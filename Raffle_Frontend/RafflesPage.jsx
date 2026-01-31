@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Ticket, Clock, Users, Gift, Loader2 } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useTotalRaffles, useRaffleInfo, useBuyTickets, useDrawWinner, useClaimPrizes, useUSDCApproval } from '../hooks/useContract';
+import { useTotalRaffles, useRaffleInfo, useBuyTickets, useDrawWinner, useClaimPrizes, useUSDCApproval } from './useContract';
 import { parseUnits } from 'viem';
 import toast from 'react-hot-toast';
 
