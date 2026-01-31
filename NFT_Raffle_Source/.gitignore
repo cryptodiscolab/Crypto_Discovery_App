@@ -1,0 +1,30 @@
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Hardhat
+artifacts/
+cache/
+typechain/
+typechain-types/
+coverage/
+coverage.json
+*.sh
+*.log
+
+# Dependencies
+node_modules/
+FrontEndReact/node_modules/
+
+# Production
+FrontEndReact/dist/
+FrontEndReact/build/
+
+# IDE / System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
