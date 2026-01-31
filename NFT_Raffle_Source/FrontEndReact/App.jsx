@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import sdk from '@farcaster/frame-sdk';
 import { Toaster } from 'react-hot-toast';
 import { Web3Provider } from './Web3Provider';
 import { Header } from './Header';
@@ -9,6 +11,17 @@ import { ProfilePage } from './ProfilePage';
 import { CreateRafflePage } from './CreateRafflePage';
 
 function App() {
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await sdk.actions.ready();
+      } catch (err) {
+        console.error('Error initializing Farcaster SDK:', err);
+      }
+    };
+    init();
+  }, []);
+
   return (
     <Web3Provider>
       <BrowserRouter>
