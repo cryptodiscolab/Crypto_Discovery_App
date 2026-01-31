@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Ticket, Gift, Users, TrendingUp, Sparkles, Shield } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useUserInfo } from '../hooks/useContract';
+import { useUserInfo } from './useContract';
 
 export function HomePage() {
   const { address } = useAccount();

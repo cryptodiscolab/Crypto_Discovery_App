@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { User, Wallet, Shield, History, ExternalLink, LogOut, Copy, Check, Users, Ticket, Gift, DollarSign, Loader2, Plus, Trophy, Settings } from 'lucide-react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useNeynarContext } from "@neynar/react";
-import { useTotalRaffles, useRaffleInfo, useWithdrawRevenue, useAdminInfo, useWithdrawFees } from '../hooks/useContract';
+import { useTotalRaffles, useRaffleInfo, useWithdrawRevenue, useAdminInfo, useWithdrawFees } from './useContract';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 

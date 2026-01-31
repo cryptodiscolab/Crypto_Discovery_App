@@ -1,5 +1,5 @@
 import { useContractRead, useContractWrite, useWaitForTransaction } from 'wagmi';
-import { parseEther } from 'viem';
+import { parseUnits, formatUnits } from 'viem';
 import toast from 'react-hot-toast';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
@@ -7,18 +7,25 @@ const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 const ABI = [
   "function createRaffle(address[] calldata _nftContracts, uint256[] calldata _tokenIds, uint256 _duration) external",
   "function claimDailyFreeTicket() external",
-  "function buyTickets(uint256 _raffleId, uint256 _amount, bool _useFreeTickets) external payable",
+  "function buyTickets(uint256 _raffleId, uint256 _amount, bool _useFreeTickets) external",
   "function drawWinner(uint256 _raffleId) external",
-  "function claimPrizes(uint256 _raffleId) external payable",
+  "function claimPrizes(uint256 _raffleId) external",
   "function getRaffleInfo(uint256 _raffleId) external view returns (uint256, address, uint256, uint256, uint256, uint256, bool, bool, address, uint256)",
   "function getUserTickets(uint256 _raffleId, address _user) external view returns (uint256)",
   "function getUserInfo(address _user) external view returns (uint256, uint256, uint256, uint256)",
   "function raffleIdCounter() external view returns (uint256)",
-  "function TICKET_PRICE() external view returns (uint256)",
+  "function ticketPrice() external view returns (uint256)",
+  "function usdcToken() external view returns (address)",
   "function withdrawFees() external",
   "function withdrawRaffleRevenue(uint256 _raffleId) external",
   "function admin() external view returns (address)",
   "function totalFees() external view returns (uint256)",
+];
+
+const ERC20_ABI = [
+  "function approve(address spender, uint256 amount) external returns (bool)",
+  "function allowance(address owner, address spender) external view returns (uint256)",
+  "function balanceOf(address account) external view returns (uint256)",
 ];
 
 // Hook untuk claim free ticket
@@ -48,6 +55,43 @@ export function useClaimFreeTicket() {
     isSuccess,
   };
 }
+// Hook untuk USDC Approval
+export function useUSDCApproval() {
+  const { data: usdcAddress } = useContractRead({
+    address: CONTRACT_ADDRESS,
+    abi: ABI,
+    functionName: 'usdcToken',
+  });
+
+  const { writeAsync: approve, data, isLoading } = useContractWrite({
+    address: usdcAddress,
+    abi: ERC20_ABI,
+    functionName: 'approve',
+  });
+
+  const { isLoading: isWaiting } = useWaitForTransaction({
+    hash: data?.hash,
+  });
+
+  const checkAndApprove = async (spender, amount) => {
+    try {
+      if (!usdcAddress) return false;
+      await approve({
+        args: [spender, amount],
+      });
+      return true;
+    } catch (error) {
+      console.error('Approval failed:', error);
+      return false;
+    }
+  };
+
+  return {
+    checkAndApprove,
+    isLoading: isLoading || isWaiting,
+    usdcAddress,
+  };
+}
 
 // Hook untuk buy tickets
 export function useBuyTickets() {
@@ -63,12 +107,13 @@ export function useBuyTickets() {
 
   const buyTickets = async (raffleId, amount, useFreeTickets = false) => {
     try {
-      const ticketPrice = parseEther('0.00015'); // $0.15 in ETH
+      // Get ticket price first (should be fetched from contract in a real app)
+      // For now we use the known 0.15 USDC (6 decimals)
+      const ticketPrice = parseUnits('0.15', 6);
       const totalCost = ticketPrice * BigInt(amount);
 
       await write({
-        args: [raffleId, amount, useFreeTickets],
-        value: totalCost,
+        args: [raffleId, BigInt(amount), useFreeTickets],
       });
       toast.success('Buying tickets...');
     } catch (error) {
@@ -193,12 +238,10 @@ export function useClaimPrizes() {
 
   const claimPrizes = async (raffleId, paidTicketsSold) => {
     try {
-      const ticketPrice = parseEther('0.00015');
-      const claimFee = (BigInt(paidTicketsSold) * ticketPrice * 5n) / 100n;
-
+      // Note: claimFee is calculated on-chain, but we need it here if we were using 'value'
+      // Since we use safeTransferFrom, the user just needs to have approved it.
       await write({
         args: [raffleId],
-        value: claimFee,
       });
       toast.success('Claiming prizes...');
     } catch (error) {

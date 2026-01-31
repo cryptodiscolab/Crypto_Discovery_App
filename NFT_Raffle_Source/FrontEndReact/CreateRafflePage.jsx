@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, Loader2, Sparkles, Calendar } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useCreateRaffle } from '../hooks/useContract';
+import { useCreateRaffle } from './useContract';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Ticket, Clock, Users, Gift, Loader2 } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useTotalRaffles, useRaffleInfo, useBuyTickets, useDrawWinner, useClaimPrizes } from '../hooks/useContract';
+import { useTotalRaffles, useRaffleInfo, useBuyTickets, useDrawWinner, useClaimPrizes, useUSDCApproval } from './useContract';
+import { parseUnits } from 'viem';
 import toast from 'react-hot-toast';
 
 function RaffleCard({ raffleId }) {
@@ -11,6 +12,7 @@ function RaffleCard({ raffleId }) {
   const { buyTickets, isLoading: isBuying } = useBuyTickets();
   const { drawWinner, isLoading: isDrawing } = useDrawWinner();
   const { claimPrizes, isLoading: isClaiming } = useClaimPrizes();
+  const { checkAndApprove, isLoading: isApproving } = useUSDCApproval();
   const [ticketAmount, setTicketAmount] = useState(1);
 
   if (isLoading || !raffleInfo) {
@@ -35,7 +37,25 @@ function RaffleCard({ raffleId }) {
       toast.error('Please connect your wallet');
       return;
     }
-    await buyTickets(raffleId, ticketAmount, false);
+
+    try {
+      const ticketPrice = parseUnits('0.15', 6);
+      const totalCost = ticketPrice * BigInt(ticketAmount);
+
+      toast.loading('Checking USDC allowance...', { id: 'buy-step' });
+      const approved = await checkAndApprove(import.meta.env.VITE_CONTRACT_ADDRESS, totalCost);
+
+      if (approved) {
+        toast.loading('Purchasing tickets...', { id: 'buy-step' });
+        await buyTickets(raffleId, ticketAmount, false);
+      } else {
+        toast.error('USDC Approval failed or rejected', { id: 'buy-step' });
+      }
+    } catch (error) {
+      toast.error(error.message || 'Transaction failed', { id: 'buy-step' });
+    } finally {
+      toast.dismiss('buy-step');
+    }
   };
 
   const handleDrawWinner = async () => {
@@ -51,7 +71,29 @@ function RaffleCard({ raffleId }) {
       toast.error('Please connect your wallet');
       return;
     }
-    await claimPrizes(raffleId, raffleInfo.paidTicketsSold);
+
+    try {
+      // Calculate 5% fee (this matches contract logic)
+      const ticketPrice = parseUnits('0.15', 6);
+      const raffleRevenue = BigInt(raffleInfo.paidTicketsSold) * ticketPrice;
+      const claimFee = (raffleRevenue * 5n) / 100n;
+
+      if (claimFee > 0n) {
+        toast.loading('Approving USDC for fee...', { id: 'claim-step' });
+        const approved = await checkAndApprove(import.meta.env.VITE_CONTRACT_ADDRESS, claimFee);
+        if (!approved) {
+          toast.error('USDC Approval failed');
+          return;
+        }
+      }
+
+      toast.loading('Claiming prizes...', { id: 'claim-step' });
+      await claimPrizes(raffleId, raffleInfo.paidTicketsSold);
+    } catch (error) {
+      toast.error(error.message || 'Claim failed');
+    } finally {
+      toast.dismiss('claim-step');
+    }
   };
 
   return (
@@ -126,10 +168,10 @@ function RaffleCard({ raffleId }) {
             />
             <button
               onClick={handleBuyTickets}
-              disabled={isBuying || !address}
+              disabled={isBuying || isApproving || !address}
               className="btn-primary flex items-center space-x-2"
             >
-              {isBuying ? (
+              {isBuying || isApproving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
