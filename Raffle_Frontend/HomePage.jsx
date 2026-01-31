@@ -1,3 +1,4 @@
+// Final fix for Vercel imports - Triggering redeploy
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Ticket, Gift, Users, TrendingUp, Sparkles, Shield } from 'lucide-react';
