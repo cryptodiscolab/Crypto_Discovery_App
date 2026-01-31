@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useContractRead, useContractWrite, useWaitForTransaction } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import toast from 'react-hot-toast';
 
