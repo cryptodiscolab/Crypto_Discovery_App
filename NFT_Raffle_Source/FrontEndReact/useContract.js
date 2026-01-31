@@ -1,4 +1,5 @@
-import { useContractRead, useContractWrite, useWaitForTransaction } from 'wagmi';
+// Build: 2026-01-31 21:37 - Wagmi v2.5 compatible
+import { useContractRead, useContractWrite, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import toast from 'react-hot-toast';
 
