@@ -6,8 +6,9 @@ import { useEnvironment } from './useEnvironment';
 
 export function Header() {
   const location = useLocation();
+  // Safe access to user context
   const { user } = useNeynarContext();
-  const { isFarcaster, isBaseApp } = useEnvironment();
+  const { isFarcaster } = useEnvironment();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -35,12 +36,11 @@ export function Header() {
             </div>
           </Link>
 
-          {/* Navigation */}
+          {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center space-x-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-
               return (
                 <Link
                   key={item.path}
@@ -59,14 +59,9 @@ export function Header() {
 
           {/* Connect Wallet & Farcaster */}
           <div className="flex items-center space-x-4">
-            {/* 
-              Context Logic:
-              - If in Farcaster (Warpcast), we hide Farcaster login (usually managed by client) 
-                but keep wallet connect if they need a specific onchain action.
-              - If in Base App, we prioritize wallet connection.
-            */}
             {!isFarcaster && <NeynarAuthButton />}
 
+            {/* INI BAGIAN YANG DIBENERIN: accountStatus JADI STRING */}
             <ConnectButton
               chainStatus="icon"
               showBalance={false}
@@ -80,7 +75,6 @@ export function Header() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
-
             return (
               <Link
                 key={item.path}
