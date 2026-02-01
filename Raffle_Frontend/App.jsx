@@ -1,20 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Web3Provider } from './Web3Provider';
-import { Header } from './Header'; // Adjusted from ./components/Header to match project structure
-
-// Kita buat halaman sementara buat gantiin HomePage
-function TempHome() {
-  return (
-    <div className="pt-20 flex flex-col items-center justify-center min-h-screen text-white text-center px-4">
-      <h1 className="text-5xl font-bold mb-4">🚀 Header Berhasil!</h1>
-      <p className="text-xl text-slate-400">
-        Navigasi udah muncul. Provider udah stabil.<br />
-        Langkah terakhir nanti tinggal balikin HomePage asli.
-      </p>
-    </div>
-  );
-}
+import { Header } from './Header'; // Adjusted path to match project structure
+import { HomePage } from './HomePage'; // Adjusted path to match project structure
 
 function App() {
   return (
@@ -24,10 +12,16 @@ function App() {
           <Header />
           <main>
             <Routes>
-              <Route path="/" element={<TempHome />} />
+              {/* Balikin HomePage sebagai route utama */}
+              <Route path="/" element={<HomePage />} />
             </Routes>
           </main>
-          <Toaster position="bottom-right" />
+          <Toaster position="bottom-right" toastOptions={{
+            style: {
+              background: '#1e293b',
+              color: '#fff',
+            },
+          }} />
         </div>
       </BrowserRouter>
     </Web3Provider>
