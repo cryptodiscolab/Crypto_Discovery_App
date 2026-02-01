@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import sdk from '@farcaster/frame-sdk';
+import sdk from '@farcaster/miniapp-sdk';
 import { Toaster } from 'react-hot-toast';
 import { Web3Provider } from './Web3Provider';
 import { Header } from './Header';
