@@ -10,7 +10,7 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "@coinbase/onchainkit": "^1.1.2",
+    "@coinbase/onchainkit": "^0.33.0",
     "@farcaster/frame-sdk": "^0.1.13",
     "@neynar/react": "^1.2.22",
     "@pigment-css/react": "^0.0.30",
