@@ -5,7 +5,7 @@ import { base, baseSepolia } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { NeynarContextProvider, Theme } from "@neynar/react";
 import { OnchainKitProvider } from '@coinbase/onchainkit';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 
 // Wagmi Config
 const config = getDefaultConfig({
@@ -17,26 +17,29 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient();
 
+// Move settings outside to prevent re-creation
+const neynarSettings = {
+  clientId: import.meta.env.VITE_NEYNAR_CLIENT_ID || "",
+  defaultTheme: Theme.Dark,
+  eventsCallbacks: {
+    // Empty for testing per request to debug Error #31
+    onAuthSuccess: () => { },
+    onSignout: () => { },
+  },
+};
+
 export function Web3Provider({ children }) {
   const [mounted, setMounted] = useState(false);
+
+  // Debugging API Key availability
+  if (import.meta.env.DEV) {
+    console.log("OnchainKit API Key:", import.meta.env.VITE_ONCHAINKIT_API_KEY ? "Present" : "Missing/Undefined");
+  }
 
   // Prevent Hydration Errors
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const neynarSettings = useMemo(() => ({
-    clientId: import.meta.env.VITE_NEYNAR_CLIENT_ID || "",
-    defaultTheme: Theme.Dark,
-    eventsCallbacks: {
-      onAuthSuccess: () => {
-        console.log("Auth success");
-      },
-      onSignout() {
-        console.log("Signout success");
-      },
-    },
-  }), []);
 
   if (!mounted) return null;
 
