@@ -1,14 +1,7 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import sdk from '@farcaster/miniapp-sdk';
+import sdk from '@farcaster/frame-sdk';
 import { Toaster } from 'react-hot-toast';
-import { Web3Provider } from './Web3Provider';
-import { Header } from './Header';
-import { HomePage } from './HomePage';
-import { RafflesPage } from './RafflesPage';
-import { LeaderboardPage } from './LeaderboardPage';
-import { ProfilePage } from './ProfilePage';
-import { CreateRafflePage } from './CreateRafflePage';
+import { Web3Provider } from './Web3Provider'; // Pastikan path ini benar
 
 function App() {
   useEffect(() => {
@@ -24,43 +17,14 @@ function App() {
 
   return (
     <Web3Provider>
-      <BrowserRouter>
-        <div className="min-h-screen">
-          <Header />
-          <main>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/raffles" element={<RafflesPage />} />
-              <Route path="/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/create" element={<CreateRafflePage />} />
-            </Routes>
-          </main>
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#1e293b',
-                color: '#fff',
-                borderRadius: '12px',
-              },
-              success: {
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
-                },
-              },
-            }}
-          />
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center">
+        <h1 className="text-4xl font-bold mb-4">Tes Isolasi Error</h1>
+        <p className="mb-4">Kalau tulisan ini muncul, berarti Web3Provider AMAN.</p>
+        <div className="p-4 border border-green-500 rounded bg-green-900/20">
+          Status: Provider Loaded
         </div>
-      </BrowserRouter>
+      </div>
+      <Toaster />
     </Web3Provider>
   );
 }
