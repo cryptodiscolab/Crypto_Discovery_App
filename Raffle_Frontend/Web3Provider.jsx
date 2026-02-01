@@ -3,14 +3,13 @@ import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rai
 import { WagmiProvider } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
-import { NeynarContextProvider, Theme } from "@neynar/react";
+import { NeynarContextProvider } from "@neynar/react"; // Hapus Theme import
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { useState, useEffect } from 'react';
 
-// Wagmi Config
 const config = getDefaultConfig({
   appName: 'NFT Raffle',
-  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID',
+  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "PROJECT_ID_PLACEHOLDER",
   chains: [base, baseSepolia],
   ssr: false,
 });
@@ -20,7 +19,6 @@ const queryClient = new QueryClient();
 export function Web3Provider({ children }) {
   const [mounted, setMounted] = useState(false);
 
-  // Prevent Hydration Errors
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -31,30 +29,19 @@ export function Web3Provider({ children }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
-          apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY}
-          chain={baseSepolia} // Set to base for production
+          apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY || "API_KEY_PLACEHOLDER"}
+          chain={baseSepolia}
         >
           <RainbowKitProvider
-            theme={darkTheme({
-              accentColor: '#3b82f6',
-              accentColorForeground: 'white',
-              borderRadius: 'large',
-              fontStack: 'system',
-            })}
+            theme={darkTheme()} // Pake default dark theme RainbowKit
             modalSize="compact"
           >
+            {/* FIX: Ganti theme jadi string "dark", jangan pake object Enum */}
             <NeynarContextProvider
               settings={{
-                clientId: import.meta.env.VITE_NEYNAR_CLIENT_ID || "YOUR_CLIENT_ID",
-                defaultTheme: Theme.Dark,
-                eventsCallbacks: {
-                  onAuthSuccess: () => {
-                    console.log("Auth success");
-                  },
-                  onSignout() {
-                    console.log("Signout success");
-                  },
-                },
+                clientId: import.meta.env.VITE_NEYNAR_CLIENT_ID || "CLIENT_ID_PLACEHOLDER",
+                defaultTheme: "dark",
+                eventsCallbacks: {},
               }}
             >
               <div className="min-h-screen bg-slate-950 text-slate-50">
