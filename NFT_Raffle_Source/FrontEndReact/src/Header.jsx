@@ -1,15 +1,16 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, useLocation } from 'react-router-dom';
-import { Ticket, Trophy, User, Home, Plus } from 'lucide-react';
+import { Ticket, Trophy, User, Home, Plus, Sparkles } from 'lucide-react';
 
 export function Header() {
   const location = useLocation();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
+    { path: '/tasks', icon: Sparkles, label: 'Tasks' },
     { path: '/raffles', icon: Ticket, label: 'Raffles' },
-    { path: '/create', icon: Plus, label: 'Host Raffle' },
-    { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
+    { path: '/create', icon: Plus, label: 'Host' },
+    { path: '/leaderboard', icon: Trophy, label: 'Winners' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 

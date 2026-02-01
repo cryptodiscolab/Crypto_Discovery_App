@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useUserV12Stats, useAllTasks, useTaskInfo, useDoTask } from './useContract';
+import { useUserV12Stats, useAllTasks, useTaskInfo, useDoTask } from '../hooks/useContract';
 import toast from 'react-hot-toast';
 
 function TaskCard({ taskId, userStats, refetchStats }) {

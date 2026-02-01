@@ -4,12 +4,12 @@ import { Web3Provider } from './Web3Provider';
 import { Header } from './Header'; // Adjusted path to match project structure
 
 // Import Halaman-Halaman
-import { HomePage } from './HomePage'; // Adjusted path to match project structure
-import { RafflesPage } from './RafflesPage'; // Adjusted path to match project structure
-import { LeaderboardPage } from './LeaderboardPage'; // Adjusted path to match project structure
-import { ProfilePage } from './ProfilePage'; // Adjusted path to match project structure
-import { CreateRafflePage } from './CreateRafflePage'; // Adjusted path to match project structure
-import { TasksPage } from './TasksPage';
+import { HomePage } from './pages/HomePage';
+import { RafflesPage } from './pages/RafflesPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { CreateRafflePage } from './pages/CreateRafflePage';
+import { TasksPage } from './pages/TasksPage';
 
 function App() {
   return (

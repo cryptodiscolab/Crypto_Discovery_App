@@ -1,6 +1,6 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, useLocation } from 'react-router-dom';
-import { Ticket, Trophy, User, Home, Plus } from 'lucide-react';
+import { Ticket, Trophy, User, Home, Plus, Sparkles } from 'lucide-react';
 
 export function Header() {
   const location = useLocation();
