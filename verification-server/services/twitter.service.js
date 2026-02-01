@@ -4,7 +4,10 @@ const config = require('../config');
 class TwitterService {
     constructor() {
         if (!config.twitter.bearerToken) {
-            throw new Error('TWITTER_BEARER_TOKEN is not configured');
+            console.warn('⚠️  TWITTER_BEARER_TOKEN is not configured. Twitter verification will be disabled.');
+            this.client = null;
+            this.readOnlyClient = null;
+            return;
         }
 
         // Initialize with bearer token for read-only operations

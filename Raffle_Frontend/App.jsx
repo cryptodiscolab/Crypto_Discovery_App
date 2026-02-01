@@ -9,6 +9,7 @@ import { RafflesPage } from './RafflesPage'; // Adjusted path to match project s
 import { LeaderboardPage } from './LeaderboardPage'; // Adjusted path to match project structure
 import { ProfilePage } from './ProfilePage'; // Adjusted path to match project structure
 import { CreateRafflePage } from './CreateRafflePage'; // Adjusted path to match project structure
+import { TasksPage } from './TasksPage';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Routes>
               {/* Daftar Rute Aplikasi */}
               <Route path="/" element={<HomePage />} />
+              <Route path="/tasks" element={<TasksPage />} />
               <Route path="/raffles" element={<RafflesPage />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />

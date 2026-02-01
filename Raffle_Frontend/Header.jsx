@@ -7,9 +7,10 @@ export function Header() {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
+    { path: '/tasks', icon: Sparkles, label: 'Tasks' },
     { path: '/raffles', icon: Ticket, label: 'Raffles' },
-    { path: '/create', icon: Plus, label: 'Host Raffle' },
-    { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
+    { path: '/create', icon: Plus, label: 'Host' },
+    { path: '/leaderboard', icon: Trophy, label: 'Winners' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 

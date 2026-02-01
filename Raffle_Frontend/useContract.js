@@ -1,84 +1,81 @@
-// Build: 2026-01-31 21:37 - Wagmi v2.5 compatible
-import { useContractRead, useContractWrite, useWaitForTransactionReceipt } from 'wagmi';
+/* eslint-disable no-unused-vars */
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+// 1. Configuration
+const RAFFLE_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || RAFFLE_ADDRESS; // Fallback if not set
+const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dcf7e"; // Base Sepolia Standard USDC
 
-const ABI = [
+// 2. Comprehensive ABI
+const MAIN_ABI = [
+  // NFTRaffle Functions
   "function createRaffle(address[] calldata _nftContracts, uint256[] calldata _tokenIds, uint256 _duration) external",
   "function claimDailyFreeTicket() external",
   "function buyTickets(uint256 _raffleId, uint256 _amount, bool _useFreeTickets) external",
   "function drawWinner(uint256 _raffleId) external",
   "function claimPrizes(uint256 _raffleId) external",
-  "function getRaffleInfo(uint256 _raffleId) external view returns (uint256, address, uint256, uint256, uint256, uint256, bool, bool, address, uint256)",
+  "function getRaffleInfo(uint256 _raffleId) external view returns (uint256 raffleId, address creator, uint256 startTime, uint256 endTime, uint256 ticketsSold, uint256 paidTicketsSold, bool isActive, bool isCompleted, address winner, uint256 nftCount)",
   "function getUserTickets(uint256 _raffleId, address _user) external view returns (uint256)",
-  "function getUserInfo(address _user) external view returns (uint256, uint256, uint256, uint256)",
+  "function getUserInfo(address _user) external view returns (uint256 totalTicketsPurchased, uint256 totalWins, uint256 freeTicketsAvailable, uint256 lastFreeTicketClaim)",
   "function raffleIdCounter() external view returns (uint256)",
   "function ticketPrice() external view returns (uint256)",
   "function usdcToken() external view returns (address)",
-  "function withdrawFees() external",
   "function withdrawRaffleRevenue(uint256 _raffleId) external",
-  "function admin() external view returns (address)",
+  "function withdrawFees() external",
   "function totalFees() external view returns (uint256)",
+  "function owner() external view returns (address)",
+
+  // DailyApp V12 Functions
+  "function doTask(uint256 _taskId, address _referrer) external",
+  "function addTask(uint256 _baseReward, uint256 _cooldown, uint8 _minTier, string calldata _title, string calldata _link, bool _requiresVerification) external",
+  "function markTaskAsVerified(address _user, uint256 _taskId) external",
+  "function isTaskVerified(address _user, uint256 _taskId) external view returns (bool)",
+  "function getUserStats(address _user) external view returns (uint256 points, uint256 totalTasksCompleted, uint256 referralCount, uint8 currentTier, uint256 tasksForReferralProgress, uint256 lastDailyBonusClaim, bool isBlacklisted)",
+  "function getTask(uint256 _taskId) external view returns (uint256 baseReward, bool isActive, uint256 cooldown, uint8 minTier, string title, string link, uint256 createdAt, bool requiresVerification, uint256 sponsorshipId)",
+  "function getContractStats() external view returns (uint256 totalUsers, uint256 totalTransactions, uint256 totalSponsors, uint256 contractTokenBalance, uint256 contractETHBalance)",
+  "function nextTaskId() external view returns (uint256)",
+  "function userCount() external view returns (uint256)",
+  "function globalTxCount() external view returns (uint256)",
+
+  // Standard Token Functions (USDC)
+  {
+    "constant": false,
+    "inputs": [{ "name": "_spender", "type": "address" }, { "name": "_value", "type": "uint256" }],
+    "name": "approve",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [{ "name": "_owner", "type": "address" }, { "name": "_spender", "type": "address" }],
+    "name": "allowance",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
 ];
 
-const ERC20_ABI = [
-  "function approve(address spender, uint256 amount) external returns (bool)",
-  "function allowance(address owner, address spender) external view returns (uint256)",
-  "function balanceOf(address account) external view returns (uint256)",
-];
+// --- 3. COMMON HOOKS ---
 
-// Hook untuk claim free ticket
-export function useClaimFreeTicket() {
-  const { write, data, isLoading } = useContractWrite({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'claimDailyFreeTicket',
-  });
-
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
-  });
-
-  const claimFreeTicket = async () => {
-    try {
-      await write();
-      toast.success('Claiming free ticket...');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to claim free ticket');
-    }
-  };
-
-  return {
-    claimFreeTicket,
-    isLoading: isLoading || isWaiting,
-    isSuccess,
-  };
-}
-// Hook untuk USDC Approval
 export function useUSDCApproval() {
-  const { data: usdcAddress } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'usdcToken',
-  });
+  const { address } = useAccount();
+  const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
+  const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
-  const { writeAsync: approve, data, isLoading } = useContractWrite({
-    address: usdcAddress,
-    abi: ERC20_ABI,
-    functionName: 'approve',
-  });
-
-  const { isLoading: isWaiting } = useWaitForTransaction({
-    hash: data?.hash,
-  });
-
-  const checkAndApprove = async (spender, amount) => {
+  const checkAndApprove = async (spenderAddress, amount) => {
+    if (!address) return false;
     try {
-      if (!usdcAddress) return false;
-      await approve({
-        args: [spender, amount],
+      await writeContractAsync({
+        address: USDC_ADDRESS,
+        abi: MAIN_ABI,
+        functionName: 'approve',
+        args: [spenderAddress, amount],
       });
       return true;
     } catch (error) {
@@ -89,280 +86,259 @@ export function useUSDCApproval() {
 
   return {
     checkAndApprove,
-    isLoading: isLoading || isWaiting,
-    usdcAddress,
+    isLoading: isConfirming || isWaiting
   };
 }
 
-// Hook untuk buy tickets
-export function useBuyTickets() {
-  const { write, data, isLoading } = useContractWrite({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'buyTickets',
+// --- 4. RAFFLE HOOKS ---
+
+export function useTotalRaffles() {
+  const { data } = useReadContract({
+    address: RAFFLE_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'raffleIdCounter',
+    query: { refetchInterval: 10000 }
+  });
+  return { totalRaffles: data ? Number(data) : 0 };
+}
+
+export function useRaffleInfo(raffleId) {
+  const { data, isLoading, refetch } = useReadContract({
+    address: RAFFLE_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'getRaffleInfo',
+    args: [BigInt(raffleId)],
   });
 
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
-  });
+  if (!data || isLoading) return { raffleInfo: null, isLoading };
+
+  const [id, creator, startTime, endTime, ticketsSold, paidTicketsSold, isActive, isCompleted, winner, nftCount] = data;
+
+  return {
+    raffleInfo: {
+      id, creator, startTime, endTime, ticketsSold, paidTicketsSold, isActive, isCompleted, winner, nftCount
+    },
+    isLoading,
+    refetch
+  };
+}
+
+export function useBuyTickets() {
+  const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
+  const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
   const buyTickets = async (raffleId, amount, useFreeTickets = false) => {
-    try {
-      // Get ticket price first (should be fetched from contract in a real app)
-      // For now we use the known 0.15 USDC (6 decimals)
-      const ticketPrice = parseUnits('0.15', 6);
-      const totalCost = ticketPrice * BigInt(amount);
-
-      await write({
-        args: [raffleId, BigInt(amount), useFreeTickets],
-      });
-      toast.success('Buying tickets...');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to buy tickets');
-    }
+    return await writeContractAsync({
+      address: RAFFLE_ADDRESS,
+      abi: MAIN_ABI,
+      functionName: 'buyTickets',
+      args: [BigInt(raffleId), BigInt(amount), useFreeTickets],
+    });
   };
 
-  return {
-    buyTickets,
-    isLoading: isLoading || isWaiting,
-    isSuccess,
-  };
+  return { buyTickets, isLoading: isConfirming || isWaiting };
 }
 
-// Hook untuk get raffle info
-export function useRaffleInfo(raffleId) {
-  const { data, isLoading, refetch } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'getRaffleInfo',
-    args: [raffleId],
-    watch: true,
-  });
+export function useClaimDailyFreeTicket() {
+  const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
+  const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
-  return {
-    raffleInfo: data ? {
-      raffleId: data[0],
-      creator: data[1],
-      startTime: data[2],
-      endTime: data[3],
-      ticketsSold: data[4],
-      paidTicketsSold: data[5],
-      isActive: data[6],
-      isCompleted: data[7],
-      winner: data[8],
-      nftCount: data[9],
-    } : null,
-    isLoading,
-    refetch,
+  const claimTicket = async () => {
+    return await writeContractAsync({
+      address: RAFFLE_ADDRESS,
+      abi: MAIN_ABI,
+      functionName: 'claimDailyFreeTicket',
+    });
   };
+
+  return { claimTicket, isLoading: isConfirming || isWaiting };
 }
 
-// Hook untuk get user info
-export function useUserInfo(address) {
-  const { data, isLoading, refetch } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
+export function useUserInfo(userAddress) {
+  const { data, isLoading } = useReadContract({
+    address: RAFFLE_ADDRESS,
+    abi: MAIN_ABI,
     functionName: 'getUserInfo',
-    args: [address],
-    enabled: !!address,
-    watch: true,
+    args: [userAddress],
+    query: { enabled: !!userAddress, refetchInterval: 15000 }
   });
 
+  if (!data || isLoading) return { userInfo: null, isLoading };
+
+  const [totalTicketsPurchased, totalWins, freeTicketsAvailable, lastFreeTicketClaim] = data;
+
   return {
-    userInfo: data ? {
-      totalTicketsPurchased: data[0],
-      totalWins: data[1],
-      freeTicketsAvailable: data[2],
-      lastFreeTicketClaim: data[3],
-    } : null,
-    isLoading,
-    refetch,
+    userInfo: {
+      totalTicketsPurchased, totalWins, freeTicketsAvailable, lastFreeTicketClaim
+    },
+    isLoading
   };
 }
 
-// Hook untuk get total raffles
-export function useTotalRaffles() {
-  const { data, isLoading } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'raffleIdCounter',
-    watch: true,
-  });
-
-  return {
-    totalRaffles: data ? Number(data) : 0,
-    isLoading,
-  };
-}
-
-// Hook untuk draw winner
 export function useDrawWinner() {
-  const { write, data, isLoading } = useContractWrite({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'drawWinner',
-  });
-
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
-  });
+  const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
+  const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
   const drawWinner = async (raffleId) => {
-    try {
-      await write({
-        args: [raffleId],
-      });
-      toast.success('Drawing winner...');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to draw winner');
-    }
+    return await writeContractAsync({
+      address: RAFFLE_ADDRESS,
+      abi: MAIN_ABI,
+      functionName: 'drawWinner',
+      args: [BigInt(raffleId)],
+    });
   };
 
-  return {
-    drawWinner,
-    isLoading: isLoading || isWaiting,
-    isSuccess,
-  };
+  return { drawWinner, isLoading: isConfirming || isWaiting };
 }
 
-// Hook untuk claim prizes
 export function useClaimPrizes() {
-  const { write, data, isLoading } = useContractWrite({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'claimPrizes',
-  });
+  const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
+  const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
-  });
-
-  const claimPrizes = async (raffleId, paidTicketsSold) => {
-    try {
-      // Note: claimFee is calculated on-chain, but we need it here if we were using 'value'
-      // Since we use safeTransferFrom, the user just needs to have approved it.
-      await write({
-        args: [raffleId],
-      });
-      toast.success('Claiming prizes...');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to claim prizes');
-    }
+  const claimPrizes = async (raffleId) => {
+    return await writeContractAsync({
+      address: RAFFLE_ADDRESS,
+      abi: MAIN_ABI,
+      functionName: 'claimPrizes',
+      args: [BigInt(raffleId)],
+    });
   };
 
-  return {
-    claimPrizes,
-    isLoading: isLoading || isWaiting,
-    isSuccess,
-  };
+  return { claimPrizes, isLoading: isConfirming || isWaiting };
 }
 
-// Hook untuk withdraw revenue (Creator)
-export function useWithdrawRevenue() {
-  const { write, data, isLoading } = useContractWrite({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'withdrawRaffleRevenue',
-  });
-
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
-  });
-
-  const withdrawRevenue = async (raffleId) => {
-    try {
-      await write({
-        args: [raffleId],
-      });
-      toast.success('Withdrawing revenue...');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to withdraw revenue');
-    }
-  };
-
-  return {
-    withdrawRevenue,
-    isLoading: isLoading || isWaiting,
-    isSuccess,
-  };
-}
-
-// Hook untuk withdraw fees (Admin only)
-export function useWithdrawFees() {
-  const { write, data, isLoading } = useContractWrite({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'withdrawFees',
-  });
-
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
-  });
-
-  const withdrawFees = async () => {
-    try {
-      await write();
-      toast.success('Withdrawing fees...');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to withdraw fees');
-    }
-  };
-
-  return {
-    withdrawFees,
-    isLoading: isLoading || isWaiting,
-    isSuccess,
-  };
-}
-
-// Hook untuk create raffle
 export function useCreateRaffle() {
-  const { write, data, isLoading } = useContractWrite({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'createRaffle',
-  });
-
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
-  });
+  const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
+  const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
   const createRaffle = async (nftContracts, tokenIds, duration) => {
-    try {
-      await write({
-        args: [nftContracts, tokenIds, duration],
-      });
-      toast.success('Creating raffle...');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to create raffle');
-    }
+    return await writeContractAsync({
+      address: RAFFLE_ADDRESS,
+      abi: MAIN_ABI,
+      functionName: 'createRaffle',
+      args: [nftContracts, tokenIds, duration],
+    });
   };
 
+  return { createRaffle, isLoading: isConfirming || isWaiting };
+}
+
+// --- 5. ADMIN HOOKS ---
+
+export function useAdminInfo() {
+  const { data: ownerAddress } = useReadContract({
+    address: RAFFLE_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'owner',
+  });
+
+  const { data: totalFees } = useReadContract({
+    address: RAFFLE_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'totalFees',
+  });
+
+  return { adminAddress: ownerAddress, totalFees: totalFees || 0n };
+}
+
+export function useWithdrawRevenue() {
+  const { writeContractAsync, isPending } = useWriteContract();
+  const withdrawRevenue = (raffleId) => writeContractAsync({
+    address: RAFFLE_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'withdrawRaffleRevenue',
+    args: [BigInt(raffleId)]
+  });
+  return { withdrawRevenue, isLoading: isPending };
+}
+
+export function useWithdrawFees() {
+  const { writeContractAsync, isPending } = useWriteContract();
+  const withdrawFees = () => writeContractAsync({
+    address: RAFFLE_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'withdrawFees'
+  });
+  return { withdrawFees, isLoading: isPending };
+}
+
+// --- 6. DAILYAPP V12 HOOKS (Tasks & Stats) ---
+
+export function useV12Stats() {
+  const { data } = useReadContract({
+    address: V12_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'getContractStats',
+  });
+
+  if (!data) return { totalUsers: 0, totalTransactions: 0, totalSponsors: 0 };
+
+  const [totalUsers, totalTransactions, totalSponsors] = data;
   return {
-    createRaffle,
-    isLoading: isLoading || isWaiting,
-    isSuccess,
+    totalUsers: Number(totalUsers),
+    totalTransactions: Number(totalTransactions),
+    totalSponsors: Number(totalSponsors)
   };
 }
 
-// Hook untuk get admin info
-export function useAdminInfo() {
-  const { data: adminAddress } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'admin',
-    watch: true,
+export function useUserV12Stats(userAddress) {
+  const { data, isLoading } = useReadContract({
+    address: V12_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'getUserStats',
+    args: [userAddress],
+    query: { enabled: !!userAddress }
   });
 
-  const { data: totalFees } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: 'totalFees',
-    watch: true,
-  });
+  if (!data) return { stats: null, isLoading };
+
+  const [points, totalTasksCompleted, referralCount, currentTier, tasksForReferralProgress, lastDailyBonusClaim, isBlacklisted] = data;
 
   return {
-    adminAddress,
-    totalFees: totalFees ? Number(totalFees) : 0,
+    stats: {
+      points, totalTasksCompleted, referralCount, currentTier, tasksForReferralProgress, lastDailyBonusClaim, isBlacklisted
+    },
+    isLoading
+  };
+}
+
+export function useDoTask() {
+  const { writeContractAsync, isPending } = useWriteContract();
+  const doTask = (taskId, referrer = "0x0000000000000000000000000000000000000000") => writeContractAsync({
+    address: V12_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'doTask',
+    args: [BigInt(taskId), referrer]
+  });
+  return { doTask, isLoading: isPending };
+}
+
+export function useAllTasks() {
+  const { data: totalTasks } = useReadContract({
+    address: V12_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'nextTaskId',
+  });
+
+  return { totalTasks: totalTasks ? Number(totalTasks) : 0 };
+}
+
+export function useTaskInfo(taskId) {
+  const { data, isLoading } = useReadContract({
+    address: V12_ADDRESS,
+    abi: MAIN_ABI,
+    functionName: 'getTask',
+    args: [BigInt(taskId)],
+  });
+
+  if (!data) return { task: null, isLoading };
+
+  const [baseReward, isActive, cooldown, minTier, title, link, createdAt, requiresVerification, sponsorshipId] = data;
+
+  return {
+    task: {
+      baseReward, isActive, cooldown, minTier, title, link, createdAt, requiresVerification, sponsorshipId
+    },
+    isLoading
   };
 }

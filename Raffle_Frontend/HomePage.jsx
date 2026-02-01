@@ -36,11 +36,40 @@ export function HomePage() {
     },
   ];
 
+  const { totalUsers, totalTransactions, totalSponsors } = useV12Stats();
+
+  const features = [
+    {
+      icon: Ticket,
+      title: 'Free Daily Tickets',
+      description: 'Get 1 free raffle ticket every day just by logging in',
+      color: 'from-blue-500 to-cyan-500',
+    },
+    {
+      icon: Gift,
+      title: 'Premium NFTs',
+      description: 'Win exclusive NFT collections worth thousands',
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      icon: Shield,
+      title: 'Provably Fair',
+      description: 'Powered by Chainlink VRF for transparent randomness',
+      color: 'from-green-500 to-emerald-500',
+    },
+    {
+      icon: TrendingUp,
+      title: 'Low Entry Cost',
+      description: 'Additional tickets only $0.15 each + 5% fee',
+      color: 'from-orange-500 to-red-500',
+    },
+  ];
+
   const stats = [
-    { label: 'Active Raffles', value: '12', icon: Ticket },
-    { label: 'Total Winners', value: '1,234', icon: Users },
-    { label: 'NFTs Distributed', value: '5,678', icon: Gift },
-    { label: 'Total Volume', value: '$45K', icon: TrendingUp },
+    { label: 'Total Users', value: totalUsers ? totalUsers.toLocaleString() : '0', icon: Users },
+    { label: 'Total TXs', value: totalTransactions ? totalTransactions.toLocaleString() : '0', icon: TrendingUp },
+    { label: 'Verified Partners', value: totalSponsors ? totalSponsors.toLocaleString() : '0', icon: Shield },
+    { label: 'NFT Items', value: '500+', icon: Gift },
   ];
 
   return (
@@ -92,11 +121,18 @@ export function HomePage() {
                     Browse Raffles
                   </button>
                 </Link>
-                {address && (
-                  <Link to="/profile">
+                {address ? (
+                  <Link to="/tasks">
                     <button className="btn-secondary px-8 py-4 text-lg">
-                      <Users className="inline w-5 h-5 mr-2" />
-                      My Profile
+                      <Sparkles className="inline w-5 h-5 mr-2 text-yellow-500" />
+                      Daily Tasks
+                    </button>
+                  </Link>
+                ) : (
+                  <Link to="/raffles">
+                    <button className="btn-secondary px-8 py-4 text-lg">
+                      <Gift className="inline w-5 h-5 mr-2" />
+                      Start Winning
                     </button>
                   </Link>
                 )}
@@ -124,7 +160,6 @@ export function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {stats.map((stat, index) => {
-              // FIX: Assign to variable first (React Standard)
               const Icon = stat.icon;
               return (
                 <motion.div
