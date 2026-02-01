@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Ticket, Gift, Users, TrendingUp, Sparkles, Shield } from 'lucide-react';
+import { Ticket, Gift, Users, TrendingUp, Sparkles, Shield, Cpu } from 'lucide-react'; // Tambah icon Cpu buat tech
 import { useAccount } from 'wagmi';
-import { useUserInfo } from './useContract'; // Corrected path to match project structure
+import { useUserInfo } from '../hooks/useContract';
 
 export function HomePage() {
   const { address } = useAccount();
@@ -23,9 +23,9 @@ export function HomePage() {
       color: 'from-purple-500 to-pink-500',
     },
     {
-      icon: Shield,
-      title: 'Provably Fair',
-      description: 'Powered by Chainlink VRF for transparent randomness',
+      icon: Shield, // Bisa ganti jadi Cpu kalau mau lebih techy, tapi Shield oke buat trust
+      title: 'Quantum Randomness', // <--- JUDUL BARU YANG LEBIH GAHAR
+      description: 'Powered by API3 QRNG for truly random & verifiable results', // <--- MENTION API3
       color: 'from-green-500 to-emerald-500',
     },
     {
@@ -124,7 +124,6 @@ export function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {stats.map((stat, index) => {
-              // FIX: Assign to variable first (React Standard)
               const Icon = stat.icon;
               return (
                 <motion.div
@@ -161,7 +160,6 @@ export function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => {
-              // FIX: Assign to variable first (React Standard)
               const Icon = feature.icon;
               return (
                 <motion.div
