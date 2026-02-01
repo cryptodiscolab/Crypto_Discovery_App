@@ -1,13 +1,13 @@
-// Final fix for Vercel imports - Triggering redeploy
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Ticket, Gift, Users, TrendingUp, Sparkles, Shield } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useUserInfo } from './useContract';
+import { useUserInfo } from './useContract'; // Corrected path to match project structure
 
 export function HomePage() {
   const { address } = useAccount();
-  const { userInfo } = useUserInfo(address);
+  // Safe default value for userInfo to prevent crash
+  const { userInfo } = useUserInfo(address) || {};
 
   const features = [
     {
@@ -110,7 +110,7 @@ export function HomePage() {
                   className="mt-8 glass-card inline-block px-6 py-3"
                 >
                   <p className="text-sm text-slate-400">
-                    You have <span className="font-bold text-blue-400">{Number(userInfo.freeTicketsAvailable)}</span> free tickets available
+                    You have <span className="font-bold text-blue-400">{Number(userInfo.freeTicketsAvailable || 0)}</span> free tickets available
                   </p>
                 </motion.div>
               )}
@@ -123,19 +123,23 @@ export function HomePage() {
       <section className="py-12 bg-slate-900/20 backdrop-blur-sm border-y border-white/5">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="stat-card"
-              >
-                <stat.icon className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-                <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
-                <p className="text-sm text-slate-400">{stat.label}</p>
-              </motion.div>
-            ))}
+            {stats.map((stat, index) => {
+              // FIX: Assign to variable first (React Standard)
+              const Icon = stat.icon;
+              return (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="stat-card"
+                >
+                  <Icon className="w-8 h-8 mx-auto mb-2 text-blue-400" />
+                  <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
+                  <p className="text-sm text-slate-400">{stat.label}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -156,22 +160,26 @@ export function HomePage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="glass-card p-6 hover:scale-105 transition-transform duration-300"
-              >
-                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} p-3 mb-4`}>
-                  <feature.icon className="w-full h-full text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-slate-400">{feature.description}</p>
-              </motion.div>
-            ))}
+            {features.map((feature, index) => {
+              // FIX: Assign to variable first (React Standard)
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="glass-card p-6 hover:scale-105 transition-transform duration-300"
+                >
+                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} p-3 mb-4`}>
+                    <Icon className="w-full h-full text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                  <p className="text-slate-400">{feature.description}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
