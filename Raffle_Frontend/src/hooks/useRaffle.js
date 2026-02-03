@@ -111,10 +111,34 @@ export function useRaffle() {
         }
     };
 
+    const rerollWinner = async (raffleId) => {
+        const tid = toast.loading("Rerolling winner...");
+
+        if (MOCK_MODE) {
+            setTimeout(() => {
+                const isWin = Math.random() > 0.5; // Simulate if *we* win the reroll (unlikely in real life for previous winner, but this is the drawer)
+                // Actually rerollWinner is usually called by ADMIN or ANYONE to trigger new draw.
+                // The winner will be someone else.
+
+                toast.success("Reroll requested! New winner selected.", { id: tid });
+
+                // For mock purposes, let's remove the item from *our* unclaimed list if we were the previous winner (simulating loss of claim)
+                // OR if we are just testing UI, maybe we win again?
+                // Let's assume we lose it.
+                setUnclaimedRewards(prev => prev.filter(r => r.id !== raffleId));
+
+                refetch();
+            }, 2000);
+        } else {
+            // Real logic: call rerollWinner(raffleId)
+        }
+    };
+
     return {
         buyTickets,
         drawRaffle,
         claimPrize,
+        rerollWinner,
         isDrawing
     };
 }

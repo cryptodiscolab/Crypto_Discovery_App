@@ -1,12 +1,18 @@
+import { useRef, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { motion } from 'framer-motion';
-import { Ticket, Trophy, Gift, Wallet, ExternalLink } from 'lucide-react'; // <--- IMPORT PENTING
+import { motion, AnimatePresence } from 'framer-motion';
+import { Ticket, Trophy, Gift, Wallet, ExternalLink, Timer as TimerIcon, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { usePoints } from '../shared/context/PointsContext';
+import { useRaffle } from '../hooks/useRaffle';
+import { ClaimTimer } from '../components/ClaimTimer';
 
 export function ProfilePage() {
   const { address, isConnected } = useAccount();
+  const { unclaimedRewards } = usePoints();
+  const { claimPrize, rerollWinner } = useRaffle();
 
-  // Dummy stats
+  // Dummy stats (could be replaced with real data from usePoints if available)
   const stats = [
     { label: 'Total Tickets', value: '15', icon: Ticket, color: 'text-blue-400' },
     { label: 'Raffles Won', value: '2', icon: Trophy, color: 'text-yellow-400' },
@@ -45,6 +51,75 @@ export function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Unclaimed Prizes Section - HIGH PRIORITY */}
+        <AnimatePresence>
+          {unclaimedRewards.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8"
+            >
+              <div className="glass-card p-6 border-l-4 border-l-yellow-500 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Gift className="w-32 h-32 text-yellow-500" />
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Gift className="w-6 h-6 text-yellow-400" />
+                  Unclaimed Prizes
+                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
+                    Action Required
+                  </span>
+                </h3>
+
+                <div className="space-y-4 relative z-10">
+                  {unclaimedRewards.map((reward) => (
+                    <div key={reward.id} className="bg-slate-900/60 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center text-2xl shadow-lg shadow-orange-500/20">
+                          🏆
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-lg">{reward.title || `Raffle #${reward.id}`}</h4>
+                          <p className="text-slate-400 text-sm">You won this prize!</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col md:flex-row items-center gap-6">
+                        {/* Timer Component */}
+                        <ClaimTimer deadline={reward.deadline} />
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          {reward.deadline > Date.now() ? (
+                            <button
+                              onClick={() => claimPrize(reward.id)}
+                              className="btn-primary bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 shadow-green-500/20 px-6 py-2 flex items-center gap-2"
+                            >
+                              <Gift className="w-4 h-4" /> Claim Now
+                            </button>
+                          ) : (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-red-400 text-xs font-bold uppercase tracking-wider">Deadline Missed</span>
+                              <button
+                                onClick={() => rerollWinner(reward.id)}
+                                className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2"
+                              >
+                                <RefreshCw className="w-4 h-4" /> Reroll Winner
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
