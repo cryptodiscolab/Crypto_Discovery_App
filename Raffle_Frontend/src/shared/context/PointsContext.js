@@ -1,0 +1,90 @@
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
+import { useUserV12Stats } from '../../hooks/useContract';
+
+const PointsContext = createContext(null);
+
+export function PointsProvider({ children }) {
+    const { address, isConnected } = useAccount();
+    const { stats, isLoading, refetch } = useUserV12Stats(address);
+
+    const [userPoints, setUserPoints] = useState(0n);
+    const [userTier, setUserTier] = useState(0); // 0=NONE, 1=BRONZE, etc.
+    const [totalTasksCompleted, setTotalTasksCompleted] = useState(0n);
+    const [unclaimedRewards, setUnclaimedRewards] = useState([]); // Array of raffleIds or reward objects
+
+    useEffect(() => {
+        if (isConnected && stats) {
+            setUserPoints(stats.points || 0n);
+            setUserTier(Number(stats.currentTier || 0));
+            setTotalTasksCompleted(stats.totalTasksCompleted || 0n);
+
+            // Mocking unclaimed rewards for now (replace with real data fetch later)
+            // In real impl, this comes from checking "won but not claimed" raffles
+            setUnclaimedRewards([]);
+        } else {
+            // Reset if disconnected
+            setUserPoints(0n);
+            setUserTier(0);
+            setTotalTasksCompleted(0n);
+            setUnclaimedRewards([]);
+        }
+    }, [isConnected, stats]);
+
+    useEffect(() => {
+        // Check for approaching deadlines every minute
+        const interval = setInterval(() => {
+            if (unclaimedRewards.length > 0) {
+                const now = Date.now();
+                unclaimedRewards.forEach(reward => {
+                    if (!reward.isClaimed && reward.deadline) {
+                        const timeLeft = reward.deadline - now;
+                        // Notify if roughly 1 hour left (between 59m and 61m to avoid spam)
+                        if (timeLeft > 59 * 60 * 1000 && timeLeft < 61 * 60 * 1000) {
+                            import('react-hot-toast').then(({ default: toast }) => {
+                                toast("⚠️ Reward expiry imminent! Claim within 1 hour.", { icon: '⏳' });
+                            });
+                        }
+                    }
+                });
+            }
+        }, 60000); // Check every minute
+
+        return () => clearInterval(interval);
+    }, [unclaimedRewards]);
+
+    // Helper: Format milliseconds to HH:MM:SS
+    const formatTimeLeft = (ms) => {
+        if (ms <= 0) return "00:00:00";
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    const value = {
+        userPoints,
+        userTier,
+        totalTasksCompleted,
+        unclaimedRewards,
+        setUnclaimedRewards, // Exposed for useRaffle to update localized state if needed
+        isLoading,
+        refetch,
+        isConnected,
+        formatTimeLeft
+    };
+
+    return (
+        <PointsContext.Provider value={value}>
+            {children}
+        </PointsContext.Provider>
+    );
+}
+
+export function usePoints() {
+    const context = useContext(PointsContext);
+    if (!context) {
+        throw new Error('usePoints must be used within a PointsProvider');
+    }
+    return context;
+}

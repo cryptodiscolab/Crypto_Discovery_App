@@ -32,14 +32,22 @@ export function useV12Stats() {
 
 // Tambahan untuk TasksPage
 export function useUserV12Stats(address) {
+    if (!address) return { stats: null, isLoading: false };
+
+    // Mock Data matching Solidity "UserStats" struct
     return {
         stats: {
-            points: 450,
-            currentTier: 2,
-            totalTasksCompleted: 12
+            points: 450n,
+            totalTasksCompleted: 12n,
+            referralCount: 5n,
+            currentTier: 2, // 0=NONE, 1=BRONZE
+            tasksForReferralProgress: 1n,
+            lastDailyBonusClaim: 0n,
+            isBlacklisted: false
         },
         isLoading: false,
-        isError: false
+        isError: false,
+        refetch: () => { console.log("Refetching stats..."); }
     };
 }
 

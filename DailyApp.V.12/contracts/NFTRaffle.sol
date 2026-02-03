@@ -30,6 +30,7 @@ contract NFTRaffle is ReentrancyGuard, Ownable, Pausable, RrpRequesterV0 {
     uint256 public constant MAX_NFTS_PER_RAFFLE = 50;
     uint256 public constant DAILY_FREE_TICKETS = 1;
     uint256 public constant SECONDS_PER_DAY = 86400;
+    uint256 public constant CLAIM_DURATION = 8 hours; // NEW: 8 Hours Deadline
     
     // Revenue Split (Configurable)
     uint256 public platformSharePercentage = 30; // 30%
@@ -52,6 +53,7 @@ contract NFTRaffle is ReentrancyGuard, Ownable, Pausable, RrpRequesterV0 {
         bool isCompleted;
         bytes32 airnodeRequestId;
         address winner;
+        uint256 claimDeadline;   // NEW: Deadline timestamp
         NFTInfo[] nfts;
     }
     
@@ -259,6 +261,58 @@ contract NFTRaffle is ReentrancyGuard, Ownable, Pausable, RrpRequesterV0 {
         
         emit RaffleDrawn(_raffleId, requestId);
     }
+
+    /**
+     * @notice Reroll winner if deadline passed and prizes unclaimed
+     * @param _raffleId ID of the raffle
+     */
+    function rerollWinner(uint256 _raffleId) external nonReentrant whenNotPaused onlyOwner {
+        RaffleEvent storage raffle = raffles[_raffleId];
+        require(raffle.isCompleted, "Raffle not completed");
+        require(block.timestamp > raffle.claimDeadline, "Deadline not passed");
+        require(raffle.ticketsSold > 0, "No tickets sold");
+        
+        // Ensure prizes are NOT claimed yet
+        bool allUnclaimed = true;
+        for (uint256 i = 0; i < raffle.nfts.length; i++) {
+            if (raffle.nfts[i].claimed) {
+                allUnclaimed = false;
+                break;
+            }
+        }
+        require(allUnclaimed, "Prizes already claimed");
+        
+        require(airnode != address(0), "QRNG not configured");
+
+        // Reset state for new draw
+        raffle.airnodeRequestId = 0; // Clear old request ID to allow new one (though strict check in fulfill might need tweak if we want to track rerolls differently, but reusing logic is simpler)
+        
+        // Actually, reusing `fulfillUint256` is tricky because it sets `isActive = false` and `isCompleted = true` again.
+        // But here `isCompleted` is ALREADY true.
+        // So we should probably set `isCompleted = false` momentarily or just trust fulfill to overwrite winner.
+        // Let's reset `isCompleted` to false to allow `fulfill` to run naturally?
+        // Wait, `fulfill` checks `require(raffle.isActive, "Raffle not active")`.
+        // So we MUST set `isActive = true` again for the callback to accept it.
+        
+        raffle.isActive = true; 
+        raffle.isCompleted = false; 
+        
+        // Request randomness
+        bytes32 requestId = airnodeRrp.makeFullRequest(
+            airnode,
+            endpointId,
+            address(this),
+            sponsorWallet,
+            address(this),
+            this.fulfillUint256.selector,
+            ""
+        );
+        
+        raffle.airnodeRequestId = requestId;
+        airnodeRequestToRaffleId[requestId] = _raffleId;
+        
+        emit RaffleDrawn(_raffleId, requestId); // Re-emit draw event
+    }
     
     /**
      * @notice Claim NFT prizes (winner only)
@@ -268,6 +322,7 @@ contract NFTRaffle is ReentrancyGuard, Ownable, Pausable, RrpRequesterV0 {
         RaffleEvent storage raffle = raffles[_raffleId];
         require(raffle.isCompleted, "Raffle not completed");
         require(raffle.winner == msg.sender, "Not the winner");
+        require(block.timestamp <= raffle.claimDeadline, "Claim period expired"); // NEW: Deadline Check
         
         // Calculate 5% Project Fee from total revenue
         uint256 raffleRevenue = raffle.paidTicketsSold * ticketPrice;
@@ -316,6 +371,7 @@ contract NFTRaffle is ReentrancyGuard, Ownable, Pausable, RrpRequesterV0 {
         raffle.winner = winner;
         raffle.isActive = false;
         raffle.isCompleted = true;
+        raffle.claimDeadline = block.timestamp + CLAIM_DURATION; // NEW: Set Deadline
         
         users[winner].totalWins++;
         

@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useUserV12Stats, useAllTasks, useTaskInfo, useDoTask } from '../hooks/useContract';
+import { useAllTasks, useTaskInfo, useDoTask } from '../hooks/useContract';
+import { useVerification } from '../hooks/useVerification';
+import { usePoints } from '../shared/context/PointsContext';
 import toast from 'react-hot-toast';
 
 function TaskCard({ taskId, userStats, refetchStats }) {
     const { task, isLoading } = useTaskInfo(taskId);
     const { doTask, isLoading: isDoing } = useDoTask();
     const { address } = useAccount();
-    const [isVerifying, setIsVerifying] = useState(false);
+    const { verifyTask, isVerifying } = useVerification(refetchStats);
 
     if (isLoading || !task || !task.isActive) return null;
 
@@ -33,42 +34,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
     };
 
     const handleVerify = async () => {
-        setIsVerifying(true);
-        const tid = toast.loading("Verifying action...");
-
-        try {
-            // This would call the verification-server
-            // Since we don't have the Vercel URL here yet, we simulate or use a placeholder
-            // In production, use import.meta.env.VITE_VERIFY_SERVER_URL
-            const SERVER_URL = import.meta.env.VITE_VERIFY_SERVER_URL || "http://localhost:3000";
-            const API_SECRET = import.meta.env.VITE_VERIFY_API_SECRET;
-
-            const response = await fetch(`${SERVER_URL}/api/verify/social`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-SECRET': API_SECRET
-                },
-                body: JSON.stringify({
-                    platform: task.title.toLowerCase().includes('twitter') ? 'twitter' : 'farcaster',
-                    action: 'follow', // simplified for demo
-                    userAddress: address,
-                    taskId: Number(taskId),
-                })
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                toast.success("Task Verified! Points awarded.", { id: tid });
-                refetchStats();
-            } else {
-                toast.error(result.error || "Verification failed. Did you complete the action?", { id: tid });
-            }
-        } catch (error) {
-            toast.error("Verification server unreachable", { id: tid });
-        } finally {
-            setIsVerifying(false);
-        }
+        await verifyTask(task, address, taskId);
     };
 
     return (
@@ -131,7 +97,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
 export function TasksPage() {
     const { address, isConnected } = useAccount();
     const { totalTasks } = useAllTasks();
-    const { stats, isLoading: statsLoading } = useUserV12Stats(address);
+    const { userPoints, userTier, totalTasksCompleted, refetch } = usePoints();
     const taskIds = Array.from({ length: totalTasks }, (_, i) => i);
 
     return (
@@ -159,21 +125,21 @@ export function TasksPage() {
                                 <p className="text-slate-400">Complete tasks to earn points and upgrade your tier.</p>
                             </div>
 
-                            {isConnected && stats && (
+                            {isConnected && (
                                 <div className="flex items-center space-x-8">
                                     <div className="text-center">
                                         <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Total Points</p>
-                                        <p className="text-3xl font-black text-blue-400">{Number(stats.points)}</p>
+                                        <p className="text-3xl font-black text-blue-400">{userPoints.toString()}</p>
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">
                                         <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Rank Tier</p>
-                                        <p className="text-3xl font-black text-indigo-400">LVL {stats.currentTier}</p>
+                                        <p className="text-3xl font-black text-indigo-400">LVL {userTier}</p>
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">
                                         <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Tasks Done</p>
-                                        <p className="text-3xl font-black text-green-400">{Number(stats.totalTasksCompleted)}</p>
+                                        <p className="text-3xl font-black text-green-400">{totalTasksCompleted.toString()}</p>
                                     </div>
                                 </div>
                             )}
@@ -187,8 +153,8 @@ export function TasksPage() {
                                 <TaskCard
                                     key={id}
                                     taskId={id}
-                                    userStats={stats}
-                                    refetchStats={() => { }} // stats will auto-refetch via query
+                                    userStats={null} // Deprecated prop
+                                    refetchStats={refetch}
                                 />
                             ))
                         ) : (
