@@ -9,7 +9,7 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0B0E14] pt-12 pb-12">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 pt-10">
 
         {/* Hero Section */}
         <div className="text-center py-12 mb-8">
@@ -26,7 +26,7 @@ export function HomePage() {
 
           {/* Tasks Card */}
           <Link to="/tasks">
-            <div className="bg-[#161B22] border border-white/5 rounded-3xl p-6 hover:border-indigo-500/50 transition-all hover:-translate-y-1 cursor-pointer h-full">
+            <div className="bg-[#161B22] border border-white/10 rounded-2xl p-6 shadow-xl hover:border-indigo-500/50 transition-all hover:-translate-y-1 cursor-pointer h-full">
               <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-4">
                 <Sparkles className="w-6 h-6 text-indigo-400" />
               </div>

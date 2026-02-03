@@ -3,14 +3,6 @@
 @tailwind utilities;
 
 body {
-    margin: 0;
-    background-color: #0B0E14;
-    /* Force dark background */
-    color: #f1f5f9;
-}
-
-/* Global link reset for better contrast */
-a {
+    background-color: #0B0E14 !important;
     color: white !important;
-    text-decoration: none;
 }

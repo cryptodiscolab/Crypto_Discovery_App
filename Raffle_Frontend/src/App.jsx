@@ -20,7 +20,7 @@ function App() {
         <BrowserRouter>
           <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
             <Header />
-            <main className="pt-16">
+            <main className="pt-24">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/tasks" element={<TasksPage />} />
