@@ -2,7 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    background-color: #0B0E14 !important;
-    color: white !important;
+@layer base {
+    body {
+        background-color: #0B0E14 !important;
+        color: #f1f5f9 !important;
+        margin: 0;
+    }
+
+    /* Biar tulisan link nggak biru dan nggak ada garis bawah */
+    a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+}
+
+/* Force layout grid biar kotak bento muncul */
+.grid {
+    display: grid !important;
 }
