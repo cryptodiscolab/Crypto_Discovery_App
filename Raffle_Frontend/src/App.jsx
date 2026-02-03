@@ -18,7 +18,7 @@ function App() {
     <Web3Provider>
       <PointsProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-slate-950 selection:bg-blue-500/30">
+          <div className="min-h-screen bg-[#F8F9FB]">
             <Header />
             <main>
               <Routes>
