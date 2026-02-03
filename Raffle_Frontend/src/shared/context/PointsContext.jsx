@@ -12,6 +12,7 @@ export function PointsProvider({ children }) {
     const [userTier, setUserTier] = useState(0); // 0=NONE, 1=BRONZE, etc.
     const [totalTasksCompleted, setTotalTasksCompleted] = useState(0n);
     const [unclaimedRewards, setUnclaimedRewards] = useState([]); // Array of raffleIds or reward objects
+    const [isAdmin, setIsAdmin] = useState(false); // Admin status
 
     useEffect(() => {
         if (isConnected && stats) {
@@ -30,6 +31,15 @@ export function PointsProvider({ children }) {
             setUnclaimedRewards([]);
         }
     }, [isConnected, stats]);
+
+    // Check admin status when wallet connects
+    useEffect(() => {
+        if (isConnected && address) {
+            checkAdminStatus(address);
+        } else {
+            setIsAdmin(false);
+        }
+    }, [isConnected, address]);
 
     useEffect(() => {
         // Check for approaching deadlines every minute
@@ -62,6 +72,29 @@ export function PointsProvider({ children }) {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    // Admin verification function
+    const checkAdminStatus = async (walletAddress) => {
+        try {
+            const response = await fetch('/api/admin/check', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ address: walletAddress }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setIsAdmin(data.isAdmin || false);
+            } else {
+                setIsAdmin(false);
+            }
+        } catch (error) {
+            console.error('Admin check failed:', error);
+            setIsAdmin(false);
+        }
+    };
+
     const value = {
         userPoints,
         userTier,
@@ -71,7 +104,9 @@ export function PointsProvider({ children }) {
         isLoading,
         refetch,
         isConnected,
-        formatTimeLeft
+        formatTimeLeft,
+        isAdmin,
+        checkAdminStatus
     };
 
     return (

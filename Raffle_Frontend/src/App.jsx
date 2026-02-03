@@ -11,6 +11,7 @@ import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { CreateRafflePage } from './pages/CreateRafflePage';
 import { TasksPage } from './pages/TasksPage';
+import { AdminPage } from './pages/AdminPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/create" element={<CreateRafflePage />} />
+                <Route path="/admin" element={<AdminPage />} />
               </Routes>
             </main>
 

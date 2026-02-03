@@ -1,9 +1,11 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, useLocation } from 'react-router-dom';
-import { Ticket, Trophy, User, Home, Plus, Sparkles } from 'lucide-react';
+import { Ticket, Trophy, User, Home, Plus, Sparkles, Shield } from 'lucide-react';
+import { usePoints } from './shared/context/PointsContext';
 
 export function Header() {
   const location = useLocation();
+  const { isAdmin } = usePoints();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -44,6 +46,18 @@ export function Header() {
                 </Link>
               );
             })}
+
+            {/* Admin Menu - Only visible to admin */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all border border-yellow-500/30 ${location.pathname === '/admin' ? 'bg-yellow-500/20 text-yellow-400' : 'text-yellow-400 hover:bg-yellow-500/10'
+                  }`}
+              >
+                <Shield className="w-4 h-4" />
+                <span className="font-medium">Admin</span>
+              </Link>
+            )}
           </nav>
 
           {/* Connect Wallet - VERSI POLOS (Paling Aman) */}
