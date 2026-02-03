@@ -20,7 +20,7 @@ function App() {
         <BrowserRouter>
           <div className="min-h-screen bg-[#F8F9FB]">
             <Header />
-            <main>
+            <main className="pt-16">
               <Routes>
                 {/* Daftar Rute Aplikasi */}
                 <Route path="/" element={<HomePage />} />
