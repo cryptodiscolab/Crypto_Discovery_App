@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Web3Provider } from './Web3Provider';
-import { Header } from './Header'; // Adjusted path to match project structure
+import { Header } from './Header';
 import { PointsProvider } from './shared/context/PointsContext';
 
-// Import Halaman-Halaman
+// Import Pages
 import { HomePage } from './pages/HomePage';
 import { RafflesPage } from './pages/RafflesPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
@@ -18,11 +18,10 @@ function App() {
     <Web3Provider>
       <PointsProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-[#F8F9FB]">
+          <div className="min-h-screen bg-[#0B0E14] text-slate-100">
             <Header />
             <main className="pt-16">
               <Routes>
-                {/* Daftar Rute Aplikasi */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/raffles" element={<RafflesPage />} />
@@ -36,7 +35,7 @@ function App() {
             <Toaster
               position="bottom-right"
               toastOptions={{
-                style: { background: '#1e293b', color: '#fff' },
+                style: { background: '#161B22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
               }}
             />
           </div>
