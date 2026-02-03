@@ -40,18 +40,18 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-12">
+          <nav className="hidden md:flex items-center gap-x-12">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`text-sm font-medium transition-colors ${isActive
+                  className={`px-4 text-sm font-medium transition-colors ${isActive
                     ? item.isAdmin
                       ? 'text-yellow-400'
                       : 'text-indigo-400'
-                    : 'text-slate-400 hover:text-indigo-400'
+                    : 'text-slate-100 hover:text-indigo-400'
                     }`}
                 >
                   {item.isAdmin && <Shield className="w-4 h-4 inline mr-1 text-yellow-500" />}
@@ -93,7 +93,7 @@ export function Header() {
                     ? item.isAdmin
                       ? 'text-yellow-400'
                       : 'text-indigo-400'
-                    : 'text-slate-400 hover:text-indigo-400'
+                    : 'text-slate-100 hover:text-indigo-400'
                     }`}
                 >
                   {item.isAdmin && <Shield className="w-4 h-4 inline mr-2 text-yellow-500" />}
