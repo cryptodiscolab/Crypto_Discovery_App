@@ -19,7 +19,10 @@ export function Header() {
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 
-  const adminItem = { path: '/admin', icon: Shield, label: 'Admin', isAdminRoute: true };
+  // Dynamically add Admin menu if user is admin
+  if (isAdmin) {
+    navItems.push({ path: '/admin', icon: Shield, label: 'Admin', isAdminRoute: true });
+  }
 
   return (
     <header className="sticky top-0 z-50 glass-card border-b border-white/5 backdrop-blur-md bg-slate-950/80">
@@ -40,14 +43,18 @@ export function Header() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
+              const isSpecial = item.isAdminRoute;
+
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 relative overflow-hidden group ${isActive ? 'text-white' : 'text-slate-400 hover:text-white'
-                    }`}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 relative overflow-hidden group ${isActive
+                      ? isSpecial ? 'bg-yellow-500/20 text-yellow-400' : 'text-white'
+                      : isSpecial ? 'text-yellow-400 hover:bg-yellow-500/10' : 'text-slate-400 hover:text-white'
+                    } ${isSpecial && !isActive ? 'border border-yellow-500/30 ml-2' : ''}`}
                 >
-                  {isActive && (
+                  {isActive && !isSpecial && (
                     <motion.div
                       layoutId="nav-bg"
                       className="absolute inset-0 bg-white/10 rounded-xl"
@@ -60,20 +67,6 @@ export function Header() {
                 </Link>
               );
             })}
-
-            {/* Admin Menu Desktop */}
-            {isAdmin && (
-              <Link
-                to={adminItem.path}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all border border-yellow-500/30 ml-2 ${location.pathname === adminItem.path
-                    ? 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
-                    : 'text-yellow-400 hover:bg-yellow-500/10'
-                  }`}
-              >
-                <Shield className="w-4 h-4" />
-                <span className="font-medium">Admin</span>
-              </Link>
-            )}
           </nav>
 
           {/* Right Action Area */}
@@ -124,34 +117,24 @@ export function Header() {
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;
+                  const isSpecial = item.isAdminRoute;
+
                   return (
                     <Link
                       key={item.path}
                       to={item.path}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${isActive
-                          ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20'
-                          : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                        }`}
+                          ? isSpecial ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-600/20 text-blue-400 border border-blue-500/20'
+                          : isSpecial ? 'text-yellow-400 hover:bg-yellow-500/10' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                        } ${isSpecial ? 'border border-yellow-500/20 mt-2' : ''}`}
                     >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : ''}`} />
+                      <Icon className={`w-5 h-5 ${isActive ? isSpecial ? 'text-yellow-400' : 'text-blue-400' : ''}`} />
                       <span className="font-medium">{item.label}</span>
-                      {isActive && <motion.div layoutId="mobile-dot" className="w-1.5 h-1.5 bg-blue-400 rounded-full ml-auto" />}
+                      {isActive && !isSpecial && <motion.div layoutId="mobile-dot" className="w-1.5 h-1.5 bg-blue-400 rounded-full ml-auto" />}
                     </Link>
                   );
                 })}
-
-                {/* Mobile Admin Link */}
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center space-x-3 px-4 py-3 rounded-xl text-yellow-400 hover:bg-yellow-500/10 border border-yellow-500/20 mt-2"
-                  >
-                    <Shield className="w-5 h-5" />
-                    <span className="font-medium">Admin Dashboard</span>
-                  </Link>
-                )}
               </nav>
             </motion.div>
           </>
