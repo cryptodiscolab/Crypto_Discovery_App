@@ -6,15 +6,16 @@ async function main() {
     console.log("🎲 Setting up API3 QRNG (Nodary) Integration");
     console.log("========================================\n");
 
-    const airnodeAddress = process.env.AIRNODE_ADDRESS;
+    const rawAirnode = process.env.AIRNODE_ADDRESS;
     const endpointId = process.env.ENDPOINT_ID_UINT256;
 
-    // Alamat Kontrak lo
-    const rawContract = "0x393B57dC5f73D06f12b18CF305a8e50FC8EdFF7de";
-    // Alamat Sponsor Wallet
-    const rawSponsor = "0x7186E5d35F126C3c809670f567B594582f3c7D61";
+    // Alamat Kontrak yang benar (deployed)
+    const rawContract = "0xd7f6d4589A04F51D22B3a5965860EB40fb219c78";
+    // Alamat Sponsor Wallet (dengan checksum yang benar)
+    const rawSponsor = "0x7186e5D35f126c3C809670F567b594582f3C7d61";
 
-    // PAKSA ke format Checksum yang bener biar Ethers v6 nggak marah
+    // PAKSA ke format Checksum yang bener biar Ethers v6 nggak marah (Node v23 fix)
+    const airnodeAddress = ethers.getAddress(rawAirnode);
     const contractAddress = ethers.getAddress(rawContract);
     const sponsorWallet = ethers.getAddress(rawSponsor);
 
