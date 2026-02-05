@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Ticket, Trophy, Gift, Wallet, ExternalLink, Timer as TimerIcon, RefreshCw } from 'lucide-react';
+import { Ticket, Trophy, Gift, Wallet, ExternalLink, Timer as TimerIcon, RefreshCw, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePoints } from '../shared/context/PointsContext';
 import { useRaffle } from '../hooks/useRaffle';
-import { ClaimTimer } from '../components/ClaimTimer';
+import { SBTRewardsDashboard } from '../components/SBTRewardsDashboard';
 
 export function ProfilePage() {
   const { address, isConnected } = useAccount();
@@ -120,6 +120,15 @@ export function ProfilePage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* SBT Community Rewards Dashboard */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
+            <Award className="w-8 h-8 text-indigo-500" />
+            Community Rewards
+          </h2>
+          <SBTRewardsDashboard />
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
