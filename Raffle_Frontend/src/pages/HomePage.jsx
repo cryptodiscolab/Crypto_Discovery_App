@@ -1,5 +1,17 @@
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Trophy, User, Ticket, Shield, TrendingUp, DollarSign, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Sparkles,
+  Trophy,
+  User,
+  Ticket,
+  Shield,
+  TrendingUp,
+  DollarSign,
+  CheckCircle,
+  Timer as TimerIcon
+} from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
@@ -18,11 +30,50 @@ const iconMap = {
   TrendingUp,
 };
 
+// Default feature cards if CMS is empty or loading
+const DEFAULT_FEATURE_CARDS = [
+  {
+    title: "NFT Raffles",
+    description: "Enter active raffles and win premium NFTs using your earned points.",
+    icon: "Trophy",
+    link: "/raffles",
+    linkText: "Enter Raffle",
+    color: "yellow",
+    badge: "Most Popular"
+  },
+  {
+    title: "Daily Tasks",
+    description: "Complete simple tasks daily to stack social points and rewards.",
+    icon: "Sparkles",
+    link: "/tasks",
+    linkText: "Earn Points",
+    color: "indigo",
+    badge: "Daily Bonus"
+  },
+  {
+    title: "Leaderboard",
+    description: "Track your rank and see how you stack up against the community.",
+    icon: "TrendingUp",
+    link: "/leaderboard",
+    linkText: "View Ranking",
+    color: "purple"
+  }
+];
+
 export function HomePage() {
   const { isConnected } = useAccount();
   const { userPoints, unclaimedRewards } = usePoints();
   const { totalPoolBalance } = useSBT();
-  const { featureCards, announcement, isLoading } = useCMS();
+  const {
+    featureCards = [],
+    announcement,
+    poolSettings,
+    ethPrice = 2500,
+    isLoading
+  } = useCMS();
+
+  // Use CMS cards if available, otherwise fall back to defaults
+  const displayCards = featureCards && featureCards.length > 0 ? featureCards : DEFAULT_FEATURE_CARDS;
 
   return (
     <div className="min-h-screen bg-[#0B0E14] pt-12 pb-12">
@@ -41,31 +92,75 @@ export function HomePage() {
         {/* Announcement Banner (from on-chain CMS) */}
         <AnnouncementBanner announcement={announcement} />
 
-        {/* SBT Community Sharing Pool - TOP PRIORITY */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <div className="glass-card p-8 border-t-4 border-t-indigo-500 relative overflow-hidden bg-gradient-to-br from-indigo-500/5 to-purple-500/5">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <TrendingUp className="w-32 h-32 text-indigo-500" />
-            </div>
+        {/* SBT Community Sharing Pool - MODERN PROGRESS WIDGET */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <div className="glass-card relative overflow-hidden group border-indigo-500/20 bg-slate-900/40">
+            {/* Animated background glow */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
 
-            <div className="relative z-10">
-              <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">
-                Disco Community Pool
-              </p>
-              <h2 className="text-5xl font-black text-white flex items-center gap-3 mb-3">
-                <DollarSign className="w-10 h-10 text-green-400" />
-                {parseFloat(formatEther(totalPoolBalance || 0n)).toFixed(6)}
-                <span className="text-2xl text-slate-500 font-normal">ETH</span>
-              </h2>
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-slate-400 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="font-semibold">Locked & Distributed On-Chain</span>
-                  <span className="text-xs text-slate-500">(Tanpa Riba)</span>
-                </p>
-                <p className="text-xs text-indigo-400/70 italic">
-                  * Rewards distributed in ETH based on current USD exchange rate
-                </p>
+            <div className="relative z-10 p-8 md:p-10">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                <div>
+                  <p className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em] mb-3">
+                    Community Sharing Pool (TVL)
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter">
+                      ${((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </h2>
+                    <span className="text-slate-500 font-bold text-xl uppercase italic">USDC</span>
+                  </div>
+                  <p className="text-slate-500 text-sm mt-1 flex items-center gap-1 font-mono">
+                    ≈ {parseFloat(formatEther(totalPoolBalance || 0n)).toFixed(4)} ETH
+                  </p>
+                </div>
+
+                {poolSettings?.claimTimestamp > Date.now() && (
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4 flex items-center gap-4">
+                    <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center animate-pulse">
+                      <TimerIcon className="w-6 h-6 text-indigo-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Next Distribution</p>
+                      <div className="text-lg font-black text-white font-mono">
+                        <HomeCountdown timestamp={poolSettings.claimTimestamp} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress Bar Container */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pool Progress</span>
+                  <span className="text-sm font-black text-indigo-400">
+                    {Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}% to Target
+                  </span>
+                </div>
+
+                <div className="h-6 bg-black/40 rounded-full border border-white/5 p-1 relative overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
+                    className="h-full bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-400 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                  />
+                </div>
+
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tighter pt-1">
+                  <span>Start: $0</span>
+                  <span className="text-slate-300">Phase Goal: ${poolSettings?.targetUSDC?.toLocaleString() || '5,000'}</span>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-white/5 flex flex-wrap gap-x-6 gap-y-2">
+                <div className="flex items-center gap-2 text-[11px] text-green-400 font-bold uppercase tracking-wide">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  No Riba / Verified On-Chain
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 italic">
+                  * Live conversion rate based on market price
+                </div>
               </div>
             </div>
           </div>
@@ -76,7 +171,7 @@ export function HomePage() {
           {isLoading ? (
             <FeatureCardSkeleton count={6} />
           ) : (
-            featureCards
+            displayCards
               .filter(card => card.visible !== false) // Only show visible cards
               .map((card, index) => {
                 const IconComponent = iconMap[card.icon] || Sparkles;
@@ -110,4 +205,32 @@ export function HomePage() {
       </div>
     </div>
   );
+}
+
+// Helper: Simple countdown for home page
+function HomeCountdown({ timestamp }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const diff = timestamp - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('READY');
+        return;
+      }
+
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / 1000 / 60) % 60);
+      const s = Math.floor((diff / 1000) % 60);
+
+      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [timestamp]);
+
+  return <span>{timeLeft}</span>;
 }

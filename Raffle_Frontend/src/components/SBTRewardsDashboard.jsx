@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useSBT } from '../hooks/useSBT';
+import { useCMS } from '../hooks/useCMS';
 import { formatEther } from 'ethers';
 import { usePublicClient } from 'wagmi';
 import toast from 'react-hot-toast';
 
 export function SBTRewardsDashboard() {
-    const { totalPoolBalance, userTier, claimableAmount, maxGasPrice, claimRewards, refetchAll } = useSBT();
+    const { totalPoolBalance, userTier, claimableAmount, maxGasPrice, claimRewards, refetchAll, isLoading: loadingSBT } = useSBT();
+    const { ethPrice, poolSettings, isLoading: loadingCMS } = useCMS();
     const publicClient = usePublicClient();
     const [currentGasPrice, setCurrentGasPrice] = useState(0n);
     const [isClaiming, setIsClaiming] = useState(false);
+
+    const isLoading = loadingSBT || loadingCMS;
 
     // Monitor Network Gas Price (for Transparency & Safety)
     useEffect(() => {
@@ -79,24 +83,57 @@ export function SBTRewardsDashboard() {
 
     return (
         <div className="space-y-6">
-            {/* 1. Global Stats: Community Pool */}
-            <div className="glass-card p-6 border-t-4 border-t-indigo-500 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <TrendingUp className="w-24 h-24 text-indigo-500" />
-                </div>
+            {/* 1. Global Stats: Community Pool (Modernized) */}
+            <div className="glass-card relative overflow-hidden group bg-slate-900/40 border-indigo-500/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-50" />
 
-                <div className="relative z-10">
-                    <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Disco Community Pool</p>
-                    <h2 className="text-4xl font-black text-white flex items-center gap-2">
-                        <DollarSign className="w-8 h-8 text-green-400" />
-                        {parseFloat(formatEther(totalPoolBalance)).toFixed(6)} <span className="text-xl text-slate-500 font-normal">ETH</span>
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" /> Locked & Distributed On-Chain
-                    </p>
-                    <p className="text-[10px] text-indigo-400/60 mt-1 italic">
-                        * Rewards distributed in ETH based on current USD exchange rate
-                    </p>
+                <div className="relative z-10 p-6 md:p-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                                    Disco Community Pool (TVL)
+                                </p>
+                                <span className="bg-indigo-500/20 text-indigo-400 text-[8px] px-1.5 py-0.5 rounded font-black tracking-tighter">SYNC v2</span>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                                <h2 className="text-4xl font-black text-white tracking-tight">
+                                    ${((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                </h2>
+                                <span className="text-slate-500 font-bold text-sm uppercase italic">USDC</span>
+                            </div>
+                            <p className="text-slate-500 text-xs mt-1 flex items-center gap-1 font-mono">
+                                ≈ {parseFloat(formatEther(totalPoolBalance || 0n)).toFixed(6)} ETH
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-2 text-[10px] text-green-400 font-bold uppercase tracking-widest bg-green-400/5 px-3 py-1.5 rounded-full border border-green-400/10">
+                                <CheckCircle className="w-3 h-3" />
+                                On-Chain Verified
+                            </div>
+                            <p className="text-[10px] text-slate-500 italic">
+                                * Rate: 1 ETH = ${ethPrice.toLocaleString()}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Simple Progress Bar for context */}
+                    <div className="mt-6 space-y-2">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                            <span>Progress to Phase Target</span>
+                            <span className="text-indigo-400">
+                                {Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}%
+                            </span>
+                        </div>
+                        <div className="h-2 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
+                                className="h-full bg-indigo-600 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.3)]"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 

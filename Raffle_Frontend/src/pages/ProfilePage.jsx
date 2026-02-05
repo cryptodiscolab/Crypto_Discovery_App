@@ -1,16 +1,22 @@
-import { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Ticket, Trophy, Gift, Wallet, ExternalLink, Timer as TimerIcon, RefreshCw, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePoints } from '../shared/context/PointsContext';
 import { useRaffle } from '../hooks/useRaffle';
+import { useCMS } from '../hooks/useCMS';
+import { useSBT } from '../hooks/useSBT';
 import { SBTRewardsDashboard } from '../components/SBTRewardsDashboard';
 
 export function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { unclaimedRewards } = usePoints();
   const { claimPrize, rerollWinner } = useRaffle();
+  const { poolSettings, ethPrice, isLoading: loadingCMS } = useCMS();
+  const { isLoading: loadingSBT } = useSBT();
+
+  const isLoadingData = loadingCMS || loadingSBT;
 
   // Dummy stats (could be replaced with real data from usePoints if available)
   const stats = [
@@ -123,10 +129,24 @@ export function ProfilePage() {
 
         {/* SBT Community Rewards Dashboard */}
         <div className="mb-8">
-          <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
-            <Award className="w-8 h-8 text-indigo-500" />
-            Community Rewards
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Award className="w-8 h-8 text-indigo-500" />
+              Community Rewards
+            </h2>
+
+            {poolSettings?.claimTimestamp > Date.now() && (
+              <div className="flex items-center gap-3 bg-indigo-500/10 border border-indigo-500/20 px-4 py-2 rounded-xl">
+                <TimerIcon className="w-4 h-4 text-indigo-400 animate-pulse" />
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-black">Next Distribution In:</p>
+                  <p className="text-sm font-bold text-white font-mono">
+                    <ProfileCountdown timestamp={poolSettings.claimTimestamp} />
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
           <SBTRewardsDashboard />
         </div>
 
@@ -170,4 +190,28 @@ export function ProfilePage() {
       </div>
     </div>
   );
+}
+
+function ProfileCountdown({ timestamp }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const diff = timestamp - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('READY');
+        return;
+      }
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / 1000 / 60) % 60);
+      const s = Math.floor((diff / 1000) % 60);
+      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [timestamp]);
+
+  return <span>{timeLeft}</span>;
 }

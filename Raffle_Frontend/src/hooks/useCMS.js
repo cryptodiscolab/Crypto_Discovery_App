@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { CMS_CONTRACT_ABI } from '../shared/constants/abis';
 import toast from 'react-hot-toast';
@@ -7,6 +8,7 @@ const DEFAULT_ADMIN_ROLE = "0x00000000000000000000000000000000000000000000000000
 
 // Default fallback states
 const DEFAULT_ANNOUNCEMENT = { visible: false, title: "", message: "", type: "info" };
+const DEFAULT_POOL_SETTINGS = { targetUSDC: 5000, claimTimestamp: 0 };
 const DEFAULT_NEWS = [];
 const DEFAULT_FEATURE_CARDS = [];
 
@@ -33,6 +35,28 @@ export function useCMS() {
         functionName: 'getAnnouncement',
         watch: true,
     });
+
+    const [ethPrice, setEthPrice] = useState(2500); // Fallback price
+
+    // Fetch ETH Price from CoinGecko (Simple public API)
+    useEffect(() => {
+        const fetchPrice = async () => {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+                const data = await response.json();
+                if (data.ethereum?.usd) {
+                    setEthPrice(data.ethereum.usd);
+                    console.log('[useCMS] ETH Price Updated:', data.ethereum.usd);
+                }
+            } catch (e) {
+                console.error("Failed to fetch ETH price:", e);
+            }
+        };
+
+        fetchPrice();
+        const interval = setInterval(fetchPrice, 5 * 60 * 1000); // Update every 5 minutes
+        return () => clearInterval(interval);
+    }, []);
 
     const {
         data: newsRaw,
@@ -91,23 +115,37 @@ export function useCMS() {
     // ============================================
 
     let announcement = DEFAULT_ANNOUNCEMENT;
+    let poolSettings = DEFAULT_POOL_SETTINGS;
     let news = DEFAULT_NEWS;
     let featureCards = DEFAULT_FEATURE_CARDS;
 
     try {
-        announcement = announcementRaw ? JSON.parse(announcementRaw) : DEFAULT_ANNOUNCEMENT;
+        if (announcementRaw && typeof announcementRaw === 'string' && announcementRaw.trim() !== "") {
+            const parsed = JSON.parse(announcementRaw);
+            // Support both old flat structure and new nested structure
+            if (parsed.announcement) {
+                announcement = parsed.announcement;
+                poolSettings = parsed.pool || DEFAULT_POOL_SETTINGS;
+            } else {
+                announcement = parsed;
+            }
+        }
     } catch (e) {
         console.error("Failed to parse announcement JSON, using defaults:", e);
     }
 
     try {
-        news = newsRaw ? JSON.parse(newsRaw) : DEFAULT_NEWS;
+        if (newsRaw && typeof newsRaw === 'string' && newsRaw.trim() !== "") {
+            news = JSON.parse(newsRaw);
+        }
     } catch (e) {
         console.error("Failed to parse news JSON, using defaults:", e);
     }
 
     try {
-        featureCards = featureCardsRaw ? JSON.parse(featureCardsRaw) : DEFAULT_FEATURE_CARDS;
+        if (featureCardsRaw && typeof featureCardsRaw === 'string' && featureCardsRaw.trim() !== "") {
+            featureCards = JSON.parse(featureCardsRaw);
+        }
     } catch (e) {
         console.error("Failed to parse feature cards JSON, using defaults:", e);
     }
@@ -123,7 +161,27 @@ export function useCMS() {
     // ============================================
 
     const updateAnnouncement = async (newAnnouncement) => {
-        const jsonString = JSON.stringify(newAnnouncement);
+        // Wrap in system structure to preserve pool settings
+        const newSettings = {
+            announcement: newAnnouncement,
+            pool: poolSettings
+        };
+        const jsonString = JSON.stringify(newSettings);
+        const hash = await writeContractAsync({
+            address: CMS_CONTRACT_ADDRESS,
+            abi: CMS_CONTRACT_ABI,
+            functionName: 'updateAnnouncement',
+            args: [jsonString],
+        });
+        return hash;
+    };
+
+    const updatePoolSettings = async (newPoolSettings) => {
+        const newSettings = {
+            announcement: announcement,
+            pool: newPoolSettings
+        };
+        const jsonString = JSON.stringify(newSettings);
         const hash = await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
@@ -268,8 +326,10 @@ export function useCMS() {
     return {
         // Content data
         announcement,
+        poolSettings,
         news,
         featureCards,
+        ethPrice,
 
         // Role status
         isAdmin,
@@ -282,6 +342,7 @@ export function useCMS() {
 
         // Content write functions
         updateAnnouncement,
+        updatePoolSettings,
         updateNews,
         updateFeatureCards,
         batchUpdate,

@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 
 // Setup Config Minimalis
 const config = getDefaultConfig({
-  appName: 'NFT Raffle',
+  appName: 'Crypto Disco',
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "YOUR_PROJECT_ID",
   chains: [base, baseSepolia],
   ssr: false,

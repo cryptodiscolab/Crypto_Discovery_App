@@ -107,6 +107,6 @@ export function useSBT() {
         updateTier,
         withdrawTreasury,
         refetchAll,
-        isLoading: false
+        isLoading: refetchPool && (totalPoolBalance === undefined || userRawData === undefined)
     };
 }
