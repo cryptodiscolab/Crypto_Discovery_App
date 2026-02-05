@@ -65,4 +65,32 @@ export const CMS_CONTRACT_ABI = [
     "event BatchPrivilegesGranted(uint256 userCount, uint256 timestamp)"
 ];
 
+// NFTRaffle Contract ABI
+export const RAFFLE_ABI = [
+    "function createRaffle(address[] calldata _nftContracts, uint256[] calldata _tokenIds, uint256 _duration) external",
+    "function buyTickets(uint256 _raffleId, uint256 _amount, bool _useFreeTickets) external",
+    "function drawWinner(uint256 _raffleId) external",
+    "function claimPrizes(uint256 _raffleId) external",
+    "function getRaffleInfo(uint256 _raffleId) external view returns (uint256 raffleId, address creator, uint256 startTime, uint256 endTime, uint256 ticketsSold, uint256 paidTicketsSold, bool isActive, bool isCompleted, address winner, uint256 nftCount)",
+    "function getUserTickets(uint256 _raffleId, address _user) external view returns (uint256)",
+    "function getUserInfo(address _user) external view returns (uint256 totalTicketsPurchased, uint256 totalWins, uint256 freeTicketsAvailable, uint256 lastFreeTicketClaim)",
+    "function raffleIdCounter() external view returns (uint256)",
+    "function ticketPrice() external view returns (uint256)",
+    "function withdrawRaffleRevenue(uint256 _raffleId) external",
+    "function withdrawFees() external",
+    "function totalFees() external view returns (uint256)",
+    "function owner() external view returns (address)"
+];
 
+// DailyApp V12 (Tasks & Points) ABI
+export const V12_ABI = [
+    "function doTask(uint256 _taskId, address _referrer) external",
+    "function addTask(uint256 _baseReward, uint256 _cooldown, uint8 _minTier, string calldata _title, string calldata _link, bool _requiresVerification) external",
+    "function markTaskAsVerified(address _user, uint256 _taskId) external",
+    "function isTaskVerified(address _user, uint256 _taskId) external view returns (bool)",
+    "function getUserStats(address _user) external view returns (uint256 points, uint256 totalTasksCompleted, uint256 referralCount, uint8 currentTier, uint256 tasksForReferralProgress, uint256 lastDailyBonusClaim, bool isBlacklisted)",
+    "function getTask(uint256 _taskId) external view returns (uint256 baseReward, bool isActive, uint256 cooldown, uint8 minTier, string title, string link, uint256 createdAt, bool requiresVerification, uint256 sponsorshipId)",
+    "function getContractStats() external view returns (uint256 totalUsers, uint256 totalTransactions, uint256 totalSponsors, uint256 contractTokenBalance, uint256 contractETHBalance)",
+    "function nextTaskId() external view returns (uint256)",
+    "function owner() external view returns (address)"
+];

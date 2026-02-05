@@ -1,125 +1,160 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Ticket, Timer, Trophy, Search, Filter } from 'lucide-react'; // <--- INI KUNCINYA!
+import { Ticket, Timer, Trophy, Search, Filter, Loader2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
+import { formatEther } from 'ethers';
+import toast from 'react-hot-toast';
+
+function RaffleCard({ raffleId }) {
+  const { raffle, isLoading } = useRaffleInfo(raffleId);
+  const { buyTickets } = useRaffle();
+  const [isBuying, setIsBuying] = useState(false);
+
+  if (isLoading || !raffle) {
+    return (
+      <div className="glass-card h-80 animate-pulse bg-white/5 rounded-2xl flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
+
+  // Hide completed or inactive raffles if needed, but let's show all for now
+  const timeLeft = raffle.endTime > Date.now() / 1000
+    ? Math.max(0, Math.floor((raffle.endTime - Date.now() / 1000) / 60)) + "m remaining"
+    : "Ended";
+
+  const handleBuy = async () => {
+    setIsBuying(true);
+    const tid = toast.loading("Processing purchase...");
+    try {
+      await buyTickets(raffleId, 1);
+      toast.success("Ticket purchased! Good luck!", { id: tid });
+    } catch (e) {
+      toast.error(e.shortMessage || "Purchase failed", { id: tid });
+    } finally {
+      setIsBuying(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-card overflow-hidden group hover:border-blue-500/30 transition-all duration-300"
+    >
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-indigo-900/40 to-slate-900 flex items-center justify-center">
+        {/* NFT Placeholder or Image */}
+        <div className="text-center">
+          <Trophy className="w-16 h-16 text-indigo-500/20 mx-auto" />
+          <p className="text-[10px] text-slate-600 font-mono mt-2">NFT PREVIEW #{raffle.id}</p>
+        </div>
+
+        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10 flex items-center gap-1">
+          <Timer className="w-3 h-3 text-yellow-400" />
+          {timeLeft}
+        </div>
+
+        {!raffle.isActive && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
+            <span className="bg-red-500 text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">Completed</span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold text-white leading-tight">Elite NFT Raffle #{raffle.id}</h3>
+          <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20 font-bold uppercase">LIVE</span>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400 flex items-center gap-2">
+              <Ticket className="w-4 h-4" /> Tickets Sold
+            </span>
+            <span className="text-white font-medium">
+              {raffle.ticketsSold} / ∞
+            </span>
+          </div>
+          {/* Simple Progress (Unlimited for this contract version usually, but let's show anyway) */}
+          <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+              style={{ width: `${Math.min((raffle.ticketsSold / 100) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+          <div className="text-sm">
+            <p className="text-slate-400 font-mono uppercase text-[9px]">Entry Price</p>
+            <p className="text-lg font-black text-blue-400">0.01 <span className="text-xs text-slate-500">ETH</span></p>
+          </div>
+
+          <button
+            onClick={handleBuy}
+            disabled={isBuying || !raffle.isActive}
+            className={`btn-primary px-6 py-2 text-sm flex items-center gap-2 ${!raffle.isActive ? 'grayscale opacity-50' : ''}`}
+          >
+            {isBuying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ticket className="w-4 h-4" />}
+            Buy Ticket
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export function RafflesPage() {
   const [filter, setFilter] = useState('all');
-
-  // Dummy Data Raffles
-  const raffles = [
-    {
-      id: 1,
-      title: "Bored Ape Yacht Club #1234",
-      ticketPrice: "0.01 ETH",
-      ticketsSold: 450,
-      totalTickets: 1000,
-      timeLeft: "2h 15m",
-      image: "https://via.placeholder.com/400x300/4f46e5/ffffff?text=BAYC+Raffle",
-      status: 'active'
-    },
-    {
-      id: 2,
-      title: "Azuki #9999",
-      ticketPrice: "0.02 ETH",
-      ticketsSold: 890,
-      totalTickets: 1000,
-      timeLeft: "5h 30m",
-      image: "https://via.placeholder.com/400x300/ec4899/ffffff?text=Azuki+Raffle",
-      status: 'ending-soon'
-    },
-    {
-      id: 3,
-      title: "Doodles #555",
-      ticketPrice: "0.005 ETH",
-      ticketsSold: 120,
-      totalTickets: 500,
-      timeLeft: "1d 12h",
-      image: "https://via.placeholder.com/400x300/f59e0b/ffffff?text=Doodles+Raffle",
-      status: 'active'
-    }
-  ];
+  const { raffleIds, count } = useRaffleList();
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4">
-      <div className="container mx-auto max-w-6xl">
+    <div className="min-h-screen pt-24 pb-12 px-4 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+      <div className="container mx-auto max-w-6xl relative z-10">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Active Raffles</h1>
-            <p className="text-slate-400">Join raffles and win exclusive NFTs</p>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+          <div className="text-center md:text-left">
+            <h1 className="text-4xl font-black text-white mb-2 tracking-tight">NFT <span className="text-blue-500">Raffles</span></h1>
+            <p className="text-slate-500 font-medium">Join on-chain raffles and win legendary digital collectibles.</p>
           </div>
 
-          <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl border border-white/10">
-            {['all', 'active', 'ending-soon'].map((f) => (
+          <div className="flex gap-2 bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">
+            {['all', 'active', 'completed'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filter === f ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-white'
                   }`}
               >
-                {f.charAt(0).toUpperCase() + f.slice(1).replace('-', ' ')}
+                {f}
               </button>
             ))}
           </div>
         </div>
 
         {/* Grid Raffles */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {raffles.map((raffle, index) => (
-            <motion.div
-              key={raffle.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="glass-card overflow-hidden group hover:border-blue-500/30 transition-all duration-300"
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={raffle.image}
-                  alt={raffle.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10 flex items-center gap-1">
-                  <Timer className="w-3 h-3 text-yellow-400" />
-                  {raffle.timeLeft}
-                </div>
-              </div>
-
-              <div className="p-5">
-                <h3 className="text-xl font-bold text-white mb-4">{raffle.title}</h3>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-400 flex items-center gap-2">
-                      <Ticket className="w-4 h-4" /> Tickets Sold
-                    </span>
-                    <span className="text-white font-medium">
-                      {raffle.ticketsSold} / {raffle.totalTickets}
-                    </span>
-                  </div>
-                  {/* Progress Bar */}
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
-                      style={{ width: `${(raffle.ticketsSold / raffle.totalTickets) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                  <div className="text-sm">
-                    <p className="text-slate-400">Price</p>
-                    <p className="text-lg font-bold text-blue-400">{raffle.ticketPrice}</p>
-                  </div>
-                  <button className="btn-primary px-6 py-2 text-sm">
-                    Buy Ticket
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {!raffleIds || raffleIds.length === 0 ? (
+          <div className="py-20 text-center glass-card">
+            <RefreshCw className="w-12 h-12 text-slate-700 mx-auto mb-4 animate-spin-slow" />
+            <h3 className="text-2xl font-bold text-white mb-2">Syncing Data...</h3>
+            <p className="text-slate-500 italic">Reading the latest raffles from the blockchain.</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {raffleIds.slice().reverse().map((id) => (
+              <RaffleCard
+                key={id}
+                raffleId={id}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

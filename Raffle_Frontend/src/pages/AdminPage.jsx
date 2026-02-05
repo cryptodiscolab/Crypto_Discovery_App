@@ -7,6 +7,8 @@ import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import { RoleManagementTab } from '../components/admin/RoleManagementTab';
 import { WhitelistManagerTab } from '../components/admin/WhitelistManagerTab';
+import { RaffleManagerTab } from '../components/admin/RaffleManagerTab';
+import { TaskManagerTab } from '../components/admin/TaskManagerTab';
 import { formatEther, parseEther } from 'ethers';
 import toast from 'react-hot-toast';
 
@@ -81,6 +83,8 @@ export function AdminPage() {
 
     const tabs = [
         { id: 'pool', label: 'SBT Master', icon: Database, color: 'indigo' },
+        { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
+        { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
         { id: 'tiers', label: 'Tier Control', icon: Award, color: 'yellow' },
         { id: 'treasury', label: 'Treasury Safe', icon: Landmark, color: 'emerald' },
         { id: 'roles', label: 'Role Management', icon: UserCog, color: 'yellow' },
@@ -157,6 +161,8 @@ export function AdminPage() {
                                 onUpdateSettings={updatePoolSettings}
                             />
                         )}
+                        {activeTab === 'raffles' && <RaffleManagerTab />}
+                        {activeTab === 'tasks' && <TaskManagerTab />}
                         {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
                         {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
                         {activeTab === 'roles' && <RoleManagementTab />}
