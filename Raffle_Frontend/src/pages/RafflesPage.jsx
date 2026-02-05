@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Ticket, Timer, Trophy, Search, Filter, Loader2, ExternalLink } from 'lucide-react';
+import { Ticket, Timer, Trophy, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
 import { formatEther } from 'ethers';
@@ -141,15 +141,17 @@ export function RafflesPage() {
         {/* Grid Raffles */}
         {!raffleIds || raffleIds.length === 0 ? (
           <div className="py-20 text-center glass-card">
-            <RefreshCw className="w-12 h-12 text-slate-700 mx-auto mb-4 animate-spin-slow" />
+            {/* Gue ganti animate-spin-slow jadi animate-spin biar aman di Vercel */}
+            <RefreshCw className="w-12 h-12 text-slate-700 mx-auto mb-4 animate-spin" />
             <h3 className="text-2xl font-bold text-white mb-2">Syncing Data...</h3>
             <p className="text-slate-500 italic">Reading the latest raffles from the blockchain.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {raffleIds.slice().reverse().map((id) => (
+            {/* Sisanya aman */}
+            {[...raffleIds].reverse().map((id) => (
               <RaffleCard
-                key={id}
+                key={id.toString()} // Pake toString() biar ID dari BigInt nggak bikin error
                 raffleId={id}
               />
             ))}
