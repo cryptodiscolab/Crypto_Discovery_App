@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Award, Landmark, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Timer as TimerIcon } from 'lucide-react';
+import { Shield, Award, Landmark, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
