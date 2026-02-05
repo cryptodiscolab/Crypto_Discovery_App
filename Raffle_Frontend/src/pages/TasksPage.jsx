@@ -14,9 +14,16 @@ function TaskCard({ taskId, userStats, refetchStats }) {
 
     if (isLoading || !task || !task.isActive) return null;
 
+    const isTierLocked = Number(userTier) < Number(task.minTier);
+
     const handleAction = async () => {
         if (!address) {
             toast.error("Please connect your wallet");
+            return;
+        }
+
+        if (isTierLocked) {
+            toast.error(`Tier ${task.minTier} required for this task!`);
             return;
         }
 
@@ -34,6 +41,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
     };
 
     const handleVerify = async () => {
+        if (isTierLocked) return;
         await verifyTask(task, address, taskId);
     };
 
@@ -41,15 +49,15 @@ function TaskCard({ taskId, userStats, refetchStats }) {
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card p-6 border-white/5 hover:border-blue-500/30 transition-all group"
+            className={`glass-card p-6 border-white/5 hover:border-blue-500/30 transition-all group ${isTierLocked ? 'opacity-60 grayscale-[0.5]' : ''}`}
         >
             <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${task.requiresVerification ? 'from-purple-500 to-indigo-600' : 'from-blue-500 to-indigo-600'} shadow-lg group-hover:scale-110 transition-transform`}>
-                    {task.title.toLowerCase().includes('twitter') ? <Twitter className="w-6 h-6 text-white" /> : <Shield className="w-6 h-6 text-white" />}
+                <div className={`p-3 rounded-xl bg-gradient-to-br ${isTierLocked ? 'from-slate-700 to-slate-800' : task.requiresVerification ? 'from-purple-500 to-indigo-600' : 'from-blue-500 to-indigo-600'} shadow-lg group-hover:scale-110 transition-transform`}>
+                    {isTierLocked ? <Shield className="w-6 h-6 text-slate-500" /> : task.title.toLowerCase().includes('twitter') ? <Twitter className="w-6 h-6 text-white" /> : <Shield className="w-6 h-6 text-white" />}
                 </div>
                 <div className="text-right">
                     <span className="text-xs font-mono text-slate-500">ID: #{Number(taskId)}</span>
-                    <div className="flex items-center text-yellow-500 mt-1">
+                    <div className={`flex items-center ${isTierLocked ? 'text-slate-500' : 'text-yellow-500'} mt-1`}>
                         <Zap className="w-3 h-3 mr-1 fill-current" />
                         <span className="text-sm font-bold">+{Number(task.baseReward)} Pts</span>
                     </div>
@@ -63,7 +71,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
                     <Clock className="w-4 h-4 mr-1" />
                     <span>{Number(task.cooldown) / 3600}h Cooldown</span>
                 </div>
-                <div className="flex items-center">
+                <div className={`flex items-center ${isTierLocked ? 'text-orange-400 font-black' : ''}`}>
                     <Award className="w-4 h-4 mr-1 text-blue-400" />
                     <span>Tier {task.minTier}+</span>
                 </div>
@@ -72,18 +80,18 @@ function TaskCard({ taskId, userStats, refetchStats }) {
             <div className="flex space-x-2">
                 <button
                     onClick={handleAction}
-                    disabled={isDoing}
-                    className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2 border border-white/10"
+                    disabled={isDoing || isTierLocked}
+                    className={`flex-1 ${isTierLocked ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed' : 'bg-white/5 hover:bg-white/10 text-white border-white/10'} py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2 border`}
                 >
-                    {isDoing ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> : <ExternalLink className="w-4 h-4" />}
-                    <span>Start Task</span>
+                    {isDoing ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> : isTierLocked ? <Clock className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
+                    <span>{isTierLocked ? `LVL ${task.minTier} Required` : 'Start Task'}</span>
                 </button>
 
                 {task.requiresVerification && (
                     <button
                         onClick={handleVerify}
-                        disabled={isVerifying}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center space-x-2"
+                        disabled={isVerifying || isTierLocked}
+                        className={`flex-1 ${isTierLocked ? 'bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 shadow-lg'} text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2`}
                     >
                         {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                         <span>Verify</span>
