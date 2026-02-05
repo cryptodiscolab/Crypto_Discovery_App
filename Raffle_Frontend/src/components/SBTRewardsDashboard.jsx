@@ -86,7 +86,7 @@ export function SBTRewardsDashboard() {
                 </div>
 
                 <div className="relative z-10">
-                    <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Community Sharing Pool (30%)</p>
+                    <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Disco Community Pool</p>
                     <h2 className="text-4xl font-black text-white flex items-center gap-2">
                         <DollarSign className="w-8 h-8 text-green-400" />
                         {parseFloat(formatEther(totalPoolBalance)).toFixed(6)} <span className="text-xl text-slate-500 font-normal">ETH</span>

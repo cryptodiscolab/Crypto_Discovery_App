@@ -1,13 +1,32 @@
 import { useState } from 'react';
+import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Sparkles, Shield } from 'lucide-react';
 import { usePoints } from './shared/context/PointsContext';
+import { useCMS } from './hooks/useCMS';
 
 export function Header() {
+  const { address } = useAccount();
   const location = useLocation();
-  const { isAdmin } = usePoints();
+  const { isAdmin: isSBTAdmin } = usePoints();
+  const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // User is admin if they're admin of either SBT or CMS contract
+  // Fallback: check against hardcoded/env admin address if connected
+  const hardcodedAdmin = import.meta.env.VITE_ADMIN_ADDRESS;
+  const isAdmin =
+    isSBTAdmin ||
+    isCMSAdmin ||
+    canEditCMS ||
+    (address && hardcodedAdmin && address.toLowerCase() === hardcodedAdmin.toLowerCase());
+
+  // DEBUG: Log admin status
+  console.log('[Header] isSBTAdmin:', isSBTAdmin);
+  console.log('[Header] isCMSAdmin:', isCMSAdmin);
+  console.log('[Header] canEdit:', canEditCMS);
+  console.log('[Header] Final isAdmin:', isAdmin);
 
   const navItems = [
     { path: '/', label: 'Home' },

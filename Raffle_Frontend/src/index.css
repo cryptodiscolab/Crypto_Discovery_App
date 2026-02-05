@@ -20,3 +20,12 @@
 .grid {
     display: grid !important;
 }
+
+/* Glass card effect untuk widget premium */
+.glass-card {
+    background: rgba(22, 27, 34, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
