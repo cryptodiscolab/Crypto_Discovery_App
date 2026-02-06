@@ -196,10 +196,41 @@ export default function AdminPanel() {
         );
     };
 
+    const addPointActivity = () => {
+        const newActivity = {
+            id: crypto.randomUUID(), // Temp ID
+            activity_key: 'new_activity',
+            points_value: 10,
+            platform: 'farcaster',
+            is_active: true
+        };
+        setPointSettings([...pointSettings, newActivity]);
+        toast.success(`Baris activity baru ditambahkan secara lokal.`);
+    };
+
+    const removePointActivity = (id) => {
+        setPointSettings(prev => prev.filter(item => item.id !== id));
+    };
+
     const savePoints = async () => {
         setSaving(true);
         try {
-            const { error } = await supabase.from('point_settings').upsert(pointSettings);
+            // Cleanup temp IDs if necessary (supabase upsert might handle UUIDs as new if not in DB)
+            const dataToSave = pointSettings.map(item => ({
+                id: typeof item.id === 'string' && item.id.includes('-') ? undefined : item.id, // Remove temp UUIDs
+                activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
+                points_value: item.points_value,
+                platform: item.platform,
+                is_active: item.is_active
+            }));
+
+            // Validation: activity_key must be unique
+            const keys = dataToSave.map(s => s.activity_key);
+            if (new Set(keys).size !== keys.length) {
+                throw new Error("Activity Key harus unik.");
+            }
+
+            const { error } = await supabase.from('point_settings').upsert(dataToSave, { onConflict: 'activity_key' });
             if (error) throw error;
 
             await logAdminAction('UPDATE_POINTS', { pointSettings });
@@ -374,46 +405,72 @@ export default function AdminPanel() {
                                 <Settings className="w-5 h-5 text-blue-400" />
                                 <h2 className="text-lg font-bold text-white">Advanced Points</h2>
                             </div>
-                            <span className="text-[10px] text-slate-500 font-mono">Table: point_settings</span>
+                            <button onClick={addPointActivity} className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">
+                                <Plus className="w-3.5 h-3.5" /> Add Point Activity
+                            </button>
                         </div>
                         <div className="bg-slate-900/50 rounded-2xl border border-white/5 overflow-hidden">
-                            <table className="w-full text-left">
-                                <thead className="bg-white/5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-                                    <tr>
-                                        <th className="px-4 py-3">Activity</th>
-                                        <th className="px-4 py-3">XP</th>
-                                        <th className="px-4 py-3 text-center">Active</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {pointSettings.map((item) => (
-                                        <tr key={item.id} className="hover:bg-white/[0.02] transition-all">
-                                            <td className="px-4 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-200 capitalize">{item.activity_key.replace('_', ' ')}</span>
-                                                    <span className="text-[10px] text-slate-500 font-mono">{item.platform}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <input
-                                                    type="number"
-                                                    value={item.points_value}
-                                                    onChange={(e) => handlePointChange(item.id, 'points_value', e.target.value)}
-                                                    className="w-16 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white focus:border-blue-500 font-mono text-xs"
-                                                />
-                                            </td>
-                                            <td className="px-4 py-4 text-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={item.is_active}
-                                                    onChange={(e) => handlePointChange(item.id, 'is_active', e.target.checked)}
-                                                    className="w-4 h-4 accent-blue-500 bg-black rounded"
-                                                />
-                                            </td>
+                            <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                                <table className="w-full text-left">
+                                    <thead className="bg-white/5 text-[10px] uppercase tracking-widest text-slate-500 font-bold sticky top-0 backdrop-blur-sm z-10">
+                                        <tr>
+                                            <th className="px-4 py-3">Activity / Platform</th>
+                                            <th className="px-4 py-3">XP</th>
+                                            <th className="px-4 py-3 text-center">Active</th>
+                                            <th className="px-4 py-3 text-right">Delete</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {pointSettings.map((item) => (
+                                            <tr key={item.id} className="hover:bg-white/[0.02] transition-all">
+                                                <td className="px-4 py-4">
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <input
+                                                            type="text"
+                                                            value={item.activity_key}
+                                                            onChange={(e) => handlePointChange(item.id, 'activity_key', e.target.value)}
+                                                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white font-bold text-xs"
+                                                            placeholder="activity_name"
+                                                        />
+                                                        <select
+                                                            value={item.platform}
+                                                            onChange={(e) => handlePointChange(item.id, 'platform', e.target.value)}
+                                                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-slate-400 font-mono text-[10px] appearance-none cursor-pointer"
+                                                        >
+                                                            <option value="farcaster">farcaster</option>
+                                                            <option value="x">x (twitter)</option>
+                                                            <option value="discord">discord</option>
+                                                            <option value="system">system</option>
+                                                            <option value="manual">manual</option>
+                                                        </select>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <input
+                                                        type="number"
+                                                        value={item.points_value}
+                                                        onChange={(e) => handlePointChange(item.id, 'points_value', e.target.value)}
+                                                        className="w-16 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white focus:border-blue-500 font-mono text-xs"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-4 text-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={item.is_active}
+                                                        onChange={(e) => handlePointChange(item.id, 'is_active', e.target.checked)}
+                                                        className="w-4 h-4 accent-blue-500 bg-black rounded cursor-pointer"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-4 text-right">
+                                                    <button onClick={() => removePointActivity(item.id)} className="text-red-500/50 hover:text-red-500 p-1.5 transition-colors">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         <button onClick={savePoints} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-black text-white transition-all shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50">
                             <Save className="w-4 h-4" />
