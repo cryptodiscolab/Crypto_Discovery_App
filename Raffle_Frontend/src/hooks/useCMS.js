@@ -101,12 +101,13 @@ export function useCMS() {
     });
 
     // Robust check fallbacks (using ENV for immediate UI response)
-    const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS;
+    const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
+    const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
     const isEnvAdmin = useMemo(() => {
-        if (!address || !envAdmin) return false;
-        const adminList = envAdmin.split(',').map(a => a.trim().toLowerCase());
+        if (!address) return false;
+        const adminList = `${envAdmin},${envWallets}`.split(',').map(a => a.trim().toLowerCase()).filter(a => a.startsWith('0x'));
         return adminList.includes(address.toLowerCase());
-    }, [address, envAdmin]);
+    }, [address, envAdmin, envWallets]);
 
     // Final boolean roles
     const isAdmin = isAdminRaw || isEnvAdmin || false;

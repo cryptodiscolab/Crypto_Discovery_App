@@ -26,16 +26,19 @@ export function Header() {
   });
 
   const isAdmin = useMemo(() => {
-    if (!address || !hardcodedAdmin) return isSBTAdmin || isCMSAdmin || canEditCMS;
+    if (!address) return isSBTAdmin || isCMSAdmin || canEditCMS;
 
-    const adminList = hardcodedAdmin.split(',').map(a => a.trim().toLowerCase());
+    const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
+    const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
+    const adminList = `${envAdmin},${envWallets}`.split(',').map(a => a.trim().toLowerCase()).filter(a => a.startsWith('0x'));
+
     const isManualAdmin = adminList.includes(address.toLowerCase());
 
     return isSBTAdmin || isCMSAdmin || canEditCMS || isManualAdmin;
-  }, [address, hardcodedAdmin, isSBTAdmin, isCMSAdmin, canEditCMS]);
+  }, [address, isSBTAdmin, isCMSAdmin, canEditCMS]);
 
   // DEBUG: Log final status
-  console.log('[Header] Final isAdmin:', isAdmin);
+  console.log('[Header] Admin Status:', { address, isAdmin });
 
   const navItems = [
     { path: '/', label: 'Home' },
@@ -45,9 +48,10 @@ export function Header() {
     { path: '/profile', label: 'Profile' },
   ];
 
-  // Add admin link if user is admin
+  // Add admin links if user is admin
   if (isAdmin) {
     navItems.push({ path: '/admin', label: 'Admin', isAdmin: true });
+    navItems.push({ path: '/admin-sbt', label: 'Admin SBT', isAdmin: true });
   }
 
   return (

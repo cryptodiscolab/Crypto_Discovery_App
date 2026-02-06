@@ -77,10 +77,18 @@ export function PointsProvider({ children }) {
         // Local Check for immediate UI response
         const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
         const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
+        const envFids = import.meta.env.VITE_ADMIN_FIDS || '';
+
         const adminList = `${envAdmin},${envWallets}`
             .split(',')
             .map(a => a.trim().toLowerCase())
-            .filter(a => a !== '');
+            .filter(a => a.startsWith('0x'));
+
+        const adminFids = envFids.split(',')
+            .map(f => f.trim())
+            .filter(f => f !== '')
+            .map(f => parseInt(f))
+            .filter(f => !isNaN(f));
 
         if (walletAddress && adminList.includes(walletAddress.toLowerCase())) {
             setIsAdmin(true);

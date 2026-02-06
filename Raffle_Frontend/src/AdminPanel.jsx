@@ -42,11 +42,15 @@ export default function AdminPanel() {
     const getAdminLists = () => {
         const fids = import.meta.env.VITE_ADMIN_FIDS || '';
         const wallets = import.meta.env.VITE_ADMIN_WALLETS || '';
-        const fallback = import.meta.env.VITE_ADMIN_ADDRESS || '';
 
-        const adminFids = fids.split(',').map(f => parseInt(f.trim())).filter(f => !isNaN(f));
-        const adminWallets = `${wallets},${fallback}`
-            .split(',')
+        // Parsing logic: split by comma, trim spaces, and handle types
+        const adminFids = fids.split(',')
+            .map(f => f.trim())
+            .filter(f => f !== '')
+            .map(f => parseInt(f))
+            .filter(f => !isNaN(f));
+
+        const adminWallets = wallets.split(',')
             .map(w => w.trim().toLowerCase())
             .filter(w => w.startsWith('0x'));
 
@@ -69,13 +73,14 @@ export default function AdminPanel() {
                 }
 
                 const currentWallet = address?.toLowerCase();
+                const isMatch = (userFid && adminFids.includes(userFid)) || (currentWallet && adminWallets.includes(currentWallet));
 
-                console.log('[Security] Checking Access:', { userFid, currentWallet });
+                // Debugging Log sesuai permintaan
+                console.log('Wallet Login:', currentWallet);
+                console.log('Wallet Daftar Admin:', adminWallets);
+                console.log('Hasil Pengecekan:', isMatch);
 
-                const fidMatch = userFid && adminFids.includes(userFid);
-                const walletMatch = currentWallet && adminWallets.includes(currentWallet);
-
-                if (fidMatch || walletMatch) {
+                if (isMatch) {
                     console.log('[Security] Access Granted');
                     setIsAuthorized(true);
                     fetchData();
@@ -83,6 +88,7 @@ export default function AdminPanel() {
                     console.error('[Security] Access Denied');
                     setIsAuthorized(false);
                     setLoading(false);
+                    toast.error('Unauthorized: Wallet atau FID anda tidak terdaftar sebagai Admin.');
 
                     // Auto kick setelah 3 detik
                     setTimeout(() => {

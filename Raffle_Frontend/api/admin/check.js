@@ -14,16 +14,17 @@ export default async function handler(req, res) {
         // Get admin addresses from environment variables
         const adminStr = process.env.ADMIN_ADDRESS || '';
         const walletsStr = process.env.VITE_ADMIN_WALLETS || '';
+        const fidsStr = process.env.VITE_ADMIN_FIDS || '';
         const allAdminStr = `${adminStr},${walletsStr}`;
-
-        if (!allAdminStr || allAdminStr === ',') {
-            console.error('Admin configurations missing');
-            return res.status(500).json({ error: 'Admin configuration missing' });
-        }
 
         // Support multiple comma-separated addresses
         const adminAddresses = allAdminStr.split(',').map(a => a.trim().toLowerCase()).filter(a => a !== '');
-        const isAdmin = address && adminAddresses.includes(address.toLowerCase());
+        const adminFids = fidsStr.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f)).filter(f => !isNaN(f));
+
+        const isWalletAdmin = address && adminAddresses.includes(address.toLowerCase());
+        const isFidAdmin = req.body.fid && adminFids.includes(parseInt(req.body.fid));
+
+        const isAdmin = isWalletAdmin || isFidAdmin;
 
         return res.status(200).json({
             isAdmin,

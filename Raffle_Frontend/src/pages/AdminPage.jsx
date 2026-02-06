@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import sdk from '@farcaster/frame-sdk';
 import { Shield, Award, Landmark, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
@@ -35,33 +36,65 @@ export function AdminPage() {
 
     // 1. Security & Access Control
     useEffect(() => {
-        if (!isConnected) {
-            setLoading(false);
-            return;
-        }
-
-        // Check if we have any admin status available
-        const isSBTAccountOwner = contractOwner && address && address.toLowerCase() === contractOwner.toLowerCase();
-        const adminList = hardcodedAdmin ? hardcodedAdmin.split(',').map(a => a.trim().toLowerCase()) : [];
-        const isEnvAdmin = address && adminList.includes(address.toLowerCase());
-
-        // Final access Boolean
-        const finalAccess = isSBTAccountOwner || isCMSAdmin || isOperator || isEnvAdmin || canEditCMS;
-
-        if (isConnected && address) {
-            setHasManagerAccess(finalAccess);
-
-            // If we have resolved access or if CMS hook finished loading
-            if (finalAccess || !loadingCMS) {
+        const checkAccess = async () => {
+            if (!isConnected) {
                 setLoading(false);
-
-                if (!finalAccess && !loadingCMS) {
-                    toast.error("Unauthorized: Restricted Area");
-                    navigate('/profile');
-                }
+                return;
             }
-        }
-    }, [address, contractOwner, isConnected, isCMSAdmin, isOperator, canEditCMS, navigate, loadingCMS, hardcodedAdmin]);
+
+            try {
+                // Get Admin Lists
+                const fids = import.meta.env.VITE_ADMIN_FIDS || '';
+                const wallets = import.meta.env.VITE_ADMIN_WALLETS || '';
+                const fallback = import.meta.env.VITE_ADMIN_ADDRESS || '';
+
+                const adminFids = fids.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f)).filter(f => !isNaN(f));
+                const adminWallets = `${wallets},${fallback}`.split(',').map(w => w.trim().toLowerCase()).filter(w => w.startsWith('0x'));
+
+                // Get Current User Context
+                let userFid = null;
+                try {
+                    const context = await sdk.context;
+                    userFid = context?.user?.fid;
+                } catch (e) {
+                    // Not in frame
+                }
+
+                const currentWallet = address?.toLowerCase();
+                const isSBTAccountOwner = contractOwner && currentWallet && currentWallet === contractOwner.toLowerCase();
+                const isEnvAdmin = currentWallet && adminWallets.includes(currentWallet);
+                const isFidAdmin = userFid && adminFids.includes(userFid);
+
+                // Final Access Boolean
+                const finalAccess = isSBTAccountOwner || isCMSAdmin || isOperator || isEnvAdmin || isFidAdmin || canEditCMS;
+
+                // Debugging Log sesuai permintaan
+                console.log('Wallet Login:', currentWallet);
+                console.log('Wallet Daftar Admin:', adminWallets);
+                console.log('Hasil Pengecekan:', finalAccess);
+
+                if (address) {
+                    setHasManagerAccess(finalAccess);
+
+                    if (finalAccess || !loadingCMS) {
+                        setLoading(false);
+                        if (!finalAccess && !loadingCMS) {
+                            toast.error("Unauthorized: Restricted Area. Redirecting...");
+                            // Auto kick setelah 3 detik
+                            setTimeout(() => {
+                                navigate('/');
+                            }, 3000);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('[Security] Error checking auth:', error);
+                setLoading(false);
+            }
+        };
+
+        checkAccess();
+    }, [address, contractOwner, isConnected, isCMSAdmin, isOperator, canEditCMS, navigate, loadingCMS]);
 
     if (loading) {
         return (
