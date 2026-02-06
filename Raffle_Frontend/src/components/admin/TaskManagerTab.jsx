@@ -71,9 +71,10 @@ export function TaskManagerTab() {
         fetchPoints();
     }, []);
 
-    // 2. Map Dynamic Points to Local Form
+    // 2. Map Dynamic Points to Local Form (Safe Lookup)
     const getGlobalPoints = (platform, action, currentSettings = pointSettings) => {
-        // Mapping logic: e.g., Farcaster + Like -> task_fc_like
+        if (!currentSettings || currentSettings.length === 0) return 0;
+
         const platMap = { 'Farcaster': 'fc', 'X': 'x', 'Base App': 'base' };
         const actMap = {
             'Follow': 'follow',
@@ -85,10 +86,19 @@ export function TaskManagerTab() {
 
         const platKey = platMap[platform] || platform.toLowerCase();
         const actKey = actMap[action] || action.toLowerCase();
-        const key = `task_${platKey}_${actKey}`;
 
-        const setting = currentSettings.find(s => s.activity_key === key);
-        return setting ? setting.points_value : 0;
+        // High Priority: Match by Database Columns (platform & action_type)
+        const columnMatch = currentSettings.find(s =>
+            s.platform?.toLowerCase() === platKey &&
+            s.action_type?.toLowerCase() === actKey
+        );
+        if (columnMatch) return columnMatch.points_value;
+
+        // Level 2: Match by Activity Key (With or Without "task_" prefix)
+        const searchKeys = [`task_${platKey}_${actKey}`, `${platKey}_${actKey}`, `${platKey}${actKey}`];
+        const keyMatch = currentSettings.find(s => searchKeys.includes(s.activity_key?.toLowerCase()));
+
+        return keyMatch ? keyMatch.points_value : 0;
     };
 
     const handleBatchSave = async () => {
@@ -141,11 +151,11 @@ export function TaskManagerTab() {
 
             toast.success("Semua task berhasil didaftarkan!", { id: tid });
 
-            // Reset to default
+            // Reset to default with synced points
             setTasksBatch([
-                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true },
-                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true },
-                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true }
+                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
+                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
+                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true }
             ]);
             refetchCount();
         } catch (e) {
