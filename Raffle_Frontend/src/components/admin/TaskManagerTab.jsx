@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Zap, Clock, Shield, Award, ExternalLink, RefreshCw, Send, List, Share2, Twitter, MessageCircle, Heart, Repeat } from 'lucide-react';
-import { useWriteContract, useReadContract } from 'wagmi';
+import { useWriteContract, useReadContract, useAccount } from 'wagmi';
 import { V12_ABI } from '../../shared/constants/abis';
 import { supabase } from '../../dailyAppLogic';
 import toast from 'react-hot-toast';
@@ -22,6 +22,7 @@ const ACTIONS = {
 };
 
 export function TaskManagerTab() {
+    const { address } = useAccount();
     const { writeContractAsync } = useWriteContract();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -44,23 +45,49 @@ export function TaskManagerTab() {
     // 1. Fetch Global Point Settings (The Source of Truth)
     useEffect(() => {
         const fetchPoints = async () => {
-            const { data, error } = await supabase.from('point_settings').select('*').eq('is_active', true);
-            if (!error && data) {
-                setPointSettings(data);
+            try {
+                const { data, error } = await supabase
+                    .from('point_settings')
+                    .select('*')
+                    .eq('is_active', true);
+
+                if (error) throw error;
+                if (data) {
+                    setPointSettings(data);
+
+                    // Sync initial points for the 3 default tasks
+                    setTasksBatch(prev => prev.map(task => ({
+                        ...task,
+                        baseReward: getGlobalPoints(task.platform, task.action, data)
+                    })));
+                }
+            } catch (err) {
+                console.error('[FetchPoints Error]', err);
+                toast.error("Gagal mengambil data poin!");
+            } finally {
+                setIsLoadingPoints(false);
             }
-            setIsLoadingPoints(false);
         };
         fetchPoints();
     }, []);
 
     // 2. Map Dynamic Points to Local Form
-    const getGlobalPoints = (platform, action) => {
+    const getGlobalPoints = (platform, action, currentSettings = pointSettings) => {
         // Mapping logic: e.g., Farcaster + Like -> task_fc_like
         const platMap = { 'Farcaster': 'fc', 'X': 'x', 'Base App': 'base' };
-        const actMap = { 'Follow': 'follow', 'Like': 'like', 'Recast/Repost': 'recast', 'Comment': 'comment' };
+        const actMap = {
+            'Follow': 'follow',
+            'Like': 'like',
+            'Recast/Repost': 'recast',
+            'Comment': 'comment',
+            'Quote': 'quote'
+        };
 
-        const key = `task_${platMap[platform] || platform.toLowerCase()}_${actMap[action] || action.toLowerCase()}`;
-        const setting = pointSettings.find(s => s.activity_key === key);
+        const platKey = platMap[platform] || platform.toLowerCase();
+        const actKey = actMap[action] || action.toLowerCase();
+        const key = `task_${platKey}_${actKey}`;
+
+        const setting = currentSettings.find(s => s.activity_key === key);
         return setting ? setting.points_value : 0;
     };
 
@@ -93,6 +120,23 @@ export function TaskManagerTab() {
                         task.requiresVerification
                     ],
                 });
+
+                // Audit Log: Record task deployment
+                try {
+                    await supabase.from('admin_audit_logs').insert([{
+                        admin_address: address || '0x0',
+                        action: 'DEPLOY_BATCH_TASK',
+                        details: {
+                            task_name: task.title,
+                            points: task.baseReward,
+                            platform: task.platform,
+                            action: task.action,
+                            min_tier: task.minTier
+                        }
+                    }]);
+                } catch (logErr) {
+                    console.warn('[Audit Log] Failed to record deployment:', logErr);
+                }
             }
 
             toast.success("Semua task berhasil didaftarkan!", { id: tid });

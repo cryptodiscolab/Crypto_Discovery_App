@@ -221,15 +221,22 @@ export default function AdminPanel() {
             // 2. LOGIC SAKTI: Baris baru (ID string/null) dikirim TANPA kolom ID
             const cleanData = pointSettings
                 .filter(item => item.activity_key && item.activity_key.trim() !== '')
-                .map(item => ({
-                    ...item,
-                    activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
-                    points_value: parseInt(item.points_value) || 0,
-                    updated_at: new Date().toISOString() // Force timestamp update
-                }));
+                .map(item => {
+                    // Force clean values to prevent NULLs in DB
+                    return {
+                        ...item,
+                        activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
+                        points_value: parseInt(item.points_value) || 0,
+                        action_type: item.action_type || 'Follow',
+                        is_active: item.is_active === null ? true : item.is_active,
+                        is_hidden: item.is_hidden || false,
+                        updated_at: new Date().toISOString()
+                    };
+                });
 
             // HAPUS SEMUA PROPERTI ID (Aturan Senior Dev)
             const dataToSave = cleanData.map(({ id, ...rest }) => rest);
+            console.log('[Admin] Payload Sync Point Settings:', dataToSave);
 
             if (dataToSave.length === 0) {
                 throw new Error("Tidak ada data valid untuk disimpan.");
