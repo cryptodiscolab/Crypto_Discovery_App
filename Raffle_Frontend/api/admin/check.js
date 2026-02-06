@@ -5,30 +5,31 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { address } = req.body;
+        const { address, fid } = req.body;
 
-        if (!address) {
-            return res.status(400).json({ error: 'Address is required' });
+        if (!address || !fid) {
+            return res.status(400).json({
+                error: 'Both Address and FID are required for admin double-check'
+            });
         }
 
-        // Get admin addresses from environment variables
-        const adminStr = process.env.ADMIN_ADDRESS || '';
-        const walletsStr = process.env.VITE_ADMIN_WALLETS || '';
-        const fidsStr = process.env.VITE_ADMIN_FIDS || '';
-        const allAdminStr = `${adminStr},${walletsStr}`;
+        // PROTOKOL KEAMANAN KETAT (Double Check)
+        // Wajib FID 1477344 DAN Wallet 0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B
+        const REQUIRED_FID = 1477344;
+        const REQUIRED_WALLET = '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b';
 
-        // Support multiple comma-separated addresses
-        const adminAddresses = allAdminStr.split(',').map(a => a.trim().toLowerCase()).filter(a => a !== '');
-        const adminFids = fidsStr.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f)).filter(f => !isNaN(f));
+        const isFidMatch = parseInt(fid) === REQUIRED_FID;
+        const isWalletMatch = address.toLowerCase() === REQUIRED_WALLET;
 
-        const isWalletAdmin = address && adminAddresses.includes(address.toLowerCase());
-        const isFidAdmin = req.body.fid && adminFids.includes(parseInt(req.body.fid));
+        const isAdmin = isFidMatch && isWalletMatch;
 
-        const isAdmin = isWalletAdmin || isFidAdmin;
+        if (!isAdmin) {
+            console.warn(`[Security] Unauthorized access attempt: FID ${fid}, Wallet ${address}`);
+        }
 
         return res.status(200).json({
             isAdmin,
-            message: isAdmin ? 'Admin access granted' : 'Regular user access'
+            message: isAdmin ? 'Admin access granted (Double Check Success)' : 'Unauthorized: Double Check Failed'
         });
 
     } catch (error) {

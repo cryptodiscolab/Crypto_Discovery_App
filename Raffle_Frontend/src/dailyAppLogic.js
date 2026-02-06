@@ -25,19 +25,27 @@ export async function handleDailyClaim(fid) {
         console.log(`[System] Menjalankan claim harian untuk FID: ${fid}`);
 
         // STEP A: Ambil data user & setting poin secara bersamaan
+        // PROTOKOL: WAJIB DARI DB, DILARANG HARDCODED/ENV
         const [userRes, pointRes] = await Promise.all([
             supabase.from('user_stats').select('*').eq('fid', fid).single(),
-            supabase.from('point_settings').select('points_value').eq('activity_key', 'daily_login').single()
+            supabase.from('point_settings')
+                .select('points_value')
+                .eq('activity_key', 'daily_login')
+                .eq('is_active', true) // Hanya ambil jika aktif
+                .single()
         ]);
 
-        // Validasi Error
+        // Validasi Error - Jika setting poin tidak ada/tidak aktif, proses berhenti.
         if (userRes.error && userRes.error.code !== 'PGRST116') throw userRes.error;
-        if (pointRes.error || !pointRes.data) throw new Error("Pengaturan 'daily_login' tidak ditemukan di database.");
+        if (pointRes.error || !pointRes.data) {
+            console.error('[Security] Konfigurasi poin "daily_login" tidak ditemukan atau tidak aktif di DB.');
+            throw new Error("Sistem poin sedang dalam pemeliharaan (DB missing/inactive).");
+        }
 
         const userData = userRes.data || { fid, total_xp: 0, current_level: 1, last_login_at: null };
         const poinHadiah = pointRes.data.points_value;
 
-        // STEP B: Cek Cooldown (Apa sudah lewat 24 jam?)
+        // STEP B: Cek Cooldown
         const waktuSekarang = new Date();
         if (userData.last_login_at) {
             const terakhirClaim = new Date(userData.last_login_at);
@@ -58,17 +66,18 @@ export async function handleDailyClaim(fid) {
         const totalXpTerbaru = (userData.total_xp || 0) + poinHadiah;
 
         // STEP D: Cek Leveling (SBT Leveling Logic)
-        // Mencari level tertinggi yang min_xp nya di bawah total XP baru user
+        // Ambil level tertinggi yang min_xp nya <= total XP baru
         const { data: thresholds, error: tError } = await supabase
             .from('sbt_thresholds')
-            .select('level, level_name')
+            .select('level, tier_name') // Menggunakan tier_name sesuai SQL patch terbaru
             .lte('min_xp', totalXpTerbaru)
             .order('min_xp', { ascending: false })
             .limit(1);
 
         if (tError) throw tError;
 
-        const infoLevel = thresholds[0] || { level: 1, level_name: 'Disco Starter' };
+        // DILARANG Hardcoded Level, jika tidak ada di DB maka default ke level 1
+        const infoLevel = thresholds[0] || { level: 1, tier_name: 'Disco Starter' };
         const levelTerbaru = infoLevel.level;
         const apakahNaikLevel = levelTerbaru > userData.current_level;
 
@@ -84,21 +93,20 @@ export async function handleDailyClaim(fid) {
 
         if (updateError) throw updateError;
 
-        // Hasil Akhir
         return {
             success: true,
-            message: apakahNaikLevel ? `🎉 GG! Lu NAIK KE LEVEL ${infoLevel.level_name}!` : `✅ Berhasil claim ${poinHadiah} poin!`,
+            message: apakahNaikLevel ? `🎉 GG! Lu NAIK KE LEVEL ${infoLevel.tier_name}!` : `✅ Berhasil claim ${poinHadiah} poin!`,
             data: {
                 poin_didapat: poinHadiah,
                 total_xp: totalXpTerbaru,
                 level: levelTerbaru,
-                nama_level: infoLevel.level_name,
+                nama_level: infoLevel.tier_name,
                 is_levelup: apakahNaikLevel
             }
         };
 
     } catch (err) {
         console.error('[Error System]', err.message);
-        return { success: false, error: 'Database eror. Pastikan tabel sudah dibuat di Supabase.' };
+        return { success: false, error: err.message || 'Database error logic.' };
     }
 }
