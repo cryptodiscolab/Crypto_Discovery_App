@@ -202,6 +202,7 @@ export default function AdminPanel() {
             activity_key: 'new_activity',
             points_value: 10,
             platform: 'farcaster',
+            action_type: 'Follow', // Default action_type biar ga NULL
             is_active: true
         };
         setPointSettings([...pointSettings, newActivity]);
@@ -223,7 +224,8 @@ export default function AdminPanel() {
                 .map(item => ({
                     ...item,
                     activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
-                    points_value: parseInt(item.points_value) || 0
+                    points_value: parseInt(item.points_value) || 0,
+                    updated_at: new Date().toISOString() // Force timestamp update
                 }));
 
             // HAPUS SEMUA PROPERTI ID (Aturan Senior Dev)
