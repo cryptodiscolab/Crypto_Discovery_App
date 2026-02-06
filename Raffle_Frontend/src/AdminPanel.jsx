@@ -218,35 +218,16 @@ export default function AdminPanel() {
             // PROTOKOL PERINTAH TEGAS: 
             // 1. Filter out invalid/empty activity keys
             // 2. LOGIC SAKTI: Baris baru (ID string/null) dikirim TANPA kolom ID
-            const dataToSave = pointSettings
+            const cleanData = pointSettings
                 .filter(item => item.activity_key && item.activity_key.trim() !== '')
-                .map(item => {
-                    const formattedKey = item.activity_key.toLowerCase().trim().replace(/\s+/g, '_');
-                    const points = parseInt(item.points_value) || 0;
+                .map(item => ({
+                    ...item,
+                    activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
+                    points_value: parseInt(item.points_value) || 0
+                }));
 
-                    // Cuma kirim ID kalau tipenya angka (data asli dari DB)
-                    if (typeof item.id === 'number') {
-                        return {
-                            id: item.id,
-                            activity_key: formattedKey,
-                            points_value: points,
-                            platform: item.platform,
-                            action_type: item.action_type || 'Custom',
-                            is_active: item.is_active,
-                            is_hidden: item.is_hidden || false
-                        };
-                    }
-
-                    // Kalau data baru (ID string/null), kirim TANPA kolom ID sama sekali
-                    return {
-                        activity_key: formattedKey,
-                        points_value: points,
-                        platform: item.platform,
-                        action_type: item.action_type || 'Custom',
-                        is_active: item.is_active,
-                        is_hidden: item.is_hidden || false
-                    };
-                });
+            // HAPUS SEMUA PROPERTI ID (Aturan Senior Dev)
+            const dataToSave = cleanData.map(({ id, ...rest }) => rest);
 
             if (dataToSave.length === 0) {
                 throw new Error("Tidak ada data valid untuk disimpan.");
@@ -311,13 +292,8 @@ export default function AdminPanel() {
                 throw new Error("Level ID (Lvl) harus unik, tidak boleh ada yang kembar.");
             }
 
-            // Cleanup temp IDs before saving if they were UUIDs and DB expects serial/uuid correctly
-            const dataToSave = sbtThresholds.map(item => ({
-                level: item.level,
-                min_xp: item.min_xp,
-                tier_name: item.tier_name,
-                badge_url: item.badge_url
-            }));
+            // HAPUS SEMUA PROPERTI ID (Aturan Senior Dev)
+            const dataToSave = sbtThresholds.map(({ id, ...rest }) => rest);
 
             // Clear and overwrite recommended for dynamic list matching
             const { error: delError } = await supabase.from('sbt_thresholds').delete().neq('level', 0); // Clear all
