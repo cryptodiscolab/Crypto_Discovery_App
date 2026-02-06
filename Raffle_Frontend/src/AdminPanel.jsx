@@ -31,7 +31,7 @@ import toast from 'react-hot-toast';
  */
 export default function AdminPanel() {
     const navigate = useNavigate();
-    const { address } = useAccount();
+    const { address, isConnected } = useAccount();
     const [pointSettings, setPointSettings] = useState([]);
     const [sbtThresholds, setSbtThresholds] = useState([]);
     const [eligibleUsers, setEligibleUsers] = useState([]);
@@ -42,13 +42,19 @@ export default function AdminPanel() {
     const [saving, setSaving] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState(null);
 
-    // 0. Security Gate: Double Check Protocol
+    // 0. Security Gate: Hybrid Double Check Protocol
+    // Toggle ini disiapkan agar jika Frame sudah aktif, bisa dipaksa logic AND (Wallet + FID)
+    const STRICT_FRAME_CHECK = false;
+
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                // PROTOKOL KETAT: FID 1477344 DAN Wallet 0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b
-                const REQUIRED_FID = 1477344;
-                const REQUIRED_WALLET = '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b';
+                // Parse Admin Lists from Env
+                const walletsEnv = import.meta.env.VITE_ADMIN_WALLETS || '';
+                const fidsEnv = import.meta.env.VITE_ADMIN_FIDS || '';
+
+                const adminWallets = walletsEnv.split(',').map(w => w.trim().toLowerCase()).filter(w => w !== '');
+                const adminFids = fidsEnv.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f));
 
                 let userFid = null;
                 try {
@@ -59,24 +65,65 @@ export default function AdminPanel() {
                 }
 
                 const currentWallet = address?.toLowerCase();
+                const walletMatch = currentWallet && adminWallets.includes(currentWallet);
+                const fidMatch = userFid && adminFids.includes(parseInt(userFid));
 
-                // Syarat: FID match && Wallet match
-                const isMatch = (parseInt(userFid) === REQUIRED_FID) && (currentWallet === REQUIRED_WALLET);
+                let isAuthorizedResult = false;
+                let loginType = 'None';
+
+                if (STRICT_FRAME_CHECK) {
+                    // Mode Ketat: Harus ada Wallet DAN FID
+                    isAuthorizedResult = walletMatch && fidMatch;
+                    loginType = isAuthorizedResult ? 'Strict (Wallet + FID)' : 'Unauthorized';
+                } else {
+                    // Logic Hybrid (User Request):
+                    if (walletMatch && !userFid) {
+                        // Di luar Frame, izinkan via Wallet
+                        isAuthorizedResult = true;
+                        loginType = 'Wallet Standalone';
+                        toast.error("Warning: Login via Wallet Only. Farcaster Frame identity not detected.", {
+                            duration: 5000,
+                            icon: '⚠️'
+                        });
+                    } else if (walletMatch && fidMatch) {
+                        // Full Auth
+                        isAuthorizedResult = true;
+                        loginType = 'Full Secure (Wallet + FID)';
+                    } else if (fidMatch) {
+                        // FID Terdeteksi, tapi wallet mungkin beda/belum connect
+                        isAuthorizedResult = true;
+                        loginType = 'FID Only';
+                    } else if (walletMatch) {
+                        // Fallback jika FID ada tapi tidak match list admin, tapi wallet match
+                        isAuthorizedResult = true;
+                        loginType = 'Wallet Only (FID Mismatch)';
+                    }
+                }
 
                 console.log('[Security] Double Check Verification:', {
-                    fidMatch: parseInt(userFid) === REQUIRED_FID,
-                    walletMatch: currentWallet === REQUIRED_WALLET
+                    walletMatch,
+                    fidMatch,
+                    loginType,
+                    isAuthorized: isAuthorizedResult
                 });
 
-                if (isMatch) {
-                    console.log('[Security] Double Check PASSED');
+                if (isAuthorizedResult) {
+                    console.log('[Security] Double Check PASSED via', loginType);
                     setIsAuthorized(true);
+
+                    // Audit Log: Record login action
+                    await logAdminAction('ADMIN_LOGIN', {
+                        type: loginType,
+                        wallet: currentWallet,
+                        fid: userFid,
+                        context: userFid ? 'Inside Frame' : 'Standalone Browser'
+                    });
+
                     fetchData();
                 } else {
                     console.error('[Security] Double Check FAILED');
                     setIsAuthorized(false);
                     setLoading(false);
-                    // toast handled in render
                 }
             } catch (error) {
                 console.error('[Security] Error checking auth:', error);
@@ -85,8 +132,14 @@ export default function AdminPanel() {
             }
         };
 
-        checkAuth();
-    }, [navigate, address]);
+        if (isConnected) {
+            checkAuth();
+        } else if (!isConnected && !loading) {
+            // Wait for connection or failed connection
+            // If already loaded and not connected, might need to show login
+            setLoading(false);
+        }
+    }, [navigate, address, isConnected]);
 
     // 1. Fetching Logic (Sync with new DB columns)
     const fetchData = async () => {
