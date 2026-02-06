@@ -42,11 +42,15 @@ export default function AdminPanel() {
     const getAdminLists = () => {
         const fids = import.meta.env.VITE_ADMIN_FIDS || '';
         const wallets = import.meta.env.VITE_ADMIN_WALLETS || '';
+        const fallback = import.meta.env.VITE_ADMIN_ADDRESS || '';
 
-        return {
-            adminFids: fids.split(',').map(f => parseInt(f.trim())).filter(f => !isNaN(f)),
-            adminWallets: wallets.split(',').map(w => w.trim().toLowerCase()).filter(w => w.startsWith('0x'))
-        };
+        const adminFids = fids.split(',').map(f => parseInt(f.trim())).filter(f => !isNaN(f));
+        const adminWallets = `${wallets},${fallback}`
+            .split(',')
+            .map(w => w.trim().toLowerCase())
+            .filter(w => w.startsWith('0x'));
+
+        return { adminFids, adminWallets };
     };
 
     // 0. Security Gate: Check FID & Wallet on mount/change

@@ -26,8 +26,10 @@ export function Header() {
   });
 
   const isAdmin = useMemo(() => {
-    const isManualAdmin = address && hardcodedAdmin &&
-      address.toLowerCase() === hardcodedAdmin.trim().toLowerCase();
+    if (!address || !hardcodedAdmin) return isSBTAdmin || isCMSAdmin || canEditCMS;
+
+    const adminList = hardcodedAdmin.split(',').map(a => a.trim().toLowerCase());
+    const isManualAdmin = adminList.includes(address.toLowerCase());
 
     return isSBTAdmin || isCMSAdmin || canEditCMS || isManualAdmin;
   }, [address, hardcodedAdmin, isSBTAdmin, isCMSAdmin, canEditCMS]);

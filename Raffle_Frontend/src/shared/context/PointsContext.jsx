@@ -74,6 +74,19 @@ export function PointsProvider({ children }) {
 
     // Admin verification function
     const checkAdminStatus = async (walletAddress) => {
+        // Local Check for immediate UI response
+        const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
+        const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
+        const adminList = `${envAdmin},${envWallets}`
+            .split(',')
+            .map(a => a.trim().toLowerCase())
+            .filter(a => a !== '');
+
+        if (walletAddress && adminList.includes(walletAddress.toLowerCase())) {
+            setIsAdmin(true);
+            // Still call API to confirm, but we've granted early access
+        }
+
         try {
             const response = await fetch('/api/admin/check', {
                 method: 'POST',
@@ -86,12 +99,12 @@ export function PointsProvider({ children }) {
             if (response.ok) {
                 const data = await response.json();
                 setIsAdmin(data.isAdmin || false);
-            } else {
+            } else if (!isAdmin) { // Only set false if local check didn't already grant access
                 setIsAdmin(false);
             }
         } catch (error) {
             console.error('Admin check failed:', error);
-            setIsAdmin(false);
+            if (!isAdmin) setIsAdmin(false);
         }
     };
 

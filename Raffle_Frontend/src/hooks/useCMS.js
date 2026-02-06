@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { CMS_CONTRACT_ABI } from '../shared/constants/abis';
 import toast from 'react-hot-toast';
@@ -102,7 +102,11 @@ export function useCMS() {
 
     // Robust check fallbacks (using ENV for immediate UI response)
     const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS;
-    const isEnvAdmin = address && envAdmin && address.toLowerCase() === envAdmin.toLowerCase();
+    const isEnvAdmin = useMemo(() => {
+        if (!address || !envAdmin) return false;
+        const adminList = envAdmin.split(',').map(a => a.trim().toLowerCase());
+        return adminList.includes(address.toLowerCase());
+    }, [address, envAdmin]);
 
     // Final boolean roles
     const isAdmin = isAdminRaw || isEnvAdmin || false;

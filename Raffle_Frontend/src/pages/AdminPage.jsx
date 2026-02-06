@@ -42,7 +42,8 @@ export function AdminPage() {
 
         // Check if we have any admin status available
         const isSBTAccountOwner = contractOwner && address && address.toLowerCase() === contractOwner.toLowerCase();
-        const isEnvAdmin = hardcodedAdmin && address && address.toLowerCase() === hardcodedAdmin.toLowerCase();
+        const adminList = hardcodedAdmin ? hardcodedAdmin.split(',').map(a => a.trim().toLowerCase()) : [];
+        const isEnvAdmin = address && adminList.includes(address.toLowerCase());
 
         // Final access Boolean
         const finalAccess = isSBTAccountOwner || isCMSAdmin || isOperator || isEnvAdmin || canEditCMS;

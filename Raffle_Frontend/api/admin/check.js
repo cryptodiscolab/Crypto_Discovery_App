@@ -11,16 +11,19 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Address is required' });
         }
 
-        // Get admin address from environment variable
-        const adminAddress = process.env.ADMIN_ADDRESS;
+        // Get admin addresses from environment variables
+        const adminStr = process.env.ADMIN_ADDRESS || '';
+        const walletsStr = process.env.VITE_ADMIN_WALLETS || '';
+        const allAdminStr = `${adminStr},${walletsStr}`;
 
-        if (!adminAddress) {
-            console.error('ADMIN_ADDRESS not configured in environment variables');
+        if (!allAdminStr || allAdminStr === ',') {
+            console.error('Admin configurations missing');
             return res.status(500).json({ error: 'Admin configuration missing' });
         }
 
-        // Case-insensitive comparison
-        const isAdmin = address.toLowerCase() === adminAddress.toLowerCase();
+        // Support multiple comma-separated addresses
+        const adminAddresses = allAdminStr.split(',').map(a => a.trim().toLowerCase()).filter(a => a !== '');
+        const isAdmin = address && adminAddresses.includes(address.toLowerCase());
 
         return res.status(200).json({
             isAdmin,
