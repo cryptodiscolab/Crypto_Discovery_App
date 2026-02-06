@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Plus, Zap, Clock, Shield, Award, ExternalLink, RefreshCw, Send, List, Share2, Twitter, MessageCircle, Heart, Repeat } from 'lucide-react';
 import { useWriteContract, useReadContract } from 'wagmi';
 import { V12_ABI } from '../../shared/constants/abis';
+import { supabase } from '../../dailyAppLogic';
 import toast from 'react-hot-toast';
 
 const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";
@@ -31,11 +32,37 @@ export function TaskManagerTab() {
         { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true }
     ]);
 
+    const [pointSettings, setPointSettings] = useState([]);
+    const [isLoadingPoints, setIsLoadingPoints] = useState(true);
+
     const { data: nextTaskId, refetch: refetchCount } = useReadContract({
         address: V12_ADDRESS,
         abi: V12_ABI,
         functionName: 'nextTaskId',
     });
+
+    // 1. Fetch Global Point Settings (The Source of Truth)
+    useEffect(() => {
+        const fetchPoints = async () => {
+            const { data, error } = await supabase.from('point_settings').select('*').eq('is_active', true);
+            if (!error && data) {
+                setPointSettings(data);
+            }
+            setIsLoadingPoints(false);
+        };
+        fetchPoints();
+    }, []);
+
+    // 2. Map Dynamic Points to Local Form
+    const getGlobalPoints = (platform, action) => {
+        // Mapping logic: e.g., Farcaster + Like -> task_fc_like
+        const platMap = { 'Farcaster': 'fc', 'X': 'x', 'Base App': 'base' };
+        const actMap = { 'Follow': 'follow', 'Like': 'like', 'Recast/Repost': 'recast', 'Comment': 'comment' };
+
+        const key = `task_${platMap[platform] || platform.toLowerCase()}_${actMap[action] || action.toLowerCase()}`;
+        const setting = pointSettings.find(s => s.activity_key === key);
+        return setting ? setting.points_value : 0;
+    };
 
     const handleBatchSave = async () => {
         const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
@@ -89,11 +116,16 @@ export function TaskManagerTab() {
         const newBatch = [...tasksBatch];
         newBatch[index][field] = value;
 
-        // Auto-fill title logic
+        // Auto-fill title and LOCKED points logic
         if (field === 'platform' || field === 'action') {
             const platform = field === 'platform' ? value : newBatch[index].platform;
             const action = field === 'action' ? value : newBatch[index].action;
             newBatch[index].title = `${action} our post on ${platform}`;
+
+            // Lock points from global settings
+            if (!isLoadingPoints) {
+                newBatch[index].baseReward = getGlobalPoints(platform, action);
+            }
         }
 
         setTasksBatch(newBatch);
@@ -181,14 +213,15 @@ export function TaskManagerTab() {
                                 {/* Pts & Tier */}
                                 <div className="lg:col-span-4 grid grid-cols-2 gap-4 h-fit">
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Points</label>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Points (Locked)</label>
                                         <div className="relative">
                                             <Zap className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-yellow-500" />
                                             <input
                                                 type="number"
+                                                readOnly
                                                 value={task.baseReward}
-                                                onChange={(e) => updateTaskLine(idx, 'baseReward', Number(e.target.value))}
-                                                className="w-full bg-slate-950/50 border border-white/5 p-3 pl-8 rounded-xl text-white font-black text-sm focus:border-purple-500/50 outline-none transition-all"
+                                                className="w-full bg-slate-900 border border-white/5 p-3 pl-8 rounded-xl text-slate-400 font-black text-sm outline-none cursor-not-allowed"
+                                                title="Poin dikunci oleh kebijakan Admin SBT"
                                             />
                                         </div>
                                     </div>

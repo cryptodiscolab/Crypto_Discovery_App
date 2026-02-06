@@ -215,13 +215,15 @@ export default function AdminPanel() {
     const savePoints = async () => {
         setSaving(true);
         try {
-            // Cleanup temp IDs if necessary (supabase upsert might handle UUIDs as new if not in DB)
+            // Cleanup temp IDs and apply formatting
             const dataToSave = pointSettings.map(item => ({
-                id: typeof item.id === 'string' && item.id.includes('-') ? undefined : item.id, // Remove temp UUIDs
+                id: typeof item.id === 'string' && item.id.includes('-') ? undefined : item.id,
                 activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
                 points_value: item.points_value,
                 platform: item.platform,
-                is_active: item.is_active
+                action_type: item.action_type || 'Custom',
+                is_active: item.is_active,
+                is_hidden: item.is_hidden || false
             }));
 
             // Validation: activity_key must be unique
@@ -233,7 +235,7 @@ export default function AdminPanel() {
             const { error } = await supabase.from('point_settings').upsert(dataToSave, { onConflict: 'activity_key' });
             if (error) throw error;
 
-            await logAdminAction('UPDATE_POINTS', { pointSettings });
+            await logAdminAction('UPDATE_POINTS', { pointSettings: dataToSave });
             toast.success('SYNC BERHASIL: Point Settings terupdate di database!');
             fetchData();
         } catch (error) {
@@ -414,35 +416,54 @@ export default function AdminPanel() {
                                 <table className="w-full text-left">
                                     <thead className="bg-white/5 text-[10px] uppercase tracking-widest text-slate-500 font-bold sticky top-0 backdrop-blur-sm z-10">
                                         <tr>
-                                            <th className="px-4 py-3">Activity / Platform</th>
+                                            <th className="px-4 py-3">Platform / Action</th>
                                             <th className="px-4 py-3">XP</th>
                                             <th className="px-4 py-3 text-center">Active</th>
-                                            <th className="px-4 py-3 text-right">Delete</th>
+                                            <th className="px-4 py-3 text-center">Hide</th>
+                                            <th className="px-4 py-3 text-right">Del</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
                                         {pointSettings.map((item) => (
-                                            <tr key={item.id} className="hover:bg-white/[0.02] transition-all">
+                                            <tr key={item.id} className={`hover:bg-white/[0.02] transition-all ${item.is_hidden ? 'opacity-40 grayscale-[0.5]' : ''}`}>
                                                 <td className="px-4 py-4">
                                                     <div className="flex flex-col gap-1.5">
+                                                        <div className="flex gap-2">
+                                                            <select
+                                                                value={item.platform}
+                                                                onChange={(e) => handlePointChange(item.id, 'platform', e.target.value)}
+                                                                className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-white font-black text-[10px] cursor-pointer outline-none focus:border-blue-500"
+                                                            >
+                                                                <option value="farcaster">Farcaster</option>
+                                                                <option value="x">X (Twitter)</option>
+                                                                <option value="base">Base</option>
+                                                                <option value="instagram">Instagram</option>
+                                                                <option value="tiktok">TikTok</option>
+                                                                <option value="system">System (Internal)</option>
+                                                            </select>
+                                                            <select
+                                                                value={item.action_type || 'Follow'}
+                                                                onChange={(e) => handlePointChange(item.id, 'action_type', e.target.value)}
+                                                                className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-indigo-300 font-bold text-[10px] cursor-pointer outline-none focus:border-blue-500"
+                                                            >
+                                                                <option value="Follow">Follow</option>
+                                                                <option value="Like">Like</option>
+                                                                <option value="Comment">Comment</option>
+                                                                <option value="Recast/Repost">Recast</option>
+                                                                <option value="Quote">Quote</option>
+                                                                <option value="Daily">Daily</option>
+                                                                <option value="Buy">Buy</option>
+                                                                <option value="Claim">Claim</option>
+                                                                <option value="Invite">Invite</option>
+                                                            </select>
+                                                        </div>
                                                         <input
                                                             type="text"
                                                             value={item.activity_key}
                                                             onChange={(e) => handlePointChange(item.id, 'activity_key', e.target.value)}
-                                                            className="bg-slate-800/60 border border-white/10 rounded-lg px-2 py-1 text-white font-bold text-xs focus:border-blue-500 outline-none transition-all"
-                                                            placeholder="activity_name"
+                                                            className="bg-black/30 border border-white/5 rounded-lg px-2 py-1 text-[10px] text-slate-400 font-mono outline-none"
+                                                            placeholder="activity_key (internal)"
                                                         />
-                                                        <select
-                                                            value={item.platform}
-                                                            onChange={(e) => handlePointChange(item.id, 'platform', e.target.value)}
-                                                            className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-indigo-300 font-mono text-[10px] cursor-pointer outline-none focus:border-blue-500 transition-all"
-                                                        >
-                                                            <option value="farcaster" className="bg-[#161B22] text-white">farcaster</option>
-                                                            <option value="x" className="bg-[#161B22] text-white">x (twitter)</option>
-                                                            <option value="discord" className="bg-[#161B22] text-white">discord</option>
-                                                            <option value="system" className="bg-[#161B22] text-white">system</option>
-                                                            <option value="manual" className="bg-[#161B22] text-white">manual</option>
-                                                        </select>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
@@ -450,7 +471,7 @@ export default function AdminPanel() {
                                                         type="number"
                                                         value={item.points_value}
                                                         onChange={(e) => handlePointChange(item.id, 'points_value', e.target.value)}
-                                                        className="w-16 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white focus:border-blue-500 font-mono text-xs"
+                                                        className="w-16 bg-slate-800/60 border border-white/10 rounded-lg px-2 py-1 text-white focus:border-blue-500 font-mono text-xs"
                                                     />
                                                 </td>
                                                 <td className="px-4 py-4 text-center">
@@ -458,12 +479,20 @@ export default function AdminPanel() {
                                                         type="checkbox"
                                                         checked={item.is_active}
                                                         onChange={(e) => handlePointChange(item.id, 'is_active', e.target.checked)}
-                                                        className="w-4 h-4 accent-blue-500 bg-black rounded cursor-pointer"
+                                                        className="w-4 h-4 accent-emerald-500 bg-black rounded cursor-pointer"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-4 text-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={item.is_hidden}
+                                                        onChange={(e) => handlePointChange(item.id, 'is_hidden', e.target.checked)}
+                                                        className="w-4 h-4 accent-red-500 bg-black rounded cursor-pointer"
                                                     />
                                                 </td>
                                                 <td className="px-4 py-4 text-right">
-                                                    <button onClick={() => removePointActivity(item.id)} className="text-red-500/50 hover:text-red-500 p-1.5 transition-colors">
-                                                        <Trash2 className="w-4 h-4" />
+                                                    <button onClick={() => removePointActivity(item.id)} className="text-red-500/30 hover:text-red-500 p-1.5 transition-colors">
+                                                        <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 </td>
                                             </tr>

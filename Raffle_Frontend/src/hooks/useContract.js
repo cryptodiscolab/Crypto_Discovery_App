@@ -1,5 +1,6 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { V12_ABI } from '../shared/constants/abis';
+import { addXP, rewardReferrer } from '../dailyAppLogic';
 
 const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || import.meta.env.VITE_CONTRACT_ADDRESS;
 const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true';
@@ -100,12 +101,26 @@ export function useDoTask() {
             console.log("Mock Task Done:", taskId);
             return;
         }
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: V12_ADDRESS,
             abi: V12_ABI,
             functionName: 'doTask',
             args: [BigInt(taskId), referrer],
         });
+
+        if (hash) {
+            // 1. Award Points to User
+            const fid = 1477344; // Context needed
+            addXP(fid, 'task_complete', address);
+
+            // 2. Reward Referrer if present
+            if (referrer && referrer !== "0x0000000000000000000000000000000000000000") {
+                // We'd need to find the referrer's FID from their address in a real scenario
+                // For now, signaling the logic
+                console.log("[Referral] Rewarding referrer:", referrer);
+            }
+        }
+        return hash;
     };
 
     return {

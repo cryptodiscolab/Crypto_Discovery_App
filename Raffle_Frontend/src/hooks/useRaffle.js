@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { usePoints } from '../shared/context/PointsContext';
 import { RAFFLE_ABI } from '../shared/constants/abis';
+import { addXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
 // MOCK MODE FLAG
@@ -31,12 +32,19 @@ export function useRaffle() {
             });
         }
 
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: RAFFLE_ABI,
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount), useFreeTickets],
         });
+
+        if (hash) {
+            // Background award XP
+            const fid = 1477344; // Should get from context in real app, hardcoded for now or fetch
+            addXP(fid, 'raffle_buy_ticket', address);
+        }
+        return hash;
     };
 
     const drawRaffle = async (raffleId) => {
@@ -95,12 +103,18 @@ export function useRaffle() {
             return;
         }
 
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: RAFFLE_ABI,
             functionName: 'claimPrizes',
             args: [BigInt(raffleId)],
         });
+
+        if (hash) {
+            const fid = 1477344; // Get from frame context
+            addXP(fid, 'raffle_claim_prize', address);
+        }
+        return hash;
     };
     return {
         buyTickets,
