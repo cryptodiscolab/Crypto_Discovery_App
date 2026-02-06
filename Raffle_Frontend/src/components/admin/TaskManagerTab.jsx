@@ -85,7 +85,10 @@ export function TaskManagerTab() {
         };
 
         const platKey = platMap[platform] || platform.toLowerCase();
-        const actKey = actMap[action] || action.toLowerCase();
+        let actKey = actMap[action] || action.toLowerCase();
+
+        // Platform specific overrides (X uses 'repost', Others use 'recast')
+        if (platKey === 'x' && actKey === 'recast') actKey = 'repost';
 
         // High Priority: Match by Database Columns (platform & action_type)
         const columnMatch = currentSettings.find(s =>
