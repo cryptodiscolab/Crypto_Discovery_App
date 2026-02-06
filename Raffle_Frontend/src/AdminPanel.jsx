@@ -429,19 +429,19 @@ export default function AdminPanel() {
                                                             type="text"
                                                             value={item.activity_key}
                                                             onChange={(e) => handlePointChange(item.id, 'activity_key', e.target.value)}
-                                                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white font-bold text-xs"
+                                                            className="bg-slate-800/60 border border-white/10 rounded-lg px-2 py-1 text-white font-bold text-xs focus:border-blue-500 outline-none transition-all"
                                                             placeholder="activity_name"
                                                         />
                                                         <select
                                                             value={item.platform}
                                                             onChange={(e) => handlePointChange(item.id, 'platform', e.target.value)}
-                                                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-slate-400 font-mono text-[10px] appearance-none cursor-pointer"
+                                                            className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-indigo-300 font-mono text-[10px] cursor-pointer outline-none focus:border-blue-500 transition-all"
                                                         >
-                                                            <option value="farcaster">farcaster</option>
-                                                            <option value="x">x (twitter)</option>
-                                                            <option value="discord">discord</option>
-                                                            <option value="system">system</option>
-                                                            <option value="manual">manual</option>
+                                                            <option value="farcaster" className="bg-[#161B22] text-white">farcaster</option>
+                                                            <option value="x" className="bg-[#161B22] text-white">x (twitter)</option>
+                                                            <option value="discord" className="bg-[#161B22] text-white">discord</option>
+                                                            <option value="system" className="bg-[#161B22] text-white">system</option>
+                                                            <option value="manual" className="bg-[#161B22] text-white">manual</option>
                                                         </select>
                                                     </div>
                                                 </td>
