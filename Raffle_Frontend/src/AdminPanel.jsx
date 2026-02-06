@@ -217,16 +217,36 @@ export default function AdminPanel() {
         try {
             // PROTOKOL PERINTAH TEGAS: 
             // 1. Filter out invalid/empty activity keys
-            // 2. Logic Perintah: Baris baru (ID string/null) dikirim TANPA kolom ID
-            const cleanData = pointSettings
+            // 2. LOGIC SAKTI: Baris baru (ID string/null) dikirim TANPA kolom ID
+            const dataToSave = pointSettings
                 .filter(item => item.activity_key && item.activity_key.trim() !== '')
-                .map(({ id, ...rest }) => (typeof id === 'number' ? { id, ...rest } : rest));
+                .map(item => {
+                    const formattedKey = item.activity_key.toLowerCase().trim().replace(/\s+/g, '_');
+                    const points = parseInt(item.points_value) || 0;
 
-            const dataToSave = cleanData.map(item => ({
-                ...item,
-                activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
-                points_value: parseInt(item.points_value) || 0
-            }));
+                    // Cuma kirim ID kalau tipenya angka (data asli dari DB)
+                    if (typeof item.id === 'number') {
+                        return {
+                            id: item.id,
+                            activity_key: formattedKey,
+                            points_value: points,
+                            platform: item.platform,
+                            action_type: item.action_type || 'Custom',
+                            is_active: item.is_active,
+                            is_hidden: item.is_hidden || false
+                        };
+                    }
+
+                    // Kalau data baru (ID string/null), kirim TANPA kolom ID sama sekali
+                    return {
+                        activity_key: formattedKey,
+                        points_value: points,
+                        platform: item.platform,
+                        action_type: item.action_type || 'Custom',
+                        is_active: item.is_active,
+                        is_hidden: item.is_hidden || false
+                    };
+                });
 
             if (dataToSave.length === 0) {
                 throw new Error("Tidak ada data valid untuk disimpan.");
