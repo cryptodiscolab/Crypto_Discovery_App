@@ -12,6 +12,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { CreateRafflePage } from './pages/CreateRafflePage';
 import { TasksPage } from './pages/TasksPage';
 import { AdminPage } from './pages/AdminPage';
+import AdminPanel from './AdminPanel';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/create" element={<CreateRafflePage />} />
                 <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin-sbt" element={<AdminPanel />} />
               </Routes>
             </main>
 

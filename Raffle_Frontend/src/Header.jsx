@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, useLocation } from 'react-router-dom';
@@ -13,19 +13,26 @@ export function Header() {
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // User is admin if they're admin of either SBT or CMS contract
   // Fallback: check against hardcoded/env admin address if connected
   const hardcodedAdmin = import.meta.env.VITE_ADMIN_ADDRESS;
-  const isAdmin =
-    isSBTAdmin ||
-    isCMSAdmin ||
-    canEditCMS ||
-    (address && hardcodedAdmin && address.toLowerCase() === hardcodedAdmin.toLowerCase());
 
-  // DEBUG: Log admin status
-  console.log('[Header] isSBTAdmin:', isSBTAdmin);
-  console.log('[Header] isCMSAdmin:', isCMSAdmin);
-  console.log('[Header] canEdit:', canEditCMS);
+  // DEBUG: Log values for troubleshooting
+  console.log('Debug Admin:', {
+    address,
+    hardcodedAdmin,
+    isSBTAdmin,
+    isCMSAdmin,
+    canEditCMS
+  });
+
+  const isAdmin = useMemo(() => {
+    const isManualAdmin = address && hardcodedAdmin &&
+      address.toLowerCase() === hardcodedAdmin.trim().toLowerCase();
+
+    return isSBTAdmin || isCMSAdmin || canEditCMS || isManualAdmin;
+  }, [address, hardcodedAdmin, isSBTAdmin, isCMSAdmin, canEditCMS]);
+
+  // DEBUG: Log final status
   console.log('[Header] Final isAdmin:', isAdmin);
 
   const navItems = [
