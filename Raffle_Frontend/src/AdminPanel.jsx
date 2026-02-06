@@ -119,7 +119,7 @@ export default function AdminPanel() {
                         context: userFid ? 'Inside Frame' : 'Standalone Browser'
                     });
 
-                    fetchData();
+                    fetchPointSettings();
                 } else {
                     console.error('[Security] Double Check FAILED');
                     setIsAuthorized(false);
@@ -141,8 +141,8 @@ export default function AdminPanel() {
         }
     }, [navigate, address, isConnected]);
 
-    // 1. Fetching Logic (Sync with new DB columns)
-    const fetchData = async () => {
+    // 1. Fetching Logic (Renamed for clarity as per Senior Dev Request)
+    const fetchPointSettings = async () => {
         setLoading(true);
         try {
             const [pointsRes, thresholdsRes, issuedRes, usersRes, logsRes] = await Promise.all([
@@ -215,16 +215,34 @@ export default function AdminPanel() {
     const savePoints = async () => {
         setSaving(true);
         try {
-            // Cleanup temp IDs and apply formatting
-            const dataToSave = pointSettings.map(item => ({
-                id: typeof item.id === 'string' && item.id.includes('-') ? undefined : item.id,
-                activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
-                points_value: item.points_value,
-                platform: item.platform,
-                action_type: item.action_type || 'Custom',
-                is_active: item.is_active,
-                is_hidden: item.is_hidden || false
-            }));
+            // PROTOKOL PERINTAH TEGAS: 
+            // 1. Filter out invalid/empty activity keys
+            // 2. Remove 'id' property completely for new data (UUID temp) to let Supabase fill it
+            const dataToSave = pointSettings
+                .filter(item => item.activity_key && item.activity_key.trim() !== '')
+                .map(item => {
+                    const isNew = typeof item.id === 'string' && item.id.includes('-');
+
+                    const cleanedItem = {
+                        activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
+                        points_value: parseInt(item.points_value) || 0,
+                        platform: item.platform,
+                        action_type: item.action_type || 'Custom',
+                        is_active: item.is_active,
+                        is_hidden: item.is_hidden || false
+                    };
+
+                    // Only include ID if it's an existing numeric ID from DB
+                    if (!isNew) {
+                        cleanedItem.id = item.id;
+                    }
+
+                    return cleanedItem;
+                });
+
+            if (dataToSave.length === 0) {
+                throw new Error("Tidak ada data valid untuk disimpan.");
+            }
 
             // Validation: activity_key must be unique
             const keys = dataToSave.map(s => s.activity_key);
@@ -237,7 +255,9 @@ export default function AdminPanel() {
 
             await logAdminAction('UPDATE_POINTS', { pointSettings: dataToSave });
             toast.success('SYNC BERHASIL: Point Settings terupdate di database!');
-            fetchData();
+
+            // 3. Panggil ulang fetchPointSettings biar state UI dapet ID asli Database
+            await fetchPointSettings();
         } catch (error) {
             toast.error('Gagal menyimpan poin: ' + error.message);
         } finally {
@@ -300,7 +320,7 @@ export default function AdminPanel() {
 
             await logAdminAction('UPDATE_SBT_LEVELS', { sbtThresholds });
             toast.success('SYNC BERHASIL: SBT Thresholds terupdate secara dinamis!');
-            fetchData();
+            fetchPointSettings();
         } catch (error) {
             toast.error('Gagal menyimpan level: ' + error.message);
         } finally {
@@ -326,7 +346,7 @@ export default function AdminPanel() {
             if (error) throw error;
             await logAdminAction('ISSUE_ENS', { fid: user.fid, label, fullName });
             toast.success(`Subname ${fullName} berhasil diterbitkan di database!`);
-            fetchData();
+            fetchPointSettings();
         } catch (error) {
             toast.error('Gagal menerbitkan subname: ' + error.message);
         } finally {
@@ -374,7 +394,7 @@ export default function AdminPanel() {
                             <p className="text-slate-400 text-xs font-mono">Dynamic Point Control & Audit Logging Enabled</p>
                         </div>
                     </div>
-                    <button onClick={fetchData} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400 hover:text-white">
+                    <button onClick={fetchPointSettings} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400 hover:text-white">
                         <RefreshCw className="w-5 h-5" />
                     </button>
                 </div>
