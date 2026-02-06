@@ -217,28 +217,16 @@ export default function AdminPanel() {
         try {
             // PROTOKOL PERINTAH TEGAS: 
             // 1. Filter out invalid/empty activity keys
-            // 2. Remove 'id' property completely for new data (UUID temp) to let Supabase fill it
-            const dataToSave = pointSettings
+            // 2. Logic Perintah: Baris baru (ID string/null) dikirim TANPA kolom ID
+            const cleanData = pointSettings
                 .filter(item => item.activity_key && item.activity_key.trim() !== '')
-                .map(item => {
-                    const isNew = typeof item.id === 'string' && item.id.includes('-');
+                .map(({ id, ...rest }) => (typeof id === 'number' ? { id, ...rest } : rest));
 
-                    const cleanedItem = {
-                        activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
-                        points_value: parseInt(item.points_value) || 0,
-                        platform: item.platform,
-                        action_type: item.action_type || 'Custom',
-                        is_active: item.is_active,
-                        is_hidden: item.is_hidden || false
-                    };
-
-                    // Only include ID if it's an existing numeric ID from DB
-                    if (!isNew) {
-                        cleanedItem.id = item.id;
-                    }
-
-                    return cleanedItem;
-                });
+            const dataToSave = cleanData.map(item => ({
+                ...item,
+                activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
+                points_value: parseInt(item.points_value) || 0
+            }));
 
             if (dataToSave.length === 0) {
                 throw new Error("Tidak ada data valid untuk disimpan.");
