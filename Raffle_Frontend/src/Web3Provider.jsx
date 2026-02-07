@@ -42,10 +42,16 @@ export function Web3Provider({ children }) {
 
   if (!mounted) return null;
 
+  const onchainKitApiKey = import.meta.env.VITE_ONCHAINKIT_API_KEY;
+
+  if (!onchainKitApiKey) {
+    console.error("VITE_ONCHAINKIT_API_KEY is undefined on Web3Provider. Check Vercel Environment Variables.");
+  }
+
   // 4. Provider Alignment: OnchainKitProvider -> WagmiProvider -> QueryClientProvider
   return (
     <OnchainKitProvider
-      apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY}
+      apiKey={onchainKitApiKey}
       chain={base}
     >
       <WagmiProvider config={config}>

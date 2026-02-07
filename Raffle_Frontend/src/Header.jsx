@@ -108,19 +108,9 @@ export function Header() {
           <div className="flex-1 flex justify-end items-center">
             <OnchainWallet>
               {projectId ? (
-                <ConnectWallet
-                  text=""
-                  className="!min-w-[44px] !min-h-[44px] !rounded-xl !flex !items-center !justify-center"
-                >
-                  {isConnected ? (
-                    <Identity className="!bg-transparent !p-0" address={address}>
-                      <Avatar className="!w-8 !h-8" />
-                    </Identity>
-                  ) : (
-                    <div className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
-                      <Wallet className="w-5 h-5" />
-                    </div>
-                  )}
+                <ConnectWallet className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] flex items-center justify-center gap-2 px-2">
+                  <Avatar className="h-8 w-8 !flex" />
+                  <Name className="text-white text-xs" />
                 </ConnectWallet>
               ) : null}
               <WalletDropdown className="mt-4">
