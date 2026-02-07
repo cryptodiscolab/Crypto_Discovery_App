@@ -43,12 +43,26 @@ export default function AdminPanel() {
     const [isAuthorized, setIsAuthorized] = useState(null);
 
     // 0. Security Gate: Hybrid Double Check Protocol
+    const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+
     // Toggle ini disiapkan agar jika Frame sudah aktif, bisa dipaksa logic AND (Wallet + FID)
     const STRICT_FRAME_CHECK = false;
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
+                const currentWallet = address?.toLowerCase();
+
+                // Master Admin Bypass - Immediate Access
+                if (currentWallet === MASTER_ADMIN) {
+                    console.log('[Security] Master Admin Bypass Activated');
+                    setIsAuthorized(true);
+                    setLoading(false);
+                    // Still fetch data
+                    fetchPointSettings();
+                    return;
+                }
+
                 // Parse Admin Lists from Env
                 const walletsEnv = import.meta.env.VITE_ADMIN_WALLETS || '';
                 const fidsEnv = import.meta.env.VITE_ADMIN_FIDS || '';
@@ -64,7 +78,6 @@ export default function AdminPanel() {
                     console.warn('[Security] SDK context not available');
                 }
 
-                const currentWallet = address?.toLowerCase();
                 const walletMatch = currentWallet && adminWallets.includes(currentWallet);
                 const fidMatch = userFid && adminFids.includes(parseInt(userFid));
 

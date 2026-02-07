@@ -16,6 +16,7 @@ const config = getDefaultConfig({
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "YOUR_PROJECT_ID",
   chains: [base, baseSepolia],
   transports: {
+    // Suggestion: Use Alchemy RPC here to avoid public node rate limits (429 errors)
     [base.id]: http(import.meta.env.VITE_BASE_RPC_URL),
     [baseSepolia.id]: http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL),
   },
