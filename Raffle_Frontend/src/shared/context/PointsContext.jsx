@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useUserV12Stats } from '../../hooks/useContract';
-import { useUserV12Stats } from '../../hooks/useContract';
 import { getSBTThresholds, getUserStatsByFid } from '../../dailyAppLogic';
 import sdk from '@farcaster/frame-sdk';
 
