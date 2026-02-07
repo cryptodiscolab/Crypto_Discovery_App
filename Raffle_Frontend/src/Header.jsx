@@ -110,7 +110,7 @@ export function Header() {
               {projectId ? (
                 <ConnectWallet
                   text=""
-                  className="!min-w-[44px] !min-h-[44px] !bg-indigo-500/20 !border !border-indigo-500/50 !rounded-xl !flex !items-center !justify-center"
+                  className="!min-w-[44px] !min-h-[44px] !rounded-xl !flex !items-center !justify-center"
                 >
                   {isConnected ? (
                     <Identity className="!bg-transparent !p-0" address={address}>

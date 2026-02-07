@@ -38,7 +38,6 @@ export function Web3Provider({ children }) {
   // Prevent Hydration Error
   useEffect(() => {
     setMounted(true);
-    console.log('DApp Check - ProjectID:', projectId);
   }, []);
 
   if (!mounted) return null;
