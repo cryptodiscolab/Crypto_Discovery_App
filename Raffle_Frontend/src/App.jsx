@@ -17,7 +17,7 @@ import AdminPanel from './AdminPanel';
 
 import { useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function RedirectOnConnect() {
   const { isConnected } = useAccount();
