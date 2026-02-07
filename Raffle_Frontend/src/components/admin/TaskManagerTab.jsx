@@ -104,6 +104,84 @@ export function TaskManagerTab() {
         return keyMatch ? keyMatch.points_value : 0;
     };
 
+    const [txHash, setTxHash] = useState(null);
+    const { data: receipt, isSuccess: isTxSuccess, isError: isTxError, error: txError } = useWaitForTransactionReceipt({
+        hash: txHash,
+    });
+
+    // To prevent double-sync from useEffect re-runs
+    const syncedHashes = React.useRef(new Set());
+
+    // 3. Supabase Sync Effect (Triggers ONLY when transaction is successful)
+    useEffect(() => {
+        const syncToSupabase = async () => {
+            // Handle Success
+            if (isTxSuccess && receipt && !syncedHashes.current.has(receipt.transactionHash)) {
+                syncedHashes.current.add(receipt.transactionHash);
+
+                const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
+                const tid = toast.loading("Transaksi sukses! Menyimpan ke database...");
+
+                try {
+                    for (const task of validTasks) {
+                        try {
+                            const { id, ...taskData } = task;
+                            const { error: dbError } = await supabase.from('tasks').insert([{
+                                ...taskData,
+                                created_at: new Date().toISOString(),
+                                is_active: true,
+                                transaction_hash: receipt.transactionHash
+                            }]);
+
+                            if (dbError) console.error('[Supabase Sync Error]', dbError);
+
+                            await supabase.from('admin_audit_logs').insert([{
+                                admin_address: address || '0x0',
+                                action: 'DEPLOY_BATCH_TASK',
+                                details: {
+                                    task_name: task.title,
+                                    points: task.baseReward,
+                                    platform: task.platform,
+                                    action: task.action,
+                                    min_tier: task.minTier,
+                                    tx_hash: receipt.transactionHash
+                                }
+                            }]);
+                        } catch (err) {
+                            console.warn('[Sync/Log Error] Non-critical failure:', err);
+                        }
+                    }
+
+                    toast.success("Selesai! Task on-chain & DB sinkron.", { id: tid });
+
+                    // Reset to default
+                    setTasksBatch([
+                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
+                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
+                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true }
+                    ]);
+                    refetchCount();
+                    setTxHash(null);
+                } catch (error) {
+                    console.error('Sync Error:', error);
+                    toast.error("Transaksi sukses, tapi gagal simpan ke DB. Cek log.", { id: tid });
+                } finally {
+                    setIsSaving(false);
+                }
+            }
+
+            // Handle Failure (Unlocking UI)
+            if (isTxError) {
+                console.error('Wait Error:', txError);
+                toast.error(`Konfirmasi Blockchain Gagal: ${txError?.shortMessage || txError?.message || "Internal Error"}`);
+                setIsSaving(false);
+                setTxHash(null);
+            }
+        };
+
+        syncToSupabase();
+    }, [isTxSuccess, isTxError, receipt, txError]);
+
     const handleBatchSave = async () => {
         const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
 
@@ -112,18 +190,16 @@ export function TaskManagerTab() {
             return;
         }
 
-        // Network Verification: Ensure Base Mainnet
-        const EXPECTED_CHAIN_ID = 8453; // Base Mainnet
+        const EXPECTED_CHAIN_ID = 8453;
         if (chainId !== EXPECTED_CHAIN_ID) {
             toast.error(`Wrong Network! Please switch to Base Mainnet (Connected: ${chainId || 'Unknown'})`);
             return;
         }
 
         setIsSaving(true);
-        const tid = toast.loading(`Mendaftarkan ${validTasks.length} task ke blockchain...`);
+        const tid = toast.loading("Minta tanda tangan wallet...");
 
         try {
-            // Prepare batch data
             const baseRewards = validTasks.map(t => BigInt(t.baseReward));
             const cooldowns = validTasks.map(t => BigInt(t.cooldown));
             const minTiers = validTasks.map(t => t.minTier);
@@ -131,104 +207,33 @@ export function TaskManagerTab() {
             const links = validTasks.map(t => t.link || 'https://warpcast.com/CryptoDisco');
             const requiresVerifications = validTasks.map(t => t.requiresVerification);
 
-            validTasks.forEach(task => {
-                console.log('Sending task to blockchain:', task);
+            const hash = await writeContractAsync({
+                address: V12_ADDRESS,
+                abi: V12_ABI,
+                functionName: 'addTaskBatch',
+                args: [
+                    baseRewards,
+                    cooldowns,
+                    minTiers,
+                    titles,
+                    links,
+                    requiresVerifications
+                ],
             });
 
-            toast.loading("Menunggu konfirmasi blockchain...", { id: tid });
+            if (!hash) throw new Error("Gagal mendapatkan transaction hash!");
 
-            // Blockchain Call
-            let hash;
-            try {
-                hash = await writeContractAsync({
-                    address: V12_ADDRESS,
-                    abi: V12_ABI,
-                    functionName: 'addTaskBatch',
-                    args: [
-                        baseRewards,
-                        cooldowns,
-                        minTiers,
-                        titles,
-                        links,
-                        requiresVerifications
-                    ],
-                });
+            setTxHash(hash);
+            // Update toast to information state, keep it loading for mining
+            toast.loading("Mengirim ke Base Network...", { id: tid });
 
-                if (!hash) throw new Error("Gagal mendapatkan transaction hash!");
-                console.log('Transaction pulse, hash:', hash);
-            } catch (error) {
-                console.error('TRANS_ERROR:', error);
-                throw error;
-            }
-
-            // State Integrity: Wait for Receipt (BLOCK CONFIRMATION)
-            // We'll use a local promise for the wait to keep logic inside handleBatchSave.
-            // Requirement logic: Database writes only AFTER receipt.
-            const { error: waitError } = await new Promise((resolve) => {
-                const interval = setInterval(async () => {
-                    // This is a simplified poll, in production we use useWaitForTransactionReceipt 
-                    // or a viem client for cleaner async wait inside a function.
-                    // Since we are in an async handler, we'll try to use the most reliable path.
-                    resolve({ success: true }); // Mocking finish for now as we don't have publicClient in scope
-                    clearInterval(interval);
-                }, 100);
-            });
-
-            // Note: Since we don't have publicClient injected here easily without more hook refactoring, 
-            // I will implement the Supabase sync clearly marking it as post-hash.
-            // If the user wants 100% strict receipt wait inside this component, 
-            // we should ideally use the useWaitForTransactionReceipt hook result in a useEffect.
-            // For now, I'll group the sync logic to ensure it's triggered by the success flow.
-
-            // Sync to Supabase AFTER blockchain confirmation
-            for (const task of validTasks) {
-                try {
-                    // Remove id property to avoid primary key conflict
-                    const { id, ...taskData } = task;
-
-                    const { error: dbError } = await supabase.from('tasks').insert([{
-                        ...taskData,
-                        created_at: new Date().toISOString(),
-                        is_active: true,
-                        transaction_hash: hash
-                    }]);
-
-                    if (dbError) console.error('[Supabase Sync Error]', dbError);
-
-                    // Audit Log
-                    await supabase.from('admin_audit_logs').insert([{
-                        admin_address: address || '0x0',
-                        action: 'DEPLOY_BATCH_TASK',
-                        details: {
-                            task_name: task.title,
-                            points: task.baseReward,
-                            platform: task.platform,
-                            action: task.action,
-                            min_tier: task.minTier,
-                            tx_hash: hash
-                        }
-                    }]);
-                } catch (err) {
-                    console.warn('[Sync/Log Error] Non-critical failure:', err);
-                }
-            }
-
-            toast.success("Semua task berhasil didaftarkan & disinkron!", { id: tid });
-
-            // Reset to default with synced points
-            setTasksBatch([
-                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
-                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
-                { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true }
-            ]);
-            refetchCount();
         } catch (e) {
             console.error("Batch Deployment Error:", e);
             toast.error(e.shortMessage || e.message || "Gagal mendaftarkan task", { id: tid });
-        } finally {
-            setIsSaving(false);
+            setIsSaving(false); // Unlock UI ONLY on premature error
         }
     };
+
 
     const updateTaskLine = (index, field, value) => {
         const newBatch = [...tasksBatch];

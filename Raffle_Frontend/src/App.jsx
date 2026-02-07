@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Web3Provider } from './Web3Provider';
 import { Header } from './Header';
+import { BottomNav } from './components/BottomNav';
 import { PointsProvider } from './shared/context/PointsContext';
 
 // Import Pages
@@ -21,7 +22,7 @@ function App() {
         <BrowserRouter>
           <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
             <Header />
-            <main className="pt-24">
+            <main className="pt-24 pb-[100px] md:pb-0">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/tasks" element={<TasksPage />} />
@@ -33,6 +34,8 @@ function App() {
                 <Route path="/admin-sbt" element={<AdminPanel />} />
               </Routes>
             </main>
+
+            <BottomNav />
 
             <Toaster
               position="bottom-right"
