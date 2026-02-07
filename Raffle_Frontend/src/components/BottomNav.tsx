@@ -80,7 +80,7 @@ export function BottomNav() {
                     <OnchainWallet>
                         <ConnectWallet
                             text=""
-                            className="!min-w-0 !w-10 !h-10 !p-0 !flex !items-center !justify-center !rounded-xl !bg-transparent !border-none !shadow-none hover:!bg-transparent active:!bg-transparent"
+                            className="!min-w-[44px] !min-h-[44px] !bg-indigo-500/20 !border !border-indigo-500/50 !rounded-xl !flex !items-center !justify-center"
                         >
                             {isConnected ? (
                                 <Identity className="!bg-transparent !p-0" address={address}>

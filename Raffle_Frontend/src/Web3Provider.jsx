@@ -31,6 +31,7 @@ export function Web3Provider({ children }) {
   // Prevent Hydration Error
   useEffect(() => {
     setMounted(true);
+    console.log('DApp Check - ProjectID:', import.meta.env.VITE_REOWN_PROJECT_ID);
   }, []);
 
   if (!mounted) return null;
