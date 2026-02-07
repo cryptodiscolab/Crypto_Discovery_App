@@ -1,24 +1,31 @@
 import '@rainbow-me/rainbowkit/styles.css';
 import '@coinbase/onchainkit/styles.css';
-import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { WagmiProvider } from 'wagmi';
+import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import { WagmiProvider, createConfig, http } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
+import { coinbaseWallet } from 'wagmi/connectors';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-
-import { http } from 'wagmi';
-
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 
-// Setup Config Minimalis
-const config = getDefaultConfig({
+// 1. Explicit Chain & ID Logic
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
+
+// 2. Simplify Config (Wagmi createConfig)
+const config = createConfig({
   appName: 'Crypto Disco',
-  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "YOUR_PROJECT_ID",
+  projectId,
   chains: [base, baseSepolia],
+  connectors: [
+    coinbaseWallet({
+      appName: 'Crypto Disco',
+      preference: 'smartWalletOnly',
+    }),
+  ],
   transports: {
-    // Suggestion: Use Alchemy RPC here to avoid public node rate limits (429 errors)
-    [base.id]: http(import.meta.env.VITE_BASE_RPC_URL),
-    [baseSepolia.id]: http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL),
+    // 3. RPC Fix with Fallback
+    [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org'),
+    [baseSepolia.id]: http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
   },
   ssr: false,
 });
@@ -31,18 +38,19 @@ export function Web3Provider({ children }) {
   // Prevent Hydration Error
   useEffect(() => {
     setMounted(true);
-    console.log('DApp Check - ProjectID:', import.meta.env.VITE_REOWN_PROJECT_ID);
+    console.log('DApp Check - ProjectID:', projectId);
   }, []);
 
   if (!mounted) return null;
 
+  // 4. Provider Alignment: OnchainKitProvider -> WagmiProvider -> QueryClientProvider
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <OnchainKitProvider
-          apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY}
-          chain={base}
-        >
+    <OnchainKitProvider
+      apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY}
+      chain={base}
+    >
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
           <RainbowKitProvider
             theme={darkTheme()}
             modalSize="compact"
@@ -52,8 +60,8 @@ export function Web3Provider({ children }) {
               {children}
             </div>
           </RainbowKitProvider>
-        </OnchainKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </OnchainKitProvider>
   );
 }

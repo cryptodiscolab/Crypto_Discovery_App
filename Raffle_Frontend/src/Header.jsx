@@ -13,6 +13,7 @@ import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
 
 const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
 export function Header() {
   const { address, isConnected } = useAccount();
@@ -106,20 +107,22 @@ export function Header() {
           {/* Right: Wallet (Icon Only) */}
           <div className="flex-1 flex justify-end items-center">
             <OnchainWallet>
-              <ConnectWallet
-                text=""
-                className="!min-w-[44px] !min-h-[44px] !bg-indigo-500/20 !border !border-indigo-500/50 !rounded-xl !flex !items-center !justify-center"
-              >
-                {isConnected ? (
-                  <Identity className="!bg-transparent !p-0" address={address}>
-                    <Avatar className="!w-8 !h-8" />
-                  </Identity>
-                ) : (
-                  <div className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
-                    <Wallet className="w-5 h-5" />
-                  </div>
-                )}
-              </ConnectWallet>
+              {projectId ? (
+                <ConnectWallet
+                  text=""
+                  className="!min-w-[44px] !min-h-[44px] !bg-indigo-500/20 !border !border-indigo-500/50 !rounded-xl !flex !items-center !justify-center"
+                >
+                  {isConnected ? (
+                    <Identity className="!bg-transparent !p-0" address={address}>
+                      <Avatar className="!w-8 !h-8" />
+                    </Identity>
+                  ) : (
+                    <div className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+                      <Wallet className="w-5 h-5" />
+                    </div>
+                  )}
+                </ConnectWallet>
+              ) : null}
               <WalletDropdown className="mt-4">
                 <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
                   <Avatar />

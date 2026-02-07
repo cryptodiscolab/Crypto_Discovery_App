@@ -11,6 +11,7 @@ import {
 import { Name, Address, Avatar, Identity } from '@coinbase/onchainkit/identity';
 
 const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
 export function BottomNav() {
     const { address, isConnected } = useAccount();
@@ -78,20 +79,22 @@ export function BottomNav() {
                 {/* Wallet Section (Icon Only - No Text) */}
                 <div className="flex flex-col items-center gap-1">
                     <OnchainWallet>
-                        <ConnectWallet
-                            text=""
-                            className="!min-w-[44px] !min-h-[44px] !bg-indigo-500/20 !border !border-indigo-500/50 !rounded-xl !flex !items-center !justify-center"
-                        >
-                            {isConnected ? (
-                                <Identity className="!bg-transparent !p-0" address={address}>
-                                    <Avatar className="!w-6 !h-6" />
-                                </Identity>
-                            ) : (
-                                <div className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
-                                    <Wallet className="w-5 h-5" />
-                                </div>
-                            )}
-                        </ConnectWallet>
+                        {projectId ? (
+                            <ConnectWallet
+                                text=""
+                                className="!min-w-[44px] !min-h-[44px] !bg-indigo-500/20 !border !border-indigo-500/50 !rounded-xl !flex !items-center !justify-center"
+                            >
+                                {isConnected ? (
+                                    <Identity className="!bg-transparent !p-0" address={address}>
+                                        <Avatar className="!w-6 !h-6" />
+                                    </Identity>
+                                ) : (
+                                    <div className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+                                        <Wallet className="w-5 h-5" />
+                                    </div>
+                                )}
+                            </ConnectWallet>
+                        ) : null}
                         <WalletDropdown className="bottom-full mb-4">
                             <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
                                 <Avatar />
