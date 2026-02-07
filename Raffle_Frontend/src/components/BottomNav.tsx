@@ -11,13 +11,27 @@ import {
 } from '@coinbase/onchainkit/wallet';
 import { Name, Address, Avatar, Identity } from '@coinbase/onchainkit/identity';
 
-const ADMIN_ADDRESS = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
 
 export function BottomNav() {
     const { address, isConnected } = useAccount();
 
     const isAdmin = useMemo(() => {
-        return address?.toLowerCase() === ADMIN_ADDRESS;
+        if (!address) return false;
+        const currentAddr = address.toLowerCase();
+
+        // Check Master Admin
+        if (currentAddr === MASTER_ADMIN) return true;
+
+        // Check additional admins from environment
+        const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
+        const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
+        const adminList = `${envAdmin},${envWallets}`
+            .split(',')
+            .map(a => a.trim().toLowerCase())
+            .filter(a => a.startsWith('0x'));
+
+        return adminList.includes(currentAddr);
     }, [address]);
 
     const navItems = [
@@ -25,7 +39,6 @@ export function BottomNav() {
         { path: '/tasks', label: 'Tasks', icon: <Zap className="w-5 h-5" /> },
         { path: '/raffles', label: 'Raffles', icon: <Ticket className="w-5 h-5" /> },
         { path: '/leaderboard', label: 'Leaderboard', icon: <Trophy className="w-5 h-5" /> },
-        // Profile/Wallet is handled separately at the end
     ];
 
     const gridCols = isAdmin ? 'grid-cols-6' : 'grid-cols-5';

@@ -15,14 +15,36 @@ import { TasksPage } from './pages/TasksPage';
 import { AdminPage } from './pages/AdminPage';
 import AdminPanel from './AdminPanel';
 
+import { useEffect, useRef } from 'react';
+import { useAccount } from 'wagmi';
+import { useNavigate } from 'react-router-dom';
+
+function RedirectOnConnect() {
+  const { isConnected } = useAccount();
+  const navigate = useNavigate();
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    if (isConnected && !hasRedirected.current) {
+      navigate('/profile');
+      hasRedirected.current = true;
+    } else if (!isConnected) {
+      hasRedirected.current = false;
+    }
+  }, [isConnected, navigate]);
+
+  return null;
+}
+
 function App() {
   return (
     <Web3Provider>
       <PointsProvider>
         <BrowserRouter>
+          <RedirectOnConnect />
           <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
             <Header />
-            <main className="pt-24 pb-[100px] md:pb-0">
+            <main className="pt-24 pb-32 md:pb-0">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/tasks" element={<TasksPage />} />

@@ -92,6 +92,10 @@ export function Header() {
                     {item.isAdmin && <Shield className="w-3.5 h-3.5 text-yellow-500" />}
                     {item.label}
                   </div>
+                  {/* Premium Hover Border Effect */}
+                  {!isActive && (
+                    <div className="absolute inset-0 border border-transparent group-hover:border-indigo-500/50 rounded-xl transition-all duration-300 pointer-events-none" />
+                  )}
                   {!isActive && (
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-indigo-500 group-hover:w-1/2 transition-all duration-300" />
                   )}
@@ -106,10 +110,10 @@ export function Header() {
               <ConnectButton showBalance={false} chainStatus="icon" />
             </div>
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle - HIDDEN FOR MOBILE PER USER REQUEST */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-3 text-slate-400 hover:text-white bg-white/5 border border-white/5 rounded-xl transition-all active:scale-90"
+              className="hidden md:hidden p-3 text-slate-400 hover:text-white bg-white/5 border border-white/5 rounded-xl transition-all active:scale-90"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
