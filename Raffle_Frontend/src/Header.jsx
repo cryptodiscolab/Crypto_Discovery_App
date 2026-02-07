@@ -124,9 +124,13 @@ export function Header() {
           <div className="flex-1 flex justify-end items-center">
             <OnchainWallet>
               {projectId ? (
-                <ConnectWallet className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] !p-0 flex items-center justify-center">
-                  <Avatar className="h-8 w-8 !flex" />
-                  <Wallet className="w-6 h-6 text-white" />
+                <ConnectWallet
+                  text="Connect Wallet"
+                  className="!bg-indigo-600 !text-white !rounded-full !px-6 !py-2 hover:!bg-indigo-500 !transition-all !flex !items-center !justify-center !min-w-[160px] !min-h-[44px]"
+                >
+                  {!isConnected && <Wallet className="w-6 h-6 mr-2" />}
+                  <Avatar className="h-6 w-6" />
+                  <Name />
                 </ConnectWallet>
               ) : null}
               <WalletDropdown className="mt-4">
