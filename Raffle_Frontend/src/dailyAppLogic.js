@@ -165,3 +165,130 @@ export async function rewardReferrer(referrerFid) {
     // Optional: Check Multiplier if referrerCount > 10
     return await addXP(referrerFid, 'referral_invite', 'Referral System');
 }
+
+// ==========================================
+// 5. SBT THRESHOLD MANAGER (Admin Config)
+// ==========================================
+export async function getSBTThresholds() {
+    try {
+        const { data, error } = await supabase
+            .from('sbt_thresholds')
+            .select('*')
+            .order('level', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
+    } catch (err) {
+        console.error('[SBT Config] Error fetching thresholds:', err);
+        return [];
+    }
+}
+
+export async function updateSBTThreshold(id, updates) {
+    try {
+        const { error } = await supabase
+            .from('sbt_thresholds')
+            .update(updates)
+            .eq('id', id);
+
+        if (error) throw error;
+        return { success: true };
+    } catch (err) {
+        console.error('[SBT Config] Error updating threshold:', err);
+        return { success: false, error: err.message };
+    }
+}
+
+// ==========================================
+// 6. USER SYNC (Frontend Hook Support)
+// ==========================================
+export async function getUserStatsSupabase(walletAddress) {
+    try {
+        // First try by wallet if we have it linked
+        // For now, we mainly use FID in this logic, but let's assume we can find by wallet in user_point_logs or a mapping
+        // Since the current table is user_stats(fid), we might need the FID.
+        // For this implementation, we will rely on the caller passing FID.
+        return null;
+    } catch (e) { return null; }
+}
+
+export async function getUserStatsByFid(fid) {
+    try {
+        const { data, error } = await supabase
+            .from('user_stats')
+            .select('*')
+            .eq('fid', fid)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+        return data || { total_xp: 0, current_level: 0, last_login_at: null };
+    } catch (err) {
+        console.error('[User Stats] Error:', err);
+        return null;
+    }
+}
+
+// ==========================================
+// 7. SBT MINT REQUEST (Anti-Halu Queue)
+// ==========================================
+export async function requestSBTMint(fid, walletAddress, targetLevel) {
+    try {
+        console.log(`[SBT Mint] Request from FID: ${fid} for Level ${targetLevel}`);
+
+        // 1. Verify Eligibility (Double Check Server Side)
+        const { data: user } = await supabase
+            .from('user_stats')
+            .select('total_xp, current_level')
+            .eq('fid', fid)
+            .single();
+
+        if (!user) throw new Error("User not found");
+
+        const { data: threshold } = await supabase
+            .from('sbt_thresholds')
+            .select('min_xp')
+            .eq('level', targetLevel)
+            .single();
+
+        if (!threshold) throw new Error("Invalid Tier Level");
+
+        if (user.total_xp < threshold.min_xp) {
+            return { success: false, message: `Points insufficient! Need ${threshold.min_xp} XP.` };
+        }
+
+        // 2. Check for Pending/Completed Request for this level
+        // (Prevent spamming requests)
+        const { data: existing } = await supabase
+            .from('user_point_logs')
+            .select('*')
+            .eq('fid', fid)
+            .eq('activity_key', `mint_request_lvl_${targetLevel}`)
+            .limit(1);
+
+        if (existing && existing.length > 0) {
+            return { success: false, message: "Mint request already pending or processed!" };
+        }
+
+        // 3. Log Request (Admin Bot will pick this up)
+        const { error } = await supabase.from('user_point_logs').insert([{
+            user_address: walletAddress,
+            fid: fid,
+            activity_key: `mint_request_lvl_${targetLevel}`,
+            points_earned: 0, // No points earned, just a log
+            metadata: {
+                type: 'SBT_MINT_REQUEST',
+                target_level: targetLevel,
+                status: 'pending',
+                timestamp: new Date().toISOString()
+            }
+        }]);
+
+        if (error) throw error;
+
+        return { success: true, message: "Mint Request Queued! Admin will process shortly." };
+
+    } catch (err) {
+        console.error('[SBT Mint] Error:', err);
+        return { success: false, message: err.message };
+    }
+}

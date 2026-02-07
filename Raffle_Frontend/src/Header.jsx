@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import {
   ConnectWallet,
@@ -7,7 +7,7 @@ import {
   WalletDropdownDisconnect
 } from '@coinbase/onchainkit/wallet';
 import { Name, Address, Avatar, Identity } from '@coinbase/onchainkit/identity';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sparkles, Shield, Wallet } from 'lucide-react';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
@@ -18,8 +18,24 @@ const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd51
 export function Header() {
   const { address, isConnected } = useAccount();
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAdmin: isSBTAdmin } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    // Only redirect when status changes from false -> true
+    // AND user is on the home page (to avoid redirect loops or unwanted jumps)
+    if (isConnected && !hasRedirected.current && location.pathname === '/') {
+      navigate('/profile');
+      hasRedirected.current = true;
+    }
+
+    // Reset if disconnected so they can be redirected again next time they connect
+    if (!isConnected) {
+      hasRedirected.current = false;
+    }
+  }, [isConnected, navigate, location.pathname]);
 
   const isAdmin = useMemo(() => {
     if (!address) return isSBTAdmin || isCMSAdmin || canEditCMS;
@@ -108,9 +124,9 @@ export function Header() {
           <div className="flex-1 flex justify-end items-center">
             <OnchainWallet>
               {projectId ? (
-                <ConnectWallet className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] flex items-center justify-center gap-2 px-2">
+                <ConnectWallet className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] !p-0 flex items-center justify-center">
                   <Avatar className="h-8 w-8 !flex" />
-                  <Name className="text-white text-xs" />
+                  <Wallet className="w-6 h-6 text-white" />
                 </ConnectWallet>
               ) : null}
               <WalletDropdown className="mt-4">

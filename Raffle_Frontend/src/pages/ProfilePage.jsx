@@ -1,17 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Ticket, Trophy, Gift, Wallet, ExternalLink, Timer as TimerIcon, RefreshCw, Award } from 'lucide-react';
+import { Ticket, Trophy, Gift, Wallet, ExternalLink, Timer as TimerIcon, RefreshCw, Award, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePoints } from '../shared/context/PointsContext';
 import { useRaffle } from '../hooks/useRaffle';
 import { useCMS } from '../hooks/useCMS';
-import { useSBT } from '../hooks/useSBT';
 import { SBTRewardsDashboard } from '../components/SBTRewardsDashboard';
+import { handleDailyClaim, requestSBTMint } from '../dailyAppLogic';
 
 export function ProfilePage() {
   const { address, isConnected } = useAccount();
-  const { unclaimedRewards } = usePoints();
+
+  const { unclaimedRewards, manualAddPoints } = usePoints();
   const { claimPrize, rerollWinner } = useRaffle();
   const { poolSettings, ethPrice, isLoading: loadingCMS } = useCMS();
   const { isLoading: loadingSBT } = useSBT();
@@ -57,6 +58,9 @@ export function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Daily Claim Section */}
+        <DailyClaimCard address={address} onClaim={(points) => manualAddPoints(points)} />
 
         {/* Unclaimed Prizes Section - HIGH PRIORITY */}
         <AnimatePresence>
@@ -215,3 +219,235 @@ function ProfileCountdown({ timestamp }) {
 
   return <span>{timeLeft}</span>;
 }
+
+function DailyClaimCard({ address, onClaim }) {
+  const { sbtThresholds, fid, offChainPoints, offChainLevel } = usePoints();
+  const [canClaim, setCanClaim] = useState(false);
+  const [timeLeft, setTimeLeft] = useState('');
+
+  // Use Centralized Context Data (Anti-Halu)
+  // Fallback to 0 if context not yet loaded
+  const realPoints = offChainPoints || 0;
+  const realLevel = offChainLevel || 0;
+
+  // Determine Next Threshold
+  const nextTierConfig = sbtThresholds.find(t => t.level === realLevel + 1)
+    || sbtThresholds[sbtThresholds.length - 1]; // Fallback to max
+
+  const nextThreshold = nextTierConfig?.min_xp || 10000;
+  const currentTierName = sbtThresholds.find(t => t.level === realLevel)?.tier_name || "None";
+  const progress = Math.min((realPoints / nextThreshold) * 100, 100);
+  const pointsNeeded = Math.max(0, nextThreshold - realPoints);
+  const canMint = realPoints >= nextThreshold;
+
+  // Constants
+  const DAILY_POINTS = 100;
+  const COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours in ms
+  const STORAGE_KEY = `daily_claim_${address?.toLowerCase()}`; // Keep local fallback for cooldown UI only
+  const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+
+  useEffect(() => {
+    // If we have FID, we should check DB for last claim time ideally
+    // But for UI speed, we can keep the localstorage check as a "First Defense"
+    // TODO: Fetch last_login_at from DB for valid check
+    if (!address) return;
+    checkClaimStatus();
+    const interval = setInterval(checkClaimStatus, 1000);
+    return () => clearInterval(interval);
+  }, [address]);
+
+  const checkClaimStatus = () => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const lastClaim = stored ? parseInt(stored) : 0;
+
+    const now = Date.now();
+    const diff = now - lastClaim;
+
+    if (diff >= COOLDOWN) {
+      setCanClaim(true);
+      setTimeLeft('Ready');
+    } else {
+      setCanClaim(false);
+      const remaining = COOLDOWN - diff;
+      const h = Math.floor(remaining / (1000 * 60 * 60));
+      const m = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((remaining % (1000 * 60)) / 1000);
+      setTimeLeft(`${h}h ${m}m ${s}s`);
+    }
+  };
+
+  const handleClaim = async () => {
+    if (!fid) {
+      // Fallback for non-Farcaster users (Mock or Fail)
+      import('react-hot-toast').then(({ default: toast }) => {
+        toast.error("Please open in Farcaster to claim!", { icon: '⚠️' });
+      });
+      return;
+    }
+
+    const result = await handleDailyClaim(fid, address);
+
+    if (result.success) {
+      // Update Local State based on result
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, now.toString());
+      // Optimistic Update handled by manualAddPoints via onClaim
+      onClaim(DAILY_POINTS);
+
+      import('react-hot-toast').then(({ default: toast }) => {
+        toast.success(result.message, { icon: '🎉' });
+      });
+      checkClaimStatus();
+    } else {
+      import('react-hot-toast').then(({ default: toast }) => {
+        toast.error(result.message || "Claim failed", { icon: '❌' });
+      });
+    }
+  };
+
+  const handleReset = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    checkClaimStatus();
+    import('react-hot-toast').then(({ default: toast }) => {
+      toast("Daily cooldown reset (Admin)", { icon: '🔧' });
+    });
+  };
+
+  const handleMintSBT = async () => {
+    if (!fid || !address) return;
+
+    const targetLevel = realLevel + 1;
+
+    const toastId = toast.loading("Verifying eligibility...");
+
+    const result = await requestSBTMint(fid, address, targetLevel);
+
+    if (result.success) {
+      toast.success(result.message, { id: toastId });
+      // Optional: Set a local "Pending" state to disable button
+    } else {
+      toast.error(result.message, { id: toastId });
+    }
+  };
+
+  const isMasterAdmin = address?.toLowerCase() === MASTER_ADMIN;
+
+  // Import toast locally if not available in scope, but usually it is. 
+  // For safety in this component structure, we'll import it dynamically or assume global.
+  // Actually DailyClaimCard uses dynamic import. Let's stick to that pattern or use the one from props if available.
+  // To avoid complexity, I'll use simple dynamic import inside the handler like handleClaim does.
+  // Wait, handleClaim uses import(). Let's align.
+
+  const handleMintSBTWrapper = () => {
+    import('react-hot-toast').then(({ default: toast }) => {
+      handleMintSBTWithToast(toast);
+    });
+  };
+
+  const handleMintSBTWithToast = async (toast) => {
+    if (!fid || !address) return;
+    const targetLevel = realLevel + 1;
+    const toastId = toast.loading("Verifying eligibility...");
+    const result = await requestSBTMint(fid, address, targetLevel);
+    if (result.success) {
+      toast.success(result.message, { id: toastId });
+    } else {
+      toast.error(result.message, { id: toastId });
+    }
+  };
+
+  return (
+    <div className="glass-card p-6 mb-8 relative overflow-hidden group">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+        <Zap className="w-32 h-32 text-yellow-400" />
+      </div>
+
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-lg transition-transform md:group-hover:scale-110 ${canClaim ? 'bg-gradient-to-br from-yellow-400 to-orange-500 shadow-orange-500/20' : 'bg-slate-800'}`}>
+            {canClaim ? '🎁' : '⏳'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] bg-yellow-400/20 text-yellow-400 px-2 py-0.5 rounded font-black tracking-widest uppercase">DAILY</span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-1">Daily Reward</h3>
+            <p className="text-slate-400 text-sm">
+              {canClaim
+                ? "Your daily points are ready to be claimed!"
+                : "Come back tomorrow for more points."}
+            </p>
+          </div>
+        </div>
+
+
+        <div className="flex flex-col items-end gap-2">
+          {canClaim ? (
+            <button
+              onClick={handleClaim}
+              className="btn-primary bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-bold px-8 py-3 rounded-xl shadow-lg shadow-orange-500/20 flex items-center gap-2 transform active:scale-95 transition-all"
+            >
+              <Gift className="w-5 h-5" />
+              Claim +{DAILY_POINTS} Points
+            </button>
+          ) : (
+            <div className="flex flex-col items-center bg-slate-900/50 px-6 py-2 rounded-xl border border-white/5">
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Next Claim In</span>
+              <span className="text-xl font-mono font-bold text-white">{timeLeft}</span>
+            </div>
+          )}
+
+          {/* Master Admin Reset */}
+          {isMasterAdmin && !canClaim && (
+            <button
+              onClick={handleReset}
+              className="text-xs text-slate-600 hover:text-red-400 underline mt-2"
+            >
+              [Admin] Reset Cooldown
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* SBT Progress Bar */}
+      <div className="relative z-10 mt-4 pt-4 border-t border-white/5">
+        <div className="flex justify-between items-end mb-2">
+          <div>
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+              {realLevel > 0 ? `Current: ${currentTierName}` : "Beginner"}
+            </span>
+            <div className="text-white font-mono text-sm max-w-[200px] truncate">
+              <span className="text-yellow-400 font-bold">{realPoints.toLocaleString()}</span>
+              <span className="text-slate-500"> / {nextThreshold.toLocaleString()} XP</span>
+              {fid ? <span className="text-[10px] text-slate-600 block">FID: {fid}</span> : <span className="text-[10px] text-red-500 block">No FID</span>}
+            </div>
+          </div>
+          <div className="text-right">
+            {canMint ? (
+              <button
+                onClick={handleMintSBTWrapper}
+                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:scale-105 active:scale-95 transition-all px-4 py-1 rounded-lg text-xs font-bold text-white shadow-lg shadow-pink-500/30 animate-pulse"
+              >
+                MINT LEVEL {realLevel + 1} SBT
+              </button>
+            ) : (
+              <span className="text-[10px] text-slate-500">{pointsNeeded.toLocaleString()} points to {nextTierConfig?.tier_name || "Next Tier"}</span>
+            )}
+          </div>
+        </div>
+        <div className="h-2 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            className={`h-full relative ${canMint ? 'bg-gradient-to-r from-pink-500 to-rose-500' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500'}`}
+          >
+            {canMint && <div className="absolute inset-0 bg-white/50 animate-ping"></div>}
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+

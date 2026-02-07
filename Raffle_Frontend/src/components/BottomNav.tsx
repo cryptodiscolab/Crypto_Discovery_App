@@ -80,9 +80,9 @@ export function BottomNav() {
                 <div className="flex flex-col items-center gap-1">
                     <OnchainWallet>
                         {projectId ? (
-                            <ConnectWallet className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] flex items-center justify-center gap-2 px-2">
-                                <Avatar address={address} className="h-8 w-8" />
-                                <Name address={address} className="text-white text-xs" />
+                            <ConnectWallet className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] !p-0 flex items-center justify-center">
+                                <Avatar address={address} className="h-8 w-8 !flex" />
+                                <Wallet className="w-6 h-6 text-white" />
                             </ConnectWallet>
                         ) : null}
                         <WalletDropdown className="bottom-full mb-4">
@@ -96,6 +96,6 @@ export function BottomNav() {
                     </OnchainWallet>
                 </div>
             </div>
-        </nav>
+        </nav >
     );
 }

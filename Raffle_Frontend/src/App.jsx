@@ -15,36 +15,16 @@ import { TasksPage } from './pages/TasksPage';
 import { AdminPage } from './pages/AdminPage';
 import AdminPanel from './AdminPanel';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { useNavigate, useLocation } from 'react-router-dom';
 
-function RedirectOnConnect() {
-  const { isConnected } = useAccount();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const hasRedirected = useRef(false);
 
-  useEffect(() => {
-    // Only redirect if connected, hasn't redirected yet, AND is on the home page
-    // This allows users to refresh on /admin or /tasks without being kicked to /profile
-    if (isConnected && !hasRedirected.current && location.pathname === '/') {
-      navigate('/profile');
-      hasRedirected.current = true;
-    } else if (!isConnected) {
-      hasRedirected.current = false;
-    }
-  }, [isConnected, navigate, location.pathname]);
-
-  return null;
-}
 
 function App() {
   return (
     <Web3Provider>
       <PointsProvider>
         <BrowserRouter>
-          <RedirectOnConnect />
           <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
             <Header />
             <main className="pt-24 pb-32 md:pb-0">

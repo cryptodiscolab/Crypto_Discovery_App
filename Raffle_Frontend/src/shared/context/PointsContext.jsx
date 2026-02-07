@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useUserV12Stats } from '../../hooks/useContract';
+import { useUserV12Stats } from '../../hooks/useContract';
+import { getSBTThresholds, getUserStatsByFid } from '../../dailyAppLogic';
+import sdk from '@farcaster/frame-sdk';
 
 const PointsContext = createContext(null);
 
@@ -13,6 +16,12 @@ export function PointsProvider({ children }) {
     const [totalTasksCompleted, setTotalTasksCompleted] = useState(0n);
     const [unclaimedRewards, setUnclaimedRewards] = useState([]); // Array of raffleIds or reward objects
     const [isAdmin, setIsAdmin] = useState(false); // Admin status
+    const [sbtThresholds, setSbtThresholds] = useState([]); // Supabase Thresholds (Anti-Halu)
+
+    // Anti-Halu Central State
+    const [fid, setFid] = useState(null);
+    const [offChainPoints, setOffChainPoints] = useState(0);
+    const [offChainLevel, setOffChainLevel] = useState(0);
 
     useEffect(() => {
         if (isConnected && stats) {
@@ -40,6 +49,45 @@ export function PointsProvider({ children }) {
             setIsAdmin(false);
         }
     }, [isConnected, address]);
+
+    useEffect(() => {
+        const loadThresholds = async () => {
+            const data = await getSBTThresholds();
+            if (data && data.length > 0) {
+                setSbtThresholds(data);
+            } else {
+                setSbtThresholds([
+                    { level: 1, min_xp: 1000, tier_name: 'Bronze' },
+                    { level: 2, min_xp: 5000, tier_name: 'Silver' },
+                    { level: 3, min_xp: 10000, tier_name: 'Gold' }
+                ]);
+            }
+        };
+        loadThresholds();
+    }, []);
+
+    // Load FID and Off-Chain Stats (Centralized Anti-Halu)
+    useEffect(() => {
+        const loadFarcaster = async () => {
+            try {
+                const context = await sdk.context;
+                if (context?.user?.fid) {
+                    const userFid = context.user.fid;
+                    setFid(userFid);
+
+                    // Fetch Real Stats from Supabase
+                    const stats = await getUserStatsByFid(userFid);
+                    if (stats) {
+                        setOffChainPoints(stats.total_xp || 0);
+                        setOffChainLevel(stats.current_level || 0);
+                    }
+                }
+            } catch (e) {
+                console.log("Not in Farcaster context");
+            }
+        };
+        loadFarcaster();
+    }, []);
 
     useEffect(() => {
         // Check for approaching deadlines every minute
@@ -116,6 +164,12 @@ export function PointsProvider({ children }) {
         }
     };
 
+    // Manual add points (for local optimistic updates like Daily Claim)
+    const manualAddPoints = (amount) => {
+        setUserPoints(prev => prev + BigInt(amount));
+        setOffChainPoints(prev => prev + amount); // Sync off-chain state
+    };
+
     const value = {
         userPoints,
         userTier,
@@ -127,7 +181,12 @@ export function PointsProvider({ children }) {
         isConnected,
         formatTimeLeft,
         isAdmin,
-        checkAdminStatus
+        checkAdminStatus,
+        manualAddPoints,
+        sbtThresholds,
+        fid,
+        offChainPoints,
+        offChainLevel
     };
 
     return (
