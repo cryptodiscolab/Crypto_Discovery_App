@@ -109,6 +109,20 @@ export const RAFFLE_ABI = [
 export const V12_ABI = [
     {
         "inputs": [
+            { "internalType": "uint256[]", "name": "_baseRewards", "type": "uint256[]" },
+            { "internalType": "uint256[]", "name": "_cooldowns", "type": "uint256[]" },
+            { "internalType": "enum DailyAppV12Secured.NFTTier[]", "name": "_minTiers", "type": "uint8[]" },
+            { "internalType": "string[]", "name": "_titles", "type": "string[]" },
+            { "internalType": "string[]", "name": "_links", "type": "string[]" },
+            { "internalType": "bool[]", "name": "_requiresVerifications", "type": "bool[]" }
+        ],
+        "name": "addTaskBatch",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
             { "internalType": "uint256", "name": "_baseReward", "type": "uint256" },
             { "internalType": "uint256", "name": "_cooldown", "type": "uint256" },
             { "internalType": "uint8", "name": "_minTier", "type": "uint8" },

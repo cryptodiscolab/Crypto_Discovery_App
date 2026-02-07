@@ -239,7 +239,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         string calldata _title,
         string calldata _link,
         bool _requiresVerification
-    ) external onlyRole(ADMIN_ROLE) validTier(_minTier) {
+    ) public onlyRole(ADMIN_ROLE) validTier(_minTier) {
         require(_baseReward > 0 && _baseReward <= MAX_TASK_REWARD, "Invalid reward");
         require(_cooldown >= 1 hours, "Cooldown too short");
         require(bytes(_title).length > 0 && bytes(_title).length <= 100, "Invalid title length");
@@ -260,6 +260,40 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         });
         
         emit TaskAdded(taskId, _title, _baseReward, _requiresVerification);
+    }
+
+    /**
+     * @notice Add multiple tasks in a single transaction
+     */
+    function addTaskBatch(
+        uint256[] calldata _baseRewards,
+        uint256[] calldata _cooldowns,
+        NFTTier[] calldata _minTiers,
+        string[] calldata _titles,
+        string[] calldata _links,
+        bool[] calldata _requiresVerifications
+    ) external onlyRole(ADMIN_ROLE) {
+        uint256 length = _baseRewards.length;
+        require(length > 0, "Empty batch");
+        require(
+            length == _cooldowns.length && 
+            length == _minTiers.length && 
+            length == _titles.length && 
+            length == _links.length && 
+            length == _requiresVerifications.length,
+            "Mismatched input lengths"
+        );
+
+        for (uint256 i = 0; i < length; i++) {
+            addTask(
+                _baseRewards[i],
+                _cooldowns[i],
+                _minTiers[i],
+                _titles[i],
+                _links[i],
+                _requiresVerifications[i]
+            );
+        }
     }
 
     function setTaskActive(uint256 _taskId, bool _isActive) external onlyRole(ADMIN_ROLE) {
