@@ -77,15 +77,19 @@ export function BottomNav() {
                 {/* Wallet Section (Icon Only - No Text) */}
                 <div className="flex flex-col items-center gap-1">
                     <OnchainWallet>
-                        <ConnectWallet className="!min-w-0 !p-0 !flex !flex-col !items-center !justify-center !bg-transparent !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
+                        <ConnectWallet
+                            text=""
+                            className="!w-10 !h-10 !p-0 !flex !items-center !justify-center !rounded-xl !bg-transparent !border-none !shadow-none hover:!bg-transparent active:!bg-transparent"
+                        >
                             {isConnected ? (
                                 <Identity className="!bg-transparent !p-0" address={address}>
-                                    <Avatar className="!w-5 !h-5" />
+                                    <Avatar className="!w-6 !h-6" />
                                 </Identity>
                             ) : (
-                                <Wallet className="w-5 h-5 text-slate-500" />
+                                <div className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+                                    <Wallet className="w-5 h-5" />
+                                </div>
                             )}
-                            <span style={{ display: 'none', width: 0, height: 0, overflow: 'hidden' }}>Connect Wallet</span>
                         </ConnectWallet>
                         <WalletDropdown className="bottom-full mb-4">
                             <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
