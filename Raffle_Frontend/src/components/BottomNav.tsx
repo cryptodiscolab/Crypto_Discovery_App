@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet } from 'lucide-react';
 import {
@@ -14,6 +14,7 @@ const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
 
 export function BottomNav() {
     const { address, isConnected } = useAccount();
+    const location = useLocation(); // Hook added to ensure no ReferenceError
 
     const isAdmin = useMemo(() => {
         if (!address) return false;
