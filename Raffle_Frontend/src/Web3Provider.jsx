@@ -1,4 +1,5 @@
 import '@rainbow-me/rainbowkit/styles.css';
+import '@coinbase/onchainkit/styles.css';
 import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
