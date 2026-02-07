@@ -8,6 +8,7 @@ import { useRaffle } from '../hooks/useRaffle';
 import { useCMS } from '../hooks/useCMS';
 import { SBTRewardsDashboard } from '../components/SBTRewardsDashboard';
 import { handleDailyClaim, requestSBTMint } from '../dailyAppLogic';
+import { useSBT } from '../hooks/useSBT';
 
 export function ProfilePage() {
   const { address, isConnected } = useAccount();
@@ -15,7 +16,15 @@ export function ProfilePage() {
   const { unclaimedRewards, manualAddPoints } = usePoints();
   const { claimPrize, rerollWinner } = useRaffle();
   const { poolSettings, ethPrice, isLoading: loadingCMS } = useCMS();
-  const { isLoading: loadingSBT } = useSBT();
+
+  // Safe Hook Access (Anti-Crash)
+  let loadingSBT = false;
+  try {
+    const sbt = typeof useSBT === 'function' ? useSBT() : null;
+    loadingSBT = sbt?.isLoading || false;
+  } catch (e) {
+    console.error("useSBT fails:", e);
+  }
 
   const isLoadingData = loadingCMS || loadingSBT;
 
