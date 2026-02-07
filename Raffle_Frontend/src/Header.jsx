@@ -1,13 +1,19 @@
 import { useState, useMemo } from 'react';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import {
+  ConnectWallet,
+  Wallet as OnchainWallet,
+  WalletDropdown,
+  WalletDropdownDisconnect
+} from '@coinbase/onchainkit/wallet';
+import { Name, Address, Avatar, Identity } from '@coinbase/onchainkit/identity';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sparkles, Shield } from 'lucide-react';
+import { Menu, X, Sparkles, Shield, Wallet } from 'lucide-react';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
 
 export function Header() {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const location = useLocation();
   const { isAdmin: isSBTAdmin } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
@@ -107,7 +113,28 @@ export function Header() {
           {/* Right: Wallet + Mobile Menu Button */}
           <div className="flex-1 flex justify-end items-center gap-4">
             <div className="hidden sm:block">
-              <ConnectButton showBalance={false} chainStatus="icon" />
+              <OnchainWallet>
+                <ConnectWallet className="!bg-transparent !p-0 !min-w-0 !h-auto !flex !items-center !gap-2 !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
+                  {isConnected ? (
+                    <Identity className="!bg-transparent !p-0" address={address}>
+                      <Avatar className="!w-8 !h-8" />
+                      <Name className="!text-white !font-bold hidden lg:block" />
+                    </Identity>
+                  ) : (
+                    <div className="p-2.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+                      <Wallet className="w-5 h-5" />
+                    </div>
+                  )}
+                </ConnectWallet>
+                <WalletDropdown className="mt-4">
+                  <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+                    <Avatar />
+                    <Name />
+                    <Address />
+                  </Identity>
+                  <WalletDropdownDisconnect />
+                </WalletDropdown>
+              </OnchainWallet>
             </div>
 
             {/* Mobile Menu Toggle - HIDDEN FOR MOBILE PER USER REQUEST */}
@@ -127,7 +154,26 @@ export function Header() {
         <div className="md:hidden fixed inset-x-0 top-[80px] bottom-0 bg-[#0B0E14]/95 backdrop-blur-2xl border-t border-white/5 z-40 overflow-y-auto">
           <nav className="container mx-auto px-6 py-8 flex flex-col gap-3">
             <div className="px-4 mb-4">
-              <ConnectButton showBalance={true} />
+              <OnchainWallet>
+                <ConnectWallet className="w-full !bg-indigo-600 !py-3 !rounded-xl !border-none !shadow-lg !shadow-indigo-500/20">
+                  {isConnected ? (
+                    <Identity className="!bg-transparent !p-0" address={address}>
+                      <Avatar className="!w-6 !h-6" />
+                      <Name className="!text-white !font-bold" />
+                    </Identity>
+                  ) : (
+                    <span className="text-white font-bold">Connect Wallet</span>
+                  )}
+                </ConnectWallet>
+                <WalletDropdown>
+                  <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+                    <Avatar />
+                    <Name />
+                    <Address />
+                  </Identity>
+                  <WalletDropdownDisconnect />
+                </WalletDropdown>
+              </OnchainWallet>
             </div>
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;

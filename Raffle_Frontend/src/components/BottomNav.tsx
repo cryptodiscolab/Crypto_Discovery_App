@@ -5,7 +5,6 @@ import { Home, Zap, Ticket, Trophy, User, ShieldAlert, Wallet } from 'lucide-rea
 import {
     ConnectWallet,
     Wallet as OnchainWallet,
-    ConnectAccount,
     WalletDropdown,
     WalletDropdownDisconnect
 } from '@coinbase/onchainkit/wallet';
@@ -80,13 +79,14 @@ export function BottomNav() {
                         <ConnectWallet className="!bg-transparent !p-0 !min-w-0 !h-auto !flex !flex-col !items-center !gap-1 !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
                             {isConnected ? (
                                 <>
-                                    <User className={`w-5 h-5 transition-all ${isConnected ? 'text-indigo-400' : 'text-slate-500'}`} />
+                                    <Identity className="!bg-transparent !p-0" address={address}>
+                                        <Avatar className="!w-5 !h-5" />
+                                    </Identity>
                                     <span className="text-[10px] font-bold uppercase tracking-tighter text-indigo-400">Profile</span>
                                 </>
                             ) : (
                                 <>
                                     <Wallet className="w-5 h-5 text-slate-500" />
-                                    <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-500">Sign-in</span>
                                 </>
                             )}
                         </ConnectWallet>
