@@ -76,7 +76,7 @@ export function BottomNav() {
                 {/* Wallet Section (Icon Only - No Text) */}
                 <div className="flex flex-col items-center gap-1">
                     <OnchainWallet>
-                        <ConnectWallet className="!bg-transparent !p-0 !min-w-0 !h-auto !flex !flex-col !items-center !gap-1 !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
+                        <ConnectWallet className="!min-w-0 !p-0 !flex !flex-col !items-center !justify-center !bg-transparent !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
                             {isConnected ? (
                                 <Identity className="!bg-transparent !p-0" address={address}>
                                     <Avatar className="!w-5 !h-5" />
@@ -84,6 +84,7 @@ export function BottomNav() {
                             ) : (
                                 <Wallet className="w-5 h-5 text-slate-500" />
                             )}
+                            <span className="!hidden">Connect Wallet</span>
                         </ConnectWallet>
                         <WalletDropdown className="bottom-full mb-4">
                             <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>

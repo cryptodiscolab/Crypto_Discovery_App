@@ -106,22 +106,22 @@ export function Header() {
           {/* Right: Wallet (Icon Only) */}
           <div className="flex-1 flex justify-end items-center">
             <OnchainWallet>
-              <ConnectWallet className="!bg-transparent !p-0 !min-w-0 !h-auto !flex !items-center !gap-2 !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
+              <ConnectWallet className="!min-w-0 !w-10 !h-10 !p-0 !flex !items-center !justify-center !bg-transparent !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
                 {isConnected ? (
                   <Identity className="!bg-transparent !p-0" address={address}>
                     <Avatar className="!w-8 !h-8" />
                   </Identity>
                 ) : (
-                  <div className="p-2.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+                  <div className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
                     <Wallet className="w-5 h-5" />
                   </div>
                 )}
+                <span className="!hidden">Connect Wallet</span>
               </ConnectWallet>
               <WalletDropdown className="mt-4">
                 <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
                   <Avatar />
                   <Name />
-                  <Address />
                 </Identity>
                 <WalletDropdownDisconnect />
               </WalletDropdown>
