@@ -134,9 +134,9 @@ export default function AdminPanel() {
 
         if (isConnected) {
             checkAuth();
-        } else if (!isConnected && !loading) {
-            // Wait for connection or failed connection
-            // If already loaded and not connected, might need to show login
+        } else {
+            // If not connected, strictly deny access and stop loading
+            setIsAuthorized(false);
             setLoading(false);
         }
     }, [navigate, address, isConnected]);

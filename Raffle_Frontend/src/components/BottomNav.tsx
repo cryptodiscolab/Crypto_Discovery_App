@@ -84,7 +84,7 @@ export function BottomNav() {
                             ) : (
                                 <Wallet className="w-5 h-5 text-slate-500" />
                             )}
-                            <span className="!hidden">Connect Wallet</span>
+                            <span style={{ display: 'none', width: 0, height: 0, overflow: 'hidden' }}>Connect Wallet</span>
                         </ConnectWallet>
                         <WalletDropdown className="bottom-full mb-4">
                             <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>

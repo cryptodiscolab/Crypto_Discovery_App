@@ -5,11 +5,17 @@ import { base, baseSepolia } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 
+import { http } from 'wagmi';
+
 // Setup Config Minimalis
 const config = getDefaultConfig({
   appName: 'Crypto Disco',
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "YOUR_PROJECT_ID",
   chains: [base, baseSepolia],
+  transports: {
+    [base.id]: http(import.meta.env.VITE_BASE_RPC_URL),
+    [baseSepolia.id]: http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL),
+  },
   ssr: false,
 });
 

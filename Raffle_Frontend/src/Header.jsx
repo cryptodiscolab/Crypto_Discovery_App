@@ -116,7 +116,7 @@ export function Header() {
                     <Wallet className="w-5 h-5" />
                   </div>
                 )}
-                <span className="!hidden">Connect Wallet</span>
+                <span style={{ display: 'none', width: 0, height: 0, overflow: 'hidden' }}>Connect Wallet</span>
               </ConnectWallet>
               <WalletDropdown className="mt-4">
                 <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
