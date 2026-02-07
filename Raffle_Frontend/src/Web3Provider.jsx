@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 
 import { http } from 'wagmi';
 
+import { OnchainKitProvider } from '@coinbase/onchainkit';
+
 // Setup Config Minimalis
 const config = getDefaultConfig({
   appName: 'Crypto Disco',
@@ -34,15 +36,20 @@ export function Web3Provider({ children }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          theme={darkTheme()}
-          modalSize="compact"
+        <OnchainKitProvider
+          apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY}
+          chain={base}
         >
-          {/* Kita pasang div container biasa dulu */}
-          <div className="min-h-screen bg-slate-950 text-slate-50">
-            {children}
-          </div>
-        </RainbowKitProvider>
+          <RainbowKitProvider
+            theme={darkTheme()}
+            modalSize="compact"
+          >
+            {/* Kita pasang div container biasa dulu */}
+            <div className="min-h-screen bg-slate-950 text-slate-50">
+              {children}
+            </div>
+          </RainbowKitProvider>
+        </OnchainKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
