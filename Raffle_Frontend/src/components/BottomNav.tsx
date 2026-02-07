@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Home, Zap, Ticket, Trophy, User, ShieldAlert, Wallet } from 'lucide-react';
+import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet } from 'lucide-react';
 import {
     ConnectWallet,
     Wallet as OnchainWallet,
@@ -19,7 +19,7 @@ export function BottomNav() {
         if (!address) return false;
         const currentAddr = address.toLowerCase();
 
-        // Check Master Admin
+        // Master Admin Bypass
         if (currentAddr === MASTER_ADMIN) return true;
 
         // Check additional admins from environment
@@ -73,21 +73,16 @@ export function BottomNav() {
                     </NavLink>
                 )}
 
-                {/* Profile / Wallet Section */}
+                {/* Wallet Section (Icon Only - No Text) */}
                 <div className="flex flex-col items-center gap-1">
                     <OnchainWallet>
                         <ConnectWallet className="!bg-transparent !p-0 !min-w-0 !h-auto !flex !flex-col !items-center !gap-1 !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
                             {isConnected ? (
-                                <>
-                                    <Identity className="!bg-transparent !p-0" address={address}>
-                                        <Avatar className="!w-5 !h-5" />
-                                    </Identity>
-                                    <span className="text-[10px] font-bold uppercase tracking-tighter text-indigo-400">Profile</span>
-                                </>
+                                <Identity className="!bg-transparent !p-0" address={address}>
+                                    <Avatar className="!w-5 !h-5" />
+                                </Identity>
                             ) : (
-                                <>
-                                    <Wallet className="w-5 h-5 text-slate-500" />
-                                </>
+                                <Wallet className="w-5 h-5 text-slate-500" />
                             )}
                         </ConnectWallet>
                         <WalletDropdown className="bottom-full mb-4">

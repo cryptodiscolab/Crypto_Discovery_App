@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import {
   ConnectWallet,
@@ -8,43 +8,37 @@ import {
 } from '@coinbase/onchainkit/wallet';
 import { Name, Address, Avatar, Identity } from '@coinbase/onchainkit/identity';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sparkles, Shield, Wallet } from 'lucide-react';
+import { Sparkles, Shield, Wallet } from 'lucide-react';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
+
+const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
 
 export function Header() {
   const { address, isConnected } = useAccount();
   const location = useLocation();
   const { isAdmin: isSBTAdmin } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Fallback: check against hardcoded/env admin address if connected
-  const hardcodedAdmin = import.meta.env.VITE_ADMIN_ADDRESS;
-
-  // DEBUG: Log values for troubleshooting
-  console.log('Debug Admin:', {
-    address,
-    hardcodedAdmin,
-    isSBTAdmin,
-    isCMSAdmin,
-    canEditCMS
-  });
 
   const isAdmin = useMemo(() => {
     if (!address) return isSBTAdmin || isCMSAdmin || canEditCMS;
 
+    const currentAddr = address.toLowerCase();
+
+    // Master Admin Bypass
+    if (currentAddr === MASTER_ADMIN) return true;
+
     const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
     const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
-    const adminList = `${envAdmin},${envWallets}`.split(',').map(a => a.trim().toLowerCase()).filter(a => a.startsWith('0x'));
+    const adminList = `${envAdmin},${envWallets}`
+      .split(',')
+      .map(a => a.trim().toLowerCase())
+      .filter(a => a.startsWith('0x'));
 
-    const isManualAdmin = adminList.includes(address.toLowerCase());
+    const isManualAdmin = adminList.includes(currentAddr);
 
     return isSBTAdmin || isCMSAdmin || canEditCMS || isManualAdmin;
   }, [address, isSBTAdmin, isCMSAdmin, canEditCMS]);
-
-  // DEBUG: Log final status
-  console.log('[Header] Admin Status:', { address, isAdmin });
 
   const navItems = [
     { path: '/', label: 'Home' },
@@ -70,7 +64,6 @@ export function Header() {
             <Link
               to="/"
               className="flex items-center gap-3 font-black text-2xl text-white hover:text-indigo-400 transition-all group"
-              onClick={() => setIsMobileMenuOpen(false)}
             >
               <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6 text-white" />
@@ -110,96 +103,32 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right: Wallet + Mobile Menu Button */}
-          <div className="flex-1 flex justify-end items-center gap-4">
-            <div className="hidden sm:block">
-              <OnchainWallet>
-                <ConnectWallet className="!bg-transparent !p-0 !min-w-0 !h-auto !flex !items-center !gap-2 !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
-                  {isConnected ? (
-                    <Identity className="!bg-transparent !p-0" address={address}>
-                      <Avatar className="!w-8 !h-8" />
-                      <Name className="!text-white !font-bold hidden lg:block" />
-                    </Identity>
-                  ) : (
-                    <div className="p-2.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
-                      <Wallet className="w-5 h-5" />
-                    </div>
-                  )}
-                </ConnectWallet>
-                <WalletDropdown className="mt-4">
-                  <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-                    <Avatar />
-                    <Name />
-                    <Address />
+          {/* Right: Wallet (Icon Only) */}
+          <div className="flex-1 flex justify-end items-center">
+            <OnchainWallet>
+              <ConnectWallet className="!bg-transparent !p-0 !min-w-0 !h-auto !flex !items-center !gap-2 !border-none !shadow-none hover:!bg-transparent active:!bg-transparent">
+                {isConnected ? (
+                  <Identity className="!bg-transparent !p-0" address={address}>
+                    <Avatar className="!w-8 !h-8" />
                   </Identity>
-                  <WalletDropdownDisconnect />
-                </WalletDropdown>
-              </OnchainWallet>
-            </div>
-
-            {/* Mobile Menu Toggle - HIDDEN FOR MOBILE PER USER REQUEST */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="hidden md:hidden p-3 text-slate-400 hover:text-white bg-white/5 border border-white/5 rounded-xl transition-all active:scale-90"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+                ) : (
+                  <div className="p-2.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+                    <Wallet className="w-5 h-5" />
+                  </div>
+                )}
+              </ConnectWallet>
+              <WalletDropdown className="mt-4">
+                <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+                  <Avatar />
+                  <Name />
+                  <Address />
+                </Identity>
+                <WalletDropdownDisconnect />
+              </WalletDropdown>
+            </OnchainWallet>
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu Fragment (Improved styling) */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-[80px] bottom-0 bg-[#0B0E14]/95 backdrop-blur-2xl border-t border-white/5 z-40 overflow-y-auto">
-          <nav className="container mx-auto px-6 py-8 flex flex-col gap-3">
-            <div className="px-4 mb-4">
-              <OnchainWallet>
-                <ConnectWallet className="w-full !bg-indigo-600 !py-3 !rounded-xl !border-none !shadow-lg !shadow-indigo-500/20">
-                  {isConnected ? (
-                    <Identity className="!bg-transparent !p-0" address={address}>
-                      <Avatar className="!w-6 !h-6" />
-                      <Name className="!text-white !font-bold" />
-                    </Identity>
-                  ) : (
-                    <span className="text-white font-bold">Connect Wallet</span>
-                  )}
-                </ConnectWallet>
-                <WalletDropdown>
-                  <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-                    <Avatar />
-                    <Name />
-                    <Address />
-                  </Identity>
-                  <WalletDropdownDisconnect />
-                </WalletDropdown>
-              </OnchainWallet>
-            </div>
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center justify-between p-4 rounded-2xl text-lg font-bold transition-all ${isActive
-                    ? item.isAdmin
-                      ? 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20'
-                      : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20'
-                    : 'text-slate-400 bg-white/5 hover:bg-white/10'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {item.isAdmin && <Shield className="w-5 h-5 text-yellow-500" />}
-                    {item.label}
-                  </div>
-                  <div className="w-2 h-2 rounded-full bg-current opacity-20" />
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      )}
     </header>
   );
 }
