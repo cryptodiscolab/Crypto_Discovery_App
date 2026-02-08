@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet } from 'lucide-react';
+import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, LayoutDashboard } from 'lucide-react';
 import {
     ConnectWallet,
     Wallet as OnchainWallet,
@@ -97,6 +97,17 @@ export function BottomNav() {
                                 <Name />
                                 <Address />
                             </Identity>
+                            {isAdmin && (
+                                <Link
+                                    to="/admin"
+                                    className="flex items-center gap-3 px-4 py-3 text-yellow-500 hover:text-yellow-400 transition-colors border-t border-white/5 group"
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <LayoutDashboard className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-sm font-bold uppercase tracking-wider">Admin Dashboard</span>
+                                </Link>
+                            )}
                             <WalletDropdownDisconnect />
                         </WalletDropdown>
                     </OnchainWallet>
