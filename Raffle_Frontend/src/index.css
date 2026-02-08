@@ -39,4 +39,10 @@
 .no-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+
+/* Global Wallet Button Fix for Mobile Visibility */
+.ock-connect-wallet {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
 }

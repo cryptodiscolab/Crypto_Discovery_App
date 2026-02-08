@@ -20,6 +20,7 @@ const config = createConfig({
     coinbaseWallet({
       appName: 'Crypto Disco',
       preference: 'smartWalletOnly',
+      isStandalone: true,
     }),
   ],
   transports: {
@@ -44,8 +45,9 @@ export function Web3Provider({ children }) {
 
   const onchainKitApiKey = import.meta.env.VITE_ONCHAINKIT_API_KEY;
 
+  // Debug API Key
   if (!onchainKitApiKey) {
-    console.error("VITE_ONCHAINKIT_API_KEY is undefined on Web3Provider. Check Vercel Environment Variables.");
+    console.warn("VITE_ONCHAINKIT_API_KEY is missing! Using fallback or restricted mode.");
   }
 
   // 4. Provider Alignment: OnchainKitProvider -> WagmiProvider -> QueryClientProvider

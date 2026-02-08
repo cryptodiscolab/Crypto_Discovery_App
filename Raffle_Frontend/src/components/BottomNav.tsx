@@ -76,18 +76,17 @@ export function BottomNav() {
                     </NavLink>
                 )}
 
-                {/* Wallet Section (Icon Only - No Text) */}
+                {/* Wallet Section (Icon Only - Forced Render) */}
                 <div className="flex flex-col items-center gap-1 relative z-[9999]">
                     <OnchainWallet>
                         {projectId ? (
                             <ConnectWallet
-                                text=""
-                                className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] !p-0 flex items-center justify-center !transition-all focus-within:ring-2 focus-within:ring-indigo-500 focus-within:shadow-lg focus-within:shadow-indigo-500/20"
+                                className="!bg-white/10 !rounded-full !min-w-[44px] !min-h-[44px] !p-0 flex items-center justify-center !transition-all !opacity-100 !visible"
                             >
                                 {isConnected ? (
-                                    <Avatar address={address} className="h-8 w-8 !flex" />
+                                    <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible" />
                                 ) : (
-                                    <Wallet className="!w-6 !h-6 !text-white !opacity-100 !visible !block z-[9999]" />
+                                    <Wallet className="!w-7 !h-7 !text-white !block !opacity-100 !visible z-[9999]" />
                                 )}
                             </ConnectWallet>
                         ) : null}
