@@ -13,9 +13,23 @@ import { useSBT } from '../hooks/useSBT';
 export function ProfilePage() {
   const { address, isConnected } = useAccount();
 
-  const { unclaimedRewards, manualAddPoints } = usePoints();
+  const { unclaimedRewards, manualAddPoints, refetch } = usePoints();
   const { claimPrize, rerollWinner } = useRaffle();
   const { poolSettings, ethPrice, isLoading: loadingCMS } = useCMS();
+
+  // State to handle the transition phase where isConnected might be true but data isn't ready
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Re-sync logic: force refetch when wallet connects
+  useEffect(() => {
+    if (isConnected) {
+      setIsSyncing(true);
+      refetch?.().finally(() => {
+        // Add a small artificial delay to ensure smooth UI transition
+        setTimeout(() => setIsSyncing(false), 800);
+      });
+    }
+  }, [isConnected, refetch]);
 
   // Safe Hook Access (Anti-Crash)
   let loadingSBT = false;
@@ -26,7 +40,7 @@ export function ProfilePage() {
     console.error("useSBT fails:", e);
   }
 
-  const isLoadingData = loadingCMS || loadingSBT;
+  const isLoadingData = loadingCMS || loadingSBT || isSyncing;
 
   // Dummy stats (could be replaced with real data from usePoints if available)
   const stats = [
@@ -35,13 +49,23 @@ export function ProfilePage() {
     { label: 'NFTs Claimed', value: '1', icon: Gift, color: 'text-purple-400' },
   ];
 
-  if (!isConnected) {
+  if (!isConnected || isSyncing) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
-        <div className="bg-slate-900/50 p-8 rounded-2xl border border-white/10 max-w-md">
-          <Wallet className="w-16 h-16 text-slate-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Wallet Not Connected</h2>
-          <p className="text-slate-400 mb-6">Please connect your wallet to view your profile and tickets.</p>
+        <div className="bg-slate-900/50 p-8 rounded-2xl border border-white/10 max-w-md w-full">
+          {isSyncing ? (
+            <div className="flex flex-col items-center">
+              <RefreshCw className="w-16 h-16 text-indigo-500 animate-spin mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">Syncing Profile...</h2>
+              <p className="text-slate-400">Fetching your on-chain data from Base</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <Wallet className="w-16 h-16 text-slate-500 mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">Wallet Not Connected</h2>
+              <p className="text-slate-400 mb-6">Please connect your wallet to view your profile and tickets.</p>
+            </div>
+          )}
         </div>
       </div>
     );

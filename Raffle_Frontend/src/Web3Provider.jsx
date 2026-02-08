@@ -34,6 +34,7 @@ const config = createConfig({
     ]),
   },
   ssr: false,
+  reconnectOnMount: true,
 });
 
 const queryClient = new QueryClient();

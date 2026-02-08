@@ -44,7 +44,7 @@ export function PointsProvider({ children }) {
     useEffect(() => {
         if (isConnected && address) {
             checkAdminStatus(address);
-        } else {
+        } else if (!isConnected) {
             setIsAdmin(false);
         }
     }, [isConnected, address]);
@@ -121,6 +121,8 @@ export function PointsProvider({ children }) {
 
     // Admin verification function
     const checkAdminStatus = async (walletAddress) => {
+        if (!walletAddress) return;
+
         // Local Check for immediate UI response
         const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
         const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';

@@ -6,7 +6,7 @@ const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || import.meta.env
 const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true';
 
 export function useUserInfo(address) {
-    const { data: userInfo, isLoading } = useReadContract({
+    const { data: userInfo, isLoading, refetch } = useReadContract({
         address: V12_ADDRESS,
         abi: V12_ABI,
         functionName: 'getUserStats',
@@ -14,7 +14,7 @@ export function useUserInfo(address) {
         query: { enabled: !!address }
     });
 
-    if (!address) return { stats: null, isLoading: false };
+    if (!address) return { stats: null, isLoading: false, refetch: () => {} };
 
     return {
         stats: userInfo ? {
@@ -26,7 +26,8 @@ export function useUserInfo(address) {
             lastDailyBonusClaim: userInfo[5],
             isBlacklisted: userInfo[6]
         } : null,
-        isLoading
+        isLoading,
+        refetch
     };
 }
 
