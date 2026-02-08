@@ -4,7 +4,6 @@ import {
     AlertTriangle,
     ChevronDown,
     Calculator,
-    TrendingUp,
     RefreshCw,
     ExternalLink,
     DollarSign,

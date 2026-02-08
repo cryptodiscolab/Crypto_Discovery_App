@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import { formatEther } from 'ethers';

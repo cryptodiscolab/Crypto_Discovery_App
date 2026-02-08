@@ -13,7 +13,6 @@ import {
   Zap,
   Users,
   ShieldCheck,
-  TrendingUp,
   AlertTriangle
 } from 'lucide-react';
 import { usePoints } from '../shared/context/PointsContext';
