@@ -41,10 +41,17 @@ export function ProfilePage() {
   const { unclaimedRewards, manualAddPoints, refetch, sbtThresholds, offChainPoints, offChainLevel, fid: ownFid } = usePoints();
   const { claimPrize, rerollWinner } = useRaffle();
   const { poolSettings, isLoading: loadingCMS } = useCMS();
-  const { profileData, isLoading: loadingFC, syncUser } = useFarcaster();
+  const { profileData, isLoading: loadingFC, error: errorFC, syncUser } = useFarcaster();
 
   // Data Syncing State
   const [isSyncing, setIsSyncing] = useState(true);
+
+  // Error Feedback
+  useEffect(() => {
+    if (errorFC) {
+      toast.error(`Sync Failed: ${errorFC}`);
+    }
+  }, [errorFC]);
 
   useEffect(() => {
     if (targetAddress) {

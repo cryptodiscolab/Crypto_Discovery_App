@@ -20,6 +20,8 @@ export const useFarcaster = () => {
         };
     }, []);
 
+    const isLoadingRef = useRef(false);
+
     /**
      * isEligible: Transparent anti-bot filter (OpenRank aware).
      */
@@ -40,13 +42,14 @@ export const useFarcaster = () => {
 
         const normalizedAddress = address.trim().toLowerCase();
 
-        // 1. Concurrency Prevention
-        if (isLoading && !forceRefresh) return null;
+        // 1. Concurrency Prevention (Ref-based to avoid dependency loop)
+        if (isLoadingRef.current && !forceRefresh) return null;
 
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
 
         setIsLoading(true);
+        isLoadingRef.current = true;
         setError(null);
         setIsSybilDetected(false);
 
@@ -69,6 +72,7 @@ export const useFarcaster = () => {
 
                     if (now - lastSync < COOLDOWN) {
                         setIsLoading(false);
+                        isLoadingRef.current = false;
                         return localProfile;
                     }
                 }
@@ -110,9 +114,10 @@ export const useFarcaster = () => {
         } finally {
             // GUARANTEE: Loading state ALWAYS resets
             setIsLoading(false);
+            isLoadingRef.current = false;
             abortControllerRef.current = null;
         }
-    }, [isLoading]);
+    }, []); // Removed isLoading dependency to prevent infinite loops
 
     return {
         profileData,

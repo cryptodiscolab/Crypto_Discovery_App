@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { V12_ABI } from '../shared/constants/abis';
 import { addXP, rewardReferrer } from '../dailyAppLogic';
@@ -14,10 +15,9 @@ export function useUserInfo(address) {
         query: { enabled: !!address }
     });
 
-    if (!address) return { stats: null, isLoading: false, refetch: () => {} };
-
-    return {
-        stats: userInfo ? {
+    const stats = useMemo(() => {
+        if (!userInfo) return null;
+        return {
             points: userInfo[0],
             totalTasksCompleted: userInfo[1],
             referralCount: userInfo[2],
@@ -25,7 +25,13 @@ export function useUserInfo(address) {
             tasksForReferralProgress: userInfo[4],
             lastDailyBonusClaim: userInfo[5],
             isBlacklisted: userInfo[6]
-        } : null,
+        };
+    }, [userInfo]);
+
+    if (!address) return { stats: null, isLoading: false, refetch: () => { } };
+
+    return {
+        stats,
         isLoading,
         refetch
     };
