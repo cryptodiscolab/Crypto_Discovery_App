@@ -82,7 +82,7 @@ export function BottomNav() {
                         {projectId ? (
                             <ConnectWallet
                                 text=""
-                                className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] !p-0 flex items-center justify-center"
+                                className="!bg-white/10 !rounded-full !min-w-[40px] !min-h-[40px] !p-0 flex items-center justify-center !transition-all focus-within:ring-2 focus-within:ring-indigo-500 focus-within:shadow-lg focus-within:shadow-indigo-500/20"
                             >
                                 {isConnected ? (
                                     <Avatar address={address} className="h-8 w-8 !flex" />
@@ -100,9 +100,9 @@ export function BottomNav() {
                             {isAdmin && (
                                 <Link
                                     to="/admin"
-                                    className="flex items-center gap-3 px-4 py-3 text-yellow-500 hover:text-yellow-400 transition-colors border-t border-white/5 group"
+                                    className="flex items-center gap-3 mx-2 my-1 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 transition-all group"
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                                         <LayoutDashboard className="w-4 h-4" />
                                     </div>
                                     <span className="text-sm font-bold uppercase tracking-wider">Admin Dashboard</span>
