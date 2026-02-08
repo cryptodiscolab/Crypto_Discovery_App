@@ -2,8 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
 /**
- * Super Sempurna: Principal Engineer's Hook for Identity Management.
- * Guaranteed zero-memory-leak, race-condition-safe, and Sybil-aware.
+ * Senior Architecture: Transparent Identity Management Hook.
+ * Guaranteed zero-RIBA, honest data attribution, and Sybil-aware.
  */
 export const useFarcaster = () => {
     const [profileData, setProfileData] = useState(null);
@@ -21,14 +21,18 @@ export const useFarcaster = () => {
     }, []);
 
     /**
-     * isEligible: Transparent anti-bot filter.
+     * isEligible: Transparent anti-bot filter (OpenRank aware).
      */
     const isEligible = useCallback((profile = profileData) => {
         if (!profile) return false;
-        // Super Sempurna: Use stored internal_trust_score if available, or calc locally
-        const score = profile.internal_trust_score ||
-            ((profile.power_badge ? 50 : 0) + (profile.follower_count / 10) + (profile.rank_score * 100));
-        return score >= 50; // Threshold can be adjusted in DB
+        // Hardened Logic: Use DB trust_score if synced, otherwise calculate local estimate
+        // Priority: internal_trust_score > (PowerBadge bonus + follower weight + rank weight)
+        const score = profile.internal_trust_score ??
+            ((profile.power_badge ? 50 : 0) +
+                (Math.min(profile.follower_count / 100, 20)) +
+                (profile.rank_score * 100));
+
+        return score >= 50;
     }, [profileData]);
 
     const syncUser = useCallback(async (address, forceRefresh = false) => {
