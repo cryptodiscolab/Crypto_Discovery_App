@@ -120,8 +120,8 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right: Wallet (Icon Only) */}
-          <div className="flex-1 flex justify-end items-center">
+          {/* Right: Wallet (Icon Only) - Hidden on Mobile */}
+          <div className="hidden md:flex flex-1 justify-end items-center">
             <OnchainWallet>
               {projectId ? (
                 <ConnectWallet
