@@ -16,6 +16,7 @@ import { AdminPage } from './pages/AdminPage';
 import AdminPanel from './AdminPanel';
 import AdminDashboard from './pages/admin/dashboard.jsx';
 import AdminGuard from './components/admin/AdminGuard.jsx';
+import { SignatureGuard } from './components/SignatureGuard.jsx';
 
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
@@ -29,27 +30,29 @@ function App() {
         <BrowserRouter>
           <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
             <Header />
-            <main className="pt-24 pb-32 md:pb-0">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/raffles" element={<RafflesPage />} />
-                <Route path="/leaderboard" element={<LeaderboardPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                <Route path="/create" element={<CreateRafflePage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/admin-sbt" element={<AdminPanel />} />
-                <Route
-                  path="/admin/reputation"
-                  element={
-                    <AdminGuard>
-                      <AdminDashboard />
-                    </AdminGuard>
-                  }
-                />
-              </Routes>
-            </main>
+            <SignatureGuard>
+              <main className="pt-24 pb-32 md:pb-0">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/tasks" element={<TasksPage />} />
+                  <Route path="/raffles" element={<RafflesPage />} />
+                  <Route path="/leaderboard" element={<LeaderboardPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                  <Route path="/create" element={<CreateRafflePage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/admin-sbt" element={<AdminPanel />} />
+                  <Route
+                    path="/admin/reputation"
+                    element={
+                      <AdminGuard>
+                        <AdminDashboard />
+                      </AdminGuard>
+                    }
+                  />
+                </Routes>
+              </main>
+            </SignatureGuard>
 
             <BottomNav />
 
