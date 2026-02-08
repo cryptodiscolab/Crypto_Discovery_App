@@ -23,7 +23,7 @@ const config = createConfig({
     }),
   ],
   transports: {
-    // 3. Robust RPC Fallback (Alchemy -> Public)
+    // 3. Robust RPC Fallback (Alchemy -> Public) - Aggressive Mode
     [base.id]: fallback([
       http(import.meta.env.VITE_BASE_RPC_URL || (import.meta.env.VITE_ALCHEMY_API_KEY ? `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}` : null)),
       http('https://mainnet.base.org'),

@@ -93,7 +93,7 @@ export function BottomNav() {
 
                                             {/* Avatar renders on top ONLY if connected and data exists */}
                                             {isConnected && (
-                                                <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible z-[9999] relative" />
+                                                <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible z-[9999] relative border-2 border-indigo-400/50" />
                                             )}
 
                                             {!isConnected && (
@@ -113,11 +113,15 @@ export function BottomNav() {
                                 </div>
                             </ConnectWallet>
                         ) : null}
-                        <WalletDropdown className="bottom-full mb-4">
-                            <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-                                <Avatar />
-                                <Name />
-                                <Address />
+                        <WalletDropdown className="bottom-full mb-4 bg-slate-900 border border-white/10 shadow-2xl rounded-2xl overflow-hidden">
+                            <Identity className="px-4 pt-4 pb-3 bg-gradient-to-b from-indigo-500/10 to-transparent" hasCopyAddressOnClick>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Avatar className="h-10 w-10 border-2 border-indigo-400 shadow-indigo-500/20 shadow-lg" />
+                                    <div className="flex flex-col">
+                                        <Name className="!text-white !font-bold !text-lg !opacity-100" />
+                                        <Address className="!text-slate-400 !text-xs" />
+                                    </div>
+                                </div>
                             </Identity>
                             {isAdmin && (
                                 <Link
