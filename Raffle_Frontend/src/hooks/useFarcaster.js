@@ -57,7 +57,7 @@ export const useFarcaster = () => {
             // 2. Efficient Local Fetch (Primary Protocol)
             if (!forceRefresh) {
                 const { data: localProfile } = await supabase
-                    .from('profiles')
+                    .from('user_profiles')
                     .select('*')
                     .eq('wallet_address', normalizedAddress)
                     .single();

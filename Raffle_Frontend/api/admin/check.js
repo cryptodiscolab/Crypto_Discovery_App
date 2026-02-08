@@ -1,3 +1,8 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
@@ -22,9 +27,22 @@ export default async function handler(req, res) {
         const isFidMatch = userFid === REQUIRED_FID;
         const isWalletMatch = address.toLowerCase() === REQUIRED_WALLET;
 
-        // Double check passes ONLY if BOTH match. 
-        // If not on Farcaster (no FID), it will fail the double check safely.
-        const isAdmin = isFidMatch && isWalletMatch;
+        // Hardcoded check
+        let isAdmin = isFidMatch && isWalletMatch;
+
+        // Database Check (Dynamic)
+        if (!isAdmin && supabaseUrl && supabaseServiceKey) {
+            const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            const { data: userProfile, error } = await supabase
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('wallet_address', address.toLowerCase())
+                .single();
+
+            if (userProfile && userProfile.is_admin) {
+                isAdmin = true;
+            }
+        }
 
         if (!isAdmin) {
             console.warn(`[Security] Unauthorized access attempt: FID ${fid}, Wallet ${address}`);
@@ -32,7 +50,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             isAdmin,
-            message: isAdmin ? 'Admin access granted (Double Check Success)' : 'Unauthorized: Double Check Failed'
+            message: isAdmin ? 'Admin access granted' : 'Unauthorized'
         });
 
     } catch (error) {

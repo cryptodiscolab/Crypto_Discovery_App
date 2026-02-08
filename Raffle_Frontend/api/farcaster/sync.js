@@ -41,7 +41,7 @@ export default async function handler(req, res) {
         // 1. HARDENED RATE LIMITING (Database-Level)
         // Check last_sync before calling expensive Neynar API
         const { data: existingUser } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .select('last_sync')
             .eq('wallet_address', normalizedAddress)
             .single();
@@ -77,10 +77,32 @@ export default async function handler(req, res) {
         const userData = (userDataArray && userDataArray.length > 0) ? userDataArray[0] : null;
 
         if (!userData) {
+            // NO Farcaster ID found.
+            // We should still ensure the user exists in user_profiles with just the wallet address
+            // to avoid foreign key issues later, or just return.
+            // Requirement says: "If not, create a new record using the wallet address as the primary identifier."
+            // valid for wallet login, but here we are syncing. 
+            // If they don't have FC, we can just upsert the wallet address and mark as not active FC.
+
+            const { data, error } = await supabase
+                .from('user_profiles')
+                .upsert({
+                    wallet_address: normalizedAddress,
+                    last_sync: new Date().toISOString()
+                    // Leave other fields null/default
+                }, {
+                    onConflict: 'wallet_address',
+                    ignoreDuplicates: false
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
             return res.status(200).json({
                 isFarcasterUser: false,
-                profile: null,
-                message: 'No FID linked'
+                profile: data,
+                message: 'No FID linked, but wallet profile synced.'
             });
         }
 
@@ -104,7 +126,7 @@ export default async function handler(req, res) {
         // SYBIL DEFENSE: The database unique index on 'fid' will handle 
         // conflicts if this FID is already used by another wallet.
         const { data, error } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .upsert(profileUpdate, {
                 onConflict: 'wallet_address',
                 ignoreDuplicates: false
@@ -136,3 +158,4 @@ export default async function handler(req, res) {
         });
     }
 }
+

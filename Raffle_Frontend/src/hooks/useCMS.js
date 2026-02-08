@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { CMS_CONTRACT_ABI } from '../shared/constants/abis';
 import toast from 'react-hot-toast';
+import { supabase } from '@/lib/supabaseClient';
 
 const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS;
 const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -82,6 +83,7 @@ export function useCMS() {
         watch: true,
     });
 
+
     // ============================================
     // READ ROLES
     // ============================================
@@ -109,9 +111,34 @@ export function useCMS() {
         return adminList.includes(address.toLowerCase());
     }, [address, envAdmin, envWallets]);
 
+    // Database Admin Check
+    const [isDbAdmin, setIsDbAdmin] = useState(false);
+    useEffect(() => {
+        const checkDbAdmin = async () => {
+            if (!address) {
+                setIsDbAdmin(false);
+                return;
+            }
+            try {
+                const { data } = await supabase
+                    .from('user_profiles')
+                    .select('is_admin')
+                    .eq('wallet_address', address.toLowerCase())
+                    .single();
+
+                if (data && data.is_admin) {
+                    setIsDbAdmin(true);
+                }
+            } catch (e) {
+                console.warn('[useCMS] DB Admin check failed', e);
+            }
+        };
+        checkDbAdmin();
+    }, [address]);
+
     // Final boolean roles
-    const isAdmin = isAdminRaw || isEnvAdmin || false;
-    const isOperator = isOperatorRaw || isEnvAdmin || false; // Admin is also an operator
+    const isAdmin = isAdminRaw || isEnvAdmin || isDbAdmin || false;
+    const isOperator = isOperatorRaw || isEnvAdmin || isDbAdmin || false; // Admin is also an operator
     const canEdit = isAdmin || isOperator;
 
 

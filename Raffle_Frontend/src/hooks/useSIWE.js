@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { verifyMessage } from 'viem';
+import { ensureUserProfile } from '../dailyAppLogic';
 
 /**
  * Hook for Lightweight SIWE Authentication
@@ -99,6 +100,10 @@ ${resourceLines}`;
             };
 
             setSession(userSession);
+
+            // Ensure User Profile Exists
+            await ensureUserProfile(address);
+
             console.log("SIWE Success:", userSession);
 
             return userSession;

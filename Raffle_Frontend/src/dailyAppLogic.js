@@ -228,6 +228,42 @@ export async function getUserStatsByFid(fid) {
     }
 }
 
+/**
+ * ensureUserProfile: Guarantee a record exists in user_profiles.
+ * Called after Wallet Signature (SIWE).
+ */
+export async function ensureUserProfile(walletAddress) {
+    if (!walletAddress) return null;
+    const normalizedAddress = walletAddress.trim().toLowerCase();
+
+    try {
+        // 1. Check if exists
+        const { data: existing, error: fetchError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('wallet_address', normalizedAddress)
+            .single();
+
+        if (existing) return existing;
+
+        if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+        // 2. Create if not exists
+        const { data: newProfile, error: insertError } = await supabase
+            .from('user_profiles')
+            .insert([{ wallet_address: normalizedAddress }])
+            .select()
+            .single();
+
+        if (insertError) throw insertError;
+        return newProfile;
+
+    } catch (err) {
+        console.error('[Ensure Profile] Error:', err.message);
+        return null; // Fail gracefully
+    }
+}
+
 // ==========================================
 // 7. SBT MINT REQUEST (Anti-Halu Queue)
 // ==========================================

@@ -115,7 +115,7 @@ export default function UserReputationTable() {
             const currentPage = isInitial ? 0 : page;
             const rangeStart = currentPage * limit;
             const { data, count, error } = await supabase
-                .from('profiles')
+                .from('user_profiles')
                 .select('*', { count: 'exact' })
                 .order('internal_trust_score', { ascending: false })
                 .range(rangeStart, rangeStart + limit - 1);
