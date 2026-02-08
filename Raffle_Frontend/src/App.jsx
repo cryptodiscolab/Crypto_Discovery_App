@@ -13,6 +13,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { CreateRafflePage } from './pages/CreateRafflePage';
 import { TasksPage } from './pages/TasksPage';
 import { AdminPage } from './pages/AdminPage';
+import { LoginPage } from './pages/LoginPage';
 import AdminPanel from './AdminPanel';
 import AdminDashboard from './pages/admin/dashboard.jsx';
 import AdminGuard from './components/admin/AdminGuard.jsx';
@@ -34,6 +35,7 @@ function App() {
               <main className="pt-24 pb-32 md:pb-0">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<LoginPage />} />
                   <Route path="/tasks" element={<TasksPage />} />
                   <Route path="/raffles" element={<RafflesPage />} />
                   <Route path="/leaderboard" element={<LeaderboardPage />} />
