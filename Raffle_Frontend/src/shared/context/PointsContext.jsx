@@ -43,11 +43,11 @@ export function PointsProvider({ children }) {
     // Check admin status when wallet connects
     useEffect(() => {
         if (isConnected && address) {
-            checkAdminStatus(address);
+            checkAdminStatus(address, fid);
         } else if (!isConnected) {
             setIsAdmin(false);
         }
-    }, [isConnected, address]);
+    }, [isConnected, address, fid]);
 
     useEffect(() => {
         const loadThresholds = async () => {
@@ -120,7 +120,7 @@ export function PointsProvider({ children }) {
     };
 
     // Admin verification function
-    const checkAdminStatus = async (walletAddress) => {
+    const checkAdminStatus = async (walletAddress, userFid) => {
         if (!walletAddress) return;
 
         // Local Check for immediate UI response
@@ -150,7 +150,10 @@ export function PointsProvider({ children }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ address: walletAddress }),
+                body: JSON.stringify({
+                    address: walletAddress,
+                    fid: userFid
+                }),
             });
 
             if (response.ok) {
