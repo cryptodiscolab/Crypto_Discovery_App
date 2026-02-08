@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { useParams, Link } from 'react-router-dom';
 import {
