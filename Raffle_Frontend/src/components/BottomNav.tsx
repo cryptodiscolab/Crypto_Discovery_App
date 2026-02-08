@@ -86,21 +86,28 @@ export function BottomNav() {
                                 <div className="absolute inset-0 flex items-center justify-center z-[9999] pointer-events-none">
                                     {isConnecting || isReconnecting ? (
                                         <Loader2 className="!w-7 !h-7 !text-white animate-spin !opacity-100 !visible" />
-                                    ) : isConnected ? (
-                                        <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible" />
                                     ) : (
                                         <div className="relative min-w-[44px] min-h-[44px] flex items-center justify-center">
-                                            <Wallet className="!w-7 !h-7 !text-white !opacity-100 !visible !block z-[9999]" />
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    window.location.reload();
-                                                }}
-                                                className="absolute -top-1 -right-4 p-1 bg-indigo-500 rounded-full hover:rotate-180 transition-transform duration-500 shadow-lg pointer-events-auto"
-                                                title="Refresh Connection"
-                                            >
-                                                <RefreshCw className="w-2 h-2 text-white" />
-                                            </button>
+                                            {/* Baseline Wallet Icon - Forced Indigo Fallback */}
+                                            <Wallet className="!w-7 !h-7 !text-indigo-400 !opacity-100 !visible !block z-[9998] absolute" />
+
+                                            {/* Avatar renders on top ONLY if connected and data exists */}
+                                            {isConnected && (
+                                                <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible z-[9999] relative" />
+                                            )}
+
+                                            {!isConnected && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        window.location.reload();
+                                                    }}
+                                                    className="absolute -top-1 -right-4 p-1 bg-indigo-500 rounded-full hover:rotate-180 transition-transform duration-500 shadow-lg pointer-events-auto z-[10000]"
+                                                    title="Refresh Connection"
+                                                >
+                                                    <RefreshCw className="w-2 h-2 text-white" />
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
