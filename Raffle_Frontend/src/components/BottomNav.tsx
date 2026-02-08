@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, LayoutDashboard } from 'lucide-react';
+import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, LayoutDashboard, Loader2 } from 'lucide-react';
 import {
     ConnectWallet,
     Wallet as OnchainWallet,
@@ -14,7 +14,7 @@ const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
 export function BottomNav() {
-    const { address, isConnected } = useAccount();
+    const { address, isConnected, isConnecting, isReconnecting } = useAccount();
     const location = useLocation();
     // const location = useLocation(); // Hook removed as it was unused
 
@@ -83,7 +83,9 @@ export function BottomNav() {
                             <ConnectWallet
                                 className="!bg-white/10 !rounded-full !min-w-[44px] !min-h-[44px] !p-0 flex items-center justify-center !transition-all !opacity-100 !visible"
                             >
-                                {isConnected ? (
+                                {isConnecting || isReconnecting ? (
+                                    <Loader2 className="!w-7 !h-7 !text-white animate-spin !opacity-100 !visible" />
+                                ) : isConnected ? (
                                     <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible" />
                                 ) : (
                                     <Wallet className="!w-7 !h-7 !text-white !block !opacity-100 !visible z-[9999]" />
