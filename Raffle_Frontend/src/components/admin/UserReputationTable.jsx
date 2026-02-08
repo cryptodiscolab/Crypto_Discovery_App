@@ -8,7 +8,8 @@ import {
     RefreshCw,
     ExternalLink,
     DollarSign,
-    Database
+    Database,
+    CheckCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -33,40 +34,63 @@ const StaticSkeletonCard = () => (
  * Optimized for: A-series (iOS) & Snapdragon (Android).
  */
 const MobileUserCard = memo(({ user, sybilDetected }) => {
+    // Calculate Trust Score Percentage (Assuming 100 is max for visual)
+    const trustPercent = Math.min(user.internal_trust_score || 0, 100);
+
     return (
         <div
-            className="p-4 border-b border-white/5 bg-[#0a0a0c] flex items-center justify-between gap-3"
+            className="p-4 border-b border-white/5 bg-[#0a0a0c] flex flex-col gap-3"
             style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         >
-            <div className="flex items-center gap-3 min-w-0">
-                <div className="h-9 w-9 bg-[#161618] rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/5">
-                    {user.pfp_url ? (
-                        <img src={user.pfp_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                        <span className="text-indigo-500 font-black text-[10px]">FC</span>
-                    )}
-                </div>
-                <div className="min-w-0">
-                    <p className="font-black text-white text-[11px] truncate uppercase tracking-tight">@{user.username || 'anon'}</p>
-                    <div className="flex items-center gap-1.5 leading-none mt-0.5">
-                        <span className="text-[9px] text-slate-600 font-mono">ID: {user.fid}</span>
-                        {sybilDetected && <AlertTriangle className="w-2.5 h-2.5 text-red-600" />}
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 bg-[#161618] rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/5">
+                        {user.pfp_url ? (
+                            <img src={user.pfp_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        ) : (
+                            <span className="text-indigo-500 font-black text-[10px]">FC</span>
+                        )}
                     </div>
+                    <div className="min-w-0">
+                        <p className="font-black text-white text-[13px] truncate uppercase tracking-tight">@{user.username || 'anon'}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                            {sybilDetected ? (
+                                <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[9px] font-bold text-red-500 uppercase tracking-widest flex items-center gap-1">
+                                    <AlertTriangle className="w-2.5 h-2.5" /> Sybil
+                                </span>
+                            ) : (
+                                <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[9px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-1">
+                                    <CheckCircle className="w-2.5 h-2.5" /> Verified
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-1">
+                    <a
+                        href={`https://warpcast.com/${user.username}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2 bg-[#161618] rounded-lg border border-white/5 active:scale-95 transition-transform"
+                    >
+                        <ExternalLink className="w-4 h-4 text-indigo-500" />
+                    </a>
                 </div>
             </div>
 
-            <div className="flex flex-col items-end gap-1.5">
-                <div className="bg-[#161618] px-2.5 py-1 rounded-lg border border-white/5">
-                    <span className="text-[10px] font-black text-indigo-400">{user.internal_trust_score || 0}</span>
+            {/* Trust Score Progress Bar */}
+            <div className="space-y-1">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-60">
+                    <span className="text-slate-500">Trust Score</span>
+                    <span className="text-white">{user.internal_trust_score || 0}</span>
                 </div>
-                <a
-                    href={`https://warpcast.com/${user.username}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-1"
-                >
-                    <ExternalLink className="w-3 h-3 text-slate-700 hover:text-indigo-500 transition-colors" />
-                </a>
+                <div className="h-1.5 w-full bg-[#161618] rounded-full overflow-hidden">
+                    <div
+                        className={`h-full rounded-full ${sybilDetected ? 'bg-red-500' : 'bg-indigo-500'}`}
+                        style={{ width: `${trustPercent}%` }}
+                    />
+                </div>
             </div>
         </div>
     );
