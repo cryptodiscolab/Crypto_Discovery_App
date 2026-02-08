@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
-import { ShieldCheck, Lock, ArrowRight, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ShieldCheck, Lock, ArrowRight, AlertTriangle, RefreshCw, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 /**
