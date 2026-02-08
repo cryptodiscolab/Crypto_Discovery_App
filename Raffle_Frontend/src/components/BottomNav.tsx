@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, LayoutDashboard, Loader2 } from 'lucide-react';
+import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, LayoutDashboard, Loader2, RefreshCw } from 'lucide-react';
 import {
     ConnectWallet,
     Wallet as OnchainWallet,
@@ -89,7 +89,19 @@ export function BottomNav() {
                                     ) : isConnected ? (
                                         <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible" />
                                     ) : (
-                                        <Wallet className="!w-7 !h-7 !text-white !block !opacity-100 !visible" />
+                                        <div className="relative">
+                                            <Wallet className="!w-7 !h-7 !text-white !block !opacity-100 !visible" />
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.location.reload();
+                                                }}
+                                                className="absolute -top-1 -right-4 p-1 bg-indigo-500 rounded-full hover:rotate-180 transition-transform duration-500 shadow-lg pointer-events-auto"
+                                                title="Refresh Connection"
+                                            >
+                                                <RefreshCw className="w-2 h-2 text-white" />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </ConnectWallet>
