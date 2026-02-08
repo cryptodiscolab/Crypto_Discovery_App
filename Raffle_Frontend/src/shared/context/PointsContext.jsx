@@ -43,11 +43,12 @@ export function PointsProvider({ children }) {
     // Check admin status when wallet connects
     useEffect(() => {
         if (isConnected && address) {
-            checkAdminStatus(address, fid);
+            // Priority 1: Check if address is available before calling API
+            checkAdminStatus(address);
         } else if (!isConnected) {
             setIsAdmin(false);
         }
-    }, [isConnected, address, fid]);
+    }, [isConnected, address]);
 
     useEffect(() => {
         const loadThresholds = async () => {
@@ -120,51 +121,42 @@ export function PointsProvider({ children }) {
     };
 
     // Admin verification function
-    const checkAdminStatus = async (walletAddress, userFid) => {
+    const checkAdminStatus = async (walletAddress) => {
         if (!walletAddress) return;
 
-        // Local Check for immediate UI response
+        // Local Check for immediate UI response (Fast Path)
         const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
         const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
-        const envFids = import.meta.env.VITE_ADMIN_FIDS || '';
 
         const adminList = `${envAdmin},${envWallets}`
             .split(',')
             .map(a => a.trim().toLowerCase())
             .filter(a => a.startsWith('0x'));
 
-        const adminFids = envFids.split(',')
-            .map(f => f.trim())
-            .filter(f => f !== '')
-            .map(f => parseInt(f))
-            .filter(f => !isNaN(f));
-
-        if (walletAddress && adminList.includes(walletAddress.toLowerCase())) {
+        // If local check confirms, set it true immediately
+        if (adminList.includes(walletAddress.toLowerCase())) {
             setIsAdmin(true);
-            // Still call API to confirm, but we've granted early access
         }
 
         try {
+            // Perform backend double-verification
             const response = await fetch('/api/admin/check', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    address: walletAddress,
-                    fid: userFid
-                }),
+                body: JSON.stringify({ address: walletAddress }),
             });
 
             if (response.ok) {
                 const data = await response.json();
                 setIsAdmin(data.isAdmin || false);
-            } else if (!isAdmin) { // Only set false if local check didn't already grant access
-                setIsAdmin(false);
+            } else {
+                console.warn('[AdminCheck] Backend verification failed with status:', response.status);
+                // We keep the local state if it was already true as a fallback
             }
         } catch (error) {
-            console.error('Admin check failed:', error);
-            if (!isAdmin) setIsAdmin(false);
+            console.error('[AdminCheck] Error:', error);
         }
     };
 

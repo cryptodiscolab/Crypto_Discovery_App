@@ -18,16 +18,18 @@ export function ProfilePage() {
   const { poolSettings, ethPrice, isLoading: loadingCMS } = useCMS();
 
   // State to handle the transition phase where isConnected might be true but data isn't ready
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(isConnected);
 
   // Re-sync logic: force refetch when wallet connects
   useEffect(() => {
     if (isConnected) {
       setIsSyncing(true);
       refetch?.().finally(() => {
-        // Add a small artificial delay to ensure smooth UI transition
-        setTimeout(() => setIsSyncing(false), 800);
+        // Longer delay to ensure on-chain data and state updates are processed
+        setTimeout(() => setIsSyncing(false), 1200);
       });
+    } else {
+      setIsSyncing(false);
     }
   }, [isConnected, refetch]);
 

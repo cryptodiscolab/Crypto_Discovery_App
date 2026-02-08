@@ -6,21 +6,24 @@ export default async function handler(req, res) {
 
     try {
         const { address, fid } = req.body;
+        const userFid = fid ? parseInt(fid) : null;
 
-        if (!address || !fid) {
+        if (!address) {
             return res.status(400).json({
-                error: 'Both Address and FID are required for admin double-check'
+                error: 'Wallet Address is required'
             });
         }
 
         // PROTOKOL KEAMANAN KETAT (Double Check)
         // Wajib FID 1477344 DAN Wallet 0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B
         const REQUIRED_FID = 1477344;
-        const REQUIRED_WALLET = '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b';
+        const REQUIRED_WALLET = '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b';
 
-        const isFidMatch = parseInt(fid) === REQUIRED_FID;
+        const isFidMatch = userFid === REQUIRED_FID;
         const isWalletMatch = address.toLowerCase() === REQUIRED_WALLET;
 
+        // Double check passes ONLY if BOTH match. 
+        // If not on Farcaster (no FID), it will fail the double check safely.
         const isAdmin = isFidMatch && isWalletMatch;
 
         if (!isAdmin) {
