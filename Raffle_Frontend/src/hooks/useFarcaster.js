@@ -98,7 +98,9 @@ export const useFarcaster = () => {
                 if (response.status === 429) {
                     throw new Error(result.error);
                 }
-                throw new Error(result.error || 'Identity Sync Failed');
+                // Critical: Show Backend Details
+                const errorMessage = result.details || result.error || 'Identity Sync Failed';
+                throw new Error(errorMessage);
             }
 
             const finalProfile = result.profile;
