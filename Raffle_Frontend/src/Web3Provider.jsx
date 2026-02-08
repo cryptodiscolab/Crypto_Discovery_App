@@ -19,14 +19,15 @@ const config = createConfig({
   connectors: [
     coinbaseWallet({
       appName: 'Crypto Disco',
-      preference: 'all',
+      preference: 'all', // Ensure MetaMask/Rainbow users can login
     }),
   ],
   transports: {
-    // 3. Robust RPC Fallback (Alchemy -> Public)
+    // 3. Triple Fallback RPC (Alchemy -> Base Public -> MeowRPC)
     [base.id]: fallback([
       http(import.meta.env.VITE_BASE_RPC_URL || (import.meta.env.VITE_ALCHEMY_API_KEY ? `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}` : null)),
       http('https://mainnet.base.org'),
+      http('https://base.meowrpc.com'),
     ]),
     [baseSepolia.id]: fallback([
       http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || (import.meta.env.VITE_ALCHEMY_API_KEY ? `https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}` : null)),
@@ -76,6 +77,7 @@ export function Web3Provider({ children }) {
         },
         wallet: {
           display: 'handle',
+          isStandalone: false, // Ensure app opens in wallet browser on mobile
         },
         appDomain: 'crypto-discovery-app.vercel.app'
       }}

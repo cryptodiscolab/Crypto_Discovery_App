@@ -89,8 +89,8 @@ export function BottomNav() {
                                     ) : isConnected ? (
                                         <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible" />
                                     ) : (
-                                        <div className="relative">
-                                            <Wallet className="!w-7 !h-7 !text-white !block !opacity-100 !visible" />
+                                        <div className="relative min-w-[44px] min-h-[44px] flex items-center justify-center">
+                                            <Wallet className="!w-7 !h-7 !text-white !opacity-100 !visible !block z-[9999]" />
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
