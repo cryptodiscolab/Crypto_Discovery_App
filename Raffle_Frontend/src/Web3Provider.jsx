@@ -19,8 +19,7 @@ const config = createConfig({
   connectors: [
     coinbaseWallet({
       appName: 'Crypto Disco',
-      preference: 'smartWalletOnly',
-      isStandalone: true,
+      preference: 'all',
     }),
   ],
   transports: {
