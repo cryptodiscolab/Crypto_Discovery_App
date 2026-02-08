@@ -87,7 +87,7 @@ export function BottomNav() {
                                 {isConnected ? (
                                     <Avatar address={address} className="h-8 w-8 !flex" />
                                 ) : (
-                                    <Wallet className="w-6 h-6 text-white" />
+                                    <Wallet className="w-6 h-6 text-white z-50" />
                                 )}
                             </ConnectWallet>
                         ) : null}

@@ -53,6 +53,17 @@ export function Web3Provider({ children }) {
     <OnchainKitProvider
       apiKey={onchainKitApiKey}
       chain={base}
+      config={{
+        appearance: {
+          name: 'Crypto Disco',
+          logo: 'https://crypto-discovery-app.vercel.app/favicon.ico',
+          mode: 'dark',
+        },
+        wallet: {
+          display: 'handle',
+        },
+        appDomain: 'crypto-discovery-app.vercel.app'
+      }}
     >
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
