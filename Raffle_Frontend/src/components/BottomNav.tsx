@@ -77,7 +77,7 @@ export function BottomNav() {
                 )}
 
                 {/* Wallet Section (Icon Only - No Text) */}
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center gap-1 relative z-[9999]">
                     <OnchainWallet>
                         {projectId ? (
                             <ConnectWallet
@@ -87,7 +87,7 @@ export function BottomNav() {
                                 {isConnected ? (
                                     <Avatar address={address} className="h-8 w-8 !flex" />
                                 ) : (
-                                    <Wallet className="w-6 h-6 text-white z-50" />
+                                    <Wallet className="!w-6 !h-6 !text-white !opacity-100 !visible !block z-[9999]" />
                                 )}
                             </ConnectWallet>
                         ) : null}
