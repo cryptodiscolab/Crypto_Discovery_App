@@ -81,6 +81,7 @@ export function BottomNav() {
                     <OnchainWallet>
                         {projectId ? (
                             <ConnectWallet
+                                text=""
                                 className="!bg-white/10 !rounded-full !min-w-[44px] !min-h-[44px] !p-0 flex items-center justify-center !transition-all !opacity-100 !visible"
                             >
                                 {isConnecting || isReconnecting ? (

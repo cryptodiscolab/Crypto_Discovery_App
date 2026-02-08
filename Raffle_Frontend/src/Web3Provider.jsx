@@ -23,9 +23,9 @@ const config = createConfig({
     }),
   ],
   transports: {
-    // 3. RPC Fix with Alchemy Fallback
-    [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY || 'public'}`),
-    [baseSepolia.id]: http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || `https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY || 'public'}`),
+    // 3. RPC Fix with Reliable Fallback
+    [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || (import.meta.env.VITE_ALCHEMY_API_KEY ? `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}` : 'https://mainnet.base.org')),
+    [baseSepolia.id]: http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || (import.meta.env.VITE_ALCHEMY_API_KEY ? `https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}` : 'https://sepolia.base.org')),
   },
   ssr: false,
 });
