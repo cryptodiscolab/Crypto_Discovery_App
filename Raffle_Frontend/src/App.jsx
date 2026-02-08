@@ -36,6 +36,7 @@ function App() {
                 <Route path="/raffles" element={<RafflesPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/profile/:userAddress" element={<ProfilePage />} />
                 <Route path="/create" element={<CreateRafflePage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin-sbt" element={<AdminPanel />} />
