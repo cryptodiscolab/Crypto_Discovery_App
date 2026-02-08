@@ -14,6 +14,8 @@ import { CreateRafflePage } from './pages/CreateRafflePage';
 import { TasksPage } from './pages/TasksPage';
 import { AdminPage } from './pages/AdminPage';
 import AdminPanel from './AdminPanel';
+import AdminDashboard from './pages/admin/dashboard';
+import AdminGuard from './components/admin/AdminGuard';
 
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
@@ -37,6 +39,14 @@ function App() {
                 <Route path="/create" element={<CreateRafflePage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin-sbt" element={<AdminPanel />} />
+                <Route
+                  path="/admin/reputation"
+                  element={
+                    <AdminGuard>
+                      <AdminDashboard />
+                    </AdminGuard>
+                  }
+                />
               </Routes>
             </main>
 
