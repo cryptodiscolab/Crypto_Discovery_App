@@ -81,16 +81,17 @@ export function BottomNav() {
                     <OnchainWallet>
                         {projectId ? (
                             <ConnectWallet
-                                text=""
-                                className="!bg-white/10 !rounded-full !min-w-[44px] !min-h-[44px] !p-0 flex items-center justify-center !transition-all !opacity-100 !visible"
+                                className="!bg-white/10 !rounded-full !min-w-[44px] !min-h-[44px] !p-0 flex items-center justify-center !transition-all !opacity-100 !visible relative overflow-hidden"
                             >
-                                {isConnecting || isReconnecting ? (
-                                    <Loader2 className="!w-7 !h-7 !text-white animate-spin !opacity-100 !visible" />
-                                ) : isConnected ? (
-                                    <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible" />
-                                ) : (
-                                    <Wallet className="!w-7 !h-7 !text-white !block !opacity-100 !visible z-[9999]" />
-                                )}
+                                <div className="absolute inset-0 flex items-center justify-center z-[9999] pointer-events-none">
+                                    {isConnecting || isReconnecting ? (
+                                        <Loader2 className="!w-7 !h-7 !text-white animate-spin !opacity-100 !visible" />
+                                    ) : isConnected ? (
+                                        <Avatar address={address} className="h-8 w-8 !flex !opacity-100 !visible" />
+                                    ) : (
+                                        <Wallet className="!w-7 !h-7 !text-white !block !opacity-100 !visible" />
+                                    )}
+                                </div>
                             </ConnectWallet>
                         ) : null}
                         <WalletDropdown className="bottom-full mb-4">

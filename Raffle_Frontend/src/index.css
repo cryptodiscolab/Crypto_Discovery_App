@@ -49,4 +49,18 @@
     min-width: 44px !important;
     min-height: 44px !important;
     background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 9999px !important;
+    padding: 0 !important;
+}
+
+.ock-connect-wallet * {
+    color: transparent !important;
+}
+
+.ock-connect-wallet .animate-spin,
+.ock-connect-wallet svg,
+.ock-connect-wallet img {
+    color: white !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
