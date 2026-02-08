@@ -14,8 +14,8 @@ import { CreateRafflePage } from './pages/CreateRafflePage';
 import { TasksPage } from './pages/TasksPage';
 import { AdminPage } from './pages/AdminPage';
 import AdminPanel from './AdminPanel';
-import AdminDashboard from './pages/admin/dashboard';
-import AdminGuard from './components/admin/AdminGuard';
+import AdminDashboard from './pages/admin/dashboard.jsx';
+import AdminGuard from './components/admin/AdminGuard.jsx';
 
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
