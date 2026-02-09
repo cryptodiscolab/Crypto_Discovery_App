@@ -23,6 +23,7 @@ import {
     History
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { cleanWallet } from './utils/cleanWallet';
 
 /**
  * Objective 3: Admin Panel Component
@@ -43,7 +44,7 @@ export default function AdminPanel() {
     const [isAuthorized, setIsAuthorized] = useState(null);
 
     // 0. Security Gate: Hybrid Double Check Protocol
-    const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+    const MASTER_ADMIN = cleanWallet("0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B");
 
     // Toggle ini disiapkan agar jika Frame sudah aktif, bisa dipaksa logic AND (Wallet + FID)
     const STRICT_FRAME_CHECK = false;
@@ -51,7 +52,7 @@ export default function AdminPanel() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const currentWallet = address?.toLowerCase();
+                const currentWallet = cleanWallet(address);
 
                 // Master Admin Bypass - Immediate Access
                 if (currentWallet === MASTER_ADMIN) {
@@ -67,7 +68,7 @@ export default function AdminPanel() {
                 const walletsEnv = import.meta.env.VITE_ADMIN_WALLETS || '';
                 const fidsEnv = import.meta.env.VITE_ADMIN_FIDS || '';
 
-                const adminWallets = walletsEnv.split(',').map(w => w.trim().toLowerCase()).filter(w => w !== '');
+                const adminWallets = walletsEnv.split(',').map(w => cleanWallet(w)).filter(w => w !== '');
                 const adminFids = fidsEnv.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f));
 
                 let userFid = null;
@@ -173,8 +174,8 @@ export default function AdminPanel() {
             setSbtThresholds(thresholdsRes.data);
             if (!issuedRes.error) setIssuedSubnames(issuedRes.data);
             if (!usersRes.error) {
-                const issuedWallets = new Set((issuedRes.data || []).map(s => s.wallet_address.toLowerCase()));
-                setEligibleUsers(usersRes.data.filter(u => u.wallet_address && !issuedWallets.has(u.wallet_address.toLowerCase())));
+                const issuedWallets = new Set((issuedRes.data || []).map(s => cleanWallet(s.wallet_address)));
+                setEligibleUsers(usersRes.data.filter(u => u.wallet_address && !issuedWallets.has(cleanWallet(u.wallet_address))));
             }
             if (!logsRes.error) setAuditLogs(logsRes.data);
 

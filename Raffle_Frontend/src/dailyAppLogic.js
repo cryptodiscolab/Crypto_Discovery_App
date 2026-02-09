@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { cleanWallet } from './utils/cleanWallet';
 
 // ==========================================
 // 1. INISIALISASI (Koneksi ke Supabase)
@@ -234,7 +235,7 @@ export async function getUserStatsByFid(fid) {
  */
 export async function ensureUserProfile(walletAddress) {
     if (!walletAddress) return null;
-    const normalizedAddress = walletAddress.trim().toLowerCase();
+    const normalizedAddress = cleanWallet(walletAddress);
 
     try {
         // 1. Semantic Upsert (Create or Update)
@@ -242,13 +243,13 @@ export async function ensureUserProfile(walletAddress) {
         const { data, error } = await supabase
             .from('user_profiles')
             .upsert(
-                { 
+                {
                     wallet_address: normalizedAddress,
                     last_login_at: new Date().toISOString()
                 },
-                { 
+                {
                     onConflict: 'wallet_address',
-                    ignoreDuplicates: false 
+                    ignoreDuplicates: false
                 }
             )
             .select()

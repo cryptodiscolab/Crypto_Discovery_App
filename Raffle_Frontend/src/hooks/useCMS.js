@@ -3,6 +3,7 @@ import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { CMS_CONTRACT_ABI } from '../shared/constants/abis';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
+import { cleanWallet } from '../utils/cleanWallet';
 
 const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS;
 const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -112,13 +113,11 @@ export function useCMS() {
     }, [address, envAdmin, envWallets]);
 
     // Helper: Normalize wallet address (Safe Lowercase)
-    const normalizeWallet = (w) => w?.toLowerCase?.() ?? null;
-
     // Database Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);
     useEffect(() => {
         const checkDbAdmin = async () => {
-            const wallet = normalizeWallet(address);
+            const wallet = cleanWallet(address);
             if (!wallet) {
                 setIsDbAdmin(false);
                 return;

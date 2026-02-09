@@ -17,7 +17,8 @@ export default async function handler(req, res) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const cleanWallet = (w) => w ? w.trim().toLowerCase() : null;
+    // Helper: Normalize wallet address (Safe Lowercase)
+    const cleanWallet = (w) => w?.trim?.().toLowerCase() ?? null;
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });

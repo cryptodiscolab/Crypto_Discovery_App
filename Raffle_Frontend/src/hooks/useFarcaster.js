@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { cleanWallet } from '../utils/cleanWallet';
 
 /**
  * Senior Architecture: Transparent Identity Management Hook.
@@ -25,7 +26,7 @@ export const useFarcaster = () => {
     /**
      * Helper: Safely normalize wallet address
      */
-    const cleanWallet = (w) => w ? w.trim().toLowerCase() : null;
+    // const cleanWallet = (w) => w ? w.trim().toLowerCase() : null; // Removed in favor of shared helper
 
     /**
      * isEligible: Transparent anti-bot filter (OpenRank aware).
