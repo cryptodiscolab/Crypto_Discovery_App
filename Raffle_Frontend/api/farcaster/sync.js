@@ -35,10 +35,11 @@ export default async function handler(req, res) {
     const { address, fid } = req.body;
 
     // Validation: Require at least one identifier
+    // Validation: Require at least one identifier
     if (!address && !fid) {
-        return res.status(400).json({
-            error: 'Missing identifier',
-            details: 'Provide either wallet address or FID'
+        return res.status(200).json({
+            skipped: true,
+            message: 'No identifier provided',
         });
     }
 
@@ -153,7 +154,7 @@ export default async function handler(req, res) {
 
         // 3. SECURE UPSERT (Bypass RLS via Service Key)
         const profileUpdate = {
-            wallet_address: cleanWallet,
+            wallet_address: finalWalletAddress,
             fid: userData.fid,
             farcaster_username: clean(userData.username),
             display_name: clean(userData.display_name),
@@ -165,7 +166,12 @@ export default async function handler(req, res) {
             is_active: userData.active_status === 'active',
             verified_addresses: userData.verifications || [], // Stored as JSONB
             rank_score: userData.profile_score || userData.rank || 0.0,
-            last_sync: new Date().toISOString()
+            last_sync: new Date().toISOString(),
+            // Ensure is_admin is preserved or defaulted safely if columns exist, 
+            // but upsert usually only updates specified columns. 
+            // We don't want to overwrite is_admin to null/false if it's not in this object
+            // unless we explicitly want to key off something. 
+            // For now, let's keep it safe.
         };
 
         // SYBIL DEFENSE: The database unique index on 'fid' will handle 

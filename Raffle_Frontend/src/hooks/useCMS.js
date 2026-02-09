@@ -111,11 +111,15 @@ export function useCMS() {
         return adminList.includes(address.toLowerCase());
     }, [address, envAdmin, envWallets]);
 
+    // Helper: Normalize wallet address (Safe Lowercase)
+    const normalizeWallet = (w) => w?.toLowerCase?.() ?? null;
+
     // Database Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);
     useEffect(() => {
         const checkDbAdmin = async () => {
-            if (!address) {
+            const wallet = normalizeWallet(address);
+            if (!wallet) {
                 setIsDbAdmin(false);
                 return;
             }
@@ -123,8 +127,8 @@ export function useCMS() {
                 const { data } = await supabase
                     .from('user_profiles')
                     .select('is_admin')
-                    .eq('wallet_address', address.toLowerCase())
-                    .single();
+                    .eq('wallet_address', wallet)
+                    .maybeSingle();
 
                 if (data && data.is_admin) {
                     setIsDbAdmin(true);
