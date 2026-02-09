@@ -119,3 +119,5 @@ dist
 
 # Inteillij
 .idea
+.vercel
+.env*.local

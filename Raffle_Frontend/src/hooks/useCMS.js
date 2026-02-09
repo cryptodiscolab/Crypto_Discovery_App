@@ -124,17 +124,23 @@ export function useCMS() {
                 return;
             }
             try {
+                // Simplified & Safe Admin Check
                 const { data } = await supabase
                     .from('user_profiles')
                     .select('is_admin')
                     .eq('wallet_address', wallet)
-                    .maybeSingle();
+                    .maybeSingle(); // Returns null instead of error if not found
 
-                if (data && data.is_admin) {
-                    setIsDbAdmin(true);
+                // Safe boolean cast (handle null/undefined/false)
+                const isAdmin = Boolean(data?.is_admin);
+                setIsDbAdmin(isAdmin);
+
+                if (isAdmin) {
+                    console.log('[useCMS] DB Admin confirmed:', wallet);
                 }
             } catch (e) {
-                console.warn('[useCMS] DB Admin check failed', e);
+                console.warn('[useCMS] DB Admin check failed (Non-blocking):', e.message);
+                setIsDbAdmin(false);
             }
         };
         checkDbAdmin();
