@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy } from 'lucide-react';
+import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap } from 'lucide-react';
 import AdminGuard from '../../components/admin/AdminGuard';
 
 /**
@@ -10,9 +10,10 @@ import AdminGuard from '../../components/admin/AdminGuard';
  */
 const UserReputationTable = lazy(() => import('../../components/admin/UserReputationTable'));
 const SBTRewardsDashboard = lazy(() => import('../../components/SBTRewardsDashboard').then(module => ({ default: module.SBTRewardsDashboard })));
+const TaskManager = lazy(() => import('../../components/admin/TaskManager').then(module => ({ default: module.TaskManager })));
 
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt'
+    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt' | 'tasks'
 
     return (
         <AdminGuard>
@@ -51,8 +52,8 @@ const AdminDashboard = () => {
                     <button
                         onClick={() => setActiveTab('reputation')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'reputation'
-                                ? 'bg-[#0a0a0c] text-white shadow-lg border border-white/5'
-                                : 'text-slate-600 hover:text-slate-400'
+                            ? 'bg-[#0a0a0c] text-white shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
                             }`}
                     >
                         <LayoutList className="w-3.5 h-3.5" />
@@ -61,12 +62,22 @@ const AdminDashboard = () => {
                     <button
                         onClick={() => setActiveTab('sbt')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'sbt'
-                                ? 'bg-[#0a0a0c] text-indigo-400 shadow-lg border border-white/5'
-                                : 'text-slate-600 hover:text-slate-400'
+                            ? 'bg-[#0a0a0c] text-indigo-400 shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
                             }`}
                     >
                         <Trophy className="w-3.5 h-3.5" />
-                        SBT Rewards
+                        SBT
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('tasks')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'tasks'
+                            ? 'bg-[#0a0a0c] text-yellow-500 shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
+                            }`}
+                    >
+                        <Zap className="w-3.5 h-3.5" />
+                        Tasks
                     </button>
                 </div>
 
@@ -79,8 +90,10 @@ const AdminDashboard = () => {
                 }>
                     {activeTab === 'reputation' ? (
                         <UserReputationTable />
-                    ) : (
+                    ) : activeTab === 'sbt' ? (
                         <SBTRewardsDashboard />
+                    ) : (
+                        <TaskManager />
                     )}
                 </Suspense>
 

@@ -62,16 +62,16 @@ export function BottomNav() {
                     </NavLink>
                 ))}
 
-                {/* Admin Menu (Only if connected and MASTER_ADMIN) */}
-                {isAdmin && isConnected && address?.toLowerCase() === MASTER_ADMIN && (
+                {/* Admin Hub Link (Visible to all admins) */}
+                {isAdmin && (
                     <NavLink
-                        to="/admin-sbt"
+                        to="/admin"
                         className={({ isActive }) =>
-                            `flex flex-col items-center gap-1 transition-all duration-300 ${isActive ? 'text-yellow-400 scale-110' : 'text-yellow-400/50 hover:text-yellow-400'
+                            `flex flex-col items-center gap-1 transition-all duration-300 ${isActive ? 'text-indigo-400 scale-110' : 'text-slate-500 hover:text-white'
                             }`
                         }
                     >
-                        <ShieldAlert className="w-5 h-5" />
+                        <ShieldAlert className="w-5 h-5 text-indigo-500" />
                         <span className="text-[10px] font-bold uppercase tracking-tighter">Admin</span>
                     </NavLink>
                 )}

@@ -42,16 +42,16 @@ function App() {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/profile/:userAddress" element={<ProfilePage />} />
                   <Route path="/create" element={<CreateRafflePage />} />
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/admin-sbt" element={<AdminPanel />} />
                   <Route
-                    path="/admin/reputation"
+                    path="/admin"
                     element={
                       <AdminGuard>
                         <AdminDashboard />
                       </AdminGuard>
                     }
                   />
+                  <Route path="/admin/legacy" element={<AdminPage />} />
+                  <Route path="/admin-sbt" element={<AdminPanel />} />
                 </Routes>
               </main>
             </SignatureGuard>

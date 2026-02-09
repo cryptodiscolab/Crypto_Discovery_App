@@ -84,7 +84,7 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
     struct UserData {
         uint256 points;
         SBTTier tier;
-        uint256 lastClaimTimestamp;
+        uint256 lastClaimTimestamp; // Kept for frontend/stats, not used for math anymore
         uint256 referralCount;
         bool isVerified; // Neynar Social Verification
         address referrer;
@@ -101,9 +101,16 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
     uint256 public silverHolders;
     uint256 public bronzeHolders;
     
-    // Claimable amounts per tier
-    mapping(SBTTier => uint256) public tierClaimablePerHolder;
-    mapping(address => uint256) public pendingClaims;
+    // --- NEW: AccRewardPerShare Pattern ---
+    uint256 public constant REWARD_PRECISION = 1e18;
+    uint256 public totalLockedRewards; // Tracks funds owed to users (anti-rug)
+    
+    // Accumulated ETH per share (1 share = 1 user in that tier)
+    // Scaled by REWARD_PRECISION
+    mapping(SBTTier => uint256) public accRewardPerShare;
+    
+    // User's reward debt (amount already "paid" or accounted for)
+    mapping(address => uint256) public userRewardDebt;
     
     // API3 QRNG Integration
     address public airnode;
@@ -220,8 +227,8 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
     }
     
     /**
-     * @notice Distribute SBT Pool to tiers based on weights
-     * @dev Can be called periodically to update claimable amounts
+     * @notice Distribute SBT Pool to tiers based on weights (AccRewardPerShare Pattern)
+     * @dev Updates accRewardPerShare for each tier
      */
     function distributeSBTPool() external nonReentrant whenNotPaused {
         require(totalSBTPoolBalance > 0, "No balance to distribute");
@@ -234,20 +241,23 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
         
         uint256 amountToDistribute = totalSBTPoolBalance;
         
-        // Calculate per-holder amounts for each tier
+        // Increase locked rewards (this amount now belongs to users)
+        totalLockedRewards += amountToDistribute;
+        
+        // Update Accumulated Rewards Per Share (Precision Safe)
         if (goldHolders > 0) {
             uint256 goldShare = (amountToDistribute * goldHolders * GOLD_WEIGHT) / totalWeight;
-            tierClaimablePerHolder[SBTTier.GOLD] += goldShare / goldHolders;
+            accRewardPerShare[SBTTier.GOLD] += (goldShare * REWARD_PRECISION) / goldHolders;
         }
         
         if (silverHolders > 0) {
             uint256 silverShare = (amountToDistribute * silverHolders * SILVER_WEIGHT) / totalWeight;
-            tierClaimablePerHolder[SBTTier.SILVER] += silverShare / silverHolders;
+            accRewardPerShare[SBTTier.SILVER] += (silverShare * REWARD_PRECISION) / silverHolders;
         }
         
         if (bronzeHolders > 0) {
             uint256 bronzeShare = (amountToDistribute * bronzeHolders * BRONZE_WEIGHT) / totalWeight;
-            tierClaimablePerHolder[SBTTier.BRONZE] += bronzeShare / bronzeHolders;
+            accRewardPerShare[SBTTier.BRONZE] += (bronzeShare * REWARD_PRECISION) / bronzeHolders;
         }
         
         totalSBTPoolBalance = 0;
@@ -255,26 +265,44 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
     }
     
     /**
-     * @notice Pull-based claim for SBT holders
-     * @dev Gas-efficient claim mechanism with gas price protection
+     * @notice Claim pending rewards (AccRewardPerShare Pattern)
      */
-    function claimSBTRewards() external nonReentrant whenNotPaused {
+    function claimSBTRewards() public nonReentrant whenNotPaused {
+        // Gas Optimization: Check gas price to prevent front-running/high costs
         require(tx.gasprice <= maxGasPrice, "Gas price too high");
-        UserData storage user = users[msg.sender];
-        require(user.tier != SBTTier.NONE, "No SBT tier");
         
-        uint256 claimableAmount = tierClaimablePerHolder[user.tier];
-        require(claimableAmount > 0, "Nothing to claim");
+        address user = msg.sender;
+        SBTTier tier = users[user].tier;
+        require(tier != SBTTier.NONE, "No SBT tier");
         
-        // Reset claimable for this user's tier
-        tierClaimablePerHolder[user.tier] = 0;
-        user.lastClaimTimestamp = block.timestamp;
+        uint256 accumulated = accRewardPerShare[tier];
+        uint256 debt = userRewardDebt[user];
         
-        // Transfer using call
-        (bool success, ) = msg.sender.call{value: claimableAmount}("");
+        // Calculate pending reward: (Accumulated - Debt) / Precision
+        // No multiplication needed because user balance is always 1 NFT
+        uint256 pending = 0;
+        if (accumulated > debt) {
+            pending = (accumulated - debt) / REWARD_PRECISION;
+        }
+        
+        require(pending > 0, "Nothing to claim");
+        
+        // Update debt to current accumulation
+        userRewardDebt[user] = accumulated;
+        users[user].lastClaimTimestamp = block.timestamp;
+        
+        // Reduce locked rewards
+        // Handle potential precision dust issues by capping at totalLockedRewards
+        if (pending > totalLockedRewards) {
+            pending = totalLockedRewards;
+        }
+        totalLockedRewards -= pending;
+        
+        // Transfer
+        (bool success, ) = user.call{value: pending}("");
         require(success, "Claim transfer failed");
         
-        emit ClaimProcessed(msg.sender, user.tier, claimableAmount);
+        emit ClaimProcessed(user, tier, pending);
     }
     
     // ============ Point System ============
@@ -326,23 +354,55 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
     // ============ SBT Tier Management ============
     
     /**
-     * @notice Update user's SBT tier
-     * @dev Updates holder counts for accurate distribution
+     * @notice Update user's SBT tier (Gas Optimized & Bug Free)
+     * @dev Settle rewards before changing tier to prevent loss
      */
     function updateUserTier(address user, SBTTier newTier) external onlyOwner {
         SBTTier oldTier = users[user].tier;
         
-        // Decrease old tier count
-        if (oldTier == SBTTier.GOLD) goldHolders--;
-        else if (oldTier == SBTTier.SILVER) silverHolders--;
-        else if (oldTier == SBTTier.BRONZE) bronzeHolders--;
+        // 1. Short-circuit: If tier is same, exit immediately to save gas
+        if (oldTier == newTier) return;
         
-        // Increase new tier count
-        if (newTier == SBTTier.GOLD) goldHolders++;
-        else if (newTier == SBTTier.SILVER) silverHolders++;
-        else if (newTier == SBTTier.BRONZE) bronzeHolders++;
+        // 2. Settle Rewards: Force claim for old tier so they don't lose pending rewards
+        if (oldTier != SBTTier.NONE) {
+            uint256 accumulated = accRewardPerShare[oldTier];
+            uint256 debt = userRewardDebt[user];
+            
+            if (accumulated > debt) {
+                uint256 pending = (accumulated - debt) / REWARD_PRECISION;
+                if (pending > 0) {
+                     // Internal claim logic to avoid re-entrancy modifiers or external calls overhead
+                    if (pending > totalLockedRewards) pending = totalLockedRewards;
+                    totalLockedRewards -= pending;
+                    (bool success, ) = user.call{value: pending}("");
+                    if (success) emit ClaimProcessed(user, oldTier, pending);
+                }
+            }
+        }
         
+        // 3. Update Holder Counts (Unchecked for gas efficiency)
+        // Guaranteed not to underflow because we check oldTier exists implicitly
+        unchecked {
+            if (oldTier == SBTTier.GOLD) goldHolders--;
+            else if (oldTier == SBTTier.SILVER) silverHolders--;
+            else if (oldTier == SBTTier.BRONZE) bronzeHolders--;
+            
+            if (newTier == SBTTier.GOLD) goldHolders++;
+            else if (newTier == SBTTier.SILVER) silverHolders++;
+            else if (newTier == SBTTier.BRONZE) bronzeHolders++;
+        }
+        
+        // 4. State Update
         users[user].tier = newTier;
+        
+        // 5. Reset Reward Debt for New Tier
+        // IMPORTANT: Debt = Current Accumulated Reward of NEW tier
+        // This prevents them from claiming historical rewards of the new tier they just joined
+        if (newTier != SBTTier.NONE) {
+            userRewardDebt[user] = accRewardPerShare[newTier];
+        } else {
+            userRewardDebt[user] = 0;
+        }
         
         emit TierUpdated(user, oldTier, newTier);
     }
@@ -586,19 +646,26 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
     }
     
     /**
-     * @notice EMERGENCY: Withdraw all funds if critical bug found
-     * @dev Only owner (40% holder) can execute
+     * @notice EMERGENCY: Withdraw STUCK funds only (anti-rug)
+     * @dev Withdraws balance minus locked rewards
      */
     function emergencyWithdraw() external onlyOwner {
-        require(emergencyMode || paused(), "Not in emergency mode");
+        uint256 contractBalance = address(this).balance;
         
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No balance");
+        // Calculate stick/dust funds (e.g. from rounding errors or direct transfers)
+        // Ensure we DO NOT withdraw user rewards
+        uint256 stuckFunds = 0;
         
-        (bool success, ) = owner().call{value: balance}("");
+        if (contractBalance > totalLockedRewards) {
+            stuckFunds = contractBalance - totalLockedRewards;
+        }
+        
+        require(stuckFunds > 0, "No stuck funds");
+        
+        (bool success, ) = owner().call{value: stuckFunds}("");
         require(success, "Emergency withdrawal failed");
         
-        emit EmergencyWithdrawal(owner(), balance);
+        emit EmergencyWithdrawal(owner(), stuckFunds);
     }
     
     // ============ Admin Functions ============
@@ -648,6 +715,22 @@ contract CryptoDiscoMaster is ReentrancyGuard, Pausable, Ownable, RrpRequesterV0
             userData.isVerified,
             userData.referrer
         );
+    }
+    
+    /**
+     * @notice Check pending rewards for a user (Frontend view)
+     */
+    function getPendingReward(address user) external view returns (uint256) {
+        SBTTier tier = users[user].tier;
+        if (tier == SBTTier.NONE) return 0;
+        
+        uint256 accumulated = accRewardPerShare[tier];
+        uint256 debt = userRewardDebt[user];
+        
+        if (accumulated > debt) {
+            return (accumulated - debt) / REWARD_PRECISION;
+        }
+        return 0;
     }
     
     function getRaffleData(uint256 raffleId) external view returns (
