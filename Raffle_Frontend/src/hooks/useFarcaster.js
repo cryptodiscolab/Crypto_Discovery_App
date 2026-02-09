@@ -23,6 +23,11 @@ export const useFarcaster = () => {
     const isLoadingRef = useRef(false);
 
     /**
+     * Helper: Safely normalize wallet address
+     */
+    const cleanWallet = (w) => w ? w.trim().toLowerCase() : null;
+
+    /**
      * isEligible: Transparent anti-bot filter (OpenRank aware).
      */
     const isEligible = useCallback((profile = profileData) => {
