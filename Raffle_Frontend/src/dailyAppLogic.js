@@ -237,30 +237,33 @@ export async function ensureUserProfile(walletAddress) {
     const normalizedAddress = walletAddress.trim().toLowerCase();
 
     try {
-        // 1. Check if exists
-        const { data: existing, error: fetchError } = await supabase
+        // 1. Semantic Upsert (Create or Update)
+        // We use upsert to guarantee a record exists without race conditions
+        const { data, error } = await supabase
             .from('user_profiles')
-            .select('*')
-            .eq('wallet_address', normalizedAddress)
-            .single();
-
-        if (existing) return existing;
-
-        if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
-
-        // 2. Create if not exists
-        const { data: newProfile, error: insertError } = await supabase
-            .from('user_profiles')
-            .insert([{ wallet_address: normalizedAddress }])
+            .upsert(
+                { 
+                    wallet_address: normalizedAddress,
+                    last_login_at: new Date().toISOString()
+                },
+                { 
+                    onConflict: 'wallet_address',
+                    ignoreDuplicates: false 
+                }
+            )
             .select()
             .single();
 
-        if (insertError) throw insertError;
-        return newProfile;
+        if (error) {
+            console.error('[Ensure Profile] Upsert failed:', error.message);
+            throw error;
+        }
+
+        return data;
 
     } catch (err) {
-        console.error('[Ensure Profile] Error:', err.message);
-        return null; // Fail gracefully
+        console.error('[Ensure Profile] Critical Error:', err.message);
+        return null; // Fail gracefully to prevent app crash
     }
 }
 

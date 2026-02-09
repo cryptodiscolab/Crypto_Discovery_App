@@ -32,34 +32,50 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { address } = req.body;
-    if (!address) return res.status(400).json({ error: 'Missing wallet address' });
+    const { address, fid } = req.body;
 
-    const normalizedAddress = address.trim().toLowerCase();
+    // Validation: Require at least one identifier
+    if (!address && !fid) {
+        return res.status(400).json({
+            error: 'Missing identifier',
+            details: 'Provide either wallet address or FID'
+        });
+    }
+
+    const normalizedAddress = address ? address.trim().toLowerCase() : null;
 
     try {
         // 1. HARDENED RATE LIMITING (Database-Level)
-        // Check last_sync before calling expensive Neynar API
-        const { data: existingUser } = await supabase
-            .from('user_profiles')
-            .select('last_sync')
-            .eq('wallet_address', normalizedAddress)
-            .single();
+        // Check last_sync only if we have an address to check against
+        if (normalizedAddress) {
+            const { data: existingUser } = await supabase
+                .from('user_profiles')
+                .select('last_sync')
+                .eq('wallet_address', normalizedAddress)
+                .single();
 
-        if (existingUser) {
-            const timeSinceLastSync = Date.now() - new Date(existingUser.last_sync).getTime();
-            const FIVE_MINUTES = 5 * 60 * 1000;
+            if (existingUser) {
+                const timeSinceLastSync = Date.now() - new Date(existingUser.last_sync).getTime();
+                const FIVE_MINUTES = 5 * 60 * 1000;
 
-            if (timeSinceLastSync < FIVE_MINUTES) {
-                return res.status(429).json({
-                    error: 'Rate Limit: Please wait 5 minutes between syncs',
-                    retryAfter: Math.ceil((FIVE_MINUTES - timeSinceLastSync) / 1000)
-                });
+                if (timeSinceLastSync < FIVE_MINUTES) {
+                    return res.status(429).json({
+                        error: 'Rate Limit Exceeded',
+                        details: `Please wait ${Math.ceil((FIVE_MINUTES - timeSinceLastSync) / 1000)} seconds before syncing again.`
+                    });
+                }
             }
         }
 
         // 2. NATIVE FETCH (Principal Standard)
-        const neynarUrl = `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${normalizedAddress}`;
+        // Prioritize FID lookup if available, otherwise fallback to address
+        let neynarUrl;
+        if (fid) {
+            neynarUrl = `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`;
+        } else {
+            neynarUrl = `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${normalizedAddress}`;
+        }
+
         const neynarResponse = await fetch(neynarUrl, {
             method: 'GET',
             headers: {
@@ -69,46 +85,75 @@ export default async function handler(req, res) {
         });
 
         if (!neynarResponse.ok) {
-            throw new Error(`Neynar API returned ${neynarResponse.status}`);
+            const errBody = await neynarResponse.json().catch(() => ({}));
+            throw new Error(`Neynar API Error: ${neynarResponse.status} - ${JSON.stringify(errBody)}`);
         }
 
         const neynarData = await neynarResponse.json();
-        const userDataArray = neynarData[normalizedAddress];
-        const userData = (userDataArray && userDataArray.length > 0) ? userDataArray[0] : null;
+
+        // Parse response based on query type (FID vs Address)
+        let userData = null;
+        if (fid) {
+            // Bulk buffer response usually: { users: [...] }
+            userData = (neynarData.users && neynarData.users.length > 0) ? neynarData.users[0] : null;
+        } else {
+            // Address response usually: { [address]: [{...}] }
+            const userDataArray = neynarData[normalizedAddress];
+            userData = (userDataArray && userDataArray.length > 0) ? userDataArray[0] : null;
+        }
 
         if (!userData) {
-            // NO Farcaster ID found.
-            // We should still ensure the user exists in user_profiles with just the wallet address
-            // to avoid foreign key issues later, or just return.
-            // Requirement says: "If not, create a new record using the wallet address as the primary identifier."
-            // valid for wallet login, but here we are syncing. 
-            // If they don't have FC, we can just upsert the wallet address and mark as not active FC.
+            // Case: No Farcaster Profile Found
+            // If we have an address, valid wallet-only user. Upsert wallet profile.
+            if (normalizedAddress) {
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .upsert({
+                        wallet_address: normalizedAddress,
+                        last_sync: new Date().toISOString()
+                    }, {
+                        onConflict: 'wallet_address',
+                        ignoreDuplicates: false
+                    })
+                    .select()
+                    .single();
 
-            const { data, error } = await supabase
-                .from('user_profiles')
-                .upsert({
-                    wallet_address: normalizedAddress,
-                    last_sync: new Date().toISOString()
-                    // Leave other fields null/default
-                }, {
-                    onConflict: 'wallet_address',
-                    ignoreDuplicates: false
-                })
-                .select()
-                .single();
+                if (error) throw error;
 
-            if (error) throw error;
+                return res.status(200).json({
+                    isFarcasterUser: false,
+                    profile: data,
+                    message: 'Wallet profile synced (No Farcaster ID found).'
+                });
+            } else {
+                // If only FID provided but not found, return 404
+                return res.status(404).json({
+                    error: 'Profile Not Found',
+                    details: 'No Farcaster profile found for this FID.'
+                });
+            }
+        }
 
-            return res.status(200).json({
-                isFarcasterUser: false,
-                profile: data,
-                message: 'No FID linked, but wallet profile synced.'
+        // 3. SECURE UPSERT
+        // We need a wallet address to bind this to.
+        // If we looked up by FID, we need to extract the verified address or custom custody address.
+        // However, this endpoint logic assumes we are syncing FOR a connected wallet typically.
+        // If 'normalizedAddress' is null (lookup by FID only), we might not want to create a profile
+        // unless we know the wallet.
+        // FOR NOW: We assume this sync is triggered by a user with a wallet.
+
+        const finalWalletAddress = normalizedAddress || userData.custody_address || (userData.verifications ? userData.verifications[0] : null);
+
+        if (!finalWalletAddress) {
+            return res.status(400).json({
+                error: 'Wallet Binding Failed',
+                details: 'Could not determine wallet address for this Farcaster profile.'
             });
         }
 
         // 3. SECURE UPSERT (Bypass RLS via Service Key)
         const profileUpdate = {
-            wallet_address: normalizedAddress,
+            wallet_address: cleanWallet,
             fid: userData.fid,
             farcaster_username: clean(userData.username),
             display_name: clean(userData.display_name),
