@@ -25,11 +25,11 @@ export function Web3Provider({ children }) {
         <RainbowKitProvider
           theme={darkTheme()}
           modalSize="compact"
-        > */}
-        <div className="min-h-screen bg-slate-950 text-slate-50">
-          {children}
-        </div>
-        {/* </RainbowKitProvider>
+        >
+          <div className="min-h-screen bg-slate-950 text-slate-50">
+            {children}
+          </div>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
