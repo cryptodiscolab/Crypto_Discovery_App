@@ -145,57 +145,56 @@ export function useCMS() {
         checkDbAdmin();
     }, [address]);
 
-    // Final boolean roles
-    const isAdmin = isAdminRaw || isEnvAdmin || isDbAdmin || false;
-    const isOperator = isOperatorRaw || isEnvAdmin || isDbAdmin || false; // Admin is also an operator
-    const canEdit = isAdmin || isOperator;
+    // Final boolean roles (Memoized for efficiency)
+    const isAdmin = useMemo(() => isAdminRaw || isEnvAdmin || isDbAdmin || false, [isAdminRaw, isEnvAdmin, isDbAdmin]);
+    const isOperator = useMemo(() => isOperatorRaw || isEnvAdmin || isDbAdmin || false, [isOperatorRaw, isEnvAdmin, isDbAdmin]);
+    const canEdit = useMemo(() => isAdmin || isOperator, [isAdmin, isOperator]);
 
 
     // ============================================
-    // PARSE JSON DATA WITH ERROR BOUNDARIES
+    // PARSE JSON DATA WITH ERROR BOUNDARIES (Memoized)
     // ============================================
 
-    let announcement = DEFAULT_ANNOUNCEMENT;
-    let poolSettings = DEFAULT_POOL_SETTINGS;
-    let news = DEFAULT_NEWS;
-    let featureCards = DEFAULT_FEATURE_CARDS;
+    const content = useMemo(() => {
+        let announcement = DEFAULT_ANNOUNCEMENT;
+        let poolSettings = DEFAULT_POOL_SETTINGS;
+        let news = DEFAULT_NEWS;
+        let featureCards = DEFAULT_FEATURE_CARDS;
 
-    try {
-        if (announcementRaw && typeof announcementRaw === 'string' && announcementRaw.trim() !== "") {
-            const parsed = JSON.parse(announcementRaw);
-            // Support both old flat structure and new nested structure
-            if (parsed.announcement) {
-                announcement = parsed.announcement;
-                poolSettings = parsed.pool || DEFAULT_POOL_SETTINGS;
-            } else {
-                announcement = parsed;
+        try {
+            if (announcementRaw && typeof announcementRaw === 'string' && announcementRaw.trim() !== "") {
+                const parsed = JSON.parse(announcementRaw);
+                if (parsed.announcement) {
+                    announcement = parsed.announcement;
+                    poolSettings = parsed.pool || DEFAULT_POOL_SETTINGS;
+                } else {
+                    announcement = parsed;
+                }
             }
+        } catch (e) {
+            console.error("Failed to parse announcement JSON", e);
         }
-    } catch (e) {
-        console.error("Failed to parse announcement JSON, using defaults:", e);
-    }
 
-    try {
-        if (newsRaw && typeof newsRaw === 'string' && newsRaw.trim() !== "") {
-            news = JSON.parse(newsRaw);
+        try {
+            if (newsRaw && typeof newsRaw === 'string' && newsRaw.trim() !== "") {
+                news = JSON.parse(newsRaw);
+            }
+        } catch (e) {
+            console.error("Failed to parse news JSON", e);
         }
-    } catch (e) {
-        console.error("Failed to parse news JSON, using defaults:", e);
-    }
 
-    try {
-        if (featureCardsRaw && typeof featureCardsRaw === 'string' && featureCardsRaw.trim() !== "") {
-            featureCards = JSON.parse(featureCardsRaw);
+        try {
+            if (featureCardsRaw && typeof featureCardsRaw === 'string' && featureCardsRaw.trim() !== "") {
+                featureCards = JSON.parse(featureCardsRaw);
+            }
+        } catch (e) {
+            console.error("Failed to parse feature cards JSON", e);
         }
-    } catch (e) {
-        console.error("Failed to parse feature cards JSON, using defaults:", e);
-    }
 
-    // DEBUG: Log admin status
-    console.log('[useCMS] Contract Address:', CMS_CONTRACT_ADDRESS);
-    console.log('[useCMS] Current User:', address);
-    console.log('[useCMS] isAdminRaw:', isAdminRaw);
-    console.log('[useCMS] isOperatorRaw:', isOperatorRaw);
+        return { announcement, poolSettings, news, featureCards };
+    }, [announcementRaw, newsRaw, featureCardsRaw]);
+
+    const { announcement, poolSettings, news, featureCards } = content;
 
     // ============================================
     // WRITE FUNCTIONS - CONTENT MANAGEMENT

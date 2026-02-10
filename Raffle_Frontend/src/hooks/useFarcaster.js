@@ -29,6 +29,33 @@ export const useFarcaster = () => {
     // const cleanWallet = (w) => w ? w.trim().toLowerCase() : null; // Removed in favor of shared helper
 
     /**
+     * Cache Management Logic
+     */
+    const getStorageKey = (address) => `fc_cache_${address?.toLowerCase()}`;
+
+    const clearCache = useCallback((address) => {
+        if (!address) return;
+        localStorage.removeItem(getStorageKey(address));
+        setProfileData(null);
+    }, []);
+
+    // Load from cache immediately on mount/address change
+    const loadFromCache = useCallback((address) => {
+        if (!address) return null;
+        try {
+            const cached = localStorage.getItem(getStorageKey(address));
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                setProfileData(parsed);
+                return parsed;
+            }
+        } catch (e) {
+            console.warn('[Cache] Load failed:', e);
+        }
+        return null;
+    }, []);
+
+    /**
      * isEligible: Transparent anti-bot filter (OpenRank aware).
      */
     const isEligible = useCallback((profile = profileData) => {
@@ -45,8 +72,16 @@ export const useFarcaster = () => {
 
     const syncUser = useCallback(async (address, forceRefresh = false) => {
         if (!address) return null;
-
         const normalizedAddress = address.trim().toLowerCase();
+
+        // 0. Try Cache First for Zero-Latency UI
+        if (!forceRefresh) {
+            const cached = loadFromCache(normalizedAddress);
+            if (cached) {
+                // Return cached version immediately but continue to check freshness in background
+                // if last sync was > 10 mins ago
+            }
+        }
 
         // 1. Concurrency Prevention
         if (isLoadingRef.current && !forceRefresh) return null;
@@ -70,6 +105,7 @@ export const useFarcaster = () => {
 
                 if (localProfile) {
                     setProfileData(localProfile);
+                    localStorage.setItem(getStorageKey(normalizedAddress), JSON.stringify(localProfile));
 
                     // 10-minute cooldown for sync (Bulletproof Rate Limit)
                     const lastSync = new Date(localProfile.last_sync || 0).getTime();
@@ -101,6 +137,7 @@ export const useFarcaster = () => {
 
             const finalProfile = result.profile;
             setProfileData(finalProfile);
+            localStorage.setItem(getStorageKey(normalizedAddress), JSON.stringify(finalProfile));
             return finalProfile;
 
         } catch (err) {
@@ -113,7 +150,7 @@ export const useFarcaster = () => {
             isLoadingRef.current = false;
             abortControllerRef.current = null;
         }
-    }, []);
+    }, [loadFromCache]);
 
     return {
         profileData,
@@ -121,6 +158,7 @@ export const useFarcaster = () => {
         error,
         isSybilDetected,
         syncUser,
+        clearCache,
         isEligible,
         trustScore: profileData?.internal_trust_score || 0,
         metadata: {

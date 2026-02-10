@@ -18,17 +18,14 @@ import {
 import { usePoints } from '../shared/context/PointsContext';
 import { useRaffle } from '../hooks/useRaffle';
 import { useCMS } from '../hooks/useCMS';
-import { useFarcaster } from '../hooks/useFarcaster';
-import { SBTRewardsDashboard } from '../components/SBTRewardsDashboard';
-import { handleDailyClaim, requestSBTMint } from '../dailyAppLogic';
-import { useSBT } from '../hooks/useSBT';
-import toast from 'react-hot-toast';
+import { ProfileSkeleton } from '../components/ProfileSkeleton';
 
 /**
  * Mobile Profile Optimization Strategy:
  * 1. Flat UI: Solid backgrounds (#0B0E14) for fast mobile rendering.
  * 2. Skeleton States: No-jank loading feedback.
  * 3. Neynar Integration: Social graph data (Followers/Following/Trust).
+ * 4. Local Caching: Zero-latency mount via localStorage.
  */
 export function ProfilePage() {
   const { userAddress } = useParams();
@@ -41,10 +38,21 @@ export function ProfilePage() {
   const { unclaimedRewards, manualAddPoints, refetch, sbtThresholds, offChainPoints, offChainLevel, fid: ownFid } = usePoints();
   const { claimPrize, rerollWinner } = useRaffle();
   const { poolSettings, isLoading: loadingCMS } = useCMS();
-  const { profileData, isLoading: loadingFC, error: errorFC, syncUser } = useFarcaster();
+  const { profileData, isLoading: loadingFC, error: errorFC, syncUser, clearCache } = useFarcaster();
 
   // Data Syncing State
-  const [isSyncing, setIsSyncing] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Manual Reset Handler
+  const handleManualRefresh = useCallback(() => {
+    if (!targetAddress) return;
+    setIsSyncing(true);
+    clearCache(targetAddress);
+    syncUser(targetAddress, true).finally(() => {
+      setTimeout(() => setIsSyncing(false), 500);
+      toast.success('Cache cleared & data refreshed');
+    });
+  }, [targetAddress, clearCache, syncUser]);
 
   // Error Feedback
   useEffect(() => {
@@ -55,16 +63,12 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (targetAddress) {
-      setIsSyncing(true);
-      syncUser(targetAddress).finally(() => {
-        setTimeout(() => setIsSyncing(false), 800);
-      });
-    } else if (!isConnected && !userAddress) {
-      setIsSyncing(false);
+      // syncUser handles internal check against cache/db
+      syncUser(targetAddress);
     }
-  }, [targetAddress, syncUser, isConnected]);
+  }, [targetAddress, syncUser]);
 
-  const isLoading = loadingCMS || loadingFC || isSyncing;
+  const isLoading = loadingFC && !profileData; // Only show skeleton if we have NO data at all (not even cached)
 
   if (!targetAddress && !isConnected) {
     return (
@@ -83,33 +87,48 @@ export function ProfilePage() {
       <div className="container mx-auto max-w-2xl space-y-6">
 
         {/* Profile Header Block */}
-        <div className="bg-[#121720] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden">
-          {/* Background ID accent */}
-          <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
-            <ShieldCheck className="w-48 h-48 text-indigo-500" />
-          </div>
+        {isLoading ? <ProfileSkeleton /> : (
+          <div className="bg-[#121720] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden">
+            {/* Background ID accent */}
+            <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
+              <ShieldCheck className="w-48 h-48 text-indigo-500" />
+            </div>
 
-          {isLoading ? <ProfileSkeleton /> : (
             <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-              <div className="w-24 h-24 rounded-2xl bg-[#1a2130] border border-indigo-500/20 flex items-center justify-center overflow-hidden shadow-2xl">
+              <div className="w-24 h-24 rounded-2xl bg-[#1a2130] border border-indigo-500/20 flex items-center justify-center overflow-hidden shadow-2xl relative group">
                 {profileData?.pfp_url ? (
                   <img src={profileData.pfp_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-3xl">👤</span>
                 )}
+                {/* Manual Refresh Trigger */}
+                <button
+                  onClick={handleManualRefresh}
+                  className={`absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${isSyncing ? 'opacity-100' : ''}`}
+                >
+                  <RefreshCw className={`w-6 h-6 text-white ${isSyncing ? 'animate-spin' : ''}`} />
+                </button>
               </div>
 
-              <div className="text-center md:text-left min-w-0">
+              <div className="text-center md:text-left min-w-0 flex-1">
                 <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
                   <h1 className="text-2xl font-black text-white uppercase tracking-tighter truncate">
                     @{profileData?.username || 'unknown'}
                   </h1>
-                  {profileData?.power_badge && (
-                    <div className="bg-indigo-500/20 px-2 py-0.5 rounded-full border border-indigo-500/30 flex items-center gap-1 w-fit mx-auto md:mx-0">
-                      <Zap className="w-3 h-3 text-indigo-400 fill-indigo-400" />
-                      <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Power</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    {profileData?.power_badge && (
+                      <div className="bg-indigo-500/20 px-2 py-0.5 rounded-full border border-indigo-500/30 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-indigo-400 fill-indigo-400" />
+                        <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Power</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={handleManualRefresh}
+                      className="p-1.5 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 active:scale-90 transition-all md:hidden"
+                    >
+                      <RefreshCw className={`w-3 h-3 text-slate-400 ${isSyncing ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
@@ -122,6 +141,13 @@ export function ProfilePage() {
                     <span className="text-white font-black text-sm">{profileData?.following_count?.toLocaleString() || 0}</span>
                     <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Following</span>
                   </div>
+                  <button
+                    onClick={handleManualRefresh}
+                    className="hidden md:flex p-1.5 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 active:scale-95 transition-all"
+                    title="Clear Cache & Force Refresh"
+                  >
+                    <RefreshCw className={`w-3 h-3 text-slate-400 ${isSyncing ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2 bg-black/40 py-1.5 px-3 rounded-xl w-fit mx-auto md:mx-0 border border-white/5">
@@ -132,8 +158,8 @@ export function ProfilePage() {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Reputation Badge Block */}
         <div className="bg-[#121720] border border-white/5 rounded-[2rem] p-6">
