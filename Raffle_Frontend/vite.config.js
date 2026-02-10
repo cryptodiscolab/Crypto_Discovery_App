@@ -11,9 +11,12 @@ export default defineConfig({
       'react': path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
       'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react/jsx-runtime'),
+      'react/jsx-dev-runtime': path.resolve(__dirname, 'node_modules/react/jsx-dev-runtime'),
       'react-dom/client': path.resolve(__dirname, 'node_modules/react-dom/client'),
+      'react-is': path.resolve(__dirname, 'node_modules/react-is'),
+      'lucide-react': path.resolve(__dirname, 'node_modules/lucide-react'),
     },
-    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client'],
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom/client', 'react-is', 'lucide-react'],
   },
   define: {
     'process.env': {},

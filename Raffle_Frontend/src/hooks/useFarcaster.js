@@ -89,12 +89,13 @@ export const useFarcaster = () => {
     }, []);
 
     return {
+        user: profileData, // Alias for ProfilePage.jsx
         profileData,
         isLoading,
         error,
         syncUser,
         clearCache,
-        trustScore: profileData?.internal_trust_score || 0
+        trustScore: Number(profileData?.internal_trust_score || 0)
     };
 };
 

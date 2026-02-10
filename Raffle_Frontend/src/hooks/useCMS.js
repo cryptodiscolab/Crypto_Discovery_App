@@ -180,10 +180,23 @@ export function useCMS() {
                 const parsed = JSON.parse(announcementRaw);
                 if (parsed && typeof parsed === 'object') {
                     if (parsed.announcement) {
-                        announcement = { ...DEFAULT_ANNOUNCEMENT, ...parsed.announcement };
-                        poolSettings = { ...DEFAULT_POOL_SETTINGS, ...parsed.pool };
+                        announcement = {
+                            visible: Boolean(parsed.announcement.visible),
+                            title: String(parsed.announcement.title || ""),
+                            message: String(parsed.announcement.message || ""),
+                            type: String(parsed.announcement.type || "info")
+                        };
+                        poolSettings = {
+                            targetUSDC: Number(parsed.pool?.targetUSDC || 5000),
+                            claimTimestamp: Number(parsed.pool?.claimTimestamp || 0)
+                        };
                     } else {
-                        announcement = { ...DEFAULT_ANNOUNCEMENT, ...parsed };
+                        announcement = {
+                            visible: Boolean(parsed.visible),
+                            title: String(parsed.title || ""),
+                            message: String(parsed.message || ""),
+                            type: String(parsed.type || "info")
+                        };
                     }
                 }
             }
@@ -195,7 +208,15 @@ export function useCMS() {
         try {
             if (newsRaw && typeof newsRaw === 'string' && newsRaw.trim() !== "") {
                 const parsed = JSON.parse(newsRaw);
-                news = Array.isArray(parsed) ? parsed : DEFAULT_NEWS;
+                if (Array.isArray(parsed)) {
+                    news = parsed.map(item => ({
+                        id: String(item.id || Date.now()),
+                        title: String(item.title || ""),
+                        message: String(item.message || ""),
+                        date: String(item.date || ""),
+                        type: String(item.type || "info")
+                    }));
+                }
             }
         } catch (e) {
             console.error("Failed to parse news JSON", e);
@@ -205,7 +226,16 @@ export function useCMS() {
         try {
             if (featureCardsRaw && typeof featureCardsRaw === 'string' && featureCardsRaw.trim() !== "") {
                 const parsed = JSON.parse(featureCardsRaw);
-                featureCards = Array.isArray(parsed) ? parsed : DEFAULT_FEATURE_CARDS;
+                if (Array.isArray(parsed)) {
+                    featureCards = parsed.map(item => ({
+                        id: String(item.id || ""),
+                        title: String(item.title || ""),
+                        description: String(item.description || ""),
+                        icon: String(item.icon || "Sparkles"),
+                        link: String(item.link || "#"),
+                        active: Boolean(item.active)
+                    }));
+                }
             }
         } catch (e) {
             console.error("Failed to parse feature cards JSON", e);
