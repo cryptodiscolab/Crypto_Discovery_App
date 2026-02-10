@@ -77,10 +77,10 @@ export function AnnouncementBanner({ announcement }) {
                         {/* Content */}
                         <div className="flex-1">
                             <h3 className={`text-lg font-bold ${config.text} mb-1`}>
-                                {announcement.title}
+                                {String(announcement.title || '')}
                             </h3>
                             <p className="text-slate-300 text-sm">
-                                {announcement.message}
+                                {String(announcement.message || '')}
                             </p>
                         </div>
 
