@@ -607,7 +607,7 @@ export default function AdminPanel() {
                                 <div key={user.fid} className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl flex flex-col gap-3 group hover:border-indigo-500/30 transition-all">
                                     <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-mono text-indigo-400 py-1 px-2 bg-indigo-500/10 rounded-lg">FID: {user.fid}</span>
-                                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full font-black uppercase tracking-tighter">XP: {user.total_xp}</span>
+                                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full font-black uppercase tracking-tighter">XP: {user.total_xp?.toString()}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <input id={`label-${user.fid}`} type="text" placeholder="label" className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none font-bold" />
@@ -668,7 +668,11 @@ export default function AdminPanel() {
                                 {auditLogs.map((log) => (
                                     <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
                                         <td className="px-4 py-4 font-mono text-slate-400">{log.admin_address?.slice(0, 10)}...</td>
-                                        <td className="px-4 py-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${log.action.includes('ENS') ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}`}>{log.action}</span></td>
+                                        <td className="px-4 py-4">
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${log.action.includes('ENS') ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                                {log.action?.toString()}
+                                            </span>
+                                        </td>
                                         <td className="px-4 py-4 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
                                     </tr>
                                 ))}
