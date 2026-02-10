@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Plus, Zap, Clock, Shield, Award, ExternalLink, RefreshCw, Send, List, Share2, Twitter, MessageCircle, Heart, Repeat } from 'lucide-react';
 import { useWriteContract, useReadContract, useAccount, useWaitForTransactionReceipt } from 'wagmi';
 import { V12_ABI } from '../../shared/constants/abis';
-import { supabase } from '../../dailyAppLogic';
+import { supabase } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
 
 const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Shield, UserPlus, UserMinus, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
-import { useCMS, FEATURE_IDS, FEATURE_NAMES } from '../../hooks/useCMS';
+import { useCMS } from '../../hooks/useCMS';
+import { FEATURE_IDS, FEATURE_NAMES } from '../../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { isAddress } from 'viem';
 
@@ -10,11 +11,11 @@ export function WhitelistManagerTab() {
 
     // Single grant state
     const [userAddress, setUserAddress] = useState('');
-    const [selectedFeature, setSelectedFeature] = useState(FEATURE_IDS.FREE_DAILY_TASK);
+    const [selectedFeature, setSelectedFeature] = useState(FEATURE_IDS.DAILY_CLAIM);
 
     // Batch grant state
     const [batchAddresses, setBatchAddresses] = useState('');
-    const [batchFeature, setBatchFeature] = useState(FEATURE_IDS.FREE_DAILY_TASK);
+    const [batchFeature, setBatchFeature] = useState(FEATURE_IDS.DAILY_CLAIM);
 
     // Whitelisted users (mock data for now - in production, read from events or backend)
     const [whitelistedUsers, setWhitelistedUsers] = useState([
@@ -40,7 +41,7 @@ export function WhitelistManagerTab() {
             setWhitelistedUsers([...whitelistedUsers, {
                 address: userAddress,
                 featureId: selectedFeature,
-                featureName: FEATURE_NAMES[selectedFeature]
+                featureName: FEATURE_NAMES[selectedFeature] || selectedFeature
             }]);
 
             setUserAddress('');
@@ -82,7 +83,7 @@ export function WhitelistManagerTab() {
             const newUsers = addresses.map(addr => ({
                 address: addr,
                 featureId: batchFeature,
-                featureName: FEATURE_NAMES[batchFeature]
+                featureName: FEATURE_NAMES[batchFeature] || batchFeature
             }));
             setWhitelistedUsers([...whitelistedUsers, ...newUsers]);
 
@@ -156,12 +157,12 @@ export function WhitelistManagerTab() {
                         </label>
                         <select
                             value={selectedFeature}
-                            onChange={(e) => setSelectedFeature(Number(e.target.value))}
+                            onChange={(e) => setSelectedFeature(e.target.value)}
                             className="w-full bg-slate-900 border border-white/5 p-3 rounded-xl text-white focus:border-purple-500/50 outline-none cursor-pointer"
                         >
-                            <option value={FEATURE_IDS.FREE_DAILY_TASK}>Free Daily Task</option>
-                            <option value={FEATURE_IDS.FREE_RAFFLE_TICKET}>Free Raffle Ticket</option>
-                            <option value={FEATURE_IDS.PREMIUM_ACCESS}>Premium Access</option>
+                            {Object.entries(FEATURE_IDS).map(([key, id]) => (
+                                <option key={id} value={id}>{FEATURE_NAMES[id]}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -204,12 +205,12 @@ export function WhitelistManagerTab() {
                     </label>
                     <select
                         value={batchFeature}
-                        onChange={(e) => setBatchFeature(Number(e.target.value))}
+                        onChange={(e) => setBatchFeature(e.target.value)}
                         className="w-full bg-slate-900 border border-white/5 p-3 rounded-xl text-white focus:border-indigo-500/50 outline-none cursor-pointer"
                     >
-                        <option value={FEATURE_IDS.FREE_DAILY_TASK}>Free Daily Task</option>
-                        <option value={FEATURE_IDS.FREE_RAFFLE_TICKET}>Free Raffle Ticket</option>
-                        <option value={FEATURE_IDS.PREMIUM_ACCESS}>Premium Access</option>
+                        {Object.entries(FEATURE_IDS).map(([key, id]) => (
+                            <option key={id} value={id}>{FEATURE_NAMES[id]}</option>
+                        ))}
                     </select>
                 </div>
 

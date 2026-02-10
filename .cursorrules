@@ -20,7 +20,6 @@ Every code suggestion must end with a 'Pre-Flight Check':
 - [ ] Gas Impact
 - [ ] Safety Verification
 
-# ... (Aturan yang sudah ada) ...
 
 ## 4. Operational Mandate (Staff Engineer Mode)
 - Tactical & Fast: Explain logic in 3 bullet points before coding.
@@ -41,3 +40,6 @@ Every code suggestion must end with a 'Pre-Flight Check':
 - **Deep Reasoning (Opus/GPT-120B Style):** Do not give shallow answers. Use "Chain of Thought" reasoning. Break down complex problems into sub-tasks and verify each logical step before writing code.
 - **Token Efficiency:** Keep code explanations concise but deep. Reuse existing functions and variables from our codebase instead of creating new ones.
 - **State Awareness:** Always track the current addresses of MasterX, Raffle, and DailyApp from the `.env` file to ensure consistency across all scripts.
+
+## 7. Check & Re-check (Secure work mode)
+- **Context Secure & Perfect mode:** selalu recheck kerjaan kamu dan pastikan kamu selesaikan perintah dengan sempurna tanpa error dan tingkatkan keamanan script dan kode agar tidak ada lubang untuk hack, manipulating, injection dan hal yang berkaitan dengan keamanan lainnya.
