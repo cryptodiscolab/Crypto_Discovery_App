@@ -112,10 +112,10 @@ export function ProfilePage() {
 
               <div className="text-center md:text-left mb-2">
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                  <h1 className="text-3xl font-black text-white tracking-tighter uppercase">{socialData.display_name}</h1>
+                  <h1 className="text-3xl font-black text-white tracking-tighter uppercase">{String(socialData.display_name)}</h1>
                   {socialData.power_badge && <TrendingUp className="w-5 h-5 text-indigo-400" />}
                 </div>
-                <p className="text-indigo-400 font-mono text-sm">@{socialData.username}</p>
+                <p className="text-indigo-400 font-mono text-sm">@{String(socialData.username)}</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
                   <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                     {socialData.power_badge ? <Star className="w-3 h-3 fill-indigo-400" /> : <Shield className="w-3 h-3" />}
@@ -152,7 +152,7 @@ export function ProfilePage() {
 
           <div className="mt-8 border-t border-slate-800 pt-6">
             <p className="text-slate-400 text-sm font-medium leading-relaxed italic">
-              "{socialData.bio}"
+              "{String(socialData.bio)}"
             </p>
           </div>
         </div>
@@ -164,14 +164,14 @@ export function ProfilePage() {
           { label: 'Followers', value: socialData.follower_count.toLocaleString(), icon: Users, color: 'indigo' },
           { label: 'Following', value: socialData.following_count.toLocaleString(), icon: Globe, color: 'purple' },
           { label: 'Trust Score', value: socialData.trust_score.toFixed(1), icon: Shield, color: 'emerald' },
-          { label: 'Points', value: user?.points?.toString() || '0', icon: Trophy, color: 'amber' }
+          { label: 'Points', value: user?.points ? String(user.points) : '0', icon: Trophy, color: 'amber' }
         ].map((stat, i) => (
           <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-lg">
             <div className={`w-10 h-10 bg-${stat.color}-500/10 rounded-xl flex items-center justify-center mb-4`}>
               <stat.icon className={`w-5 h-5 text-${stat.color}-500`} />
             </div>
             <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-            <p className="text-2xl font-black text-white tracking-tighter">{stat.value}</p>
+            <p className="text-2xl font-black text-white tracking-tighter">{String(stat.value)}</p>
           </div>
         ))}
       </div>

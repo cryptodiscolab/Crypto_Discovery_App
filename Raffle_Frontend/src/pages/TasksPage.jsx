@@ -68,7 +68,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
                 </div>
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-2">{task.title}</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{String(task.title || '')}</h3>
 
             <div className="flex flex-wrap gap-2 mb-6 text-[10px] font-black uppercase tracking-tighter">
                 <div className="flex items-center bg-slate-800/50 px-2 py-1 rounded-md text-slate-400">
@@ -155,17 +155,17 @@ export function TasksPage() {
                                 <div className="flex items-center space-x-8">
                                     <div className="text-center">
                                         <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Total Points</p>
-                                        <p className="text-3xl font-black text-blue-400">{userPoints.toString()}</p>
+                                        <p className="text-3xl font-black text-blue-400">{String(userPoints)}</p>
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">
                                         <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Rank Tier</p>
-                                        <p className="text-3xl font-black text-indigo-400">LVL {userTier?.toString() || '0'}</p>
+                                        <p className="text-3xl font-black text-indigo-400">LVL {String(userTier ?? 0)}</p>
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">
                                         <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Tasks Done</p>
-                                        <p className="text-3xl font-black text-green-400">{totalTasksCompleted.toString()}</p>
+                                        <p className="text-3xl font-black text-green-400">{String(totalTasksCompleted)}</p>
                                     </div>
                                 </div>
                             )}
