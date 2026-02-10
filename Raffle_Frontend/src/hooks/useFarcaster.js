@@ -48,7 +48,7 @@ export const useFarcaster = () => {
 
         const normalizedAddress = address.trim().toLowerCase();
 
-        // 1. Concurrency Prevention (Ref-based to avoid dependency loop)
+        // 1. Concurrency Prevention
         if (isLoadingRef.current && !forceRefresh) return null;
 
         if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -60,7 +60,7 @@ export const useFarcaster = () => {
         setIsSybilDetected(false);
 
         try {
-            // 2. Efficient Local Fetch (Primary Protocol)
+            // 2. Efficient Local Fetch first
             if (!forceRefresh) {
                 const { data: localProfile } = await supabase
                     .from('user_profiles')
@@ -71,12 +71,12 @@ export const useFarcaster = () => {
                 if (localProfile) {
                     setProfileData(localProfile);
 
-                    // 5-minute cooldown for sync (Bulletproof Rate Limit)
-                    const lastSync = new Date(localProfile.last_sync).getTime();
+                    // 10-minute cooldown for sync (Bulletproof Rate Limit)
+                    const lastSync = new Date(localProfile.last_sync || 0).getTime();
                     const now = Date.now();
-                    const COOLDOWN = 5 * 60 * 1000;
+                    const COOLDOWN = 10 * 60 * 1000;
 
-                    if (now - lastSync < COOLDOWN) {
+                    if (now - lastSync < COOLDOWN && localProfile.username) {
                         setIsLoading(false);
                         isLoadingRef.current = false;
                         return localProfile;
@@ -84,7 +84,7 @@ export const useFarcaster = () => {
                 }
             }
 
-            // 3. Bulletproof API Call (NATIVE FETCH)
+            // 3. API Call to trigger Neynar Sync
             const response = await fetch('/api/farcaster/sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -95,16 +95,6 @@ export const useFarcaster = () => {
             const result = await response.json();
 
             if (!response.ok) {
-                // Sybil Attack Coverage
-                if (response.status === 403 && result.isSybil) {
-                    setIsSybilDetected(true);
-                    throw new Error(result.error);
-                }
-                // Rate Limit Check
-                if (response.status === 429) {
-                    throw new Error(result.error);
-                }
-                // Critical: Show Backend Details
                 const errorMessage = result.details || result.error || 'Identity Sync Failed';
                 throw new Error(errorMessage);
             }
@@ -115,17 +105,15 @@ export const useFarcaster = () => {
 
         } catch (err) {
             if (err.name === 'AbortError') return null;
-
-            console.error('[Principal Hook] Logic Failure:', err.message);
+            console.error('[Farcaster Sync] Failure:', err.message);
             setError(err.message);
             return null;
         } finally {
-            // GUARANTEE: Loading state ALWAYS resets
             setIsLoading(false);
             isLoadingRef.current = false;
             abortControllerRef.current = null;
         }
-    }, []); // Removed isLoading dependency to prevent infinite loops
+    }, []);
 
     return {
         profileData,
@@ -138,7 +126,11 @@ export const useFarcaster = () => {
         metadata: {
             rank: profileData?.rank_score || 0,
             verifications: profileData?.verified_addresses || [],
-            bio: profileData?.bio || ''
+            bio: profileData?.bio || '',
+            username: profileData?.username || '',
+            pfp: profileData?.pfp_url || '',
+            followers: profileData?.follower_count || 0,
+            following: profileData?.following_count || 0
         }
     };
 };
