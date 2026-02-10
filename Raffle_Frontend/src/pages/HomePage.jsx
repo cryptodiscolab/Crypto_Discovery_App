@@ -181,19 +181,19 @@ export function HomePage() {
                       <div className={`w-12 h-12 bg-${card.color || 'indigo'}-500/10 rounded-xl flex items-center justify-center mb-4`}>
                         <IconComponent className={`w-6 h-6 text-${card.color || 'indigo'}-400`} />
                       </div>
-                      <h3 className="text-xl font-bold text-white mb-2">{card.title}</h3>
+                      <h3 className="text-xl font-bold text-white mb-2">{String(card.title || '')}</h3>
                       <p className="text-slate-400 text-sm mb-4">
-                        {card.description}
+                        {String(card.description || '')}
                       </p>
                       {card.linkText && (
                         <div className={`flex items-center text-${card.color || 'indigo'}-400 font-medium text-sm`}>
-                          {card.linkText}
+                          {String(card.linkText)}
                         </div>
                       )}
                       {card.badge && (
                         <div className="flex items-center gap-1 text-xs text-slate-500 mt-2">
                           <Shield className="w-3 h-3" />
-                          <span>{card.badge}</span>
+                          <span>{String(card.badge)}</span>
                         </div>
                       )}
                     </div>
