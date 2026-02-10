@@ -10,8 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       'react': path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react/jsx-runtime'),
+      'react-dom/client': path.resolve(__dirname, 'node_modules/react-dom/client'),
     },
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client'],
   },
   define: {
     'process.env': {},
@@ -39,7 +41,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['wagmi', 'viem', '@rainbow-me/rainbowkit'],
+    include: ['wagmi', 'viem', '@rainbow-me/rainbowkit', '@pigment-css/react'],
     esbuildOptions: {
       target: 'esnext',
     }
