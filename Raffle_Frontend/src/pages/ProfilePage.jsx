@@ -18,7 +18,11 @@ import {
 import { usePoints } from '../shared/context/PointsContext';
 import { useRaffle } from '../hooks/useRaffle';
 import { useCMS } from '../hooks/useCMS';
+import { useFarcaster } from '../hooks/useFarcaster';
+import { SBTRewardsDashboard } from '../components/SBTRewardsDashboard';
+import { handleDailyClaim, requestSBTMint } from '../dailyAppLogic';
 import { ProfileSkeleton } from '../components/ProfileSkeleton';
+import toast from 'react-hot-toast';
 
 /**
  * Mobile Profile Optimization Strategy:
