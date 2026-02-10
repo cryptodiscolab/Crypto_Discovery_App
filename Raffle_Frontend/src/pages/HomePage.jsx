@@ -106,12 +106,12 @@ export function HomePage() {
                   </p>
                   <div className="flex items-baseline gap-2">
                     <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter">
-                      ${((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      ${String(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 }))}
                     </h2>
                     <span className="text-slate-500 font-bold text-xl uppercase italic">USDC</span>
                   </div>
                   <p className="text-slate-500 text-sm mt-1 flex items-center gap-1 font-mono">
-                    ≈ {parseFloat(formatUnits(totalPoolBalance || 0n, 18)).toFixed(4)} ETH
+                    ≈ {String(parseFloat(formatUnits(totalPoolBalance || 0n, 18)).toFixed(4))} ETH
                   </p>
                 </div>
 
@@ -149,7 +149,7 @@ export function HomePage() {
 
                 <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tighter pt-1">
                   <span>Start: $0</span>
-                  <span className="text-slate-300">Phase Goal: ${poolSettings?.targetUSDC?.toLocaleString() || '5,000'}</span>
+                  <span className="text-slate-300">Phase Goal: ${String(poolSettings?.targetUSDC?.toLocaleString() || '5,000')}</span>
                 </div>
               </div>
 
