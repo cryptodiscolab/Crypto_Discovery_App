@@ -255,19 +255,6 @@ export function ProfilePage() {
   );
 }
 
-function ProfileSkeleton() {
-  return (
-    <div className="flex flex-col md:flex-row items-center gap-6 animate-pulse">
-      <div className="w-24 h-24 rounded-2xl bg-white/5" />
-      <div className="flex-1 space-y-3 w-full">
-        <div className="h-6 w-32 bg-white/5 rounded mx-auto md:mx-0" />
-        <div className="h-4 w-48 bg-white/5 rounded mx-auto md:mx-0" />
-        <div className="h-8 w-24 bg-white/5 rounded-xl mx-auto md:mx-0" />
-      </div>
-    </div>
-  );
-}
-
 /**
  * DailyClaimCard: Integrated with PointsContext and Mobile Optimized UI.
  */
