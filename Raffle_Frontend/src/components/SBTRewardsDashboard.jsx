@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
-import { formatUnits } from 'viem';
+import { formatEther, formatUnits } from 'viem';
 import { usePublicClient } from 'wagmi';
 import toast from 'react-hot-toast';
 
