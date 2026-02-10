@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useRef } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, Shield, Wallet } from 'lucide-react';
+import { Sparkles, Shield, Wallet, LogOut, RefreshCw } from 'lucide-react';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
 
@@ -12,6 +12,7 @@ export function Header() {
   const { address, isConnected } = useAccount();
   const location = useLocation();
   const navigate = useNavigate();
+  const { disconnect } = useDisconnect();
   const { isAdmin: isSBTAdmin } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
   const hasRedirected = useRef(false);
@@ -116,11 +117,23 @@ export function Header() {
           {/* Right: Wallet (Icon Only) - Hidden on Mobile */}
           <div className="hidden md:flex flex-1 justify-end items-center">
             {isConnected ? (
-              <div className="flex items-center gap-2 bg-indigo-600/20 px-4 py-2 rounded-full border border-indigo-500/30">
-                <Wallet className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs font-mono text-white">
-                  {address.slice(0, 6)}...{address.slice(-4)}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-indigo-600/20 px-4 py-2 rounded-full border border-indigo-500/30">
+                  <Wallet className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-mono text-white">
+                    {address.slice(0, 6)}...{address.slice(-4)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    disconnect();
+                    navigate('/');
+                  }}
+                  className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-full border border-red-500/20 transition-all active:scale-90"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
             ) : (
               <button
