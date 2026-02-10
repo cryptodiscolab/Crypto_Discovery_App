@@ -1,14 +1,13 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Web3Provider } from './Web3Provider';
 import { Header } from './Header';
 import { BottomNav } from './components/BottomNav';
 import { PointsProvider } from './shared/context/PointsContext';
+import { Suspense, lazy } from 'react';
+import { NeynarContextProvider } from '@neynar/react';
 
-import { Suspense, lazy, useEffect } from 'react';
-import { useAccount } from 'wagmi';
-
-// Lazy Load Pages
+// Lazy Load Pages (Non-critical components)
 const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
 const RafflesPage = lazy(() => import('./pages/RafflesPage').then(m => ({ default: m.RafflesPage })));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
@@ -22,15 +21,12 @@ const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx').then(m =
 const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx').then(m => ({ default: m.default || m.AdminGuard })));
 const SignatureGuard = lazy(() => import('./components/SignatureGuard.jsx').then(m => ({ default: m.SignatureGuard })));
 
-// Helper component to use SignatureGuard as a layout wrapper
-import { Outlet } from 'react-router-dom';
-// Neynar Provider Configuration
-const NeynarContextProvider = lazy(() => import('@neynar/react').then(mod => ({ default: mod.NeynarContextProvider })));
+// Neynar Settings (Sanitized)
 const NEYNAR_SETTINGS = {
   clientId: import.meta.env.VITE_NEYNAR_CLIENT_ID,
   defaultTheme: "dark",
   eventsCallbacks: {
-    onLogout: () => {
+    onSignout: () => {
       localStorage.removeItem('crypto_disco_auth_status');
       window.location.href = "/login";
     }
@@ -43,49 +39,46 @@ const ProtectedLayout = () => (
   </SignatureGuard>
 );
 
-
 function App() {
   return (
     <Web3Provider>
-      <Suspense fallback={null}>
-        <NeynarContextProvider settings={NEYNAR_SETTINGS}>
-          <PointsProvider>
-            <BrowserRouter>
-              <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
-                <Header />
-                <main className="pt-24 pb-32 md:pb-0">
-                  <Suspense fallback={
-                    <div className="min-h-screen flex items-center justify-center">
-                      <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
-                    </div>
-                  }>
-                    <Routes>
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route element={<ProtectedLayout />}>
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/tasks" element={<TasksPage />} />
-                        <Route path="/raffles" element={<RafflesPage />} />
-                        <Route path="/leaderboard" element={<LeaderboardPage />} />
-                        <Route path="/profile" element={<ProfilePage />} />
-                        <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                        <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-                        <Route path="/admin/legacy" element={<AdminGuard><AdminPage /></AdminGuard>} />
-                        <Route path="/admin-sbt" element={<AdminGuard><AdminPanel /></AdminGuard>} />
-                        <Route path="/create" element={<AdminGuard><CreateRafflePage /></AdminGuard>} />
-                      </Route>
-                    </Routes>
-                  </Suspense>
-                </main>
-                <BottomNav />
-                <Toaster position="bottom-right" toastOptions={{ style: { background: '#161B22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
-              </div>
-            </BrowserRouter>
-          </PointsProvider>
-        </NeynarContextProvider>
-      </Suspense>
+      <NeynarContextProvider settings={NEYNAR_SETTINGS}>
+        <PointsProvider>
+          <BrowserRouter>
+            <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
+              <Header />
+              <main className="pt-24 pb-32 md:pb-0">
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center">
+                    <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                  </div>
+                }>
+                  <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route element={<ProtectedLayout />}>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/tasks" element={<TasksPage />} />
+                      <Route path="/raffles" element={<RafflesPage />} />
+                      <Route path="/leaderboard" element={<LeaderboardPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                      <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                      <Route path="/admin/legacy" element={<AdminGuard><AdminPage /></AdminGuard>} />
+                      <Route path="/admin-sbt" element={<AdminGuard><AdminPanel /></AdminGuard>} />
+                      <Route path="/create" element={<AdminGuard><CreateRafflePage /></AdminGuard>} />
+                    </Route>
+                  </Routes>
+                </Suspense>
+              </main>
+              <BottomNav />
+              <Toaster position="bottom-right" toastOptions={{ style: { background: '#161B22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
+            </div>
+          </BrowserRouter>
+        </PointsProvider>
+      </NeynarContextProvider>
     </Web3Provider>
   );
 }
 
-
 export default App;
+
