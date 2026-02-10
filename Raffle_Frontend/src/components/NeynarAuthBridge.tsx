@@ -7,10 +7,10 @@ import { cleanWallet } from '../utils/cleanWallet';
  * Synchronizes Neynar SIWN with Crypto Disco Auth Status.
  * Ensures zero-RIBA compliance and sanitized identity attribution.
  */
-export const NeynarAuthBridge = ({ onSuccess }) => {
+export const NeynarAuthBridge = ({ onSuccess }: { onSuccess?: (status: any) => void }) => {
     const { user } = useNeynarContext();
 
-    const handleSuccess = (user) => {
+    React.useEffect(() => {
         if (user?.custody_address) {
             const sanitizedWallet = cleanWallet(user.custody_address);
 
@@ -25,14 +25,14 @@ export const NeynarAuthBridge = ({ onSuccess }) => {
 
             if (onSuccess) onSuccess(authStatus);
         }
-    };
+    }, [user, onSuccess]);
 
     return (
         <div className="neynar-bridge-container w-full">
             <NeynarAuthButton
-                onSuccess={handleSuccess}
                 className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 duration-75"
             />
         </div>
     );
 };
+

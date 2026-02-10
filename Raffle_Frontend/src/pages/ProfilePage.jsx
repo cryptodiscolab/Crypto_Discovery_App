@@ -1,48 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Wallet,
-  ExternalLink,
-  RefreshCw,
-  Award,
-  Zap,
-  ShieldCheck,
+  User,
+  Shield,
+  TrendingUp,
+  Users,
+  Globe,
   LogOut,
-  Trash2
+  Trash2,
+  RefreshCw,
+  Star
 } from 'lucide-react';
-
-// Neynar UI Primitives (Modular imports to save RAM)
-import { Card, CardHeader, CardContent } from '@neynar/ui/card';
-import { Avatar, AvatarImage, AvatarFallback } from '@neynar/ui/avatar';
-import { Skeleton } from '@neynar/ui/skeleton';
-import { Badge } from '@neynar/ui/badge';
-import { Button } from '@neynar/ui/button';
-
-import { usePoints } from '../shared/context/PointsContext';
+import { useAccount, useDisconnect } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
-import { SBTRewardsDashboard } from '../components/SBTRewardsDashboard';
-import { handleDailyClaim, requestSBTMint } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
 /**
- * Optimized Profile Page:
- * 1. Neynar UI Integration: Professional, lightweight UI.
- * 2. Hardware Optimized: Reduced animations and lighter DOM.
- * 3. Cache Control: Manual localStorage purge for maintenance.
+ * High-Performance Profile Hub (React 18 Optimized).
+ * Reverts @neynar/ui to custom Tailwind to resolve React 19 peer-dep conflicts.
  */
 export function ProfilePage() {
   const { userAddress } = useParams();
-  const { address: connectedAddress, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const { address: connectedAddress, isConnected, disconnect } = useAccount();
   const navigate = useNavigate();
 
-  const targetAddress = (userAddress || connectedAddress)?.trim().toLowerCase();
-  const isOwnProfile = targetAddress === connectedAddress?.toLowerCase();
+  // Target Address Logic: Use URL param or connected wallet
+  const targetAddress = userAddress || connectedAddress;
+  const isOwnProfile = !userAddress || userAddress.toLowerCase() === connectedAddress?.toLowerCase();
 
-  const { manualAddPoints, sbtThresholds, offChainPoints, offChainLevel, fid: ownFid } = usePoints();
-  const { profileData, isLoading: loadingFC, error: errorFC, syncUser, clearCache } = useFarcaster();
-
+  const { user, isLoading: isFarcasterLoading, error, syncUser, clearCache } = useFarcaster(targetAddress);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Global Purge Strategy (User side maintenance)
@@ -62,259 +48,156 @@ export function ProfilePage() {
     });
   }, [targetAddress, clearCache, syncUser]);
 
-  useEffect(() => {
-    if (errorFC) toast.error(`Identity Check: ${errorFC}`);
-  }, [errorFC]);
+  // Derived Social Data
+  const socialData = useMemo(() => ({
+    display_name: user?.farcaster_user?.display_name || user?.display_name || 'Anonymous User',
+    username: user?.farcaster_user?.username || 'user',
+    pfp_url: user?.farcaster_user?.pfp_url || `https://avatar.vercel.sh/${targetAddress}.svg`,
+    bio: user?.farcaster_user?.profile?.bio?.text || 'Standard Disco Explorer',
+    follower_count: user?.farcaster_user?.follower_count || 0,
+    following_count: user?.farcaster_user?.following_count || 0,
+    power_badge: user?.farcaster_user?.power_badge || false,
+    trust_score: user?.trust_score || 0
+  }), [user, targetAddress]);
 
-  useEffect(() => {
-    if (targetAddress) syncUser(targetAddress);
-  }, [targetAddress, syncUser]);
-
-  const isLoading = loadingFC && !profileData;
-
-  if (!targetAddress && !isConnected) {
+  if (!isConnected && !userAddress) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 bg-[#0B0E14]">
-        <Card className="max-w-md w-full border-white/5 bg-[#121720]/50 backdrop-blur-xl">
-          <CardContent className="pt-8 text-center">
-            <Wallet className="w-16 h-16 text-slate-700 mb-4 mx-auto" />
-            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Connection Required</h2>
-            <p className="text-slate-500 text-sm mb-6 uppercase tracking-wider font-bold">Connect your wallet to proceed.</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center text-slate-100">
+        <div className="bg-slate-900 border border-slate-800 p-10 rounded-[2.5rem] shadow-2xl max-w-sm">
+          <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <User className="w-10 h-10 text-indigo-500" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Identity Locked</h2>
+          <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">Connect your wallet to access your profile and reputation stats.</p>
+          <button
+            onClick={() => navigate('/login')}
+            className="w-full bg-indigo-600 py-4 rounded-2xl text-white font-bold hover:bg-indigo-500 transition-all shadow-xl active:scale-95 text-xs uppercase tracking-widest"
+          >
+            Connect Identity
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isFarcasterLoading && !user) {
+    return (
+      <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8 animate-pulse">
+        <div className="bg-slate-900/50 h-64 rounded-[2rem]"></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
+          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
+          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
+          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-32 px-4 bg-[#0B0E14]">
-      <div className="container mx-auto max-w-2xl space-y-6">
+    <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6 text-slate-100">
 
-        {/* Profile Identity Block */}
-        <Card className="border-white/5 bg-[#121720] rounded-[2rem] overflow-hidden">
-          <CardContent className="p-6">
-            {isLoading ? (
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <Skeleton className="w-24 h-24 rounded-2xl" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-8 w-48" />
-                  <Skeleton className="h-4 w-32" />
+      {/* Premium Profile Header */}
+      <div className="relative bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-900/40 to-purple-900/40"></div>
+
+        <div className="relative pt-16 px-6 pb-8 md:px-10">
+          <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-6">
+
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+              {/* Profile Picture */}
+              <div className="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl relative">
+                <img src={socialData.pfp_url} alt="Profile" className="w-full h-full object-cover" />
+              </div>
+
+              <div className="text-center md:text-left mb-2">
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                  <h1 className="text-3xl font-black text-white tracking-tighter uppercase">{socialData.display_name}</h1>
+                  {socialData.power_badge && <TrendingUp className="w-5 h-5 text-indigo-400" />}
+                </div>
+                <p className="text-indigo-400 font-mono text-sm">@{socialData.username}</p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
+                  <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                    {socialData.power_badge ? <Star className="w-3 h-3 fill-indigo-400" /> : <Shield className="w-3 h-3" />}
+                    {socialData.power_badge ? 'Active Identity' : 'Standard User'}
+                  </span>
+                  {isOwnProfile && (
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      Owner
+                    </span>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="flex flex-col md:flex-row items-center gap-6 relative">
-                <Avatar className="w-24 h-24 rounded-2xl border border-indigo-500/20 shadow-2xl">
-                  <AvatarImage src={profileData?.pfp_url} alt={profileData?.username} />
-                  <AvatarFallback className="bg-slate-800 text-3xl">👤</AvatarFallback>
-                </Avatar>
-
-                <div className="text-center md:text-left min-w-0 flex-1">
-                  <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-                    <h1 className="text-3xl font-black text-white uppercase tracking-tighter truncate">
-                      @{profileData?.username || 'unknown'}
-                    </h1>
-                    {profileData?.power_badge && (
-                      <Badge variant="indigo" className="w-fit mx-auto md:mx-0 bg-indigo-500/20 text-indigo-400 border-indigo-500/30 flex items-center gap-1">
-                        <Zap className="w-3 h-3 fill-indigo-400" />
-                        POWER
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-center md:justify-start gap-6 mb-4">
-                    <div className="flex flex-col">
-                      <span className="text-white font-black text-lg leading-none">{profileData?.follower_count?.toLocaleString() || 0}</span>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Followers</span>
-                    </div>
-                    <div className="w-px h-8 bg-white/5" />
-                    <div className="flex flex-col">
-                      <span className="text-white font-black text-lg leading-none">{profileData?.following_count?.toLocaleString() || 0}</span>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Following</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                    <div className="flex items-center gap-2 bg-black/40 py-1.5 px-3 rounded-xl border border-white/5">
-                      <span className="font-mono text-slate-400 text-[10px] font-black tracking-tighter">
-                        {targetAddress.slice(0, 6)}...{targetAddress.slice(-4)}
-                      </span>
-                      <ExternalLink className="w-3 h-3 text-slate-600" />
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleManualRefresh}
-                      className="rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 h-8 w-8"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isSyncing ? 'animate-spin' : ''}`} />
-                    </Button>
-                  </div>
-                </div>
-
-                {isOwnProfile && (
-                  <div className="flex flex-col gap-2 mt-4 md:mt-0">
-                    <Button
-                      variant="destructive"
-                      onClick={() => { disconnect(); navigate('/login'); }}
-                      className="bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 text-[10px] uppercase font-black tracking-widest h-10 px-4 rounded-xl"
-                    >
-                      <LogOut className="w-3 h-3 mr-2" />
-                      Logout
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={handleGlobalPurge}
-                      className="bg-white/5 border-white/10 text-slate-500 hover:bg-white/10 text-[10px] uppercase font-black tracking-widest h-10 px-4 rounded-xl"
-                    >
-                      <Trash2 className="w-3 h-3 mr-2" />
-                      Clean Cache
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Reputation Audit Card */}
-        <Card className="border-white/5 bg-[#121720] rounded-[2rem]">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-xs font-black text-white uppercase tracking-widest">Reputation Node Audit</h2>
-              </div>
-              <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-black">
-                SCORE: {profileData?.internal_trust_score || 0}
-              </Badge>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden mb-4 border border-white/5">
-              <div
-                className="h-full bg-indigo-500 transition-all duration-1000 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
-                style={{ width: `${Math.min(profileData?.internal_trust_score || 0, 100)}%` }}
-              />
-            </div>
-            <div className="p-4 bg-black/20 rounded-2xl border border-white/5 flex items-start gap-4">
-              <div className="p-3 bg-indigo-500/10 rounded-xl">
-                <Zap className="w-4 h-4 text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-white uppercase mb-1">InviSync Protocol v2.5</p>
-                <p className="text-[9px] text-slate-500 leading-relaxed font-bold uppercase tracking-widest">
-                  Verified via Neynar Managed Signer.<br />
-                  Last audit: {profileData?.last_sync ? new Date(profileData.last_sync).toLocaleTimeString() : 'Awaiting initialization'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Action Blocks (Private) */}
-        {isOwnProfile && (
-          <div className="space-y-6">
-            <DailyClaimCard address={connectedAddress} onClaim={(p) => manualAddPoints(p)} />
-            <SBTRewardsDashboard />
+            {/* Actions */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleManualRefresh}
+                disabled={isSyncing}
+                className="w-12 h-12 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-2xl flex items-center justify-center transition-all border border-slate-700 active:scale-95 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+              </button>
+              {isOwnProfile && (
+                <button
+                  onClick={() => { disconnect(); navigate('/login'); }}
+                  className="bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 px-6 h-12 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
           </div>
-        )}
+
+          <div className="mt-8 border-t border-slate-800 pt-6">
+            <p className="text-slate-400 text-sm font-medium leading-relaxed italic">
+              "{socialData.bio}"
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* Social Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Followers', value: socialData.follower_count.toLocaleString(), icon: Users, color: 'indigo' },
+          { label: 'Following', value: socialData.following_count.toLocaleString(), icon: Globe, color: 'purple' },
+          { label: 'Trust Score', value: socialData.trust_score.toFixed(1), icon: Shield, color: 'emerald' },
+          { label: 'Points', value: user?.points?.toString() || '0', icon: Trophy, color: 'amber' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-lg">
+            <div className={`w-10 h-10 bg-${stat.color}-500/10 rounded-xl flex items-center justify-center mb-4`}>
+              <stat.icon className={`w-5 h-5 text-${stat.color}-500`} />
+            </div>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+            <p className="text-2xl font-black text-white tracking-tighter">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Maintenance Controls (Admin Mode) */}
+      {isOwnProfile && (
+        <div className="bg-slate-900/40 border border-dashed border-slate-800 p-8 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h3 className="text-white font-black uppercase tracking-widest text-xs mb-1">Local Identity maintenance</h3>
+            <p className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">Purge local cache and re-sync from protocol nodes.</p>
+          </div>
+          <button
+            onClick={handleGlobalPurge}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-400 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-slate-700 transition-all hover:text-red-400 hover:border-red-400/20"
+          >
+            <Trash2 className="w-4 h-4" />
+            Global System Purge
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
 
-/**
- * Optimized DailyClaimCard
- */
-function DailyClaimCard({ address, onClaim }) {
-  const { sbtThresholds, fid, offChainPoints, offChainLevel } = usePoints();
-  const [canClaim, setCanClaim] = useState(false);
-  const [timeLeft, setTimeLeft] = useState('');
-  const [claiming, setClaiming] = useState(false);
-
-  const realPoints = offChainPoints || 0;
-  const realLevel = offChainLevel || 0;
-  const nextTierConfig = sbtThresholds.find(t => t.level === realLevel + 1) || sbtThresholds[sbtThresholds.length - 1];
-  const nextThreshold = nextTierConfig?.min_xp || 10000;
-  const progress = Math.min((realPoints / nextThreshold) * 100, 100);
-
-  const COOLDOWN = 24 * 60 * 60 * 1000;
-  const STORAGE_KEY = `daily_claim_${address?.toLowerCase()}`;
-
-  const checkStatus = useCallback(() => {
-    const lastClaim = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
-    const diff = Date.now() - lastClaim;
-    if (diff >= COOLDOWN) {
-      setCanClaim(true);
-      setTimeLeft('READY');
-    } else {
-      setCanClaim(false);
-      const rem = COOLDOWN - diff;
-      const h = Math.floor(rem / 3600000);
-      const m = Math.floor((rem % 3600000) / 60000);
-      const s = Math.floor((rem % 60000) / 1000);
-      setTimeLeft(`${h}h ${m}m ${s}s`);
-    }
-  }, [STORAGE_KEY]);
-
-  useEffect(() => {
-    checkStatus();
-    const interval = setInterval(checkStatus, 1000);
-    return () => clearInterval(interval);
-  }, [checkStatus]);
-
-  const handleClaim = async () => {
-    if (!fid) {
-      toast.error("Farcaster identity required!", { icon: '🤖' });
-      return;
-    }
-    setClaiming(true);
-    const res = await handleDailyClaim(fid, address);
-    if (res.success) {
-      localStorage.setItem(STORAGE_KEY, Date.now().toString());
-      onClaim(100);
-      toast.success(res.message);
-      checkStatus();
-    } else {
-      toast.error(res.message || "Protocol mismatch");
-    }
-    setClaiming(false);
-  };
-
-  return (
-    <Card className="border-white/5 bg-[#121720] rounded-[2rem] overflow-hidden relative">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${canClaim ? 'bg-indigo-600 shadow-xl shadow-indigo-500/20' : 'bg-slate-800'}`}>
-              {canClaim ? '⚡' : '⏳'}
-            </div>
-            <div>
-              <h3 className="text-xl font-black text-white uppercase italic tracking-tighter leading-tight">Identity Sync</h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{canClaim ? 'Protocol ready' : `Refresh: ${timeLeft}`}</p>
-            </div>
-          </div>
-          <Button
-            disabled={!canClaim || claiming}
-            onClick={handleClaim}
-            className={`font-black text-xs uppercase tracking-widest px-8 rounded-xl h-12 ${canClaim ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-800'}`}
-          >
-            {claiming ? 'SYNCING...' : 'SYNC +100'}
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-end">
-            <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">XP Progression</span>
-            <span className="text-[10px] text-white font-black">{realPoints.toLocaleString()} / {nextThreshold.toLocaleString()} XP</span>
-          </div>
-          <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-            <div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
+// Minimal helpers
+const Trophy = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>
+);

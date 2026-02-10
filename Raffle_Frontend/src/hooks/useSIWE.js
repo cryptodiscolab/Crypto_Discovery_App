@@ -97,7 +97,12 @@ ${resourceLines}`;
             };
 
             // Synchronize with SignatureGuard storage requirement
-            localStorage.setItem('crypto_disco_auth_status', 'authenticated');
+            const authStatus = {
+                wallet: address,
+                status: 'AUTHENTICATED',
+                method: 'SIWE'
+            };
+            localStorage.setItem('crypto_disco_auth_status', JSON.stringify(authStatus));
             setSession(userSession);
 
             // Ensure User Profile Exists

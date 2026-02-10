@@ -24,12 +24,24 @@ export const SignatureGuard = ({ children }) => {
 
     // 1. Initial Identity Check & Redirection
     useEffect(() => {
-        // Explicit State Check
-        const isAuth = localStorage.getItem(AUTH_KEY) === 'authenticated' && isConnected;
+        const authRaw = localStorage.getItem(AUTH_KEY);
+        let isAuth = false;
 
-        setIsApproved(isAuth);
+        if (authRaw) {
+            try {
+                // Try parsing as JSON (New SDK Format)
+                const auth = JSON.parse(authRaw);
+                isAuth = auth.status === 'AUTHENTICATED';
+            } catch (e) {
+                // Fallback for Legacy Format
+                isAuth = authRaw === 'authenticated';
+            }
+        }
 
-        if (!isAuth) {
+        const isFullyAuth = isAuth && isConnected;
+        setIsApproved(isFullyAuth);
+
+        if (!isFullyAuth) {
             // Redirect to login ohne modal to prevent blocking UI
             // We use a small timeout to allow routing state to settle if needed
             const timeoutId = setTimeout(() => {
