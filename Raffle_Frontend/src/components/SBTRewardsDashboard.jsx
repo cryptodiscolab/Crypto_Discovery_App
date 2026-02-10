@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
-import { formatEther } from 'ethers';
+import { formatUnits } from 'viem';
 import { usePublicClient } from 'wagmi';
 import toast from 'react-hot-toast';
 
@@ -123,13 +123,13 @@ export function SBTRewardsDashboard() {
                         <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                             <span>Progress to Phase Target</span>
                             <span className="text-indigo-400">
-                                {Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}%
+                                {Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}%
                             </span>
                         </div>
                         <div className="h-2 bg-black/40 rounded-full overflow-hidden border border-white/5">
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
+                                animate={{ width: `${Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
                                 className="h-full bg-indigo-600 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.3)]"
                             />
                         </div>

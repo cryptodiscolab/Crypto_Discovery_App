@@ -1,12 +1,5 @@
 import { useMemo, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
-import {
-  ConnectWallet,
-  Wallet as OnchainWallet,
-  WalletDropdown,
-  WalletDropdownDisconnect
-} from '@coinbase/onchainkit/wallet';
-import { Name, Address, Avatar, Identity } from '@coinbase/onchainkit/identity';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sparkles, Shield, Wallet } from 'lucide-react';
 import { usePoints } from './shared/context/PointsContext';
@@ -122,25 +115,22 @@ export function Header() {
 
           {/* Right: Wallet (Icon Only) - Hidden on Mobile */}
           <div className="hidden md:flex flex-1 justify-end items-center">
-            <OnchainWallet>
-              {projectId ? (
-                <ConnectWallet
-                  text="Connect Wallet"
-                  className="!bg-indigo-600 !text-white !rounded-full !px-6 !py-2 hover:!bg-indigo-500 !transition-all !flex !items-center !justify-center !min-w-[160px] !min-h-[44px]"
-                >
-                  {!isConnected && <Wallet className="w-6 h-6 mr-2" />}
-                  <Avatar className="h-6 w-6" />
-                  <Name />
-                </ConnectWallet>
-              ) : null}
-              <WalletDropdown className="mt-4">
-                <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-                  <Avatar />
-                  <Name />
-                </Identity>
-                <WalletDropdownDisconnect />
-              </WalletDropdown>
-            </OnchainWallet>
+            {isConnected ? (
+              <div className="flex items-center gap-2 bg-indigo-600/20 px-4 py-2 rounded-full border border-indigo-500/30">
+                <Wallet className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-mono text-white">
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="bg-indigo-600 text-white rounded-full px-6 py-2 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"
+              >
+                <Wallet className="w-5 h-5" />
+                Connect Wallet
+              </button>
+            )}
           </div>
         </div>
       </div>

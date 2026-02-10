@@ -100,6 +100,7 @@ export function useTaskInfo(taskId) {
 }
 
 export function useDoTask() {
+    const { address } = useAccount();
     const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
     const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 

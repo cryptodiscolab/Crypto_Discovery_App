@@ -16,7 +16,7 @@ import { useAccount } from 'wagmi';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
-import { formatEther } from 'ethers';
+import { formatUnits } from 'viem';
 import { AnnouncementBanner } from '../components/AnnouncementBanner';
 import { FeatureCardSkeleton } from '../components/FeatureCardSkeleton';
 
@@ -106,12 +106,12 @@ export function HomePage() {
                   </p>
                   <div className="flex items-baseline gap-2">
                     <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter">
-                      ${((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      ${((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </h2>
                     <span className="text-slate-500 font-bold text-xl uppercase italic">USDC</span>
                   </div>
                   <p className="text-slate-500 text-sm mt-1 flex items-center gap-1 font-mono">
-                    ≈ {parseFloat(formatEther(totalPoolBalance || 0n)).toFixed(4)} ETH
+                    ≈ {parseFloat(formatUnits(totalPoolBalance || 0n, 18)).toFixed(4)} ETH
                   </p>
                 </div>
 
@@ -135,14 +135,14 @@ export function HomePage() {
                 <div className="flex justify-between items-end">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pool Progress</span>
                   <span className="text-sm font-black text-indigo-400">
-                    {Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}% to Target
+                    {Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}% to Target
                   </span>
                 </div>
 
                 <div className="h-6 bg-black/40 rounded-full border border-white/5 p-1 relative overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
+                    animate={{ width: `${Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
                     className="h-full bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-400 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.4)]"
                   />
                 </div>

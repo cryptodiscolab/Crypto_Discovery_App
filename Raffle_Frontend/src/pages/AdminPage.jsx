@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import sdk from '@farcaster/frame-sdk';
 import { Shield, Award, Landmark, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
@@ -10,7 +9,7 @@ import { RoleManagementTab } from '../components/admin/RoleManagementTab';
 import { WhitelistManagerTab } from '../components/admin/WhitelistManagerTab';
 import { RaffleManagerTab } from '../components/admin/RaffleManagerTab';
 import { TaskManagerTab } from '../components/admin/TaskManagerTab';
-import { formatEther, parseEther } from 'ethers';
+import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
 import { getSBTThresholds, updateSBTThreshold } from '../dailyAppLogic';
 
@@ -54,12 +53,7 @@ export function AdminPage() {
 
                 // Get Current User Context
                 let userFid = null;
-                try {
-                    const context = await sdk.context;
-                    userFid = context?.user?.fid;
-                } catch (e) {
-                    // Not in frame
-                }
+                // Farcaster SDK check removed to stay within stable build boundaries
 
                 const currentWallet = address?.toLowerCase();
                 const isSBTAccountOwner = contractOwner && currentWallet && currentWallet === contractOwner.toLowerCase();
@@ -546,7 +540,7 @@ function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSettings }
         }
     }, [settings]);
 
-    const currentETH = parseFloat(formatEther(balance));
+    const currentETH = parseFloat(formatUnits(balance, 18));
     const currentUSDC = currentETH * ethPrice;
     const progress = Math.min((currentUSDC / formData.targetUSDC) * 100, 100);
 
@@ -818,7 +812,7 @@ function TierTab({ onUpdate }) {
                         <div key={t.id} className="bg-slate-900 p-4 rounded-xl border border-white/5">
                             <div className="flex justify-between items-center mb-2">
                                 <span className={`text-sm font-black uppercase tracking-widest ${t.tier_name === 'Gold' ? 'text-yellow-400' :
-                                        t.tier_name === 'Silver' ? 'text-slate-300' : 'text-orange-400'
+                                    t.tier_name === 'Silver' ? 'text-slate-300' : 'text-orange-400'
                                     }`}>{t.tier_name} Tier</span>
                                 <span className="text-xs text-slate-500">Level {t.level}</span>
                             </div>

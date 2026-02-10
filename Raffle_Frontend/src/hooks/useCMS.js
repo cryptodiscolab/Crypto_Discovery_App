@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useReadContract, useWriteContract, useAccount } from 'wagmi';
-import { readContract } from '@wagmi/core';
+import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClient } from 'wagmi';
 import { CMS_CONTRACT_ABI, CHAINLINK_ORACLE_ABI } from '../shared/constants/abis';
+import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
-import { config } from '../Web3Provider'; // Import from Web3Provider instead of missing lib/wagmi
+// Multi-instance fix: Import from wagmiConfig to break circular dependency (Note: removed direct import for hook usage)
 
 const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS;
 const PRICE_FEED_ADDRESS = "0x4aDC67696bA383F43fD60604633031d935f9584b"; // ETH/USD Base Sepolia
@@ -24,6 +24,8 @@ const DEFAULT_FEATURE_CARDS = [];
 export function useCMS() {
     const { address } = useAccount();
     const { writeContractAsync } = useWriteContract();
+    const config = useConfig();
+    const publicClient = usePublicClient();
 
     // ============================================
     // READ CONTENT FROM CONTRACT
@@ -355,7 +357,8 @@ export function useCMS() {
     const checkAccess = useCallback(async (userAddress, featureId) => {
         if (!CMS_CONTRACT_ADDRESS) return false;
         try {
-            const result = await readContract(config, {
+            if (!publicClient) return false;
+            const result = await publicClient.readContract({
                 address: CMS_CONTRACT_ADDRESS,
                 abi: CMS_CONTRACT_ABI,
                 functionName: 'hasAccess',
@@ -428,15 +431,4 @@ export function useCMS() {
 }
 
 // Feature ID constants (match contract)
-export const FEATURE_IDS = {
-    FREE_DAILY_TASK: 1,
-    FREE_RAFFLE_TICKET: 2,
-    PREMIUM_ACCESS: 3,
-};
-
-export const FEATURE_NAMES = {
-    1: "Free Daily Task",
-    2: "Free Raffle Ticket",
-    3: "Premium Access",
-};
-
+// Feature constants moved to shared/constants/cmsFeatures.js

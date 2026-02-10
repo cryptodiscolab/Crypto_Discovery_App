@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Shield, UserPlus, UserX, Crown, Wrench, AlertCircle } from 'lucide-react';
 import { useCMS } from '../../hooks/useCMS';
 import toast from 'react-hot-toast';
-import { isAddress } from 'ethers';
+import { isAddress } from 'viem';
 
 export function RoleManagementTab() {
     const { grantOperator, revokeOperator, showSuccessToast, refetchAll, isAdmin } = useCMS();
@@ -156,8 +156,8 @@ export function RoleManagementTab() {
                                             {operator.address.slice(0, 6)}...{operator.address.slice(-4)}
                                         </code>
                                         <span className={`ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${operator.role === 'Admin'
-                                                ? 'bg-yellow-500/20 text-yellow-400'
-                                                : 'bg-indigo-500/20 text-indigo-400'
+                                            ? 'bg-yellow-500/20 text-yellow-400'
+                                            : 'bg-indigo-500/20 text-indigo-400'
                                             }`}>
                                             {operator.role}
                                         </span>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Ticket, Timer, Trophy, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Users, Timer, Ticket, ArrowRight, Shield, AlertCircle, RefreshCw, Zap, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAccount, useReadContract, useWriteContract, useWatchContractEvents, usePublicClient } from 'wagmi';
+import { formatUnits } from 'viem';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
-import { formatEther } from 'ethers';
 import toast from 'react-hot-toast';
 
 function RaffleCard({ raffleId }) {

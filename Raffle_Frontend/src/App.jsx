@@ -5,24 +5,22 @@ import { Header } from './Header';
 import { BottomNav } from './components/BottomNav';
 import { PointsProvider } from './shared/context/PointsContext';
 
-// Import Pages
-import { HomePage } from './pages/HomePage';
-import { RafflesPage } from './pages/RafflesPage';
-import { LeaderboardPage } from './pages/LeaderboardPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { CreateRafflePage } from './pages/CreateRafflePage';
-import { TasksPage } from './pages/TasksPage';
-import { AdminPage } from './pages/AdminPage';
-import { LoginPage } from './pages/LoginPage';
-import AdminPanel from './AdminPanel';
-import AdminDashboard from './pages/admin/dashboard.jsx';
-import AdminGuard from './components/admin/AdminGuard.jsx';
-import { SignatureGuard } from './components/SignatureGuard.jsx';
-
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 
-
+// Lazy Load Pages
+const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
+const RafflesPage = lazy(() => import('./pages/RafflesPage').then(m => ({ default: m.RafflesPage })));
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const CreateRafflePage = lazy(() => import('./pages/CreateRafflePage').then(m => ({ default: m.CreateRafflePage })));
+const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.TasksPage })));
+const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const AdminPanel = lazy(() => import('./AdminPanel'));
+const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx'));
+const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx'));
+const SignatureGuard = lazy(() => import('./components/SignatureGuard.jsx').then(m => ({ default: m.SignatureGuard })));
 
 function App() {
   return (
@@ -33,26 +31,32 @@ function App() {
             <Header />
             <SignatureGuard>
               <main className="pt-24 pb-32 md:pb-0">
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/tasks" element={<TasksPage />} />
-                  <Route path="/raffles" element={<RafflesPage />} />
-                  <Route path="/leaderboard" element={<LeaderboardPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                  <Route path="/create" element={<CreateRafflePage />} />
-                  <Route
-                    path="/admin"
-                    element={
-                      <AdminGuard>
-                        <AdminDashboard />
-                      </AdminGuard>
-                    }
-                  />
-                  <Route path="/admin/legacy" element={<AdminPage />} />
-                  <Route path="/admin-sbt" element={<AdminPanel />} />
-                </Routes>
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center">
+                    <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                  </div>
+                }>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/tasks" element={<TasksPage />} />
+                    <Route path="/raffles" element={<RafflesPage />} />
+                    <Route path="/leaderboard" element={<LeaderboardPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                    <Route path="/create" element={<CreateRafflePage />} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <AdminGuard>
+                          <AdminDashboard />
+                        </AdminGuard>
+                      }
+                    />
+                    <Route path="/admin/legacy" element={<AdminPage />} />
+                    <Route path="/admin-sbt" element={<AdminPanel />} />
+                  </Routes>
+                </Suspense>
               </main>
             </SignatureGuard>
 

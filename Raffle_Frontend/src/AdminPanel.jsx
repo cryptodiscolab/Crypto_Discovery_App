@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import sdk from '@farcaster/frame-sdk';
+import { isAddress } from 'viem';
 import { useAccount } from 'wagmi';
-import { supabase } from './dailyAppLogic';
+import { supabase } from './lib/supabaseClient';
 import {
     Database,
     Settings,
@@ -72,12 +72,7 @@ export default function AdminPanel() {
                 const adminFids = fidsEnv.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f));
 
                 let userFid = null;
-                try {
-                    const context = await sdk.context;
-                    userFid = context?.user?.fid;
-                } catch (e) {
-                    console.warn('[Security] SDK context not available');
-                }
+                // Farcaster SDK check removed to stay within stable build boundaries
 
                 const walletMatch = currentWallet && adminWallets.includes(currentWallet);
                 const fidMatch = userFid && adminFids.includes(parseInt(userFid));

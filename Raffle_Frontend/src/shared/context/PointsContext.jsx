@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useUserV12Stats } from '../../hooks/useContract';
 import { getSBTThresholds, getUserStatsByFid } from '../../dailyAppLogic';
-import sdk from '@farcaster/frame-sdk';
 
 const PointsContext = createContext(null);
 
@@ -66,28 +65,7 @@ export function PointsProvider({ children }) {
         loadThresholds();
     }, []);
 
-    // Load FID and Off-Chain Stats (Centralized Anti-Halu)
-    useEffect(() => {
-        const loadFarcaster = async () => {
-            try {
-                const context = await sdk.context;
-                if (context?.user?.fid) {
-                    const userFid = context.user.fid;
-                    setFid(userFid);
-
-                    // Fetch Real Stats from Supabase
-                    const stats = await getUserStatsByFid(userFid);
-                    if (stats) {
-                        setOffChainPoints(stats.total_xp || 0);
-                        setOffChainLevel(stats.current_level || 0);
-                    }
-                }
-            } catch (e) {
-                console.log("Not in Farcaster context");
-            }
-        };
-        loadFarcaster();
-    }, []);
+    // FID and Off-Chain Stats loading removed to resolve build issues
 
     useEffect(() => {
         // Check for approaching deadlines every minute

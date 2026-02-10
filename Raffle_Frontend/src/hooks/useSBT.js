@@ -1,7 +1,6 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { DISCO_MASTER_ABI } from '../shared/constants/abis';
 import { useEffect, useState } from 'react';
-import { formatEther } from 'ethers';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 

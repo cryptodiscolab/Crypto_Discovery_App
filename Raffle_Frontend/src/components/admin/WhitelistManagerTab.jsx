@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Shield, UserPlus, UserMinus, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
 import { useCMS, FEATURE_IDS, FEATURE_NAMES } from '../../hooks/useCMS';
 import toast from 'react-hot-toast';
-import { isAddress } from 'ethers';
+import { isAddress } from 'viem';
 
 export function WhitelistManagerTab() {
     const { grantPrivilege, revokePrivilege, batchGrantPrivileges, showSuccessToast, refetchAll } = useCMS();
