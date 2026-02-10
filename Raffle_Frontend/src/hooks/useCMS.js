@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
+import { readContract } from '@wagmi/core';
 import { CMS_CONTRACT_ABI } from '../shared/constants/abis';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
+import { config } from '../Web3Provider'; // Import from Web3Provider instead of missing lib/wagmi
 
 const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS;
 const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -35,18 +37,21 @@ export function useCMS() {
         address: CMS_CONTRACT_ADDRESS,
         abi: CMS_CONTRACT_ABI,
         functionName: 'getAnnouncement',
-        watch: true,
+        query: {
+            enabled: Boolean(CMS_CONTRACT_ADDRESS),
+        }
     });
 
     const [ethPrice, setEthPrice] = useState(2500); // Fallback price
 
     // Fetch ETH Price from CoinGecko (Simple public API)
     useEffect(() => {
+        let isMounted = true;
         const fetchPrice = async () => {
             try {
                 const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
                 const data = await response.json();
-                if (data.ethereum?.usd) {
+                if (isMounted && data.ethereum?.usd) {
                     setEthPrice(data.ethereum.usd);
                     console.log('[useCMS] ETH Price Updated:', data.ethereum.usd);
                 }
@@ -57,7 +62,10 @@ export function useCMS() {
 
         fetchPrice();
         const interval = setInterval(fetchPrice, 5 * 60 * 1000); // Update every 5 minutes
-        return () => clearInterval(interval);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     const {
@@ -69,7 +77,9 @@ export function useCMS() {
         address: CMS_CONTRACT_ADDRESS,
         abi: CMS_CONTRACT_ABI,
         functionName: 'getNews',
-        watch: true,
+        query: {
+            enabled: Boolean(CMS_CONTRACT_ADDRESS),
+        }
     });
 
     const {
@@ -81,7 +91,9 @@ export function useCMS() {
         address: CMS_CONTRACT_ADDRESS,
         abi: CMS_CONTRACT_ABI,
         functionName: 'getFeatureCards',
-        watch: true,
+        query: {
+            enabled: Boolean(CMS_CONTRACT_ADDRESS),
+        }
     });
 
 
@@ -93,14 +105,20 @@ export function useCMS() {
         address: CMS_CONTRACT_ADDRESS,
         abi: CMS_CONTRACT_ABI,
         functionName: 'hasRole',
-        args: [DEFAULT_ADMIN_ROLE, address || "0x0"],
+        args: [DEFAULT_ADMIN_ROLE, address || "0x0000000000000000000000000000000000000000"],
+        query: {
+            enabled: Boolean(CMS_CONTRACT_ADDRESS && address),
+        }
     });
 
     const { data: isOperatorRaw } = useReadContract({
         address: CMS_CONTRACT_ADDRESS,
         abi: CMS_CONTRACT_ABI,
         functionName: 'isOperator',
-        args: [address || "0x0"],
+        args: [address || "0x0000000000000000000000000000000000000000"],
+        query: {
+            enabled: Boolean(CMS_CONTRACT_ADDRESS && address),
+        }
     });
 
     // Robust check fallbacks (using ENV for immediate UI response)
@@ -112,42 +130,42 @@ export function useCMS() {
         return adminList.includes(address.toLowerCase());
     }, [address, envAdmin, envWallets]);
 
-    // Helper: Normalize wallet address (Safe Lowercase)
     // Database Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);
     useEffect(() => {
+        let isMounted = true;
         const checkDbAdmin = async () => {
             const wallet = cleanWallet(address);
             if (!wallet) {
-                setIsDbAdmin(false);
+                if (isMounted) setIsDbAdmin(false);
                 return;
             }
             try {
-                // Simplified & Safe Admin Check
                 const { data } = await supabase
                     .from('user_profiles')
                     .select('is_admin')
                     .eq('wallet_address', wallet)
-                    .maybeSingle(); // Returns null instead of error if not found
+                    .maybeSingle();
 
-                // Safe boolean cast (handle null/undefined/false)
-                const isAdmin = Boolean(data?.is_admin);
-                setIsDbAdmin(isAdmin);
-
-                if (isAdmin) {
-                    console.log('[useCMS] DB Admin confirmed:', wallet);
+                if (isMounted) {
+                    const isAdminVal = Boolean(data?.is_admin);
+                    setIsDbAdmin(isAdminVal);
+                    if (isAdminVal) {
+                        console.log('[useCMS] DB Admin confirmed:', wallet);
+                    }
                 }
             } catch (e) {
                 console.warn('[useCMS] DB Admin check failed (Non-blocking):', e.message);
-                setIsDbAdmin(false);
+                if (isMounted) setIsDbAdmin(false);
             }
         };
         checkDbAdmin();
+        return () => { isMounted = false; };
     }, [address]);
 
     // Final boolean roles (Memoized for efficiency)
-    const isAdmin = useMemo(() => isAdminRaw || isEnvAdmin || isDbAdmin || false, [isAdminRaw, isEnvAdmin, isDbAdmin]);
-    const isOperator = useMemo(() => isOperatorRaw || isEnvAdmin || isDbAdmin || false, [isOperatorRaw, isEnvAdmin, isDbAdmin]);
+    const isAdmin = useMemo(() => Boolean(isAdminRaw || isEnvAdmin || isDbAdmin), [isAdminRaw, isEnvAdmin, isDbAdmin]);
+    const isOperator = useMemo(() => Boolean(isOperatorRaw || isEnvAdmin || isDbAdmin), [isOperatorRaw, isEnvAdmin, isDbAdmin]);
     const canEdit = useMemo(() => isAdmin || isOperator, [isAdmin, isOperator]);
 
 
@@ -161,31 +179,38 @@ export function useCMS() {
         let news = DEFAULT_NEWS;
         let featureCards = DEFAULT_FEATURE_CARDS;
 
+        // Parse Announcement and Pool Settings
         try {
             if (announcementRaw && typeof announcementRaw === 'string' && announcementRaw.trim() !== "") {
                 const parsed = JSON.parse(announcementRaw);
-                if (parsed.announcement) {
-                    announcement = parsed.announcement;
-                    poolSettings = parsed.pool || DEFAULT_POOL_SETTINGS;
-                } else {
-                    announcement = parsed;
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.announcement) {
+                        announcement = { ...DEFAULT_ANNOUNCEMENT, ...parsed.announcement };
+                        poolSettings = { ...DEFAULT_POOL_SETTINGS, ...parsed.pool };
+                    } else {
+                        announcement = { ...DEFAULT_ANNOUNCEMENT, ...parsed };
+                    }
                 }
             }
         } catch (e) {
             console.error("Failed to parse announcement JSON", e);
         }
 
+        // Parse News
         try {
             if (newsRaw && typeof newsRaw === 'string' && newsRaw.trim() !== "") {
-                news = JSON.parse(newsRaw);
+                const parsed = JSON.parse(newsRaw);
+                news = Array.isArray(parsed) ? parsed : DEFAULT_NEWS;
             }
         } catch (e) {
             console.error("Failed to parse news JSON", e);
         }
 
+        // Parse Feature Cards
         try {
             if (featureCardsRaw && typeof featureCardsRaw === 'string' && featureCardsRaw.trim() !== "") {
-                featureCards = JSON.parse(featureCardsRaw);
+                const parsed = JSON.parse(featureCardsRaw);
+                featureCards = Array.isArray(parsed) ? parsed : DEFAULT_FEATURE_CARDS;
             }
         } catch (e) {
             console.error("Failed to parse feature cards JSON", e);
@@ -200,64 +225,63 @@ export function useCMS() {
     // WRITE FUNCTIONS - CONTENT MANAGEMENT
     // ============================================
 
-    const updateAnnouncement = async (newAnnouncement) => {
-        // Wrap in system structure to preserve pool settings
+    const updateAnnouncement = useCallback(async (newAnnouncement) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+
         const newSettings = {
             announcement: newAnnouncement,
             pool: poolSettings
         };
         const jsonString = JSON.stringify(newSettings);
-        const hash = await writeContractAsync({
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'updateAnnouncement',
             args: [jsonString],
         });
-        return hash;
-    };
+    }, [poolSettings, writeContractAsync]);
 
-    const updatePoolSettings = async (newPoolSettings) => {
+    const updatePoolSettings = useCallback(async (newPoolSettings) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+
         const newSettings = {
             announcement: announcement,
             pool: newPoolSettings
         };
         const jsonString = JSON.stringify(newSettings);
-        const hash = await writeContractAsync({
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'updateAnnouncement',
             args: [jsonString],
         });
-        return hash;
-    };
+    }, [announcement, writeContractAsync]);
 
-    const updateNews = async (newNews) => {
+    const updateNews = useCallback(async (newNews) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newNews);
-        const hash = await writeContractAsync({
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'updateNews',
             args: [jsonString],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
-    const updateFeatureCards = async (newCards) => {
+    const updateFeatureCards = useCallback(async (newCards) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newCards);
-        const hash = await writeContractAsync({
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'updateFeatureCards',
             args: [jsonString],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
-    /**
-     * Batch update all content in one transaction (GAS SAVER!)
-     */
-    const batchUpdate = async (newAnnouncement, newNews, newCards) => {
-        const hash = await writeContractAsync({
+    const batchUpdate = useCallback(async (newAnnouncement, newNews, newCards) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'batchUpdate',
@@ -267,69 +291,65 @@ export function useCMS() {
                 JSON.stringify(newCards)
             ],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
     // ============================================
     // WRITE FUNCTIONS - ROLE MANAGEMENT
     // ============================================
 
-    const grantOperator = async (operatorAddress) => {
-        const hash = await writeContractAsync({
+    const grantOperator = useCallback(async (operatorAddress) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'grantOperator',
             args: [operatorAddress],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
-    const revokeOperator = async (operatorAddress) => {
-        const hash = await writeContractAsync({
+    const revokeOperator = useCallback(async (operatorAddress) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'revokeOperator',
             args: [operatorAddress],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
     // ============================================
     // WRITE FUNCTIONS - SPONSORED ACCESS WHITELIST
     // ============================================
 
-    const grantPrivilege = async (userAddress, featureId) => {
-        const hash = await writeContractAsync({
+    const grantPrivilege = useCallback(async (userAddress, featureId) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'grantPrivilege',
             args: [userAddress, featureId],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
-    const revokePrivilege = async (userAddress, featureId) => {
-        const hash = await writeContractAsync({
+    const revokePrivilege = useCallback(async (userAddress, featureId) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'revokePrivilege',
             args: [userAddress, featureId],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
-    /**
-     * Batch grant privileges to multiple users (GAS SAVER!)
-     */
-    const batchGrantPrivileges = async (userAddresses, featureIds) => {
-        const hash = await writeContractAsync({
+    const batchGrantPrivileges = useCallback(async (userAddresses, featureIds) => {
+        if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
+        return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: CMS_CONTRACT_ABI,
             functionName: 'batchGrantPrivileges',
             args: [userAddresses, featureIds],
         });
-        return hash;
-    };
+    }, [writeContractAsync]);
 
     // ============================================
     // HELPER FUNCTIONS
@@ -337,16 +357,23 @@ export function useCMS() {
 
     /**
      * Check if a user has access to a specific feature
+     * FIXED: Removed useReadContract hook from inside function
      */
-    const checkAccess = async (userAddress, featureId) => {
-        const { data } = await useReadContract({
-            address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
-            functionName: 'hasAccess',
-            args: [userAddress, featureId],
-        });
-        return data;
-    };
+    const checkAccess = useCallback(async (userAddress, featureId) => {
+        if (!CMS_CONTRACT_ADDRESS) return false;
+        try {
+            const result = await readContract(config, {
+                address: CMS_CONTRACT_ADDRESS,
+                abi: CMS_CONTRACT_ABI,
+                functionName: 'hasAccess',
+                args: [userAddress, featureId],
+            });
+            return result;
+        } catch (e) {
+            console.error("[useCMS] Error checking access:", e);
+            return false;
+        }
+    }, []);
 
     /**
      * Show success toast with BaseScan link
@@ -419,3 +446,4 @@ export const FEATURE_NAMES = {
     2: "Free Raffle Ticket",
     3: "Premium Access",
 };
+

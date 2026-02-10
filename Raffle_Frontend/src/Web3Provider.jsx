@@ -12,7 +12,7 @@ import { OnchainKitProvider } from '@coinbase/onchainkit';
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
 // 2. Simplify Config (Wagmi createConfig)
-const config = createConfig({
+export const config = createConfig({
   appName: 'Crypto Disco',
   projectId,
   chains: [base, baseSepolia],
