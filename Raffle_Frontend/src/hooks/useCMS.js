@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { readContract } from '@wagmi/core';
-import { CMS_CONTRACT_ABI } from '../shared/constants/abis';
+import { CMS_CONTRACT_ABI, CHAINLINK_ORACLE_ABI } from '../shared/constants/abis';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
 import { config } from '../Web3Provider'; // Import from Web3Provider instead of missing lib/wagmi
 
 const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS;
+const PRICE_FEED_ADDRESS = "0x4aDC67696bA383F43fD60604633031d935f9584b"; // ETH/USD Base Sepolia
 const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 // Default fallback states
@@ -42,31 +43,23 @@ export function useCMS() {
         }
     });
 
-    const [ethPrice, setEthPrice] = useState(2500); // Fallback price
+    // On-Chain ETH Price Oracle (Chainlink)
+    // Resolves CORS/429 issues from CoinGecko
+    const { data: priceRaw } = useReadContract({
+        address: PRICE_FEED_ADDRESS,
+        abi: CHAINLINK_ORACLE_ABI,
+        functionName: 'latestRoundData',
+        query: {
+            refetchInterval: 60 * 1000, // Update every minute
+        }
+    });
 
-    // Fetch ETH Price from CoinGecko (Simple public API)
-    useEffect(() => {
-        let isMounted = true;
-        const fetchPrice = async () => {
-            try {
-                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-                const data = await response.json();
-                if (isMounted && data.ethereum?.usd) {
-                    setEthPrice(data.ethereum.usd);
-                    console.log('[useCMS] ETH Price Updated:', data.ethereum.usd);
-                }
-            } catch (e) {
-                console.error("Failed to fetch ETH price:", e);
-            }
-        };
-
-        fetchPrice();
-        const interval = setInterval(fetchPrice, 5 * 60 * 1000); // Update every 5 minutes
-        return () => {
-            isMounted = false;
-            clearInterval(interval);
-        };
-    }, []);
+    const ethPrice = useMemo(() => {
+        if (priceRaw?.[1]) {
+            return Number(priceRaw[1]) / 1e8; // Chainlink USD Feeds have 8 decimals
+        }
+        return 2200; // Hard fallback
+    }, [priceRaw]);
 
     const {
         data: newsRaw,
