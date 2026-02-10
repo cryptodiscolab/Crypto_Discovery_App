@@ -165,15 +165,18 @@ export function ProfilePage() {
           { label: 'Following', value: socialData.following_count.toLocaleString(), icon: Globe, color: 'purple' },
           { label: 'Trust Score', value: socialData.trust_score.toFixed(1), icon: Shield, color: 'emerald' },
           { label: 'Points', value: user?.points ? String(user.points) : '0', icon: Trophy, color: 'amber' }
-        ].map((stat, i) => (
-          <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-lg">
-            <div className={`w-10 h-10 bg-${stat.color}-500/10 rounded-xl flex items-center justify-center mb-4`}>
-              <stat.icon className={`w-5 h-5 text-${stat.color}-500`} />
+        ].map((stat, i) => {
+          const IconComponent = stat.icon;
+          return (
+            <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-lg">
+              <div className={`w-10 h-10 bg-${stat.color}-500/10 rounded-xl flex items-center justify-center mb-4`}>
+                <IconComponent className={`w-5 h-5 text-${stat.color}-500`} />
+              </div>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+              <p className="text-2xl font-black text-white tracking-tighter">{String(stat.value)}</p>
             </div>
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-            <p className="text-2xl font-black text-white tracking-tighter">{String(stat.value)}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Maintenance Controls (Admin Mode) */}
