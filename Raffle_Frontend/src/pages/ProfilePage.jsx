@@ -139,14 +139,7 @@ export function ProfilePage() {
               >
                 <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
               </button>
-              {isOwnProfile && (
-                <button
-                  onClick={() => { disconnect(); navigate('/login'); }}
-                  className="bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 px-6 h-12 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
-                >
-                  Logout
-                </button>
-              )}
+
             </div>
           </div>
 

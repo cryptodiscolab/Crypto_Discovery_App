@@ -62,7 +62,6 @@ export function Header() {
   // Add admin links if user is admin
   if (isAdmin) {
     navItems.push({ path: '/admin', label: 'Admin Hub', isAdmin: true });
-    navItems.push({ path: '/admin-sbt', label: 'SBT Admin', isAdmin: true });
   }
 
   return (

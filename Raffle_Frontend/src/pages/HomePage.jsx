@@ -72,6 +72,29 @@ export function HomePage() {
     isLoading
   } = useCMS();
 
+  // DEBUG: Log all CMS data to find React elements
+  console.log('🔍 HomePage CMS Data:', {
+    featureCards,
+    announcement,
+    poolSettings,
+    ethPrice,
+    isLoading
+  });
+
+  // Check if any value is a React element
+  const checkForReactElement = (obj, path = '') => {
+    if (obj && typeof obj === 'object') {
+      if (obj.$$typeof) {
+        console.error(`🚨 FOUND REACT ELEMENT at ${path}:`, obj);
+      }
+      Object.keys(obj).forEach(key => {
+        checkForReactElement(obj[key], `${path}.${key}`);
+      });
+    }
+  };
+
+  checkForReactElement({ featureCards, announcement, poolSettings }, 'CMS');
+
   // Use CMS cards if available, otherwise fall back to defaults
   const displayCards = featureCards && featureCards.length > 0 ? featureCards : DEFAULT_FEATURE_CARDS;
 

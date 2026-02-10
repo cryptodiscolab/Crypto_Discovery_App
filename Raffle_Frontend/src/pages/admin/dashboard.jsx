@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
-import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap } from 'lucide-react';
+import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap, Settings } from 'lucide-react';
 import AdminGuard from '../../components/admin/AdminGuard';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 /**
  * Performance Strategy:
@@ -11,9 +12,10 @@ import AdminGuard from '../../components/admin/AdminGuard';
 const UserReputationTable = lazy(() => import('../../components/admin/UserReputationTable'));
 const SBTRewardsDashboard = lazy(() => import('../../components/SBTRewardsDashboard').then(module => ({ default: module.SBTRewardsDashboard })));
 const TaskManager = lazy(() => import('../../components/admin/TaskManager').then(module => ({ default: module.TaskManager })));
+const AdminSystemSettings = lazy(() => import('../../components/admin/AdminSystemSettings'));
 
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt' | 'tasks'
+    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt' | 'tasks' | 'system'
 
     return (
         <AdminGuard>
@@ -79,6 +81,16 @@ const AdminDashboard = () => {
                         <Zap className="w-3.5 h-3.5" />
                         Tasks
                     </button>
+                    <button
+                        onClick={() => setActiveTab('system')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
+                            ? 'bg-[#0a0a0c] text-emerald-500 shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
+                            }`}
+                    >
+                        <Settings className="w-3.5 h-3.5" />
+                        System
+                    </button>
                 </div>
 
                 {/* Suspense Boundary with Minimalist Placeholder */}
@@ -88,13 +100,17 @@ const AdminDashboard = () => {
                         <p className="text-[8px] font-black text-slate-800 uppercase tracking-widest">Loading Module...</p>
                     </div>
                 }>
-                    {activeTab === 'reputation' ? (
-                        <UserReputationTable />
-                    ) : activeTab === 'sbt' ? (
-                        <SBTRewardsDashboard />
-                    ) : (
-                        <TaskManager />
-                    )}
+                    <ErrorBoundary>
+                        {activeTab === 'reputation' ? (
+                            <UserReputationTable />
+                        ) : activeTab === 'sbt' ? (
+                            <SBTRewardsDashboard />
+                        ) : activeTab === 'tasks' ? (
+                            <TaskManager />
+                        ) : (
+                            <AdminSystemSettings />
+                        )}
+                    </ErrorBoundary>
                 </Suspense>
 
                 {/* Flat Disclosure */}

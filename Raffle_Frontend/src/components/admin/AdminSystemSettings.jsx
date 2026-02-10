@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { isAddress } from 'viem';
-import { cleanWallet } from './utils/cleanWallet';
+import { cleanWallet } from '../../utils/cleanWallet';
 import { useAccount } from 'wagmi';
-import { supabase } from './lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 import {
-    Database,
     Settings,
     TrendingUp,
     Save,
     RefreshCw,
     ShieldCheck,
-    ChevronRight,
     Info,
-    AlertOctagon,
-    ArrowLeft,
     UserCheck,
     Globe,
-    ExternalLink,
-    CheckCircle2,
+    CheckCircle,
     Plus,
     Trash2,
     History
@@ -26,13 +20,12 @@ import {
 import toast from 'react-hot-toast';
 
 /**
- * Objective 3: Admin Panel Component
- * Fitur: Dynamic Point Table, Dynamic SBT Levels, & Audit Logging.
- * Protokol Keamanan: Double Check (FID 1477344 & Wallet 0x0845...204B)
+ * Admin System Settings Component
+ * Migrated from AdminPanel.jsx
+ * Features: Dynamic Point Table, Dynamic SBT Levels, ENS Management, Audit Logging.
  */
-export default function AdminPanel() {
-    const navigate = useNavigate();
-    const { address, isConnected } = useAccount();
+export default function AdminSystemSettings() {
+    const { address } = useAccount();
     const [pointSettings, setPointSettings] = useState([]);
     const [sbtThresholds, setSbtThresholds] = useState([]);
     const [eligibleUsers, setEligibleUsers] = useState([]);
@@ -41,116 +34,11 @@ export default function AdminPanel() {
     const [activeTab, setActiveTab] = useState('settings'); // 'settings' | 'ens' | 'logs'
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [isAuthorized, setIsAuthorized] = useState(null);
-
-    // 0. Security Gate: Hybrid Double Check Protocol
-    const MASTER_ADMIN = cleanWallet("0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B");
-
-    // Toggle ini disiapkan agar jika Frame sudah aktif, bisa dipaksa logic AND (Wallet + FID)
-    const STRICT_FRAME_CHECK = false;
 
     useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const currentWallet = cleanWallet(address);
+        fetchPointSettings();
+    }, []);
 
-                // Master Admin Bypass - Immediate Access
-                if (currentWallet === MASTER_ADMIN) {
-                    console.log('[Security] Master Admin Bypass Activated');
-                    setIsAuthorized(true);
-                    setLoading(false);
-                    // Still fetch data
-                    fetchPointSettings();
-                    return;
-                }
-
-                // Parse Admin Lists from Env
-                const walletsEnv = import.meta.env.VITE_ADMIN_WALLETS || '';
-                const fidsEnv = import.meta.env.VITE_ADMIN_FIDS || '';
-
-                const adminWallets = walletsEnv.split(',').map(w => cleanWallet(w)).filter(w => w !== '');
-                const adminFids = fidsEnv.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f));
-
-                let userFid = null;
-                // Farcaster SDK check removed to stay within stable build boundaries
-
-                const walletMatch = currentWallet && adminWallets.includes(currentWallet);
-                const fidMatch = userFid && adminFids.includes(parseInt(userFid));
-
-                let isAuthorizedResult = false;
-                let loginType = 'None';
-
-                if (STRICT_FRAME_CHECK) {
-                    // Mode Ketat: Harus ada Wallet DAN FID
-                    isAuthorizedResult = walletMatch && fidMatch;
-                    loginType = isAuthorizedResult ? 'Strict (Wallet + FID)' : 'Unauthorized';
-                } else {
-                    // Logic Hybrid (User Request):
-                    if (walletMatch && !userFid) {
-                        // Di luar Frame, izinkan via Wallet
-                        isAuthorizedResult = true;
-                        loginType = 'Wallet Standalone';
-                        toast.error("Warning: Login via Wallet Only. Farcaster Frame identity not detected.", {
-                            duration: 5000,
-                            icon: '⚠️'
-                        });
-                    } else if (walletMatch && fidMatch) {
-                        // Full Auth
-                        isAuthorizedResult = true;
-                        loginType = 'Full Secure (Wallet + FID)';
-                    } else if (fidMatch) {
-                        // FID Terdeteksi, tapi wallet mungkin beda/belum connect
-                        isAuthorizedResult = true;
-                        loginType = 'FID Only';
-                    } else if (walletMatch) {
-                        // Fallback jika FID ada tapi tidak match list admin, tapi wallet match
-                        isAuthorizedResult = true;
-                        loginType = 'Wallet Only (FID Mismatch)';
-                    }
-                }
-
-                console.log('[Security] Double Check Verification:', {
-                    walletMatch,
-                    fidMatch,
-                    loginType,
-                    isAuthorized: isAuthorizedResult
-                });
-
-                if (isAuthorizedResult) {
-                    console.log('[Security] Double Check PASSED via', loginType);
-                    setIsAuthorized(true);
-
-                    // Audit Log: Record login action
-                    await logAdminAction('ADMIN_LOGIN', {
-                        type: loginType,
-                        wallet: currentWallet,
-                        fid: userFid,
-                        context: userFid ? 'Inside Frame' : 'Standalone Browser'
-                    });
-
-                    fetchPointSettings();
-                } else {
-                    console.error('[Security] Double Check FAILED');
-                    setIsAuthorized(false);
-                    setLoading(false);
-                }
-            } catch (error) {
-                console.error('[Security] Error checking auth:', error);
-                setIsAuthorized(false);
-                setLoading(false);
-            }
-        };
-
-        if (isConnected) {
-            checkAuth();
-        } else {
-            // If not connected, strictly deny access and stop loading
-            setIsAuthorized(false);
-            setLoading(false);
-        }
-    }, [navigate, address, isConnected]);
-
-    // 1. Fetching Logic (Renamed for clarity as per Senior Dev Request)
     const fetchPointSettings = async () => {
         setLoading(true);
         try {
@@ -182,7 +70,6 @@ export default function AdminPanel() {
         }
     };
 
-    // 2. Audit Logging Utility
     const logAdminAction = async (action, details) => {
         try {
             await supabase.from('admin_audit_logs').insert([{
@@ -195,7 +82,6 @@ export default function AdminPanel() {
         }
     };
 
-    // 3. Dynamic Point Handlers
     const handlePointChange = (id, field, newValue) => {
         setPointSettings(prev =>
             prev.map(item => item.id === id ? {
@@ -205,13 +91,15 @@ export default function AdminPanel() {
         );
     };
 
+    const generateId = () => `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     const addPointActivity = () => {
         const newActivity = {
-            id: crypto.randomUUID(), // Temp ID
+            id: generateId(),
             activity_key: 'new_activity',
             points_value: 10,
             platform: 'farcaster',
-            action_type: 'Follow', // Default action_type biar ga NULL
+            action_type: 'Follow',
             is_active: true
         };
         setPointSettings([...pointSettings, newActivity]);
@@ -225,13 +113,9 @@ export default function AdminPanel() {
     const savePoints = async () => {
         setSaving(true);
         try {
-            // PROTOKOL PERINTAH TEGAS: 
-            // 1. Filter out invalid/empty activity keys
-            // 2. LOGIC SAKTI: Baris baru (ID string/null) dikirim TANPA kolom ID
             const cleanData = pointSettings
                 .filter(item => item.activity_key && item.activity_key.trim() !== '')
                 .map(item => {
-                    // Force clean values to prevent NULLs in DB
                     return {
                         ...item,
                         activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
@@ -243,15 +127,12 @@ export default function AdminPanel() {
                     };
                 });
 
-            // HAPUS SEMUA PROPERTI ID (Aturan Senior Dev)
             const dataToSave = cleanData.map(({ id, ...rest }) => rest);
-            console.log('[Admin] Payload Sync Point Settings:', dataToSave);
 
             if (dataToSave.length === 0) {
                 throw new Error("Tidak ada data valid untuk disimpan.");
             }
 
-            // Validation: activity_key must be unique
             const keys = dataToSave.map(s => s.activity_key);
             if (new Set(keys).size !== keys.length) {
                 throw new Error("Activity Key harus unik.");
@@ -263,7 +144,6 @@ export default function AdminPanel() {
             await logAdminAction('UPDATE_POINTS', { pointSettings: dataToSave });
             toast.success('SYNC BERHASIL: Point Settings terupdate di database!');
 
-            // 3. Panggil ulang fetchPointSettings biar state UI dapet ID asli Database
             await fetchPointSettings();
         } catch (error) {
             toast.error('Gagal menyimpan poin: ' + error.message);
@@ -272,7 +152,6 @@ export default function AdminPanel() {
         }
     };
 
-    // 4. Dynamic SBT Threshold Handlers
     const handleThresholdChange = (id, field, newValue) => {
         setSbtThresholds(prev =>
             prev.map(item => item.id === id ? {
@@ -287,7 +166,7 @@ export default function AdminPanel() {
         const nextXp = sbtThresholds.length > 0 ? Math.max(...sbtThresholds.map(l => l.min_xp)) + 50 : 0;
 
         const newLevel = {
-            id: crypto.randomUUID(), // Temp ID
+            id: generateId(),
             level: nextLevel,
             min_xp: nextXp,
             tier_name: 'New Tier Name',
@@ -304,17 +183,14 @@ export default function AdminPanel() {
     const saveThresholds = async () => {
         setSaving(true);
         try {
-            // Validation: level must be unique
             const levels = sbtThresholds.map(s => s.level);
             if (new Set(levels).size !== levels.length) {
                 throw new Error("Level ID (Lvl) harus unik, tidak boleh ada yang kembar.");
             }
 
-            // HAPUS SEMUA PROPERTI ID (Aturan Senior Dev)
             const dataToSave = sbtThresholds.map(({ id, ...rest }) => rest);
 
-            // Clear and overwrite recommended for dynamic list matching
-            const { error: delError } = await supabase.from('sbt_thresholds').delete().neq('level', 0); // Clear all
+            const { error: delError } = await supabase.from('sbt_thresholds').delete().neq('level', 0);
             if (delError) throw delError;
 
             const { error: insError } = await supabase.from('sbt_thresholds').insert(dataToSave);
@@ -330,7 +206,6 @@ export default function AdminPanel() {
         }
     };
 
-    // 5. ENS Issue Logic
     const issueSubname = async (user, label) => {
         if (!label || label.length < 3) {
             toast.error('Label minimal 3 karakter');
@@ -360,30 +235,13 @@ export default function AdminPanel() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin" />
-                <p className="text-slate-400 font-mono animate-pulse">Running Double Check Security Guard...</p>
-            </div>
-        );
-    }
-
-    if (isAuthorized === false) {
-        return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6">
-                <div className="bg-red-500/10 p-6 rounded-full border border-red-500/20 mb-8 animate-bounce">
-                    <AlertOctagon className="w-20 h-20 text-red-500" />
-                </div>
-                <h1 className="text-4xl font-black text-white mb-4">403 - DOUBLE CHECK <span className="text-red-500">FAILED</span></h1>
-                <p className="text-lg text-slate-400 max-w-lg mx-auto leading-relaxed">
-                    Akses ditolak. Protocol Double Check mendeteksi Wallet atau FID Anda tidak sesuai otoritas Senior Developer.
-                </p>
-                <button onClick={() => navigate('/')} className="mt-8 flex items-center gap-2 bg-indigo-600 px-6 py-3 rounded-xl text-white font-bold hover:bg-indigo-500 transition-all">
-                    <ArrowLeft className="w-4 h-4" /> Balik ke Home
-                </button>
+                <p className="text-slate-400 font-mono animate-pulse">Loading System Data...</p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-5xl mx-auto p-6 space-y-8 bg-black/20 backdrop-blur-md rounded-3xl border border-white/5 shadow-2xl">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
             {/* Header Section */}
             <div className="flex flex-col gap-6 border-b border-white/10 pb-6">
                 <div className="flex items-center justify-between">
@@ -392,7 +250,7 @@ export default function AdminPanel() {
                             <ShieldCheck className="w-8 h-8 text-indigo-400" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black text-white uppercase tracking-tight">Admin System <span className="text-indigo-500">v2.0</span></h1>
+                            <h1 className="text-2xl font-black text-white uppercase tracking-tight">System <span className="text-indigo-500">Settings</span></h1>
                             <p className="text-slate-400 text-xs font-mono">Dynamic Point Control & Audit Logging Enabled</p>
                         </div>
                     </div>
@@ -404,7 +262,7 @@ export default function AdminPanel() {
                 {/* Tab Switcher */}
                 <div className="flex gap-2 p-1 bg-black/30 rounded-xl w-fit border border-white/5">
                     {[
-                        { id: 'settings', label: 'Dashboard', icon: Settings },
+                        { id: 'settings', label: 'Points & Logic', icon: Settings },
                         { id: 'ens', label: 'ENS Management', icon: Globe },
                         { id: 'logs', label: 'Audit Logs', icon: History }
                     ].map(tab => {
@@ -617,7 +475,7 @@ export default function AdminPanel() {
                                         <span className="text-slate-500 text-xs font-black">.cryptodiscovery.eth</span>
                                     </div>
                                     <button onClick={() => issueSubname(user, document.getElementById(`label-${user.fid}`).value)} disabled={saving} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black py-2.5 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4" /> Issue Subname Identity
+                                        <CheckCircle className="w-4 h-4" /> Issue Subname Identity
                                     </button>
                                 </div>
                             ))}
