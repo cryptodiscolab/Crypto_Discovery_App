@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAddress } from 'viem';
+import { cleanWallet } from './utils/cleanWallet';
 import { useAccount } from 'wagmi';
 import { supabase } from './lib/supabaseClient';
 import {
@@ -23,7 +24,6 @@ import {
     History
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { cleanWallet } from './utils/cleanWallet';
 
 /**
  * Objective 3: Admin Panel Component

@@ -44,7 +44,6 @@ function App() {
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                    <Route path="/create" element={<CreateRafflePage />} />
                     <Route
                       path="/admin"
                       element={
@@ -53,8 +52,30 @@ function App() {
                         </AdminGuard>
                       }
                     />
-                    <Route path="/admin/legacy" element={<AdminPage />} />
-                    <Route path="/admin-sbt" element={<AdminPanel />} />
+                    <Route
+                      path="/admin/legacy"
+                      element={
+                        <AdminGuard>
+                          <AdminPage />
+                        </AdminGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin-sbt"
+                      element={
+                        <AdminGuard>
+                          <AdminPanel />
+                        </AdminGuard>
+                      }
+                    />
+                    <Route
+                      path="/create"
+                      element={
+                        <AdminGuard>
+                          <CreateRafflePage />
+                        </AdminGuard>
+                      }
+                    />
                   </Routes>
                 </Suspense>
               </main>

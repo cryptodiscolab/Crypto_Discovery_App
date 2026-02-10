@@ -12,6 +12,7 @@ import { TaskManagerTab } from '../components/admin/TaskManagerTab';
 import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
 import { getSBTThresholds, updateSBTThreshold } from '../dailyAppLogic';
+import { cleanWallet } from '../utils/cleanWallet';
 
 export function AdminPage() {
     const navigate = useNavigate();
@@ -49,14 +50,14 @@ export function AdminPage() {
                 const fallback = import.meta.env.VITE_ADMIN_ADDRESS || '';
 
                 const adminFids = fids.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f)).filter(f => !isNaN(f));
-                const adminWallets = `${wallets},${fallback}`.split(',').map(w => w.trim().toLowerCase()).filter(w => w.startsWith('0x'));
+                const adminWallets = `${wallets},${fallback}`.split(',').map(w => cleanWallet(w)).filter(w => w !== null);
 
                 // Get Current User Context
                 let userFid = null;
                 // Farcaster SDK check removed to stay within stable build boundaries
 
-                const currentWallet = address?.toLowerCase();
-                const isSBTAccountOwner = contractOwner && currentWallet && currentWallet === contractOwner.toLowerCase();
+                const currentWallet = cleanWallet(address);
+                const isSBTAccountOwner = contractOwner && currentWallet && currentWallet === cleanWallet(contractOwner);
                 const isEnvAdmin = currentWallet && adminWallets.includes(currentWallet);
                 const isFidAdmin = userFid && adminFids.includes(userFid);
 
