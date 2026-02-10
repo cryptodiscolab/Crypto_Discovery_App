@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@neynar/nodejs-sdk": "^3.133.0",
     "@neynar/react": "^1.2.22",
+    "@neynar/ui": "^1.2.2",
+    "@pigment-css/react": "^0.0.30",
     "@rainbow-me/rainbowkit": "^2.1.2",
     "@supabase/supabase-js": "^2.95.2",
     "@tanstack/react-query": "^5.90.20",
@@ -30,6 +33,7 @@
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.24",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.0",
     "eslint-plugin-react-hooks": "^4.6.0",

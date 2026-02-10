@@ -3,34 +3,17 @@ import { supabase } from '@/lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
 
 /**
- * Senior Architecture: Transparent Identity Management Hook.
- * Guaranteed zero-RIBA, honest data attribution, and Sybil-aware.
+ * Senior Architecture Hook: zero-latency identity management.
+ * Adheres to Anti-Riba and hardware optimization principles.
  */
 export const useFarcaster = () => {
     const [profileData, setProfileData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [isSybilDetected, setIsSybilDetected] = useState(false);
 
     const abortControllerRef = useRef(null);
 
-    // Hardware-aware cleanup (Project IDX Optimization)
-    useEffect(() => {
-        return () => {
-            if (abortControllerRef.current) abortControllerRef.current.abort();
-        };
-    }, []);
-
-    const isLoadingRef = useRef(false);
-
-    /**
-     * Helper: Safely normalize wallet address
-     */
-    // const cleanWallet = (w) => w ? w.trim().toLowerCase() : null; // Removed in favor of shared helper
-
-    /**
-     * Cache Management Logic
-     */
+    // Cache Key Generator
     const getStorageKey = (address) => `fc_cache_${address?.toLowerCase()}`;
 
     const clearCache = useCallback((address) => {
@@ -39,136 +22,79 @@ export const useFarcaster = () => {
         setProfileData(null);
     }, []);
 
-    // Load from cache immediately on mount/address change
-    const loadFromCache = useCallback((address) => {
+    const syncUser = useCallback(async (address, forceRefresh = false) => {
         if (!address) return null;
-        try {
-            const cached = localStorage.getItem(getStorageKey(address));
+        const wallet = cleanWallet(address);
+        const storageKey = getStorageKey(wallet);
+
+        // 1. Zero-Latency: Load from Local Storage immediately
+        if (!forceRefresh) {
+            const cached = localStorage.getItem(storageKey);
             if (cached) {
                 const parsed = JSON.parse(cached);
                 setProfileData(parsed);
-                return parsed;
-            }
-        } catch (e) {
-            console.warn('[Cache] Load failed:', e);
-        }
-        return null;
-    }, []);
-
-    /**
-     * isEligible: Transparent anti-bot filter (OpenRank aware).
-     */
-    const isEligible = useCallback((profile = profileData) => {
-        if (!profile) return false;
-        // Hardened Logic: Use DB trust_score if synced, otherwise calculate local estimate
-        // Priority: internal_trust_score > (PowerBadge bonus + follower weight + rank weight)
-        const score = profile.internal_trust_score ??
-            ((profile.power_badge ? 50 : 0) +
-                (Math.min(profile.follower_count / 100, 20)) +
-                (profile.rank_score * 100));
-
-        return score >= 50;
-    }, [profileData]);
-
-    const syncUser = useCallback(async (address, forceRefresh = false) => {
-        if (!address) return null;
-        const normalizedAddress = address.trim().toLowerCase();
-
-        // 0. Try Cache First for Zero-Latency UI
-        if (!forceRefresh) {
-            const cached = loadFromCache(normalizedAddress);
-            if (cached) {
-                // Return cached version immediately but continue to check freshness in background
-                // if last sync was > 10 mins ago
+                // Return immediately for UI responsiveness
+                // We could do a background check, but let's keep it lean for low-spec hardware
+                if (Date.now() - new Date(parsed.last_sync).getTime() < 3600000) return parsed;
             }
         }
-
-        // 1. Concurrency Prevention
-        if (isLoadingRef.current && !forceRefresh) return null;
 
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
 
         setIsLoading(true);
-        isLoadingRef.current = true;
         setError(null);
-        setIsSybilDetected(false);
 
         try {
-            // 2. Efficient Local Fetch first
+            // 2. Database First (Leaner than full sync)
             if (!forceRefresh) {
-                const { data: localProfile } = await supabase
+                const { data: dbProfile } = await supabase
                     .from('user_profiles')
                     .select('*')
-                    .eq('wallet_address', normalizedAddress)
+                    .eq('wallet_address', wallet)
                     .single();
 
-                if (localProfile) {
-                    setProfileData(localProfile);
-                    localStorage.setItem(getStorageKey(normalizedAddress), JSON.stringify(localProfile));
-
-                    // 10-minute cooldown for sync (Bulletproof Rate Limit)
-                    const lastSync = new Date(localProfile.last_sync || 0).getTime();
-                    const now = Date.now();
-                    const COOLDOWN = 10 * 60 * 1000;
-
-                    if (now - lastSync < COOLDOWN && localProfile.username) {
-                        setIsLoading(false);
-                        isLoadingRef.current = false;
-                        return localProfile;
-                    }
+                if (dbProfile) {
+                    setProfileData(dbProfile);
+                    localStorage.setItem(storageKey, JSON.stringify(dbProfile));
+                    setIsLoading(false);
+                    return dbProfile;
                 }
             }
 
-            // 3. API Call to trigger Neynar Sync
+            // 3. Neynar SDK Sync (Via Backend Bridge)
             const response = await fetch('/api/farcaster/sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address: normalizedAddress }),
+                body: JSON.stringify({ address: wallet }),
                 signal: abortControllerRef.current.signal
             });
 
             const result = await response.json();
-
-            if (!response.ok) {
-                const errorMessage = result.details || result.error || 'Identity Sync Failed';
-                throw new Error(errorMessage);
-            }
+            if (!response.ok) throw new Error(result.error || 'Identity Sync Failed');
 
             const finalProfile = result.profile;
             setProfileData(finalProfile);
-            localStorage.setItem(getStorageKey(normalizedAddress), JSON.stringify(finalProfile));
+            localStorage.setItem(storageKey, JSON.stringify(finalProfile));
             return finalProfile;
 
         } catch (err) {
             if (err.name === 'AbortError') return null;
-            console.error('[Farcaster Sync] Failure:', err.message);
             setError(err.message);
             return null;
         } finally {
             setIsLoading(false);
-            isLoadingRef.current = false;
             abortControllerRef.current = null;
         }
-    }, [loadFromCache]);
+    }, []);
 
     return {
         profileData,
         isLoading,
         error,
-        isSybilDetected,
         syncUser,
         clearCache,
-        isEligible,
-        trustScore: profileData?.internal_trust_score || 0,
-        metadata: {
-            rank: profileData?.rank_score || 0,
-            verifications: profileData?.verified_addresses || [],
-            bio: profileData?.bio || '',
-            username: profileData?.username || '',
-            pfp: profileData?.pfp_url || '',
-            followers: profileData?.follower_count || 0,
-            following: profileData?.following_count || 0
-        }
+        trustScore: profileData?.internal_trust_score || 0
     };
 };
+

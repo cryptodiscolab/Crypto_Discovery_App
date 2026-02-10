@@ -1,102 +1,62 @@
 import React, { useEffect } from 'react';
-import { useAccount, useConnect } from 'wagmi';
-import { useSIWE } from '../hooks/useSIWE';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { NeynarAuthBridge } from '../components/NeynarAuthBridge';
 
+/**
+ * Mobile-Optimized Login via Neynar (SIWN).
+ * Adheres to Anti-Riba principle and hardware performance mandates.
+ */
 export function LoginPage() {
-    const { isConnected, address } = useAccount();
-    const { connect, connectors } = useConnect();
-    const { signIn, isAuthenticated, isLoading, error } = useSIWE();
     const navigate = useNavigate();
     const location = useLocation();
-
-    const AUTH_KEY = 'crypto_disco_auth_status';
     const from = location.state?.from?.pathname || "/";
+    const AUTH_KEY = 'crypto_disco_auth_status';
 
     // Re-entry Prevention: If already authenticated, skip login
     useEffect(() => {
-        const isAuth = localStorage.getItem(AUTH_KEY) === 'authenticated' && isConnected;
-        if (isAuth || isAuthenticated) {
-            navigate(from, { replace: true });
-        }
-    }, [isConnected, isAuthenticated, navigate, from]);
-
-    const handleLogin = async () => {
-        try {
-            const session = await signIn();
-            if (session) {
-                // Atomic Update: Set authenticated status
-                localStorage.setItem(AUTH_KEY, 'authenticated');
-                navigate(from, { replace: true });
+        const authRaw = localStorage.getItem(AUTH_KEY);
+        if (authRaw) {
+            try {
+                const auth = JSON.parse(authRaw);
+                if (auth.status === 'AUTHENTICATED') {
+                    navigate(from, { replace: true });
+                }
+            } catch (e) {
+                localStorage.removeItem(AUTH_KEY);
             }
-        } catch (e) {
-            // Error handled in hook / error state
         }
-    };
-
-    const handleConnect = (connector) => {
-        connect({ connector });
-    };
+    }, [navigate, from]);
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
-                <h1 className="text-2xl font-black text-white mb-2 text-center uppercase italic tracking-tighter">
-                    Welcome <span className="text-indigo-500">Node</span>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 bg-[#0B0E14]">
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden">
+                {/* Background ID accent */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <h1 className="text-3xl font-black text-white mb-2 text-center uppercase italic tracking-tighter relative z-10">
+                    Daily<span className="text-indigo-500">App</span>
                 </h1>
-                <p className="text-slate-500 text-center mb-8 text-[10px] font-bold uppercase tracking-[0.2em]">
-                    Initialize identity to access the network
+                <p className="text-slate-500 text-center mb-10 text-[10px] font-bold uppercase tracking-[0.3em] relative z-10">
+                    Initialize Protocol Session
                 </p>
 
-                {error && (
-                    <div className="mb-6 p-4 bg-red-900/10 border border-red-500/20 rounded-xl text-red-400 text-[10px] font-bold uppercase text-center tracking-widest leading-relaxed">
-                        {error}
+                <div className="space-y-6 relative z-10">
+                    <NeynarAuthBridge onSuccess={() => navigate(from, { replace: true })} />
+
+                    <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest text-center leading-relaxed">
+                            Sign-in with Farcaster is gasless.<br />
+                            Sanitized wallet & identity sync included.
+                        </p>
                     </div>
-                )}
-
-                <div className="space-y-4">
-                    {!isConnected ? (
-                        <div className="grid gap-3">
-                            {connectors.map((connector) => (
-                                connector.ready && (
-                                    <button
-                                        key={connector.id}
-                                        onClick={() => handleConnect(connector)}
-                                        className="w-full py-4 px-6 bg-slate-800/50 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/5 active:scale-95 duration-75"
-                                    >
-                                        Connect {connector.name}
-                                    </button>
-                                )
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center">
-                            <div className="mb-6 p-5 bg-black/40 rounded-2xl border border-white/5">
-                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2">Connected Identity</p>
-                                <div className="font-mono text-indigo-400 truncate px-2 text-xs">
-                                    {address}
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleLogin}
-                                disabled={isLoading}
-                                className={`w-full py-5 px-6 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all transform active:scale-95 duration-75 text-white shadow-xl
-                  ${isLoading
-                                        ? 'bg-slate-800 cursor-wait opacity-80'
-                                        : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20'
-                                    }`}
-                            >
-                                {isLoading ? 'Verifying...' : 'Initialize Session'}
-                            </button>
-                        </div>
-                    )}
                 </div>
 
-                <div className="mt-8 text-center text-[8px] text-slate-600 font-bold uppercase tracking-widest leading-relaxed">
-                    Identity verification is off-chain and gasless.<br />By connecting, you agree to the protocol rules.
+                <div className="mt-10 text-center text-[8px] text-slate-600 font-bold uppercase tracking-widest leading-relaxed">
+                    Identity verification follows the Security Mandate.<br />
+                    No Riba. No Interest. Honest Data Only.
                 </div>
             </div>
         </div>
     );
 }
+
