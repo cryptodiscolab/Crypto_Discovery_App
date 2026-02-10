@@ -407,16 +407,19 @@ export default function AdminPanel() {
                         { id: 'settings', label: 'Dashboard', icon: Settings },
                         { id: 'ens', label: 'ENS Management', icon: Globe },
                         { id: 'logs', label: 'Audit Logs', icon: History }
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${activeTab === tab.id ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                        >
-                            <tab.icon className="w-3.5 h-3.5" />
-                            {tab.label}
-                        </button>
-                    ))}
+                    ].map(tab => {
+                        const IconComponent = tab.icon;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${activeTab === tab.id ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <IconComponent className="w-3.5 h-3.5" />
+                                {tab.label}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 

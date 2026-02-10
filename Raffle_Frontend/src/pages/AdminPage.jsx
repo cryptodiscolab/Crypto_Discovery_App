@@ -684,7 +684,7 @@ function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSettings }
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-slate-500 uppercase tracking-wider">Target</p>
-                                    <p className="text-xl font-bold text-slate-400">${formData.targetUSDC.toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-slate-400">${formData.targetUSDC ? formData.targetUSDC.toLocaleString() : '0'}</p>
                                 </div>
                             </div>
 
@@ -1113,7 +1113,7 @@ function ContentTab() {
                                         <Database className={`w-5 h-5 text-${card.color}-400`} />
                                     </div>
                                     <div>
-                                        <h4 className="text-white font-bold text-sm">{card.title}</h4>
+                                        <h4 className="text-white font-bold text-sm">{String(card.title || '')}</h4>
                                         <p className="text-[10px] text-slate-500 uppercase tracking-widest">{card.visible ? 'Visible' : 'Hidden'}</p>
                                     </div>
                                 </div>
