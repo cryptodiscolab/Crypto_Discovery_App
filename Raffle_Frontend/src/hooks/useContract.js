@@ -88,7 +88,7 @@ export function useTaskInfo(taskId) {
             baseReward: Number(task[0]),
             isActive: task[1],
             cooldown: Number(task[2]),
-            minTier: task[3],
+            minTier: Number(task[3] || 0),
             title: task[4],
             link: task[5],
             createdAt: Number(task[6]),

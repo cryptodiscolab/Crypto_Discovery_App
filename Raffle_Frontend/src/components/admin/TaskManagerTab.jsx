@@ -9,16 +9,18 @@ import toast from 'react-hot-toast';
 const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";
 
 const PLATFORMS = {
-    'Farcaster': { domain: 'https://warpcast.com/...', icon: <Share2 className="w-4 h-4" /> },
-    'X': { domain: 'https://x.com/...', icon: <Twitter className="w-4 h-4" /> },
-    'Base App': { domain: 'https://base.app/...', icon: <img src="/base-logo.png" className="w-4 h-4 grayscale opacity-50" alt="Base" /> }
+    'Farcaster': { id: 'farcaster', domain: 'https://warpcast.com/...', icon: <Share2 className="w-4 h-4" /> },
+    'X': { id: 'x', domain: 'https://x.com/...', icon: <Twitter className="w-4 h-4" /> },
+    'Base App': { id: 'base', domain: 'https://base.app/...', icon: <img src="/base-logo.png" className="w-4 h-4 grayscale opacity-50" alt="Base" /> }
 };
 
 const ACTIONS = {
-    'Follow': { label: 'Follow', icon: <Plus className="w-3 h-3" /> },
-    'Like': { label: 'Like', icon: <Heart className="w-3 h-3" /> },
-    'Recast/Repost': { label: 'Recast/Repost', icon: <Repeat className="w-3 h-3" /> },
-    'Comment': { label: 'Comment', icon: <MessageCircle className="w-3 h-3" /> }
+    'Follow': { id: 'follow', label: 'Follow', icon: <Plus className="w-3 h-3" /> },
+    'Like': { id: 'like', label: 'Like', icon: <Heart className="w-3 h-3" /> },
+    'Recast/Repost': { id: 'recast', label: 'Recast/Repost', icon: <Repeat className="w-3 h-3" /> },
+    'Quote': { id: 'quote', label: 'Quote', icon: <Repeat className="w-3 h-3 rotate-90" /> },
+    'Comment': { id: 'comment', label: 'Comment', icon: <MessageCircle className="w-3 h-3" /> },
+    'Transaction': { id: 'transaction', label: 'Transaction', icon: <Zap className="w-3 h-3" /> }
 };
 
 export function TaskManagerTab() {
@@ -26,11 +28,11 @@ export function TaskManagerTab() {
     const { writeContractAsync } = useWriteContract();
     const [isSaving, setIsSaving] = useState(false);
 
-    // Initial state for 3 tasks
+    // Initial state for 3 tasks with advanced filters
     const [tasksBatch, setTasksBatch] = useState([
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true },
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true },
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true }
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 100, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true }
     ]);
 
     const [pointSettings, setPointSettings] = useState([]);
@@ -125,9 +127,18 @@ export function TaskManagerTab() {
                 try {
                     for (const task of validTasks) {
                         try {
-                            const { id, ...taskData } = task;
+                            const { id, platform, action, ...taskData } = task;
                             const { error: dbError } = await supabase.from('tasks').insert([{
                                 ...taskData,
+                                platform: PLATFORMS[platform]?.id || platform.toLowerCase(),
+                                action_type: ACTIONS[action]?.id || action.toLowerCase(),
+                                requires_verification: task.requiresVerification,
+                                min_neynar_score: task.minNeynarScore,
+                                min_followers: task.minFollowers,
+                                account_age_requirement: task.accountAgeLimit,
+                                power_badge_required: task.powerBadgeRequired,
+                                no_spam_filter: task.noSpamFilter,
+                                reward_points: task.baseReward,
                                 created_at: new Date().toISOString(),
                                 is_active: true,
                                 transaction_hash: receipt.transactionHash
@@ -156,9 +167,9 @@ export function TaskManagerTab() {
 
                     // Reset to default
                     setTasksBatch([
-                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
-                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true },
-                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true }
+                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+                        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true }
                     ]);
                     refetchCount();
                     setTxHash(null);
@@ -348,6 +359,18 @@ export function TaskManagerTab() {
                                             />
                                         </div>
                                     </div>
+                                    <div className="flex flex-col justify-between">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Verification</label>
+                                        <button
+                                            onClick={() => updateTaskLine(idx, 'requiresVerification', !task.requiresVerification)}
+                                            className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${task.requiresVerification ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'bg-slate-950/50 border-white/5 text-slate-50'}`}
+                                        >
+                                            <Shield className={`w-4 h-4 ${task.requiresVerification ? 'animate-pulse' : ''}`} />
+                                            <span className="text-[10px] font-black uppercase tracking-tighter">
+                                                {task.requiresVerification ? 'Auto-Verify ON' : 'Manual Claim'}
+                                            </span>
+                                        </button>
+                                    </div>
                                     <div>
                                         <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Min Tier</label>
                                         <select
@@ -363,6 +386,60 @@ export function TaskManagerTab() {
                                         </select>
                                     </div>
                                 </div>
+
+                                {/* Advanced Filters SECTION */}
+                                {task.requiresVerification && (
+                                    <div className="lg:col-span-12 mt-4 grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-slate-950/30 rounded-2xl border border-purple-500/10">
+                                        <div>
+                                            <label className="text-[9px] font-black text-purple-400 uppercase mb-1 block">Min Neynar Score</label>
+                                            <input
+                                                type="number"
+                                                value={task.minNeynarScore}
+                                                onChange={(e) => updateTaskLine(idx, 'minNeynarScore', Number(e.target.value))}
+                                                className="w-full bg-slate-900 border border-white/5 p-2 rounded-lg text-white text-xs"
+                                                placeholder="0-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] font-black text-purple-400 uppercase mb-1 block">Min Followers</label>
+                                            <input
+                                                type="number"
+                                                value={task.minFollowers}
+                                                onChange={(e) => updateTaskLine(idx, 'minFollowers', Number(e.target.value))}
+                                                className="w-full bg-slate-900 border border-white/5 p-2 rounded-lg text-white text-xs"
+                                                placeholder="Count"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] font-black text-purple-400 uppercase mb-1 block">Account Age (Days)</label>
+                                            <input
+                                                type="number"
+                                                value={task.accountAgeLimit}
+                                                onChange={(e) => updateTaskLine(idx, 'accountAgeLimit', Number(e.target.value))}
+                                                className="w-full bg-slate-900 border border-white/5 p-2 rounded-lg text-white text-xs"
+                                                placeholder="Days"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col justify-end">
+                                            <label className="text-[9px] font-black text-purple-400 uppercase mb-1 block">Power Badge</label>
+                                            <button
+                                                onClick={() => updateTaskLine(idx, 'powerBadgeRequired', !task.powerBadgeRequired)}
+                                                className={`p-2 rounded-lg text-[10px] font-bold border transition-all ${task.powerBadgeRequired ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-900 border-white/5 text-slate-600'}`}
+                                            >
+                                                {task.powerBadgeRequired ? 'REQUIRED' : 'ANY'}
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-col justify-end">
+                                            <label className="text-[9px] font-black text-purple-400 uppercase mb-1 block">Anti-Spam</label>
+                                            <button
+                                                onClick={() => updateTaskLine(idx, 'noSpamFilter', !task.noSpamFilter)}
+                                                className={`p-2 rounded-lg text-[10px] font-bold border transition-all ${task.noSpamFilter ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-slate-900 border-white/5 text-slate-600'}`}
+                                            >
+                                                {task.noSpamFilter ? 'STRICT' : 'OFF'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -402,6 +479,6 @@ export function TaskManagerTab() {
                     <Award className="absolute -right-4 -bottom-4 w-24 h-24 text-white/5 rotate-12 group-hover:rotate-0 transition-all duration-500" />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

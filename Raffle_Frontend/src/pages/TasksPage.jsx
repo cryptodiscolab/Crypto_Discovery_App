@@ -10,7 +10,8 @@ function TaskCard({ taskId, userStats, refetchStats }) {
     const { task, isLoading } = useTaskInfo(taskId);
     const { doTask, isLoading: isDoing } = useDoTask();
     const { address } = useAccount();
-    const { verifyTask, isVerifying } = useVerification(refetchStats);
+    const { userTier } = usePoints();
+    const { verifyTask, isVerifying, registerTaskStart, lastActionTime } = useVerification(refetchStats);
 
     if (isLoading || !task || !task.isActive) return null;
 
@@ -27,14 +28,17 @@ function TaskCard({ taskId, userStats, refetchStats }) {
             return;
         }
 
-        // 1. Open link in new tab
+        // 1. Register start time for anti-fraud (30s)
+        registerTaskStart(taskId);
+
+        // 2. Open link in new tab
         window.open(task.link, '_blank');
 
-        // 2. Call doTask on-chain (registers intent/cooldown)
+        // 3. Call doTask on-chain (registers intent/cooldown)
         try {
             toast.loading("Registering task action...", { id: `task-${taskId}` });
             await doTask(taskId);
-            toast.success("Action registered! You can verify after completion.", { id: `task-${taskId}` });
+            toast.success("Action registered! Tunggu 30 detik untuk sinkronisasi sosial sebelum Verifikasi.", { id: `task-${taskId}` });
         } catch (error) {
             toast.error("Action failed: " + (error.shortMessage || error.message), { id: `task-${taskId}` });
         }
@@ -66,15 +70,29 @@ function TaskCard({ taskId, userStats, refetchStats }) {
 
             <h3 className="text-xl font-bold text-white mb-2">{task.title}</h3>
 
-            <div className="flex items-center space-x-4 mb-6 text-sm text-slate-400">
-                <div className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    <span>{Number(task.cooldown) / 3600}h Cooldown</span>
+            <div className="flex flex-wrap gap-2 mb-6 text-[10px] font-black uppercase tracking-tighter">
+                <div className="flex items-center bg-slate-800/50 px-2 py-1 rounded-md text-slate-400">
+                    <Clock className="w-3 h-3 mr-1" />
+                    <span>{Number(task.cooldown) / 3600}h CD</span>
                 </div>
-                <div className={`flex items-center ${isTierLocked ? 'text-orange-400 font-black' : ''}`}>
-                    <Award className="w-4 h-4 mr-1 text-blue-400" />
-                    <span>Tier {task.minTier}+</span>
+                <div className={`flex items-center px-2 py-1 rounded-md ${isTierLocked ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                    <Award className="w-3 h-3 mr-1" />
+                    <span>Tier {Number(task.minTier)}+</span>
                 </div>
+
+                {/* Advanced Requirements */}
+                {(Number(task.minNeynarScore || 0) > 0) && (
+                    <div className="flex items-center bg-purple-500/20 text-purple-400 px-2 py-1 rounded-md">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        <span>Score {Number(task.minNeynarScore)}+</span>
+                    </div>
+                )}
+                {task.powerBadgeRequired && (
+                    <div className="flex items-center bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-md border border-indigo-500/30">
+                        <Shield className="w-3 h-3 mr-1" />
+                        <span>Power User</span>
+                    </div>
+                )}
             </div>
 
             <div className="flex space-x-2">
@@ -142,7 +160,7 @@ export function TasksPage() {
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">
                                         <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Rank Tier</p>
-                                        <p className="text-3xl font-black text-indigo-400">LVL {userTier}</p>
+                                        <p className="text-3xl font-black text-indigo-400">LVL {userTier?.toString() || '0'}</p>
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">

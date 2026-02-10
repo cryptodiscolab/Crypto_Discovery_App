@@ -5,10 +5,12 @@ import { Shield, Award, Landmark, Users, ArrowUpRight, DollarSign, Database, Che
 import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
-import { RoleManagementTab } from '../components/admin/RoleManagementTab';
-import { WhitelistManagerTab } from '../components/admin/WhitelistManagerTab';
-import { RaffleManagerTab } from '../components/admin/RaffleManagerTab';
-import { TaskManagerTab } from '../components/admin/TaskManagerTab';
+// Lazy Load Admin Tabs for Performance
+const RoleManagementTab = React.lazy(() => import('../components/admin/RoleManagementTab').then(m => ({ default: m.RoleManagementTab })));
+const WhitelistManagerTab = React.lazy(() => import('../components/admin/WhitelistManagerTab').then(m => ({ default: m.WhitelistManagerTab })));
+const RaffleManagerTab = React.lazy(() => import('../components/admin/RaffleManagerTab').then(m => ({ default: m.RaffleManagerTab })));
+const TaskManagerTab = React.lazy(() => import('../components/admin/TaskManagerTab').then(m => ({ default: m.TaskManagerTab })));
+
 import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
 import { getSBTThresholds, updateSBTThreshold } from '../dailyAppLogic';
@@ -174,34 +176,41 @@ export function AdminPage() {
                 </div>
 
                 {/* Tab Content */}
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        {activeTab === 'pool' && (
-                            <PoolTab
-                                balance={totalPoolBalance}
-                                onDistribute={distributePool}
-                                ethPrice={ethPrice}
-                                settings={poolSettings}
-                                onUpdateSettings={updatePoolSettings}
-                            />
-                        )}
-                        {activeTab === 'raffles' && <RaffleManagerTab />}
-                        {activeTab === 'tasks' && <TaskManagerTab />}
-                        {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
-                        {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
-                        {activeTab === 'roles' && <RoleManagementTab />}
-                        {activeTab === 'whitelist' && <WhitelistManagerTab />}
-                        {activeTab === 'announcement' && <AnnouncementTab />}
-                        {activeTab === 'news' && <NewsTab />}
-                        {activeTab === 'content' && <ContentTab />}
-                    </motion.div>
-                </AnimatePresence>
+                <React.Suspense fallback={
+                    <div className="flex flex-col items-center justify-center p-20 glass-card bg-slate-900/40">
+                        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
+                        <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Optimizing Dashboard Module...</p>
+                    </div>
+                }>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {activeTab === 'pool' && (
+                                <PoolTab
+                                    balance={totalPoolBalance}
+                                    onDistribute={distributePool}
+                                    ethPrice={ethPrice}
+                                    settings={poolSettings}
+                                    onUpdateSettings={updatePoolSettings}
+                                />
+                            )}
+                            {activeTab === 'raffles' && <RaffleManagerTab />}
+                            {activeTab === 'tasks' && <TaskManagerTab />}
+                            {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
+                            {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
+                            {activeTab === 'roles' && <RoleManagementTab />}
+                            {activeTab === 'whitelist' && <WhitelistManagerTab />}
+                            {activeTab === 'announcement' && <AnnouncementTab />}
+                            {activeTab === 'news' && <NewsTab />}
+                            {activeTab === 'content' && <ContentTab />}
+                        </motion.div>
+                    </AnimatePresence>
+                </React.Suspense>
             </div>
         </div>
     );
