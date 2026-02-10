@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Users, Timer, Ticket, ArrowRight, Shield, AlertCircle, RefreshCw, Zap, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
+import { Trophy, Users, Timer, Ticket, ArrowRight, Shield, AlertCircle, RefreshCw, Zap, TrendingUp, Calendar, ExternalLink, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
 import { formatUnits } from 'viem';

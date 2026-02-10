@@ -12,7 +12,6 @@
   "dependencies": {
     "@neynar/nodejs-sdk": "^3.133.0",
     "@neynar/react": "^1.2.22",
-    "@neynar/ui": "^1.2.2",
     "@pigment-css/react": "^0.0.30",
     "@rainbow-me/rainbowkit": "^2.1.2",
     "@supabase/supabase-js": "^2.95.2",

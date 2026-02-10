@@ -19,7 +19,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m
 const AdminPanel = lazy(() => import('./AdminPanel').then(m => ({ default: m.default || m.AdminPanel })));
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx').then(m => ({ default: m.default || m.AdminDashboard })));
 const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx').then(m => ({ default: m.default || m.AdminGuard })));
-const SignatureGuard = lazy(() => import('./components/SignatureGuard.jsx').then(m => ({ default: m.SignatureGuard })));
+const SignatureGuard = lazy(() => import('./components/SignatureGuard.jsx').then(m => ({ default: m.default || m.SignatureGuard })));
 
 // Neynar Settings (Sanitized)
 const NEYNAR_SETTINGS = {
