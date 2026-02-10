@@ -1,16 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './lib/supabaseClient';
 import { cleanWallet } from './utils/cleanWallet';
 
-// ==========================================
-// 1. INISIALISASI (Koneksi ke Supabase)
-// Menggunakan variabel dari file .env lu
-// ==========================================
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Kalo lu jalanin ini di server (Project IDX), disarankan pake Service Role Key
-// tapi kalo di Frontend, Anon Key sudah cukup.
-export const supabase = createClient(supabaseUrl, supabaseKey);
 
 
 // ==========================================
