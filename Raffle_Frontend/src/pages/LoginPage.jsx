@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useAccount, useConnect } from 'wagmi';
 import { useSIWE } from '../hooks/useSIWE';
@@ -11,19 +10,27 @@ export function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const AUTH_KEY = 'crypto_disco_auth_status';
     const from = location.state?.from?.pathname || "/";
 
+    // Re-entry Prevention: If already authenticated, skip login
     useEffect(() => {
-        if (isAuthenticated) {
+        const isAuth = localStorage.getItem(AUTH_KEY) === 'authenticated' && isConnected;
+        if (isAuth || isAuthenticated) {
             navigate(from, { replace: true });
         }
-    }, [isAuthenticated, navigate, from]);
+    }, [isConnected, isAuthenticated, navigate, from]);
 
     const handleLogin = async () => {
         try {
-            await signIn();
+            const session = await signIn();
+            if (session) {
+                // Atomic Update: Set authenticated status
+                localStorage.setItem(AUTH_KEY, 'authenticated');
+                navigate(from, { replace: true });
+            }
         } catch (e) {
-            // Error handled in hook
+            // Error handled in hook / error state
         }
     };
 
@@ -33,12 +40,16 @@ export function LoginPage() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">Welcome Back</h1>
-                <p className="text-slate-400 text-center mb-6">Sign in to access your account</p>
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
+                <h1 className="text-2xl font-black text-white mb-2 text-center uppercase italic tracking-tighter">
+                    Welcome <span className="text-indigo-500">Node</span>
+                </h1>
+                <p className="text-slate-500 text-center mb-8 text-[10px] font-bold uppercase tracking-[0.2em]">
+                    Initialize identity to access the network
+                </p>
 
                 {error && (
-                    <div className="mb-4 p-3 bg-red-900/20 border border-red-900/50 rounded text-red-200 text-sm text-center">
+                    <div className="mb-6 p-4 bg-red-900/10 border border-red-500/20 rounded-xl text-red-400 text-[10px] font-bold uppercase text-center tracking-widest leading-relaxed">
                         {error}
                     </div>
                 )}
@@ -51,7 +62,7 @@ export function LoginPage() {
                                     <button
                                         key={connector.id}
                                         onClick={() => handleConnect(connector)}
-                                        className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors border border-slate-700 active:scale-95 duration-75"
+                                        className="w-full py-4 px-6 bg-slate-800/50 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/5 active:scale-95 duration-75"
                                     >
                                         Connect {connector.name}
                                     </button>
@@ -60,9 +71,9 @@ export function LoginPage() {
                         </div>
                     ) : (
                         <div className="text-center">
-                            <div className="mb-4 p-3 bg-slate-800/50 rounded-lg">
-                                <p className="text-sm text-slate-400 mb-1">Connected Wallet</p>
-                                <div className="font-mono text-slate-200 truncate px-4">
+                            <div className="mb-6 p-5 bg-black/40 rounded-2xl border border-white/5">
+                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2">Connected Identity</p>
+                                <div className="font-mono text-indigo-400 truncate px-2 text-xs">
                                     {address}
                                 </div>
                             </div>
@@ -70,20 +81,20 @@ export function LoginPage() {
                             <button
                                 onClick={handleLogin}
                                 disabled={isLoading}
-                                className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-all transform active:scale-95 duration-75
+                                className={`w-full py-5 px-6 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all transform active:scale-95 duration-75 text-white shadow-xl
                   ${isLoading
-                                        ? 'bg-slate-700 cursor-wait opacity-80'
-                                        : 'bg-indigo-600 hover:bg-indigo-500 shadow-sm'
+                                        ? 'bg-slate-800 cursor-wait opacity-80'
+                                        : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20'
                                     }`}
                             >
-                                {isLoading ? 'Signing...' : 'Sign In with Ethereum'}
+                                {isLoading ? 'Verifying...' : 'Initialize Session'}
                             </button>
                         </div>
                     )}
                 </div>
 
-                <div className="mt-6 text-center text-xs text-slate-500">
-                    By connecting, you agree to our Terms of Service and Privacy Policy.
+                <div className="mt-8 text-center text-[8px] text-slate-600 font-bold uppercase tracking-widest leading-relaxed">
+                    Identity verification is off-chain and gasless.<br />By connecting, you agree to the protocol rules.
                 </div>
             </div>
         </div>

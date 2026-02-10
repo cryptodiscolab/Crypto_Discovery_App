@@ -89,9 +89,6 @@ ${resourceLines}`;
 
             if (!valid) throw new Error("Signature verification failed");
 
-            // Successful Login
-            // In a real app, you would send { message, signature } to backend here.
-            // For this implementation, we just set client-side session.
             const userSession = {
                 address,
                 chainId,
@@ -99,6 +96,8 @@ ${resourceLines}`;
                 signature
             };
 
+            // Synchronize with SignatureGuard storage requirement
+            localStorage.setItem('crypto_disco_auth_status', 'authenticated');
             setSession(userSession);
 
             // Ensure User Profile Exists

@@ -17,10 +17,18 @@ const CreateRafflePage = lazy(() => import('./pages/CreateRafflePage').then(m =>
 const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.TasksPage })));
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
-const AdminPanel = lazy(() => import('./AdminPanel'));
-const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx'));
-const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx'));
+const AdminPanel = lazy(() => import('./AdminPanel').then(m => ({ default: m.default || m.AdminPanel })));
+const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx').then(m => ({ default: m.default || m.AdminDashboard })));
+const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx').then(m => ({ default: m.default || m.AdminGuard })));
 const SignatureGuard = lazy(() => import('./components/SignatureGuard.jsx').then(m => ({ default: m.SignatureGuard })));
+
+// Helper component to use SignatureGuard as a layout wrapper
+import { Outlet } from 'react-router-dom';
+const ProtectedLayout = () => (
+  <SignatureGuard>
+    <Outlet />
+  </SignatureGuard>
+);
 
 function App() {
   return (
@@ -29,16 +37,19 @@ function App() {
         <BrowserRouter>
           <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
             <Header />
-            <SignatureGuard>
-              <main className="pt-24 pb-32 md:pb-0">
-                <Suspense fallback={
-                  <div className="min-h-screen flex items-center justify-center">
-                    <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
-                  </div>
-                }>
-                  <Routes>
+            <main className="pt-24 pb-32 md:pb-0">
+              <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                  <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                </div>
+              }>
+                <Routes>
+                  {/* Public: Login Page must be accessible without SignatureGuard */}
+                  <Route path="/login" element={<LoginPage />} />
+
+                  {/* Protected: Wrapper for all other routes */}
+                  <Route element={<ProtectedLayout />}>
                     <Route path="/" element={<HomePage />} />
-                    <Route path="/login" element={<LoginPage />} />
                     <Route path="/tasks" element={<TasksPage />} />
                     <Route path="/raffles" element={<RafflesPage />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
@@ -76,10 +87,10 @@ function App() {
                         </AdminGuard>
                       }
                     />
-                  </Routes>
-                </Suspense>
-              </main>
-            </SignatureGuard>
+                  </Route>
+                </Routes>
+              </Suspense>
+            </main>
 
             <BottomNav />
 
