@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
@@ -127,10 +126,9 @@ export function SBTRewardsDashboard() {
                             </span>
                         </div>
                         <div className="h-2 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
-                                className="h-full bg-indigo-600 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.3)]"
+                            <div
+                                style={{ width: `${Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
+                                className="h-full bg-indigo-600 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.3)] transition-all duration-1000 ease-out"
                             />
                         </div>
                     </div>
@@ -183,21 +181,16 @@ export function SBTRewardsDashboard() {
             </div>
 
             {/* 3. Safety Check: Network Gas Indicator */}
-            <AnimatePresence>
-                {Number(currentGasPrice) / 1e9 > 150 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="flex items-center justify-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-500"
-                    >
-                        <ShieldAlert className="w-4 h-4 animate-pulse" />
-                        <span className="text-xs font-bold uppercase tracking-tighter">
-                            Network Congestion: {(Number(currentGasPrice) / 1e9).toFixed(0)} Gwei. Recommend waiting.
-                        </span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {Number(currentGasPrice) / 1e9 > 150 && (
+                <div
+                    className="flex items-center justify-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-500 animate-slide-up"
+                >
+                    <ShieldAlert className="w-4 h-4 animate-pulse" />
+                    <span className="text-xs font-bold uppercase tracking-tighter">
+                        Network Congestion: {(Number(currentGasPrice) / 1e9).toFixed(0)} Gwei. Recommend waiting.
+                    </span>
+                </div>
+            )}
 
             <div className="text-center">
                 <p className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em]">
