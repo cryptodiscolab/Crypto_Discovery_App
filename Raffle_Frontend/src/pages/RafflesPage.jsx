@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Users, Timer, Ticket, ArrowRight, Shield, AlertCircle, RefreshCw, Zap, TrendingUp, Calendar, ExternalLink, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
@@ -39,10 +38,8 @@ function RaffleCard({ raffleId }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass-card overflow-hidden group hover:border-blue-500/30 transition-all duration-300"
+    <div
+      className="glass-card overflow-hidden group hover:border-blue-500/30 transition-all duration-300 animate-slide-up"
     >
       <div className="relative h-48 overflow-hidden bg-gradient-to-br from-indigo-900/40 to-slate-900 flex items-center justify-center">
         {/* NFT Placeholder or Image */}
@@ -103,7 +100,7 @@ function RaffleCard({ raffleId }) {
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
