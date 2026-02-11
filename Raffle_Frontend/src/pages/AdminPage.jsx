@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Award, Landmark, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
@@ -182,34 +181,29 @@ export function AdminPage() {
                         <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Optimizing Dashboard Module...</p>
                     </div>
                 }>
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {activeTab === 'pool' && (
-                                <PoolTab
-                                    balance={totalPoolBalance}
-                                    onDistribute={distributePool}
-                                    ethPrice={ethPrice}
-                                    settings={poolSettings}
-                                    onUpdateSettings={updatePoolSettings}
-                                />
-                            )}
-                            {activeTab === 'raffles' && <RaffleManagerTab />}
-                            {activeTab === 'tasks' && <TaskManagerTab />}
-                            {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
-                            {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
-                            {activeTab === 'roles' && <RoleManagementTab />}
-                            {activeTab === 'whitelist' && <WhitelistManagerTab />}
-                            {activeTab === 'announcement' && <AnnouncementTab />}
-                            {activeTab === 'news' && <NewsTab />}
-                            {activeTab === 'content' && <ContentTab />}
-                        </motion.div>
-                    </AnimatePresence>
+                    <div
+                        key={activeTab}
+                        className="animate-fade-in"
+                    >
+                        {activeTab === 'pool' && (
+                            <PoolTab
+                                balance={totalPoolBalance}
+                                onDistribute={distributePool}
+                                ethPrice={ethPrice}
+                                settings={poolSettings}
+                                onUpdateSettings={updatePoolSettings}
+                            />
+                        )}
+                        {activeTab === 'raffles' && <RaffleManagerTab />}
+                        {activeTab === 'tasks' && <TaskManagerTab />}
+                        {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
+                        {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
+                        {activeTab === 'roles' && <RoleManagementTab />}
+                        {activeTab === 'whitelist' && <WhitelistManagerTab />}
+                        {activeTab === 'announcement' && <AnnouncementTab />}
+                        {activeTab === 'news' && <NewsTab />}
+                        {activeTab === 'content' && <ContentTab />}
+                    </div>
                 </React.Suspense>
             </div>
         </div>
@@ -690,10 +684,9 @@ function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSettings }
 
                             {/* Modern Progress Bar */}
                             <div className="h-4 bg-black/40 rounded-full border border-white/5 p-1 relative overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${progress}%` }}
-                                    className="h-full bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-400 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                                <div
+                                    style={{ width: `${progress}%` }}
+                                    className="h-full bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-400 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-all duration-1000 ease-out"
                                 />
                             </div>
                             <p className="text-[11px] text-right mt-2 text-indigo-400 font-bold">{progress.toFixed(1)}% Completed</p>
