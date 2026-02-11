@@ -57,7 +57,7 @@ export function LoginPage() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 bg-[#0B0E14]">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden">
+            <div className="relative z-50 pointer-events-auto w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2rem] p-8 shadow-2xl overflow-hidden">
                 {/* Background ID accent */}
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 

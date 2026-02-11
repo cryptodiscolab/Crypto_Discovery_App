@@ -32,9 +32,9 @@ function App() {
     <Web3Provider>
       <PointsProvider>
         <BrowserRouter>
-          <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
+          <div className="dark min-h-screen bg-[#0B0E14] text-slate-100 pointer-events-none">
             <Header />
-            <main className="pt-24 pb-32 md:pb-0">
+            <main className="pt-24 pb-32 md:pb-0 pointer-events-auto">
               <Suspense fallback={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
