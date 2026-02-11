@@ -1,9 +1,10 @@
 import { useMemo, useEffect, useRef } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, Shield, Wallet, LogOut, RefreshCw } from 'lucide-react';
+import { Sparkles, Shield } from 'lucide-react';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
@@ -113,36 +114,12 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right: Wallet (Icon Only) - Hidden on Mobile */}
+          {/* Right: RainbowKit ConnectButton - Hidden on Mobile */}
           <div className="hidden md:flex flex-1 justify-end items-center">
-            {isConnected ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-indigo-600/20 px-4 py-2 rounded-full border border-indigo-500/30">
-                  <Wallet className="w-4 h-4 text-indigo-400" />
-                  <span className="text-xs font-mono text-white">
-                    {address.slice(0, 6)}...{address.slice(-4)}
-                  </span>
-                </div>
-                <button
-                  onClick={() => {
-                    disconnect();
-                    navigate('/');
-                  }}
-                  className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-full border border-red-500/20 transition-all active:scale-90"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => navigate('/login')}
-                className="bg-indigo-600 text-white rounded-full px-6 py-2 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"
-              >
-                <Wallet className="w-5 h-5" />
-                Connect Wallet
-              </button>
-            )}
+            <ConnectButton
+              chainStatus="none"
+              showBalance={false}
+            />
           </div>
         </div>
       </div>
