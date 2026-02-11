@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Plus, Zap, Clock, Shield, Award, ExternalLink, RefreshCw, Send, List, Share2, Twitter, MessageCircle, Heart, Repeat } from 'lucide-react';
 import { useWriteContract, useReadContract, useAccount, useWaitForTransactionReceipt } from 'wagmi';
 import { V12_ABI } from '../../shared/constants/abis';
@@ -14,6 +13,37 @@ const PLATFORMS = {
     'Base App': { id: 'base', domain: 'https://base.app/...', icon: <img src="/base-logo.png" className="w-4 h-4 grayscale opacity-50" alt="Base" /> }
 };
 
+const DAILY_APP_ADDRESS = import.meta.env.VITE_DAILY_APP_ADDRESS;
+const DAILY_APP_ABI = [
+    {
+        "inputs": [
+            { "internalType": "string", "name": "_name", "type": "string" },
+            { "internalType": "string[]", "name": "_descs", "type": "string[]" },
+            { "internalType": "uint256[]", "name": "_rewards", "type": "uint256[]" }
+        ],
+        "name": "createSponsorship",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "nextSponsorId",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "name": "sponsorships",
+        "outputs": [
+            { "internalType": "string", "name": "name", "type": "string" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
+
 const ACTIONS = {
     'Follow': { id: 'follow', label: 'Follow', icon: <Plus className="w-3 h-3" /> },
     'Like': { id: 'like', label: 'Like', icon: <Heart className="w-3 h-3" /> },
@@ -27,6 +57,18 @@ export function TaskManagerTab() {
     const { address, chainId } = useAccount();
     const { writeContractAsync } = useWriteContract();
     const [isSaving, setIsSaving] = useState(false);
+
+    // Sponsorship State
+    const [showSponsorForm, setShowSponsorForm] = useState(false);
+    const [sponsorName, setSponsorName] = useState('');
+    const [sponsorTasks, setSponsorTasks] = useState([{ desc: '', points: 100 }]);
+    const [isSponsorSaving, setIsSponsorSaving] = useState(false);
+
+    const { data: nextSponsorId, refetch: refetchSponsors } = useReadContract({
+        address: DAILY_APP_ADDRESS,
+        abi: DAILY_APP_ABI,
+        functionName: 'nextSponsorId',
+    });
 
     // Initial state for 3 tasks with advanced filters
     const [tasksBatch, setTasksBatch] = useState([
@@ -265,20 +307,144 @@ export function TaskManagerTab() {
         setTasksBatch(newBatch);
     };
 
+    // --- SPONSORSHIP HANDLERS ---
+    const handleAddSponsorTask = () => {
+        if (sponsorTasks.length < 5) {
+            setSponsorTasks([...sponsorTasks, { desc: '', points: 100 }]);
+        } else {
+            toast.error("Max 5 tasks per sponsorship");
+        }
+    };
+
+    const handleRemoveSponsorTask = (index) => {
+        setSponsorTasks(sponsorTasks.filter((_, i) => i !== index));
+    };
+
+    const handleSponsorTaskChange = (index, field, value) => {
+        const newTasks = [...sponsorTasks];
+        newTasks[index][field] = value;
+        setSponsorTasks(newTasks);
+    };
+
+    const handleCreateSponsorship = async () => {
+        if (!sponsorName.trim()) return toast.error("Enter Sponsor Name");
+        if (sponsorTasks.some(t => !t.desc.trim())) return toast.error("All tasks must have descriptions");
+
+        setIsSponsorSaving(true);
+        const tid = toast.loading("Deploying Sponsorship...");
+
+        try {
+            const hash = await writeContractAsync({
+                address: DAILY_APP_ADDRESS,
+                abi: DAILY_APP_ABI,
+                functionName: 'createSponsorship',
+                args: [
+                    sponsorName,
+                    sponsorTasks.map(t => t.desc),
+                    sponsorTasks.map(t => BigInt(t.points))
+                ]
+            });
+
+            if (hash) {
+                toast.success("Sponsorship Created!", { id: tid });
+                setSponsorName('');
+                setSponsorTasks([{ desc: '', points: 100 }]);
+                setShowSponsorForm(false);
+                setTimeout(() => refetchSponsors(), 2000); // Give time for indexing
+            }
+        } catch (error) {
+            console.error("Sponsorship Error:", error);
+            toast.error(error.shortMessage || "Failed to create sponsorship", { id: tid });
+        } finally {
+            setIsSponsorSaving(false);
+        }
+    };
+
     return (
         <div className="space-y-8">
             <div className="glass-card p-8 bg-purple-950/10 border border-purple-500/10 shadow-2xl overflow-hidden relative">
                 {/* Decoration */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
 
-                <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-6">
-                    <div>
-                        <h3 className="text-2xl font-black text-white flex items-center gap-2">
-                            <Plus className="w-6 h-6 text-purple-500" /> SMART BATCH CREATOR
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Manage multiple sponsorship tasks with one click</p>
-                    </div>
+                <div>
+                    <h3 className="text-2xl font-black text-white flex items-center gap-2">
+                        <Plus className="w-6 h-6 text-purple-500" /> SMART BATCH CREATOR
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Manage multiple sponsorship tasks with one click</p>
                 </div>
+                <button
+                    onClick={() => setShowSponsorForm(!showSponsorForm)}
+                    className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border transition-all ${showSponsorForm ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-white/5 hover:text-white'}`}
+                >
+                    {showSponsorForm ? 'Close Register' : '+ New Sponsorship'}
+                </button>
+
+                {/* SPONSORSHIP FORM (Minimalist) */}
+                {/* SPONSORSHIP FORM (Minimalist) */}
+                {showSponsorForm && (
+                    <div
+                        className="mb-8 bg-[#0a0a0c] p-6 rounded-2xl border border-indigo-500/20 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300"
+                    >
+                        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="text-[9px] font-black text-indigo-400 uppercase mb-1 block">Sponsor Identity</label>
+                                    <input
+                                        value={sponsorName}
+                                        onChange={(e) => setSponsorName(e.target.value)}
+                                        placeholder="e.g. Warpcast (Official)"
+                                        className="w-full bg-slate-900/50 border border-white/10 p-3 rounded-xl text-white text-sm font-bold focus:border-indigo-500/50 outline-none"
+                                    />
+                                </div>
+                                <div className="flex items-end">
+                                    <button
+                                        onClick={handleAddSponsorTask}
+                                        className="px-4 py-3 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition-all"
+                                    >
+                                        + Task
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                {sponsorTasks.map((task, i) => (
+                                    <div key={i} className="flex gap-2 items-center">
+                                        <span className="text-[10px] text-slate-600 font-mono w-4">{i + 1}</span>
+                                        <input
+                                            value={task.desc}
+                                            onChange={(e) => handleSponsorTaskChange(i, 'desc', e.target.value)}
+                                            placeholder="Task Description"
+                                            className="flex-1 bg-transparent border-b border-white/10 py-2 text-xs text-slate-300 focus:border-indigo-500/50 outline-none"
+                                        />
+                                        <div className="flex items-center gap-1 bg-slate-900 px-2 rounded-lg">
+                                            <Zap className="w-3 h-3 text-yellow-500" />
+                                            <input
+                                                type="number"
+                                                value={task.points}
+                                                onChange={(e) => handleSponsorTaskChange(i, 'points', e.target.value)}
+                                                className="w-12 bg-transparent py-2 text-xs font-mono text-yellow-500 font-bold outline-none text-right"
+                                            />
+                                        </div>
+                                        {sponsorTasks.length > 1 && (
+                                            <button onClick={() => handleRemoveSponsorTask(i)} className="text-slate-600 hover:text-red-500">
+                                                <List className="w-3 h-3 rotate-45" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={handleCreateSponsorship}
+                                disabled={isSponsorSaving}
+                                className="mt-2 w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-white text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                            >
+                                {isSponsorSaving ? 'Deploying...' : 'Deploy Sponsorship Module'}
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="space-y-6 mb-10">
                     {tasksBatch.map((task, idx) => (
@@ -478,7 +644,109 @@ export function TaskManagerTab() {
                     </div>
                     <Award className="absolute -right-4 -bottom-4 w-24 h-24 text-white/5 rotate-12 group-hover:rotate-0 transition-all duration-500" />
                 </div>
+
+                {/* LIVE SPONSORSHIP FETCH DISPLAY */}
+                <div className="space-y-4">
+                    <div className="glass-card p-6 bg-slate-900/40 border border-white/5 flex items-center justify-between group transition-all hover:bg-slate-900/60">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                                <Zap className="w-5 h-5 text-indigo-400" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Sponsorships</p>
+                                <p className="text-xl font-black text-white">
+                                    {nextSponsorId ? (Number(nextSponsorId) - 1).toString() : '0'} <span className="text-sm text-slate-600 font-medium">Campaigns</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-[9px] text-slate-600 uppercase font-black bg-slate-950 px-2 py-1 rounded-md">Synced with Base</span>
+                        </div>
+                    </div>
+
+                    {/* FETCHED LIST */}
+                    {nextSponsorId && Number(nextSponsorId) > 1 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Array.from({ length: Number(nextSponsorId) - 1 }).map((_, i) => (
+                                <SponsorCardItem key={i + 1} id={BigInt(i + 1)} />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div >
+    );
+}
+
+// --- SUB-COMPONENTS FOR FETCHING ---
+
+function SponsorCardItem({ id }) {
+    const { data: sponsor } = useReadContract({
+        address: DAILY_APP_ADDRESS,
+        abi: DAILY_APP_ABI,
+        functionName: 'sponsorships',
+        args: [id]
+    });
+
+    const { data: taskIds } = useReadContract({
+        address: DAILY_APP_ADDRESS,
+        abi: DAILY_APP_ABI,
+        functionName: 'getSponsorTasks',
+        args: [id]
+    });
+
+    if (!sponsor) return null;
+
+    return (
+        <div className="p-5 bg-slate-900/30 border border-white/5 rounded-2xl relative overflow-hidden group hover:bg-slate-900/50 transition-all">
+            <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                <span className="text-[8px] font-black uppercase tracking-widest bg-white/10 px-2 py-1 rounded">ID #{id.toString()}</span>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+                    <span className="font-black text-white text-xs">{sponsor[0].charAt(0)}</span>
+                </div>
+                <div>
+                    <h4 className="font-bold text-white text-sm">{sponsor[0]}</h4>
+                    <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Featured Partner</p>
+                </div>
+            </div>
+
+            <div className="space-y-2 pl-2 border-l-2 border-white/5">
+                {taskIds?.map(tid => (
+                    <SponsorSubTask key={Number(tid)} id={tid} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function SponsorSubTask({ id }) {
+    const { data: task } = useReadContract({
+        address: DAILY_APP_ADDRESS,
+        abi: [
+            {
+                "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+                "name": "tasks",
+                "outputs": [
+                    { "internalType": "string", "name": "desc", "type": "string" },
+                    { "internalType": "uint256", "name": "pointReward", "type": "uint256" }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ],
+        functionName: 'tasks',
+        args: [id]
+    });
+
+    if (!task) return <div className="h-4 w-20 bg-white/5 animate-pulse rounded"></div>;
+
+    return (
+        <div className="flex items-center justify-between text-xs group/item">
+            <span className="text-slate-400 group-hover/item:text-slate-200 transition-colors">{task[0]}</span>
+            <span className="font-mono font-black text-indigo-400 text-[10px] bg-indigo-500/10 px-1.5 py-0.5 rounded">{task[1].toString()} XP</span>
+        </div>
     );
 }
