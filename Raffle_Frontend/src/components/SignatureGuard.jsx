@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
  * Optimized for Mobile (Base App) with zero blurs and flat design.
  */
 export const SignatureGuard = ({ children }) => {
-    const { address, isConnected } = useAccount();
+    const { address, isConnected, status } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { disconnect } = useDisconnect();
     const { isAuthenticated } = useSIWE();
@@ -24,6 +24,9 @@ export const SignatureGuard = ({ children }) => {
 
     // 1. Initial Identity Check & Redirection
     useEffect(() => {
+        // Wait for Wagmi to initialize
+        if (status === 'reconnecting' || status === 'connecting') return;
+
         const authRaw = localStorage.getItem(AUTH_KEY);
         let isAuth = false;
 
@@ -41,7 +44,7 @@ export const SignatureGuard = ({ children }) => {
         const isFullyAuth = isAuth && isConnected;
         setIsApproved(isFullyAuth);
 
-        if (!isFullyAuth) {
+        if (!isFullyAuth && status === 'disconnected') {
             // Redirect to login ohne modal to prevent blocking UI
             // We use a small timeout to allow routing state to settle if needed
             const timeoutId = setTimeout(() => {
@@ -49,7 +52,7 @@ export const SignatureGuard = ({ children }) => {
             }, 10);
             return () => clearTimeout(timeoutId);
         }
-    }, [isConnected, address, isAuthenticated, navigate]);
+    }, [isConnected, status, address, isAuthenticated, navigate]);
 
     // 2. High-Performance Signature Logic (Still available if needed for internal actions)
     const handleSignApproval = useCallback(async () => {
