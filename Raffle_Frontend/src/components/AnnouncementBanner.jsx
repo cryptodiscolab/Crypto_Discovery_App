@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Info, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 
 export function AnnouncementBanner({ announcement }) {
@@ -55,45 +54,40 @@ export function AnnouncementBanner({ announcement }) {
     const Icon = config.icon;
 
     return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className={`max-w-4xl mx-auto mb-8`}
-            >
-                <div className={`glass-card p-6 bg-gradient-to-r ${config.bg} border-l-4 ${config.border} relative overflow-hidden`}>
-                    {/* Background decoration */}
-                    <div className="absolute top-0 right-0 p-4 opacity-5">
-                        <Icon className="w-32 h-32" />
-                    </div>
-
-                    <div className="relative z-10 flex items-start gap-4">
-                        {/* Icon */}
-                        <div className={`p-2 rounded-lg bg-white/5 ${config.text}`}>
-                            <Icon className="w-6 h-6" />
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1">
-                            <h3 className={`text-lg font-bold ${config.text} mb-1`}>
-                                {String(announcement.title || '')}
-                            </h3>
-                            <p className="text-slate-300 text-sm">
-                                {String(announcement.message || '')}
-                            </p>
-                        </div>
-
-                        {/* Dismiss button */}
-                        <button
-                            onClick={handleDismiss}
-                            className="p-1 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
+        <div
+            className={`max-w-4xl mx-auto mb-8 animate-slide-up`}
+        >
+            <div className={`glass-card p-6 bg-gradient-to-r ${config.bg} border-l-4 ${config.border} relative overflow-hidden`}>
+                {/* Background decoration */}
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <Icon className="w-32 h-32" />
                 </div>
-            </motion.div>
-        </AnimatePresence>
+
+                <div className="relative z-10 flex items-start gap-4">
+                    {/* Icon */}
+                    <div className={`p-2 rounded-lg bg-white/5 ${config.text}`}>
+                        <Icon className="w-6 h-6" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1">
+                        <h3 className={`text-lg font-bold ${config.text} mb-1`}>
+                            {String(announcement.title || '')}
+                        </h3>
+                        <p className="text-slate-300 text-sm">
+                            {String(announcement.message || '')}
+                        </p>
+                    </div>
+
+                    {/* Dismiss button */}
+                    <button
+                        onClick={handleDismiss}
+                        className="p-1 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
