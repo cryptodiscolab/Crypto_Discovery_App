@@ -1,4 +1,4 @@
 diff --git a/node_modules/@metamask/sdk/dist/lockdown-install.js b/node_modules/@metamask/sdk/dist/lockdown-install.js
 new file mode 100644
-index 0000000..c6cf65c
+index 0000000..c46ea3d
 Binary files /dev/null and b/node_modules/@metamask/sdk/dist/lockdown-install.js differ
