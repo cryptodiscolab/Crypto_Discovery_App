@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Upload, Calendar, DollarSign, Gift, Ticket, AlertCircle } from 'lucide-react'; // <--- TICKET WAJIB ADA DISINI
 import { useAccount } from 'wagmi';
 
@@ -31,10 +30,8 @@ export function CreateRafflePage() {
                     <p className="text-slate-400">Set up a new raffle for your NFT</p>
                 </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="glass-card p-8"
+                <div
+                    className="glass-card p-8 animate-slide-up"
                 >
                     <form className="space-y-6">
                         {/* NFT Details */}
@@ -106,7 +103,7 @@ export function CreateRafflePage() {
                             Create Raffle
                         </button>
                     </form>
-                </motion.div>
+                </div>
             </div>
         </div>
     );
