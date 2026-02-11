@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
@@ -12,10 +11,8 @@ export function HeroSection() {
             </div>
 
             <div className="container mx-auto max-w-7xl relative z-10 text-center">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                <div
+                    className="animate-slide-up"
                 >
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-8">
                         <Sparkles className="w-4 h-4 text-yellow-400" />
@@ -48,7 +45,7 @@ export function HeroSection() {
                             </button>
                         </Link>
                     </div>
-                </motion.div>
+                </div>
             </div>
         </section>
     );
