@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { Plus, Ticket, Timer, Trophy, ExternalLink, RefreshCw, Send, AlertCircle } from 'lucide-react';
 import { useRaffle } from '../../hooks/useRaffle';
 import { useReadContract } from 'wagmi';
