@@ -39,7 +39,7 @@ export function BottomNav() {
     const gridCols = isAdmin ? 'grid-cols-6' : 'grid-cols-5';
 
     return (
-        <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-[999] bg-black/95 backdrop-blur-lg border-t border-white/5 pb-6 pt-3 px-2 shadow-2xl`}>
+        <nav className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto bg-black/95 backdrop-blur-lg border-t border-white/5 pb-6 pt-3 px-2 shadow-2xl md:hidden">
             <div className={`grid ${gridCols} items-center justify-items-center`}>
                 {navItems.map((item) => (
                     <NavLink
