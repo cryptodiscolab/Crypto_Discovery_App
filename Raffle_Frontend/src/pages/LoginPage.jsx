@@ -26,8 +26,10 @@ export function LoginPage() {
         }
     }, [isConnected, address, navigate, from]);
 
-    // Re-entry Prevention: If already authenticated, skip login
+    // Re-entry Prevention: If already authenticated AND connected, skip login
     useEffect(() => {
+        if (!isConnected) return; // Don't trust storage if wallet is locked
+
         const authRaw = localStorage.getItem(AUTH_KEY);
         if (authRaw) {
             try {
@@ -39,7 +41,7 @@ export function LoginPage() {
                 localStorage.removeItem(AUTH_KEY);
             }
         }
-    }, [navigate, from]);
+    }, [navigate, from, isConnected]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 bg-[#0B0E14]">
