@@ -70,7 +70,7 @@ export function BottomNav() {
                 )}
 
                 {/* Wallet Section (Icon Only - Forced Render) */}
-                <div className="flex flex-col items-center gap-1 relative z-[9999] pointer-events-auto">
+                <div className="flex flex-col items-center gap-1 relative z-[9999] pointer-events-auto cursor-pointer">
                     {isConnected ? (
                         <Link
                             to="/profile"

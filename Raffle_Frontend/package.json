@@ -11,6 +11,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
+    "@coinbase/onchainkit": "^1.1.2",
     "@metamask/sdk": "^0.34.0",
     "@pigment-css/react": "^0.0.30",
     "@rainbow-me/rainbowkit": "^2.1.2",
