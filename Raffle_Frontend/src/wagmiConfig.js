@@ -1,6 +1,6 @@
 import { createConfig, http, fallback } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { coinbaseWallet } from 'wagmi/connectors';
+import { injected, walletConnect } from 'wagmi/connectors';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
@@ -9,10 +9,9 @@ export const config = createConfig({
     projectId,
     chains: [base, baseSepolia],
     connectors: [
-        coinbaseWallet({
-            appName: 'Crypto Disco',
-            preference: 'all',
-        }),
+        injected(),
+        walletConnect({ projectId }),
+
     ],
     transports: {
         [base.id]: fallback([
