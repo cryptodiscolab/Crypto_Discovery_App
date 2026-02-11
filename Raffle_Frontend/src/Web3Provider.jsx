@@ -1,20 +1,31 @@
-import { Suspense, lazy } from 'react';
+import { useState, useEffect, lazy } from 'react';
 
 // Lazy load the heavy provider
 const LazyWeb3Wallet = lazy(() => import('./components/LazyWeb3Provider'));
 
 export function Web3Provider({ children }) {
-  return (
-    <Suspense fallback={
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Ensure we only render Web3 providers on the client side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // During SSR or initial render, show loading state
+  if (!isMounted) {
+    return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-50">
         <div className="w-12 h-12 border-t-2 border-indigo-500 rounded-full animate-spin mb-4"></div>
         <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Initializing Wallet Core...</p>
       </div>
-    }>
-      <LazyWeb3Wallet>
-        {children}
-      </LazyWeb3Wallet>
-    </Suspense>
+    );
+  }
+
+  // Client-side only: render the actual Web3 providers
+  return (
+    <LazyWeb3Wallet>
+      {children}
+    </LazyWeb3Wallet>
   );
 }
 

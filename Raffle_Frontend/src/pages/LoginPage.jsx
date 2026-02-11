@@ -1,7 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
+
+// Dynamically import ConnectButton to ensure it only loads on client side
+const ConnectButton = lazy(() =>
+    import('@rainbow-me/rainbowkit').then(module => ({
+        default: module.ConnectButton
+    }))
+);
 
 /**
  * Mobile-Optimized Login via Wallet Connect.
@@ -13,6 +19,12 @@ export function LoginPage() {
     const from = location.state?.from?.pathname || "/";
     const { address, isConnected } = useAccount();
     const AUTH_KEY = 'crypto_disco_auth_status';
+    const [isClient, setIsClient] = useState(false);
+
+    // Ensure component only renders wallet UI on client side
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     // Auto-navigate when wallet is connected
     useEffect(() => {
@@ -57,11 +69,20 @@ export function LoginPage() {
                 </p>
 
                 <div className="space-y-6 relative z-20">
-                    <div className="w-full flex justify-center relative z-30" style={{ pointerEvents: 'auto' }}>
-                        <ConnectButton
-                            chainStatus="none"
-                            showBalance={false}
-                        />
+                    {/* Wallet Connect Button - Client-side only with dynamic import */}
+                    <div className="w-full flex justify-center relative z-50 pointer-events-auto">
+                        {isClient ? (
+                            <Suspense fallback={
+                                <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                            }>
+                                <ConnectButton
+                                    chainStatus="none"
+                                    showBalance={false}
+                                />
+                            </Suspense>
+                        ) : (
+                            <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                        )}
                     </div>
 
                     <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl relative z-10">
