@@ -1,10 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), visualizer({
+    open: false,
+    gzipSize: true,
+    brotliSize: true,
+    filename: "stats.html"
+  })],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -28,9 +34,13 @@ export default defineConfig({
     sourcemap: false,
     cssCodeSplit: true,
     rollupOptions: {
-      treeshake: false, // CRITICAL: Stop the recursive property tracer
+      treeshake: true, // CRITICAL: Enable dead code elimination
       output: {
-        manualChunks: undefined, // Let Vite handle it naturally
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-web3': ['wagmi', 'viem', '@rainbow-me/rainbowkit'],
+          'vendor-ui': ['lucide-react', 'react-hot-toast']
+        },
       },
       onwarn(warning, warn) {
         if (warning.code === 'CIRCULAR_DEPENDENCY') return;
