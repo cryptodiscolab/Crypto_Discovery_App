@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Trophy, Medal, Crown, Ticket, Loader2 } from 'lucide-react';
 import { useRaffleList, useRaffleInfo } from '../hooks/useRaffle';
 
@@ -9,10 +8,8 @@ function WinnerRow({ raffleId, rank }) {
   if (isLoading || !raffle || !raffle.isCompleted) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="glass-card p-5 flex items-center justify-between border border-white/5 hover:border-yellow-500/20 transition-all"
+    <div
+      className="glass-card p-5 flex items-center justify-between border border-white/5 hover:border-yellow-500/20 transition-all animate-slide-up"
     >
       <div className="flex items-center gap-4">
         <div className={`w-10 h-10 flex items-center justify-center font-black rounded-xl shadow-lg
@@ -34,7 +31,7 @@ function WinnerRow({ raffleId, rank }) {
         </div>
         <p className="text-[10px] text-slate-500 uppercase font-black">Received 1 NFT</p>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
