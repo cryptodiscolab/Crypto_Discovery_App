@@ -1,8 +1,4 @@
 diff --git a/node_modules/@metamask/sdk/dist/lockdown-install.js b/node_modules/@metamask/sdk/dist/lockdown-install.js
-index 7298372..e69de29 100644
---- a/node_modules/@metamask/sdk/dist/lockdown-install.js
-+++ b/node_modules/@metamask/sdk/dist/lockdown-install.js
-@@ -1 +1,2 @@
--// SES Lockdown disabled by patch-package
-+// SES Lockdown disabled by patch-package
-+console.log('SES Lockdown disabled for @metamask/sdk');
+new file mode 100644
+index 0000000..c46ea3d
+Binary files /dev/null and b/node_modules/@metamask/sdk/dist/lockdown-install.js differ
