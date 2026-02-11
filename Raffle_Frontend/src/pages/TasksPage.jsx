@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask } from '../hooks/useContract';
@@ -50,10 +49,8 @@ function TaskCard({ taskId, userStats, refetchStats }) {
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`glass-card p-6 border-white/5 hover:border-blue-500/30 transition-all group ${isTierLocked ? 'opacity-60 grayscale-[0.5]' : ''}`}
+        <div
+            className={`glass-card p-6 border-white/5 hover:border-blue-500/30 transition-all group animate-scale-in ${isTierLocked ? 'opacity-60 grayscale-[0.5]' : ''}`}
         >
             <div className="flex items-start justify-between mb-4">
                 <div className={`p-3 rounded-xl bg-gradient-to-br ${isTierLocked ? 'from-slate-700 to-slate-800' : task.requiresVerification ? 'from-purple-500 to-indigo-600' : 'from-blue-500 to-indigo-600'} shadow-lg group-hover:scale-110 transition-transform`}>
@@ -116,7 +113,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
                     </button>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 }
 
@@ -135,10 +132,8 @@ export function TasksPage() {
             <div className="container mx-auto px-4 relative z-10">
                 <div className="max-w-6xl mx-auto">
                     {/* User Progress Header */}
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="glass-card mb-12 overflow-hidden"
+                    <div
+                        className="glass-card mb-12 overflow-hidden animate-slide-up"
                     >
                         <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 p-8 flex flex-col md:flex-row items-center justify-between border-b border-white/5">
                             <div className="mb-6 md:mb-0">
@@ -170,7 +165,7 @@ export function TasksPage() {
                                 </div>
                             )}
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Task Grid */}
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
