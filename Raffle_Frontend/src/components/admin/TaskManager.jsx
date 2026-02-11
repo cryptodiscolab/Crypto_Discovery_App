@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
 import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { createAuthenticatedClient, cleanWallet } from '../../lib/supabaseClient_enhanced';
 
 const DAILY_APP_ABI = [
     {
@@ -177,6 +178,8 @@ export function TaskManager() {
     const [sponsorName, setSponsorName] = useState('');
     const [sponsorTasks, setSponsorTasks] = useState([{ desc: '', points: '' }]);
 
+    // Wagmi hooks
+    const { address } = useAccount();
     const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
 
     const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
@@ -194,14 +197,44 @@ export function TaskManager() {
         }
     }, [isSuccess]);
 
-    const handleCreateDaily = () => {
+    const handleCreateDaily = async () => {
+        // Validation
         if (!dailyDesc || !dailyPoints) return toast.error("Fill all fields");
-        writeContract({
-            address: DAILY_APP_ADDRESS,
-            abi: DAILY_APP_ABI,
-            functionName: 'createDailyTask',
-            args: [dailyDesc, BigInt(dailyPoints)],
-        });
+        if (!address) return toast.error("Wallet not connected");
+
+        try {
+            // 1. Insert to Supabase Database
+            const adminClient = createAuthenticatedClient(address);
+            const { data: supabaseData, error: supabaseError } = await adminClient
+                .from('daily_tasks')
+                .insert({
+                    description: dailyDesc,
+                    xp_reward: parseInt(dailyPoints),
+                    task_type: 'daily',
+                    is_active: true,
+                })
+                .select()
+                .single();
+
+            if (supabaseError) {
+                console.error('Supabase error:', supabaseError);
+                toast.error(`Database Error: ${supabaseError.message}`);
+                return;
+            }
+
+            toast.success('Task saved to database! Now deploying to blockchain...');
+
+            // 2. Deploy to Blockchain
+            writeContract({
+                address: DAILY_APP_ADDRESS,
+                abi: DAILY_APP_ABI,
+                functionName: 'createDailyTask',
+                args: [dailyDesc, BigInt(dailyPoints)],
+            });
+        } catch (error) {
+            console.error('Error creating task:', error);
+            toast.error(`Failed: ${error.message}`);
+        }
     };
 
     const handleCreateSponsor = () => {

@@ -15,3 +15,11 @@ if (!globalThis.supabaseInstance) {
 }
 
 export const supabase = globalThis.supabaseInstance;
+
+// Helper: Clean wallet address untuk konsistensi (lowercase)
+// Prevents case-sensitivity bugs in EVM address comparisons
+export const cleanWallet = (address) => {
+    if (!address) return null;
+    return address.toLowerCase().trim();
+};
+

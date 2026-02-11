@@ -1,18 +1,38 @@
 import { createConfig, http, fallback } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { injected, walletConnect } from 'wagmi/connectors';
+// IMPORT WAJIB DARI RAINBOWKIT:
+import { connectorsForWallets } from '@rainbow-me/rainbowkit';
+import {
+    coinbaseWallet,
+    metaMaskWallet,
+    bitgetWallet,
+    walletConnectWallet
+} from '@rainbow-me/rainbowkit/wallets';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
-export const config = createConfig({
-    appName: 'Crypto Disco',
-    projectId,
-    chains: [base, baseSepolia],
-    connectors: [
-        injected(),
-        walletConnect({ projectId }),
-
+// KITA SUSUN URUTAN DOMPETNYA DI SINI
+const connectors = connectorsForWallets(
+    [
+        {
+            groupName: 'Recommended',
+            wallets: [
+                coinbaseWallet, // Taruh paling atas biar jadi Raja!
+                metaMaskWallet,
+                bitgetWallet,
+                walletConnectWallet
+            ],
+        },
     ],
+    {
+        appName: 'Crypto Disco',
+        projectId,
+    }
+);
+
+export const config = createConfig({
+    chains: [base, baseSepolia],
+    connectors, // Pakai connector yang udah dibungkus RainbowKit
     transports: {
         [base.id]: fallback([
             http(`https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}`),
@@ -24,5 +44,4 @@ export const config = createConfig({
         ]),
     },
     ssr: false,
-    reconnectOnMount: true,
 });
