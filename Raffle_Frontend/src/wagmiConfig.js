@@ -15,11 +15,11 @@ export const config = createConfig({
     ],
     transports: {
         [base.id]: fallback([
-            http(import.meta.env.VITE_BASE_RPC_URL || (import.meta.env.VITE_ALCHEMY_API_KEY ? `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}` : null)),
+            http(`https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}`),
             http('https://mainnet.base.org'),
         ]),
         [baseSepolia.id]: fallback([
-            http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || (import.meta.env.VITE_ALCHEMY_API_KEY ? `https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}` : null)),
+            http(`https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}`),
             http('https://sepolia.base.org'),
         ]),
     },

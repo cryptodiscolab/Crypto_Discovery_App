@@ -20,6 +20,7 @@ export default function LazyWeb3Provider({ children }) {
                             logo: 'https://crypto-discovery-app.vercel.app/logo.png',
                             theme: 'dark',
                         },
+                        appDomain: 'crypto-discovery-app.vercel.app', // Hardcoded for production handshake
                     }}
                 >
                     <RainbowKitProvider
