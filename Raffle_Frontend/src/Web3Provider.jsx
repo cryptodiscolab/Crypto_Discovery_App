@@ -1,36 +1,27 @@
-import { config } from './wagmiConfig';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
-import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { useEffect, useState } from 'react';
+import { Suspense, lazy } from 'react';
 
-const queryClient = new QueryClient();
+// Lazy load the heavy provider
+const LazyWeb3Wallet = lazy(() => import('./components/LazyWeb3Provider'));
 
 export function Web3Provider({ children }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-
-    if (!import.meta.env.VITE_ALCHEMY_API_KEY) {
-      console.warn('WARNING: Alchemy API Key is missing. Falling back to Public RPC.');
-    }
-  }, []);
-
-  if (!mounted) return null;
-
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          theme={darkTheme()}
-          modalSize="compact"
-        >
-          <div className="min-h-screen bg-slate-950 text-slate-50">
-            {children}
-          </div>
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-50">
+        <div className="w-12 h-12 border-t-2 border-indigo-500 rounded-full animate-spin mb-4"></div>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Initializing Wallet Core...</p>
+      </div>
+    }>
+      <LazyWeb3Wallet>
+        {children}
+      </LazyWeb3Wallet>
+    </Suspense>
   );
+}
+
+// Preload the Web3 bundle when the browser is idle
+// This ensures it's ready before the user even clicks "Connect"
+if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+  requestIdleCallback(() => {
+    import('./components/LazyWeb3Provider');
+  });
 }
