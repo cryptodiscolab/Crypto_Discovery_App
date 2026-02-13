@@ -69,7 +69,20 @@ export function TaskList() {
         try {
             const authClient = createAuthenticatedClient(address);
 
-            // Insert claim
+            // 1. Upsert Profile first to prevent FK error
+            const { error: upsertError } = await authClient
+                .from('user_profiles')
+                .upsert(
+                    { wallet_address: address.toLowerCase() },
+                    { onConflict: 'wallet_address' }
+                );
+
+            if (upsertError) {
+                console.error("Profile upsert warning:", upsertError);
+                // Continue anyway, as the profile might already exist and RLS might be strict
+            }
+
+            // 2. Insert claim
             const { error } = await authClient
                 .from('user_task_claims')
                 .insert({
@@ -126,8 +139,8 @@ export function TaskList() {
                         <div
                             key={task.id}
                             className={`relative group p-4 rounded-xl border transition-all duration-300 ${isClaimed
-                                    ? 'bg-slate-900/40 border-slate-800' // Claimed Style
-                                    : 'glass-card border-white/10 hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10' // Active Style
+                                ? 'bg-slate-900/40 border-slate-800' // Claimed Style
+                                : 'glass-card border-white/10 hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10' // Active Style
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-3">
@@ -151,8 +164,8 @@ export function TaskList() {
                                 onClick={() => !isClaimed && handleClaim(task)}
                                 disabled={isClaimed || isClaiming || !isConnected}
                                 className={`w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isClaimed
-                                        ? 'bg-transparent text-green-500 cursor-default'
-                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                    ? 'bg-transparent text-green-500 cursor-default'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
                                     }`}
                             >
                                 {isClaiming ? (
