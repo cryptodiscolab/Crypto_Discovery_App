@@ -246,7 +246,6 @@ export function TaskManager() {
                 .insert({
                     description: dailyDesc,
                     xp_reward: parseInt(dailyPoints),
-                    task_type: 'daily',
                     is_active: true,
                 })
                 .select()
