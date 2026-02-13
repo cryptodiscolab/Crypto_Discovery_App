@@ -3,8 +3,13 @@ import { useAccount } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
 
-// MASTER_ADMIN Address (Protocol 0x0845...204B)
-const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+// ALLOWED_ADMINS Addresses
+// 1. Smart Wallet (Protocol)
+// 2. Deployer Wallet (MetaMask)
+const ALLOWED_ADMINS = [
+    "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase(),
+    "0x455DF75735d2a18c26f0AfDefa93217B60369fe5".toLowerCase()
+];
 
 /**
  * AdminGuard: BUILD-READY Security Gate.
@@ -23,7 +28,7 @@ const AdminGuard = ({ children }) => {
         }
 
         const currentAddr = address?.toLowerCase();
-        if (currentAddr === MASTER_ADMIN) {
+        if (ALLOWED_ADMINS.includes(currentAddr)) {
             setIsAuthorized(true);
         } else {
             setIsAuthorized(false);
