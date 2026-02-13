@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
-import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star } from 'lucide-react';
+import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createAuthenticatedClient, cleanWallet } from '../../lib/supabaseClient_enhanced';
+import { supabase } from '../../lib/supabaseClient';
 
 const DAILY_APP_ABI = [
     {
@@ -178,6 +179,10 @@ export function TaskManager() {
     const [sponsorName, setSponsorName] = useState('');
     const [sponsorTasks, setSponsorTasks] = useState([{ desc: '', points: '' }]);
 
+    // Database Tasks State (MISI 1)
+    const [tasks, setTasks] = useState([]);
+    const [isFetching, setIsFetching] = useState(false);
+
     // Wagmi hooks
     const { address } = useAccount();
     const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
@@ -185,6 +190,35 @@ export function TaskManager() {
     const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
         hash,
     });
+
+    // MISI 1: Fetch Admin Tasks dari Supabase
+    const fetchAdminTasks = async () => {
+        setIsFetching(true);
+        try {
+            const { data, error } = await supabase
+                .from('daily_tasks')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('[fetchAdminTasks Error]', error);
+                toast.error(`Failed to fetch tasks: ${error.message}`);
+                return;
+            }
+
+            setTasks(data || []);
+        } catch (err) {
+            console.error('[fetchAdminTasks Exception]', err);
+            toast.error('Unexpected error while fetching tasks');
+        } finally {
+            setIsFetching(false);
+        }
+    };
+
+    // MISI 1: Auto-fetch saat component mount
+    useEffect(() => {
+        fetchAdminTasks();
+    }, []);
 
     // Reset forms on success
     React.useEffect(() => {
@@ -194,6 +228,8 @@ export function TaskManager() {
             setDailyPoints('');
             setSponsorName('');
             setSponsorTasks([{ desc: '', points: '' }]);
+            // Refresh tasks setelah insert berhasil
+            fetchAdminTasks();
         }
     }, [isSuccess]);
 
@@ -275,6 +311,21 @@ export function TaskManager() {
 
     return (
         <div className="space-y-6" style={{ willChange: 'transform', transform: 'translateZ(0)' }}>
+
+            {/* MISI 1: Stats Dashboard */}
+            <div className="grid grid-cols-2 gap-4 mb-2">
+                <div className="bg-[#121214] p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total (DB)</p>
+                    <p className="text-2xl font-black text-white">{isFetching ? <Loader2 className="w-4 h-4 animate-spin text-indigo-500" /> : tasks.length}</p>
+                </div>
+                <div className="bg-[#121214] p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Active (DB)</p>
+                    <p className="text-2xl font-black text-green-500">{isFetching ? <Loader2 className="w-4 h-4 animate-spin text-green-500" /> : tasks.filter(t => t.is_active).length}</p>
+                </div>
+            </div>
+
             {/* Mode Switcher */}
             <div className="flex gap-2 p-1 bg-[#121214] border border-white/5 rounded-xl">
                 <button
@@ -408,9 +459,55 @@ export function TaskManager() {
                 </div>
             )}
 
-            {/* List View */}
+            {/* List View (DB & Blockchain) */}
             {mode === 'view' && (
-                <TaskViewer address={DAILY_APP_ADDRESS} abi={DAILY_APP_ABI} />
+                <div className="space-y-6">
+                    {/* Database Records Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                            <div className="flex items-center gap-2">
+                                <Database className="w-3.5 h-3.5 text-indigo-500" />
+                                <span className="text-[10px] font-black text-white uppercase tracking-tighter">Database Records (Supabase)</span>
+                            </div>
+                            <button
+                                onClick={fetchAdminTasks}
+                                disabled={isFetching}
+                                className="text-[8px] font-black text-indigo-500 uppercase hover:underline disabled:opacity-50"
+                            >
+                                {isFetching ? 'Syncing...' : 'Refresh DB'}
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {tasks.map((task) => (
+                                <div key={task.id} className="flex items-center justify-between p-3 bg-[#0a0a0c] border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-white font-bold">{task.description}</span>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-[8px] text-slate-500 uppercase tracking-tighter">ID: {task.id}</span>
+                                            <span className={`text-[7px] px-1.5 py-0.5 rounded-full uppercase font-black ${task.is_active ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                {task.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">
+                                        <Star className="w-2.5 h-2.5 text-indigo-400" />
+                                        <span className="text-[10px] font-mono text-indigo-400 font-black">{task.xp_reward} XP</span>
+                                    </div>
+                                </div>
+                            ))}
+                            {tasks.length === 0 && !isFetching && (
+                                <div className="p-4 bg-[#0a0a0c] rounded-xl border border-white/5 text-center">
+                                    <p className="text-[10px] text-slate-500 italic">No tasks found in database.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/5">
+                        <TaskViewer address={DAILY_APP_ADDRESS} abi={DAILY_APP_ABI} />
+                    </div>
+                </div>
             )}
 
             {/* Status Feedback */}
