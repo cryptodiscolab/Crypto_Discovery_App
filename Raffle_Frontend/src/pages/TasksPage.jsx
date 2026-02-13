@@ -4,6 +4,7 @@ import { useAllTasks, useTaskInfo, useDoTask } from '../hooks/useContract';
 import { useVerification } from '../hooks/useVerification';
 import { usePoints } from '../shared/context/PointsContext';
 import toast from 'react-hot-toast';
+import { TaskList } from '../components/tasks/TaskList';
 
 function TaskCard({ taskId, userStats, refetchStats }) {
     const { task, isLoading } = useTaskInfo(taskId);
@@ -166,6 +167,9 @@ export function TasksPage() {
                             )}
                         </div>
                     </div>
+
+                    {/* Supabase Tasks (New Phase 5) */}
+                    <TaskList />
 
                     {/* Task Grid */}
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
