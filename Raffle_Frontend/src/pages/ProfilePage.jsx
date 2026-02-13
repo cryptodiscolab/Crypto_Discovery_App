@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -6,14 +6,29 @@ import {
   TrendingUp,
   Users,
   Globe,
-  LogOut,
   Trash2,
   RefreshCw,
-  Star
+  Star,
+  Crown
 } from 'lucide-react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
+import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
+
+// Helper: Tier Logic
+const getTier = (xp) => {
+  if (xp >= 10000) return { name: 'Gold', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' };
+  if (xp >= 5000) return { name: 'Silver', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
+  if (xp >= 1000) return { name: 'Bronze', color: 'text-amber-600', bg: 'bg-amber-600/10', border: 'border-amber-600/20' };
+  return { name: 'Rookie', color: 'text-slate-500', bg: 'bg-slate-800/50', border: 'border-slate-700/50' };
+};
+
+// Helper: Format Address
+const formatAddress = (addr) => {
+  if (!addr) return 'Unknown';
+  return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+};
 
 /**
  * High-Performance Profile Hub (React 18 Optimized).
@@ -21,15 +36,44 @@ import toast from 'react-hot-toast';
  */
 export function ProfilePage() {
   const { userAddress } = useParams();
-  const { address: connectedAddress, isConnected, disconnect } = useAccount();
+  const { address: connectedAddress, isConnected } = useAccount();
   const navigate = useNavigate();
 
   // Target Address Logic: Use URL param or connected wallet
-  const targetAddress = userAddress || connectedAddress;
-  const isOwnProfile = !userAddress || userAddress.toLowerCase() === connectedAddress?.toLowerCase();
+  const targetAddress = userAddress ? userAddress.toLowerCase() : connectedAddress?.toLowerCase();
+  const isOwnProfile = !userAddress || targetAddress === connectedAddress?.toLowerCase();
 
-  const { user, isLoading: isFarcasterLoading, error, syncUser, clearCache } = useFarcaster(targetAddress);
+  const { user: farcasterUser, isLoading: isFarcasterLoading, syncUser, clearCache } = useFarcaster(targetAddress);
+  const [supabaseUser, setSupabaseUser] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Fetch Supabase Data
+  // Fetch Supabase Data
+  useEffect(() => {
+    if (!targetAddress) return;
+
+    const fetchSupabaseData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('wallet_address', targetAddress.toLowerCase()) // Ensure lowercase
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching profile:", error);
+        }
+
+        if (data) {
+          setSupabaseUser(data);
+        }
+      } catch (err) {
+        console.error("Unexpected error in profile fetch:", err);
+      }
+    };
+
+    fetchSupabaseData();
+  }, [targetAddress]);
 
   // Global Purge Strategy (User side maintenance)
   const handleGlobalPurge = useCallback(() => {
@@ -49,16 +93,44 @@ export function ProfilePage() {
   }, [targetAddress, clearCache, syncUser]);
 
   // Derived Social Data
-  const socialData = useMemo(() => ({
-    display_name: user?.farcaster_user?.display_name || user?.display_name || 'Anonymous User',
-    username: user?.farcaster_user?.username || 'user',
-    pfp_url: user?.farcaster_user?.pfp_url || `https://avatar.vercel.sh/${targetAddress}.svg`,
-    bio: user?.farcaster_user?.profile?.bio?.text || 'Standard Disco Explorer',
-    follower_count: user?.farcaster_user?.follower_count || 0,
-    following_count: user?.farcaster_user?.following_count || 0,
-    power_badge: user?.farcaster_user?.power_badge || false,
-    trust_score: user?.trust_score || 0
-  }), [user, targetAddress]);
+  const socialData = useMemo(() => {
+    const fcUser = farcasterUser?.farcaster_user;
+
+    // Identity Logic: Use Farcaster Name -> Supabase Name -> Sliced Address
+    let finalName = 'Anonymous User';
+
+    // Priority 1: Farcaster Profile
+    if (fcUser?.display_name) {
+      finalName = fcUser.display_name;
+    }
+    // Priority 2: Supabase Profile
+    else if (supabaseUser?.display_name) {
+      finalName = supabaseUser.display_name;
+    }
+    // Priority 3: Sliced Address (Fallback)
+    else if (targetAddress) {
+      finalName = formatAddress(targetAddress);
+    }
+
+    const finalUsername = fcUser?.username || 'explorer';
+    const finalPfp = fcUser?.pfp_url || `https://avatar.vercel.sh/${targetAddress}.svg`;
+    const finalBio = fcUser?.profile?.bio?.text || 'Standard Disco Explorer';
+
+    return {
+      display_name: finalName,
+      username: finalUsername,
+      pfp_url: finalPfp,
+      bio: finalBio,
+      follower_count: fcUser?.follower_count || 0,
+      following_count: fcUser?.following_count || 0,
+      power_badge: fcUser?.power_badge || false,
+      trust_score: supabaseUser?.trust_score || farcasterUser?.trust_score || 0,
+      points: supabaseUser?.total_xp || 0
+    };
+  }, [farcasterUser, supabaseUser, targetAddress]);
+
+  // Derived Tier
+  const tier = getTier(socialData.points);
 
   if (!isConnected && !userAddress) {
     return (
@@ -80,7 +152,7 @@ export function ProfilePage() {
     );
   }
 
-  if (isFarcasterLoading && !user) {
+  if (isFarcasterLoading && !farcasterUser && !supabaseUser) {
     return (
       <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8 animate-pulse">
         <div className="bg-slate-900/50 h-64 rounded-[2rem]"></div>
@@ -117,6 +189,10 @@ export function ProfilePage() {
                 </div>
                 <p className="text-indigo-400 font-mono text-sm">@{String(socialData.username)}</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border ${tier.bg} ${tier.color} ${tier.border}`}>
+                    <Crown className="w-3 h-3" />
+                    {tier.name}
+                  </span>
                   <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                     {socialData.power_badge ? <Star className="w-3 h-3 fill-indigo-400" /> : <Shield className="w-3 h-3" />}
                     {socialData.power_badge ? 'Active Identity' : 'Standard User'}
@@ -156,8 +232,8 @@ export function ProfilePage() {
         {[
           { label: 'Followers', value: socialData.follower_count.toLocaleString(), icon: Users, color: 'indigo' },
           { label: 'Following', value: socialData.following_count.toLocaleString(), icon: Globe, color: 'purple' },
-          { label: 'Trust Score', value: socialData.trust_score.toFixed(1), icon: Shield, color: 'emerald' },
-          { label: 'Points', value: user?.points ? String(user.points) : '0', icon: Trophy, color: 'amber' }
+          { label: 'Trust Score', value: Number(socialData.trust_score).toFixed(1), icon: Shield, color: 'emerald' },
+          { label: 'Points', value: Number(socialData.points).toLocaleString(), icon: Trophy, color: 'amber' }
         ].map((stat, i) => {
           const IconComponent = stat.icon;
           return (
