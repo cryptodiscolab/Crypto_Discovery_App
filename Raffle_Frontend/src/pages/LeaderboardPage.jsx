@@ -17,7 +17,7 @@ const formatAddress = (addr) => {
 };
 
 function LeaderboardRow({ user, rank, isCurrentUser }) {
-  const tier = getTier(user.total_xp);
+  const tier = getTier(user.points);
 
   return (
     <div
@@ -54,9 +54,9 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
       <div className="flex flex-col items-end">
         <div className="flex items-center gap-2 text-yellow-400 font-black">
           <Sparkles className="w-4 h-4 text-yellow-500" />
-          <span className="text-xl tracking-tighter">{user.total_xp.toLocaleString()}</span>
+          <span className="text-xl tracking-tighter">{user.points?.toLocaleString() || 0}</span>
         </div>
-        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total XP</p>
+        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Points</p>
       </div>
     </div>
   );
@@ -75,8 +75,8 @@ export function LeaderboardPage() {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('wallet_address, total_xp, trust_score')
-        .order('total_xp', { ascending: false })
+        .select('wallet_address, points, trust_score')
+        .order('points', { ascending: false })
         .limit(50);
 
       if (error) throw error;

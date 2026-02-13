@@ -65,6 +65,7 @@ export function ProfilePage() {
         }
 
         if (data) {
+          console.log("Profile Data:", data);
           setSupabaseUser(data);
         }
       } catch (err) {
@@ -125,7 +126,7 @@ export function ProfilePage() {
       following_count: fcUser?.following_count || 0,
       power_badge: fcUser?.power_badge || false,
       trust_score: supabaseUser?.trust_score || farcasterUser?.trust_score || 0,
-      points: supabaseUser?.total_xp || 0
+      points: supabaseUser?.points || 0
     };
   }, [farcasterUser, supabaseUser, targetAddress]);
 
