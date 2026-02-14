@@ -54,7 +54,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
       <div className="flex flex-col items-end">
         <div className="flex items-center gap-2 text-yellow-400 font-black">
           <Sparkles className="w-4 h-4 text-yellow-500" />
-          <span className="text-xl tracking-tighter">{user.points?.toLocaleString() || 0}</span>
+          <span className="text-xl tracking-tighter">{Number(user.points || 0).toLocaleString()}</span>
         </div>
         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Points</p>
       </div>
@@ -126,7 +126,8 @@ export function LeaderboardPage() {
                 key={user.wallet_address}
                 user={user}
                 rank={index + 1}
-                isCurrentUser={address && user.wallet_address.toLowerCase() === address.toLowerCase()}
+                rank={index + 1}
+                isCurrentUser={address && user.wallet_address?.toLowerCase() === address.toLowerCase()}
               />
             ))
           )}

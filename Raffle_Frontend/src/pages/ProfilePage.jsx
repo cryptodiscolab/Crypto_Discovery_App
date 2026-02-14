@@ -1,276 +1,172 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
-  User,
-  Shield,
-  TrendingUp,
-  Users,
-  Globe,
-  Trash2,
-  RefreshCw,
-  Star,
-  Crown
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2
 } from 'lucide-react';
-import { useAccount } from 'wagmi';
-import { useFarcaster } from '../hooks/useFarcaster';
+import { useAccount, useSignMessage } from 'wagmi';
+import { useFarcaster } from '../hooks/useFarcaster'; // Asumsi lo pake ini buat read data awal
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 
-// Helper: Tier Logic
-const getTier = (xp) => {
-  if (xp >= 10000) return { name: 'Gold', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' };
-  if (xp >= 5000) return { name: 'Silver', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
-  if (xp >= 1000) return { name: 'Bronze', color: 'text-amber-600', bg: 'bg-amber-600/10', border: 'border-amber-600/20' };
-  return { name: 'Rookie', color: 'text-slate-500', bg: 'bg-slate-800/50', border: 'border-slate-700/50' };
-};
+export default function ProfilePage() {
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
-// Helper: Format Address
-const formatAddress = (addr) => {
-  if (!addr) return 'Unknown';
-  return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
-};
+  // State untuk Mode Edit
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-/**
- * High-Performance Profile Hub (React 18 Optimized).
- * Reverts @neynar/ui to custom Tailwind to resolve React 19 peer-dep conflicts.
- */
-export function ProfilePage() {
-  const { userAddress } = useParams();
-  const { address: connectedAddress, isConnected } = useAccount();
-  const navigate = useNavigate();
+  // State Form Data
+  const [formData, setFormData] = useState({
+    displayName: '',
+    bio: '',
+    avatarUrl: ''
+  });
 
-  // Target Address Logic: Use URL param or connected wallet
-  const targetAddress = userAddress ? userAddress.toLowerCase() : connectedAddress?.toLowerCase();
-  const isOwnProfile = !userAddress || targetAddress === connectedAddress?.toLowerCase();
-
-  const { user: farcasterUser, isLoading: isFarcasterLoading, syncUser, clearCache } = useFarcaster(targetAddress);
-  const [supabaseUser, setSupabaseUser] = useState(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  // Fetch Supabase Data
-  // Fetch Supabase Data
+  // Load data awal dari Supabase saat component mount
   useEffect(() => {
-    if (!targetAddress) return;
+    if (address) {
+      fetchProfile();
+    }
+  }, [address]);
 
-    const fetchSupabaseData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('wallet_address', targetAddress.toLowerCase()) // Ensure lowercase
-          .single();
+  const fetchProfile = async () => {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('wallet_address', address.toLowerCase())
+      .single();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error fetching profile:", error);
-        }
+    if (data) {
+      setFormData({
+        displayName: data.display_name || '',
+        bio: data.bio || '',
+        avatarUrl: data.avatar_url || ''
+      });
+    }
+  };
 
-        if (data) {
-          console.log("Profile Data:", data);
-          setSupabaseUser(data);
-        }
-      } catch (err) {
-        console.error("Unexpected error in profile fetch:", err);
+  // --- CORE LOGIC: SECURE SAVE ---
+  const handleSaveProfile = async () => {
+    if (!address) return toast.error("Connect wallet dulu bos!");
+
+    setIsSaving(true);
+    const toastId = toast.loading("Meminta tanda tangan wallet...");
+
+    try {
+      // 1. Siapkan Pesan Unik (Anti-Replay Attack)
+      // Kita kasih timestamp biar signature cuma valid sekali pakai (secara logika)
+      const messageToSign = `Update Profile for ${address.toLowerCase()} at ${new Date().toISOString()}`;
+
+      // 2. Trigger Wallet Signature (Metamask/Rainbow muncul)
+      const signature = await signMessageAsync({ message: messageToSign });
+
+      toast.loading("Verifikasi & Simpan ke Server...", { id: toastId });
+
+      // 3. Kirim ke API Vercel (Bukan Supabase Client!)
+      // Sesuaikan path '/api/profile/update' dengan lokasi file lo
+      const response = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet_address: address,
+          signature: signature,
+          message: messageToSign,
+          profile_data: {
+            display_name: formData.displayName,
+            bio: formData.bio,
+            avatar_url: formData.avatarUrl
+          }
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Gagal update profile");
       }
-    };
 
-    fetchSupabaseData();
-  }, [targetAddress]);
+      // 4. Sukses!
+      toast.success("Profile berhasil diupdate!", { id: toastId });
+      setIsEditing(false);
 
-  // Global Purge Strategy (User side maintenance)
-  const handleGlobalPurge = useCallback(() => {
-    localStorage.clear();
-    toast.success('System Cache Purged. Re-initializing...');
-    setTimeout(() => window.location.reload(), 1000);
-  }, []);
+      // Refresh data di UI biar sinkron
+      fetchProfile();
 
-  const handleManualRefresh = useCallback(() => {
-    if (!targetAddress) return;
-    setIsSyncing(true);
-    clearCache(targetAddress);
-    syncUser(targetAddress, true).finally(() => {
-      setTimeout(() => setIsSyncing(false), 500);
-      toast.success('Profile Refresh Triggered');
-    });
-  }, [targetAddress, clearCache, syncUser]);
-
-  // Derived Social Data
-  const socialData = useMemo(() => {
-    const fcUser = farcasterUser?.farcaster_user;
-
-    // Identity Logic: Use Farcaster Name -> Supabase Name -> Sliced Address
-    let finalName = 'Anonymous User';
-
-    // Priority 1: Farcaster Profile
-    if (fcUser?.display_name) {
-      finalName = fcUser.display_name;
+    } catch (error) {
+      console.error("Save Error:", error);
+      // Handle User Reject Signature
+      if (error.code === 4001 || error.message.includes("rejected")) {
+        toast.error("Tanda tangan dibatalkan user", { id: toastId });
+      } else {
+        toast.error(`Error: ${error.message}`, { id: toastId });
+      }
+    } finally {
+      setIsSaving(false);
     }
-    // Priority 2: Supabase Profile
-    else if (supabaseUser?.display_name) {
-      finalName = supabaseUser.display_name;
-    }
-    // Priority 3: Sliced Address (Fallback)
-    else if (targetAddress) {
-      finalName = formatAddress(targetAddress);
-    }
-
-    const finalUsername = fcUser?.username || 'explorer';
-    const finalPfp = fcUser?.pfp_url || `https://avatar.vercel.sh/${targetAddress}.svg`;
-    const finalBio = fcUser?.profile?.bio?.text || 'Standard Disco Explorer';
-
-    return {
-      display_name: finalName,
-      username: finalUsername,
-      pfp_url: finalPfp,
-      bio: finalBio,
-      follower_count: fcUser?.follower_count || 0,
-      following_count: fcUser?.following_count || 0,
-      power_badge: fcUser?.power_badge || false,
-      trust_score: supabaseUser?.trust_score || farcasterUser?.trust_score || 0,
-      points: supabaseUser?.points || 0
-    };
-  }, [farcasterUser, supabaseUser, targetAddress]);
-
-  // Derived Tier
-  const tier = getTier(socialData.points);
-
-  if (!isConnected && !userAddress) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center text-slate-100">
-        <div className="bg-slate-900 border border-slate-800 p-10 rounded-[2.5rem] shadow-2xl max-w-sm">
-          <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <User className="w-10 h-10 text-indigo-500" />
-          </div>
-          <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Identity Locked</h2>
-          <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">Connect your wallet to access your profile and reputation stats.</p>
-          <button
-            onClick={() => navigate('/login')}
-            className="w-full bg-indigo-600 py-4 rounded-2xl text-white font-bold hover:bg-indigo-500 transition-all shadow-xl active:scale-95 text-xs uppercase tracking-widest"
-          >
-            Connect Identity
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isFarcasterLoading && !farcasterUser && !supabaseUser) {
-    return (
-      <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8 animate-pulse">
-        <div className="bg-slate-900/50 h-64 rounded-[2rem]"></div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
-          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
-          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
-          <div className="bg-slate-900/50 h-32 rounded-2xl"></div>
-        </div>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6 text-slate-100">
+    <div className="p-4 max-w-2xl mx-auto">
+      {/* UI HEADER CONTOH */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Crown className="w-6 h-6 text-yellow-500" /> User Profile
+        </h1>
 
-      {/* Premium Profile Header */}
-      <div className="relative bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-900/40 to-purple-900/40"></div>
-
-        <div className="relative pt-16 px-6 pb-8 md:px-10">
-          <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-6">
-
-            <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-              {/* Profile Picture */}
-              <div className="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl relative">
-                <img src={socialData.pfp_url} alt="Profile" className="w-full h-full object-cover" />
-              </div>
-
-              <div className="text-center md:text-left mb-2">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                  <h1 className="text-3xl font-black text-white tracking-tighter uppercase">{String(socialData.display_name)}</h1>
-                  {socialData.power_badge && <TrendingUp className="w-5 h-5 text-indigo-400" />}
-                </div>
-                <p className="text-indigo-400 font-mono text-sm">@{String(socialData.username)}</p>
-                <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border ${tier.bg} ${tier.color} ${tier.border}`}>
-                    <Crown className="w-3 h-3" />
-                    {tier.name}
-                  </span>
-                  <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                    {socialData.power_badge ? <Star className="w-3 h-3 fill-indigo-400" /> : <Shield className="w-3 h-3" />}
-                    {socialData.power_badge ? 'Active Identity' : 'Standard User'}
-                  </span>
-                  {isOwnProfile && (
-                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                      Owner
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleManualRefresh}
-                disabled={isSyncing}
-                className="w-12 h-12 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-2xl flex items-center justify-center transition-all border border-slate-700 active:scale-95 disabled:opacity-50"
-              >
-                <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
-              </button>
-
-            </div>
-          </div>
-
-          <div className="mt-8 border-t border-slate-800 pt-6">
-            <p className="text-slate-400 text-sm font-medium leading-relaxed italic">
-              "{String(socialData.bio)}"
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Social Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Followers', value: socialData.follower_count.toLocaleString(), icon: Users, color: 'indigo' },
-          { label: 'Following', value: socialData.following_count.toLocaleString(), icon: Globe, color: 'purple' },
-          { label: 'Trust Score', value: Number(socialData.trust_score).toFixed(1), icon: Shield, color: 'emerald' },
-          { label: 'Points', value: Number(socialData.points).toLocaleString(), icon: Trophy, color: 'amber' }
-        ].map((stat, i) => {
-          const IconComponent = stat.icon;
-          return (
-            <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-lg">
-              <div className={`w-10 h-10 bg-${stat.color}-500/10 rounded-xl flex items-center justify-center mb-4`}>
-                <IconComponent className={`w-5 h-5 text-${stat.color}-500`} />
-              </div>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-              <p className="text-2xl font-black text-white tracking-tighter">{String(stat.value)}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Maintenance Controls (Admin Mode) */}
-      {isOwnProfile && (
-        <div className="bg-slate-900/40 border border-dashed border-slate-800 p-8 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h3 className="text-white font-black uppercase tracking-widest text-xs mb-1">Local Identity maintenance</h3>
-            <p className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">Purge local cache and re-sync from protocol nodes.</p>
-          </div>
+        {/* Tombol Edit/Save Toggle */}
+        {!isEditing ? (
           <button
-            onClick={handleGlobalPurge}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-400 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-slate-700 transition-all hover:text-red-400 hover:border-red-400/20"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            <Trash2 className="w-4 h-4" />
-            Global System Purge
+            <Edit size={16} /> Edit Profile
           </button>
-        </div>
-      )}
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsEditing(false)}
+              disabled={isSaving}
+              className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              <X size={20} />
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              Save
+            </button>
+          </div>
+        )}
+      </div>
 
+      {/* FORM INPUTS */}
+      <div className="space-y-4 bg-gray-900 p-6 rounded-xl border border-gray-800">
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Display Name</label>
+          <input
+            type="text"
+            disabled={!isEditing}
+            value={formData.displayName}
+            onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+            className="w-full bg-black border border-gray-700 rounded p-2 text-white disabled:text-gray-500 disabled:cursor-not-allowed"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Bio</label>
+          <textarea
+            disabled={!isEditing}
+            value={formData.bio}
+            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+            className="w-full bg-black border border-gray-700 rounded p-2 text-white h-24 disabled:text-gray-500 disabled:cursor-not-allowed"
+          />
+        </div>
+      </div>
     </div>
   );
 }
-
-// Minimal helpers
-const Trophy = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>
-);
