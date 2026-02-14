@@ -51,7 +51,7 @@ export const useFarcaster = () => {
                 const { data: dbProfile } = await supabase
                     .from('user_profiles')
                     .select('*')
-                    .eq('address', wallet)
+                    .eq('wallet_address', wallet)
                     .maybeSingle();
 
                 if (dbProfile) {
@@ -76,7 +76,56 @@ export const useFarcaster = () => {
                 throw new Error(result.error || 'Identity Sync Failed');
             }
 
-            const finalProfile = result.profile;
+            // --- PARSING LOGIC UPDATE (Handle Raw Neynar Structure) ---
+            // Response format: { "0x...": [ { fid: ... } ] }
+            // or sometimes wrapped in { result: ... } depending on the proxy.
+            // We try to find the array by looking for the address key.
+
+            let userObj = null;
+            const addressKey = wallet.toLowerCase();
+
+            // Case A: Direct Raw Response { "0x...": [...] }
+            if (result[addressKey] && Array.isArray(result[addressKey])) {
+                userObj = result[addressKey][0];
+            }
+            // Case B: Previously assumed structure { profile: ... }
+            else if (result.profile) {
+                userObj = result.profile;
+            }
+
+            if (!userObj) {
+                console.warn("[Sync Hook] keys found:", Object.keys(result));
+                throw new Error("No Farcaster profile found for this address.");
+            }
+
+            // --- MAPPING LOGIC ---
+            // Map Neynar keys to our Supabase Schema
+            const finalProfile = {
+                wallet_address: wallet,
+                fid: userObj.fid,
+                username: userObj.username,
+                display_name: userObj.display_name,
+                pfp_url: userObj.pfp_url,
+                bio: userObj.profile?.bio?.text || '',
+                follower_count: userObj.follower_count || 0,
+                following_count: userObj.following_count || 0,
+                verifications: userObj.verifications || [],
+                active_status: userObj.active_status || 'active',
+                neynar_score: userObj.score || userObj.experimental?.neynar_user_score || 0,
+                power_badge: (userObj.follower_count > 500), // Simple logic for badge
+                last_login_at: new Date().toISOString()
+            };
+
+            // 4. UPSERT TO SUPABASE (Critical for ProfilePage)
+            const { error: upsertError } = await supabase
+                .from('user_profiles')
+                .upsert(finalProfile, { onConflict: 'wallet_address' });
+
+            if (upsertError) {
+                console.error("[Sync Hook] DB Upsert Error:", upsertError);
+                // We don't throw here, passing the data to UI is better than nothing
+            }
+
             setProfileData(finalProfile);
             localStorage.setItem(storageKey, JSON.stringify(finalProfile));
             return finalProfile;
@@ -84,6 +133,7 @@ export const useFarcaster = () => {
         } catch (err) {
             if (err.name === 'AbortError') return null;
             setError(err.message);
+            console.error("[Sync Hook] Process Error:", err);
             return null;
         } finally {
             setIsLoading(false);
