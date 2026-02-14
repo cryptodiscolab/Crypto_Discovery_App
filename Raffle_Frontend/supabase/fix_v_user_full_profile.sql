@@ -16,11 +16,10 @@ SELECT
     w.w_address as wallet_address,
     COALESCE(
         NULLIF(p.display_name, ''), 
-        NULLIF(up.display_name, ''), 
         ens.full_name
     ) as display_name, 
-    COALESCE(NULLIF(p.bio, ''), NULLIF(up.bio, '')) as bio,
-    COALESCE(NULLIF(p.pfp_url, ''), NULLIF(up.avatar_url, '')) as pfp_url,
+    p.bio,
+    p.pfp_url,
     COALESCE(p.neynar_score, 0) as neynar_score,
     COALESCE(up.points, 0) as points,
     COALESCE(up.tier, 1) as tier,
