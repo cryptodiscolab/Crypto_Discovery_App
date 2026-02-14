@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 export default function ProfilePage() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
   // State untuk Mode Edit
   const [isEditing, setIsEditing] = useState(false);
@@ -117,12 +118,33 @@ export default function ProfilePage() {
 
         {/* Tombol Edit/Save Toggle */}
         {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            <Edit size={16} /> Edit Profile
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                const toastId = toast.loading("Syncing with Farcaster...");
+                try {
+                  // Import dynamically if needed, or use the hook if available at top level
+                  // Using the hook from top level is better
+                  await syncUser(address, true);
+                  await fetchProfile(); // Refresh local data from Supabase
+                  toast.success("Synced from Farcaster!", { id: toastId });
+                } catch (e) {
+                  toast.error("Sync failed: " + e.message, { id: toastId });
+                }
+              }}
+              disabled={isFarcasterLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            >
+              {isFarcasterLoading ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+              Sync Farcaster
+            </button>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              <Edit size={16} /> Edit Profile
+            </button>
+          </div>
         ) : (
           <div className="flex gap-2">
             <button

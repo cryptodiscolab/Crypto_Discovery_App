@@ -8,9 +8,7 @@ import toast from 'react-hot-toast';
 export function TaskList() {
     const { address, isConnected } = useAccount();
     const [tasks, setTasks] = useState([]);
-    const [userClaims, setUserClaims] = useState(new Set());
-    const [isLoading, setIsLoading] = useState(true);
-    const [claimingTask, setClaimingTask] = useState(null);
+    const [userScore, setUserScore] = useState(0);
 
     // Fetch Tasks & User Claims
     const fetchData = async () => {
@@ -25,21 +23,33 @@ export function TaskList() {
 
             if (tasksError) throw tasksError;
 
-            // 2. Fetch User Claims (if connected)
+            // 2. Fetch User Claims & Score (if connected)
             let claimsSet = new Set();
             if (address) {
                 const today = new Date().toISOString().split('T')[0];
-                const { data: claimsData, error: claimsError } = await supabase
-                    .from('user_task_claims')
-                    .select('task_id')
-                    .eq('wallet_address', address.toLowerCase())
-                    .gte('claimed_at', `${today}T00:00:00.000Z`)
-                    .lte('claimed_at', `${today}T23:59:59.999Z`);
 
-                if (claimsError) console.error("Error fetching claims:", claimsError);
+                // Parallel Fetch for Performance
+                const [claimsResult, profileResult] = await Promise.all([
+                    supabase
+                        .from('user_task_claims')
+                        .select('task_id')
+                        .eq('wallet_address', address.toLowerCase())
+                        .gte('claimed_at', `${today}T00:00:00.000Z`)
+                        .lte('claimed_at', `${today}T23:59:59.999Z`),
 
-                if (claimsData) {
-                    claimsData.forEach(claim => claimsSet.add(claim.task_id));
+                    supabase
+                        .from('user_profiles')
+                        .select('neynar_score')
+                        .eq('wallet_address', address.toLowerCase())
+                        .single()
+                ]);
+
+                if (claimsResult.data) {
+                    claimsResult.data.forEach(claim => claimsSet.add(claim.task_id));
+                }
+
+                if (profileResult.data) {
+                    setUserScore(profileResult.data.neynar_score || 0);
                 }
             }
 
@@ -60,6 +70,12 @@ export function TaskList() {
     const handleClaim = async (task) => {
         if (!isConnected || !address) {
             toast.error("Please connect wallet first");
+            return;
+        }
+
+        // Double check score client-side (Server RLS should also enforce this ideally)
+        if (task.min_neynar_score > 0 && userScore < task.min_neynar_score) {
+            toast.error(`Low Reputation: Requires Neynar Score ${task.min_neynar_score}`);
             return;
         }
 
@@ -135,6 +151,11 @@ export function TaskList() {
                     const isClaimed = userClaims.has(task.id);
                     const isClaiming = claimingTask === task.id;
 
+                    // Anti-Sybil Check
+                    const requiresScore = task.min_neynar_score && task.min_neynar_score > 0;
+                    const isScoreLow = requiresScore && userScore < task.min_neynar_score;
+                    const isDisabled = isClaimed || isClaiming || !isConnected || isScoreLow;
+
                     return (
                         <div
                             key={task.id}
@@ -150,9 +171,16 @@ export function TaskList() {
                                         : <Clock className="w-5 h-5 text-indigo-400" />
                                     }
                                 </div>
-                                <div className={`px-2 py-1 rounded-md text-xs font-black font-mono flex items-center gap-1 ${isClaimed ? 'bg-slate-800 text-slate-500' : 'bg-yellow-500/20 text-yellow-400'
-                                    }`}>
-                                    <span>+{task.xp_reward} XP</span>
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className={`px-2 py-1 rounded-md text-xs font-black font-mono flex items-center gap-1 ${isClaimed ? 'bg-slate-800 text-slate-500' : 'bg-yellow-500/20 text-yellow-400'
+                                        }`}>
+                                        <span>+{task.xp_reward} XP</span>
+                                    </div>
+                                    {requiresScore && (
+                                        <div className={`text-[10px] font-bold ${isScoreLow ? 'text-red-400' : 'text-slate-500'}`}>
+                                            Min Score: {task.min_neynar_score}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -160,25 +188,40 @@ export function TaskList() {
                                 {task.description}
                             </h4>
 
-                            <button
-                                onClick={() => !isClaimed && handleClaim(task)}
-                                disabled={isClaimed || isClaiming || !isConnected}
-                                className={`w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isClaimed
-                                    ? 'bg-transparent text-green-500 cursor-default'
-                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                                    }`}
-                            >
-                                {isClaiming ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : isClaimed ? (
-                                    <>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        Completed
-                                    </>
-                                ) : (
-                                    "Claim Reward"
+                            <div className="relative group/btn">
+                                <button
+                                    onClick={() => !isDisabled && handleClaim(task)}
+                                    disabled={isDisabled}
+                                    className={`w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isClaimed
+                                        ? 'bg-transparent text-green-500 cursor-default'
+                                        : isScoreLow
+                                            ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
+                                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                        }`}
+                                >
+                                    {isClaiming ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : isClaimed ? (
+                                        <>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            Completed
+                                        </>
+                                    ) : isScoreLow ? (
+                                        <div className="flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4" />
+                                            Low Reputation
+                                        </div>
+                                    ) : (
+                                        "Claim Reward"
+                                    )}
+                                </button>
+
+                                {isScoreLow && (
+                                    <div className="absolute bottom-full left-0 w-full mb-2 p-2 bg-black/90 text-white text-[10px] rounded pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-opacity z-10 text-center">
+                                        Your Neynar Score ({userScore || 0}) is below {task.min_neynar_score}
+                                    </div>
                                 )}
-                            </button>
+                            </div>
                         </div>
                     );
                 })}

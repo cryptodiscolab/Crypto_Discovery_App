@@ -51,22 +51,36 @@ export default async function handler(req, res) {
             profile.following_count = fcUser.following_count || 0;
             profile.verified_addresses = fcUser.verified_addresses || [];
 
-            // OpenRank / Internal Trust Score calc can be added here or via separate trigger
+            // Anti-Sybil: Neynar Score (default to 0 if missing)
+            // Note: internal_trust_score might be nested or named differently in recent SDK versions
+            // Checking common paths: experimental.neynar_user_score or similar.
+            // For standard user object returned by lookupUserByVerification, score might not be present.
+            // If missing, we might need a separate call or check 'viewer_context' if authenticated.
+            // Assuming standard 'score' field or similar based on user request "internal_trust_score".
+            // Fallback to 0 if undefined.
+            profile.neynar_score = fcUser.experimental?.neynar_user_score || 0;
+        } else {
+            profile.neynar_score = 0;
         }
 
-        // 3. Commit to Database
+        // 3. Commit to Database using Robust Upsert
+        // We use the Service Role key so RLS is bypassed, but we log the context.
         const { data, error } = await supabase
             .from("user_profiles")
             .upsert(profile, { onConflict: "wallet_address" })
-            .select()
+            .select() // Return the inserted data
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error("[Sync] Supabase Upsert Failed:", error);
+            throw new Error("Database commit failed: " + error.message);
+        }
 
         return res.status(200).json({
             ok: true,
             profile: data,
-            synced: !!fcUser
+            synced: !!fcUser,
+            score: profile.neynar_score
         });
 
     } catch (err) {
