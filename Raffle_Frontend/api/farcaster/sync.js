@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         supabase = createClient(supabaseUrl, supabaseServiceKey, {
             global: { headers: { 'x-user-wallet': wallet } }
         });
-        neynar = new NeynarAPIClient(neynarApiKey);
+        neynar = new NeynarAPIClient({ apiKey: neynarApiKey });
     } catch (initErr) {
         console.error("[Sync] Client Initialization Error:", initErr.message);
         return res.status(500).json({ error: "Client Init Failed: " + initErr.message });
