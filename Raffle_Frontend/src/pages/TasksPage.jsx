@@ -155,8 +155,8 @@ export function TasksPage() {
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">
-                                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Rank Tier</p>
-                                        <p className="text-3xl font-black text-indigo-400">LVL {String(userTier ?? 0)}</p>
+                                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Current Rank</p>
+                                        <p className="text-3xl font-black text-indigo-400">{rankName || `LVL ${userTier}`}</p>
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>
                                     <div className="text-center">

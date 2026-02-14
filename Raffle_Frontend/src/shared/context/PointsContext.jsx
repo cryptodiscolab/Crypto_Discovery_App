@@ -11,6 +11,7 @@ export function PointsProvider({ children }) {
 
     const [userPoints, setUserPoints] = useState(0n); // BigInt for safety
     const [userTier, setUserTier] = useState(0);
+    const [rankName, setRankName] = useState('Rookie');
     const [totalTasksCompleted, setTotalTasksCompleted] = useState(0);
 
     // Loading States
@@ -35,13 +36,14 @@ export function PointsProvider({ children }) {
             // Priority: Fetch from 'v_user_full_profile' (The Consolidated View)
             const { data, error } = await supabase
                 .from('v_user_full_profile')
-                .select('total_xp, current_level')
+                .select('total_xp, current_level, rank_name')
                 .eq('wallet_address', address.toLowerCase())
                 .single();
 
             if (data) {
                 setUserPoints(BigInt(data.total_xp || 0));
                 setUserTier(data.current_level || 1);
+                setRankName(data.rank_name || 'Rookie');
             }
 
             // Optional: Get total tasks count if needed
@@ -177,6 +179,7 @@ export function PointsProvider({ children }) {
     const value = {
         userPoints,
         userTier,
+        rankName,
         totalTasksCompleted,
         unclaimedRewards,
         setUnclaimedRewards, // Exposed for useRaffle to update localized state if needed
