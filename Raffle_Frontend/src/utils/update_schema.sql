@@ -11,7 +11,8 @@ ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS neynar_score FLOAT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS verifications TEXT[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS active_status TEXT DEFAULT 'active',
-ADD COLUMN IF NOT EXISTS power_badge BOOLEAN DEFAULT FALSE;
+ADD COLUMN IF NOT EXISTS power_badge BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- 2. UPDATE VIEW v_user_full_profile
 -- (Di-drop dulu biar bersih, lalu create ulang dengan kolom baru)

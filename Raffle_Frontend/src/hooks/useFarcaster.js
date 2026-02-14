@@ -117,24 +117,19 @@ export const useFarcaster = () => {
             };
 
             // 4. UPSERT TO SUPABASE (With RLS Header)
-            // We must create a scoped client because our RLS policy checks 'x-user-wallet' header
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            // Use the centralized authenticated client factory
+            const { createAuthenticatedClient } = await import('@/lib/supabaseClient_enhanced');
+            const authClient = createAuthenticatedClient(wallet);
 
-            // Create specific client for this request to pass the header
-            const { createClient } = await import('@supabase/supabase-js');
-            const scopedSupabase = createClient(supabaseUrl, supabaseAnonKey, {
-                global: {
-                    headers: { 'x-user-wallet': wallet }
-                }
-            });
-
-            const { error: upsertError } = await scopedSupabase
+            const { error: upsertError } = await authClient
                 .from('user_profiles')
                 .upsert(finalProfile, { onConflict: 'wallet_address' });
 
             if (upsertError) {
                 console.error("[Sync Hook] DB Upsert Error:", upsertError);
+                // Log details for debugging RLS issues
+                console.debug("[Sync Hook] Payload:", finalProfile);
+                console.debug("[Sync Hook] Wallet Code:", wallet);
             }
 
             setProfileData(finalProfile);
