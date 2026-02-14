@@ -41,9 +41,16 @@ export default async function handler(req, res) {
 
     try {
         // 1. Procure Farcaster Metadata via Neynar SDK
-        console.log("[Sync] Fetching data from Neynar...");
-        const neynarData = await neynar.lookupUserByVerification(wallet);
-        const fcUser = neynarData.result?.user || null;
+        console.log(`[Sync] Fetching data from Neynar for: ${wallet}`);
+        let fcUser = null;
+        try {
+            const neynarData = await neynar.lookupUserByVerification(wallet);
+            fcUser = neynarData.result?.user || null;
+            console.log("[Sync] Neynar Lookup Success:", fcUser ? "User Found" : "User Not Found");
+        } catch (nErr) {
+            console.error("[Sync] Neynar API Call Error (Likely not found or contract):", nErr.message);
+            // We continue even if Neynar fails, we want at least a skeleton profile
+        }
 
         // 2. Prepare Profile State
         console.log("[Sync] Preparing profile data...");

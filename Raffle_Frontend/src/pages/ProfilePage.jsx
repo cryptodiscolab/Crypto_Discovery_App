@@ -133,13 +133,14 @@ export default function ProfilePage() {
                 try {
                   const result = await syncUser(address, true);
                   if (result) {
-                    // Wajib panggil ulang fungsi fetch profil agar state langsung update
                     await fetchProfile();
-                    toast.success("Synced from Farcaster!", { id: toastId });
+                    toast.success("Synced successfully!", { id: toastId });
                   } else {
-                    toast.error("Sync returned no data", { id: toastId });
+                    // Cek apa ada error spesifik dari hook
+                    toast.error("Sync failed. Check console or try again.", { id: toastId });
                   }
                 } catch (e) {
+                  console.error("Sync Click Error:", e);
                   toast.error("Sync failed: " + e.message, { id: toastId });
                 }
               }}
