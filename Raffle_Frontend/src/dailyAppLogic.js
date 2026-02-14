@@ -71,7 +71,7 @@ export async function handleDailyClaim(fid, userAddress) {
  */
 export async function addXP(fid, activityKey, userAddress) {
     try {
-        console.log(`[XP Engine] Awarding XP for ${activityKey} to FID: ${fid}`);
+
 
         // 1. Fetch Point Value & Visibility
         const { data: setting, error: sError } = await supabase
@@ -263,7 +263,7 @@ export async function ensureUserProfile(walletAddress) {
 // ==========================================
 export async function requestSBTMint(fid, walletAddress, targetLevel) {
     try {
-        console.log(`[SBT Mint] Request from FID: ${fid} for Level ${targetLevel}`);
+
 
         // 1. Verify Eligibility (Double Check Server Side)
         const { data: user } = await supabase

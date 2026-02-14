@@ -6,7 +6,7 @@ import { addXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
 // MOCK MODE FLAG
-const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true';
+
 const RAFFLE_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 export function useRaffle() {
@@ -21,16 +21,7 @@ export function useRaffle() {
     // ==========================================
 
     const buyTickets = async (raffleId, amount, useFreeTickets = false) => {
-        if (MOCK_MODE) {
-            toast.loading("Buying tickets (Mock)...", { id: 'buy-ticket' });
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    toast.success(`Bought ${amount} tickets!`, { id: 'buy-ticket' });
-                    refetch();
-                    resolve(true);
-                }, 1500);
-            });
-        }
+
 
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
@@ -51,13 +42,7 @@ export function useRaffle() {
         setIsDrawing(true);
         const tid = toast.loading("Drawing winner...");
 
-        if (MOCK_MODE) {
-            setTimeout(() => {
-                toast.success("Winner drawn (Mock)!", { id: tid });
-                setIsDrawing(false);
-            }, 2000);
-            return;
-        }
+
 
         try {
             const hash = await writeContractAsync({
@@ -77,10 +62,7 @@ export function useRaffle() {
     };
 
     const createRaffle = async (nftContracts, tokenIds, duration) => {
-        if (MOCK_MODE) {
-            toast.success("Raffle created (Mock)!");
-            return;
-        }
+
 
         return await writeContractAsync({
             address: RAFFLE_ADDRESS,
@@ -91,17 +73,7 @@ export function useRaffle() {
     };
 
     const claimPrize = async (raffleId) => {
-        if (MOCK_MODE) {
-            const tid = toast.loading("Claiming prize (Mock)...");
-            setTimeout(() => {
-                toast.success("Prize claimed!", { id: tid });
-                setUnclaimedRewards(prev => prev.map(r =>
-                    r.id === raffleId ? { ...r, isClaimed: true } : r
-                ));
-                refetch();
-            }, 2000);
-            return;
-        }
+
 
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,

@@ -22,7 +22,7 @@ export const NotificationService = {
             // Currently Neynar focuses on reading/writing casts. Direct notifications might be via frame interactions or specific bot logic.
             // This is a template structure.
 
-            console.log(`[Mock] Sending notification to FID ${fid}: ${message}`);
+
 
             /*
             // NEYNAR API Example for proper mentions
@@ -64,7 +64,7 @@ export const NotificationService = {
 
                 // Logic already exists in PointsContext, but this service could centralize external API calls
                 if (timeLeft < 3600000 && timeLeft > 0) {
-                    console.log(`Urgent: Reward ${reward.id} expires in ${(timeLeft / 60000).toFixed(0)} mins`);
+
                 }
             }
         });

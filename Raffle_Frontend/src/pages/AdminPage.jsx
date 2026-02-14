@@ -66,9 +66,9 @@ export function AdminPage() {
                 const finalAccess = isSBTAccountOwner || isCMSAdmin || isOperator || isEnvAdmin || isFidAdmin || canEditCMS;
 
                 // Debugging Log sesuai permintaan
-                console.log('Wallet Login:', currentWallet);
-                console.log('Wallet Daftar Admin:', adminWallets);
-                console.log('Hasil Pengecekan:', finalAccess);
+
+
+
 
                 if (address) {
                     setHasManagerAccess(finalAccess);

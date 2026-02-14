@@ -108,7 +108,7 @@ ${resourceLines}`;
             // Ensure User Profile Exists
             await ensureUserProfile(address);
 
-            console.log("SIWE Success:", userSession);
+
 
             return userSession;
 

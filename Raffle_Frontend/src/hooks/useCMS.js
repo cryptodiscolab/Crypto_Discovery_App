@@ -60,7 +60,7 @@ export function useCMS() {
         if (priceRaw?.[1]) {
             return Number(priceRaw[1]) / 1e8; // Chainlink USD Feeds have 8 decimals
         }
-        return 2200; // Hard fallback
+        return 0; // Fallback to 0 if Oracle fails
     }, [priceRaw]);
 
     const {
@@ -146,7 +146,7 @@ export function useCMS() {
                     const isAdminVal = Boolean(data?.is_admin);
                     setIsDbAdmin(isAdminVal);
                     if (isAdminVal) {
-                        console.log('[useCMS] DB Admin confirmed:', wallet);
+
                     }
                 }
             } catch (e) {

@@ -30,34 +30,7 @@ const iconMap = {
 };
 
 // Default feature cards if CMS is empty or loading
-const DEFAULT_FEATURE_CARDS = [
-  {
-    title: "NFT Raffles",
-    description: "Enter active raffles and win premium NFTs using your earned points.",
-    icon: "Trophy",
-    link: "/raffles",
-    linkText: "Enter Raffle",
-    color: "yellow",
-    badge: "Most Popular"
-  },
-  {
-    title: "Daily Tasks",
-    description: "Complete simple tasks daily to stack social points and rewards.",
-    icon: "Sparkles",
-    link: "/tasks",
-    linkText: "Earn Points",
-    color: "indigo",
-    badge: "Daily Bonus"
-  },
-  {
-    title: "Leaderboard",
-    description: "Track your rank and see how you stack up against the community.",
-    icon: "TrendingUp",
-    link: "/leaderboard",
-    linkText: "View Ranking",
-    color: "purple"
-  }
-];
+
 
 export function HomePage() {
   const { isConnected } = useAccount();
@@ -71,31 +44,11 @@ export function HomePage() {
     isLoading
   } = useCMS();
 
-  // DEBUG: Log all CMS data to find React elements
-  console.log('🔍 HomePage CMS Data:', {
-    featureCards,
-    announcement,
-    poolSettings,
-    ethPrice,
-    isLoading
-  });
 
-  // Check if any value is a React element
-  const checkForReactElement = (obj, path = '') => {
-    if (obj && typeof obj === 'object') {
-      if (obj.$$typeof) {
-        console.error(`🚨 FOUND REACT ELEMENT at ${path}:`, obj);
-      }
-      Object.keys(obj).forEach(key => {
-        checkForReactElement(obj[key], `${path}.${key}`);
-      });
-    }
-  };
-
-  checkForReactElement({ featureCards, announcement, poolSettings }, 'CMS');
 
   // Use CMS cards if available, otherwise fall back to defaults
-  const displayCards = featureCards && featureCards.length > 0 ? featureCards : DEFAULT_FEATURE_CARDS;
+  // Use CMS cards if available
+  const displayCards = featureCards;
 
   return (
     <div className="min-h-screen bg-[#0B0E14] pt-12 pb-12">

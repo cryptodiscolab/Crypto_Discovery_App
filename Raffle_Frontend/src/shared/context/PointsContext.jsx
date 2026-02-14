@@ -90,12 +90,6 @@ export function PointsProvider({ children }) {
             const data = await getSBTThresholds();
             if (data && data.length > 0) {
                 setSbtThresholds(data);
-            } else {
-                setSbtThresholds([
-                    { level: 1, min_xp: 1000, tier_name: 'Bronze' },
-                    { level: 2, min_xp: 5000, tier_name: 'Silver' },
-                    { level: 3, min_xp: 10000, tier_name: 'Gold' }
-                ]);
             }
         };
         loadThresholds();
