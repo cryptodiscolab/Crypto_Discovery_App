@@ -49,22 +49,47 @@ export default async function handler(req, res) {
         console.log(`[Sync] Fetching data from Neynar for: ${wallet}`);
         let fcUser = null;
         try {
-            // Revert to lookupUserByVerification as requested (proven method)
-            const neynarData = await neynar.lookupUserByVerification(wallet);
+            let response;
+            // SDK v3: Check namespace neynar.user
+            if (neynar.user && typeof neynar.user.fetchBulkUsersByEthereumAddress === 'function') {
+                response = await neynar.user.fetchBulkUsersByEthereumAddress([wallet]);
+            }
+            // SDK v3 (alternative): Check top level or user namespace lookup
+            else if (neynar.user && typeof neynar.user.lookupByVerification === 'function') {
+                // Note: lookupByVerification might not be available or might take different args, verify if needed.
+                // Sticking to fetchBulkUsersByEthereumAddress as primarily intended for v3
+                throw new Error("neynar.user.fetchBulkUsersByEthereumAddress not found on client");
+            }
+            // Fallback: Check top level (older versions or flattened)
+            else if (typeof neynar.fetchBulkUsersByEthereumAddress === 'function') {
+                response = await neynar.fetchBulkUsersByEthereumAddress([wallet]);
+            } else {
+                // inspect client structure to debug
+                console.log("Neynar Client Structure:", Object.keys(neynar));
+                if (neynar.user) console.log("Neynar User Namespace:", Object.keys(neynar.user));
+                throw new Error("Neynar SDK method fetchBulkUsersByEthereumAddress not found anywhere.");
+            }
 
             // LOGGING: Inspect the actual structure
-            console.log(`[Sync] Raw Neynar Response for ${wallet}:`, JSON.stringify(neynarData, null, 2));
+            console.log(`[Sync] Raw Neynar Response for ${wallet}:`, JSON.stringify(response, null, 2));
 
-            // Flexible Parsing (Handle v2 vs v3 structures)
-            fcUser = neynarData?.result?.user
-                || neynarData?.user
-                || (neynarData?.[wallet.toLowerCase()] && neynarData[wallet.toLowerCase()][0])
-                || null;
+            // Flexible Parsing
+            // SDK v3 fetchBulkUsersByEthereumAddress returns: { [lowerCaseAddress]: [UserObject] }
+            if (response && response[wallet.toLowerCase()]) {
+                const users = response[wallet.toLowerCase()];
+                if (users && users.length > 0) {
+                    fcUser = users[0];
+                }
+            }
+            // Fallback parsing just in case structure is different
+            else if (response?.users) {
+                fcUser = response.users[0];
+            }
 
             if (fcUser) {
                 console.log(`[Sync] User Found: ${fcUser.username} (FID: ${fcUser.fid})`);
             } else {
-                console.warn("[Sync] User Object extraction failed. Keys found:", Object.keys(neynarData || {}));
+                console.warn("[Sync] User Not Found in Neynar response. Keys:", Object.keys(response || {}));
             }
         } catch (nErr) {
             console.error("[Sync] Neynar API Call Error (Non-blocking):", nErr.message);
