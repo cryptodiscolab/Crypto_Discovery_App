@@ -92,7 +92,10 @@ export function LeaderboardPage() {
         .order('total_xp', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching leaderboard detail:", JSON.stringify(error, null, 2));
+        throw error;
+      }
       setUsers(data || []);
     } catch (err) {
       console.error("Error fetching leaderboard:", err);
