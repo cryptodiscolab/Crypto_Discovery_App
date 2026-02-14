@@ -49,26 +49,18 @@ export default async function handler(req, res) {
         console.log(`[Sync] Fetching data from Neynar for: ${wallet}`);
         let fcUser = null;
         try {
+
+            // SDK v3 Correct Method (Verified via node_modules source)
+            // Method signature: fetchBulkUsersByEthOrSolAddress(params: { addresses: string[], ... })
             let response;
-            // SDK v3: Check namespace neynar.user
-            if (neynar.user && typeof neynar.user.fetchBulkUsersByEthereumAddress === 'function') {
-                response = await neynar.user.fetchBulkUsersByEthereumAddress([wallet]);
-            }
-            // SDK v3 (alternative): Check top level or user namespace lookup
-            else if (neynar.user && typeof neynar.user.lookupByVerification === 'function') {
-                // Note: lookupByVerification might not be available or might take different args, verify if needed.
-                // Sticking to fetchBulkUsersByEthereumAddress as primarily intended for v3
-                throw new Error("neynar.user.fetchBulkUsersByEthereumAddress not found on client");
-            }
-            // Fallback: Check top level (older versions or flattened)
-            else if (typeof neynar.fetchBulkUsersByEthereumAddress === 'function') {
-                response = await neynar.fetchBulkUsersByEthereumAddress([wallet]);
+            if (typeof neynar.fetchBulkUsersByEthOrSolAddress === 'function') {
+                response = await neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [wallet] });
             } else {
                 // inspect client structure to debug
-                console.log("Neynar Client Structure:", Object.keys(neynar));
-                if (neynar.user) console.log("Neynar User Namespace:", Object.keys(neynar.user));
-                throw new Error("Neynar SDK method fetchBulkUsersByEthereumAddress not found anywhere.");
+                console.log("Neynar Client Keys:", Object.keys(neynar));
+                throw new Error("Neynar SDK method fetchBulkUsersByEthOrSolAddress not found.");
             }
+
 
             // LOGGING: Inspect the actual structure
             console.log(`[Sync] Raw Neynar Response for ${wallet}:`, JSON.stringify(response, null, 2));
