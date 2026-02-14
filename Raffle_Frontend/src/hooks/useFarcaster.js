@@ -49,7 +49,7 @@ export const useFarcaster = () => {
             // 2. Database First (Leaner than full sync)
             if (!forceRefresh) {
                 const { data: dbProfile } = await supabase
-                    .from('profiles')
+                    .from('user_profiles')
                     .select('*')
                     .eq('address', wallet)
                     .maybeSingle();

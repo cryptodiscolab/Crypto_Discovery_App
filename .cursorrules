@@ -70,3 +70,10 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 ## 5. Tech Stack Consistency
 - Backend Logic: Use **Next.js API Routes** (App Router `route.ts`), NOT Supabase Edge Functions (Deno), to maintain a single runtime environment.
 - Blockchain: Focus on **Base Mainnet (8453)** and **Base Sepolia (84532)**.
+
+## 9. STRICT CODING GUIDELINES (ANTI-GUESSING PROTOCOL)
+- **MANDATORY**: Before implementing ANY external library method, you MUST read the actual module source code in `node_modules` or the official documentation.
+- **NO GUESSING**: Never assume a method name based on intuition or previous versions. Verify deeply.
+- **LOCK IN MEMORY**: If you catch yourself guessing, STOP. Go back to step 1.
+- **CONTEXT IS KING**: Always check for the latest version of installed modules to avoid legacy code issues.
+- **SELF-CORRECTION**: If an API call fails, DO NOT just try another name. STOP and READ THE SOURCE.
