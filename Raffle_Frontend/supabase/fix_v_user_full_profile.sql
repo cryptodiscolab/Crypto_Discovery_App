@@ -1,20 +1,26 @@
--- FIX: Recreate v_user_full_profile with wallet_address column
+-- FINAL ALIGNMENT: v_user_full_profile view
+-- Based on live schema audit: 
+-- profiles table uses 'address'
+-- user_profiles table uses 'wallet_address'
+
 DROP VIEW IF EXISTS public.v_user_full_profile;
 
 CREATE OR REPLACE VIEW public.v_user_full_profile AS
 SELECT 
-    p.wallet_address,
-    p.fid,
-    p.farcaster_username,
+    p.address as wallet_address, -- Alias 'address' to 'wallet_address' for Frontend compatibility
     p.display_name,
-    p.pfp_url,
     p.bio,
+    p.pfp_url,
     p.neynar_score,
-    u.points,
-    u.tier
+    COALESCE(up.points, 0) as points,
+    COALESCE(up.tier, 1) as tier,
+    COALESCE(up.total_xp, 0) as total_xp,
+    p.updated_at
 FROM public.profiles p
-LEFT JOIN public.user_profiles u ON LOWER(p.wallet_address) = LOWER(u.wallet_address);
+LEFT JOIN public.user_profiles up ON LOWER(p.address) = LOWER(up.wallet_address);
 
--- Optional: Enable RLS on view if needed (Supabase Views inherit RLS from tables if using SECURITY INVOKER, but by default views are SECURITY DEFINER in some contexts)
--- For public read access:
-COMMENT ON VIEW public.v_user_full_profile IS 'Joined view of Farcaster profiles and User points';
+-- Grant permissions for the view
+GRANT SELECT ON public.v_user_full_profile TO anon, authenticated;
+
+-- Optional: Ensure neynar_score is in profiles if not already added
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS neynar_score FLOAT DEFAULT 0;

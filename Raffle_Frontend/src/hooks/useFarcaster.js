@@ -51,7 +51,7 @@ export const useFarcaster = () => {
                 const { data: dbProfile } = await supabase
                     .from('profiles')
                     .select('*')
-                    .eq('wallet_address', wallet)
+                    .eq('address', wallet)
                     .single();
 
                 if (dbProfile) {

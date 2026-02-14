@@ -48,18 +48,16 @@ export default async function handler(req, res) {
         // 2. Prepare Profile State
         console.log("[Sync] Preparing profile data...");
         const profile = {
-            address: wallet, // Change from wallet_address to address to match live DB
-            last_sync: new Date().toISOString()
+            address: wallet, // Live table uses 'address'
+            updated_at: new Date().toISOString() // Live table uses 'updated_at'
         };
 
         if (fcUser) {
-            console.log(`[Sync] Farcaster user found: ${fcUser.username} (FID: ${fcUser.fid})`);
-            profile.fid = fcUser.fid;
-            profile.farcaster_username = fcUser.username;
+            console.log(`[Sync] Farcaster user found: ${fcUser.username}`);
+            // Note: Only includes columns that exist in the live 'profiles' table
             profile.display_name = fcUser.display_name;
             profile.pfp_url = fcUser.pfp_url;
             profile.bio = fcUser.profile?.bio?.text || '';
-            profile.power_badge = fcUser.power_badge || false;
             profile.neynar_score = fcUser.experimental?.neynar_user_score || 0;
             console.log(`[Sync] Neynar Score: ${profile.neynar_score}`);
         } else {
@@ -71,7 +69,7 @@ export default async function handler(req, res) {
         console.log("[Sync] Upserting to 'profiles' table...");
         const { data, error } = await supabase
             .from("profiles")
-            .upsert(profile, { onConflict: "address" }) // Change conflict target to address
+            .upsert(profile, { onConflict: "address" }) // Conflict target is 'address'
             .select()
             .single();
 
