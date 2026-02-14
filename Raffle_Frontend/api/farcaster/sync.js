@@ -49,9 +49,18 @@ export default async function handler(req, res) {
         console.log(`[Sync] Fetching data from Neynar for: ${wallet}`);
         let fcUser = null;
         try {
-            const neynarData = await neynar.lookupUserByVerification(wallet);
-            fcUser = neynarData?.result?.user || null;
-            console.log("[Sync] Neynar Lookup Success:", fcUser ? `User Found: ${fcUser.username}` : "User Not Found in verifications");
+            // Use fetchBulkUsersByEthereumAddress for better coverage (Custody + Verified)
+            const response = await neynar.fetchBulkUsersByEthereumAddress([wallet]);
+
+            // SDK v3 usually returns: { [lowerCaseAddress]: [UserObject] }
+            const users = response[wallet.toLowerCase()];
+
+            if (users && users.length > 0) {
+                fcUser = users[0];
+                console.log(`[Sync] User Found: ${fcUser.username} (FID: ${fcUser.fid})`);
+            } else {
+                console.log("[Sync] User Not Found in Neynar response:", JSON.stringify(Object.keys(response || {})));
+            }
         } catch (nErr) {
             console.error("[Sync] Neynar API Call Error (Non-blocking):", nErr.message);
         }
