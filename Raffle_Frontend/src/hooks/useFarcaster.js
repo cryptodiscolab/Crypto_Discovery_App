@@ -52,7 +52,7 @@ export const useFarcaster = () => {
                     .from('profiles')
                     .select('*')
                     .eq('address', wallet)
-                    .single();
+                    .maybeSingle();
 
                 if (dbProfile) {
                     setProfileData(dbProfile);

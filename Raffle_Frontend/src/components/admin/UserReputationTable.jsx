@@ -34,7 +34,7 @@ const StaticSkeletonCard = () => (
  */
 const MobileUserCard = memo(({ user, sybilDetected }) => {
     // Calculate Trust Score Percentage (Assuming 100 is max for visual)
-    const trustPercent = Math.min(user.internal_trust_score || 0, 100);
+    const trustPercent = Math.min(user.trust_score || 0, 100);
 
     return (
         <div
@@ -82,7 +82,7 @@ const MobileUserCard = memo(({ user, sybilDetected }) => {
             <div className="space-y-1">
                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-60">
                     <span className="text-slate-500">Trust Score</span>
-                    <span className="text-white">{user.internal_trust_score || 0}</span>
+                    <span className="text-white">{user.trust_score || 0}</span>
                 </div>
                 <div className="h-1.5 w-full bg-[#161618] rounded-full overflow-hidden">
                     <div
@@ -117,7 +117,7 @@ export default function UserReputationTable() {
             const { data, count, error } = await supabase
                 .from('user_profiles')
                 .select('*', { count: 'exact' })
-                .order('internal_trust_score', { ascending: false })
+                .order('trust_score', { ascending: false })
                 .range(rangeStart, rangeStart + limit - 1);
 
             if (error) throw error;

@@ -41,18 +41,20 @@ export default function ProfilePage() {
       .from('v_user_full_profile')
       .select('*')
       .eq('wallet_address', walletAddress)
-      .single();
+      .maybeSingle(); // Pakai maybeSingle() biar gak error JSON coercion kalau data kosong
 
     if (error) {
-      console.warn("Profile not found or view error:", error.message);
+      console.warn("Profile fetching error:", error.message);
     }
 
     if (data) {
       setFormData({
         displayName: data.display_name || '',
         bio: data.bio || '',
-        avatarUrl: data.pfp_url || '' // Map pfp_url from view to avatarUrl state
+        avatarUrl: data.pfp_url || ''
       });
+    } else {
+      console.log("No profile found for address:", walletAddress);
     }
   };
 
