@@ -126,10 +126,9 @@ export const useFarcaster = () => {
                 .upsert(finalProfile, { onConflict: 'wallet_address' });
 
             if (upsertError) {
-                console.error("[Sync Hook] DB Upsert Error:", upsertError);
-                // Log details for debugging RLS issues
-                console.debug("[Sync Hook] Payload:", finalProfile);
-                console.debug("[Sync Hook] Wallet Code:", wallet);
+                console.error("[Sync Hook] DB Upsert Error:", JSON.stringify(upsertError, null, 2));
+                // Fallback log if stringify fails or returns empty
+                console.error("[Sync Hook] DB Upsert Error (Raw):", upsertError);
             }
 
             setProfileData(finalProfile);
