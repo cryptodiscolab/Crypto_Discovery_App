@@ -135,21 +135,11 @@ export function useCMS() {
                 return;
             }
             try {
-                const { data } = await supabase
-                    .from('user_profiles')
-                    .select('is_admin')
-                    .eq('wallet_address', wallet)
-                    .maybeSingle();
-
-                if (isMounted) {
-                    const isAdminVal = Boolean(data?.is_admin);
-                    setIsDbAdmin(isAdminVal);
-                    if (isAdminVal) {
-
-                    }
-                }
+                // Column 'is_admin' does not exist in live 'user_profiles' table.
+                // We rely on contract roles (isAdminRaw) and env variables (isEnvAdmin).
+                if (isMounted) setIsDbAdmin(false);
             } catch (e) {
-                console.warn('[useCMS] DB Admin check failed (Non-blocking):', e.message);
+                console.warn('[useCMS] DB Admin check skipped:', e.message);
                 if (isMounted) setIsDbAdmin(false);
             }
         };
