@@ -7,37 +7,73 @@ const PointsContext = createContext(null);
 
 export function PointsProvider({ children }) {
     const { address, isConnected } = useAccount();
-    const { stats, isLoading, refetch } = useUserV12Stats(address);
+    // const { stats, isLoading: isContractLoading, refetch: refetchContract } = useUserV12Stats(address); // DEPRECATED: Blockchain Source
 
-    const [userPoints, setUserPoints] = useState(0n);
-    const [userTier, setUserTier] = useState(0); // 0=NONE, 1=BRONZE, etc.
-    const [totalTasksCompleted, setTotalTasksCompleted] = useState(0n);
-    const [unclaimedRewards, setUnclaimedRewards] = useState([]); // Array of raffleIds or reward objects
-    const [isAdmin, setIsAdmin] = useState(false); // Admin status
-    const [sbtThresholds, setSbtThresholds] = useState([]); // Supabase Thresholds (Anti-Halu)
+    const [userPoints, setUserPoints] = useState(0n); // BigInt for safety
+    const [userTier, setUserTier] = useState(0);
+    const [totalTasksCompleted, setTotalTasksCompleted] = useState(0);
+
+    // Loading States
+    const [isLoading, setIsLoading] = useState(false);
+
+    const [unclaimedRewards, setUnclaimedRewards] = useState([]);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [sbtThresholds, setSbtThresholds] = useState([]);
 
     // Anti-Halu Central State
     const [fid, setFid] = useState(null);
     const [offChainPoints, setOffChainPoints] = useState(0);
     const [offChainLevel, setOffChainLevel] = useState(0);
 
-    useEffect(() => {
-        if (isConnected && stats) {
-            setUserPoints(stats.points || 0n);
-            setUserTier(Number(stats.currentTier || 0));
-            setTotalTasksCompleted(stats.totalTasksCompleted || 0n);
+    // ==========================================
+    // REAL-TIME SYNC (SUPABASE SOURCE)
+    // ==========================================
+    const fetchUserData = async () => {
+        if (!address) return;
+        setIsLoading(true);
+        try {
+            // Priority: Fetch from 'user_profiles' (The Source of Truth)
+            const { data, error } = await import('../../lib/supabaseClient').then(m => m.supabase)
+                .from('user_profiles')
+                .select('points, tier')
+                .eq('wallet_address', address.toLowerCase())
+                .single();
 
-            // Mocking unclaimed rewards for now (replace with real data fetch later)
-            // In real impl, this comes from checking "won but not claimed" raffles
-            setUnclaimedRewards([]);
+            if (data) {
+                setUserPoints(BigInt(data.points || 0));
+                setUserTier(data.tier || 1);
+            }
+
+            // Optional: Get total tasks count if needed
+            const { count } = await import('../../lib/supabaseClient').then(m => m.supabase)
+                .from('user_task_claims')
+                .select('*', { count: 'exact', head: true })
+                .eq('wallet_address', address.toLowerCase());
+
+            setTotalTasksCompleted(count || 0);
+
+        } catch (err) {
+            console.error("[PointsContext] Sync Error:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Public Refetcher
+    const refetch = () => {
+        fetchUserData();
+        // checkAdminStatus(address); // Optional re-check
+    };
+
+    useEffect(() => {
+        if (isConnected && address) {
+            fetchUserData();
         } else {
-            // Reset if disconnected
             setUserPoints(0n);
             setUserTier(0);
-            setTotalTasksCompleted(0n);
-            setUnclaimedRewards([]);
+            setTotalTasksCompleted(0);
         }
-    }, [isConnected, stats]);
+    }, [isConnected, address]);
 
     // Check admin status when wallet connects
     useEffect(() => {
