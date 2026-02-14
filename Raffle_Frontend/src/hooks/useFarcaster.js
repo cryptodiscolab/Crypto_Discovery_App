@@ -99,37 +99,28 @@ export const useFarcaster = () => {
             }
 
             // --- MAPPING LOGIC ---
-            // Map Neynar keys to our Supabase Schema
+            // Map Neynar keys OR Supabase DB keys to our Schema
             const finalProfile = {
                 wallet_address: wallet,
                 fid: userObj.fid,
                 username: userObj.username,
                 display_name: userObj.display_name,
                 pfp_url: userObj.pfp_url,
-                bio: userObj.profile?.bio?.text || '',
+                // Handle both nested Neynar object AND flat Supabase row
+                bio: userObj.bio || userObj.profile?.bio?.text || '',
                 follower_count: userObj.follower_count || 0,
                 following_count: userObj.following_count || 0,
                 verifications: userObj.verifications || [],
                 active_status: userObj.active_status || 'active',
-                neynar_score: userObj.score || userObj.experimental?.neynar_user_score || 0,
-                power_badge: (userObj.follower_count > 500), // Simple logic for badge
+                // Handle various score locations
+                neynar_score: userObj.neynar_score || userObj.score || userObj.experimental?.neynar_user_score || 0,
+                power_badge: (userObj.follower_count > 500) || userObj.power_badge || false,
                 last_login_at: new Date().toISOString()
             };
 
-            // 4. UPSERT TO SUPABASE (With RLS Header)
-            // Use the centralized authenticated client factory
-            const { createAuthenticatedClient } = await import('@/lib/supabaseClient_enhanced');
-            const authClient = createAuthenticatedClient(wallet);
-
-            const { error: upsertError } = await authClient
-                .from('user_profiles')
-                .upsert(finalProfile, { onConflict: 'wallet_address' });
-
-            if (upsertError) {
-                console.error("[Sync Hook] DB Upsert Error:", JSON.stringify(upsertError, null, 2));
-                // Fallback log if stringify fails or returns empty
-                console.error("[Sync Hook] DB Upsert Error (Raw):", upsertError);
-            }
+            // 4. SKIP Client-Side Upsert (API already handled it via Service Role)
+            // This prevents RLS 42501 errors and double-writes.
+            console.log("[Sync Hook] Profile synced successfully via API.");
 
             setProfileData(finalProfile);
             localStorage.setItem(storageKey, JSON.stringify(finalProfile));
