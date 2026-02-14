@@ -9,6 +9,9 @@ export function TaskList() {
     const { address, isConnected } = useAccount();
     const [tasks, setTasks] = useState([]);
     const [userScore, setUserScore] = useState(0);
+    const [userClaims, setUserClaims] = useState(new Set());
+    const [isLoading, setIsLoading] = useState(false);
+    const [claimingTask, setClaimingTask] = useState(null);
 
     // Fetch Tasks & User Claims
     const fetchData = async () => {

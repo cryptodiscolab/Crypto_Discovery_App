@@ -44,3 +44,29 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Pre-Flight Check**: Every code suggestion must end with a short verification checklist (Bytecode Impact, Gas Impact, UI/Z-Index Safety).
 - **Context Preservation**: Read `README.md` and `implementation_plan.md` before starting. Remind the developer to update tracking files after major milestones.
 - **Deep Reasoning**: Use "Chain of Thought" reasoning for complex bugs. Re-check code for Reentrancy or Logic flaws before finalization.
+
+## 8. SECURITY & ARCHITECTURE RULES (STRICT ENFORCEMENT)
+
+## 1. Zero Trust Frontend Policy
+- **FORBIDDEN:** Never suggest writing to sensitive database tables (e.g., `user_profiles`, `campaigns`, `user_claims`) directly from the Client-Side (Frontend).
+- **REQUIRED:** All sensitive "Write" operations (INSERT/UPDATE/DELETE) MUST go through a **Next.js API Route (Backend)**.
+- **REASON:** To prevent data tampering via browser dev tools. Frontend is for display and signing only.
+
+## 2. Authentication & Verification
+- **FORBIDDEN:** Do NOT suggest RLS policies that rely on custom headers (e.g., `current_setting('request.headers'...)`) for authentication. Headers can be spoofed.
+- **REQUIRED:** Use **Cryptographic Signature Verification** (SIWE or raw `viem.verifyMessage`) in the Backend API to prove user identity before updating data.
+- **TOOLING:** Use `viem` for all backend crypto verifications. Use `wagmi` for frontend signing.
+
+## 3. Database Access (Supabase)
+- **CLIENT SIDE:** Use `createClient` with `ANON_KEY` only for **READ** operations (SELECT).
+- **SERVER SIDE:** Use `createClient` with `SERVICE_ROLE_KEY` inside API Routes (`app/api/...`) for **WRITE** operations.
+- **SAFETY:** Never expose `SERVICE_ROLE_KEY` in files starting with `VITE_` or `NEXT_PUBLIC_`. It belongs in `.env.local` only.
+
+## 4. Specific Workflows
+- **Profile Updates:** Frontend signs message -> Backend verifies signature -> Backend updates DB.
+- **Campaign Creation:** Frontend sends TX Hash -> Backend verifies TX on-chain -> Backend inserts to DB.
+- **Claim Rewards:** Frontend requests claim -> Backend checks eligibility & date -> Backend triggers paymaster/transfer.
+
+## 5. Tech Stack Consistency
+- Backend Logic: Use **Next.js API Routes** (App Router `route.ts`), NOT Supabase Edge Functions (Deno), to maintain a single runtime environment.
+- Blockchain: Focus on **Base Mainnet (8453)** and **Base Sepolia (84532)**.
