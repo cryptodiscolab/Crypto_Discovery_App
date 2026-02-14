@@ -17,7 +17,15 @@ const formatAddress = (addr) => {
 };
 
 function LeaderboardRow({ user, rank, isCurrentUser }) {
-  const tier = getTier(user.points);
+  const tierStyles = {
+    'Gold': { color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+    'Silver': { color: 'text-slate-300', bg: 'bg-slate-300/20' },
+    'Bronze': { color: 'text-amber-600', bg: 'bg-amber-600/20' },
+    'Rookie': { color: 'text-slate-500', bg: 'bg-slate-800/50' }
+  };
+
+  const style = tierStyles[user.rank_name] || { color: 'text-blue-400', bg: 'bg-blue-500/10' };
+  const displayName = user.display_name || user.username || formatAddress(user.wallet_address);
 
   return (
     <div
@@ -38,25 +46,30 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
           {rank === 1 ? <Crown className="w-6 h-6" /> : rank}
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${tier.bg} ${tier.color}`}>
-              {tier.name}
+        <div className="flex items-center gap-3">
+          {user.pfp_url && (
+            <img src={user.pfp_url} alt="" className="w-10 h-10 rounded-full border border-white/10 shadow-sm" />
+          )}
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${style.bg} ${style.color}`}>
+                {user.rank_name || 'Rookie'}
+              </span>
+              {isCurrentUser && <span className="text-[10px] font-bold text-yellow-500">(YOU)</span>}
+            </div>
+            <span className={`font-mono text-base ${isCurrentUser ? 'text-white font-bold' : 'text-slate-300'}`}>
+              {displayName}
             </span>
-            {isCurrentUser && <span className="text-[10px] font-bold text-yellow-500">(YOU)</span>}
           </div>
-          <span className={`font-mono text-base ${isCurrentUser ? 'text-white font-bold' : 'text-slate-300'}`}>
-            {formatAddress(user.wallet_address)}
-          </span>
         </div>
       </div>
 
       <div className="flex flex-col items-end">
         <div className="flex items-center gap-2 text-yellow-400 font-black">
           <Sparkles className="w-4 h-4 text-yellow-500" />
-          <span className="text-xl tracking-tighter">{Number(user.points || 0).toLocaleString()}</span>
+          <span className="text-xl tracking-tighter">{Number(user.total_xp || 0).toLocaleString()}</span>
         </div>
-        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Points</p>
+        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">XP</p>
       </div>
     </div>
   );
@@ -74,9 +87,9 @@ export function LeaderboardPage() {
   const fetchLeaderboard = async () => {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('wallet_address, points, trust_score')
-        .order('points', { ascending: false })
+        .from('v_user_full_profile')
+        .select('wallet_address, total_xp, rank_name, display_name, username, pfp_url')
+        .order('total_xp', { ascending: false })
         .limit(50);
 
       if (error) throw error;

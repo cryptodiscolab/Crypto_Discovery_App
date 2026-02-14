@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award
 } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
@@ -27,7 +27,9 @@ export default function ProfilePage() {
     followingCount: 0,
     neynarScore: 0,
     verifications: [],
-    powerBadge: false
+    powerBadge: false,
+    totalXp: 0,
+    rankName: 'Rookie'
   });
 
   // Load data awal dari Supabase saat component mount
@@ -44,8 +46,6 @@ export default function ProfilePage() {
     const walletAddress = address.toLowerCase();
 
     // Ambil data dari view v_user_full_profile
-    // Pastikan view/table ini punya kolom-kolom baru (fid, username, dll)
-    // Kalau belum ada di view, kita akan coba ambil dari raw_data column atau columns terpisah jika ada
     const { data, error } = await supabase
       .from('v_user_full_profile')
       .select('*')
@@ -67,9 +67,11 @@ export default function ProfilePage() {
         followerCount: data.follower_count || 0,
         followingCount: data.following_count || 0,
         neynarScore: data.neynar_score || 0,
-        verifications: data.verifications || [], // Asumsi array of addresses
+        verifications: data.verifications || [],
         powerBadge: data.power_badge || false,
-        activeStatus: data.active_status || 'active'
+        activeStatus: data.active_status || 'active',
+        totalXp: data.total_xp || 0,
+        rankName: data.rank_name || 'Rookie'
       });
     } else {
       console.log("No profile found for address:", walletAddress);
@@ -288,6 +290,31 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <ShieldCheck className={profileData.neynarScore >= 0.9 ? "text-green-500" : "text-yellow-500"} size={24} />
+              </div>
+            </div>
+          </div>
+
+          {/* Game Progress Card */}
+          <div className="glass-card p-5 border-blue-500/20 bg-blue-500/5">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Sparkles className="text-blue-400" size={20} /> Game Progress
+            </h3>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center bg-blue-600/10 p-4 rounded-xl border border-blue-500/20">
+                <div>
+                  <div className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-1">Current Rank</div>
+                  <div className="text-2xl font-black text-white">{profileData.rankName}</div>
+                </div>
+                <Award className="text-blue-400 w-10 h-10" />
+              </div>
+
+              <div className="bg-black/30 p-4 rounded-xl border border-gray-800/50">
+                <div className="flex justify-between items-baseline mb-2">
+                  <span className="text-xs text-gray-400 font-bold uppercase">Total XP Balance</span>
+                  <span className="text-2xl font-black text-yellow-500">{Number(profileData.totalXp).toLocaleString()}</span>
+                </div>
+                {/* Visual progress bar could be added here if we had max_xp info */}
               </div>
             </div>
           </div>

@@ -32,16 +32,17 @@ SELECT
     up.verifications,
     up.active_status,
     up.power_badge,
-    COALESCE(us.total_xp, 0) as total_xp,
-    COALESCE(us.current_level, 1) as current_level
+    (COALESCE(us.total_xp, 0) + COALESCE(up.total_xp, 0)) as total_xp,
+    GREATEST(COALESCE(us.current_level, 1), 1) as current_level,
+    (
+        SELECT tier_name 
+        FROM public.sbt_thresholds st 
+        WHERE st.min_xp <= (COALESCE(us.total_xp, 0) + COALESCE(up.total_xp, 0)) 
+        ORDER BY st.min_xp DESC 
+        LIMIT 1
+    ) as rank_name
 FROM public.user_profiles up
-LEFT JOIN public.user_stats us ON up.fid = us.fid
-OR up.wallet_address = (
-    -- Fallback join logic logic kalau FID belum ada di user_stats tapi wallet ada di logs
-    -- (Opsional, sesuaikan dengan logic existing user_stats relation)
-    -- Simpelnya join via FID dulu.
-    NULL
-);
+LEFT JOIN public.user_stats us ON up.fid = us.fid;
 
 -- Note: user_stats mungkin perlu FK ke wallet_address atau sebaliknya jika FID null.
 -- Update view ini sesuaikan dengan relasi yang _pasti_ ada.

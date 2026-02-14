@@ -32,16 +32,16 @@ export function PointsProvider({ children }) {
         if (!address) return;
         setIsLoading(true);
         try {
-            // Priority: Fetch from 'user_profiles' (The Source of Truth)
+            // Priority: Fetch from 'v_user_full_profile' (The Consolidated View)
             const { data, error } = await supabase
-                .from('user_profiles')
-                .select('points, tier')
+                .from('v_user_full_profile')
+                .select('total_xp, current_level')
                 .eq('wallet_address', address.toLowerCase())
                 .single();
 
             if (data) {
-                setUserPoints(BigInt(data.points || 0));
-                setUserTier(data.tier || 1);
+                setUserPoints(BigInt(data.total_xp || 0));
+                setUserTier(data.current_level || 1);
             }
 
             // Optional: Get total tasks count if needed
