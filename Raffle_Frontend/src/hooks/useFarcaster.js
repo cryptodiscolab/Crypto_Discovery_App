@@ -116,14 +116,25 @@ export const useFarcaster = () => {
                 last_login_at: new Date().toISOString()
             };
 
-            // 4. UPSERT TO SUPABASE (Critical for ProfilePage)
-            const { error: upsertError } = await supabase
+            // 4. UPSERT TO SUPABASE (With RLS Header)
+            // We must create a scoped client because our RLS policy checks 'x-user-wallet' header
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            // Create specific client for this request to pass the header
+            const { createClient } = await import('@supabase/supabase-js');
+            const scopedSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+                global: {
+                    headers: { 'x-user-wallet': wallet }
+                }
+            });
+
+            const { error: upsertError } = await scopedSupabase
                 .from('user_profiles')
                 .upsert(finalProfile, { onConflict: 'wallet_address' });
 
             if (upsertError) {
                 console.error("[Sync Hook] DB Upsert Error:", upsertError);
-                // We don't throw here, passing the data to UI is better than nothing
             }
 
             setProfileData(finalProfile);
