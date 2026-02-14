@@ -64,9 +64,9 @@ export default async function handler(req, res) {
         };
 
         if (fcUser) {
-            profile.display_name = fcUser.display_name || '';
-            profile.pfp_url = fcUser.pfp_url || '';
-            profile.bio = fcUser.profile?.bio?.text || '';
+            profile.display_name = fcUser.display_name || null;
+            profile.pfp_url = fcUser.pfp_url || null;
+            profile.bio = fcUser.profile?.bio?.text || null;
             profile.neynar_score = fcUser.experimental?.neynar_user_score || 0;
         } else {
             profile.neynar_score = 0;
