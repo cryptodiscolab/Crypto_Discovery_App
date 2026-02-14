@@ -89,27 +89,38 @@ export default async function handler(req, res) {
 
         // 2. Prepare Profile State
         console.log("[Sync] Preparing profile data...");
+
+        // Map to user_profiles schema
         const profile = {
-            address: wallet,
-            updated_at: new Date().toISOString()
+            wallet_address: wallet, // Primary Key
+            last_login_at: new Date().toISOString()
         };
 
         if (fcUser) {
+            profile.fid = fcUser.fid;
+            profile.username = fcUser.username;
             profile.display_name = fcUser.display_name || null;
             profile.pfp_url = fcUser.pfp_url || null;
             profile.bio = fcUser.profile?.bio?.text || null;
             profile.neynar_score = fcUser.experimental?.neynar_user_score || 0;
+            profile.follower_count = fcUser.follower_count || 0;
+            profile.following_count = fcUser.following_count || 0;
+            profile.verifications = fcUser.verifications || [];
+            profile.active_status = fcUser.active_status || 'active';
+            profile.power_badge = (fcUser.follower_count > 500);
         } else {
             profile.neynar_score = 0;
         }
 
         // 3. Commit to Database using Robust Upsert
-        console.log("[Sync] Upserting to 'profiles' table for:", wallet);
+        console.log("[Sync] Upserting to 'user_profiles' table for:", wallet);
+
+        // Note: Using Service Role Key, so RLS is bypassed automatically here.
         const { data, error } = await supabase
-            .from("profiles")
-            .upsert(profile, { onConflict: "address" })
+            .from("user_profiles")
+            .upsert(profile, { onConflict: "wallet_address" })
             .select()
-            .maybeSingle(); // Better for cases where upsert doesn't return exactly 1 row
+            .maybeSingle();
 
         if (error) {
             console.error("[Sync] Supabase Upsert Failed:", error);
