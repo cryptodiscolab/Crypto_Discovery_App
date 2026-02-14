@@ -49,17 +49,22 @@ export default async function handler(req, res) {
         console.log(`[Sync] Fetching data from Neynar for: ${wallet}`);
         let fcUser = null;
         try {
-            // Use fetchBulkUsersByEthereumAddress for better coverage (Custody + Verified)
-            const response = await neynar.fetchBulkUsersByEthereumAddress([wallet]);
+            // Revert to lookupUserByVerification as requested (proven method)
+            const neynarData = await neynar.lookupUserByVerification(wallet);
 
-            // SDK v3 usually returns: { [lowerCaseAddress]: [UserObject] }
-            const users = response[wallet.toLowerCase()];
+            // LOGGING: Inspect the actual structure
+            console.log(`[Sync] Raw Neynar Response for ${wallet}:`, JSON.stringify(neynarData, null, 2));
 
-            if (users && users.length > 0) {
-                fcUser = users[0];
+            // Flexible Parsing (Handle v2 vs v3 structures)
+            fcUser = neynarData?.result?.user
+                || neynarData?.user
+                || (neynarData?.[wallet.toLowerCase()] && neynarData[wallet.toLowerCase()][0])
+                || null;
+
+            if (fcUser) {
                 console.log(`[Sync] User Found: ${fcUser.username} (FID: ${fcUser.fid})`);
             } else {
-                console.log("[Sync] User Not Found in Neynar response:", JSON.stringify(Object.keys(response || {})));
+                console.warn("[Sync] User Object extraction failed. Keys found:", Object.keys(neynarData || {}));
             }
         } catch (nErr) {
             console.error("[Sync] Neynar API Call Error (Non-blocking):", nErr.message);
