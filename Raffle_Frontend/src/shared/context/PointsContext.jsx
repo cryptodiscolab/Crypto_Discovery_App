@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useUserV12Stats } from '../../hooks/useContract';
 import { getSBTThresholds, getUserStatsByFid } from '../../dailyAppLogic';
+import { supabase } from '../../lib/supabaseClient';
 
 const PointsContext = createContext(null);
 
@@ -32,7 +33,7 @@ export function PointsProvider({ children }) {
         setIsLoading(true);
         try {
             // Priority: Fetch from 'user_profiles' (The Source of Truth)
-            const { data, error } = await import('../../lib/supabaseClient').then(m => m.supabase)
+            const { data, error } = await supabase
                 .from('user_profiles')
                 .select('points, tier')
                 .eq('wallet_address', address.toLowerCase())
@@ -44,7 +45,7 @@ export function PointsProvider({ children }) {
             }
 
             // Optional: Get total tasks count if needed
-            const { count } = await import('../../lib/supabaseClient').then(m => m.supabase)
+            const { count } = await supabase
                 .from('user_task_claims')
                 .select('*', { count: 'exact', head: true })
                 .eq('wallet_address', address.toLowerCase());
