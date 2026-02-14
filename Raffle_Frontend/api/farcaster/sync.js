@@ -13,11 +13,9 @@ const neynarApiKey = process.env.NEYNAR_API_KEY;
  */
 export default async function handler(req, res) {
     if (!supabaseServiceKey || !supabaseUrl || !neynarApiKey) {
+        console.error("[Sync] Missing Configuration:", { supabaseUrl: !!supabaseUrl, supabaseServiceKey: !!supabaseServiceKey, neynarApiKey: !!neynarApiKey });
         return res.status(500).json({ error: 'System Configuration Incomplete' });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const neynar = new NeynarAPIClient(neynarApiKey);
 
     const cleanWallet = (w) => w?.trim?.().toLowerCase() ?? null;
 
@@ -26,55 +24,64 @@ export default async function handler(req, res) {
     const { address } = req.body;
     const wallet = cleanWallet(address);
 
-    if (!wallet) return res.status(200).json({ skipped: true, message: 'Invalid Wallet' });
+    console.log(`[Sync] Starting sync for wallet: ${wallet}`);
+
+    if (!wallet) {
+        console.warn("[Sync] Aborted: Invalid Wallet Address");
+        return res.status(200).json({ skipped: true, message: 'Invalid Wallet' });
+    }
+
+    // Initialize Supabase with header for context awareness
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        global: {
+            headers: { 'x-user-wallet': wallet }
+        }
+    });
+    const neynar = new NeynarAPIClient(neynarApiKey);
 
     try {
         // 1. Procure Farcaster Metadata via Neynar SDK
-        // bulk-by-address is now a clean SDK call
+        console.log("[Sync] Fetching data from Neynar...");
         const neynarData = await neynar.lookupUserByVerification(wallet);
         const fcUser = neynarData.result?.user || null;
 
         // 2. Prepare Profile State
+        console.log("[Sync] Preparing profile data...");
         const profile = {
             wallet_address: wallet,
             last_sync: new Date().toISOString()
         };
 
         if (fcUser) {
+            console.log(`[Sync] Farcaster user found: ${fcUser.username} (FID: ${fcUser.fid})`);
             profile.fid = fcUser.fid;
-            profile.username = fcUser.username;
+            profile.farcaster_username = fcUser.username; // Note: Column in DB is farcaster_username
             profile.display_name = fcUser.display_name;
             profile.pfp_url = fcUser.pfp_url;
             profile.bio = fcUser.profile?.bio?.text || '';
             profile.power_badge = fcUser.power_badge || false;
-            profile.follower_count = fcUser.follower_count || 0;
-            profile.following_count = fcUser.following_count || 0;
-            profile.verified_addresses = fcUser.verified_addresses || [];
-
-            // Anti-Sybil: Neynar Score (default to 0 if missing)
-            // Note: internal_trust_score might be nested or named differently in recent SDK versions
-            // Checking common paths: experimental.neynar_user_score or similar.
-            // For standard user object returned by lookupUserByVerification, score might not be present.
-            // If missing, we might need a separate call or check 'viewer_context' if authenticated.
-            // Assuming standard 'score' field or similar based on user request "internal_trust_score".
-            // Fallback to 0 if undefined.
+            // Note: Update columns if they exist in DB
             profile.neynar_score = fcUser.experimental?.neynar_user_score || 0;
+            console.log(`[Sync] Neynar Score: ${profile.neynar_score}`);
         } else {
+            console.log("[Sync] No Farcaster user found for this wallet.");
             profile.neynar_score = 0;
         }
 
         // 3. Commit to Database using Robust Upsert
-        // We use the Service Role key so RLS is bypassed, but we log the context.
+        console.log("[Sync] Upserting to 'profiles' table...");
         const { data, error } = await supabase
-            .from("user_profiles")
+            .from("profiles")
             .upsert(profile, { onConflict: "wallet_address" })
-            .select() // Return the inserted data
+            .select()
             .single();
 
         if (error) {
             console.error("[Sync] Supabase Upsert Failed:", error);
             throw new Error("Database commit failed: " + error.message);
         }
+
+        console.log("[Sync] Successfully synced profile for:", wallet);
 
         return res.status(200).json({
             ok: true,
@@ -84,7 +91,7 @@ export default async function handler(req, res) {
         });
 
     } catch (err) {
-        console.error('[Neynar SDK Sync Error]:', err.message);
+        console.error('[Sync] Error:', err.message);
         return res.status(500).json({ error: err.message });
     }
 }

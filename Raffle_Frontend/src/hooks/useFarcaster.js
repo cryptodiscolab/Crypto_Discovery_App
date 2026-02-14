@@ -49,7 +49,7 @@ export const useFarcaster = () => {
             // 2. Database First (Leaner than full sync)
             if (!forceRefresh) {
                 const { data: dbProfile } = await supabase
-                    .from('user_profiles')
+                    .from('profiles')
                     .select('*')
                     .eq('wallet_address', wallet)
                     .single();
@@ -95,7 +95,7 @@ export const useFarcaster = () => {
         error,
         syncUser,
         clearCache,
-        trustScore: Number(profileData?.internal_trust_score || 0)
+        trustScore: Number(profileData?.neynar_score || 0)
     };
 };
 

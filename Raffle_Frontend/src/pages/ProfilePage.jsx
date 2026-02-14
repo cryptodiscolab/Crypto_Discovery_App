@@ -31,17 +31,27 @@ export default function ProfilePage() {
   }, [address]);
 
   const fetchProfile = async () => {
+    if (!address) return;
+
+    // Gunakan address lowercase agar sinkron dengan database
+    const walletAddress = address.toLowerCase();
+
+    // Ambil data dari view v_user_full_profile
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('v_user_full_profile')
       .select('*')
-      .eq('wallet_address', address.toLowerCase())
+      .eq('wallet_address', walletAddress)
       .single();
+
+    if (error) {
+      console.warn("Profile not found or view error:", error.message);
+    }
 
     if (data) {
       setFormData({
         displayName: data.display_name || '',
         bio: data.bio || '',
-        avatarUrl: data.avatar_url || ''
+        avatarUrl: data.pfp_url || '' // Map pfp_url from view to avatarUrl state
       });
     }
   };
@@ -55,23 +65,21 @@ export default function ProfilePage() {
 
     try {
       // 1. Siapkan Pesan Unik (Anti-Replay Attack)
-      // Kita kasih timestamp biar signature cuma valid sekali pakai (secara logika)
       const messageToSign = `Update Profile for ${address.toLowerCase()} at ${new Date().toISOString()}`;
 
-      // 2. Trigger Wallet Signature (Metamask/Rainbow muncul)
+      // 2. Trigger Wallet Signature
       const signature = await signMessageAsync({ message: messageToSign });
 
       toast.loading("Verifikasi & Simpan ke Server...", { id: toastId });
 
-      // 3. Kirim ke API Vercel (Bukan Supabase Client!)
-      // Sesuaikan path '/api/profile/update' dengan lokasi file lo
+      // 3. Kirim ke API
       const response = await fetch('/api/profile/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          wallet_address: address,
+          wallet_address: address.toLowerCase(),
           signature: signature,
           message: messageToSign,
           profile_data: {
@@ -97,7 +105,6 @@ export default function ProfilePage() {
 
     } catch (error) {
       console.error("Save Error:", error);
-      // Handle User Reject Signature
       if (error.code === 4001 || error.message.includes("rejected")) {
         toast.error("Tanda tangan dibatalkan user", { id: toastId });
       } else {
@@ -110,30 +117,32 @@ export default function ProfilePage() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      {/* UI HEADER CONTOH */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Crown className="w-6 h-6 text-yellow-500" /> User Profile
         </h1>
 
-        {/* Tombol Edit/Save Toggle */}
         {!isEditing ? (
           <div className="flex gap-2">
             <button
               onClick={async () => {
+                if (!address) return toast.error("Connect wallet dulu!");
                 const toastId = toast.loading("Syncing with Farcaster...");
                 try {
-                  // Import dynamically if needed, or use the hook if available at top level
-                  // Using the hook from top level is better
-                  await syncUser(address, true);
-                  await fetchProfile(); // Refresh local data from Supabase
-                  toast.success("Synced from Farcaster!", { id: toastId });
+                  const result = await syncUser(address, true);
+                  if (result) {
+                    // Wajib panggil ulang fungsi fetch profil agar state langsung update
+                    await fetchProfile();
+                    toast.success("Synced from Farcaster!", { id: toastId });
+                  } else {
+                    toast.error("Sync returned no data", { id: toastId });
+                  }
                 } catch (e) {
                   toast.error("Sync failed: " + e.message, { id: toastId });
                 }
               }}
               disabled={isFarcasterLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
             >
               {isFarcasterLoading ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
               Sync Farcaster
