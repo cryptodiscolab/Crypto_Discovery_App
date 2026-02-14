@@ -15,7 +15,6 @@ const DEFAULT_ADMIN_ROLE = "0x00000000000000000000000000000000000000000000000000
 const DEFAULT_ANNOUNCEMENT = { visible: false, title: "", message: "", type: "info" };
 const DEFAULT_POOL_SETTINGS = { targetUSDC: 5000, claimTimestamp: 0 };
 const DEFAULT_NEWS = [];
-const DEFAULT_FEATURE_CARDS = [];
 
 /**
  * Custom hook for interacting with ContentCMSV2 contract
@@ -172,7 +171,7 @@ export function useCMS() {
         let announcement = DEFAULT_ANNOUNCEMENT;
         let poolSettings = DEFAULT_POOL_SETTINGS;
         let news = DEFAULT_NEWS;
-        let featureCards = DEFAULT_FEATURE_CARDS;
+        let featureCards = [];
 
         // Parse Announcement and Pool Settings
         try {

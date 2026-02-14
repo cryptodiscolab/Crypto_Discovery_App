@@ -5,7 +5,7 @@ import { RAFFLE_ABI } from '../shared/constants/abis';
 import { addXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
-// MOCK MODE FLAG
+
 
 const RAFFLE_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 

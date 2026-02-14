@@ -40,7 +40,7 @@ export function HomePage() {
     featureCards = [],
     announcement,
     poolSettings,
-    ethPrice = 2500,
+    ethPrice = 0,
     isLoading
   } = useCMS();
 

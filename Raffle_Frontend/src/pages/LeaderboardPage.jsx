@@ -126,7 +126,6 @@ export function LeaderboardPage() {
                 key={user.wallet_address}
                 user={user}
                 rank={index + 1}
-                rank={index + 1}
                 isCurrentUser={address && user.wallet_address?.toLowerCase() === address.toLowerCase()}
               />
             ))

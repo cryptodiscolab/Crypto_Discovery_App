@@ -7,7 +7,6 @@ const PointsContext = createContext(null);
 
 export function PointsProvider({ children }) {
     const { address, isConnected } = useAccount();
-    // const { stats, isLoading: isContractLoading, refetch: refetchContract } = useUserV12Stats(address); // DEPRECATED: Blockchain Source
 
     const [userPoints, setUserPoints] = useState(0n); // BigInt for safety
     const [userTier, setUserTier] = useState(0);
