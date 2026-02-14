@@ -71,7 +71,10 @@ export const useFarcaster = () => {
             });
 
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Identity Sync Failed');
+            if (!response.ok) {
+                console.error("[Sync Hook] Server Error Response:", result);
+                throw new Error(result.error || 'Identity Sync Failed');
+            }
 
             const finalProfile = result.profile;
             setProfileData(finalProfile);

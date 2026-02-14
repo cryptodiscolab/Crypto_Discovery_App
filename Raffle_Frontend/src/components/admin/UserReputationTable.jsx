@@ -183,9 +183,9 @@ export default function UserReputationTable() {
                     <>
                         {users.map(user => (
                             <MobileUserCard
-                                key={user.id}
+                                key={user.wallet_address}
                                 user={user}
-                                sybilDetected={(user.verified_addresses?.length || 0) > 1}
+                                sybilDetected={false} // verified_addresses column is missing in live schema
                             />
                         ))}
                     </>

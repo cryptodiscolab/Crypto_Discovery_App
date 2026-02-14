@@ -31,13 +31,18 @@ export default async function handler(req, res) {
         return res.status(200).json({ skipped: true, message: 'Invalid Wallet' });
     }
 
-    // Initialize Supabase with header for context awareness
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-        global: {
-            headers: { 'x-user-wallet': wallet }
-        }
-    });
-    const neynar = new NeynarAPIClient(neynarApiKey);
+    // Initialize Supabase and Neynar with safety
+    let supabase;
+    let neynar;
+    try {
+        supabase = createClient(supabaseUrl, supabaseServiceKey, {
+            global: { headers: { 'x-user-wallet': wallet } }
+        });
+        neynar = new NeynarAPIClient(neynarApiKey);
+    } catch (initErr) {
+        console.error("[Sync] Client Initialization Error:", initErr.message);
+        return res.status(500).json({ error: "Client Init Failed: " + initErr.message });
+    }
 
     try {
         // 1. Procure Farcaster Metadata via Neynar SDK
@@ -45,48 +50,42 @@ export default async function handler(req, res) {
         let fcUser = null;
         try {
             const neynarData = await neynar.lookupUserByVerification(wallet);
-            fcUser = neynarData.result?.user || null;
-            console.log("[Sync] Neynar Lookup Success:", fcUser ? "User Found" : "User Not Found");
+            fcUser = neynarData?.result?.user || null;
+            console.log("[Sync] Neynar Lookup Success:", fcUser ? `User Found: ${fcUser.username}` : "User Not Found in verifications");
         } catch (nErr) {
-            console.error("[Sync] Neynar API Call Error (Likely not found or contract):", nErr.message);
-            // We continue even if Neynar fails, we want at least a skeleton profile
+            console.error("[Sync] Neynar API Call Error (Non-blocking):", nErr.message);
         }
 
         // 2. Prepare Profile State
         console.log("[Sync] Preparing profile data...");
         const profile = {
-            address: wallet, // Live table uses 'address'
-            updated_at: new Date().toISOString() // Live table uses 'updated_at'
+            address: wallet,
+            updated_at: new Date().toISOString()
         };
 
         if (fcUser) {
-            console.log(`[Sync] Farcaster user found: ${fcUser.username}`);
-            // Note: Only includes columns that exist in the live 'profiles' table
-            profile.display_name = fcUser.display_name;
-            profile.pfp_url = fcUser.pfp_url;
+            profile.display_name = fcUser.display_name || '';
+            profile.pfp_url = fcUser.pfp_url || '';
             profile.bio = fcUser.profile?.bio?.text || '';
             profile.neynar_score = fcUser.experimental?.neynar_user_score || 0;
-            console.log(`[Sync] Neynar Score: ${profile.neynar_score}`);
         } else {
-            console.log("[Sync] No Farcaster user found for this wallet.");
             profile.neynar_score = 0;
         }
 
         // 3. Commit to Database using Robust Upsert
-        console.log("[Sync] Upserting to 'profiles' table...");
+        console.log("[Sync] Upserting to 'profiles' table for:", wallet);
         const { data, error } = await supabase
             .from("profiles")
-            .upsert(profile, { onConflict: "address" }) // Conflict target is 'address'
+            .upsert(profile, { onConflict: "address" })
             .select()
-            .single();
+            .maybeSingle(); // Better for cases where upsert doesn't return exactly 1 row
 
         if (error) {
             console.error("[Sync] Supabase Upsert Failed:", error);
-            throw new Error("Database commit failed: " + error.message);
+            return res.status(500).json({ error: "Database commit failed: " + error.message, details: error });
         }
 
         console.log("[Sync] Successfully synced profile for:", wallet);
-
         return res.status(200).json({
             ok: true,
             profile: data,
@@ -95,8 +94,16 @@ export default async function handler(req, res) {
         });
 
     } catch (err) {
-        console.error('[Sync] Error:', err.message);
-        return res.status(500).json({ error: err.message });
+        console.error('[Sync] Fatal Pipeline Error:', err.message, err.stack);
+        return res.status(500).json({
+            error: err.message,
+            stack: err.stack,
+            env_status: {
+                url: !!supabaseUrl,
+                key: !!supabaseServiceKey,
+                neynar: !!neynarApiKey
+            }
+        });
     }
 }
 
