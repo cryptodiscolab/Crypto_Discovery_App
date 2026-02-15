@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Zap, Clock, Shield, Award, ExternalLink, RefreshCw, Send, List, Share2, Twitter, MessageCircle, Heart, Repeat } from 'lucide-react';
-import { useWriteContract, useReadContract, useAccount, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useReadContract, useAccount, useWaitForTransactionReceipt, useSignMessage } from 'wagmi';
 import { V12_ABI } from '../../shared/constants/abis';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 
 const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";
@@ -55,6 +55,7 @@ const ACTIONS = {
 
 export function TaskManagerTab() {
     const { address, chainId } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { writeContractAsync } = useWriteContract();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -156,58 +157,61 @@ export function TaskManagerTab() {
     // To prevent double-sync from useEffect re-runs
     const syncedHashes = React.useRef(new Set());
 
-    // 3. Supabase Sync Effect (Triggers ONLY when transaction is successful)
+    // 3. SECURE Supabase Sync Effect
     useEffect(() => {
         const syncToSupabase = async () => {
-            // Handle Success
             if (isTxSuccess && receipt && !syncedHashes.current.has(receipt.transactionHash)) {
                 syncedHashes.current.add(receipt.transactionHash);
 
                 const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
-                const tid = toast.loading("Transaksi sukses! Menyimpan ke database...");
+                const tid = toast.loading("Transaksi sukses! Meminta tanda tangan admin untuk sinkronisasi DB...");
 
                 try {
-                    for (const task of validTasks) {
-                        try {
-                            const { id, platform, action, ...taskData } = task;
-                            const { error: dbError } = await supabase.from('tasks').insert([{
-                                ...taskData,
-                                platform: PLATFORMS[platform]?.id || platform.toLowerCase(),
-                                action_type: ACTIONS[action]?.id || action.toLowerCase(),
-                                requires_verification: task.requiresVerification,
-                                min_neynar_score: task.minNeynarScore,
-                                min_followers: task.minFollowers,
-                                account_age_requirement: task.accountAgeLimit,
-                                power_badge_required: task.powerBadgeRequired,
-                                no_spam_filter: task.noSpamFilter,
-                                reward_points: task.baseReward,
-                                created_at: new Date().toISOString(),
-                                is_active: true,
-                                transaction_hash: receipt.transactionHash
-                            }]);
+                    // 1. Prepare Message & Signature
+                    const timestamp = new Date().toISOString();
+                    const message = `Sync Batch Tasks\nTX: ${receipt.transactionHash}\nAdmin: ${address}\nTime: ${timestamp}`;
+                    const signature = await signMessageAsync({ message });
 
-                            if (dbError) console.error('[Supabase Sync Error]', dbError);
+                    toast.loading("Mengupdate database via Secure API...", { id: tid });
 
-                            await supabase.from('admin_audit_logs').insert([{
-                                admin_address: address || '0x0',
-                                action: 'DEPLOY_BATCH_TASK',
-                                details: {
-                                    task_name: task.title,
-                                    points: task.baseReward,
-                                    platform: task.platform,
-                                    action: task.action,
-                                    min_tier: task.minTier,
-                                    tx_hash: receipt.transactionHash
-                                }
-                            }]);
-                        } catch (err) {
-                            console.warn('[Sync/Log Error] Non-critical failure:', err);
-                        }
+                    // 2. Prepare Data for API
+                    const tasksToSync = validTasks.map(task => ({
+                        platform: PLATFORMS[task.platform]?.id || task.platform.toLowerCase(),
+                        action_type: ACTIONS[task.action]?.id || task.action.toLowerCase(),
+                        title: task.title,
+                        link: task.link || 'https://warpcast.com/CryptoDisco',
+                        reward_points: task.baseReward,
+                        min_tier: task.minTier,
+                        requires_verification: task.requiresVerification,
+                        min_neynar_score: task.minNeynarScore,
+                        min_followers: task.minFollowers,
+                        account_age_requirement: task.accountAgeLimit,
+                        power_badge_required: task.powerBadgeRequired,
+                        no_spam_filter: task.noSpamFilter
+                    }));
+
+                    // 3. Call Secure API
+                    const response = await fetch('/api/admin/tasks/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            wallet_address: address,
+                            signature,
+                            message,
+                            tx_hash: receipt.transactionHash,
+                            tasks: tasksToSync
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || "Sync failed");
                     }
 
                     toast.success("Selesai! Task on-chain & DB sinkron.", { id: tid });
 
-                    // Reset to default
+                    // Reset
                     setTasksBatch([
                         { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
                         { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: getGlobalPoints('Farcaster', 'Follow'), minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
@@ -215,9 +219,15 @@ export function TaskManagerTab() {
                     ]);
                     refetchCount();
                     setTxHash(null);
+
                 } catch (error) {
                     console.error('Sync Error:', error);
-                    toast.error("Transaksi sukses, tapi gagal simpan ke DB. Cek log.", { id: tid });
+                    const errMsg = error.message || "Unknown error";
+                    if (error.code === 4001) {
+                        toast.error("Signature rejected. Data DB tidak sinkron!", { id: tid });
+                    } else {
+                        toast.error(`Gagal sinkron: ${errMsg}`, { id: tid });
+                    }
                 } finally {
                     setIsSaving(false);
                 }

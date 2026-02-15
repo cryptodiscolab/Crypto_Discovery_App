@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
 import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createAuthenticatedClient, cleanWallet } from '../../lib/supabaseClient_enhanced';
 import { supabase } from '../../lib/supabaseClient';
 
 const DAILY_APP_ABI = [
@@ -185,6 +183,7 @@ export function TaskManager() {
 
     // Wagmi hooks
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
 
     const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
@@ -234,32 +233,43 @@ export function TaskManager() {
     }, [isSuccess]);
 
     const handleCreateDaily = async () => {
-        // Validation
         if (!dailyDesc || !dailyPoints) return toast.error("Fill all fields");
         if (!address) return toast.error("Wallet not connected");
 
-        try {
-            // 1. Insert to Supabase Database
-            const adminClient = createAuthenticatedClient(address);
-            const { data: supabaseData, error: supabaseError } = await adminClient
-                .from('daily_tasks')
-                .insert({
-                    description: dailyDesc,
-                    xp_reward: parseInt(dailyPoints),
-                    is_active: true,
-                })
-                .select()
-                .single();
+        const toastId = toast.loading("Requesting Admin Signature...");
 
-            if (supabaseError) {
-                console.error('Supabase error:', supabaseError);
-                toast.error(`Database Error: ${supabaseError.message}`);
-                return;
+        try {
+            // 1. Prepare & Sign Message
+            const timestamp = new Date().toISOString();
+            const message = `Create Daily Task: ${dailyDesc}\nReward: ${dailyPoints} XP\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            toast.loading("Saving to secure database...", { id: toastId });
+
+            // 2. Insert to Supabase via Secure API
+            const response = await fetch('/api/admin/tasks/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    task_data: {
+                        description: dailyDesc,
+                        xp_reward: parseInt(dailyPoints)
+                    }
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to save task");
             }
 
-            toast.success('Task saved to database! Now deploying to blockchain...');
+            toast.success('Task saved to database! Now deploying to blockchain...', { id: toastId });
 
-            // 2. Deploy to Blockchain
+            // 3. Deploy to Blockchain
             writeContract({
                 address: DAILY_APP_ADDRESS,
                 abi: DAILY_APP_ABI,
@@ -268,7 +278,12 @@ export function TaskManager() {
             });
         } catch (error) {
             console.error('Error creating task:', error);
-            toast.error(`Failed: ${error.message}`);
+            const errMsg = error.message || "Unknown error";
+            if (error.code === 4001) {
+                toast.error("Signature rejected", { id: toastId });
+            } else {
+                toast.error(`Failed: ${errMsg}`, { id: toastId });
+            }
         }
     };
 

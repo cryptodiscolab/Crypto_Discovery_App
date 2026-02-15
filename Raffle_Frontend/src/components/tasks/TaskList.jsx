@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { supabase } from '../../lib/supabaseClient';
-import { createAuthenticatedClient } from '../../lib/supabaseClient_enhanced';
 import { Loader2, CheckCircle2, Zap, Clock, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePoints } from '../../shared/context/PointsContext';
@@ -9,6 +8,7 @@ import { usePoints } from '../../shared/context/PointsContext';
 
 export function TaskList() {
     const { address, isConnected } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const [tasks, setTasks] = useState([]);
     const [userScore, setUserScore] = useState(0);
     const [userClaims, setUserClaims] = useState(new Set());
@@ -84,61 +84,55 @@ export function TaskList() {
             return;
         }
 
-        // Double check score client-side (Server RLS should also enforce this ideally)
         if (task.min_neynar_score > 0 && userScore < task.min_neynar_score) {
             toast.error(`Low Reputation: Requires Neynar Score ${task.min_neynar_score}`);
             return;
         }
 
         setClaimingTask(task.id);
-        const toastId = toast.loading("Claiming reward...");
+        const toastId = toast.loading("Requesting signature...");
 
         try {
-            const authClient = createAuthenticatedClient(address);
+            // 1. Prepare Message
+            const timestamp = new Date().toISOString();
+            const message = `Claim Task: ${task.description}\nID: ${task.id}\nWallet: ${address.toLowerCase()}\nTime: ${timestamp}`;
 
-            // 1. Upsert Profile ONLY if not already loaded (Optimization)
-            if (!hasProfile) {
-                const { error: upsertError } = await authClient
-                    .from('user_profiles')
-                    .upsert(
-                        { wallet_address: address.toLowerCase() },
-                        { onConflict: 'wallet_address' }
-                    );
+            // 2. Request Signature
+            const signature = await signMessageAsync({ message });
 
-                if (upsertError) {
-                    console.error("Profile upsert warning:", upsertError);
-                    // Continue anyway, as the profile might already exist
-                } else {
-                    setHasProfile(true);
-                }
-            }
+            toast.loading("Verifying on server...", { id: toastId });
 
-            // 2. Insert claim
-            const { error } = await authClient
-                .from('user_task_claims')
-                .insert({
-                    wallet_address: address.toLowerCase(),
+            // 3. Call Secure API
+            const response = await fetch('/api/tasks/claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
                     task_id: task.id,
-                    xp_earned: task.xp_reward
-                });
+                    xp_reward: task.xp_reward
+                })
+            });
 
-            if (error) {
-                if (error.code === '23505') { // Unique violation
-                    toast.error("You already claimed this task today", { id: toastId });
-                    setUserClaims(prev => new Set(prev).add(task.id)); // Optimistic update fix
-                } else {
-                    throw error;
-                }
-            } else {
-                toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
-                setUserClaims(prev => new Set(prev).add(task.id));
-                // Trigger global points refresh
-                if (refetch) refetch();
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || "Claim failed");
             }
+
+            toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
+            setUserClaims(prev => new Set(prev).add(task.id));
+            if (refetch) refetch();
 
         } catch (err) {
             console.error("Claim error:", err);
-            toast.error("Claim failed: " + err.message, { id: toastId });
+            const errMsg = err.message || "Unknown error";
+            if (err.code === 4001 || errMsg.toLowerCase().includes("rejected")) {
+                toast.error("Signature rejected", { id: toastId });
+            } else {
+                toast.error("Claim failed: " + errMsg, { id: toastId });
+            }
         } finally {
             setClaimingTask(null);
         }
