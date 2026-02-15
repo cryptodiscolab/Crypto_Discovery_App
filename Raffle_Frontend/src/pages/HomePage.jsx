@@ -41,7 +41,7 @@ export function HomePage() {
     announcement,
     poolSettings,
     ethPrice = 0,
-    isLoading
+    isLoadingCards
   } = useCMS();
 
 
@@ -142,7 +142,7 @@ export function HomePage() {
 
         {/* Feature Cards Grid - Dynamic from CMS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {isLoading ? (
+          {isLoadingCards && displayCards.length === 0 ? (
             <FeatureCardSkeleton count={6} />
           ) : (
             displayCards

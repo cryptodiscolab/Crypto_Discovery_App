@@ -420,6 +420,9 @@ export function useCMS() {
 
         // Loading states
         isLoading: loadingAnnouncement || loadingNews || loadingCards,
+        isLoadingCards: loadingCards,
+        isLoadingAnnouncement: loadingAnnouncement,
+        isLoadingNews: loadingNews,
         hasError: announcementError || newsError || cardsError,
 
         // Content write functions
