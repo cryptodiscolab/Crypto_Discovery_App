@@ -67,7 +67,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
       <div className="flex flex-col items-end">
         <div className="flex items-center gap-2 text-yellow-400 font-black">
           <Sparkles className="w-4 h-4 text-yellow-500" />
-          <span className="text-xl tracking-tighter">{Number(user.total_xp || 0).toLocaleString()}</span>
+          <span className="text-xl tracking-tighter">{Number(user.xp || 0).toLocaleString()}</span>
         </div>
         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">XP</p>
       </div>
@@ -88,8 +88,8 @@ export function LeaderboardPage() {
     try {
       const { data, error } = await supabase
         .from('v_user_full_profile')
-        .select('wallet_address, total_xp, rank_name, display_name, username, pfp_url')
-        .order('total_xp', { ascending: false })
+        .select('wallet_address, xp, rank_name, display_name, username, pfp_url')
+        .order('xp', { ascending: false })
         .limit(50);
 
       if (error) {

@@ -61,7 +61,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
                     <span className="text-xs font-mono text-slate-500">ID: #{Number(taskId)}</span>
                     <div className={`flex items-center ${isTierLocked ? 'text-slate-500' : 'text-yellow-500'} mt-1`}>
                         <Zap className="w-3 h-3 mr-1 fill-current" />
-                        <span className="text-sm font-bold">+{Number(task.baseReward)} Pts</span>
+                        <span className="text-sm font-bold">+{Number(task.baseReward)} XP</span>
                     </div>
                 </div>
             </div>
@@ -150,7 +150,7 @@ export function TasksPage() {
                             {isConnected && (
                                 <div className="flex items-center space-x-8">
                                     <div className="text-center">
-                                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Total Points</p>
+                                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Total XP</p>
                                         <p className="text-3xl font-black text-blue-400">{String(userPoints)}</p>
                                     </div>
                                     <div className="h-12 w-px bg-white/10 hidden md:block"></div>

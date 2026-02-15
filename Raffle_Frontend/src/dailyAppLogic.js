@@ -17,8 +17,8 @@ export async function handleDailyClaim(fid, userAddress) {
     try {
         // STEP A: Cek data harian user
         const { data: userData, error } = await supabase
-            .from('user_stats')
-            .select('last_login_at')
+            .from('user_profiles')
+            .select('last_seen_at')
             .eq('fid', fid)
             .single();
 
@@ -42,12 +42,12 @@ export async function handleDailyClaim(fid, userAddress) {
         const result = await addXP(fid, 'daily_login', userAddress);
 
         if (result.success) {
-            // Update last_login_at permanen
-            await supabase.from('user_stats').update({ last_login_at: now.toISOString() }).eq('fid', fid);
+            // Update last_seen_at permanen
+            await supabase.from('user_profiles').update({ last_seen_at: now.toISOString() }).eq('fid', fid);
 
             return {
                 success: true,
-                message: result.isLevelUp ? `🎉 GG! NAIK KE ${result.tierName.toUpperCase()}!` : `✅ Claim beres! +${result.points} XP.`,
+                message: result.isLevelUp ? `🎉 GG! NAIK KE ${result.tierName.toUpperCase()}!` : `✅ Claim beres! +${result.xp} XP.`,
                 data: result
             };
         } else {
@@ -87,20 +87,20 @@ export async function addXP(fid, activityKey, userAddress) {
             return { success: false, message: "Activity inactive" };
         }
 
-        const points = setting.points_value;
+        const xp = setting.points_value;
 
         // 2. Get User Current Stats
         const { data: user, error: uError } = await supabase
-            .from('user_stats')
+            .from('user_profiles')
             .select('*')
             .eq('fid', fid)
             .single();
 
         if (uError && uError.code !== 'PGRST116') throw uError;
 
-        const currentXP = user?.total_xp || 0;
-        const currentLevel = user?.current_level || 1;
-        const newTotalXP = currentXP + points;
+        const currentXP = user?.xp || 0;
+        const currentTier = user?.tier || 1;
+        const newTotalXP = currentXP + xp;
 
         // 3. New Level Check (SBT Thresholds)
         const { data: threshold } = await supabase
@@ -110,19 +110,19 @@ export async function addXP(fid, activityKey, userAddress) {
             .order('min_xp', { ascending: false })
             .limit(1);
 
-        const nextLevelInfo = threshold?.[0] || { level: 1, tier_name: 'Disco Starter' };
-        const newLevel = nextLevelInfo.level;
-        const isLevelUp = newLevel > currentLevel;
+        const nextTierInfo = threshold?.[0] || { level: 1, tier_name: 'Disco Starter' };
+        const newTier = nextTierInfo.level;
+        const isLevelUp = newTier > currentTier;
 
         // 4. Atomic Updates
         const { error: updateError } = await supabase
-            .from('user_stats')
+            .from('user_profiles')
             .upsert({
                 fid: fid,
-                total_xp: newTotalXP,
-                current_level: newLevel,
-                last_active_at: new Date().toISOString()
-            });
+                xp: newTotalXP,
+                tier: newTier,
+                last_seen_at: new Date().toISOString()
+            }, { onConflict: 'fid' });
 
         if (updateError) throw updateError;
 
@@ -131,15 +131,15 @@ export async function addXP(fid, activityKey, userAddress) {
             user_address: userAddress || '0x0',
             fid: fid,
             activity_key: activityKey,
-            points_earned: points,
-            metadata: { level_up: isLevelUp, new_level: nextLevelInfo.tier_name }
+            points_earned: xp,
+            metadata: { level_up: isLevelUp, new_tier: nextTierInfo.tier_name }
         }]);
 
         return {
             success: true,
-            points,
+            xp,
             isLevelUp,
-            tierName: nextLevelInfo.tier_name
+            tierName: nextTierInfo.tier_name
         };
 
     } catch (err) {
@@ -206,13 +206,13 @@ export async function getUserStatsSupabase(walletAddress) {
 export async function getUserStatsByFid(fid) {
     try {
         const { data, error } = await supabase
-            .from('user_stats')
+            .from('user_profiles')
             .select('*')
             .eq('fid', fid)
             .single();
 
         if (error && error.code !== 'PGRST116') throw error;
-        return data || { total_xp: 0, current_level: 0, last_login_at: null };
+        return data || { xp: 0, tier: 1, last_seen_at: null };
     } catch (err) {
         console.error('[User Stats] Error:', err);
         return null;
@@ -267,8 +267,8 @@ export async function requestSBTMint(fid, walletAddress, targetLevel) {
 
         // 1. Verify Eligibility (Double Check Server Side)
         const { data: user } = await supabase
-            .from('user_stats')
-            .select('total_xp, current_level')
+            .from('user_profiles')
+            .select('xp, tier')
             .eq('fid', fid)
             .single();
 
@@ -277,12 +277,12 @@ export async function requestSBTMint(fid, walletAddress, targetLevel) {
         const { data: threshold } = await supabase
             .from('sbt_thresholds')
             .select('min_xp')
-            .eq('level', targetLevel)
+            .eq('level', user.tier)
             .single();
 
         if (!threshold) throw new Error("Invalid Tier Level");
 
-        if (user.total_xp < threshold.min_xp) {
+        if (user.xp < threshold.min_xp) {
             return { success: false, message: `Points insufficient! Need ${threshold.min_xp} XP.` };
         }
 

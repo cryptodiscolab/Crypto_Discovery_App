@@ -9,8 +9,10 @@
 
 CREATE TABLE IF NOT EXISTS public.user_profiles (
     wallet_address TEXT PRIMARY KEY,
+    fid BIGINT UNIQUE,
     trust_score NUMERIC DEFAULT 0,
-    total_xp INTEGER DEFAULT 0,
+    xp INTEGER DEFAULT 0,
+    tier INTEGER DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -18,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
     -- Constraints
     CONSTRAINT wallet_address_lowercase CHECK (wallet_address = LOWER(wallet_address)),
     CONSTRAINT trust_score_range CHECK (trust_score >= 0 AND trust_score <= 100),
-    CONSTRAINT total_xp_positive CHECK (total_xp >= 0)
+    CONSTRAINT xp_positive CHECK (xp >= 0)
 );
 
 -- Index untuk performa
@@ -26,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_trust_score
     ON public.user_profiles(trust_score DESC);
 
 CREATE INDEX IF NOT EXISTS idx_user_profiles_xp 
-    ON public.user_profiles(total_xp DESC);
+    ON public.user_profiles(xp DESC);
 
 -- Enable RLS
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
@@ -172,13 +174,17 @@ CREATE TRIGGER update_daily_tasks_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Function: Auto-increment total_xp when task claimed
-CREATE OR REPLACE FUNCTION increment_user_xp()
+-- Function: Auto-sync user XP when task claimed
+CREATE OR REPLACE FUNCTION public.sync_user_xp()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE public.user_profiles
     SET 
-        total_xp = total_xp + NEW.xp_earned,
+        xp = (
+            SELECT COALESCE(SUM(xp_earned), 0)
+            FROM public.user_task_claims
+            WHERE wallet_address = NEW.wallet_address
+        ),
         last_seen_at = NOW()
     WHERE wallet_address = NEW.wallet_address;
     
@@ -186,10 +192,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER increment_xp_on_claim
+CREATE TRIGGER trg_sync_user_xp_on_claim
     AFTER INSERT ON public.user_task_claims
     FOR EACH ROW
-    EXECUTE FUNCTION increment_user_xp();
+    EXECUTE FUNCTION public.sync_user_xp();
 
 -- Function: Auto-increment current_claims counter
 CREATE OR REPLACE FUNCTION increment_task_claims()
@@ -224,7 +230,7 @@ $$ LANGUAGE plpgsql;
 -- Function: Get user stats
 CREATE OR REPLACE FUNCTION get_user_stats(wallet TEXT)
 RETURNS TABLE (
-    total_xp INTEGER,
+    xp INTEGER,
     total_claims BIGINT,
     trust_score NUMERIC,
     rank BIGINT
@@ -232,16 +238,16 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT 
-        up.total_xp,
+        up.xp,
         COUNT(utc.id) as total_claims,
         up.trust_score,
         (SELECT COUNT(*) + 1 
          FROM public.user_profiles 
-         WHERE total_xp > up.total_xp) as rank
+         WHERE xp > up.xp) as rank
     FROM public.user_profiles up
     LEFT JOIN public.user_task_claims utc ON utc.wallet_address = up.wallet_address
     WHERE up.wallet_address = LOWER(wallet)
-    GROUP BY up.wallet_address, up.total_xp, up.trust_score;
+    GROUP BY up.wallet_address, up.xp, up.trust_score;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -259,7 +265,7 @@ INSERT INTO public.daily_tasks (description, xp_reward, task_type) VALUES
 ON CONFLICT DO NOTHING;
 
 -- Insert sample admin profile
-INSERT INTO public.user_profiles (wallet_address, trust_score, total_xp) VALUES
+INSERT INTO public.user_profiles (wallet_address, trust_score, xp) VALUES
     (LOWER('0x0845204b4b5e5f8aa7a0cfd2c6c6b5e8d4f3e2d1'), 100, 0)
 ON CONFLICT DO NOTHING;
 
