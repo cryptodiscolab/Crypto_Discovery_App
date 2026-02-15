@@ -74,7 +74,7 @@ export function BottomNav() {
                     {isConnected ? (
                         <Link
                             to="/profile"
-                            className={`flex flex-col items-center gap-1 transition-all duration-300 ${location.pathname === '/profile' ? 'text-indigo-400 scale-110' : 'text-slate-500 hover:text-white'
+                            className={`flex flex-col items-center gap-1 transition-all duration-300 ${location.pathname.startsWith('/profile') ? 'text-indigo-400 scale-110' : 'text-slate-500 hover:text-white'
                                 }`}
                         >
                             <div className="relative">

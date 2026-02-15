@@ -38,7 +38,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
       )}
 
       <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 flex items-center justify-center font-black text-lg rounded-xl shadow-lg border border-white/10
+        <div className={`w-12 h-12 min-w-[3rem] flex items-center justify-center font-black text-lg rounded-xl shadow-lg border border-white/10
           ${rank === 1 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-black shadow-yellow-500/20' :
             rank === 2 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-black shadow-slate-300/20' :
               rank === 3 ? 'bg-gradient-to-br from-amber-500 to-amber-700 text-white shadow-amber-600/20' :
@@ -46,18 +46,18 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
           {rank === 1 ? <Crown className="w-6 h-6" /> : rank}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 px-1 min-w-0 flex-1">
           {user.pfp_url && (
-            <img src={user.pfp_url} alt="" className="w-10 h-10 rounded-full border border-white/10 shadow-sm" />
+            <img src={user.pfp_url} alt="" className="w-10 h-10 rounded-full border border-white/10 shadow-sm shrink-0" />
           )}
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${style.bg} ${style.color}`}>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${style.bg} ${style.color} shrink-0`}>
                 {user.rank_name || 'Rookie'}
               </span>
-              {isCurrentUser && <span className="text-[10px] font-bold text-yellow-500">(YOU)</span>}
+              {isCurrentUser && <span className="text-[10px] font-bold text-yellow-500 shrink-0">(YOU)</span>}
             </div>
-            <span className={`font-mono text-base ${isCurrentUser ? 'text-white font-bold' : 'text-slate-300'}`}>
+            <span className={`font-mono text-base truncate block ${isCurrentUser ? 'text-white font-bold' : 'text-slate-300'}`}>
               {displayName}
             </span>
           </div>
