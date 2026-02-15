@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
 import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star, Database } from 'lucide-react';
