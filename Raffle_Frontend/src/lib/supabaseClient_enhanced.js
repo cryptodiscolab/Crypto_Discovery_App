@@ -12,11 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.error("Supabase environment variables are missing!");
 }
 
-// Helper: Clean wallet address untuk konsistensi (lowercase)
-export const cleanWallet = (address) => {
-    if (!address) return null;
-    return address.toLowerCase().trim();
-};
+import { supabase, cleanWallet } from './supabaseClient';
 
 // ============================================
 // AUTHENTICATED SUPABASE CLIENT FACTORY
@@ -50,22 +46,16 @@ export const createAuthenticatedClient = (walletAddress) => {
                 'x-user-wallet': clean,
             },
         },
+        auth: {
+            persistSession: false, // Critical: Prevent multiple GoTrue instances
+        }
     });
 
     clientCache.set(clean, client);
     return client;
 };
 
-// ============================================
-// BASE SUPABASE CLIENT (Read-Only Operations)
-// ============================================
-
-// Singleton implementation for read-only operations
-if (!globalThis.supabaseInstance) {
-    globalThis.supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
-}
-
-export const supabase = globalThis.supabaseInstance;
+export { supabase };
 
 // ============================================
 // USAGE EXAMPLES
