@@ -41,6 +41,7 @@ export function useCMS() {
         functionName: 'getAnnouncement',
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
+            placeholderData: (prev) => prev,
         }
     });
 
@@ -52,6 +53,7 @@ export function useCMS() {
         functionName: 'latestRoundData',
         query: {
             refetchInterval: 60 * 1000, // Update every minute
+            placeholderData: (prev) => prev,
         }
     });
 
@@ -73,6 +75,7 @@ export function useCMS() {
         functionName: 'getNews',
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
+            placeholderData: (prev) => prev,
         }
     });
 
@@ -87,6 +90,7 @@ export function useCMS() {
         functionName: 'getFeatureCards',
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
+            placeholderData: (prev) => prev,
         }
     });
 
