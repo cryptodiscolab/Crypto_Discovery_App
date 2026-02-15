@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
 import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
