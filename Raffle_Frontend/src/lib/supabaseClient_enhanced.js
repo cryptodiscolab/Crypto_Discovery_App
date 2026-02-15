@@ -22,6 +22,9 @@ export const cleanWallet = (address) => {
 // AUTHENTICATED SUPABASE CLIENT FACTORY
 // ============================================
 
+// Cache for authenticated clients to avoid "Multiple GoTrueClient instances" warnings
+const clientCache = new Map();
+
 /**
  * Creates a Supabase client with custom x-user-wallet header
  * This header is validated by RLS policies for write operations
@@ -34,13 +37,23 @@ export const createAuthenticatedClient = (walletAddress) => {
         throw new Error('Wallet address is required for authenticated operations');
     }
 
-    return createClient(supabaseUrl, supabaseAnonKey, {
+    const clean = cleanWallet(walletAddress);
+
+    // Return cached client if it exists
+    if (clientCache.has(clean)) {
+        return clientCache.get(clean);
+    }
+
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
         global: {
             headers: {
-                'x-user-wallet': cleanWallet(walletAddress),
+                'x-user-wallet': clean,
             },
         },
     });
+
+    clientCache.set(clean, client);
+    return client;
 };
 
 // ============================================

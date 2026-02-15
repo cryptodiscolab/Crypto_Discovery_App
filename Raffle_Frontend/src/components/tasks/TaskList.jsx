@@ -11,6 +11,7 @@ export function TaskList() {
     const [userScore, setUserScore] = useState(0);
     const [userClaims, setUserClaims] = useState(new Set());
     const [isLoading, setIsLoading] = useState(false);
+    const [hasProfile, setHasProfile] = useState(false);
     const [claimingTask, setClaimingTask] = useState(null);
 
     // Fetch Tasks & User Claims
@@ -53,6 +54,9 @@ export function TaskList() {
 
                 if (profileResult.data) {
                     setUserScore(profileResult.data.neynar_score || 0);
+                    setHasProfile(true);
+                } else {
+                    setHasProfile(false);
                 }
             }
 
@@ -88,17 +92,21 @@ export function TaskList() {
         try {
             const authClient = createAuthenticatedClient(address);
 
-            // 1. Upsert Profile first to prevent FK error
-            const { error: upsertError } = await authClient
-                .from('user_profiles')
-                .upsert(
-                    { wallet_address: address.toLowerCase() },
-                    { onConflict: 'wallet_address' }
-                );
+            // 1. Upsert Profile ONLY if not already loaded (Optimization)
+            if (!hasProfile) {
+                const { error: upsertError } = await authClient
+                    .from('user_profiles')
+                    .upsert(
+                        { wallet_address: address.toLowerCase() },
+                        { onConflict: 'wallet_address' }
+                    );
 
-            if (upsertError) {
-                console.error("Profile upsert warning:", upsertError);
-                // Continue anyway, as the profile might already exist and RLS might be strict
+                if (upsertError) {
+                    console.error("Profile upsert warning:", upsertError);
+                    // Continue anyway, as the profile might already exist
+                } else {
+                    setHasProfile(true);
+                }
             }
 
             // 2. Insert claim
