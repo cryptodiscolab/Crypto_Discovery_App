@@ -27,7 +27,22 @@ const ProtectedLayout = () => (
   </SignatureGuard>
 );
 
+import { useEffect } from 'react';
+import sdk from '@farcaster/frame-sdk';
+
 function App() {
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster Frame SDK ready');
+      } catch (error) {
+        console.error('Farcaster Frame SDK initialization failed:', error);
+      }
+    };
+    init();
+  }, []);
+
   return (
     <Web3Provider>
       <PointsProvider>

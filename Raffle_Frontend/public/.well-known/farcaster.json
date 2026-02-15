@@ -1,0 +1,17 @@
+{
+    "accountAssociation": {
+        "header": "eyJmaWQiOiA0NTExLCAidHlwZSI6ICJjdXN0b2R5IiwgImtleSI6ICIweDY0ZDQ2Zjc1REUzREI5MDcwM0U1OTY0ZjEzREI2RTczMzMxYjQzRTUifQ",
+        "payload": "eyJkb21haW4iOiAicmFmZmxlLWRpc2NvLnZlcmNlbC5hcHAifQ",
+        "signature": "MHhlNDY1OTkxY2RmZDI5YWYzYTZmNDRhNjc1YjJkNjYxNTg5ODQzMmUwZGEzNzY1NDhjYzQ4NmNiNjNmN2M2OGZhNDliYTZiZDUwYWY5MmY4ZGNlODliMGEwZDU4YzJjNDU4MmZkZTMzYTBiY2NjOTIyNjZlNmUwNDJmMTliYjRiMDFj"
+    },
+    "frame": {
+        "version": "1",
+        "name": "Crypto Discovery",
+        "iconUrl": "https://disco-daily-app.vercel.app/og-image.png",
+        "homeUrl": "https://disco-daily-app.vercel.app/",
+        "imageUrl": "https://disco-daily-app.vercel.app/og-image.png",
+        "buttonTitle": "Launch App",
+        "splashImageUrl": "https://disco-daily-app.vercel.app/og-image.png",
+        "splashBackgroundColor": "#0B0E14"
+    }
+}
