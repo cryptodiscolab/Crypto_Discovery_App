@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap, Settings } from 'lucide-react';
+import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap, Settings, ClipboardList } from 'lucide-react';
+
 import AdminGuard from '../../components/admin/AdminGuard';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 
@@ -12,10 +13,13 @@ import { ErrorBoundary } from '../../components/ErrorBoundary';
 const UserReputationTable = lazy(() => import('../../components/admin/UserReputationTable'));
 const SBTRewardsDashboard = lazy(() => import('../../components/SBTRewardsDashboard').then(module => ({ default: module.SBTRewardsDashboard })));
 const TaskManager = lazy(() => import('../../components/admin/TaskManager').then(module => ({ default: module.TaskManager })));
+const TaskClaimLogs = lazy(() => import('../../components/admin/TaskClaimLogs'));
 const AdminSystemSettings = lazy(() => import('../../components/admin/AdminSystemSettings'));
 
+
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt' | 'tasks' | 'system'
+    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt' | 'tasks' | 'logs' | 'system'
+
 
     return (
         <AdminGuard>
@@ -82,6 +86,17 @@ const AdminDashboard = () => {
                         Tasks
                     </button>
                     <button
+                        onClick={() => setActiveTab('logs')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'logs'
+                            ? 'bg-[#0a0a0c] text-blue-400 shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
+                            }`}
+                    >
+                        <ClipboardList className="w-3.5 h-3.5" />
+                        Logs
+                    </button>
+
+                    <button
                         onClick={() => setActiveTab('system')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
                             ? 'bg-[#0a0a0c] text-emerald-500 shadow-lg border border-white/5'
@@ -107,9 +122,12 @@ const AdminDashboard = () => {
                             <SBTRewardsDashboard />
                         ) : activeTab === 'tasks' ? (
                             <TaskManager />
+                        ) : activeTab === 'logs' ? (
+                            <TaskClaimLogs />
                         ) : (
                             <AdminSystemSettings />
                         )}
+
                     </ErrorBoundary>
                 </Suspense>
 

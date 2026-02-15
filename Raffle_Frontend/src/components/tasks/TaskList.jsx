@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { createAuthenticatedClient } from '../../lib/supabaseClient_enhanced';
 import { Loader2, CheckCircle2, Zap, Clock, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePoints } from '../../shared/context/PointsContext';
+
 
 export function TaskList() {
     const { address, isConnected } = useAccount();
@@ -13,6 +15,8 @@ export function TaskList() {
     const [isLoading, setIsLoading] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
     const [claimingTask, setClaimingTask] = useState(null);
+    const { refetch } = usePoints();
+
 
     // Fetch Tasks & User Claims
     const fetchData = async () => {
@@ -128,8 +132,10 @@ export function TaskList() {
             } else {
                 toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
                 setUserClaims(prev => new Set(prev).add(task.id));
-                // Optional: trigger a global points refresh if available via context
+                // Trigger global points refresh
+                if (refetch) refetch();
             }
+
         } catch (err) {
             console.error("Claim error:", err);
             toast.error("Claim failed: " + err.message, { id: toastId });

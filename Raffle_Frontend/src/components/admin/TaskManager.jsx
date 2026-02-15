@@ -538,4 +538,3 @@ export function TaskManager() {
     );
 }
 
-import { useReadContract } from 'wagmi';
