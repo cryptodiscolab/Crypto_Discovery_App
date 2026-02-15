@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut
 } from 'lucide-react';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 export default function ProfilePage() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const { disconnect } = useDisconnect();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
   // State untuk Mode Edit
@@ -148,7 +149,7 @@ export default function ProfilePage() {
           User Profile
         </h1>
 
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
           {!isEditing ? (
             <>
               <button
@@ -179,6 +180,13 @@ export default function ProfilePage() {
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition backdrop-blur-sm"
               >
                 <Edit size={16} /> Edit
+              </button>
+              {/* Mobile Only Logout Button */}
+              <button
+                onClick={() => disconnect()}
+                className="md:hidden flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition backdrop-blur-sm"
+              >
+                <LogOut size={16} /> Logout
               </button>
             </>
           ) : (

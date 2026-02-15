@@ -86,11 +86,13 @@ export function BottomNav() {
                     ) : (
                         <Link
                             to="/login"
-                            className={`flex flex-col items-center gap-1 transition-all duration-300 ${location.pathname === '/login' ? 'text-indigo-400 scale-110' : 'text-slate-500 hover:text-white'
+                            className={`flex flex-col items-center gap-1 transition-all duration-300 ${location.pathname === '/login' ? 'text-pink-500 scale-110' : 'text-slate-400 hover:text-white'
                                 }`}
                         >
-                            <Wallet className="w-5 h-5" />
-                            <span className="text-[10px] font-bold uppercase tracking-tighter">Connect</span>
+                            <div className="p-2 bg-pink-500/10 rounded-lg group-hover:bg-pink-500/20 transition-colors">
+                                <Wallet className={`w-5 h-5 ${location.pathname === '/login' ? 'text-pink-500' : 'text-slate-400'}`} />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-tighter">Login</span>
                         </Link>
                     )}
                 </div>
