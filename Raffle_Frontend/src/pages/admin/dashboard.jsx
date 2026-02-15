@@ -15,6 +15,7 @@ const SBTRewardsDashboard = lazy(() => import('../../components/SBTRewardsDashbo
 const TaskManager = lazy(() => import('../../components/admin/TaskManager').then(module => ({ default: module.TaskManager })));
 const TaskClaimLogs = lazy(() => import('../../components/admin/TaskClaimLogs'));
 const AdminSystemSettings = lazy(() => import('../../components/admin/AdminSystemSettings'));
+const AdminCMSContent = lazy(() => import('../../components/admin/AdminCMSContent'));
 
 
 const AdminDashboard = () => {
@@ -97,6 +98,17 @@ const AdminDashboard = () => {
                     </button>
 
                     <button
+                        onClick={() => setActiveTab('cms')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'cms'
+                            ? 'bg-[#0a0a0c] text-indigo-500 shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
+                            }`}
+                    >
+                        <LayoutList className="w-3.5 h-3.5" />
+                        CMS
+                    </button>
+
+                    <button
                         onClick={() => setActiveTab('system')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
                             ? 'bg-[#0a0a0c] text-emerald-500 shadow-lg border border-white/5'
@@ -124,6 +136,8 @@ const AdminDashboard = () => {
                             <TaskManager />
                         ) : activeTab === 'logs' ? (
                             <TaskClaimLogs />
+                        ) : activeTab === 'cms' ? (
+                            <AdminCMSContent />
                         ) : (
                             <AdminSystemSettings />
                         )}
