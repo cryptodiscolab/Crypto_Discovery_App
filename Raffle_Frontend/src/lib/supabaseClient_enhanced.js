@@ -55,7 +55,7 @@ export const createAuthenticatedClient = (walletAddress) => {
     return client;
 };
 
-export { supabase };
+export { supabase, cleanWallet };
 
 // ============================================
 // USAGE EXAMPLES
