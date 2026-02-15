@@ -121,7 +121,7 @@ function TaskCard({ taskId, userStats, refetchStats }) {
 export function TasksPage() {
     const { address, isConnected } = useAccount();
     const { totalTasks } = useAllTasks();
-    const { userPoints, userTier, totalTasksCompleted, refetch } = usePoints();
+    const { userPoints, userTier, rankName, totalTasksCompleted, refetch } = usePoints();
     const taskIds = Array.from({ length: totalTasks }, (_, i) => i);
 
     return (
