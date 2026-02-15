@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sparkles, Shield } from 'lucide-react';
@@ -16,21 +16,9 @@ export function Header() {
   const { disconnect } = useDisconnect();
   const { isAdmin: isSBTAdmin } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
-  const hasRedirected = useRef(false);
 
-  useEffect(() => {
-    // Only redirect when status changes from false -> true
-    // AND user is on the home page (to avoid redirect loops or unwanted jumps)
-    if (isConnected && !hasRedirected.current && location.pathname === '/') {
-      navigate('/profile');
-      hasRedirected.current = true;
-    }
 
-    // Reset if disconnected so they can be redirected again next time they connect
-    if (!isConnected) {
-      hasRedirected.current = false;
-    }
-  }, [isConnected, navigate, location.pathname]);
+
 
   const isAdmin = useMemo(() => {
     if (!address) return isSBTAdmin || isCMSAdmin || canEditCMS;
