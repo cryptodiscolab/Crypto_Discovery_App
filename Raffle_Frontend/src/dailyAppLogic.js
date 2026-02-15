@@ -98,7 +98,7 @@ export async function addXP(fid, activityKey, userAddress) {
 
         if (uError && uError.code !== 'PGRST116') throw uError;
 
-        const currentXP = user?.xp || 0;
+        const currentXP = user?.total_xp || 0;
         const currentTier = user?.tier || 1;
         const newTotalXP = currentXP + xp;
 
@@ -119,7 +119,7 @@ export async function addXP(fid, activityKey, userAddress) {
             .from('user_profiles')
             .upsert({
                 fid: fid,
-                xp: newTotalXP,
+                total_xp: newTotalXP,
                 tier: newTier,
                 last_seen_at: new Date().toISOString()
             }, { onConflict: 'fid' });
@@ -212,7 +212,7 @@ export async function getUserStatsByFid(fid) {
             .single();
 
         if (error && error.code !== 'PGRST116') throw error;
-        return data || { xp: 0, tier: 1, last_seen_at: null };
+        return data || { total_xp: 0, tier: 1, last_seen_at: null };
     } catch (err) {
         console.error('[User Stats] Error:', err);
         return null;

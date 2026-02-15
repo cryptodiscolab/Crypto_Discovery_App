@@ -36,12 +36,12 @@ export function PointsProvider({ children }) {
             // Priority: Fetch from 'v_user_full_profile' (The Consolidated View)
             const { data, error } = await supabase
                 .from('v_user_full_profile')
-                .select('xp, tier, rank_name')
+                .select('total_xp, tier, rank_name')
                 .eq('wallet_address', address.toLowerCase())
                 .single();
 
             if (data) {
-                setUserPoints(BigInt(data.xp || 0));
+                setUserPoints(BigInt(data.total_xp || 0));
                 setUserTier(data.tier || 1);
                 setRankName(data.rank_name || 'Rookie');
             }

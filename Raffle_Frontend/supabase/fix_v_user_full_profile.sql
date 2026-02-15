@@ -14,16 +14,25 @@ WITH all_wallets AS (
 )
 SELECT 
     w.w_address as wallet_address,
+    p.fid,
+    COALESCE(p.farcaster_username, p.display_name, '') as username,
     COALESCE(
         NULLIF(p.display_name, ''), 
-        ens.full_name
+        ens.full_name,
+        '0x' || substring(w.w_address from 3 for 4) || '...' || substring(w.w_address from length(w.w_address)-3)
     ) as display_name, 
     p.bio,
     p.pfp_url,
     COALESCE(p.neynar_score, 0) as neynar_score,
-    COALESCE(up.points, 0) as points,
-    COALESCE(up.tier, 1) as tier,
     COALESCE(up.total_xp, 0) as total_xp,
+    COALESCE(up.tier, 1) as tier,
+    -- Dynamic Rank Name based on total_xp
+    CASE 
+        WHEN COALESCE(up.total_xp, 0) >= 10000 THEN 'Gold'
+        WHEN COALESCE(up.total_xp, 0) >= 5000 THEN 'Silver'
+        WHEN COALESCE(up.total_xp, 0) >= 1000 THEN 'Bronze'
+        ELSE 'Rookie'
+    END as rank_name,
     ens.full_name as ens_name,
     COALESCE(p.updated_at, up.created_at, ens.created_at) as updated_at
 FROM all_wallets w

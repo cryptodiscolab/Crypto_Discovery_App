@@ -71,7 +71,7 @@ export default function ProfilePage() {
         verifications: data.verifications || [],
         powerBadge: data.power_badge || false,
         activeStatus: data.active_status || 'active',
-        xp: data.xp || 0,
+        total_xp: data.total_xp || 0,
         rankName: data.rank_name || 'Rookie'
       });
     } else {
@@ -320,7 +320,7 @@ export default function ProfilePage() {
               <div className="bg-black/30 p-4 rounded-xl border border-gray-800/50">
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-xs text-gray-400 font-bold uppercase">Total XP Balance</span>
-                  <span className="text-2xl font-black text-yellow-500">{Number(profileData.xp).toLocaleString()}</span>
+                  <span className="text-2xl font-black text-yellow-500">{Number(profileData.total_xp).toLocaleString()}</span>
                 </div>
                 {/* Visual progress bar could be added here if we had max_xp info */}
               </div>
