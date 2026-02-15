@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Database, Eye, EyeOff, CheckCircle, Edit3, AlertTriangle, Save, RefreshCw, XCircle } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { useCMS } from '../../hooks/useCMS';
+import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
+import { Upload, ImageIcon, Trash2 } from 'lucide-react';
 
 export default function AdminCMSContent() {
     const { featureCards, updateFeatureCards, refetchAll } = useCMS();
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [cards, setCards] = useState([]);
 
     const emptyForm = {
@@ -84,8 +87,60 @@ export default function AdminCMSContent() {
         }
     };
 
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validation
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            toast.error("Format file tidak didukung! (Gunakan JPG, PNG, atau WEBP)");
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error("File terlalu besar! Maksimal 2MB.");
+            return;
+        }
+
+        setIsUploading(true);
+        const toastId = toast.loading("Uploading image...");
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}.${fileExt}`;
+            const filePath = `cms/feature-cards/${fileName}`;
+
+            // Upload to Supabase Storage (Assumes 'assets' bucket exists)
+            const { data, error: uploadError } = await supabase.storage
+                .from('assets')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('assets')
+                .getPublicUrl(filePath);
+
+            setCardForm(prev => ({ ...prev, icon: publicUrl }));
+            toast.success("Image uploaded successfully!", { id: toastId });
+        } catch (err) {
+            console.error('[Upload Error]', err);
+            toast.error("Upload failed: " + err.message, { id: toastId });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     // Helper to render icon preview
     const renderIconPreview = (iconName) => {
+        if (iconName && iconName.startsWith('http')) {
+            return (
+                <div className="w-5 h-5 rounded overflow-hidden">
+                    <img src={iconName} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+            );
+        }
         const IconComponent = Icons[iconName] || Icons.HelpCircle;
         return <IconComponent className="w-5 h-5 text-indigo-400" />;
     };
@@ -120,16 +175,47 @@ export default function AdminCMSContent() {
                         />
                     </div>
                     <div>
-                        <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Icon (Lucide Name)</label>
-                        <div className="relative">
-                            <input
-                                value={cardForm.icon}
-                                onChange={(e) => setCardForm({ ...cardForm, icon: e.target.value })}
-                                className="w-full bg-[#0a0a0c] border border-white/5 p-3 pl-12 rounded-xl text-white text-sm focus:border-indigo-500/50 outline-none"
-                                placeholder="e.g. Shield, Zap, Star"
-                            />
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                                {renderIconPreview(cardForm.icon)}
+                        <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                            Card Icon
+                            <span className="text-[7px] text-slate-600 ml-2">(Max 2MB | JPG, PNG, WEBP)</span>
+                        </label>
+                        <div className="space-y-3">
+                            {/* Icon Name Input */}
+                            <div className="relative">
+                                <input
+                                    value={cardForm.icon && cardForm.icon.startsWith('http') ? 'Custom Image Uploaded' : cardForm.icon}
+                                    onChange={(e) => setCardForm({ ...cardForm, icon: e.target.value })}
+                                    className="w-full bg-[#0a0a0c] border border-white/5 p-3 pl-12 rounded-xl text-white text-sm focus:border-indigo-500/50 outline-none"
+                                    placeholder="Enter Lucide name (e.g. Shield) or upload below"
+                                    disabled={cardForm.icon && cardForm.icon.startsWith('http')}
+                                />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                    {renderIconPreview(cardForm.icon)}
+                                </div>
+                            </div>
+
+                            {/* Image Upload Button */}
+                            <div className="flex gap-2">
+                                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all ${isUploading ? 'bg-slate-900 border-slate-800 text-slate-700 pointer-events-none' : 'bg-[#0a0a0c] border-white/10 text-slate-400 hover:border-indigo-500/50 hover:text-indigo-400'}`}>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        onChange={handleImageUpload}
+                                        disabled={isUploading}
+                                    />
+                                    {isUploading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                                    {isUploading ? 'Uploading...' : 'Upload Image'}
+                                </label>
+                                {cardForm.icon && cardForm.icon.startsWith('http') && (
+                                    <button
+                                        onClick={() => setCardForm({ ...cardForm, icon: 'Shield' })}
+                                        className="p-3 bg-red-600/10 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-600/20 transition-all"
+                                        title="Remove Image"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -170,12 +256,12 @@ export default function AdminCMSContent() {
                                     key={color}
                                     onClick={() => setCardForm({ ...cardForm, color })}
                                     className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${color === 'indigo' ? 'bg-indigo-500' :
-                                            color === 'purple' ? 'bg-purple-500' :
-                                                color === 'blue' ? 'bg-blue-500' :
-                                                    color === 'emerald' ? 'bg-emerald-500' :
-                                                        color === 'yellow' ? 'bg-yellow-500' :
-                                                            color === 'pink' ? 'bg-pink-500' :
-                                                                'bg-red-500'
+                                        color === 'purple' ? 'bg-purple-500' :
+                                            color === 'blue' ? 'bg-blue-500' :
+                                                color === 'emerald' ? 'bg-emerald-500' :
+                                                    color === 'yellow' ? 'bg-yellow-500' :
+                                                        color === 'pink' ? 'bg-pink-500' :
+                                                            'bg-red-500'
                                         } ${cardForm.color === color ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:border-white/20'
                                         }`}
                                     title={color.charAt(0).toUpperCase() + color.slice(1)}

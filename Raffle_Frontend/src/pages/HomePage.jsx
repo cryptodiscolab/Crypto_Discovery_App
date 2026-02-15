@@ -148,12 +148,18 @@ export function HomePage() {
             displayCards
               .filter(card => card.visible !== false) // Only show visible cards
               .map((card, index) => {
+                const isCustomImage = card.icon && typeof card.icon === 'string' && card.icon.startsWith('http');
                 const IconComponent = iconMap[card.icon] || Sparkles;
+
                 return (
                   <Link key={index} to={card.link || '/'}>
                     <div className={`bg-[#161B22] border border-white/${card.borderOpacity || '10'} rounded-2xl p-6 shadow-xl hover:border-indigo-500/50 transition-all hover:-translate-y-1 cursor-pointer h-full`}>
-                      <div className={`w-12 h-12 bg-${card.color || 'indigo'}-500/10 rounded-xl flex items-center justify-center mb-4`}>
-                        <IconComponent className={`w-6 h-6 text-${card.color || 'indigo'}-400`} />
+                      <div className={`w-12 h-12 bg-${card.color || 'indigo'}-500/10 rounded-xl flex items-center justify-center mb-4 overflow-hidden`}>
+                        {isCustomImage ? (
+                          <img src={card.icon} alt={card.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <IconComponent className={`w-6 h-6 text-${card.color || 'indigo'}-400`} />
+                        )}
                       </div>
                       <h3 className="text-xl font-bold text-white mb-2">{String(card.title || '')}</h3>
                       <p className="text-slate-400 text-sm mb-4">
