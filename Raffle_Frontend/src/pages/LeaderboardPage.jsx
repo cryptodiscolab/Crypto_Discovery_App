@@ -25,7 +25,16 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
   };
 
   const style = tierStyles[user.rank_name] || { color: 'text-blue-400', bg: 'bg-blue-500/10' };
-  const displayName = user.display_name || user.username || formatAddress(user.wallet_address);
+  const getDisplayAddress = (name, addr) => {
+    if (name && name.startsWith('0x') && name.length > 20) {
+      return formatAddress(name);
+    }
+    if (name) return name;
+    if (user.username) return user.username;
+    return formatAddress(addr);
+  };
+
+  const displayName = getDisplayAddress(user.display_name, user.wallet_address);
 
   return (
     <div
@@ -37,7 +46,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
         <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-12 bg-yellow-500 rounded-r-full shadow-[0_0_10px_rgba(234,179,8,0.8)]" />
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 min-w-0 flex-1">
         <div className={`w-12 h-12 min-w-[3rem] flex items-center justify-center font-black text-lg rounded-xl shadow-lg border border-white/10
           ${rank === 1 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-black shadow-yellow-500/20' :
             rank === 2 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-black shadow-slate-300/20' :
@@ -57,7 +66,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
               </span>
               {isCurrentUser && <span className="text-[10px] font-bold text-yellow-500 shrink-0">(YOU)</span>}
             </div>
-            <span className={`font-mono text-base truncate block ${isCurrentUser ? 'text-white font-bold' : 'text-slate-300'}`}>
+            <span className={`font-mono text-sm md:text-base truncate block ${isCurrentUser ? 'text-white font-bold' : 'text-slate-300'}`}>
               {displayName}
             </span>
           </div>

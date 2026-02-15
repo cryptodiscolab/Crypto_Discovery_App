@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut, Copy, Check
 } from 'lucide-react';
 import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
@@ -32,6 +32,8 @@ export default function ProfilePage() {
     xp: 0,
     rankName: 'Rookie'
   });
+
+  const [copied, setCopied] = useState(false);
 
   // Load data awal dari Supabase saat component mount
   useEffect(() => {
@@ -137,6 +139,14 @@ export default function ProfilePage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCopyAddress = () => {
+    if (!address) return;
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    toast.success("Wallet address copied!", { duration: 2000 });
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -247,9 +257,20 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-bold text-white truncate">{profileData.displayName || 'No Name Set'}</h2>
                 )}
 
-                <div className="flex items-center gap-2 text-gray-400 text-sm mt-1">
+                <div
+                  className="flex items-center gap-2 text-gray-400 text-sm mt-1 cursor-pointer hover:text-white transition-colors group/address"
+                  onClick={handleCopyAddress}
+                  title="Click to copy address"
+                >
                   <AtSign size={14} />
-                  <span>{profileData.username || address?.slice(0, 6) + '...' + address?.slice(-4)}</span>
+                  <span className="font-mono">
+                    {profileData.username || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No Address')}
+                  </span>
+                  {copied ? (
+                    <Check size={14} className="text-green-500" />
+                  ) : (
+                    <Copy size={14} className="opacity-0 group-hover/address:opacity-100 transition-opacity" />
+                  )}
                 </div>
               </div>
             </div>
