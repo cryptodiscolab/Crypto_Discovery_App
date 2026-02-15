@@ -226,7 +226,11 @@ export function useCMS() {
                         description: String(item.description || ""),
                         icon: String(item.icon || "Sparkles"),
                         link: String(item.link || "#"),
-                        active: Boolean(item.active)
+                        active: Boolean(item.active),
+                        visible: item.visible !== undefined ? Boolean(item.visible) : true,
+                        color: String(item.color || "indigo"),
+                        linkText: String(item.linkText || ""),
+                        badge: String(item.badge || "")
                     }));
                 }
             }
