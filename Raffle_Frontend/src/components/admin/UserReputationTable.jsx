@@ -131,8 +131,11 @@ export default function UserReputationTable() {
             }
             setTotalCount(count || 0);
         } catch (e) {
+            console.group("UserReputationTable Fetch Error");
             console.error('[Extreme Mobile Audit] Failure:', e.message);
-            toast.error("Pipeline sync failed.");
+            console.debug('Full error context:', e);
+            console.groupEnd();
+            toast.error(`Pipeline sync failed: ${e.message || 'Network error'}`);
         } finally {
             setLoading(false);
         }

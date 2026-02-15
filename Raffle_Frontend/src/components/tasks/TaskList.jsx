@@ -67,8 +67,11 @@ export function TaskList() {
             setTasks(tasksData || []);
             setUserClaims(claimsSet);
         } catch (error) {
-            console.error('Error fetching tasks:', error);
-            toast.error('Failed to load daily tasks');
+            console.group("TaskList Fetch Error");
+            console.error('Error fetching tasks:', error.message);
+            console.debug('Full error context:', error);
+            console.groupEnd();
+            toast.error(`Failed to load daily tasks: ${error.message || 'Network error'}`);
         } finally {
             setIsLoading(false);
         }
