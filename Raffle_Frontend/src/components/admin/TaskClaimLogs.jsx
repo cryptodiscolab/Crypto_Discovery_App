@@ -22,10 +22,11 @@ export default function TaskClaimLogs() {
                     id,
                     claimed_at,
                     wallet_address,
-                    task:daily_tasks(id, title, xp_reward)
+                    task:daily_tasks(id, description, xp_reward)
                 `, { count: 'exact' })
                 .order('claimed_at', { ascending: false })
                 .range(rangeStart, rangeStart + limit - 1);
+
 
             if (error) throw error;
 
@@ -79,8 +80,9 @@ export default function TaskClaimLogs() {
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
                                         <p className="text-[11px] font-black text-white uppercase truncate">
-                                            {log.task?.title || 'Unknown Task'}
+                                            {log.task?.description || 'Unknown Task'}
                                         </p>
+
                                         <div className="flex items-center gap-2 mt-1">
                                             <div className="flex items-center gap-1">
                                                 <User className="w-2.5 h-2.5 text-slate-500" />
