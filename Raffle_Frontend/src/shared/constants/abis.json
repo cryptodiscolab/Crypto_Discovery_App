@@ -117,6 +117,141 @@
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "_json",
+                    "type": "string"
+                }
+            ],
+            "name": "updateNews",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "_json",
+                    "type": "string"
+                }
+            ],
+            "name": "updateFeatureCards",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "_announcementJson",
+                    "type": "string"
+                },
+                {
+                    "internalType": "string",
+                    "name": "_newsJson",
+                    "type": "string"
+                },
+                {
+                    "internalType": "string",
+                    "name": "_cardsJson",
+                    "type": "string"
+                }
+            ],
+            "name": "batchUpdate",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_operator",
+                    "type": "address"
+                }
+            ],
+            "name": "grantOperator",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_operator",
+                    "type": "address"
+                }
+            ],
+            "name": "revokeOperator",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_user",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_featureId",
+                    "type": "uint256"
+                }
+            ],
+            "name": "grantPrivilege",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_user",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_featureId",
+                    "type": "uint256"
+                }
+            ],
+            "name": "revokePrivilege",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "user",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "role",
+                    "type": "uint256"
+                }
+            ],
+            "name": "hasAccess",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
         }
     ],
     "RAFFLE_ABI": [
