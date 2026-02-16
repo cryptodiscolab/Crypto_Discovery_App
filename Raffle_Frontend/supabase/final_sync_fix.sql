@@ -1,15 +1,28 @@
 -- ========================================================
--- CRYPTO DISCO APP - USER DATA CONSOLIDATION & SYNC
+-- CONSOLIDATED FIX: RESOLVE UNIQUE CONSTRAINT ERRORS
 -- ========================================================
--- Purpose: Sync user_profiles (Source of Truth) to legacy tables
--- (profiles & user_stats) to prevent crashes while cleaning up redundancy.
 
--- 1. Create Sync Trigger Function
+-- 1. Ensure 'user_stats' allows NULL FID (Legacy support for wallet-only users)
+ALTER TABLE public.user_stats ALTER COLUMN fid DROP NOT NULL;
+
+-- 2. ADD UNIQUE CONSTRAINT TO 'user_stats' (Crucial for ON CONFLICT to work)
+-- This fixes the "no unique or exclusion constraint matching" error.
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'user_stats_wallet_address_key' 
+        AND conrelid = 'public.user_stats'::regclass
+    ) THEN
+        ALTER TABLE public.user_stats ADD CONSTRAINT user_stats_wallet_address_key UNIQUE (wallet_address);
+    END IF;
+END $$;
+
+-- 3. Define the Robust Sync Function
 CREATE OR REPLACE FUNCTION public.fn_sync_user_data_propagation()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- SYNC TO: public.profiles
-    -- Profiles uses 'address' instead of 'wallet_address'
+    -- SYNC TO: public.profiles (Legacy Table 1)
     INSERT INTO public.profiles (address, display_name, bio, pfp_url, neynar_score, updated_at)
     VALUES (
         NEW.wallet_address,
@@ -26,8 +39,8 @@ BEGIN
         neynar_score = EXCLUDED.neynar_score,
         updated_at = NOW();
 
-    -- SYNC TO: public.user_stats
-    -- user_stats uses 'wallet_address' and 'total_xp'
+    -- SYNC TO: public.user_stats (Legacy Table 2)
+    -- Anchors on wallet_address now that it has a UNIQUE constraint
     INSERT INTO public.user_stats (wallet_address, fid, total_xp, current_level, last_login_at, created_at)
     VALUES (
         NEW.wallet_address,
@@ -43,11 +56,11 @@ BEGIN
         current_level = EXCLUDED.current_level,
         last_login_at = EXCLUDED.last_login_at;
 
-    -- LOG AUDIT: Track internal sync
+    -- Standard Audit Log
     INSERT INTO public.admin_audit_logs (admin_address, action, details)
     VALUES (
         'SYSTEM_SYNC',
-        'DATA_CONSOLIDATION',
+        'FIXED_DATA_CONSOLIDATION',
         jsonb_build_object(
             'target_wallet', NEW.wallet_address,
             'fid', NEW.fid,
@@ -59,26 +72,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 2. Apply Trigger to Source of Truth (user_profiles)
+-- 4. Re-apply Trigger to user_profiles
 DROP TRIGGER IF EXISTS trg_sync_user_data_on_update ON public.user_profiles;
 CREATE TRIGGER trg_sync_user_data_on_update
     AFTER INSERT OR UPDATE ON public.user_profiles
     FOR EACH ROW
     EXECUTE FUNCTION public.fn_sync_user_data_propagation();
-
--- 3. Initial One-Time Sync (Safe: Won't overwrite if data is newer elsewhere, but sets baseline)
--- Note: Run this manually if you want to sync existing data immediately.
-/*
-INSERT INTO public.profiles (address, display_name, bio, pfp_url, neynar_score)
-SELECT wallet_address, display_name, bio, pfp_url, neynar_score FROM public.user_profiles
-ON CONFLICT (address) DO NOTHING;
-
-INSERT INTO public.user_stats (wallet_address, fid, total_xp, current_level)
-SELECT wallet_address, fid, total_xp, tier FROM public.user_profiles
-ON CONFLICT (fid) DO NOTHING;
-*/
-
--- PRE-FLIGHT CHECK
--- ✅ Consistency: user_profiles is now the master source.
--- ✅ Backward Compatibility: profiles & user_stats stay updated.
--- ✅ Auditability: SYSTEM_SYNC entries added to admin_audit_logs.
