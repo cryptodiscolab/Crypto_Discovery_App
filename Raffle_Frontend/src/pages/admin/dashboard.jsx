@@ -62,11 +62,11 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* Tab Navigation */}
-                <div className="flex bg-[#121214] p-1 rounded-xl border border-white/5 mb-6">
+                {/* Tab Navigation - Scrollable on Mobile */}
+                <div className="flex overflow-x-auto scrollbar-hide bg-[#121214] p-1 rounded-xl border border-white/5 mb-6 gap-1 no-scrollbar">
                     <button
                         onClick={() => setActiveTab('reputation')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'reputation'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'reputation'
                             ? 'bg-[#0a0a0c] text-white shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -76,7 +76,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('sbt')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'sbt'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'sbt'
                             ? 'bg-[#0a0a0c] text-indigo-400 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('pool')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'pool'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'pool'
                             ? 'bg-[#0a0a0c] text-indigo-400 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('raffles')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'raffles'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'raffles'
                             ? 'bg-[#0a0a0c] text-blue-400 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -106,7 +106,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('tasks')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'tasks'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'tasks'
                             ? 'bg-[#0a0a0c] text-yellow-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -116,7 +116,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('announcement')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'announcement'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'announcement'
                             ? 'bg-[#0a0a0c] text-blue-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -126,7 +126,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('news')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'news'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'news'
                             ? 'bg-[#0a0a0c] text-green-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -136,7 +136,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('system')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
                             ? 'bg-[#0a0a0c] text-red-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
