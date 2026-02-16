@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 import { getSBTThresholds, updateSBTThreshold } from '../dailyAppLogic';
 import { cleanWallet } from '../utils/cleanWallet';
 
-export function AdminPage() {
+export function AdminPage({ initialTab = 'pool' }) {
     const navigate = useNavigate();
     const { address, isConnected } = useAccount();
     const { totalPoolBalance, contractOwner, distributePool, updateTier, withdrawTreasury, refetchAll } = useSBT();
@@ -29,9 +29,14 @@ export function AdminPage() {
         updatePoolSettings
     } = useCMS();
 
-    const [activeTab, setActiveTab] = useState('pool');
+    const [activeTab, setActiveTab] = useState(initialTab);
     const [hasManagerAccess, setHasManagerAccess] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    // Sync activeTab when initialTab changes
+    useEffect(() => {
+        if (initialTab) setActiveTab(initialTab);
+    }, [initialTab]);
 
     // Hardcoded admin from env for bypass
     const hardcodedAdmin = import.meta.env.VITE_ADMIN_ADDRESS;

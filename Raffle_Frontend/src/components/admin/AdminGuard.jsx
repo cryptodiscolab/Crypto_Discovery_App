@@ -4,12 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
 
 // ALLOWED_ADMINS Addresses
-// 1. Smart Wallet (Protocol)
-// 2. Deployer Wallet (MetaMask)
+// 1. Master Admin (Lead Architect authority from .cursorrules)
+// 2. Secondary Authorized Admin Wallet
 const ALLOWED_ADMINS = [
-    "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase(),
+    "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase(), // MASTER_ADMIN
     "0x455DF75735d2a18c26f0AfDefa93217B60369fe5".toLowerCase()
 ];
+
 
 /**
  * AdminGuard: BUILD-READY Security Gate.

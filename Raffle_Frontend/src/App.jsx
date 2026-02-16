@@ -65,11 +65,9 @@ function App() {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/profile/:userAddress" element={<ProfilePage />} />
                     <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-                    <Route path="/admin/legacy" element={<AdminGuard><AdminPage /></AdminGuard>} />
-
-                    <Route path="/create" element={<AdminGuard><CreateRafflePage /></AdminGuard>} />
                   </Route>
                 </Routes>
+
               </Suspense>
             </main>
             <BottomNav />

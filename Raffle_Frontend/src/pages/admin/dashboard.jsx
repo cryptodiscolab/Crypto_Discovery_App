@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap, Settings, ClipboardList } from 'lucide-react';
+import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap, Settings, ClipboardList, Landmark, Edit3, Newspaper } from 'lucide-react';
+
 
 import AdminGuard from '../../components/admin/AdminGuard';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
@@ -16,10 +17,17 @@ const TaskManager = lazy(() => import('../../components/admin/TaskManager').then
 const TaskClaimLogs = lazy(() => import('../../components/admin/TaskClaimLogs'));
 const AdminSystemSettings = lazy(() => import('../../components/admin/AdminSystemSettings'));
 const AdminCMSContent = lazy(() => import('../../components/admin/AdminCMSContent'));
+const WhitelistManagerTab = lazy(() => import('../../components/admin/WhitelistManagerTab').then(m => ({ default: m.WhitelistManagerTab })));
+const RaffleManagerTab = lazy(() => import('../../components/admin/RaffleManagerTab').then(m => ({ default: m.RaffleManagerTab })));
+
+// Unified Legacy Components (to be moved/merged properly later)
+import { AdminPage } from '../AdminPage'; // Using internal tab sub-components if exported
+// Note: For now, we will wrap the legacy components if they are not exported as standalone
 
 
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt' | 'tasks' | 'logs' | 'system'
+    const [activeTab, setActiveTab] = React.useState('reputation'); // 'reputation' | 'sbt' | 'tasks' | 'logs' | 'system' | 'pool' | 'raffles' | 'announcement' | 'news'
+
 
 
     return (
@@ -77,6 +85,26 @@ const AdminDashboard = () => {
                         SBT
                     </button>
                     <button
+                        onClick={() => setActiveTab('pool')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'pool'
+                            ? 'bg-[#0a0a0c] text-indigo-400 shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
+                            }`}
+                    >
+                        <Landmark className="w-3.5 h-3.5" />
+                        Pool
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('raffles')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'raffles'
+                            ? 'bg-[#0a0a0c] text-blue-400 shadow-lg border border-white/5'
+                            : 'text-slate-600 hover:text-slate-400'
+                            }`}
+                    >
+                        <Trophy className="w-3.5 h-3.5" />
+                        Raffles
+                    </button>
+                    <button
                         onClick={() => setActiveTab('tasks')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'tasks'
                             ? 'bg-[#0a0a0c] text-yellow-500 shadow-lg border border-white/5'
@@ -87,38 +115,37 @@ const AdminDashboard = () => {
                         Tasks
                     </button>
                     <button
-                        onClick={() => setActiveTab('logs')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'logs'
-                            ? 'bg-[#0a0a0c] text-blue-400 shadow-lg border border-white/5'
+                        onClick={() => setActiveTab('announcement')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'announcement'
+                            ? 'bg-[#0a0a0c] text-blue-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
                     >
-                        <ClipboardList className="w-3.5 h-3.5" />
-                        Logs
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Announce
                     </button>
-
                     <button
-                        onClick={() => setActiveTab('cms')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'cms'
-                            ? 'bg-[#0a0a0c] text-indigo-500 shadow-lg border border-white/5'
+                        onClick={() => setActiveTab('news')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'news'
+                            ? 'bg-[#0a0a0c] text-green-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
                     >
-                        <LayoutList className="w-3.5 h-3.5" />
-                        CMS
+                        <Newspaper className="w-3.5 h-3.5" />
+                        News
                     </button>
-
                     <button
                         onClick={() => setActiveTab('system')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
-                            ? 'bg-[#0a0a0c] text-emerald-500 shadow-lg border border-white/5'
+                            ? 'bg-[#0a0a0c] text-red-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
                     >
                         <Settings className="w-3.5 h-3.5" />
-                        System
+                        Control
                     </button>
                 </div>
+
 
                 {/* Suspense Boundary with Minimalist Placeholder */}
                 <Suspense fallback={
@@ -138,9 +165,13 @@ const AdminDashboard = () => {
                             <TaskClaimLogs />
                         ) : activeTab === 'cms' ? (
                             <AdminCMSContent />
-                        ) : (
+                        ) : activeTab === 'system' ? (
                             <AdminSystemSettings />
+                        ) : (
+                            /* Fallback to legacy components for missing tabs */
+                            <AdminPage initialTab={activeTab} />
                         )}
+
 
                     </ErrorBoundary>
                 </Suspense>
