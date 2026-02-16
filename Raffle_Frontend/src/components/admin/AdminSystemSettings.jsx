@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { isAddress } from 'viem';
 import { cleanWallet } from '../../utils/cleanWallet';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { supabase } from '../../lib/supabaseClient';
 import {
     Settings,
@@ -26,6 +26,7 @@ import toast from 'react-hot-toast';
  */
 export default function AdminSystemSettings() {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const [pointSettings, setPointSettings] = useState([]);
     const [sbtThresholds, setSbtThresholds] = useState([]);
     const [eligibleUsers, setEligibleUsers] = useState([]);
@@ -70,17 +71,7 @@ export default function AdminSystemSettings() {
         }
     };
 
-    const logAdminAction = async (action, details) => {
-        try {
-            await supabase.from('admin_audit_logs').insert([{
-                admin_address: address,
-                action: action,
-                details: details
-            }]);
-        } catch (e) {
-            console.error('Logging Error:', e);
-        }
-    };
+    // logAdminAction is now handled by the Backend API to ensure audit integrity
 
     const handlePointChange = (id, field, newValue) => {
         setPointSettings(prev =>
@@ -112,14 +103,15 @@ export default function AdminSystemSettings() {
 
     const savePoints = async () => {
         setSaving(true);
+        const tid = toast.loading('Requesting signature for Point Sync...');
         try {
             const cleanData = pointSettings
                 .filter(item => item.activity_key && item.activity_key.trim() !== '')
                 .map(item => {
                     return {
-                        ...item,
                         activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
                         points_value: parseInt(item.points_value) || 0,
+                        platform: item.platform || 'farcaster',
                         action_type: item.action_type || 'Follow',
                         is_active: item.is_active === null ? true : item.is_active,
                         is_hidden: item.is_hidden || false,
@@ -127,26 +119,40 @@ export default function AdminSystemSettings() {
                     };
                 });
 
-            const dataToSave = cleanData.map(({ id, ...rest }) => rest);
-
-            if (dataToSave.length === 0) {
+            if (cleanData.length === 0) {
                 throw new Error("Tidak ada data valid untuk disimpan.");
             }
 
-            const keys = dataToSave.map(s => s.activity_key);
+            const keys = cleanData.map(s => s.activity_key);
             if (new Set(keys).size !== keys.length) {
                 throw new Error("Activity Key harus unik.");
             }
 
-            const { error } = await supabase.from('point_settings').upsert(dataToSave, { onConflict: 'activity_key' });
-            if (error) throw error;
+            // 1. Prepare and Sign Message
+            const timestamp = new Date().toISOString();
+            const message = `Update Point Settings\nAdmin: ${address}\nTime: ${timestamp}\nItems: ${cleanData.length}`;
+            const signature = await signMessageAsync({ message });
 
-            await logAdminAction('UPDATE_POINTS', { pointSettings: dataToSave });
-            toast.success('SYNC BERHASIL: Point Settings terupdate di database!');
+            // 2. Send to Secure API
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'UPDATE_POINTS',
+                    payload: cleanData
+                })
+            });
 
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Failed to update points");
+
+            toast.success('SYNC BERHASIL: Point Settings terupdate via API!', { id: tid });
             await fetchPointSettings();
         } catch (error) {
-            toast.error('Gagal menyimpan poin: ' + error.message);
+            toast.error('Gagal menyimpan poin: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }
@@ -182,6 +188,7 @@ export default function AdminSystemSettings() {
 
     const saveThresholds = async () => {
         setSaving(true);
+        const tid = toast.loading('Requesting signature for SBT Sync...');
         try {
             const levels = sbtThresholds.map(s => s.level);
             if (new Set(levels).size !== levels.length) {
@@ -190,17 +197,31 @@ export default function AdminSystemSettings() {
 
             const dataToSave = sbtThresholds.map(({ id, ...rest }) => rest);
 
-            const { error: delError } = await supabase.from('sbt_thresholds').delete().neq('level', 0);
-            if (delError) throw delError;
+            // 1. Prepare and Sign Message
+            const timestamp = new Date().toISOString();
+            const message = `Update SBT Thresholds\nAdmin: ${address}\nTime: ${timestamp}\nLevels: ${dataToSave.length}`;
+            const signature = await signMessageAsync({ message });
 
-            const { error: insError } = await supabase.from('sbt_thresholds').insert(dataToSave);
-            if (insError) throw insError;
+            // 2. Send to Secure API
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'UPDATE_THRESHOLDS',
+                    payload: dataToSave
+                })
+            });
 
-            await logAdminAction('UPDATE_SBT_LEVELS', { sbtThresholds });
-            toast.success('SYNC BERHASIL: SBT Thresholds terupdate secara dinamis!');
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Failed to update thresholds");
+
+            toast.success('SYNC BERHASIL: SBT Thresholds terupdate via API!', { id: tid });
             fetchPointSettings();
         } catch (error) {
-            toast.error('Gagal menyimpan level: ' + error.message);
+            toast.error('Gagal menyimpan level: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }
@@ -212,20 +233,41 @@ export default function AdminSystemSettings() {
             return;
         }
         setSaving(true);
+        const tid = toast.loading('Requesting signature for ENS Issue...');
         const fullName = `${label.toLowerCase()}.cryptodiscovery.eth`;
         try {
-            const { error } = await supabase.from('ens_subdomains').insert([{
+            const payload = {
                 fid: user.fid,
                 wallet_address: user.wallet_address,
                 label: label.toLowerCase(),
                 full_name: fullName
-            }]);
-            if (error) throw error;
-            await logAdminAction('ISSUE_ENS', { fid: user.fid, label, fullName });
-            toast.success(`Subname ${fullName} berhasil diterbitkan di database!`);
+            };
+
+            // 1. Prepare and Sign Message
+            const timestamp = new Date().toISOString();
+            const message = `Issue ENS Subname\nTarget: ${fullName}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            // 2. Send to Secure API
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'ISSUE_ENS',
+                    payload: payload
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Failed to issue subname");
+
+            toast.success(`Subname ${fullName} berhasil diterbitkan via API!`, { id: tid });
             fetchPointSettings();
         } catch (error) {
-            toast.error('Gagal menerbitkan subname: ' + error.message);
+            toast.error('Gagal menerbitkan subname: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }

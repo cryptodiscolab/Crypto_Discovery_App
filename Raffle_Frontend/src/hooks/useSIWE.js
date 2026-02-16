@@ -105,10 +105,8 @@ ${resourceLines}`;
             localStorage.setItem('crypto_disco_auth_status', JSON.stringify(authStatus));
             setSession(userSession);
 
-            // Ensure User Profile Exists
-            await ensureUserProfile(address);
-
-
+            // Ensure User Profile Exists (SECURE: Pass signature and message)
+            await ensureUserProfile(address, signature, message, fid);
 
             return userSession;
 

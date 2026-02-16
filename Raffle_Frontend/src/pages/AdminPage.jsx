@@ -725,6 +725,7 @@ function TierTab({ onUpdate }) {
     const [isUpdating, setIsUpdating] = useState(false);
     const [thresholds, setThresholds] = useState([]);
     const [isSavingConfig, setIsSavingConfig] = useState(false);
+    const { signMessageAsync } = useSignMessage();
 
     const levels = ["None", "Bronze", "Silver", "Gold"];
 
@@ -755,13 +756,36 @@ function TierTab({ onUpdate }) {
 
     const handleConfigSave = async (id, min_xp) => {
         setIsSavingConfig(true);
-        const tid = toast.loading("Updating threshold...");
+        const tid = toast.loading("Requesting Admin Signature...");
         try {
-            await updateSBTThreshold(id, { min_xp });
+            // 1. Signature for Zero-Trust
+            const timestamp = new Date().toISOString();
+            const message = `Update SBT Threshold: Tier ID ${id}\nNew Min XP: ${min_xp}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            toast.loading("Updating via secure API...", { id: tid });
+
+            // 2. Call Secure API
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action: 'UPDATE_THRESHOLD',
+                    data: { id, min_xp }
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Update failed");
+
             toast.success("Threshold Updated!", { id: tid });
             loadConfig();
         } catch (e) {
-            toast.error(e.message, { id: tid });
+            console.error(e);
+            toast.error(e.message || "Update failed", { id: tid });
         } finally {
             setIsSavingConfig(false);
         }

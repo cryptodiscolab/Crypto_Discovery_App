@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignMessage } from 'wagmi';
 import { V12_ABI } from '../shared/constants/abis';
-import { addXP, rewardReferrer } from '../dailyAppLogic';
+import { awardTaskXP } from '../dailyAppLogic';
+import toast from 'react-hot-toast';
 
 const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || import.meta.env.VITE_CONTRACT_ADDRESS;
-
 
 export function useUserInfo(address) {
     const { data: userInfo, isLoading, refetch } = useReadContract({
@@ -101,11 +101,11 @@ export function useTaskInfo(taskId) {
 
 export function useDoTask() {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
     const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
     const doTask = async (taskId, referrer = "0x0000000000000000000000000000000000000000") => {
-
         const hash = await writeContractAsync({
             address: V12_ADDRESS,
             abi: V12_ABI,
@@ -114,15 +114,16 @@ export function useDoTask() {
         });
 
         if (hash) {
-            // 1. Award Points to User
-            const fid = 1477344; // Context needed
-            addXP(fid, 'task_complete', address);
+            toast.success("Task submitted! Requesting signature for XP rewards...");
+            try {
+                // Secure Awarding Logic
+                const timestamp = new Date().toISOString();
+                const message = `Claim XP for Task Completion\nTask: ${taskId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
+                const signature = await signMessageAsync({ message });
 
-            // 2. Reward Referrer if present
-            if (referrer && referrer !== "0x0000000000000000000000000000000000000000") {
-                // We'd need to find the referrer's FID from their address in a real scenario
-                // For now, signaling the logic
-
+                await awardTaskXP(address, signature, message, taskId, 0); // Reward value handled by backend Activity Key
+            } catch (e) {
+                console.warn("XP Awarding skipped or failed:", e.message);
             }
         }
         return hash;
