@@ -2,32 +2,28 @@ import React, { useMemo } from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, LayoutDashboard, Loader2, RefreshCw } from 'lucide-react';
+import { useCMS } from '../hooks/useCMS';
 
 const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
 export function BottomNav() {
-    const { address, isConnected, isConnecting, isReconnecting } = useAccount();
+    const { address, isConnected } = useAccount();
+    const { isAdmin: isCMSAdmin } = useCMS();
     const location = useLocation();
-    // const location = useLocation(); // Hook removed as it was unused
 
     const isAdmin = useMemo(() => {
+        // First check CMS (Chain/DB/Env)
+        if (isCMSAdmin) return true;
+
         if (!address) return false;
         const currentAddr = address.toLowerCase();
 
-        // Master Admin Bypass
+        // Master Admin Bypass (Hardcoded fallback)
         if (currentAddr === MASTER_ADMIN) return true;
 
-        // Check additional admins from environment
-        const envAdmin = (import.meta as any).env.VITE_ADMIN_ADDRESS || '';
-        const envWallets = (import.meta as any).env.VITE_ADMIN_WALLETS || '';
-        const adminList = `${envAdmin},${envWallets}`
-            .split(',')
-            .map(a => a.trim().toLowerCase())
-            .filter(a => a.startsWith('0x'));
-
-        return adminList.includes(currentAddr);
-    }, [address]);
+        return false;
+    }, [address, isCMSAdmin]);
 
     const navItems = [
         { path: '/', label: 'Home', icon: <Home className="w-6 h-6" /> },
@@ -39,8 +35,8 @@ export function BottomNav() {
     const gridCols = isAdmin ? 'grid-cols-6' : 'grid-cols-5';
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto bg-black/95 backdrop-blur-lg border-t border-white/5 pb-8 pt-4 px-4 shadow-2xl md:hidden">
-            <div className={`grid ${gridCols} items-center justify-items-center gap-4`}>
+        <nav className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto bg-black/95 backdrop-blur-lg border-t border-white/5 pb-8 pt-4 px-2 shadow-2xl md:hidden">
+            <div className={`grid ${gridCols} w-full items-center justify-items-center`}>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
