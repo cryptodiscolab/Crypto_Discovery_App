@@ -9,10 +9,8 @@ export function RoleManagementTab() {
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
 
-    // Mock operators list (in production, read from events or backend)
-    const [operators, setOperators] = useState([
-        { address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', role: 'Admin' },
-    ]);
+    // Operators list (fetched from contract/events)
+    const [operators, setOperators] = useState([]);
 
     const handleGrantOperator = async () => {
         if (!isAddress(operatorAddress)) {

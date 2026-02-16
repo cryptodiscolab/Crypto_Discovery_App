@@ -252,22 +252,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================
--- 6. SAMPLE DATA (Optional - untuk testing)
+-- 6. SAMPLE DATA (Removed for Production)
 -- ============================================
-
--- Insert sample tasks
-INSERT INTO public.daily_tasks (description, xp_reward, task_type) VALUES
-    ('Connect your wallet', 10, 'onetime'),
-    ('Complete your first transaction', 25, 'onetime'),
-    ('Daily check-in', 5, 'daily'),
-    ('Participate in raffle', 50, 'weekly'),
-    ('Invite a friend', 100, 'special')
-ON CONFLICT DO NOTHING;
-
--- Insert sample admin profile
-INSERT INTO public.user_profiles (wallet_address, trust_score, xp) VALUES
-    (LOWER('0x0845204b4b5e5f8aa7a0cfd2c6c6b5e8d4f3e2d1'), 100, 0)
-ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- 7. VERIFICATION QUERIES

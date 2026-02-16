@@ -17,11 +17,8 @@ export function WhitelistManagerTab() {
     const [batchAddresses, setBatchAddresses] = useState('');
     const [batchFeature, setBatchFeature] = useState(FEATURE_IDS.DAILY_CLAIM);
 
-    // Whitelisted users (mock data for now - in production, read from events or backend)
-    const [whitelistedUsers, setWhitelistedUsers] = useState([
-        { address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', featureId: 1, featureName: 'Free Daily Task' },
-        { address: '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199', featureId: 2, featureName: 'Free Raffle Ticket' },
-    ]);
+    // Whitelisted users (fetched from contract/events)
+    const [whitelistedUsers, setWhitelistedUsers] = useState([]);
 
     const handleGrantPrivilege = async () => {
         if (!isAddress(userAddress)) {
