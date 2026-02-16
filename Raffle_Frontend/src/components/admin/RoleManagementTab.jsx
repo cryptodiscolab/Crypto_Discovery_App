@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Shield, UserPlus, UserX, Crown, Wrench, AlertCircle } from 'lucide-react';
+import { useAccount, useSignMessage } from 'wagmi';
 import { useCMS } from '../../hooks/useCMS';
 import toast from 'react-hot-toast';
 import { isAddress } from 'viem';
 
 export function RoleManagementTab() {
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { grantOperator, revokeOperator, showSuccessToast, refetchAll, isAdmin } = useCMS();
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
@@ -22,9 +25,34 @@ export function RoleManagementTab() {
         const tid = toast.loading("Granting operator role...");
 
         try {
+            // 1. Blockchain Transaction
             const hash = await grantOperator(operatorAddress);
-            showSuccessToast("Operator Role Granted!", hash);
-            toast.dismiss(tid);
+            showSuccessToast("Operator Role Granted on Blockchain!", hash);
+
+            // 2. Database Sync (Zero-Trust API)
+            toast.loading("Syncing role to database...", { id: tid });
+            const timestamp = new Date().toISOString();
+            const message = `Grant Operator Role\nTarget: ${operatorAddress.toLowerCase()}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'GRANT_ROLE',
+                    payload: { target_address: operatorAddress }
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || "Database sync failed");
+            }
+
+            toast.success("Operator Role Granted & Synced!", { id: tid });
 
             // Add to local list
             setOperators([...operators, { address: operatorAddress, role: 'Operator' }]);
@@ -32,7 +60,7 @@ export function RoleManagementTab() {
             refetchAll();
         } catch (e) {
             console.error(e);
-            toast.error(e.shortMessage || "Transaction failed", { id: tid });
+            toast.error(e.message || e.shortMessage || "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -43,16 +71,41 @@ export function RoleManagementTab() {
         const tid = toast.loading("Revoking operator role...");
 
         try {
+            // 1. Blockchain Transaction
             const hash = await revokeOperator(addr);
-            showSuccessToast("Operator Role Revoked!", hash);
-            toast.dismiss(tid);
+            showSuccessToast("Operator Role Revoked on Blockchain!", hash);
+
+            // 2. Database Sync (Zero-Trust API)
+            toast.loading("Syncing revocation to database...", { id: tid });
+            const timestamp = new Date().toISOString();
+            const message = `Revoke Operator Role\nTarget: ${addr.toLowerCase()}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'REVOKE_ROLE',
+                    payload: { target_address: addr }
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || "Database sync failed");
+            }
+
+            toast.success("Operator Role Revoked & Synced!", { id: tid });
 
             // Remove from local list
             setOperators(operators.filter(op => op.address !== addr));
             refetchAll();
         } catch (e) {
             console.error(e);
-            toast.error(e.shortMessage || "Transaction failed", { id: tid });
+            toast.error(e.message || e.shortMessage || "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }

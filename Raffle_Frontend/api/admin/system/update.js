@@ -7,9 +7,24 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const MASTER_ADMIN = '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b';
+const AUTHORIZED_ADMINS = [
+    '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b', // Primary Admin
+    '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'  // Secondary Admin
+].map(a => a.toLowerCase());
+
+// Basic in-memory rate limiter
+const lastActions = new Map();
+const RATE_LIMIT_MS = 2000; // 2 seconds between admin actions
 
 export default async function handler(req, res) {
+    const clientIP = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+
+    if (lastActions.has(clientIP) && (now - lastActions.get(clientIP) < RATE_LIMIT_MS)) {
+        return res.status(429).json({ error: 'Too many requests. Please wait a moment.' });
+    }
+    lastActions.set(clientIP, now);
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -45,7 +60,7 @@ export default async function handler(req, res) {
         const cleanAddress = wallet_address.toLowerCase();
 
         // 3. Admin Authorization Check
-        let isAuthorized = cleanAddress === MASTER_ADMIN.toLowerCase();
+        let isAuthorized = AUTHORIZED_ADMINS.includes(cleanAddress);
 
         if (!isAuthorized) {
             const { data: profile } = await supabaseAdmin
@@ -69,24 +84,71 @@ export default async function handler(req, res) {
         switch (action_type) {
             case 'UPDATE_POINTS':
                 // payload: array of point settings
+                if (!Array.isArray(payload) || payload.length === 0) {
+                    return res.status(400).json({ error: 'Payload must be a non-empty array' });
+                }
                 ({ data: result, error: dbError } = await supabaseAdmin
                     .from('point_settings')
                     .upsert(payload, { onConflict: 'activity_key' }));
                 break;
 
             case 'UPDATE_THRESHOLDS':
-                // payload: array of threshold settings (delete and re-insert pattern used in frontend)
-                await supabaseAdmin.from('sbt_thresholds').delete().neq('level', 0);
+                // payload: array of threshold settings
+                if (!Array.isArray(payload) || payload.length === 0) {
+                    return res.status(400).json({ error: 'Payload must be a non-empty array' });
+                }
+                // Atomic upsert instead of delete+insert for safety
                 ({ data: result, error: dbError } = await supabaseAdmin
                     .from('sbt_thresholds')
-                    .insert(payload));
+                    .upsert(payload, { onConflict: 'level' }));
+                break;
+
+            case 'GRANT_ROLE':
+                // payload: { target_address: '0x...' }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('user_profiles')
+                    .update({ is_admin: true })
+                    .eq('wallet_address', payload.target_address.toLowerCase())
+                    .select());
+                break;
+
+            case 'REVOKE_ROLE':
+                // payload: { target_address: '0x...' }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('user_profiles')
+                    .update({ is_admin: false })
+                    .eq('wallet_address', payload.target_address.toLowerCase())
+                    .select());
+                break;
+
+            case 'SYNC_RAFFLE':
+                // payload: { raffle_id, creator, nft_address, token_id, end_time }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('raffles')
+                    .upsert({
+                        id: payload.raffle_id,
+                        creator_address: payload.creator.toLowerCase(),
+                        nft_contract: payload.nft_address.toLowerCase(),
+                        token_id: payload.token_id,
+                        end_time: payload.end_time,
+                        is_active: true,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' })
+                    .select());
                 break;
 
             case 'ISSUE_ENS':
                 // payload: { fid, wallet_address, label, full_name }
+                if (!payload.wallet_address) return res.status(400).json({ error: 'wallet_address is required in payload' });
+
+                const cleanPayload = {
+                    ...payload,
+                    wallet_address: payload.wallet_address.toLowerCase()
+                };
+
                 ({ data: result, error: dbError } = await supabaseAdmin
                     .from('ens_subdomains')
-                    .insert([payload]));
+                    .insert([cleanPayload]));
                 break;
 
             default:

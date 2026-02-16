@@ -130,7 +130,7 @@ export default function AdminSystemSettings() {
 
             // 1. Prepare and Sign Message
             const timestamp = new Date().toISOString();
-            const message = `Update Point Settings\nAdmin: ${address}\nTime: ${timestamp}\nItems: ${cleanData.length}`;
+            const message = `Update Point Settings\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}\nItems: ${cleanData.length}`;
             const signature = await signMessageAsync({ message });
 
             // 2. Send to Secure API
@@ -199,7 +199,7 @@ export default function AdminSystemSettings() {
 
             // 1. Prepare and Sign Message
             const timestamp = new Date().toISOString();
-            const message = `Update SBT Thresholds\nAdmin: ${address}\nTime: ${timestamp}\nLevels: ${dataToSave.length}`;
+            const message = `Update SBT Thresholds\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}\nLevels: ${dataToSave.length}`;
             const signature = await signMessageAsync({ message });
 
             // 2. Send to Secure API
@@ -245,7 +245,7 @@ export default function AdminSystemSettings() {
 
             // 1. Prepare and Sign Message
             const timestamp = new Date().toISOString();
-            const message = `Issue ENS Subname\nTarget: ${fullName}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const message = `Issue ENS Subname\nTarget: ${fullName}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
             // 2. Send to Secure API

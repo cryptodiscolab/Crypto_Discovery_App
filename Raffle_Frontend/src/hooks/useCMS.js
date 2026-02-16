@@ -13,7 +13,7 @@ const DEFAULT_ADMIN_ROLE = "0x00000000000000000000000000000000000000000000000000
 
 // Default fallback states
 const DEFAULT_ANNOUNCEMENT = { visible: false, title: "", message: "", type: "info" };
-const DEFAULT_POOL_SETTINGS = { targetUSDC: 5000, claimTimestamp: 0 };
+const DEFAULT_POOL_SETTINGS = { targetUSDC: 0, claimTimestamp: 0 };
 const DEFAULT_NEWS = [];
 
 /**
@@ -139,11 +139,17 @@ export function useCMS() {
                 return;
             }
             try {
-                // Column 'is_admin' does not exist in live 'user_profiles' table.
-                // We rely on contract roles (isAdminRaw) and env variables (isEnvAdmin).
-                if (isMounted) setIsDbAdmin(false);
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .select('is_admin')
+                    .eq('wallet_address', wallet)
+                    .maybeSingle();
+
+                if (!error && data && isMounted) {
+                    setIsDbAdmin(!!data.is_admin);
+                }
             } catch (e) {
-                console.warn('[useCMS] DB Admin check skipped:', e.message);
+                console.warn('[useCMS] DB Admin check failed:', e.message);
                 if (isMounted) setIsDbAdmin(false);
             }
         };
@@ -180,7 +186,7 @@ export function useCMS() {
                             type: String(parsed.announcement.type || "info")
                         };
                         poolSettings = {
-                            targetUSDC: Number(parsed.pool?.targetUSDC || 5000),
+                            targetUSDC: Number(parsed.pool?.targetUSDC || 0),
                             claimTimestamp: Number(parsed.pool?.claimTimestamp || 0)
                         };
                     } else {

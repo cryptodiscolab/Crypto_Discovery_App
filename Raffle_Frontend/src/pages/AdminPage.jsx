@@ -720,6 +720,7 @@ function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSettings }
 }
 
 function TierTab({ onUpdate }) {
+    const { address } = useAccount();
     const [targetUser, setTargetUser] = useState('');
     const [selectedTier, setSelectedTier] = useState(1); // 1 = Bronze
     const [isUpdating, setIsUpdating] = useState(false);
@@ -760,7 +761,7 @@ function TierTab({ onUpdate }) {
         try {
             // 1. Signature for Zero-Trust
             const timestamp = new Date().toISOString();
-            const message = `Update SBT Threshold: Tier ID ${id}\nNew Min XP: ${min_xp}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const message = `Update SBT Threshold: Tier ID ${id}\nNew Min XP: ${min_xp}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
             toast.loading("Updating via secure API...", { id: tid });
@@ -773,8 +774,8 @@ function TierTab({ onUpdate }) {
                     wallet_address: address,
                     signature,
                     message,
-                    action: 'UPDATE_THRESHOLD',
-                    data: { id, min_xp }
+                    action_type: 'UPDATE_THRESHOLDS',
+                    payload: [{ id, min_xp }]
                 })
             });
 

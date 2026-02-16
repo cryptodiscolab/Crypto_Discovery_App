@@ -106,7 +106,7 @@ export default function UserReputationTable() {
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
-    const [revenue, setRevenue] = useState(2500);
+    const [revenue, setRevenue] = useState(0);
     const limit = 5; // Incremental Fetch Size
 
     const fetchReputationMetrics = useCallback(async (isInitial = false) => {
@@ -171,7 +171,7 @@ export default function UserReputationTable() {
                 <div className="h-px bg-white/5 w-full mb-2" />
                 <div className="flex justify-between items-center text-[10px] font-black uppercase">
                     <span className="text-slate-600 tracking-widest">Share Pool</span>
-                    <span className="text-emerald-500">${payoutPool.toLocaleString()}</span>
+                    <span className="text-emerald-500">${payoutPool > 0 ? payoutPool.toLocaleString() : '---'}</span>
                 </div>
             </div>
 

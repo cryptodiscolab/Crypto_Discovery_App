@@ -48,6 +48,16 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Invalid signature! Unauthorized access attempt.' });
         }
 
+        // 2.5 Replay Protection: Validate Timestamp
+        const timeMatch = message.match(/Time:\s*(.+)$/m);
+        if (!timeMatch) return res.status(400).json({ error: 'Message missing timestamp' });
+
+        const msgTime = new Date(timeMatch[1]).getTime();
+        const diff = Math.abs(Date.now() - msgTime);
+        if (diff > 5 * 60 * 1000) { // 5 minutes window
+            return res.status(401).json({ error: 'Signature expired (Replay Protection)' });
+        }
+
         // 3. Update Database (Secure Bypass of RLS)
         const cleanAddress = wallet_address.toLowerCase();
 

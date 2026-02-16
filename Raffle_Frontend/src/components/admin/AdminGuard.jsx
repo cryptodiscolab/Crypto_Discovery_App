@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
+import { useCMS } from '../../hooks/useCMS';
 
 // ALLOWED_ADMINS Addresses
 // 1. Master Admin (Lead Architect authority from .cursorrules)
@@ -18,23 +19,29 @@ const ALLOWED_ADMINS = [
  */
 const AdminGuard = ({ children }) => {
     const { address, isConnected } = useAccount();
+    const { isAdmin, isLoading } = useCMS();
     const navigate = useNavigate();
     const [isAuthorized, setIsAuthorized] = useState(null);
 
     useEffect(() => {
-        // Double Check: Ensure connection status is stable
         if (isConnected === false) {
             setIsAuthorized(false);
             return;
         }
 
+        if (isLoading) return; // Wait for CMS to load roles
+
         const currentAddr = address?.toLowerCase();
-        if (ALLOWED_ADMINS.includes(currentAddr)) {
+        // 1. Check Hardcoded Authority
+        const isMaster = ALLOWED_ADMINS.includes(currentAddr);
+
+        // 2. Check Centralized Roles (Blockchain + DB + Env)
+        if (isMaster || isAdmin) {
             setIsAuthorized(true);
         } else {
             setIsAuthorized(false);
         }
-    }, [address, isConnected]);
+    }, [address, isConnected, isAdmin, isLoading]);
 
     if (isAuthorized === null) {
         return (

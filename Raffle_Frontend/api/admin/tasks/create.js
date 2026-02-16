@@ -6,7 +6,10 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const MASTER_ADMIN = '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b';
+const AUTHORIZED_ADMINS = [
+    '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b',
+    '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'
+].map(a => a.toLowerCase());
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -34,7 +37,7 @@ export default async function handler(req, res) {
         const cleanAddress = wallet_address.toLowerCase();
 
         // 2. Admin Check
-        let isAuthorized = cleanAddress === MASTER_ADMIN.toLowerCase();
+        let isAuthorized = AUTHORIZED_ADMINS.includes(cleanAddress);
 
         if (!isAuthorized) {
             const { data: profile } = await supabaseAdmin

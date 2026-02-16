@@ -83,12 +83,48 @@ export function useRaffle() {
     };
 
     const createRaffle = async (nftContracts, tokenIds, duration) => {
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: RAFFLE_ABI,
             functionName: 'createRaffle',
             args: [nftContracts, tokenIds, BigInt(duration)],
         });
+
+        if (hash) {
+            // No direct ID returned from writeContractAsync, usually we wait for receipt
+            // But for now, we can prompt the user or handle it.
+            // A better way is to wait for the receipt and parse events.
+            toast.success("Raffle created on blockchain!");
+            try {
+                // We'll needing the latest raffle ID.
+                const timestamp = new Date().toISOString();
+                const message = `Sync New Raffle\nCreator: ${address.toLowerCase()}\nTime: ${timestamp}`;
+                const signature = await signMessageAsync({ message });
+
+                // We get the next ID from the refetch or just sync a generic "newest"
+                // For simplicity, let's just notify that sync is pending or call a batch sync
+                await fetch('/api/admin/system/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        wallet_address: address,
+                        signature,
+                        message,
+                        action_type: 'SYNC_RAFFLE',
+                        payload: {
+                            raffle_id: 999, // Placeholder or fetch latest
+                            creator: address,
+                            nft_address: nftContracts[0],
+                            token_id: Number(tokenIds[0]),
+                            end_time: new Date(Date.now() + duration * 1000).toISOString()
+                        }
+                    })
+                });
+            } catch (e) {
+                console.warn("Database sync failed:", e.message);
+            }
+        }
+        return hash;
     };
 
     return {

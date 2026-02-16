@@ -3,7 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const cleanWallet = (w) => w?.trim?.().toLowerCase() ?? null;
+const AUTHORIZED_ADMINS = [
+    '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b',
+    '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'
+].map(a => a.toLowerCase());
 
 export default async function handler(req, res) {
     // Only allow POST requests
@@ -21,24 +24,17 @@ export default async function handler(req, res) {
             });
         }
 
-        // PROTOKOL KEAMANAN KETAT (Double Check)
-        // Wajib FID 1477344 DAN Wallet 0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B
-        const REQUIRED_FID = 1477344;
-        const REQUIRED_WALLET = cleanWallet('0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b');
+        // 2. Admin Check (Genesis Admins)
+        const cleanAddress = address.trim().toLowerCase();
+        let isAdmin = AUTHORIZED_ADMINS.includes(cleanAddress);
 
-        const isFidMatch = userFid === REQUIRED_FID;
-        const isWalletMatch = cleanWallet(address) === REQUIRED_WALLET;
-
-        // Hardcoded check
-        let isAdmin = isFidMatch && isWalletMatch;
-
-        // Database Check (Dynamic)
+        // Database Check (Dynamic assigned admins)
         if (!isAdmin && supabaseUrl && supabaseServiceKey) {
             const supabase = createClient(supabaseUrl, supabaseServiceKey);
             const { data: userProfile, error } = await supabase
                 .from('user_profiles')
                 .select('is_admin')
-                .eq('wallet_address', cleanWallet(address))
+                .eq('wallet_address', cleanAddress)
                 .single();
 
             if (userProfile && userProfile.is_admin) {

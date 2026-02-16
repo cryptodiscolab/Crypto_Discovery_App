@@ -6,9 +6,24 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const MASTER_ADMIN = '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b';
+const AUTHORIZED_ADMINS = [
+    '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b',
+    '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'
+].map(a => a.toLowerCase());
+
+// Basic in-memory rate limiter
+const lastActions = new Map();
+const RATE_LIMIT_MS = 2000; // 2 seconds between admin actions
 
 export default async function handler(req, res) {
+    const clientIP = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+
+    if (lastActions.has(clientIP) && (now - lastActions.get(clientIP) < RATE_LIMIT_MS)) {
+        return res.status(429).json({ error: 'Too many requests. Please wait a moment.' });
+    }
+    lastActions.set(clientIP, now);
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -31,10 +46,20 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Invalid signature!' });
         }
 
+        // 2. Replay Protection: Validate Timestamp
+        const timeMatch = message.match(/Time:\s*(.+)$/m);
+        if (!timeMatch) return res.status(400).json({ error: 'Message missing timestamp' });
+
+        const msgTime = new Date(timeMatch[1]).getTime();
+        const diff = Math.abs(Date.now() - msgTime);
+        if (diff > 5 * 60 * 1000) { // 5 minutes window
+            return res.status(401).json({ error: 'Signature expired (Replay Protection)' });
+        }
+
         const cleanAddress = wallet_address.toLowerCase();
 
-        // 2. Admin Check
-        let isAuthorized = cleanAddress === MASTER_ADMIN.toLowerCase();
+        // 3. Admin Check
+        let isAuthorized = AUTHORIZED_ADMINS.includes(cleanAddress);
 
         if (!isAuthorized) {
             const { data: profile } = await supabaseAdmin
