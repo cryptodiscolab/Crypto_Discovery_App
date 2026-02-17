@@ -122,16 +122,21 @@ export default async function handler(req, res) {
                 break;
 
             case 'SYNC_RAFFLE':
-                // payload: { raffle_id, creator, nft_address, token_id, end_time }
+                // payload: { raffle_id, creator, nft_address, token_id, end_time, max_tickets, metadata_uri, prize_pool }
                 ({ data: result, error: dbError } = await supabaseAdmin
                     .from('raffles')
                     .upsert({
                         id: payload.raffle_id,
                         creator_address: payload.creator.toLowerCase(),
-                        nft_contract: payload.nft_address.toLowerCase(),
-                        token_id: payload.token_id,
+                        sponsor_address: payload.creator.toLowerCase(), // In V2, sponsor is creator
+                        nft_contract: payload.nft_address?.toLowerCase() || '',
+                        token_id: payload.token_id || 0,
                         end_time: payload.end_time,
+                        max_tickets: payload.max_tickets || 100,
+                        metadata_uri: payload.metadata_uri || '',
+                        prize_pool: payload.prize_pool || 0,
                         is_active: true,
+                        is_finalized: payload.is_finalized || false,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'id' })
                     .select());

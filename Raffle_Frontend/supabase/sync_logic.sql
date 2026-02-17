@@ -32,7 +32,7 @@ BEGIN
     VALUES (
         NEW.wallet_address,
         NEW.fid,
-        COALESCE(NEW.total_xp, 0),
+        COALESCE(NEW.xp, 0),
         COALESCE(NEW.tier, 1),
         COALESCE(NEW.last_login_at, NOW()),
         COALESCE(NEW.created_at, NOW())
