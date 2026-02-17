@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut, Copy, Check
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut, Copy, Check, ExternalLink
 } from 'lucide-react';
 import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
@@ -150,233 +150,231 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#0B0E14] text-slate-100 pb-20">
+      {/* 
+        FLAT-NATIVE HEADER 
+        Mimic Farcaster/Twitter: Cover Image (Optional) -> Avatar -> Info 
+        Since we don't have a cover image, we start with simple padding.
+      */}
 
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-3xl font-bold flex items-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600">
-          <Crown className="w-8 h-8 text-yellow-500" />
-          User Profile
-        </h1>
-
-        <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
-          {!isEditing ? (
-            <>
-              <button
-                onClick={async () => {
-                  if (!address) return toast.error("Connect wallet dulu!");
-                  const toastId = toast.loading("Syncing with Farcaster...");
-                  try {
-                    const result = await syncUser(address, true);
-                    if (result) {
-                      await fetchProfile();
-                      toast.success("Sync Complete! Data updated.", { id: toastId });
-                    } else {
-                      toast.error("Sync failed. Check console.", { id: toastId });
-                    }
-                  } catch (e) {
-                    console.error("Sync Click Error:", e);
-                    toast.error("Sync failed: " + e.message, { id: toastId });
-                  }
-                }}
-                disabled={isFarcasterLoading}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition disabled:opacity-50 backdrop-blur-sm"
-              >
-                {isFarcasterLoading ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
-                Sync Farcaster
-              </button>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition backdrop-blur-sm"
-              >
-                <Edit size={16} /> Edit
-              </button>
-              {/* Mobile Only Logout Button */}
-              <button
-                onClick={() => disconnect()}
-                className="md:hidden flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition backdrop-blur-sm"
-              >
-                <LogOut size={16} /> Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setIsEditing(false)}
-                disabled={isSaving}
-                className="p-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700"
-              >
-                <X size={20} />
-              </button>
-              <button
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 shadow-lg shadow-green-900/20"
-              >
-                {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                Save Changes
-              </button>
-            </>
-          )}
+      {/* Top Action Bar (Mobile only usually, or simplified header) */}
+      <div className="flex justify-between items-center px-4 py-3 border-b-subtle sticky top-0 bg-[#0B0E14]/95 backdrop-blur-md z-10 md:hidden">
+        <h1 className="text-base font-bold text-white">Profile</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={() => disconnect()}
+            className="text-red-400 hover:text-red-300"
+          >
+            <LogOut size={20} />
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        {/* LEFT COLUMN: MAIN PROFILE CARD */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="glass-card p-6">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="relative group">
-                <div className="w-20 h-20 rounded-full bg-gray-800 overflow-hidden border-2 border-gray-700 shadow-lg">
-                  {profileData.avatarUrl ? (
-                    <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500">
-                      <Users size={32} />
-                    </div>
-                  )}
-                </div>
-                {profileData.powerBadge && (
-                  <div className="absolute -top-1 -right-1 bg-yellow-500/20 text-yellow-400 p-1 rounded-full border border-yellow-500/50" title="Power User">
-                    <Star size={12} fill="currentColor" />
+      <div className="max-w-2xl mx-auto">
+        {/* AVATAR & MAIN INFO */}
+        <div className="px-4 pt-6 pb-4">
+          <div className="flex justify-between items-start mb-4">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full bg-gray-800 overflow-hidden border-4 border-[#0B0E14] shadow-sm">
+                {profileData.avatarUrl ? (
+                  <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-900">
+                    <Users size={32} />
                   </div>
                 )}
               </div>
-
-              <div className="flex-1 min-w-0">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profileData.displayName}
-                    onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
-                    className="w-full bg-black/50 border border-gray-700 rounded px-3 py-2 text-white font-bold text-lg focus:border-purple-500 focus:outline-none"
-                    placeholder="Display Name"
-                  />
-                ) : (
-                  <h2 className="text-2xl font-bold text-white truncate">{profileData.displayName || 'No Name Set'}</h2>
-                )}
-
-                <div
-                  className="flex items-center gap-2 text-gray-400 text-sm mt-1 cursor-pointer hover:text-white transition-colors group/address"
-                  onClick={handleCopyAddress}
-                  title="Click to copy address"
-                >
-                  <AtSign size={14} />
-                  <span className="font-mono">
-                    {profileData.username || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No Address')}
-                  </span>
-                  {copied ? (
-                    <Check size={14} className="text-green-500" />
-                  ) : (
-                    <Copy size={14} className="opacity-0 group-hover/address:opacity-100 transition-opacity" />
-                  )}
+              {profileData.powerBadge && (
+                <div className="absolute -bottom-1 -right-1 bg-[#0B0E14] rounded-full p-1">
+                  <Star size={16} className="text-yellow-400 fill-current" />
                 </div>
-              </div>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Bio</label>
-              {isEditing ? (
-                <textarea
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                  className="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-gray-300 h-32 focus:border-purple-500 focus:outline-none resize-none"
-                  placeholder="Tell us about yourself..."
-                />
+            {/* Action Buttons (Edit/Sync) */}
+            <div className="flex gap-2 mt-2">
+              {!isEditing ? (
+                <>
+                  <button
+                    onClick={async () => {
+                      if (!address) return toast.error("Connect wallet dulu!");
+                      const toastId = toast.loading("Syncing...");
+                      try {
+                        await syncUser(address, true);
+                        await fetchProfile();
+                        toast.success("Synced!", { id: toastId });
+                      } catch (e) {
+                        toast.error("Failed", { id: toastId });
+                      }
+                    }}
+                    disabled={isFarcasterLoading}
+                    className="px-4 py-1.5 rounded-full border border-white/20 text-sm font-medium hover:bg-white/5 active:scale-95 transition-transform"
+                  >
+                    {isFarcasterLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Sync"}
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-1.5 rounded-full border border-white/20 text-sm font-medium hover:bg-white/5 active:scale-95 transition-transform"
+                  >
+                    Edit
+                  </button>
+                </>
               ) : (
-                <div className="bg-black/30 rounded-lg p-4 border border-gray-800 min-h-[5rem]">
-                  <p className="text-gray-300 whitespace-pre-wrap">{profileData.bio || "No bio yet."}</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-1.5 rounded-full border border-red-500/50 text-red-400 text-sm font-medium active:scale-95 transition-transform"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-bold active:scale-95 transition-transform"
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
                 </div>
               )}
             </div>
           </div>
+
+          {/* NAME & BIO */}
+          <div className="space-y-1">
+            {isEditing ? (
+              <input
+                type="text"
+                value={profileData.displayName}
+                onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
+                className="w-full bg-transparent border-b border-gray-700 py-1 text-xl font-bold text-white focus:border-indigo-500 outline-none"
+                placeholder="Display Name"
+              />
+            ) : (
+              <h2 className="text-xl font-bold text-white leading-tight">{profileData.displayName || 'No Name'}</h2>
+            )}
+
+            <div className="flex items-center gap-2 text-slate-500 text-sm">
+              <span className="text-slate-400">@{profileData.username || 'username'}</span>
+              {profileData.fid && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] text-slate-500">FID: {profileData.fid}</span>}
+            </div>
+          </div>
+
+          <div className="mt-3">
+            {isEditing ? (
+              <textarea
+                value={profileData.bio}
+                onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                className="w-full bg-transparent border border-gray-700 rounded p-2 text-sm text-slate-300 focus:border-indigo-500 outline-none h-20"
+                placeholder="Bio..."
+              />
+            ) : (
+              <p className="text-[15px] text-slate-300 leading-snug whitespace-pre-wrap">
+                {profileData.bio || "No bio yet."}
+              </p>
+            )}
+          </div>
+
+          {/* FOLLOW STATS & WALLET */}
+          <div className="flex items-center gap-4 mt-3 text-sm">
+            <div className="flex gap-1">
+              <span className="font-bold text-white">{profileData.followingCount.toLocaleString()}</span>
+              <span className="text-slate-500">Following</span>
+            </div>
+            <div className="flex gap-1">
+              <span className="font-bold text-white">{profileData.followerCount.toLocaleString()}</span>
+              <span className="text-slate-500">Followers</span>
+            </div>
+            <div
+              className="flex items-center gap-1 text-slate-500 cursor-pointer hover:text-indigo-400 transition-colors ml-auto"
+              onClick={handleCopyAddress}
+            >
+              <div className={`w-2 h-2 rounded-full ${address ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="font-mono text-xs">
+                {address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Connect Wallet'}
+              </span>
+              {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+            </div>
+          </div>
         </div>
 
-        {/* RIGHT COLUMN: STATS & NEYNAR DATA */}
-        <div className="space-y-4">
+        {/* DIVIDER */}
+        <div className="h-px bg-white/5 w-full my-2" />
 
-          {/* Stats Card */}
-          <div className="glass-card p-5">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Hash className="text-purple-500" size={20} /> Social Stats
-            </h3>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-black/30 p-3 rounded-lg border border-gray-800/50">
-                <div className="text-xs text-gray-500 mb-1">Followers</div>
-                <div className="text-xl font-bold text-white">{profileData.followerCount.toLocaleString()}</div>
+        {/* STATS LIST (Mobile Native Style) */}
+        <div className="flex flex-col">
+          {/* Neynar Score */}
+          <div className="flex items-center justify-between px-4 py-3 border-b-subtle active:bg-white/5 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+                <ShieldCheck size={20} />
               </div>
-              <div className="bg-black/30 p-3 rounded-lg border border-gray-800/50">
-                <div className="text-xs text-gray-500 mb-1">Following</div>
-                <div className="text-xl font-bold text-white">{profileData.followingCount.toLocaleString()}</div>
-              </div>
-              <div className="bg-black/30 p-3 rounded-lg border border-gray-800/50 col-span-2 flex justify-between items-center">
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Neynar Score</div>
-                  <div className={`text-xl font-bold ${profileData.neynarScore >= 90 ? 'text-green-400' : 'text-yellow-400'}`}>
-                    {(profileData.neynarScore * 100).toFixed(1)}%
-                  </div>
-                </div>
-                <ShieldCheck className={profileData.neynarScore >= 0.9 ? "text-green-500" : "text-yellow-500"} size={24} />
-              </div>
-            </div>
-          </div>
-
-          {/* Game Progress Card */}
-          <div className="glass-card p-5 border-blue-500/20 bg-blue-500/5">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Sparkles className="text-blue-400" size={20} /> Game Progress
-            </h3>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center bg-blue-600/10 p-4 rounded-xl border border-blue-500/20">
-                <div>
-                  <div className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-1">Current Rank</div>
-                  <div className="text-2xl font-black text-white">{profileData.rankName}</div>
-                </div>
-                <Award className="text-blue-400 w-10 h-10" />
-              </div>
-
-              <div className="bg-black/30 p-4 rounded-xl border border-gray-800/50">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-xs text-gray-400 font-bold uppercase">Total XP Balance</span>
-                  <span className="text-2xl font-black text-yellow-500">{Number(profileData.total_xp).toLocaleString()}</span>
-                </div>
-                {/* Visual progress bar could be added here if we had max_xp info */}
-              </div>
-            </div>
-          </div>
-
-          {/* Farcaster ID Card */}
-          <div className="glass-card p-5">
-            <div className="flex justify-between items-center">
               <div>
-                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Farcaster ID</div>
-                <div className="text-2xl font-mono text-white tracking-widest">{profileData.fid || '---'}</div>
+                <h3 className="text-sm font-bold text-white">Neynar Score</h3>
+                <p className="text-xs text-slate-500">Reputation Health</p>
               </div>
-              <div className="h-10 w-10 bg-purple-900/30 rounded-full flex items-center justify-center border border-purple-500/20">
-                <UserCheck className="text-purple-400" size={20} />
-              </div>
+            </div>
+            <div className="text-right">
+              <span className={`text-lg font-mono font-bold ${profileData.neynarScore >= 90 ? 'text-green-400' : 'text-yellow-400'}`}>
+                {(profileData.neynarScore * 100).toFixed(1)}%
+              </span>
             </div>
           </div>
 
-          {/* Verifications (Optional) */}
-          {profileData.verifications && profileData.verifications.length > 0 && (
-            <div className="glass-card p-5">
-              <h3 className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Verified Addresses</h3>
-              <div className="flex flex-col gap-2">
-                {profileData.verifications.map((vAddr, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-xs text-gray-300 font-mono bg-black/30 p-2 rounded border border-gray-800">
-                    <span className={`w-2 h-2 rounded-full ${vAddr.toLowerCase() === address?.toLowerCase() ? 'bg-green-500' : 'bg-gray-500'}`}></span>
-                    {vAddr.slice(0, 6)}...{vAddr.slice(-4)}
-                  </div>
-                ))}
+          {/* Total XP */}
+          <div className="flex items-center justify-between px-4 py-3 border-b-subtle active:bg-white/5 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-400">
+                <Award size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Total XP</h3>
+                <p className="text-xs text-slate-500">Season Progress</p>
               </div>
             </div>
-          )}
+            <div className="text-right">
+              <span className="text-lg font-mono font-bold text-white">
+                {Number(profileData.total_xp).toLocaleString()}
+              </span>
+            </div>
+          </div>
 
+          {/* Rank */}
+          <div className="flex items-center justify-between px-4 py-3 border-b-subtle active:bg-white/5 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+                <Crown size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Current Rank</h3>
+                <p className="text-xs text-slate-500">Leaderboard Tier</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-lg font-bold text-blue-400">
+                {profileData.rankName}
+              </span>
+            </div>
+          </div>
         </div>
+
+        {/* VERIFICATIONS LIST */}
+        {profileData.verifications && profileData.verifications.length > 0 && (
+          <div className="mt-6 px-4">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Verified Addresses</h3>
+            <div className="space-y-2">
+              {profileData.verifications.map((vAddr, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                  <span className="font-mono text-sm text-slate-300">
+                    {vAddr.slice(0, 10)}...{vAddr.slice(-8)}
+                  </span>
+                  <ExternalLink size={14} className="text-slate-600" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="h-24" /> {/* Safe spacing for bottom nav */}
       </div>
     </div>
   );

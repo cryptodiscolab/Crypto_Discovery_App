@@ -1,4 +1,4 @@
-import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare } from 'lucide-react';
+import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask } from '../hooks/useContract';
 import { useVerification } from '../hooks/useVerification';
@@ -6,7 +6,7 @@ import { usePoints } from '../shared/context/PointsContext';
 import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
 
-function TaskCard({ taskId, userStats, refetchStats }) {
+function TaskRow({ taskId, userStats, refetchStats }) {
     const { task, isLoading } = useTaskInfo(taskId);
     const { doTask, isLoading: isDoing } = useDoTask();
     const { address } = useAccount();
@@ -44,74 +44,62 @@ function TaskCard({ taskId, userStats, refetchStats }) {
         }
     };
 
-    const handleVerify = async () => {
+    const handleVerify = async (e) => {
+        e.stopPropagation();
         if (isTierLocked) return;
         await verifyTask(task, address, taskId);
     };
 
     return (
         <div
-            className={`glass-card p-6 border-white/5 hover:border-blue-500/30 transition-all group animate-scale-in ${isTierLocked ? 'opacity-60 grayscale-[0.5]' : ''}`}
+            onClick={!isTierLocked ? handleAction : undefined}
+            className={`flex items-center justify-between p-4 border-b-subtle active:bg-white/5 transition-colors cursor-pointer group ${isTierLocked ? 'opacity-50' : ''}`}
         >
-            <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${isTierLocked ? 'from-slate-700 to-slate-800' : task.requiresVerification ? 'from-purple-500 to-indigo-600' : 'from-blue-500 to-indigo-600'} shadow-lg group-hover:scale-110 transition-transform`}>
-                    {isTierLocked ? <Shield className="w-6 h-6 text-slate-500" /> : task.title.toLowerCase().includes('twitter') ? <Twitter className="w-6 h-6 text-white" /> : <Shield className="w-6 h-6 text-white" />}
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+                {/* Icon Box */}
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isTierLocked ? 'bg-slate-800' : task.requiresVerification ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                    {isTierLocked ? <Shield size={18} className="text-slate-500" /> : task.title.toLowerCase().includes('twitter') ? <Twitter size={18} /> : <Zap size={18} />}
                 </div>
-                <div className="text-right">
-                    <span className="text-xs font-mono text-slate-500">ID: #{Number(taskId)}</span>
-                    <div className={`flex items-center ${isTierLocked ? 'text-slate-500' : 'text-yellow-500'} mt-1`}>
-                        <Zap className="w-3 h-3 mr-1 fill-current" />
-                        <span className="text-sm font-bold">+{Number(task.baseReward)} XP</span>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[15px] font-bold text-white truncate">{task.title}</span>
+                        {task.requiresVerification && (
+                            <Shield size={12} className="text-green-500 flex-shrink-0" />
+                        )}
+                        {isTierLocked && (
+                            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
+                                LVL {task.minTier}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                        <span className="font-bold text-yellow-500 flex items-center gap-1">
+                            +{Number(task.baseReward)} XP
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                            <Clock size={10} /> {Number(task.cooldown) / 3600}h
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-2">{String(task.title || '')}</h3>
-
-            <div className="flex flex-wrap gap-2 mb-6 text-[10px] font-black uppercase tracking-tighter">
-                <div className="flex items-center bg-slate-800/50 px-2 py-1 rounded-md text-slate-400">
-                    <Clock className="w-3 h-3 mr-1" />
-                    <span>{Number(task.cooldown) / 3600}h CD</span>
-                </div>
-                <div className={`flex items-center px-2 py-1 rounded-md ${isTierLocked ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                    <Award className="w-3 h-3 mr-1" />
-                    <span>Tier {Number(task.minTier)}+</span>
-                </div>
-
-                {/* Advanced Requirements */}
-                {(Number(task.minNeynarScore || 0) > 0) && (
-                    <div className="flex items-center bg-purple-500/20 text-purple-400 px-2 py-1 rounded-md">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        <span>Score {Number(task.minNeynarScore)}+</span>
-                    </div>
-                )}
-                {task.powerBadgeRequired && (
-                    <div className="flex items-center bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-md border border-indigo-500/30">
-                        <Shield className="w-3 h-3 mr-1" />
-                        <span>Power User</span>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex space-x-2">
-                <button
-                    onClick={handleAction}
-                    disabled={isDoing || isTierLocked}
-                    className={`flex-1 ${isTierLocked ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed' : 'bg-white/5 hover:bg-white/10 text-white border-white/10'} py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2 border`}
-                >
-                    {isDoing ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> : isTierLocked ? <Clock className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
-                    <span>{isTierLocked ? `LVL ${task.minTier} Required` : 'Start Task'}</span>
-                </button>
-
-                {task.requiresVerification && (
+            {/* Action Area */}
+            <div className="flex items-center gap-3 pl-4">
+                {task.requiresVerification ? (
                     <button
                         onClick={handleVerify}
                         disabled={isVerifying || isTierLocked}
-                        className={`flex-1 ${isTierLocked ? 'bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 shadow-lg'} text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2`}
+                        className="px-4 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-900/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
                     >
-                        {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                        <span>Verify</span>
+                        {isVerifying ? <Loader2 size={14} className="animate-spin" /> : "Verify"}
                     </button>
+                ) : (
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                        {isDoing ? <Loader2 size={16} className="animate-spin text-slate-400" /> : <ArrowRight size={16} className="text-slate-400 group-hover:text-white" />}
+                    </div>
                 )}
             </div>
         </div>
@@ -125,74 +113,48 @@ export function TasksPage() {
     const taskIds = Array.from({ length: totalTasks }, (_, i) => i);
 
     return (
-        <div className="min-h-screen pt-8 pb-20 md:py-20 relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
+            {/* Header (Flat) */}
+            <div className="px-4 py-6 border-b-subtle">
+                <h1 className="text-2xl font-black text-white mb-1">Daily Tasks</h1>
+                <p className="text-slate-500 text-sm">Earn XP and level up your tier.</p>
 
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="max-w-6xl mx-auto">
-                    {/* User Progress Header */}
-                    <div
-                        className="glass-card mb-12 overflow-hidden animate-slide-up"
-                    >
-                        <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 p-8 flex flex-col md:flex-row items-center justify-between border-b border-white/5">
-                            <div className="mb-6 md:mb-0">
-                                <div className="flex items-center space-x-3 mb-2">
-                                    <div className="bg-yellow-500 p-1.5 rounded-lg shadow-lg">
-                                        <Award className="w-6 h-6 text-slate-900" />
-                                    </div>
-                                    <h2 className="text-3xl font-bold text-white">Daily Tasks</h2>
-                                </div>
-                                <p className="text-slate-400">Complete tasks to earn points and upgrade your tier.</p>
-                            </div>
-
-                            {isConnected && (
-                                <div className="flex items-center space-x-8">
-                                    <div className="text-center">
-                                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Total XP</p>
-                                        <p className="text-3xl font-black text-blue-400">{String(userPoints)}</p>
-                                    </div>
-                                    <div className="h-12 w-px bg-white/10 hidden md:block"></div>
-                                    <div className="text-center">
-                                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Current Rank</p>
-                                        <p className="text-3xl font-black text-indigo-400">{rankName || `LVL ${userTier}`}</p>
-                                    </div>
-                                    <div className="h-12 w-px bg-white/10 hidden md:block"></div>
-                                    <div className="text-center">
-                                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Tasks Done</p>
-                                        <p className="text-3xl font-black text-green-400">{String(totalTasksCompleted)}</p>
-                                    </div>
-                                </div>
-                            )}
+                {/* Stats Row (Inline) */}
+                {isConnected && (
+                    <div className="flex items-center gap-6 mt-4">
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Your XP</p>
+                            <p className="text-xl font-mono font-bold text-white">{String(userPoints)}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Rank</p>
+                            <p className="text-xl font-bold text-indigo-400">{rankName || `LVL ${userTier}`}</p>
                         </div>
                     </div>
+                )}
+            </div>
 
-                    {/* Supabase Tasks (New Phase 5) */}
-                    <TaskList />
+            {/* Task List Container */}
+            <div className="divide-y divide-white/5">
+                {/* Supabase Tasks Injection Point (If any) */}
+                <TaskList />
 
-                    {/* Task Grid */}
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {taskIds.length > 0 ? (
-                            taskIds.map(id => (
-                                <TaskCard
-                                    key={id}
-                                    taskId={id}
-                                    userStats={null} // Deprecated prop
-                                    refetchStats={refetch}
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-full py-20 text-center">
-                                <div className="bg-white/5 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <Loader2 className="w-10 h-10 text-slate-700" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">Syncing Tasks...</h3>
-                                <p className="text-slate-400">Loading new opportunities from the blockchain</p>
-                            </div>
-                        )}
+                {/* On-Chain Tasks */}
+                {taskIds.length > 0 ? (
+                    taskIds.map(id => (
+                        <TaskRow
+                            key={id}
+                            taskId={id}
+                            userStats={null}
+                            refetchStats={refetch}
+                        />
+                    ))
+                ) : (
+                    <div className="py-12 text-center">
+                        <Loader2 className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
+                        <p className="text-sm text-slate-500">Loading Tasks...</p>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
