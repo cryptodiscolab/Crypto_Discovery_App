@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Trophy, Users, Timer, Ticket, ArrowRight, Shield, AlertCircle, RefreshCw, Zap, TrendingUp, Calendar, ExternalLink, Loader2 } from 'lucide-react';
+import { Trophy, Users, Timer, Ticket, ArrowRight, Shield, AlertCircle, RefreshCw, Zap, TrendingUp, Calendar, ExternalLink, Loader2, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
 import { formatUnits } from 'viem';
@@ -7,9 +6,10 @@ import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
 import toast from 'react-hot-toast';
 
 function RaffleCard({ raffleId }) {
+  const { address } = useAccount();
   const { raffle, isLoading } = useRaffleInfo(raffleId);
-  const { buyTickets } = useRaffle();
-  const [isBuying, setIsBuying] = useState(false);
+  const { buyTickets, claimPrize } = useRaffle();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (isLoading || !raffle) {
     return (
@@ -18,6 +18,9 @@ function RaffleCard({ raffleId }) {
       </div>
     );
   }
+
+  const isWinner = raffle.winners?.some(w => w.toLowerCase() === address?.toLowerCase());
+  const isFinalized = raffle.isFinalized;
 
   // Hide completed or inactive raffles if needed, but let's show all for now
   const timeLeft = raffle.endTime > Date.now() / 1000
