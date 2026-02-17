@@ -121,6 +121,40 @@ export default async function handler(req, res) {
                     .select());
                 break;
 
+            case 'GRANT_PRIVILEGE':
+                // payload: { target_address: '0x...', feature_id: '...' }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('user_privileges')
+                    .upsert({
+                        wallet_address: payload.target_address.toLowerCase(),
+                        feature_id: payload.feature_id,
+                        granted_at: new Date().toISOString()
+                    }, { onConflict: 'wallet_address,feature_id' })
+                    .select());
+                break;
+
+            case 'REVOKE_PRIVILEGE':
+                // payload: { target_address: '0x...', feature_id: '...' }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('user_privileges')
+                    .delete()
+                    .eq('wallet_address', payload.target_address.toLowerCase())
+                    .eq('feature_id', payload.feature_id));
+                break;
+
+            case 'BATCH_GRANT_PRIVILEGE':
+                // payload: { target_addresses: ['0x...', ...], feature_id: '...' }
+                const batchData = payload.target_addresses.map(addr => ({
+                    wallet_address: addr.toLowerCase(),
+                    feature_id: payload.feature_id,
+                    granted_at: new Date().toISOString()
+                }));
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('user_privileges')
+                    .upsert(batchData, { onConflict: 'wallet_address,feature_id' })
+                    .select());
+                break;
+
             case 'SYNC_RAFFLE':
                 // payload: { raffle_id, creator, nft_address, token_id, end_time, max_tickets, metadata_uri, prize_pool }
                 ({ data: result, error: dbError } = await supabaseAdmin

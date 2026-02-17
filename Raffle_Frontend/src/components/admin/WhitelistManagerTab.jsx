@@ -1,13 +1,18 @@
-import { useState } from 'react';
-import { Shield, UserPlus, UserMinus, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, UserPlus, UserMinus, AlertCircle, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { useAccount, useSignMessage } from 'wagmi';
 import { useCMS } from '../../hooks/useCMS';
 import { FEATURE_IDS, FEATURE_NAMES } from '../../shared/constants/cmsFeatures';
+import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { isAddress } from 'viem';
 
 export function WhitelistManagerTab() {
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { grantPrivilege, revokePrivilege, batchGrantPrivileges, showSuccessToast, refetchAll } = useCMS();
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
 
     // Single grant state
     const [userAddress, setUserAddress] = useState('');
@@ -17,8 +22,49 @@ export function WhitelistManagerTab() {
     const [batchAddresses, setBatchAddresses] = useState('');
     const [batchFeature, setBatchFeature] = useState(FEATURE_IDS.DAILY_CLAIM);
 
-    // Whitelisted users (fetched from contract/events)
+    // Whitelisted users (fetched from database)
     const [whitelistedUsers, setWhitelistedUsers] = useState([]);
+
+    // 1. Fetch Existing Whitelist from DB
+    useEffect(() => {
+        const fetchWhitelist = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('user_privileges')
+                    .select('*')
+                    .order('granted_at', { ascending: false });
+
+                if (error) {
+                    // It's possible the table doesn't exist yet, so we fail silently or log
+                    console.warn('[FetchWhitelist] Table might not exist:', error.message);
+                    return;
+                }
+
+                if (data) {
+                    setWhitelistedUsers(data.map(u => ({
+                        address: u.wallet_address,
+                        featureId: u.feature_id,
+                        featureName: FEATURE_NAMES[u.feature_id] || u.feature_id
+                    })));
+                }
+            } catch (err) {
+                console.error('[FetchWhitelist Error]', err);
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+
+        fetchWhitelist();
+    }, []);
+
+    if (isLoadingData) {
+        return (
+            <div className="py-20 flex flex-col items-center gap-4">
+                <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Loading Whitelist...</p>
+            </div>
+        );
+    }
 
     const handleGrantPrivilege = async () => {
         if (!isAddress(userAddress)) {
@@ -31,15 +77,38 @@ export function WhitelistManagerTab() {
 
         try {
             const hash = await grantPrivilege(userAddress, selectedFeature);
-            showSuccessToast("Privilege Granted!", hash);
-            toast.dismiss(tid);
+            showSuccessToast("Privilege Granted on Blockchain!", hash);
+
+            // 2. Database Sync
+            toast.loading("Syncing privilege to database...", { id: tid });
+            const timestamp = new Date().toISOString();
+            const message = `Grant Privilege\nTarget: ${userAddress.toLowerCase()}\nFeature: ${selectedFeature}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'GRANT_PRIVILEGE',
+                    payload: { target_address: userAddress, feature_id: selectedFeature }
+                })
+            });
+
+            if (!response.ok) {
+                console.warn("Database sync failed, but blockchain tx succeeded.");
+            }
+
+            toast.success("Privilege Granted & Synced!", { id: tid });
 
             // Add to local list
-            setWhitelistedUsers([...whitelistedUsers, {
+            setWhitelistedUsers([{
                 address: userAddress,
                 featureId: selectedFeature,
                 featureName: FEATURE_NAMES[selectedFeature] || selectedFeature
-            }]);
+            }, ...whitelistedUsers]);
 
             setUserAddress('');
             refetchAll();
@@ -73,8 +142,31 @@ export function WhitelistManagerTab() {
         try {
             const featureIds = addresses.map(() => batchFeature);
             const hash = await batchGrantPrivileges(addresses, featureIds);
-            showSuccessToast(`${addresses.length} Privileges Granted!`, hash);
-            toast.dismiss(tid);
+            showSuccessToast(`${addresses.length} Privileges Granted on Blockchain!`, hash);
+
+            // 2. Database Sync
+            toast.loading("Syncing batch to database...", { id: tid });
+            const timestamp = new Date().toISOString();
+            const message = `Batch Grant Privilege\nCount: ${addresses.length}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'BATCH_GRANT_PRIVILEGE',
+                    payload: { target_addresses: addresses, feature_id: batchFeature }
+                })
+            });
+
+            if (!response.ok) {
+                console.warn("Database sync failed, but blockchain tx succeeded.");
+            }
+
+            toast.success("Batch Privileges Granted & Synced!", { id: tid });
 
             // Add to local list
             const newUsers = addresses.map(addr => ({
@@ -82,7 +174,7 @@ export function WhitelistManagerTab() {
                 featureId: batchFeature,
                 featureName: FEATURE_NAMES[batchFeature] || batchFeature
             }));
-            setWhitelistedUsers([...whitelistedUsers, ...newUsers]);
+            setWhitelistedUsers([...newUsers, ...whitelistedUsers]);
 
             setBatchAddresses('');
             refetchAll();
@@ -100,8 +192,31 @@ export function WhitelistManagerTab() {
 
         try {
             const hash = await revokePrivilege(userAddr, featureId);
-            showSuccessToast("Privilege Revoked!", hash);
-            toast.dismiss(tid);
+            showSuccessToast("Privilege Revoked on Blockchain!", hash);
+
+            // 2. Database Sync
+            toast.loading("Syncing revocation to database...", { id: tid });
+            const timestamp = new Date().toISOString();
+            const message = `Revoke Privilege\nTarget: ${userAddr.toLowerCase()}\nFeature: ${featureId}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'REVOKE_PRIVILEGE',
+                    payload: { target_address: userAddr, feature_id: featureId }
+                })
+            });
+
+            if (!response.ok) {
+                console.warn("Database sync failed, but blockchain tx succeeded.");
+            }
+
+            toast.success("Privilege Revoked & Synced!", { id: tid });
 
             // Remove from local list
             setWhitelistedUsers(whitelistedUsers.filter(

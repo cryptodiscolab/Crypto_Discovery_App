@@ -1,19 +1,57 @@
-import { useState } from 'react';
-import { Shield, UserPlus, UserX, Crown, Wrench, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, UserPlus, UserX, Crown, Wrench, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { useCMS } from '../../hooks/useCMS';
+import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { isAddress } from 'viem';
 
 export function RoleManagementTab() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { grantOperator, revokeOperator, showSuccessToast, refetchAll, isAdmin } = useCMS();
+    const { grantOperator, revokeOperator, showSuccessToast, refetchAll, isAdmin, isLoading: loadingCMS } = useCMS();
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
+    const [isLoadingData, setIsLoadingData] = useState(true);
 
-    // Operators list (fetched from contract/events)
+    // Operators list (fetched from database)
     const [operators, setOperators] = useState([]);
+
+    // 1. Fetch Existing Operators from DB
+    useEffect(() => {
+        const fetchOperators = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .select('wallet_address')
+                    .eq('is_admin', true);
+
+                if (error) throw error;
+                if (data) {
+                    setOperators(data.map(u => ({
+                        address: u.wallet_address,
+                        role: 'Operator'
+                    })));
+                }
+            } catch (err) {
+                console.error('[FetchOperators Error]', err);
+                // toast.error("Failed to load operator list");
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+
+        fetchOperators();
+    }, []);
+
+    if (loadingCMS || isLoadingData) {
+        return (
+            <div className="py-20 flex flex-col items-center gap-4">
+                <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Checking Permissions...</p>
+            </div>
+        );
+    }
 
     const handleGrantOperator = async () => {
         if (!isAddress(operatorAddress)) {
