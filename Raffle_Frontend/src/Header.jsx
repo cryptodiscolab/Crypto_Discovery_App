@@ -59,7 +59,7 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] pointer-events-auto bg-[#0B0E14]/70 backdrop-blur-xl border-b border-white/5">
-      <div className="container mx-auto px-6">
+      <div className="max-w-screen-lg mx-auto px-4">
         <div className="flex items-center justify-between h-20">
 
           {/* Left: Logo & Farcaster Welcome */}

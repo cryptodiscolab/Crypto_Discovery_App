@@ -114,47 +114,51 @@ export function TasksPage() {
 
     return (
         <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
-            {/* Header (Flat) */}
-            <div className="px-4 py-6 border-b-subtle">
-                <h1 className="text-2xl font-black text-white mb-1">Daily Tasks</h1>
-                <p className="text-slate-500 text-sm">Earn XP and level up your tier.</p>
+            <div className="max-w-screen-lg mx-auto">
+                {/* Header (Flat) */}
+                <div className="px-4 py-6 border-b-subtle">
+                    <h1 className="text-2xl font-black text-white mb-1">Daily Tasks</h1>
+                    <p className="text-slate-500 text-sm">Earn XP and level up your tier.</p>
 
-                {/* Stats Row (Inline) */}
-                {isConnected && (
-                    <div className="flex items-center gap-6 mt-4">
-                        <div>
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Your XP</p>
-                            <p className="text-xl font-mono font-bold text-white">{String(userPoints)}</p>
+                    {/* Stats Row (Inline) */}
+                    {isConnected && (
+                        <div className="flex items-center gap-6 mt-4">
+                            <div>
+                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Your XP</p>
+                                <p className="text-xl font-mono font-bold text-white">{String(userPoints)}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Rank</p>
+                                <p className="text-xl font-bold text-indigo-400">{rankName || `LVL ${userTier}`}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Rank</p>
-                            <p className="text-xl font-bold text-indigo-400">{rankName || `LVL ${userTier}`}</p>
+                    )}
+                </div>
+
+                {/* Task List Container */}
+                <div className="divide-y divide-white/5 md:divide-y-0 grid grid-cols-1 md:grid-cols-2 md:gap-4 md:px-4">
+                    {/* Supabase Tasks Injection Point (If any) */}
+                    <div className="col-span-full">
+                        <TaskList />
+                    </div>
+
+                    {/* On-Chain Tasks */}
+                    {taskIds.length > 0 ? (
+                        taskIds.map(id => (
+                            <TaskRow
+                                key={id}
+                                taskId={id}
+                                userStats={null}
+                                refetchStats={refetch}
+                            />
+                        ))
+                    ) : (
+                        <div className="py-12 text-center col-span-full">
+                            <Loader2 className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
+                            <p className="text-sm text-slate-500">Loading Tasks...</p>
                         </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Task List Container */}
-            <div className="divide-y divide-white/5">
-                {/* Supabase Tasks Injection Point (If any) */}
-                <TaskList />
-
-                {/* On-Chain Tasks */}
-                {taskIds.length > 0 ? (
-                    taskIds.map(id => (
-                        <TaskRow
-                            key={id}
-                            taskId={id}
-                            userStats={null}
-                            refetchStats={refetch}
-                        />
-                    ))
-                ) : (
-                    <div className="py-12 text-center">
-                        <Loader2 className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
-                        <p className="text-sm text-slate-500">Loading Tasks...</p>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -170,7 +170,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-screen-md mx-auto">
         {/* AVATAR & MAIN INFO */}
         <div className="px-4 pt-6 pb-4">
           <div className="flex justify-between items-start mb-4">

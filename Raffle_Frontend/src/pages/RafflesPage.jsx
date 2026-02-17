@@ -116,46 +116,48 @@ export function RafflesPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
-      {/* Header */}
-      <div className="px-4 py-6 border-b-subtle">
-        <div className="flex justify-between items-end mb-4">
-          <div>
-            <h1 className="text-2xl font-black text-white mb-1">NFT Raffles</h1>
-            <p className="text-slate-500 text-sm">Win exclusive prizes.</p>
+      <div className="max-w-screen-lg mx-auto">
+        {/* Header */}
+        <div className="px-4 py-6 border-b-subtle">
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <h1 className="text-2xl font-black text-white mb-1">NFT Raffles</h1>
+              <p className="text-slate-500 text-sm">Win exclusive prizes.</p>
+            </div>
+            <Link to="/create-raffle" className="p-2 rounded-full bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 active:scale-95 transition-transform">
+              <Gift size={20} />
+            </Link>
           </div>
-          <Link to="/create-raffle" className="p-2 rounded-full bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 active:scale-95 transition-transform">
-            <Gift size={20} />
-          </Link>
-        </div>
 
-        {/* Filter Pills */}
-        <div className="flex gap-2">
-          {['all', 'active', 'completed'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${filter === f ? 'bg-white text-black border-white' : 'text-slate-500 border-white/10 hover:border-white/30'}`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Raffle Feed */}
-      <div className="divide-y divide-white/5">
-        {!raffleIds || raffleIds.length === 0 ? (
-          <div className="py-20 text-center">
-            <RefreshCw className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
-            <p className="text-sm text-slate-500">Syncing Raffles...</p>
-          </div>
-        ) : (
-          <div>
-            {[...raffleIds].reverse().map((id) => (
-              <RaffleRow key={id.toString()} raffleId={id} />
+          {/* Filter Pills */}
+          <div className="flex gap-2">
+            {['all', 'active', 'completed'].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${filter === f ? 'bg-white text-black border-white' : 'text-slate-500 border-white/10 hover:border-white/30'}`}
+              >
+                {f}
+              </button>
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Raffle Feed */}
+        <div className="divide-y divide-white/5 md:divide-y-0 grid grid-cols-1 md:grid-cols-2 md:gap-4 md:px-4">
+          {!raffleIds || raffleIds.length === 0 ? (
+            <div className="py-20 text-center col-span-full">
+              <RefreshCw className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
+              <p className="text-sm text-slate-500">Syncing Raffles...</p>
+            </div>
+          ) : (
+            <>
+              {[...raffleIds].reverse().map((id) => (
+                <RaffleRow key={id.toString()} raffleId={id} />
+              ))}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
