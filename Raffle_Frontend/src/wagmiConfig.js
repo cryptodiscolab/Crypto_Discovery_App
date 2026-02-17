@@ -16,9 +16,13 @@ const connectors = connectorsForWallets(
         {
             groupName: 'Recommended',
             wallets: [
-                metaMaskWallet,
-                () => coinbaseWallet({ preference: 'all' }),
-                walletConnectWallet,
+                metaMaskWallet({ projectId }),
+                coinbaseWallet({
+                    projectId,
+                    appName: 'Crypto Disco',
+                    preference: 'all'
+                }),
+                walletConnectWallet({ projectId }),
             ],
         },
     ],

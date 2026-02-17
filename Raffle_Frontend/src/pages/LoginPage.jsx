@@ -8,11 +8,10 @@ import { useSIWE } from '../hooks/useSIWE';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 
 // Dynamically import ConnectButton to ensure it only loads on client side
-const ConnectButton = lazy(() =>
-    import('@rainbow-me/rainbowkit').then(module => ({
-        default: module.ConnectButton
-    }))
-);
+const ConnectButton = lazy(async () => {
+    const module = await import('@rainbow-me/rainbowkit');
+    return { default: module.ConnectButton };
+});
 
 /**
  * Mobile-Optimized Login via Wallet Connect.
