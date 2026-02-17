@@ -6,6 +6,7 @@ import { BottomNav } from './components/BottomNav';
 import { PointsProvider } from './shared/context/PointsContext';
 import { Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { SkeletonLoader } from './components/SkeletonLoader';
 
 // Lazy Load Pages (Non-critical components)
 const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.default || m.HomePage })));
@@ -37,10 +38,10 @@ function App() {
           <BrowserRouter>
             <div className="dark min-h-screen bg-[#0B0E14] text-slate-100 pointer-events-none">
               <Header />
-              <main className="pt-24 pb-32 md:pb-0 pointer-events-auto">
+              <main className="pt-20 pb-24 md:pb-0 pointer-events-auto min-h-screen">
                 <Suspense fallback={
-                  <div className="min-h-screen flex items-center justify-center">
-                    <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                  <div className="min-h-screen flex items-start justify-center pt-8">
+                    <SkeletonLoader />
                   </div>
                 }>
                   <Routes>

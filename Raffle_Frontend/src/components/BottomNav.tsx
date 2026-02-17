@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, LayoutDashboard, Loader2, RefreshCw } from 'lucide-react';
+import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet } from 'lucide-react';
 import { useCMS } from '../hooks/useCMS';
 
 const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
-const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
 export function BottomNav() {
     const { address, isConnected } = useAccount();
@@ -26,27 +25,45 @@ export function BottomNav() {
     }, [address, isCMSAdmin]);
 
     const navItems = [
-        { path: '/', label: 'Home', icon: <Home className="w-6 h-6" /> },
-        { path: '/tasks', label: 'Tasks', icon: <Zap className="w-6 h-6" /> },
-        { path: '/raffles', label: 'Raffles', icon: <Ticket className="w-6 h-6" /> },
-        { path: '/leaderboard', label: 'Leaderboard', icon: <Trophy className="w-6 h-6" /> },
+        { path: '/', label: 'Home', icon: <Home className="w-5 h-5" /> },
+        { path: '/tasks', label: 'Tasks', icon: <Zap className="w-5 h-5" /> },
+        { path: '/raffles', label: 'Raffles', icon: <Ticket className="w-5 h-5" /> },
+        { path: '/leaderboard', label: 'Rank', icon: <Trophy className="w-5 h-5" /> },
     ];
 
     const gridCols = isAdmin ? 'grid-cols-6' : 'grid-cols-5';
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto bg-black/95 backdrop-blur-lg border-t border-white/5 pb-8 pt-4 px-2 shadow-2xl md:hidden">
-            <div className={`grid ${gridCols} w-full items-center justify-items-center`}>
+        <nav className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto bg-[#0B0E14]/90 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 px-2 shadow-2xl md:hidden">
+            <div className={`grid ${gridCols} w-full items-end justify-items-center h-[60px] pb-2`}>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
                         className={({ isActive }) =>
-                            `flex flex-col items-center transition-all duration-300 ${isActive ? 'text-pink-500 scale-125' : 'text-slate-500 hover:text-white'
+                            `flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 relative group ${isActive ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'
                             }`
                         }
                     >
-                        {item.icon}
+                        {({ isActive }) => (
+                            <>
+                                {/* Active Glow Background */}
+                                {isActive && (
+                                    <div className="absolute top-0 w-8 h-8 rounded-full bg-indigo-500/10 blur-md -z-10" />
+                                )}
+
+                                <div className={`relative transition-transform duration-200 ${isActive ? '-translate-y-0.5' : ''}`}>
+                                    {item.icon}
+                                    {/* Active Dot Indicator */}
+                                    {isActive && (
+                                        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-indigo-400 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.8)]" />
+                                    )}
+                                </div>
+                                <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                                    {item.label}
+                                </span>
+                            </>
+                        )}
                     </NavLink>
                 ))}
 
@@ -55,35 +72,49 @@ export function BottomNav() {
                     <NavLink
                         to="/admin"
                         className={({ isActive }) =>
-                            `flex flex-col items-center transition-all duration-300 ${isActive ? 'text-indigo-400 scale-125' : 'text-slate-500 hover:text-white'
+                            `flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 relative ${isActive ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'
                             }`
                         }
                     >
-                        <ShieldAlert className="w-6 h-6 text-indigo-500" />
+                        {({ isActive }) => (
+                            <>
+                                <div className={`relative transition-transform duration-200 ${isActive ? '-translate-y-0.5' : ''}`}>
+                                    <ShieldAlert className="w-5 h-5" />
+                                    {isActive && (
+                                        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-pink-400 rounded-full shadow-[0_0_8px_rgba(244,114,182,0.8)]" />
+                                    )}
+                                </div>
+                                <span className="text-[10px] font-medium tracking-wide">Admin</span>
+                            </>
+                        )}
                     </NavLink>
                 )}
 
-                {/* Wallet Section (Icon Only - Forced Render) */}
-                <div className="flex flex-col items-center relative z-[9999] pointer-events-auto cursor-pointer">
+                {/* Wallet Section */}
+                <div className="flex flex-col items-center justify-center w-full h-full pb-1 relative z-[9999]">
                     {isConnected ? (
                         <Link
                             to="/profile"
-                            className={`flex flex-col items-center transition-all duration-300 ${location.pathname.startsWith('/profile') ? 'text-indigo-400 scale-125' : 'text-slate-500 hover:text-white'
+                            className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
                                 }`}
                         >
-                            <div className="relative">
-                                <Wallet className="w-6 h-6" />
-                                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border border-black" />
+                            <div className={`relative transition-transform duration-200 ${location.pathname.startsWith('/profile') ? '-translate-y-0.5' : ''}`}>
+                                <Wallet className="w-5 h-5" />
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-[#0B0E14]" />
+                                {location.pathname.startsWith('/profile') && (
+                                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                                )}
                             </div>
+                            <span className="text-[10px] font-medium tracking-wide">Profile</span>
                         </Link>
                     ) : (
                         <Link
                             to="/login"
-                            className={`flex flex-col items-center transition-all duration-300 ${location.pathname === '/login' ? 'text-pink-500 scale-125' : 'text-slate-400 hover:text-white'
+                            className={`flex flex-col items-center justify-center transition-all duration-200 group ${location.pathname === '/login' ? 'text-pink-500' : 'text-slate-400'
                                 }`}
                         >
-                            <div className="p-2 bg-pink-500/10 rounded-lg group-hover:bg-pink-500/20 transition-colors">
-                                <Wallet className={`w-6 h-6 ${location.pathname === '/login' ? 'text-pink-500' : 'text-slate-400'}`} />
+                            <div className="p-2 bg-white/5 rounded-xl border border-white/5 group-hover:bg-white/10 transition-colors">
+                                <Wallet className={`w-5 h-5 ${location.pathname === '/login' ? 'text-pink-500' : 'text-slate-300'}`} />
                             </div>
                         </Link>
                     )}
