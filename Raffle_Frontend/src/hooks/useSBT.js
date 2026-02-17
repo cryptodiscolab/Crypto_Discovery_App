@@ -72,6 +72,12 @@ export function useSBT() {
         functionName: 'lastDistributeTimestamp',
     });
 
+    const { data: ticketDescription, refetch: refetchDesc } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: DISCO_MASTER_ABI,
+        functionName: 'ticketDescription',
+    });
+
     const claimRewards = async () => {
         if (!isConnected) throw new Error("Wallet not connected");
         return await writeContractAsync({
