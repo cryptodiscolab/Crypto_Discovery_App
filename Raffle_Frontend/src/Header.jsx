@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, Shield } from 'lucide-react';
+import { Sparkles, Shield, Wallet } from 'lucide-react';
+import { baseSepolia } from 'wagmi/chains';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
+import { useFarcaster } from './shared/context/FarcasterContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
@@ -11,6 +13,8 @@ const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd51
 
 export function Header() {
   const { address, isConnected } = useAccount();
+  const { switchChain } = useSwitchChain();
+  const { frameUser } = useFarcaster();
   const location = useLocation();
   const navigate = useNavigate();
   const { disconnect } = useDisconnect();
@@ -58,8 +62,8 @@ export function Header() {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
 
-          {/* Left: Logo */}
-          <div className="flex-1 flex justify-start">
+          {/* Left: Logo & Farcaster Welcome */}
+          <div className="flex-1 flex flex-col justify-center">
             <Link
               to="/"
               className="flex items-center gap-3 font-black text-2xl text-white hover:text-indigo-400 transition-all group"
@@ -69,6 +73,11 @@ export function Header() {
               </div>
               <span className="hidden lg:inline tracking-tighter">CRYPTO <span className="text-indigo-400">DISCO</span></span>
             </Link>
+            {frameUser && (
+              <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mt-1 ml-1 animate-pulse">
+                Welcome, @{frameUser.username}
+              </p>
+            )}
           </div>
 
           {/* Center: Desktop Navigation */}
@@ -102,12 +111,78 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right: RainbowKit ConnectButton - Hidden on Mobile */}
+          {/* Right: RainbowKit ConnectButton - Custom Styled */}
           <div className="hidden md:flex flex-1 justify-end items-center">
-            <ConnectButton
-              chainStatus="none"
-              showBalance={false}
-            />
+            <ConnectButton.Custom>
+              {({
+                account,
+                chain,
+                openAccountModal,
+                openChainModal,
+                openConnectModal,
+                authenticationStatus,
+                mounted,
+              }) => {
+                const ready = mounted && authenticationStatus !== 'loading';
+                const connected =
+                  ready &&
+                  account &&
+                  chain &&
+                  (!authenticationStatus ||
+                    authenticationStatus === 'authenticated');
+
+                return (
+                  <div
+                    {...(!ready && {
+                      'aria-hidden': true,
+                      'style': {
+                        opacity: 0,
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                      },
+                    })}
+                  >
+                    {(() => {
+                      if (!connected) {
+                        return (
+                          <button
+                            onClick={openConnectModal}
+                            type="button"
+                            className="flex items-center gap-3 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 transition-all rounded-xl shadow-lg shadow-indigo-500/20 group"
+                          >
+                            <Wallet className="w-4 h-4 text-white group-hover:scale-110 transition-transform" strokeWidth={2.5} />
+                            <span className="text-xs font-black text-white uppercase tracking-widest">Connect Wallet</span>
+                          </button>
+                        );
+                      }
+
+                      if (chain.unsupported) {
+                        return (
+                          <button
+                            onClick={() => switchChain({ chainId: baseSepolia.id })}
+                            type="button"
+                            className="px-5 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-600 transition-all"
+                          >
+                            Switch to Base
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <button
+                          onClick={openAccountModal}
+                          type="button"
+                          className="flex items-center gap-3 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-xs font-bold text-white uppercase tracking-widest">{account.displayName}</span>
+                        </button>
+                      );
+                    })()}
+                  </div>
+                );
+              }}
+            </ConnectButton.Custom>
           </div>
         </div>
       </div>

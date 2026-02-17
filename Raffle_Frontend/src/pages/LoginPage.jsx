@@ -1,6 +1,11 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useSwitchChain } from 'wagmi';
+import { Wallet, ShieldCheck } from 'lucide-react';
+import { baseSepolia } from 'wagmi/chains';
+
+import { useSIWE } from '../hooks/useSIWE';
+import { useFarcaster } from '../shared/context/FarcasterContext';
 
 // Dynamically import ConnectButton to ensure it only loads on client side
 const ConnectButton = lazy(() =>
@@ -16,6 +21,9 @@ const ConnectButton = lazy(() =>
 export function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { switchChain } = useSwitchChain();
+    const { frameUser } = useFarcaster();
+    const { signIn, session: siweSession, isLoading: isSigningIn } = useSIWE();
     const from = location.state?.from?.pathname || "/";
     const { address, isConnected } = useAccount();
     const AUTH_KEY = 'crypto_disco_auth_status';
@@ -26,17 +34,12 @@ export function LoginPage() {
         setIsClient(true);
     }, []);
 
-    // Auto-navigate when wallet is connected
+    // Auto-navigate when wallet is connected AND SIWE is done
     useEffect(() => {
-        if (isConnected && address) {
-            const authStatus = {
-                wallet: address.toLowerCase(),
-                status: 'AUTHENTICATED'
-            };
-            localStorage.setItem(AUTH_KEY, JSON.stringify(authStatus));
+        if (isConnected && address && siweSession) {
             navigate(from, { replace: true });
         }
-    }, [isConnected, address, navigate, from]);
+    }, [isConnected, address, siweSession, navigate, from]);
 
     // Re-entry Prevention: If already authenticated AND connected, skip login
     useEffect(() => {
@@ -75,10 +78,97 @@ export function LoginPage() {
                             <Suspense fallback={
                                 <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
                             }>
-                                <ConnectButton
-                                    chainStatus="none"
-                                    showBalance={false}
-                                />
+                                <ConnectButton.Custom>
+                                    {({
+                                        account,
+                                        chain,
+                                        openAccountModal,
+                                        openChainModal,
+                                        openConnectModal,
+                                        authenticationStatus,
+                                        mounted,
+                                    }) => {
+                                        const ready = mounted && authenticationStatus !== 'loading';
+                                        const connected =
+                                            ready &&
+                                            account &&
+                                            chain &&
+                                            (!authenticationStatus ||
+                                                authenticationStatus === 'authenticated');
+
+                                        return (
+                                            <div
+                                                {...(!ready && {
+                                                    'aria-hidden': true,
+                                                    'style': {
+                                                        opacity: 0,
+                                                        pointerEvents: 'none',
+                                                        userSelect: 'none',
+                                                    },
+                                                })}
+                                            >
+                                                {(() => {
+                                                    if (!connected) {
+                                                        return (
+                                                            <button
+                                                                onClick={openConnectModal}
+                                                                type="button"
+                                                                className="flex flex-col items-center gap-2 group transition-all"
+                                                            >
+                                                                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-110 active:scale-95 transition-all duration-300">
+                                                                    <Wallet className="w-7 h-7 text-white" strokeWidth={2.5} />
+                                                                </div>
+                                                                <span className="text-xs font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-300 transition-colors">
+                                                                    Connect Wallet
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    }
+
+                                                    if (chain.unsupported) {
+                                                        return (
+                                                            <button
+                                                                onClick={() => switchChain({ chainId: baseSepolia.id })}
+                                                                type="button"
+                                                                className="px-6 py-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                                                            >
+                                                                Switch to Base
+                                                            </button>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <div className="flex flex-col items-center gap-3">
+                                                            {!siweSession ? (
+                                                                <button
+                                                                    onClick={() => signIn(frameUser?.fid)}
+                                                                    disabled={isSigningIn}
+                                                                    type="button"
+                                                                    className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                                                                >
+                                                                    {isSigningIn ? (
+                                                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                                                    ) : (
+                                                                        <ShieldCheck className="w-4 h-4" />
+                                                                    )}
+                                                                    {isSigningIn ? 'Verifying...' : 'Sign & Verify'}
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={openAccountModal}
+                                                                    type="button"
+                                                                    className="px-6 py-3 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl text-indigo-400 text-xs font-bold uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
+                                                                >
+                                                                    {account.displayName}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        );
+                                    }}
+                                </ConnectButton.Custom>
                             </Suspense>
                         ) : (
                             <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>

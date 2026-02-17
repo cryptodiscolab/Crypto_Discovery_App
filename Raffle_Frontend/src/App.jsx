@@ -27,53 +27,42 @@ const ProtectedLayout = () => (
   </SignatureGuard>
 );
 
-import { useEffect } from 'react';
-import sdk from '@farcaster/miniapp-sdk';
+import { FarcasterProvider } from './shared/context/FarcasterContext';
 
 function App() {
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await sdk.actions.ready();
-        console.log('Farcaster Frame SDK ready');
-      } catch (error) {
-        console.error('Farcaster Frame SDK initialization failed:', error);
-      }
-    };
-    init();
-  }, []);
-
   return (
     <Web3Provider>
       <PointsProvider>
-        <BrowserRouter>
-          <div className="dark min-h-screen bg-[#0B0E14] text-slate-100 pointer-events-none">
-            <Header />
-            <main className="pt-24 pb-32 md:pb-0 pointer-events-auto">
-              <Suspense fallback={
-                <div className="min-h-screen flex items-center justify-center">
-                  <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
-                </div>
-              }>
-                <Routes>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route element={<ProtectedLayout />}>
-                    <Route path="/" element={<ErrorBoundary><HomePage /></ErrorBoundary>} />
-                    <Route path="/tasks" element={<TasksPage />} />
-                    <Route path="/raffles" element={<RafflesPage />} />
-                    <Route path="/leaderboard" element={<LeaderboardPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                    <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-                  </Route>
-                </Routes>
+        <FarcasterProvider>
+          <BrowserRouter>
+            <div className="dark min-h-screen bg-[#0B0E14] text-slate-100 pointer-events-none">
+              <Header />
+              <main className="pt-24 pb-32 md:pb-0 pointer-events-auto">
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center">
+                    <div className="w-10 h-10 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                  </div>
+                }>
+                  <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route element={<ProtectedLayout />}>
+                      <Route path="/" element={<ErrorBoundary><HomePage /></ErrorBoundary>} />
+                      <Route path="/tasks" element={<TasksPage />} />
+                      <Route path="/raffles" element={<RafflesPage />} />
+                      <Route path="/leaderboard" element={<LeaderboardPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                      <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                    </Route>
+                  </Routes>
 
-              </Suspense>
-            </main>
-            <BottomNav />
-            <Toaster position="bottom-right" toastOptions={{ style: { background: '#161B22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
-          </div>
-        </BrowserRouter>
+                </Suspense>
+              </main>
+              <BottomNav />
+              <Toaster position="bottom-right" toastOptions={{ style: { background: '#161B22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
+            </div>
+          </BrowserRouter>
+        </FarcasterProvider>
       </PointsProvider>
     </Web3Provider>
   );

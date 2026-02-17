@@ -17,8 +17,8 @@ export default function LazyWeb3Provider({ children }) {
                     modalSize="compact"
                     initialChain={baseSepolia}
                 >
-                    {/* Relative positioning here helps with z-index stacking context */}
-                    <div className="relative min-h-screen bg-slate-950 text-slate-50">
+                    {/* Remove 'relative' to avoid creating a new stacking context that traps z-index */}
+                    <div className="min-h-screen bg-slate-950 text-slate-50">
                         {children}
                     </div>
                 </RainbowKitProvider>

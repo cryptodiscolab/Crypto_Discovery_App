@@ -17,16 +17,24 @@ const connectors = connectorsForWallets(
         {
             groupName: 'Recommended',
             wallets: [
-                coinbaseWallet, // Taruh paling atas biar jadi Raja!
-                metaMaskWallet,
-                bitgetWallet,
-                walletConnectWallet
+                coinbaseWallet({
+                    projectId,
+                    appName: 'Crypto Disco',
+                    preference: 'all' // Support Smart Wallet + Extension
+                }),
+                metaMaskWallet({ projectId }),
+                bitgetWallet({ projectId }),
+                walletConnectWallet({ projectId })
             ],
         },
     ],
     {
         appName: 'Crypto Disco',
         projectId,
+        // METADATA WAJIB BUAT DEEP LINK MOBILE:
+        appDescription: 'Crypto Discovery App on Base',
+        appUrl: 'https://y-app.vercel.app',
+        appIcon: 'https://y-app.vercel.app/og-image.png',
     }
 );
 
