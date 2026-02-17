@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import sdk from '@farcaster/miniapp-sdk';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 const FarcasterContext = createContext({
     frameUser: null,

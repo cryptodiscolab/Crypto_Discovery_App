@@ -5,7 +5,6 @@ import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import {
     coinbaseWallet,
     metaMaskWallet,
-    bitgetWallet,
     walletConnectWallet
 } from '@rainbow-me/rainbowkit/wallets';
 
@@ -17,24 +16,15 @@ const connectors = connectorsForWallets(
         {
             groupName: 'Recommended',
             wallets: [
-                coinbaseWallet({
-                    projectId,
-                    appName: 'Crypto Disco',
-                    preference: 'all' // Support Smart Wallet + Extension
-                }),
-                metaMaskWallet({ projectId }),
-                bitgetWallet({ projectId }),
-                walletConnectWallet({ projectId })
+                metaMaskWallet,
+                coinbaseWallet,
+                walletConnectWallet,
             ],
         },
     ],
     {
         appName: 'Crypto Disco',
         projectId,
-        // METADATA WAJIB BUAT DEEP LINK MOBILE:
-        appDescription: 'Crypto Discovery App on Base',
-        appUrl: 'https://y-app.vercel.app',
-        appIcon: 'https://y-app.vercel.app/og-image.png',
     }
 );
 
