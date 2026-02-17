@@ -24,18 +24,27 @@ function RaffleCard({ raffleId }) {
     ? Math.max(0, Math.floor((raffle.endTime - Date.now() / 1000) / 60)) + "m remaining"
     : "Ended";
 
-  const handleBuy = async () => {
-    setIsBuying(true);
-    const tid = toast.loading("Processing purchase...");
+  const handleAction = async () => {
+    setIsProcessing(true);
+    const tid = toast.loading(isFinalized ? "Claiming prize..." : "Processing purchase...");
     try {
-      await buyTickets(raffleId, 1);
-      toast.success("Ticket purchased! Good luck!", { id: tid });
+      if (isFinalized) {
+        await claimPrize(raffleId);
+        toast.success("Prize claimed! Check your wallet.", { id: tid });
+      } else {
+        await buyTickets(raffleId, 1);
+        toast.success("Ticket purchased! Good luck!", { id: tid });
+      }
     } catch (e) {
-      toast.error(e.shortMessage || "Purchase failed", { id: tid });
+      toast.error(e.shortMessage || "Action failed", { id: tid });
     } finally {
-      setIsBuying(false);
+      setIsProcessing(false);
     }
   };
+
+  const currentTickets = Number(raffle.totalTickets || 0);
+  const maxTickets = Number(raffle.maxTickets || 100);
+  const progress = Math.min((currentTickets / maxTickets) * 100, 100);
 
   return (
     <div
@@ -43,43 +52,49 @@ function RaffleCard({ raffleId }) {
     >
       <div className="relative h-48 overflow-hidden bg-gradient-to-br from-indigo-900/40 to-slate-900 flex items-center justify-center">
         {/* NFT Placeholder or Image */}
-        <div className="text-center">
+        <div className="text-center px-4">
           <Trophy className="w-16 h-16 text-indigo-500/20 mx-auto" />
-          <p className="text-[10px] text-slate-600 font-mono mt-2">NFT PREVIEW #{raffle.id}</p>
+          <h4 className="text-white font-bold mt-2 truncate max-w-[200px]">
+            {raffle.metadataURI?.includes('ipfs') ? "Community Prize" : `Elite Raffle #${raffle.id}`}
+          </h4>
+          <p className="text-[10px] text-slate-500 font-mono mt-1">PROUDLY SPONSORED</p>
         </div>
 
         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10 flex items-center gap-1">
           <Timer className="w-3 h-3 text-yellow-400" />
-          {timeLeft}
+          {isFinalized ? "Finalized" : timeLeft}
         </div>
 
-        {!raffle.isActive && (
+        {isFinalized && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
-            <span className="bg-red-500 text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">Completed</span>
+            <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">
+              {isWinner ? "YOU WON!" : "Ended"}
+            </span>
           </div>
         )}
       </div>
 
       <div className="p-5">
         <div className="flex justify-between items-start mb-4">
-          <h3 className="text-xl font-bold text-white leading-tight">Elite NFT Raffle #{raffle.id}</h3>
-          <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20 font-bold uppercase">LIVE</span>
+          <h3 className="text-xl font-bold text-white leading-tight truncate pr-2">Event #{raffle.id}</h3>
+          <span className={`text-[10px] px-2 py-0.5 rounded border font-bold uppercase ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+            {raffle.isActive ? 'LIVE' : 'CLOSED'}
+          </span>
         </div>
 
         <div className="space-y-3 mb-6">
           <div className="flex justify-between text-sm">
             <span className="text-slate-400 flex items-center gap-2">
-              <Ticket className="w-4 h-4" /> Tickets Sold
+              <Ticket className="w-4 h-4" /> Participation
             </span>
             <span className="text-white font-medium">
-              {raffle.ticketsSold} / ∞
+              {currentTickets} / {maxTickets}
             </span>
           </div>
-          {/* Simple Progress (Unlimited for this contract version usually, but let's show anyway) */}
           <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
-              style={{ width: `${Math.min((raffle.ticketsSold / 100) * 100, 100)}%` }}
+              className={`h-full bg-gradient-to-r ${isFinalized ? 'from-slate-600 to-slate-500' : 'from-blue-500 to-emerald-500'}`}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -90,14 +105,25 @@ function RaffleCard({ raffleId }) {
             <p className="text-lg font-black text-blue-400">0.01 <span className="text-xs text-slate-500">ETH</span></p>
           </div>
 
-          <button
-            onClick={handleBuy}
-            disabled={isBuying || !raffle.isActive}
-            className={`btn-primary px-6 py-2 text-sm flex items-center gap-2 ${!raffle.isActive ? 'grayscale opacity-50' : ''}`}
-          >
-            {isBuying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ticket className="w-4 h-4" />}
-            Buy Ticket
-          </button>
+          {isWinner && isFinalized ? (
+            <button
+              onClick={handleAction}
+              disabled={isProcessing}
+              className="btn-primary px-6 py-2 text-sm flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 animate-bounce"
+            >
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
+              Claim Prize
+            </button>
+          ) : (
+            <button
+              onClick={handleAction}
+              disabled={isProcessing || isFinalized || !raffle.isActive}
+              className={`btn-primary px-6 py-2 text-sm flex items-center gap-2 ${(isFinalized || !raffle.isActive) ? 'grayscale opacity-50' : ''}`}
+            >
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {isFinalized ? 'Results Out' : 'Join Now'}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -116,10 +142,16 @@ export function RafflesPage() {
 
       <div className="container mx-auto max-w-6xl relative z-10">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div className="text-center md:text-left">
             <h1 className="text-4xl font-black text-white mb-2 tracking-tight">NFT <span className="text-blue-500">Raffles</span></h1>
-            <p className="text-slate-500 font-medium">Join on-chain raffles and win legendary digital collectibles.</p>
+            <p className="text-slate-500 font-medium max-w-md">Participate in community raffles or sponsor your own event to grow your project.</p>
+
+            <Link to="/create-raffle" className="inline-flex items-center gap-2 mt-4 text-blue-400 hover:text-blue-300 font-bold transition-all group">
+              <Gift className="w-5 h-5" />
+              Sponsor an Event
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
 
           <div className="flex gap-2 bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">

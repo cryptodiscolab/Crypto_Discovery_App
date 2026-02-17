@@ -62,22 +62,49 @@ export function useRaffle() {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: RAFFLE_ABI,
-            functionName: 'claimPrizes',
+            functionName: 'claimRafflePrize',
             args: [BigInt(raffleId)],
         });
 
         if (hash) {
-            toast.success("Prize claimed! Requesting signature for XP rewards...");
-            try {
-                const timestamp = new Date().toISOString();
-                const message = `Claim XP for Raffle Prize\nRaffle ID: ${raffleId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
-                const signature = await signMessageAsync({ message });
+            toast.success("Prize claim submitted!");
+            if (refetch) refetch();
+        }
+        return hash;
+    };
 
-                await awardTaskXP(address, signature, message, `raffle_claim_${raffleId}`, 0);
-                if (refetch) refetch();
-            } catch (e) {
-                console.warn("XP Awarding skipped or failed:", e.message);
-            }
+    const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH }) => {
+        // Total value includes 5% platform fee (105%)
+        const totalValue = (BigInt(depositETH) * 105n) / 100n;
+
+        const hash = await writeContractAsync({
+            address: RAFFLE_ADDRESS,
+            abi: RAFFLE_ABI,
+            functionName: 'createSponsorshipRaffle',
+            args: [
+                BigInt(winnerCount),
+                BigInt(maxTickets),
+                BigInt(durationDays),
+                metadataURI
+            ],
+            value: totalValue
+        });
+
+        if (hash) {
+            toast.success("Raffle created successfully!");
+        }
+        return hash;
+    };
+
+    const withdrawEarnings = async () => {
+        const hash = await writeContractAsync({
+            address: RAFFLE_ADDRESS,
+            abi: RAFFLE_ABI,
+            functionName: 'withdrawSponsorBalance'
+        });
+
+        if (hash) {
+            toast.success("Earnings withdrawn!");
         }
         return hash;
     };
@@ -130,7 +157,8 @@ export function useRaffle() {
     return {
         buyTickets,
         drawRaffle,
-        createRaffle,
+        createSponsorshipRaffle,
+        withdrawEarnings,
         claimPrize,
         isDrawing
     };
@@ -159,20 +187,25 @@ export function useRaffleInfo(raffleId) {
 
     if (!data || isLoading) return { raffle: null, isLoading };
 
-    const [id, creator, startTime, endTime, ticketsSold, paidTicketsSold, isActive, isCompleted, winner, nftCount] = data;
+    const r = data;
 
     return {
         raffle: {
-            id: Number(id),
-            creator,
-            startTime: Number(startTime),
-            endTime: Number(endTime),
-            ticketsSold: Number(ticketsSold),
-            paidTicketsSold: Number(paidTicketsSold),
-            isActive,
-            isCompleted,
-            winner,
-            nftCount: Number(nftCount)
+            id: Number(r.raffleId),
+            totalTickets: Number(r.totalTickets),
+            maxTickets: Number(r.maxTickets),
+            targetPrizePool: r.targetPrizePool,
+            prizePool: r.prizePool,
+            participants: r.participants,
+            winners: r.winners,
+            winnerCount: Number(r.winnerCount),
+            randomNumber: r.randomNumber,
+            isActive: r.isActive,
+            isFinalized: r.isFinalized,
+            sponsor: r.sponsor,
+            metadataURI: r.metadataURI,
+            endTime: Number(r.endTime),
+            prizePerWinner: r.prizePerWinner
         },
         isLoading,
         refetch

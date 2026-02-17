@@ -170,6 +170,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     uint256 public globalTxCount;
     uint256 public totalSponsorRequests;
     uint256 public nextTaskId = 2;
+    address public masterX;
 
     uint256[3] public packagePricesUSD = [10 ether, 50 ether, 100 ether];
     uint256 public tokenPriceUSD = 0.01 ether;
@@ -453,6 +454,10 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         isValidReferrer[_referrer] = _status;
     }
 
+    function setMasterX(address _m) external onlyRole(ADMIN_ROLE) {
+        masterX = _m;
+    }
+
     // --- ADMIN: EMERGENCY CONTROLS ---
     
     function pause() external onlyRole(ADMIN_ROLE) {
@@ -547,7 +552,8 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         if (_rewardAmount == 0) revert InvalidReward();
 
         uint256 usdFee = packagePricesUSD[uint256(_level)];
-        uint256 ethFee = convertUSDtoETH(usdFee);
+        uint256 baseETH = convertUSDtoETH(usdFee);
+        uint256 ethFee = (baseETH * 105) / 100;
         
         if (msg.value < ethFee) revert InsufficientPayment();
         if ((_rewardAmount / _maxParticipants) < 0.01 ether) revert RewardTooLow();
@@ -558,6 +564,12 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         _processSponsorship(msg.sender, _level, _title, _link, _email, ethFee, address(0), _rewardAmount, _maxParticipants);
         
         creatorToken.safeTransferFrom(msg.sender, address(this), _rewardAmount);
+
+        // Forward Fee to MasterX if set
+        if (masterX != address(0)) {
+            (bool s, ) = payable(masterX).call{value: ethFee}("");
+            require(s, "MasterX forward failed");
+        }
 
         // Refund excess ETH
         if (msg.value > ethFee) {
@@ -808,7 +820,8 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         if (currentTier == _tier) revert AlreadyOwnNFT();
         if (uint256(_tier) != uint256(currentTier) + 1) revert SequentialUpgradeRequired();
         if (stats.points < config.pointsRequired) revert InsufficientPoints();
-        if (msg.value < config.mintPrice) revert InsufficientPayment();
+        uint256 requiredPayment = (config.mintPrice * 105) / 100;
+        if (msg.value < requiredPayment) revert InsufficientPayment();
         
         if (config.currentSupply >= config.maxSupply) revert SoldOut();
 
@@ -825,9 +838,15 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         } else {
             emit NFTUpgraded(msg.sender, oldTier, _tier);
         }
+
+        // Forward to MasterX if set
+        if (masterX != address(0)) {
+            (bool s, ) = payable(masterX).call{value: requiredPayment}("");
+            require(s, "MasterX forward failed");
+        }
         
-        if (msg.value > config.mintPrice) {
-            uint256 refund = msg.value - config.mintPrice;
+        if (msg.value > requiredPayment) {
+            uint256 refund = msg.value - requiredPayment;
             (bool success, ) = payable(msg.sender).call{value: refund}("");
             require(success, "Refund failed");
         }
@@ -844,15 +863,14 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         validTier(_tier)
     {
         NFTConfig storage config = nftConfigs[_tier];
-        // Convert config.mintPrice (ETH) to USD/Token
-        uint256 ethAmount = config.mintPrice;
-        uint256 usdAmount = convertETHtoUSD(ethAmount);
+        UserStats storage stats = userStats[msg.sender];
+        NFTTier currentTier = stats.currentTier;
+
+        uint256 baseUSD = convertETHtoUSD(config.mintPrice);
+        uint256 usdAmount = (baseUSD * 105) / 100;
         
         if (paymentToken.balanceOf(msg.sender) < usdAmount) revert InsufficientPayment();
         if (paymentToken.allowance(msg.sender, address(this)) < usdAmount) revert InsufficientPayment();
-
-        UserStats storage stats = userStats[msg.sender];
-        NFTTier currentTier = stats.currentTier;
 
         if (balanceOf(msg.sender) != 0 && currentTier >= _tier) revert AlreadyOwnNFT();
         if (currentTier == _tier) revert AlreadyOwnNFT();

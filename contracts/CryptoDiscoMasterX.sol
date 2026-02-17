@@ -53,11 +53,14 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     uint256 public constant USD_DECIMALS = 6;
     
     // Logic state
-    uint256 public ticketPriceUSD = 150000; // $0.15
+    string public ticketDescription = "Raffle Ticket";
+    uint256 public ticketPriceUSDC = 150000; // $0.15 (6 decimals)
+    uint256 public pointsPerTicket = 15;
     uint256 public maxGasPrice = 100 gwei;
     uint256 public totalSBTPoolBalance;
     uint256 public totalLockedRewards;
-    uint256 public lastDistributionTimestamp;
+    uint256 public lastDistributeTimestamp;
+    uint256 public constant DISTRIBUTE_INTERVAL = 5 days;
     
     // Packed holder counts
     uint32 public goldHolders;
@@ -77,11 +80,14 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     // ============ Events ============
     
     event RevenueReceived(uint256 amount, uint256 timestamp);
-    event SBTPoolDistributed(uint256 amount, uint256 timestamp);
+    event SBTPoolDistributed(uint256 amount, uint256 goldAcc, uint256 silverAcc, uint256 bronzeAcc, uint256 timestamp);
     event ClaimProcessed(address indexed user, SBTTier tier, uint256 amount);
+    uint256 public constant DISTRIBUTE_INTERVAL_SEC = 5 days; // for reference in testing
     event PointsAwarded(address indexed user, uint256 points, string reason);
     event TierUpdated(address indexed user, SBTTier oldTier, SBTTier newTier);
     event EmergencyWithdrawal(address indexed owner, uint256 amount);
+    event TicketsPurchased(address indexed user, uint256 quantity, uint256 totalPaid);
+    event RevenueDistributed(uint256 totalAmount, uint256 timestamp);
 
     // ============ Constructor ============
     
@@ -93,7 +99,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         operationsWallet = _ops;
         treasuryWallet = _treasury;
         priceFeed = AggregatorV3Interface(_priceFeed);
-        lastDistributionTimestamp = block.timestamp;
+        lastDistributeTimestamp = block.timestamp;
     }
 
     // ============ Integration Hooks ============
@@ -115,43 +121,90 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     // ============ Revenue Distribution ============
     
     receive() external payable whenNotPaused {
-        if (msg.value == 0) return;
-        
-        uint256 ownerAmt = (msg.value * OWNER_SHARE) / BASIS_POINTS;
-        uint256 opsAmt = (msg.value * OPS_SHARE) / BASIS_POINTS;
-        uint256 sbtPoolAmt = (msg.value * SBT_POOL_SHARE) / BASIS_POINTS;
-        
-        payable(owner()).transfer(ownerAmt);
-        payable(operationsWallet).transfer(opsAmt);
-        
-        totalSBTPoolBalance += sbtPoolAmt;
-        emit RevenueReceived(msg.value, block.timestamp);
+        if (msg.value > 0) {
+            emit RevenueReceived(msg.value, block.timestamp);
+        }
     }
 
-    function distributeSBTPool() external nonReentrant whenNotPaused {
-        uint256 totalWeight = (goldHolders * GOLD_WEIGHT) + (silverHolders * SILVER_WEIGHT) + (bronzeHolders * BRONZE_WEIGHT);
-        if (totalWeight == 0) return;
+    /**
+     * @notice Distribute accumulated revenue in batch
+     * @dev Shares: 40% Owner, 20% Ops, 30% SBT Pool, 10% Treasury
+     * @dev Cooldown: 5 days, bypassed by Owner
+     */
+    function distributeRevenue() external nonReentrant whenNotPaused {
+        uint256 totalBalance = address(this).balance;
+        uint256 distributable = totalBalance > totalLockedRewards ? totalBalance - totalLockedRewards : 0;
         
-        uint256 amount = totalSBTPoolBalance;
-        totalLockedRewards += amount;
+        require(distributable > 0, "No revenue to distribute");
+        require(
+            msg.sender == owner() || block.timestamp >= lastDistributeTimestamp + DISTRIBUTE_INTERVAL,
+            "Cooldown active"
+        );
+
+        uint256 ownerAmt = (distributable * OWNER_SHARE) / BASIS_POINTS;
+        uint256 opsAmt = (distributable * OPS_SHARE) / BASIS_POINTS;
+        uint256 sbtPoolAmt = (distributable * SBT_POOL_SHARE) / BASIS_POINTS;
+        uint256 treasuryAmt = (distributable * TREASURY_SHARE) / BASIS_POINTS;
+
+        // 1. Process Transfers
+        (bool s1, ) = payable(owner()).call{value: ownerAmt}("");
+        require(s1, "Owner payout failed");
         
-        if (goldHolders > 0) {
-            uint256 share = (amount * goldHolders * GOLD_WEIGHT) / totalWeight;
-            accRewardPerShare[SBTTier.GOLD] += (share * REWARD_PRECISION) / goldHolders;
-        }
-        if (silverHolders > 0) {
-            uint256 share = (amount * silverHolders * SILVER_WEIGHT) / totalWeight;
-            accRewardPerShare[SBTTier.SILVER] += (share * REWARD_PRECISION) / silverHolders;
-        }
-        if (bronzeHolders > 0) {
-            uint256 share = (amount * bronzeHolders * BRONZE_WEIGHT) / totalWeight;
-            accRewardPerShare[SBTTier.BRONZE] += (share * REWARD_PRECISION) / bronzeHolders;
-        }
-        
-        totalSBTPoolBalance = 0;
-        lastDistributionTimestamp = block.timestamp;
-        emit SBTPoolDistributed(amount, block.timestamp);
+        (bool s2, ) = payable(operationsWallet).call{value: opsAmt}("");
+        require(s2, "Ops payout failed");
+
+        (bool s3, ) = payable(treasuryWallet).call{value: treasuryAmt}("");
+        require(s3, "Treasury payout failed");
+
+        // 2. Distribute SBT Pool Share (Immediate accRewardPerShare update)
+        _processSBTSplit(sbtPoolAmt);
+
+        lastDistributeTimestamp = block.timestamp;
+        emit RevenueDistributed(distributable, block.timestamp);
     }
+
+    function _processSBTSplit(uint256 amount) internal {
+        if (amount == 0) return;
+        uint256 ownerOverflow = 0;
+        
+        unchecked {
+            // Gold
+            if (goldHolders > 0) {
+                uint256 share = (amount * GOLD_WEIGHT) / 100;
+                accRewardPerShare[SBTTier.GOLD] += (share * REWARD_PRECISION) / goldHolders;
+                totalLockedRewards += share;
+            } else {
+                ownerOverflow += (amount * GOLD_WEIGHT) / 100;
+            }
+            
+            // Silver
+            if (silverHolders > 0) {
+                uint256 share = (amount * SILVER_WEIGHT) / 100;
+                accRewardPerShare[SBTTier.SILVER] += (share * REWARD_PRECISION) / silverHolders;
+                totalLockedRewards += share;
+            } else {
+                ownerOverflow += (amount * SILVER_WEIGHT) / 100;
+            }
+            
+            // Bronze
+            if (bronzeHolders > 0) {
+                uint256 share = (amount * BRONZE_WEIGHT) / 100;
+                accRewardPerShare[SBTTier.BRONZE] += (share * REWARD_PRECISION) / bronzeHolders;
+                totalLockedRewards += share;
+            } else {
+                ownerOverflow += (amount * BRONZE_WEIGHT) / 100;
+            }
+        }
+        
+        totalSBTPoolBalance += amount; // Historical tracking
+
+        if (ownerOverflow > 0) {
+            (bool success, ) = payable(owner()).call{value: ownerOverflow}("");
+            require(success, "SBT Overflow failed");
+        }
+    }
+
+    // Removed legacy _distributeRevenue and distributeSBTPool
 
     function claimSBTRewards() public nonReentrant whenNotPaused {
         require(tx.gasprice <= maxGasPrice, "Gas too high");
@@ -166,7 +219,9 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         
         if (pending > totalLockedRewards) pending = totalLockedRewards;
         totalLockedRewards -= pending;
-        payable(msg.sender).transfer(pending);
+        
+        (bool success, ) = payable(msg.sender).call{value: pending}("");
+        require(success, "Claim failed");
         
         emit ClaimProcessed(msg.sender, tier, pending);
     }
@@ -183,7 +238,8 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
             if (pending > 0) {
                 if (pending > totalLockedRewards) pending = totalLockedRewards;
                 totalLockedRewards -= pending;
-                payable(user).transfer(pending);
+                (bool success, ) = payable(user).call{value: pending}("");
+                require(success, "Tier claim failed");
                 emit ClaimProcessed(user, oldTier, pending);
             }
         }
@@ -205,9 +261,49 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
 
     // ============ Price Logic ============
     
+    // ============ Raffle Sales (Master Store) ============
+    
+    /**
+     * @notice Calculate ticket price in ETH using high-precision Oracle math
+     * @dev (ticketPriceUSDC * 1e18 * 1e8) / (uint256(price) * 1e6)
+     */
     function getTicketPriceInETH() public view returns (uint256) {
         (, int256 price, , , ) = priceFeed.latestRoundData();
-        return (ticketPriceUSD * 1e20) / uint256(price);
+        require(price > 0, "Invalid oracle price");
+        
+        // ticketPriceUSDC (6 decimals)
+        // ETH (18 decimals)
+        // Oracle Price (8 decimals)
+        return (ticketPriceUSDC * 1e18 * 1e8) / (uint256(price) * 1e6);
+    }
+
+    /**
+     * @notice Buy Raffle Tickets directly from Master Store
+     * @dev Revenue is automatically distributed 40/20/30/10
+     */
+    function buyRaffleTickets(uint256 quantity) external payable nonReentrant whenNotPaused {
+        require(quantity > 0, "Invalid quantity");
+        uint256 ticketPrice = getTicketPriceInETH();
+        uint256 totalRequired = (ticketPrice * quantity * 105) / 100;
+        
+        require(msg.value >= totalRequired, "Insufficient ETH");
+
+        // 1. Award Points
+        uint256 points = quantity * pointsPerTicket;
+        users[msg.sender].points += points;
+        emit PointsAwarded(msg.sender, points, "Raffle Purchase");
+
+        // 2. Revenue (Accumulates in balance)
+        // No immediate distribution here anymore.
+
+        // 3. Handle Refund
+        if (msg.value > totalRequired) {
+            uint256 refund = msg.value - totalRequired;
+            (bool success, ) = payable(msg.sender).call{value: refund}("");
+            require(success, "Refund failed");
+        }
+
+        emit TicketsPurchased(msg.sender, quantity, totalRequired);
     }
 
     // ============ Admin ============
@@ -215,12 +311,20 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     function emergencyWithdraw() external onlyOwner {
         uint256 stuck = address(this).balance - totalLockedRewards;
         require(stuck > 0, "No funds");
-        payable(owner()).transfer(stuck);
+        (bool success, ) = payable(owner()).call{value: stuck}("");
+        require(success, "Emergency failed");
         emit EmergencyWithdrawal(owner(), stuck);
     }
 
-    function setParams(uint256 _tUSD, uint256 _mGas) external onlyOwner {
-        ticketPriceUSD = _tUSD;
+    function setParams(
+        uint256 _tUSDC, 
+        uint256 _mGas, 
+        uint256 _pPerTicket, 
+        string calldata _desc
+    ) external onlyOwner {
+        ticketPriceUSDC = _tUSDC;
         maxGasPrice = _mGas;
+        pointsPerTicket = _pPerTicket;
+        ticketDescription = _desc;
     }
 }

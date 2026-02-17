@@ -34,13 +34,22 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     struct RaffleData {
         uint256 raffleId;
         uint256 totalTickets;
+        uint256 maxTickets;     // Max tickets for this event
+        uint256 targetPrizePool; // Target amount in ETH
         uint256 prizePool;
         address[] participants;
         mapping(address => uint256) ticketCount;
-        address winner;
+        address[] winners;      // Support for multiple winners
+        uint256 winnerCount;    // Number of winners to pick
         uint256 randomNumber;
         bool isActive;
         bool isFinalized;
+        address sponsor;        // User who created the raffle (address(0) for Admin)
+        string metadataURI;     // JSON with Image, Title, Description
+        uint256 endTime;        // End timestamp
+        mapping(address => bool) isClaimed; 
+        uint256 prizePerWinner; // Calculated at finalization
+        uint256 totalTicketRevenue; // Amount collected from ticket sales
     }
 
     // ============ State Variables ============
@@ -49,8 +58,9 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     IAirnodeRrpV0 public immutable airnodeRrp;
     
     uint256 public constant POINTS_RAFFLE_TICKET = 15;
-    uint256 public constant MAX_TICKETS_PER_USER = 100;
-    uint256 public constant MAX_PARTICIPANTS = 4000;
+    uint256 public constant MAX_TICKETS_PER_USER = 1000; // Increased for high-cap events
+    uint256 public constant MAX_PARTICIPANTS = 10000;
+    uint256 public constant MAINTENANCE_FEE_BP = 2000; // 20% Rake
     
     // API3 QRNG Integration
     address public airnode;
@@ -60,6 +70,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     mapping(uint256 => RaffleData) public raffles;
     uint256 public currentRaffleId;
     mapping(bytes32 => uint256) public requestToRaffleId;
+    mapping(address => uint256) public sponsorBalances; // Claimable earnings for creators
 
     // ============ Events ============
     
@@ -88,8 +99,50 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     function initializeFirstRaffle() external onlyOwner {
         require(currentRaffleId == 0, "Already initialized");
         currentRaffleId = 1;
-        raffles[currentRaffleId].raffleId = currentRaffleId;
-        raffles[currentRaffleId].isActive = true;
+        RaffleData storage r = raffles[currentRaffleId];
+        r.raffleId = currentRaffleId;
+        r.isActive = true;
+        r.winnerCount = 1;
+        r.maxTickets = MAX_PARTICIPANTS;
+        r.endTime = block.timestamp + 7 days;
+        r.metadataURI = "ipfs://default-admin-raffle";
+        emit RaffleCreated(currentRaffleId, block.timestamp);
+    }
+
+    /**
+     * @notice Create a community raffle event.
+     */
+    function createSponsorshipRaffle(
+        uint256 _winnerCount,
+        uint256 _maxTickets,
+        uint256 _durationDays,
+        string calldata _metadataURI
+    ) external payable nonReentrant whenNotPaused {
+        require(msg.value > 0, "Deposit required");
+        uint256 basePrize = msg.value * 100 / 105; // 5% is surcharge
+        uint256 surcharge = msg.value - basePrize;
+        
+        require(_winnerCount > 0 && _winnerCount <= 10, "Invalid winner count");
+        require(_durationDays > 0 && _durationDays <= 25, "Max 25 days");
+        require(_maxTickets > 0 && _maxTickets <= MAX_PARTICIPANTS, "Exceeds max");
+
+        // Forward 5% surcharge to MasterX
+        if (surcharge > 0) {
+            (bool success, ) = payable(address(masterContract)).call{value: surcharge}("");
+            require(success, "Surcharge forward failed");
+        }
+
+        currentRaffleId++;
+        RaffleData storage r = raffles[currentRaffleId];
+        r.raffleId = currentRaffleId;
+        r.isActive = true;
+        r.winnerCount = _winnerCount;
+        r.maxTickets = _maxTickets;
+        r.endTime = block.timestamp + (_durationDays * 1 days);
+        r.metadataURI = _metadataURI;
+        r.prizePool = basePrize; // Initial prize from creator (untouched by ticket sales)
+        r.sponsor = msg.sender;
+
         emit RaffleCreated(currentRaffleId, block.timestamp);
     }
 
@@ -100,26 +153,35 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         
         RaffleData storage raffle = raffles[currentRaffleId];
         require(raffle.isActive, "Raffle not active");
-        require(raffle.ticketCount[msg.sender] + ticketCount <= MAX_TICKETS_PER_USER, "Exceeds max");
+        require(block.timestamp <= raffle.endTime, "Raffle expired");
+        require(raffle.totalTickets + ticketCount <= raffle.maxTickets, "Sold out");
+        require(raffle.ticketCount[msg.sender] + ticketCount <= MAX_TICKETS_PER_USER, "Exceeds user max");
         
-        uint256 requiredETH = masterContract.getTicketPriceInETH() * ticketCount;
+        uint256 baseETH = masterContract.getTicketPriceInETH() * ticketCount;
+        uint256 requiredETH = (baseETH * 105) / 100;
         require(msg.value >= requiredETH, "Insufficient ETH");
         
-        // Award points via Master contract
+        // 1. Forward 5% Fee to MasterX
+        uint256 fee = requiredETH - baseETH;
+        (bool s, ) = payable(address(masterContract)).call{value: fee}("");
+        require(s, "Fee forwarding failed");
+
+        // 2. Award points via Master contract
         masterContract.addPoints(msg.sender, ticketCount * POINTS_RAFFLE_TICKET, "Raffle Ticket");
         
-        // Add tickets
+        // 3. Add tickets
         if (raffle.ticketCount[msg.sender] == 0) {
-            require(raffle.participants.length < MAX_PARTICIPANTS, "Full");
+            require(raffle.participants.length < MAX_PARTICIPANTS, "Room limit");
             raffle.participants.push(msg.sender);
         }
         raffle.ticketCount[msg.sender] += ticketCount;
         raffle.totalTickets += ticketCount;
-        raffle.prizePool += msg.value;
+        raffle.totalTicketRevenue += baseETH; 
         
         // Refund excess
         if (msg.value > requiredETH) {
-            payable(msg.sender).transfer(msg.value - requiredETH);
+            (bool success, ) = payable(msg.sender).call{value: msg.value - requiredETH}("");
+            require(success, "Refund failed");
         }
         
         emit TicketPurchased(msg.sender, currentRaffleId, ticketCount);
@@ -133,9 +195,24 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         sponsorWallet = _sw;
     }
 
-    function requestRaffleWinner(uint256 raffleId) external onlyOwner {
+    function requestRaffleWinner(uint256 raffleId) external {
         RaffleData storage raffle = raffles[raffleId];
-        require(raffle.isActive && raffle.totalTickets > 0, "Cannot request");
+        require(raffle.isActive, "Not active");
+        require(raffle.totalTickets > 0, "No tickets");
+        
+        // Authorization: Owner or the Sponsor can request if conditions met
+        bool isSponsor = (msg.sender == raffle.sponsor && raffle.sponsor != address(0));
+        bool isAdmin = (msg.sender == owner());
+        require(isAdmin || isSponsor, "Not authorized");
+
+        // Allow request if Sold Out or Time Expired
+        require(
+            raffle.totalTickets >= raffle.maxTickets || 
+            block.timestamp >= raffle.endTime || 
+            isAdmin, 
+            "Conditions not met"
+        );
+        
         require(airnode != address(0), "QRNG not set");
         
         raffle.isActive = false;
@@ -158,31 +235,108 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
 
     function _finalizeRaffle(uint256 raffleId, uint256 randomNumber) internal {
         RaffleData storage raffle = raffles[raffleId];
-        uint256 winningTicket = randomNumber % raffle.totalTickets;
-        uint256 ticketCounter = 0;
-        address winner;
+        require(!raffle.isFinalized, "Already finalized");
+
+        // 1. Calculate 20% Project Rake from TICKET SALES only
+        uint256 projectRake = (raffle.totalTicketRevenue * MAINTENANCE_FEE_BP) / 10000;
+        uint256 sponsorShare = raffle.totalTicketRevenue - projectRake;
         
-        uint256 pCount = raffle.participants.length;
-        for (uint256 i = 0; i < pCount;) {
-            address p = raffle.participants[i];
-            ticketCounter += raffle.ticketCount[p];
-            if (winningTicket < ticketCounter) {
-                winner = p;
-                break;
+        // 2. Distribute Rake to Owner
+        if (projectRake > 0) {
+            (bool success, ) = payable(owner()).call{value: projectRake}("");
+            require(success, "Rake transfer failed");
+        }
+
+        // 3. Credit Sponsor (80% of sales + original PrizePool deposit)
+        if (raffle.sponsor != address(0)) {
+            sponsorBalances[raffle.sponsor] += (sponsorShare + raffle.prizePool);
+        }
+
+        // 4. Select Multiple Winners
+        uint256 winnersToPick = raffle.winnerCount;
+        if (winnersToPick > raffle.participants.length) {
+            winnersToPick = raffle.participants.length;
+        }
+
+        // Winners share the ORIGINAL prize pool provided by sponsor
+        uint256 prizePerWinner = raffle.prizePool / winnersToPick;
+
+        for (uint256 i = 0; i < winnersToPick; i++) {
+            // Derive unique random for each winner slot
+            uint256 derivedRandom = uint256(keccak256(abi.encode(randomNumber, i)));
+            uint256 winningTicket = derivedRandom % raffle.totalTickets;
+            
+            uint256 ticketCounter = 0;
+            address winner;
+            
+            for (uint256 j = 0; j < raffle.participants.length; j++) {
+                address p = raffle.participants[j];
+                ticketCounter += raffle.ticketCount[p];
+                if (winningTicket < ticketCounter) {
+                    winner = p;
+                    break;
+                }
             }
-            unchecked { ++i; }
+            
+            raffle.winners.push(winner);
         }
         
-        raffle.winner = winner;
+        raffle.prizePerWinner = prizePerWinner;
         raffle.isFinalized = true;
-        payable(winner).transfer(raffle.prizePool);
         
-        emit RaffleWinner(raffleId, winner, raffle.prizePool);
+        // If it was the current auto-raffle (Admin one), spawn next
+        if (raffle.sponsor == address(0)) {
+            currentRaffleId++;
+            RaffleData storage next = raffles[currentRaffleId];
+            next.raffleId = currentRaffleId;
+            next.isActive = true;
+            next.winnerCount = 1;
+            next.maxTickets = MAX_PARTICIPANTS;
+            next.endTime = block.timestamp + 7 days;
+            next.metadataURI = "ipfs://default-admin-raffle";
+            emit RaffleCreated(currentRaffleId, block.timestamp);
+        }
+    }
+
+    /**
+     * @notice Winners claim their prize. They pay the gas.
+     */
+    function claimRafflePrize(uint256 raffleId) external nonReentrant {
+        RaffleData storage raffle = raffles[raffleId];
+        require(raffle.isFinalized, "Not finalized");
+        require(!raffle.isClaimed[msg.sender], "Already claimed");
         
-        currentRaffleId++;
-        raffles[currentRaffleId].raffleId = currentRaffleId;
-        raffles[currentRaffleId].isActive = true;
-        emit RaffleCreated(currentRaffleId, block.timestamp);
+        // Check if user is a winner
+        bool isWinner = false;
+        uint256 winnersLen = raffle.winners.length;
+        for (uint256 i = 0; i < winnersLen; i++) {
+            if (raffle.winners[i] == msg.sender) {
+                isWinner = true;
+                break;
+            }
+        }
+        require(isWinner, "Not a winner");
+
+        uint256 prize = raffle.prizePerWinner;
+        require(prize > 0, "No prize");
+
+        raffle.isClaimed[msg.sender] = true;
+        (bool s, ) = payable(msg.sender).call{value: prize}("");
+        require(s, "Transfer failed");
+
+        emit RaffleWinner(raffleId, msg.sender, prize);
+    }
+
+    /**
+     * @notice Sponsors withdraw their 80% revenue + leftover deposit.
+     */
+    function withdrawSponsorBalance() external nonReentrant {
+        uint256 balance = sponsorBalances[msg.sender];
+        require(balance > 0, "No balance");
+        
+        sponsorBalances[msg.sender] = 0;
+        (bool s, ) = payable(msg.sender).call{value: balance}("");
+        require(s, "Withdrawal failed");
     }
 
     // ============ Admin ============

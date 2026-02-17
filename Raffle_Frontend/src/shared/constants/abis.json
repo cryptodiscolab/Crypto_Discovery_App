@@ -63,6 +63,150 @@
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "user",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint8",
+                    "name": "newTier",
+                    "type": "uint8"
+                }
+            ],
+            "name": "updateUserTier",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawTreasury",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "distributeRevenue",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "lastDistributeTimestamp",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "ticketPriceUSDC",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "pointsPerTicket",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "ticketDescription",
+            "outputs": [
+                {
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "maxGasPrice",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_tUSDC",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_mGas",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_pPerTicket",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "string",
+                    "name": "_desc",
+                    "type": "string"
+                }
+            ],
+            "name": "setParams",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
         }
     ],
     "CMS_CONTRACT_ABI": [
@@ -258,45 +402,60 @@
         {
             "inputs": [
                 {
-                    "internalType": "address[]",
-                    "name": "_nftContracts",
-                    "type": "address[]"
-                },
-                {
-                    "internalType": "uint256[]",
-                    "name": "_tokenIds",
-                    "type": "uint256[]"
+                    "internalType": "uint256",
+                    "name": "_winnerCount",
+                    "type": "uint256"
                 },
                 {
                     "internalType": "uint256",
-                    "name": "_duration",
+                    "name": "_maxTickets",
                     "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_durationDays",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "string",
+                    "name": "_metadataURI",
+                    "type": "string"
                 }
             ],
-            "name": "createRaffle",
+            "name": "createSponsorshipRaffle",
             "outputs": [],
-            "stateMutability": "nonpayable",
+            "stateMutability": "payable",
             "type": "function"
         },
         {
             "inputs": [
                 {
                     "internalType": "uint256",
-                    "name": "_raffleId",
+                    "name": "ticketCount",
                     "type": "uint256"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_amount",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "_useFreeTickets",
-                    "type": "bool"
                 }
             ],
-            "name": "buyTickets",
+            "name": "purchaseRaffleTickets",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "raffleId",
+                    "type": "uint256"
+                }
+            ],
+            "name": "claimRafflePrize",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "withdrawSponsorBalance",
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function"
@@ -312,53 +471,98 @@
             "name": "getRaffleInfo",
             "outputs": [
                 {
+                    "components": [
+                        {
+                            "internalType": "uint256",
+                            "name": "raffleId",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "totalTickets",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "maxTickets",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "targetPrizePool",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "prizePool",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "address[]",
+                            "name": "participants",
+                            "type": "address[]"
+                        },
+                        {
+                            "internalType": "address[]",
+                            "name": "winners",
+                            "type": "address[]"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "winnerCount",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "randomNumber",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "bool",
+                            "name": "isActive",
+                            "type": "bool"
+                        },
+                        {
+                            "internalType": "bool",
+                            "name": "isFinalized",
+                            "type": "bool"
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "sponsor",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "string",
+                            "name": "metadataURI",
+                            "type": "string"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "endTime",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "prizePerWinner",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct CryptoDiscoRaffle.RaffleData",
+                    "name": "r",
+                    "type": "tuple"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "currentRaffleId",
+            "outputs": [
+                {
                     "internalType": "uint256",
-                    "name": "raffleId",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "address",
-                    "name": "creator",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "startTime",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "endTime",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "ticketsSold",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "paidTicketsSold",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "isActive",
-                    "type": "bool"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "isCompleted",
-                    "type": "bool"
-                },
-                {
-                    "internalType": "address",
-                    "name": "winner",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "nftCount",
+                    "name": "",
                     "type": "uint256"
                 }
             ],

@@ -20,6 +20,7 @@ hardhat.config.js.backup
 # IDE
 .vscode/
 .idea/
+.cursorrules
 .DS_Store
 
 # Logs

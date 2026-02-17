@@ -47,11 +47,29 @@ export function useSBT() {
         }
     });
 
-    // 4. Fetch Max Gas Price limit from contract
-    const { data: maxGasPrice } = useReadContract({
+    // 4. Fetch System Settings
+    const { data: maxGasPrice, refetch: refetchGas } = useReadContract({
         address: CONTRACT_ADDRESS,
         abi: DISCO_MASTER_ABI,
         functionName: 'maxGasPrice',
+    });
+
+    const { data: ticketPriceUSDC, refetch: refetchPrice } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: DISCO_MASTER_ABI,
+        functionName: 'ticketPriceUSDC',
+    });
+
+    const { data: pointsPerTicket, refetch: refetchPointsPer } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: DISCO_MASTER_ABI,
+        functionName: 'pointsPerTicket',
+    });
+
+    const { data: lastDistributeTimestamp, refetch: refetchLastDist } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: DISCO_MASTER_ABI,
+        functionName: 'lastDistributeTimestamp',
     });
 
     const claimRewards = async () => {
@@ -63,11 +81,11 @@ export function useSBT() {
         });
     };
 
-    const distributePool = async () => {
+    const distributeRevenue = async () => {
         return await writeContractAsync({
             address: CONTRACT_ADDRESS,
             abi: DISCO_MASTER_ABI,
-            functionName: 'distributeSBTPool',
+            functionName: 'distributeRevenue',
         });
     };
 
@@ -89,10 +107,24 @@ export function useSBT() {
         });
     };
 
+    const setMasterParams = async (tUSDC, mGas, pPerTicket, desc) => {
+        return await writeContractAsync({
+            address: CONTRACT_ADDRESS,
+            abi: DISCO_MASTER_ABI,
+            functionName: 'setParams',
+            args: [tUSDC, mGas, pPerTicket, desc],
+        });
+    };
+
     const refetchAll = () => {
         refetchPool();
         refetchUser();
         refetchClaimable();
+        refetchGas();
+        refetchPrice();
+        refetchPointsPer();
+        refetchDesc();
+        refetchLastDist();
     };
 
     return {
@@ -102,10 +134,15 @@ export function useSBT() {
         maxGasPrice: maxGasPrice || 0n,
         contractOwner,
         claimRewards,
-        distributePool,
+        distributeRevenue,
         updateTier,
         withdrawTreasury,
+        setMasterParams,
         refetchAll,
+        ticketPriceUSDC: ticketPriceUSDC || 0n,
+        pointsPerTicket: pointsPerTicket || 0n,
+        ticketDescription: ticketDescription || '',
+        lastDistributeTimestamp: lastDistributeTimestamp || 0n,
         isLoading: refetchPool && (totalPoolBalance === undefined || userRawData === undefined)
     };
 }
