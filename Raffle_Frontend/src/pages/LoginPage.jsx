@@ -1,7 +1,7 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useSwitchChain } from 'wagmi';
-import { Wallet, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { baseSepolia } from 'wagmi/chains';
 
 import { useSIWE } from '../hooks/useSIWE';
@@ -115,7 +115,20 @@ export function LoginPage() {
                                                                 className="flex flex-col items-center gap-2 group transition-all"
                                                             >
                                                                 <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-110 active:scale-95 transition-all duration-300">
-                                                                    <Wallet className="w-7 h-7 text-white" strokeWidth={2.5} />
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        viewBox="0 0 24 24"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        strokeWidth="2.5"
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        className="w-7 h-7 text-white"
+                                                                    >
+                                                                        <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
+                                                                        <path d="M4 6v12c0 1.1.9 2 2 2h14v-4" />
+                                                                        <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h2v-4Z" />
+                                                                    </svg>
                                                                 </div>
                                                                 <span className="text-xs font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-300 transition-colors">
                                                                     Connect Wallet
