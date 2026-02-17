@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Trophy, Users, Timer, Ticket, ArrowRight, Shield, AlertCircle, RefreshCw, Zap, TrendingUp, Calendar, ExternalLink, Loader2, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
