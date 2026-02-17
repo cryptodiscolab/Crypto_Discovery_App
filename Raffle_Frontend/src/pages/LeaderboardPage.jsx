@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Crown, Sparkles } from 'lucide-react';
+import { Trophy, Crown, Sparkles, Medal } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
-
-// Tier Logic Helper
-const getTier = (xp) => {
-  if (xp >= 10000) return { name: 'Gold', color: 'text-yellow-400', bg: 'bg-yellow-500/20' };
-  if (xp >= 5000) return { name: 'Silver', color: 'text-slate-300', bg: 'bg-slate-300/20' };
-  if (xp >= 1000) return { name: 'Bronze', color: 'text-amber-600', bg: 'bg-amber-600/20' };
-  return { name: 'Rookie', color: 'text-slate-500', bg: 'bg-slate-800/50' };
-};
 
 const formatAddress = (addr) => {
   if (!addr) return 'Unknown';
@@ -17,14 +9,6 @@ const formatAddress = (addr) => {
 };
 
 function LeaderboardRow({ user, rank, isCurrentUser }) {
-  const tierStyles = {
-    'Gold': { color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
-    'Silver': { color: 'text-slate-300', bg: 'bg-slate-300/20' },
-    'Bronze': { color: 'text-amber-600', bg: 'bg-amber-600/20' },
-    'Rookie': { color: 'text-slate-500', bg: 'bg-slate-800/50' }
-  };
-
-  const style = tierStyles[user.rank_name] || { color: 'text-blue-400', bg: 'bg-blue-500/10' };
   const getDisplayAddress = (name, addr) => {
     if (name && name.startsWith('0x') && name.length > 20) {
       return formatAddress(name);
@@ -36,49 +20,59 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
 
   const displayName = getDisplayAddress(user.display_name, user.wallet_address);
 
-  return (
-    <div
-      className={`relative glass-card p-4 flex items-center justify-between border transition-all animate-slide-up
-        ${isCurrentUser ? 'border-yellow-500/50 bg-yellow-500/5 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)]' : 'border-white/5 hover:border-white/10'}
-      `}
-    >
-      {isCurrentUser && (
-        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-12 bg-yellow-500 rounded-r-full shadow-[0_0_10px_rgba(234,179,8,0.8)]" />
-      )}
+  // Rank Colors
+  const getRankColor = (r) => {
+    if (r === 1) return 'text-yellow-500';
+    if (r === 2) return 'text-slate-300';
+    if (r === 3) return 'text-amber-600';
+    return 'text-slate-500';
+  };
 
-      <div className="flex items-center gap-4 min-w-0 flex-1">
-        <div className={`w-12 h-12 min-w-[3rem] flex items-center justify-center font-black text-lg rounded-xl shadow-lg border border-white/10
-          ${rank === 1 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-black shadow-yellow-500/20' :
-            rank === 2 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-black shadow-slate-300/20' :
-              rank === 3 ? 'bg-gradient-to-br from-amber-500 to-amber-700 text-white shadow-amber-600/20' :
-                'bg-slate-800 text-slate-400'}`}>
-          {rank === 1 ? <Crown className="w-6 h-6" /> : rank}
+  return (
+    <div className={`flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors ${isCurrentUser ? 'bg-yellow-500/5' : ''}`}>
+      <div className="flex items-center gap-4 min-w-0">
+        {/* Rank Number */}
+        <div className={`w-6 text-center font-bold ${getRankColor(rank)} text-lg`}>
+          {rank}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 px-1 min-w-0 flex-1">
-          {user.pfp_url && (
-            <img src={user.pfp_url} alt="" className="w-10 h-10 rounded-full border border-white/10 shadow-sm shrink-0" />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${style.bg} ${style.color} shrink-0`}>
-                {user.rank_name || 'Rookie'}
-              </span>
-              {isCurrentUser && <span className="text-[10px] font-bold text-yellow-500 shrink-0">(YOU)</span>}
+        {/* Avatar */}
+        <div className="relative">
+          {user.pfp_url ? (
+            <img
+              src={user.pfp_url}
+              alt=""
+              className={`w-10 h-10 rounded-full border ${isCurrentUser ? 'border-yellow-500/50' : 'border-white/10'}`}
+            />
+          ) : (
+            <div className={`w-10 h-10 rounded-full border flex items-center justify-center bg-slate-800 ${isCurrentUser ? 'border-yellow-500/50' : 'border-white/10'}`}>
+              <span className="text-xs text-slate-500">{displayName?.substring(0, 2).toUpperCase()}</span>
             </div>
-            <span className={`font-mono text-sm md:text-base truncate block ${isCurrentUser ? 'text-white font-bold' : 'text-slate-300'}`}>
-              {displayName}
-            </span>
-          </div>
+          )}
+          {rank <= 3 && (
+            <div className="absolute -top-1 -right-1">
+              <Crown size={12} className={getRankColor(rank)} fill="currentColor" />
+            </div>
+          )}
+        </div>
+
+        {/* Name & Tier */}
+        <div className="flex flex-col min-w-0">
+          <span className={`font-bold text-[15px] truncate max-w-[120px] sm:max-w-xs ${isCurrentUser ? 'text-white' : 'text-slate-200'}`}>
+            {displayName}
+          </span>
+          <span className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1">
+            {user.rank_name || 'Rookie'} {isCurrentUser && <span className="text-yellow-500 font-bold">(You)</span>}
+          </span>
         </div>
       </div>
 
+      {/* XP Stats */}
       <div className="flex flex-col items-end">
-        <div className="flex items-center gap-2 text-yellow-400 font-black">
-          <Sparkles className="w-4 h-4 text-yellow-500" />
-          <span className="text-xl tracking-tighter">{Number(user.total_xp || 0).toLocaleString()}</span>
-        </div>
-        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">XP</p>
+        <span className="text-yellow-500 font-bold font-mono">
+          {Number(user.total_xp || 0).toLocaleString()}
+        </span>
+        <span className="text-[10px] text-slate-500 font-medium">XP</span>
       </div>
     </div>
   );
@@ -102,7 +96,6 @@ export function LeaderboardPage() {
         .limit(50);
 
       if (error) {
-        console.error("Error fetching leaderboard detail:", JSON.stringify(error, null, 2));
         throw error;
       }
       setUsers(data || []);
@@ -114,46 +107,49 @@ export function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute top-40 left-10 w-72 h-72 bg-purple-500/10 blur-[80px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-500/5 blur-[100px] rounded-full pointer-events-none" />
-
-      <div className="container mx-auto max-w-3xl relative z-10">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center p-4 rounded-full bg-gradient-to-r from-yellow-500/10 to-purple-500/10 border border-white/10 mb-6 backdrop-blur-sm">
-            <Trophy className="w-8 h-8 text-yellow-400 mr-3" />
-            <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-yellow-200 to-white tracking-tight">
-              LEADERBOARD
-            </h1>
-            <Trophy className="w-8 h-8 text-yellow-400 ml-3 transform scale-x-[-1]" />
+    <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
+      <div className="max-w-screen-md mx-auto">
+        {/* Header (Farcaster-Style) */}
+        <div className="flex flex-col border-b border-white/10 pb-6 pt-6">
+          <div className="flex items-center gap-2 px-4 mb-2">
+            <Trophy className="text-yellow-500 w-5 h-5" />
+            <h1 className="text-xl font-bold tracking-tight text-white uppercase">Leaderboard</h1>
           </div>
-          <p className="text-slate-400 font-medium max-w-lg mx-auto text-lg">
+          <p className="px-4 text-slate-400 text-sm leading-snug">
             Top 50 legendary hunters fighting for glory and XP.
           </p>
         </div>
 
-        <div className="space-y-3">
+        {/* List Content */}
+        <div className="bg-[#0B0E14]">
           {loading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-slate-800/30 rounded-xl animate-pulse border border-white/5" />
+            <div className="space-y-0 divide-y divide-white/5">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="flex items-center p-4 gap-4 animate-pulse">
+                  <div className="w-6 h-6 bg-slate-800 rounded-full" />
+                  <div className="w-10 h-10 bg-slate-800 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-800 rounded w-1/3" />
+                    <div className="h-2 bg-slate-800 rounded w-1/4" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-20 glass-card border-dashed">
-              <p className="text-slate-500 font-bold">No data available yet.</p>
+            <div className="py-20 text-center text-slate-500 text-sm">
+              No data available.
             </div>
           ) : (
-            users.map((user, index) => (
-              <LeaderboardRow
-                key={user.wallet_address}
-                user={user}
-                rank={index + 1}
-                isCurrentUser={address && user.wallet_address?.toLowerCase() === address.toLowerCase()}
-              />
-            ))
+            <div className="divide-y divide-white/5 border-b border-white/5">
+              {users.map((user, index) => (
+                <LeaderboardRow
+                  key={user.wallet_address || index}
+                  user={user}
+                  rank={index + 1}
+                  isCurrentUser={address && user.wallet_address?.toLowerCase() === address.toLowerCase()}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
