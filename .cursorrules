@@ -140,3 +140,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 | Neynar Client ID | `0a715e62-512c-4b04-a51a-58b3ca51795d` |
 | Neynar API Key | `NEYNAR_API_KEY` / `VITE_NEYNAR_API_KEY` (env only) |
 | Admin FIDs | `1477344` |
+
+## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
+- **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis kepada pengguna.
+- **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI aplikasi, label, pesan error di frontend, dan teks yang dilihat oleh pengguna akhir.

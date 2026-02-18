@@ -42,6 +42,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
+            staleTime: 60 * 60 * 1000, // 1 hour
         }
     });
 
@@ -52,8 +53,9 @@ export function useCMS() {
         abi: CHAINLINK_ORACLE_ABI,
         functionName: 'latestRoundData',
         query: {
-            refetchInterval: 60 * 1000, // Update every minute
+            refetchInterval: 300 * 1000, // Update every 5 minutes (reduced from 1m)
             placeholderData: (prev) => prev,
+            staleTime: 60 * 1000,
         }
     });
 
@@ -76,6 +78,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
+            staleTime: 120 * 60 * 1000, // 2 hours
         }
     });
 
@@ -91,6 +94,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
+            staleTime: 60 * 60 * 1000, // 1 hour
         }
     });
 

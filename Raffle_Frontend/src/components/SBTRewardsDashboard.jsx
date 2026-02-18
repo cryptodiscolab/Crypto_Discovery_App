@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, Timer as TimerIcon } from 'lucide-react';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import { formatEther, formatUnits } from 'viem';
@@ -7,7 +7,7 @@ import { usePublicClient } from 'wagmi';
 import toast from 'react-hot-toast';
 
 export function SBTRewardsDashboard() {
-    const { totalPoolBalance, userTier, claimableAmount, maxGasPrice, claimRewards, refetchAll, isLoading: loadingSBT } = useSBT();
+    const { totalPoolBalance, userTier, claimableAmount, maxGasPrice, claimRewards, isLoading: loadingSBT } = useSBT();
     const { ethPrice, poolSettings, isLoading: loadingCMS } = useCMS();
     const publicClient = usePublicClient();
     const [currentGasPrice, setCurrentGasPrice] = useState(0n);
@@ -91,7 +91,7 @@ export function SBTRewardsDashboard() {
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                                    Disco Community Pool (TVL)
+                                    Pool Reward Collected
                                 </p>
                                 <span className="bg-indigo-500/20 text-indigo-400 text-[8px] px-1.5 py-0.5 rounded font-black tracking-tighter">SYNC v2</span>
                             </div>
@@ -120,7 +120,7 @@ export function SBTRewardsDashboard() {
                     {/* Simple Progress Bar for context */}
                     <div className="mt-6 space-y-2">
                         <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            <span>Progress to Phase Target</span>
+                            <span>Reward Progress</span>
                             <span className="text-indigo-400">
                                 {Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}%
                             </span>
@@ -156,9 +156,12 @@ export function SBTRewardsDashboard() {
                                 COMMUNITY POOL
                             </p>
                         </div>
-                        <button onClick={() => refetchAll()} className="p-1 hover:bg-white/5 rounded-md transition-colors">
-                            <RefreshCw className="w-3 h-3 text-slate-500" />
-                        </button>
+                    </div>
+                    <div className="mb-4 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
+                        <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider flex items-center gap-2">
+                            <TimerIcon className="w-3 h-3" />
+                            Data updates every 24h at 07:00 UTC
+                        </p>
                     </div>
                     <div className="flex items-end justify-between">
                         <h3 className="text-2xl font-bold text-white">

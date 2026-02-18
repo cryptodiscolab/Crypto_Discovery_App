@@ -77,7 +77,11 @@ export function HomePage() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                 <div>
                   <p className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em] mb-3">
-                    Community Sharing Pool (TVL)
+                    Pool Reward Collected
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <TimerIcon className="w-3 h-3 text-indigo-500" />
+                    Updates every 24h at 07:00 UTC
                   </p>
                   <div className="flex items-baseline gap-2">
                     <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter">
@@ -108,7 +112,7 @@ export function HomePage() {
               {/* Progress Bar Container */}
               <div className="space-y-3">
                 <div className="flex justify-between items-end">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pool Progress</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reward Progress</span>
                   <span className="text-sm font-black text-indigo-400">
                     {Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}% to Target
                   </span>

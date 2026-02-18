@@ -13,7 +13,10 @@ export function useSBT() {
         address: CONTRACT_ADDRESS,
         abi: DISCO_MASTER_ABI,
         functionName: 'totalSBTPoolBalance',
-        watch: true, // Auto-update
+        query: {
+            staleTime: 60 * 60 * 1000, // 1 hour cache
+            gcTime: 24 * 60 * 60 * 1000, // 24 hours persistence
+        }
     });
 
     // 2. Fetch User Data

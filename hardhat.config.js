@@ -16,7 +16,7 @@ module.exports = {
     },
     networks: {
         baseSepolia: {
-            url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+            url: "https://base-sepolia-rpc.publicnode.com",
             accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
         },
     },

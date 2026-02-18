@@ -115,9 +115,17 @@ export function LeaderboardPage() {
             <Trophy className="text-yellow-500 w-5 h-5" />
             <h1 className="text-xl font-bold tracking-tight text-white uppercase">Leaderboard</h1>
           </div>
-          <p className="px-4 text-slate-400 text-sm leading-snug">
+          <p className="px-4 text-slate-400 text-sm leading-snug mb-3">
             Top 50 legendary hunters fighting for glory and XP.
           </p>
+          <div className="px-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/5 border border-yellow-500/10">
+              <Sparkles size={12} className="text-yellow-500" />
+              <span className="text-[10px] text-yellow-500/80 font-black uppercase tracking-widest">
+                Data updates every 24h at 07:00 UTC
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* List Content */}

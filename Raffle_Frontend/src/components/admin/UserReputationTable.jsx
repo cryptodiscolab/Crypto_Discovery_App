@@ -8,7 +8,6 @@ import {
     ExternalLink,
     DollarSign,
     Database,
-    Database,
     CheckCircle,
     Award,
     ShieldAlert
