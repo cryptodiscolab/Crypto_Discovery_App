@@ -15,9 +15,15 @@ import {
     CheckCircle,
     Plus,
     Trash2,
-    History
+    History,
+    Users,
+    Sliders,
+    Search,
+    BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useSBT } from '../../hooks/useSBT';
+import { Award } from 'lucide-react';
 
 /**
  * Admin System Settings Component
@@ -27,6 +33,7 @@ import toast from 'react-hot-toast';
 export default function AdminSystemSettings() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
+    const { syncTiersToContract } = useSBT();
     const [pointSettings, setPointSettings] = useState([]);
     const [sbtThresholds, setSbtThresholds] = useState([]);
     const [eligibleUsers, setEligibleUsers] = useState([]);
@@ -36,9 +43,39 @@ export default function AdminSystemSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
+    // New Advanced Tier States
+    const [tierConfig, setTierConfig] = useState({ diamond: 0.01, gold: 0.10, silver: 0.30, bronze: 0.70 });
+    const [tierDistribution, setTierDistribution] = useState([]);
+    const [targetWallet, setTargetWallet] = useState('');
+    const [overrideTier, setOverrideTier] = useState(0); // 0: None, 1: Bronze, 2: Silver, 3: Gold, 4: Diamond
+
     useEffect(() => {
         fetchPointSettings();
+        fetchTierConfig();
+        fetchTierDistribution();
     }, []);
+
+    const fetchTierDistribution = async () => {
+        try {
+            const { data, error } = await supabase.rpc('fn_get_tier_distribution');
+            if (!error && data) {
+                setTierDistribution(data);
+            }
+        } catch (error) {
+            console.error('Fetch Distribution Error:', error);
+        }
+    };
+
+    const fetchTierConfig = async () => {
+        try {
+            const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'tier_percentiles').single();
+            if (!error && data) {
+                setTierConfig(data.value);
+            }
+        } catch (error) {
+            console.error('Fetch Tier Config Error:', error);
+        }
+    };
 
     const fetchPointSettings = async () => {
         setLoading(true);
@@ -222,6 +259,89 @@ export default function AdminSystemSettings() {
             fetchPointSettings();
         } catch (error) {
             toast.error('Gagal menyimpan level: ' + error.message, { id: tid });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSyncTiers = async () => {
+        if (!window.confirm('PUSH LEADERBOARD KE BLOCKCHAIN?\n\nIni akan menghitung ulang Tier semua user di DB berdasarkan rank XP (Top 10% Gold, etc) dan mengupdate contract CryptoDiscoMasterX secara on-chain.')) return;
+
+        setSaving(true);
+        try {
+            // First save the current percentile config to be sure
+            await saveTierConfig(true);
+            await syncTiersToContract(signMessageAsync);
+            fetchTierDistribution();
+        } catch (error) {
+            console.error('Sync error:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const saveTierConfig = async (silent = false) => {
+        if (!silent) setSaving(true);
+        const tid = !silent ? toast.loading('Saving tier configuration...') : null;
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Update Tier Percentiles\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'UPDATE_TIER_CONFIG',
+                    payload: tierConfig
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to save tier config');
+            if (!silent) toast.success('Tier configuration saved!', { id: tid });
+        } catch (error) {
+            if (!silent) toast.error('Failed to save tier config: ' + error.message, { id: tid });
+            throw error;
+        } finally {
+            if (!silent) setSaving(false);
+        }
+    };
+
+    const handleManualOverride = async () => {
+        if (!isAddress(targetWallet)) {
+            toast.error('Wallet address tidak valid');
+            return;
+        }
+        setSaving(true);
+        const tid = toast.loading('Applying manual tier override...');
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Manual Tier Override\nTarget: ${targetWallet.toLowerCase()}\nTier: ${overrideTier}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'MANUAL_TIER_OVERRIDE',
+                    payload: { target_address: targetWallet, tier: overrideTier }
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Failed to apply override");
+
+            toast.success('Manual override applied and logged!', { id: tid });
+            setTargetWallet('');
+            fetchTierDistribution();
+        } catch (error) {
+            toast.error('Override gagal: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }
@@ -495,8 +615,159 @@ export default function AdminSystemSettings() {
                         </div>
                         <button onClick={saveThresholds} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-black text-white transition-all shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50">
                             <Save className="w-4 h-4" />
-                            {saving ? 'Saving...' : 'Sync SBT Thresholds'}
+                            {saving ? 'Saving...' : 'Sync SBT Thresholds (Off-chain)'}
                         </button>
+                    </div>
+
+                    {/* SECTION 3: ADVANCED TIER CONFIG & OVERRIDE */}
+                    <div className="space-y-8">
+                        {/* Leaderboard Distribution Stats */}
+                        <div className="bg-slate-900/40 p-5 rounded-3xl border border-white/5 backdrop-blur-md transition-all hover:border-white/10 group">
+                            <div className="flex items-center gap-2 mb-4">
+                                <BarChart3 className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Live Distribution</h3>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {[
+                                    { key: 'DIAMOND', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+                                    { key: 'GOLD', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                                    { key: 'SILVER', color: 'text-slate-300', bg: 'bg-slate-400/10' },
+                                    { key: 'BRONZE', color: 'text-amber-700', bg: 'bg-amber-800/10' }
+                                ].map(t => {
+                                    const dist = tierDistribution.find(d => d.tier_label === t.key);
+                                    return (
+                                        <div key={t.key} className={`${t.bg} p-3 rounded-2xl border border-white/5 flex flex-col items-center sm:items-start`}>
+                                            <p className={`text-[9px] font-black tracking-widest ${t.color}`}>{t.key}</p>
+                                            <p className="text-xl font-black text-white leading-none mt-1">{dist?.user_count || 0}</p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Leaderboard Tier Distribution */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Sliders className="w-5 h-5 text-amber-500" />
+                                <h2 className="text-lg font-bold text-white">Leaderboard Tier Config</h2>
+                            </div>
+                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 space-y-6">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Diamond (Top %)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={tierConfig.diamond * 100}
+                                            onChange={(e) => setTierConfig({ ...tierConfig, diamond: parseFloat(e.target.value) / 100 })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-cyan-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Gold (Top %)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={tierConfig.gold * 100}
+                                            onChange={(e) => setTierConfig({ ...tierConfig, gold: parseFloat(e.target.value) / 100 })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-amber-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Silver (Top %)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={tierConfig.silver * 100}
+                                            onChange={(e) => setTierConfig({ ...tierConfig, silver: parseFloat(e.target.value) / 100 })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-slate-400 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Bronze (Top %)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={tierConfig.bronze * 100}
+                                            onChange={(e) => setTierConfig({ ...tierConfig, bronze: parseFloat(e.target.value) / 100 })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-amber-700 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                                <button onClick={() => saveTierConfig()} disabled={saving} className="w-full bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white py-2 rounded-xl text-xs font-black transition-all border border-amber-500/30">
+                                    Save Tier Percentiles
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Manual Tier Override */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Users className="w-5 h-5 text-indigo-400" />
+                                <h2 className="text-lg font-bold text-white">Manual Tier Override</h2>
+                            </div>
+                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 space-y-4">
+                                <div className="flex flex-col gap-3">
+                                    <div className="relative">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                        <input
+                                            type="text"
+                                            placeholder="User Wallet Address (0x...)"
+                                            value={targetWallet}
+                                            onChange={(e) => setTargetWallet(e.target.value)}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:border-indigo-500 outline-none font-mono"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {[
+                                            { id: 0, label: 'NONE' },
+                                            { id: 1, label: 'BRONZE' },
+                                            { id: 2, label: 'SILVER' },
+                                            { id: 3, label: 'GOLD' },
+                                            { id: 4, label: 'DIAMOND' }
+                                        ].map(t => (
+                                            <button
+                                                key={t.id}
+                                                onClick={() => setOverrideTier(t.id)}
+                                                className={`flex-1 py-2 rounded-lg text-[9px] font-black transition-all border ${overrideTier === t.id ? 'bg-indigo-500 text-white border-white/20' : 'bg-black/40 text-slate-500 border-white/5 hover:border-white/20'}`}
+                                            >
+                                                {t.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleManualOverride}
+                                    disabled={saving || !targetWallet}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-xs font-black text-white transition-all disabled:opacity-50"
+                                >
+                                    Apply Manual Override
+                                </button>
+                                <p className="text-[9px] text-slate-500 font-mono uppercase text-center leading-tight">
+                                    Override will bypass leaderboard rank calculation.<br />
+                                    Sync to blockchain is required to apply on-chain.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Push to Blockchain */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Award className="w-5 h-5 text-orange-400" />
+                                <h2 className="text-lg font-bold text-white">Contract Sync</h2>
+                            </div>
+                            <button
+                                onClick={handleSyncTiers}
+                                disabled={saving}
+                                className="w-full flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 p-6 rounded-3xl font-black text-white transition-all shadow-2xl hover:shadow-orange-500/40 active:scale-[0.97] border border-white/30 disabled:opacity-50"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Award className="w-7 h-7" />
+                                    <span className="text-lg tracking-tight">PUSH LEADERBOARD TO CHAIN</span>
+                                </div>
+                                <span className="text-[10px] opacity-70 font-mono tracking-widest">BATCH UPDATE CONTRACT TIERS</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

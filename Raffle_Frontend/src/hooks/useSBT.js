@@ -122,6 +122,53 @@ export function useSBT() {
         });
     };
 
+    /**
+     * Leaderboard -> Contract Tier Sync
+     * Fetches calculated tiers from API and batch updates contract
+     */
+    const syncTiersToContract = async (signMessageAsync) => {
+        const toastId = toast.loading('Calculating tiers and preparing sync...');
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Sync Leaderboard Tiers\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/sync-tiers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'API Sync failed');
+
+            toast.loading(`Syncing ${result.data.length} users to on-chain...`, { id: toastId });
+
+            // Optimized: Use batchUpdateUserTiers
+            const userAddresses = result.data.map(item => item.wallet_address);
+            const userTiers = result.data.map(item => item.computed_tier);
+
+            const tx = await writeContractAsync({
+                address: CONTRACT_ADDRESS,
+                abi: DISCO_MASTER_ABI,
+                functionName: 'batchUpdateUserTiers',
+                args: [userAddresses, userTiers],
+            });
+
+            toast.success(`Successfully synced ${result.data.length} tiers in one batch!`, { id: toastId });
+            return { success: true, count: result.data.length, tx };
+
+        } catch (error) {
+            console.error('[SyncTiers] Error:', error);
+            toast.error(`Sync failed: ${error.message}`, { id: toastId });
+            throw error;
+        }
+    };
+
     const refetchAll = () => {
         refetchPool();
         refetchUser();
@@ -144,6 +191,7 @@ export function useSBT() {
         updateTier,
         withdrawTreasury,
         setMasterParams,
+        syncTiersToContract,
         refetchAll,
         ticketPriceUSDC: ticketPriceUSDC || 0n,
         pointsPerTicket: pointsPerTicket || 0n,

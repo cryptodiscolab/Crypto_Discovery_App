@@ -1,98 +1,69 @@
 import { createClient } from '@supabase/supabase-js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 
-// Centralized Environment Consumption
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
 const neynarApiKey = process.env.NEYNAR_API_KEY;
 
 /**
- * Neynar Identity Sync Protocol:
- * Uses @neynar/nodejs-sdk for robust data procurement.
- * Optimized for low-latency identity mapping.
+ * Neynar Identity Sync Protocol
+ * Syncs Farcaster profile data into user_profiles table.
+ * Uses SERVICE_ROLE_KEY — RLS is bypassed server-side only.
  */
 export default async function handler(req, res) {
     if (!supabaseServiceKey || !supabaseUrl || !neynarApiKey) {
-        console.error("[Sync] Missing Configuration:", { supabaseUrl: !!supabaseUrl, supabaseServiceKey: !!supabaseServiceKey, neynarApiKey: !!neynarApiKey });
-        return res.status(500).json({ error: 'System Configuration Incomplete' });
+        console.error("[Sync] Missing server configuration");
+        return res.status(500).json({ error: 'Internal server error' });
     }
-
-    const cleanWallet = (w) => w?.trim?.().toLowerCase() ?? null;
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
+    const cleanWallet = (w) => w?.trim?.().toLowerCase() ?? null;
     const { address } = req.body;
     const wallet = cleanWallet(address);
 
-    console.log(`[Sync] Starting sync for wallet: ${wallet}`);
-
     if (!wallet) {
-        console.warn("[Sync] Aborted: Invalid Wallet Address");
-        return res.status(200).json({ skipped: true, message: 'Invalid Wallet' });
+        return res.status(400).json({ error: 'Invalid wallet address' });
     }
 
-    // Initialize Supabase and Neynar with safety
+    // ── ZERO TRUST FIX: Do NOT pass x-user-wallet header to Supabase ──
+    // SERVICE_ROLE_KEY already bypasses RLS. The header was the original
+    // vulnerability (spoofable via DevTools). Never send it server-side.
     let supabase;
     let neynar;
     try {
-        supabase = createClient(supabaseUrl, supabaseServiceKey, {
-            global: { headers: { 'x-user-wallet': wallet } }
-        });
+        supabase = createClient(supabaseUrl, supabaseServiceKey);
         neynar = new NeynarAPIClient({ apiKey: neynarApiKey });
     } catch (initErr) {
-        console.error("[Sync] Client Initialization Error:", initErr.message);
-        return res.status(500).json({ error: "Client Init Failed: " + initErr.message });
+        console.error("[Sync] Client initialization failed");
+        return res.status(500).json({ error: 'Internal server error' });
     }
 
     try {
-        // 1. Procure Farcaster Metadata via Neynar SDK
-        console.log(`[Sync] Fetching data from Neynar for: ${wallet}`);
+        // 1. Fetch Farcaster metadata via Neynar SDK
         let fcUser = null;
         try {
-
-            // SDK v3 Correct Method (Verified via node_modules source)
-            // Method signature: fetchBulkUsersByEthOrSolAddress(params: { addresses: string[], ... })
             let response;
             if (typeof neynar.fetchBulkUsersByEthOrSolAddress === 'function') {
                 response = await neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [wallet] });
             } else {
-                // inspect client structure to debug
-                console.log("Neynar Client Keys:", Object.keys(neynar));
-                throw new Error("Neynar SDK method fetchBulkUsersByEthOrSolAddress not found.");
+                throw new Error("Neynar SDK method not found");
             }
 
-
-            // LOGGING: Inspect the actual structure
-            console.log(`[Sync] Raw Neynar Response for ${wallet}:`, JSON.stringify(response, null, 2));
-
-            // Flexible Parsing
-            // SDK v3 fetchBulkUsersByEthereumAddress returns: { [lowerCaseAddress]: [UserObject] }
-            if (response && response[wallet.toLowerCase()]) {
-                const users = response[wallet.toLowerCase()];
-                if (users && users.length > 0) {
-                    fcUser = users[0];
-                }
-            }
-            // Fallback parsing just in case structure is different
-            else if (response?.users) {
+            if (response?.[wallet]) {
+                const users = response[wallet];
+                if (users?.length > 0) fcUser = users[0];
+            } else if (response?.users) {
                 fcUser = response.users[0];
             }
-
-            if (fcUser) {
-                console.log(`[Sync] User Found: ${fcUser.username} (FID: ${fcUser.fid})`);
-            } else {
-                console.warn("[Sync] User Not Found in Neynar response. Keys:", Object.keys(response || {}));
-            }
         } catch (nErr) {
-            console.error("[Sync] Neynar API Call Error (Non-blocking):", nErr.message);
+            // Non-blocking: sync proceeds without Farcaster data
+            console.error("[Sync] Neynar fetch failed (non-blocking):", nErr.message);
         }
 
-        // 2. Prepare Profile State
-        console.log("[Sync] Preparing profile data...");
-
-        // Map to user_profiles schema
+        // 2. Prepare profile payload
         const profile = {
-            wallet_address: wallet, // Primary Key
+            wallet_address: wallet,
             last_login_at: new Date().toISOString()
         };
 
@@ -112,10 +83,7 @@ export default async function handler(req, res) {
             profile.neynar_score = 0;
         }
 
-        // 3. Commit to Database using Robust Upsert
-        console.log("[Sync] Upserting to 'user_profiles' table for:", wallet);
-
-        // Note: Using Service Role Key, so RLS is bypassed automatically here.
+        // 3. Upsert to DB (SERVICE_ROLE_KEY bypasses RLS — no header needed)
         const { data, error } = await supabase
             .from("user_profiles")
             .upsert(profile, { onConflict: "wallet_address" })
@@ -123,11 +91,10 @@ export default async function handler(req, res) {
             .maybeSingle();
 
         if (error) {
-            console.error("[Sync] Supabase Upsert Failed:", error);
-            return res.status(500).json({ error: "Database commit failed: " + error.message, details: error });
+            console.error("[Sync] Supabase upsert failed:", error.code);
+            return res.status(500).json({ error: 'Internal server error' });
         }
 
-        console.log("[Sync] Successfully synced profile for:", wallet);
         return res.status(200).json({
             ok: true,
             profile: data,
@@ -136,17 +103,8 @@ export default async function handler(req, res) {
         });
 
     } catch (err) {
-        console.error('[Sync] Fatal Pipeline Error:', err.message, err.stack);
-        return res.status(500).json({
-            error: err.message,
-            stack: err.stack,
-            env_status: {
-                url: !!supabaseUrl,
-                key: !!supabaseServiceKey,
-                neynar: !!neynarApiKey
-            }
-        });
+        // ── ZERO TRUST FIX: Never expose stack trace or env status ──
+        console.error('[Sync] Fatal error:', err.message);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 }
-
-

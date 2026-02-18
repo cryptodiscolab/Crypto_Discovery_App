@@ -42,7 +42,23 @@ export default async function handler(req, res) {
 
         const cleanAddress = wallet_address.toLowerCase();
 
-        // 3. Synchronize User Profile
+        // 3. Replay Protection: (DB Level)
+        const { error: replayError } = await supabaseAdmin
+            .from('api_action_log')
+            .insert([{
+                wallet_address: cleanAddress,
+                action: 'USER_SYNC',
+                msg_timestamp: msgTime
+            }]);
+
+        if (replayError && (replayError.code === '23505' || replayError.message?.includes('duplicate key'))) {
+            // It's possible for user/sync to be called twice very fast (e.g. double trigger in FE)
+            // If the action is USER_SYNC, we can be more lenient or just skip the update.
+            // But for audit compliance, we enforce replay protection strictly.
+            return res.status(401).json({ error: 'Signature already used (Replay attack prevention)' });
+        }
+
+        // 4. Synchronize User Profile
         const { data: profile, error: upsertError } = await supabaseAdmin
             .from('user_profiles')
             .upsert(

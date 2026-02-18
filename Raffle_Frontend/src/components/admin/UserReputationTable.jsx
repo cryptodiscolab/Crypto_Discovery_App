@@ -8,8 +8,13 @@ import {
     ExternalLink,
     DollarSign,
     Database,
-    CheckCircle
+    Database,
+    CheckCircle,
+    Award,
+    ShieldAlert
 } from 'lucide-react';
+import { useAccount, useSignMessage } from 'wagmi';
+import { isAddress } from 'viem';
 import toast from 'react-hot-toast';
 
 /**
@@ -32,7 +37,19 @@ const StaticSkeletonCard = () => (
  * MobileUserCard: Specialized Flexbox Card for WebViews.
  * Optimized for: A-series (iOS) & Snapdragon (Android).
  */
-const MobileUserCard = memo(({ user, sybilDetected }) => {
+const MobileUserCard = memo(({ user, sybilDetected, onOverride }) => {
+    // 0: None, 1: Bronze, 2: Silver, 3: Gold, 4: Diamond
+    const currentTier = user.tier_override !== null ? user.tier_override : (user.computed_tier || 0);
+    const tiers = [
+        { id: 0, label: 'NONE', color: 'text-slate-500', bg: 'bg-slate-500/10' },
+        { id: 1, label: 'BRONZE', color: 'text-amber-700', bg: 'bg-amber-800/10' },
+        { id: 2, label: 'SILVER', color: 'text-slate-300', bg: 'bg-slate-400/10' },
+        { id: 3, label: 'GOLD', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+        { id: 4, label: 'DIAMOND', color: 'text-cyan-400', bg: 'bg-cyan-500/10' }
+    ];
+
+    const currentTierData = tiers.find(t => t.id === currentTier) || tiers[0];
+
     // Calculate Trust Score Percentage (Assuming 100 is max for visual)
     const trustPercent = Math.min(user.trust_score || 0, 100);
 
@@ -67,14 +84,25 @@ const MobileUserCard = memo(({ user, sybilDetected }) => {
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
-                    <a
-                        href={`https://warpcast.com/${user.username}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2 bg-[#161618] rounded-lg border border-white/5 active:scale-95 transition-transform"
-                    >
-                        <ExternalLink className="w-4 h-4 text-indigo-500" />
-                    </a>
+                    <div className="flex items-center gap-2">
+                        <select
+                            value={currentTier}
+                            onChange={(e) => onOverride(user.wallet_address, parseInt(e.target.value))}
+                            className={`text-[9px] font-black uppercase tracking-widest ${currentTierData.bg} ${currentTierData.color} border border-white/10 rounded-lg px-2 py-1 outline-none appearance-none cursor-pointer hover:border-white/30 transition-all`}
+                        >
+                            {tiers.map(t => (
+                                <option key={t.id} value={t.id} className="bg-[#121214] text-white">{t.label}</option>
+                            ))}
+                        </select>
+                        <a
+                            href={`https://warpcast.com/${user.username}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 bg-[#161618] rounded-lg border border-white/5 active:scale-95 transition-transform"
+                        >
+                            <ExternalLink className="w-4 h-4 text-indigo-500" />
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -107,7 +135,43 @@ export default function UserReputationTable() {
     const [page, setPage] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
     const [revenue, setRevenue] = useState(0);
+    const [saving, setSaving] = useState(false);
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const limit = 5; // Incremental Fetch Size
+
+    const handleQuickOverride = async (targetWallet, tierId) => {
+        if (!isAddress(targetWallet)) return;
+
+        const tid = toast.loading('Applying tier override...');
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Manual Tier Override\nTarget: ${targetWallet.toLowerCase()}\nTier: ${tierId}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'MANUAL_TIER_OVERRIDE',
+                    payload: { target_address: targetWallet, tier: tierId }
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to apply override");
+
+            toast.success('Override applied!', { id: tid });
+            // Refresh list to show new tier
+            setUsers(prev => prev.map(u =>
+                u.wallet_address === targetWallet ? { ...u, tier_override: tierId } : u
+            ));
+        } catch (error) {
+            toast.error('Override failed: ' + error.message, { id: tid });
+        }
+    };
 
     const fetchReputationMetrics = useCallback(async (isInitial = false) => {
         setLoading(true);
@@ -188,7 +252,8 @@ export default function UserReputationTable() {
                             <MobileUserCard
                                 key={user.wallet_address}
                                 user={user}
-                                sybilDetected={false} // verified_addresses column is missing in live schema
+                                sybilDetected={false}
+                                onOverride={handleQuickOverride}
                             />
                         ))}
                     </>

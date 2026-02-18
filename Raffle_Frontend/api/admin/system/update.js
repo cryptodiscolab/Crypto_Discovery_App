@@ -13,6 +13,8 @@ const AUTHORIZED_ADMINS = [
 ].map(a => a.toLowerCase());
 
 // Basic in-memory rate limiter
+// ⚠️ NOTE: This Map resets on serverless cold starts — provides best-effort
+// protection only. For strict rate limiting, use Redis or Supabase-based counters.
 const lastActions = new Map();
 const RATE_LIMIT_MS = 2000; // 2 seconds between admin actions
 
@@ -190,6 +192,30 @@ export default async function handler(req, res) {
                     .insert([cleanPayload]));
                 break;
 
+            case 'UPDATE_TIER_CONFIG':
+                // payload: { gold: 0.10, silver: 0.30, bronze: 0.70 }
+                if (typeof payload !== 'object') return res.status(400).json({ error: 'Invalid payload' });
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('system_settings')
+                    .upsert({
+                        key: 'tier_percentiles',
+                        value: payload,
+                        updated_at: new Date().toISOString()
+                    }));
+                break;
+
+            case 'MANUAL_TIER_OVERRIDE':
+                // payload: { target_address: '0x...', tier: 0..3 }
+                if (!payload.target_address || payload.tier === undefined) {
+                    return res.status(400).json({ error: 'target_address and tier are required' });
+                }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('user_profiles')
+                    .update({ tier_override: parseInt(payload.tier) })
+                    .eq('wallet_address', payload.target_address.toLowerCase())
+                    .select());
+                break;
+
             default:
                 return res.status(400).json({ error: 'Invalid action type' });
         }
@@ -207,6 +233,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('[API] Admin System Update Error:', error);
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 }

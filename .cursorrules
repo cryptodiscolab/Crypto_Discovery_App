@@ -11,9 +11,18 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Hardhat Config**: Always use `viaIR: true` and `runs: 200` to optimize for size.
 - **Bytecode Limit**: 24KB (Spurious Dragon). If exceeded, propose contract splitting/modularization.
 - **Core Infrastructure (VERIFIED ADDRESSES - DO NOT GUESS):**
-  - MasterX V2: `0xf074b0457d5c092bb67e62734B13C5f4cbc69e89` (Central Hub)
-  - Raffle: `0x18C64ed185C15F46d17C1888e12168dba409e2ee` (Linked to MasterX V2)
-  - DailyApp: `0x5d7338cd98029a73283f959fe24935a5099771b7` (Authorized Satellite)
+  - MasterX V2: `0xf074b0457d5c092bb67e62734B13C5f4cBC69e89` (Central Hub)
+  - Raffle (Main): `0x18C64ed185C15F46d17C1888e12168DBA409e2EE` (Linked to MasterX V2)
+  - Raffle (Frontend/VITE): `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` (`VITE_CONTRACT_ADDRESS`)
+  - DailyApp: `0x5d7338Cd98029a73283F959fe24935a5099771b7` (Authorized Satellite)
+  - CMS V2: `0xf55280bba6F34C68B1459aFd70B8798A07A8A613` (`VITE_CMS_CONTRACT_ADDRESS`)
+  - API3 Airnode RRP: `0x2ab9f26E18b6103274414940251539D0105e2Add`
+  - API3 Airnode (Nodary): `0x6238772544f029ecaBfDED4300f13A3c4FE84E1D`
+  - Sponsor Wallet: `0x7186e5D35f126c3C809670F567b594582f3C7d61`
+  - Chainlink ETH/USD Feed: `0x4aDC67696bA383F43fD60604633031d935f9584b`
+- **Revenue Wallets:**
+  - Operations (20%): `0x73F76B2b436E2E50bB6F81A6e33a42875f1cDff3`
+  - Treasury (10%): `0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa`
 - **Reward Logic**: Must use `Accumulated Reward Per Share` with `1e18` precision.
 - **Safety**: `emergencyWithdraw` must always protect `totalLockedRewards`. Use `unchecked` blocks for non-overflowing arithmetic.
 
@@ -29,13 +38,18 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **The "Glass Wall" Bug**: If buttons become unclickable, check for full-screen `div` overlays. Add `pointer-events-none` to background wrappers while keeping children `pointer-events-auto`.
 
 ## 5. AUTHENTICATION, ADMIN, & SECURITY (THE PROTECTOR)
-- **Master Admin**: The recognized MASTER_ADMIN address is `0x0845...204B`.
+- **Master Admin Addresses (BOTH are authorized — DO NOT GUESS):**
+  - Primary: `0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B`
+  - Secondary: `0x455DF75735d2a18c26f0AfDefa93217B60369fe5`
+- **Admin FIDs**: `1477344` (Farcaster)
 - **Case-Insensitive EVM Checks**: ALWAYS use `.toLowerCase()` on both sides when comparing Ethereum/Base addresses to prevent "Identity Rejected" bugs.
 - **Anti-Leak Policy**: Never output Private Keys or API Keys in plain text. Always use `.env`.
 - **Privacy First**: Keep everything local to IDX. Do not send code to untrusted 3rd party analysis tools.
 
 ## 6. NEXT-GEN INTEGRATIONS (NEYNAR & FARCASTER)
 - **Neynar SIWE Integration**: Use **Neynar SIWE (Sign-In with Ethereum)** to sync the connected Base wallet with the user's Farcaster FID.
+- **Neynar Client ID**: `0a715e62-512c-4b04-a51a-58b3ca51795d` (`VITE_NEYNAR_CLIENT_ID`)
+- **Neynar API Key**: Stored in `NEYNAR_API_KEY` and `VITE_NEYNAR_API_KEY` env vars (never hardcode).
 - Handle Neynar API Keys securely via Vercel Environment Variables.
 - Build SIWE as a separate, isolated layer only AFTER the base wallet connection is verified to be 100% stable.
 
@@ -47,27 +61,27 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 
 ## 8. SECURITY & ARCHITECTURE RULES (STRICT ENFORCEMENT)
 
-## 1. Zero Trust Frontend Policy
+### 8.1 Zero Trust Frontend Policy
 - **FORBIDDEN:** Never suggest writing to sensitive database tables (e.g., `user_profiles`, `campaigns`, `user_claims`) directly from the Client-Side (Frontend).
 - **REQUIRED:** All sensitive "Write" operations (INSERT/UPDATE/DELETE) MUST go through a **Next.js API Route (Backend)**.
 - **REASON:** To prevent data tampering via browser dev tools. Frontend is for display and signing only.
 
-## 2. Authentication & Verification
+### 8.2 Authentication & Verification
 - **FORBIDDEN:** Do NOT suggest RLS policies that rely on custom headers (e.g., `current_setting('request.headers'...)`) for authentication. Headers can be spoofed.
 - **REQUIRED:** Use **Cryptographic Signature Verification** (SIWE or raw `viem.verifyMessage`) in the Backend API to prove user identity before updating data.
 - **TOOLING:** Use `viem` for all backend crypto verifications. Use `wagmi` for frontend signing.
 
-## 3. Database Access (Supabase)
+### 8.3 Database Access (Supabase)
 - **CLIENT SIDE:** Use `createClient` with `ANON_KEY` only for **READ** operations (SELECT).
 - **SERVER SIDE:** Use `createClient` with `SERVICE_ROLE_KEY` inside API Routes (`app/api/...`) for **WRITE** operations.
 - **SAFETY:** Never expose `SERVICE_ROLE_KEY` in files starting with `VITE_` or `NEXT_PUBLIC_`. It belongs in `.env.local` only.
 
-## 4. Specific Workflows
+### 8.4 Specific Workflows
 - **Profile Updates:** Frontend signs message -> Backend verifies signature -> Backend updates DB.
 - **Campaign Creation:** Frontend sends TX Hash -> Backend verifies TX on-chain -> Backend inserts to DB.
 - **Claim Rewards:** Frontend requests claim -> Backend checks eligibility & date -> Backend triggers paymaster/transfer.
 
-## 5. Tech Stack Consistency
+### 8.5 Tech Stack Consistency
 - Backend Logic: Use **Next.js API Routes** (App Router `route.ts`), NOT Supabase Edge Functions (Deno), to maintain a single runtime environment.
 - Blockchain: Focus on **Base Mainnet (8453)** and **Base Sepolia (84532)**.
 
@@ -91,3 +105,38 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 
 ## Web3 & Security Standard
 - Backend: PostgreSQL + Supabase logic priority.
+
+---
+
+## 10. VERIFIED INFRASTRUCTURE REFERENCE (SYNCED FROM .ENV)
+
+> **DO NOT GUESS** any of these values. Always reference this section.
+
+### Blockchain
+| Key | Value |
+|---|---|
+| Chain (Mainnet) | Base Mainnet `8453` |
+| Chain (Testnet) | Base Sepolia `84532` |
+| Alchemy RPC (Sepolia) | `https://base-sepolia.g.alchemy.com/v2/4fUdl1Y2lipSqhXr8JbJY` |
+| Public RPC (Sepolia) | `https://sepolia.base.org` |
+| Reown/WalletConnect Project ID | `5ae6de312908f2d0cd512576920b78cd` (`VITE_REOWN_PROJECT_ID`) |
+| OnchainKit API Key | `VITE_ONCHAINKIT_API_KEY` (env only) |
+| BaseScan API Key | `BASESCAN_API_KEY` = `136H9NRK6VYFR5GRHXBGK2GMVG8HHTDN4C` |
+| API3 QRNG Endpoint ID | `0xfb6d017bb87991b7495f563db3c8cf59ff87b09781947bb1e417006ad7f55a78` |
+| Max Gas Price | `50 gwei` (`MAX_GAS_PRICE`) |
+| Ticket Price | `150000` = $0.15 with 6 decimals (`TICKET_PRICE_USD`) |
+
+### Supabase
+| Key | Value |
+|---|---|
+| Supabase URL | `https://rbgzwhsdqnhwrwimjjfm.supabase.co` |
+| Anon Key | `VITE_SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` (env only) |
+| Service Role Key | `SUPABASE_SERVICE_ROLE_KEY` — **SERVER SIDE ONLY, never expose to client** |
+| Publishable Key | `SUPABASE_PUBLISHABLE_KEY` = `sb_publishable_Cnj2oBLzYsUOC9ypiuxYgA_voMZidu0` |
+
+### Neynar / Farcaster
+| Key | Value |
+|---|---|
+| Neynar Client ID | `0a715e62-512c-4b04-a51a-58b3ca51795d` |
+| Neynar API Key | `NEYNAR_API_KEY` / `VITE_NEYNAR_API_KEY` (env only) |
+| Admin FIDs | `1477344` |

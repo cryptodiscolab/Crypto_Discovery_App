@@ -1,5 +1,6 @@
 require("dotenv").config();
 require("@nomicfoundation/hardhat-toolbox");
+require("hardhat-contract-sizer");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -21,5 +22,12 @@ module.exports = {
     },
     etherscan: {
         apiKey: process.env.BASESCAN_API_KEY || "",
+    },
+    // Contract size checker — run manually: npx hardhat size-contracts
+    contractSizer: {
+        alphaSort: false,
+        runOnCompile: false,   // keep false on low-spec machine
+        disambiguatePaths: false,
+        strict: true,          // fails if any contract > 24KB
     },
 };

@@ -19,7 +19,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     
     // ============ Enums & Structs ============
     
-    enum SBTTier { NONE, BRONZE, SILVER, GOLD }
+    enum SBTTier { NONE, BRONZE, SILVER, GOLD, DIAMOND }
     
     struct UserData {
         uint256 points;
@@ -44,9 +44,10 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     uint256 public constant POINTS_REFERRAL = 2;
     
     // Tier weights
-    uint256 public constant GOLD_WEIGHT = 50;
-    uint256 public constant SILVER_WEIGHT = 30;
-    uint256 public constant BRONZE_WEIGHT = 20;
+    uint256 public constant DIAMOND_WEIGHT = 40;
+    uint256 public constant GOLD_WEIGHT = 30;
+    uint256 public constant SILVER_WEIGHT = 20;
+    uint256 public constant BRONZE_WEIGHT = 10;
 
     // Precision & Limits
     uint256 public constant REWARD_PRECISION = 1e18;
@@ -63,6 +64,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     uint256 public constant DISTRIBUTE_INTERVAL = 5 days;
     
     // Packed holder counts
+    uint32 public diamondHolders;
     uint32 public goldHolders;
     uint32 public silverHolders;
     uint32 public bronzeHolders;
@@ -80,7 +82,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     // ============ Events ============
     
     event RevenueReceived(uint256 amount, uint256 timestamp);
-    event SBTPoolDistributed(uint256 amount, uint256 goldAcc, uint256 silverAcc, uint256 bronzeAcc, uint256 timestamp);
+    event SBTPoolDistributed(uint256 amount, uint256 diamondAcc, uint256 goldAcc, uint256 silverAcc, uint256 bronzeAcc, uint256 timestamp);
     event ClaimProcessed(address indexed user, SBTTier tier, uint256 amount);
     uint256 public constant DISTRIBUTE_INTERVAL_SEC = 5 days; // for reference in testing
     event PointsAwarded(address indexed user, uint256 points, string reason);
@@ -168,6 +170,15 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         uint256 ownerOverflow = 0;
         
         unchecked {
+            // Diamond
+            if (diamondHolders > 0) {
+                uint256 share = (amount * DIAMOND_WEIGHT) / 100;
+                accRewardPerShare[SBTTier.DIAMOND] += (share * REWARD_PRECISION) / diamondHolders;
+                totalLockedRewards += share;
+            } else {
+                ownerOverflow += (amount * DIAMOND_WEIGHT) / 100;
+            }
+
             // Gold
             if (goldHolders > 0) {
                 uint256 share = (amount * GOLD_WEIGHT) / 100;
@@ -195,6 +206,15 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
                 ownerOverflow += (amount * BRONZE_WEIGHT) / 100;
             }
         }
+
+        emit SBTPoolDistributed(
+            amount, 
+            accRewardPerShare[SBTTier.DIAMOND],
+            accRewardPerShare[SBTTier.GOLD], 
+            accRewardPerShare[SBTTier.SILVER], 
+            accRewardPerShare[SBTTier.BRONZE], 
+            block.timestamp
+        );
         
         totalSBTPoolBalance += amount; // Historical tracking
 
@@ -228,7 +248,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
 
     // ============ User Management ============
     
-    function updateUserTier(address user, SBTTier newTier) external onlyOwner {
+    function updateUserTier(address user, SBTTier newTier) public onlyOwner {
         SBTTier oldTier = users[user].tier;
         if (oldTier == newTier) return;
         
@@ -245,11 +265,13 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         }
         
         unchecked {
-            if (oldTier == SBTTier.GOLD) goldHolders--;
+            if (oldTier == SBTTier.DIAMOND) diamondHolders--;
+            else if (oldTier == SBTTier.GOLD) goldHolders--;
             else if (oldTier == SBTTier.SILVER) silverHolders--;
             else if (oldTier == SBTTier.BRONZE) bronzeHolders--;
             
-            if (newTier == SBTTier.GOLD) goldHolders++;
+            if (newTier == SBTTier.DIAMOND) diamondHolders++;
+            else if (newTier == SBTTier.GOLD) goldHolders++;
             else if (newTier == SBTTier.SILVER) silverHolders++;
             else if (newTier == SBTTier.BRONZE) bronzeHolders++;
         }
@@ -259,18 +281,39 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         emit TierUpdated(user, oldTier, newTier);
     }
 
+    /**
+     * @notice Batch update user tiers
+     * @dev Optimized for leaderboard sync to save gas
+     */
+    function batchUpdateUserTiers(address[] calldata _users, SBTTier[] calldata _tiers) external onlyOwner {
+        require(_users.length == _tiers.length, "Array length mismatch");
+        for (uint256 i = 0; i < _users.length; i++) {
+            updateUserTier(_users[i], _tiers[i]);
+        }
+    }
+
     // ============ Price Logic ============
     
     // ============ Raffle Sales (Master Store) ============
     
     /**
      * @notice Calculate ticket price in ETH using high-precision Oracle math
-     * @dev (ticketPriceUSDC * 1e18 * 1e8) / (uint256(price) * 1e6)
+     * @dev FIX: Validates Chainlink price staleness (1-hour threshold) and answeredInRound.
+     *      (ticketPriceUSDC * 1e18 * 1e8) / (uint256(price) * 1e6)
      */
     function getTicketPriceInETH() public view returns (uint256) {
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        (
+            uint80 roundId,
+            int256 price,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+
         require(price > 0, "Invalid oracle price");
-        
+        require(answeredInRound >= roundId, "Stale price: round not complete");
+        require(block.timestamp - updatedAt <= 1 hours, "Stale price: feed outdated");
+
         // ticketPriceUSDC (6 decimals)
         // ETH (18 decimals)
         // Oracle Price (8 decimals)

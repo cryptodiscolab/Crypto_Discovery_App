@@ -1,88 +1,71 @@
 -- ============================================
--- HARDENED RLS POLICIES (Custom Header Validation)
+-- HARDENED RLS POLICIES v2
+-- FIX #3: Remove all x-user-wallet header-based policies.
+-- All client writes are BLOCKED. Only Next.js API Routes
+-- using SERVICE_ROLE_KEY can write to these tables.
 -- ============================================
 
--- DROP existing permissive policies first
-DROP POLICY IF EXISTS "Public can view profiles" ON public.user_profiles;
-DROP POLICY IF EXISTS "Users can manage own profile" ON public.user_profiles;
-DROP POLICY IF EXISTS "Public can view active tasks" ON public.daily_tasks;
-DROP POLICY IF EXISTS "Admin can manage tasks" ON public.daily_tasks;
-DROP POLICY IF EXISTS "Public can view claims" ON public.user_task_claims;
-DROP POLICY IF EXISTS "Users can insert claims" ON public.user_task_claims;
+-- ─── DROP OLD VULNERABLE POLICIES ────────────────────────────────────────────
 
--- ============================================
--- USER_PROFILES POLICIES
--- ============================================
+DROP POLICY IF EXISTS "Public can view profiles"        ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can manage own profile"    ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can create own profile"    ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile"    ON public.user_profiles;
 
--- Policy 1: Public Read (Leaderboard visible to all)
+DROP POLICY IF EXISTS "Public can view active tasks"    ON public.daily_tasks;
+DROP POLICY IF EXISTS "Admin can manage tasks"          ON public.daily_tasks;
+
+DROP POLICY IF EXISTS "Public can view claims"          ON public.user_task_claims;
+DROP POLICY IF EXISTS "Users can insert claims"         ON public.user_task_claims;
+DROP POLICY IF EXISTS "Users can insert own claims"     ON public.user_task_claims;
+
+-- ─── USER_PROFILES ────────────────────────────────────────────────────────────
+
+-- ✅ Public read: leaderboard & reputation visible to all
 CREATE POLICY "Public can view profiles"
     ON public.user_profiles
     FOR SELECT
     USING (true);
 
--- Policy 2: Users can INSERT their own profile
-CREATE POLICY "Users can create own profile"
-    ON public.user_profiles
-    FOR INSERT
-    WITH CHECK (
-        LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') = LOWER(wallet_address)
-    );
+-- 🔒 Block ALL client-side writes.
+-- API Routes use SERVICE_ROLE_KEY which bypasses RLS entirely.
+-- No INSERT / UPDATE / DELETE policy = denied by default when RLS is enabled.
 
--- Policy 3: Users can UPDATE their own profile
-CREATE POLICY "Users can update own profile"
-    ON public.user_profiles
-    FOR UPDATE
-    USING (
-        LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') = LOWER(wallet_address)
-    )
-    WITH CHECK (
-        LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') = LOWER(wallet_address)
-    );
+-- ─── DAILY_TASKS ─────────────────────────────────────────────────────────────
 
--- ============================================
--- DAILY_TASKS POLICIES
--- ============================================
-
--- Policy 1: Public Read (All users can view active tasks)
+-- ✅ Public read: active tasks visible to all
 CREATE POLICY "Public can view active tasks"
     ON public.daily_tasks
     FOR SELECT
     USING (is_active = true);
 
--- Policy 2: Admin Only Write (MASTER_ADMIN can manage tasks)
-CREATE POLICY "Admin can manage tasks"
-    ON public.daily_tasks
-    FOR ALL
-    USING (
-        LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') = LOWER('0x0845204b4b5e5f8aa7a0cfd2c6c6b5e8d4f3e2d1')
-    )
-    WITH CHECK (
-        LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') = LOWER('0x0845204b4b5e5f8aa7a0cfd2c6c6b5e8d4f3e2d1')
-    );
+-- 🔒 No write policy — admin writes go through API Route with SERVICE_ROLE_KEY
 
--- ============================================
--- USER_TASK_CLAIMS POLICIES
--- ============================================
+-- ─── USER_TASK_CLAIMS ────────────────────────────────────────────────────────
 
--- Policy 1: Public Read (For leaderboard & stats)
+-- ✅ Public read: for leaderboard & stats
 CREATE POLICY "Public can view claims"
     ON public.user_task_claims
     FOR SELECT
     USING (true);
 
--- Policy 2: Users can INSERT claims for their own wallet
-CREATE POLICY "Users can insert own claims"
-    ON public.user_task_claims
-    FOR INSERT
-    WITH CHECK (
-        LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') = LOWER(wallet_address)
-    );
+-- 🔒 No insert policy — claim writes go through /api/verify-action with signature check
 
--- ============================================
--- PRE-FLIGHT CHECK
--- ============================================
--- ✅ Admin Protection: Only MASTER_ADMIN can modify tasks
--- ✅ User Protection: Users can only insert/update their own data
--- ✅ Header Validation: All write operations check x-user-wallet header
--- ✅ Public Read: Leaderboard & stats remain accessible
--- ✅ No Permissive Policies: All USING (true) replaced with proper checks
+-- ─── ADMIN HELPER FUNCTION (Updated with correct addresses) ──────────────────
+
+CREATE OR REPLACE FUNCTION is_admin_wallet(wallet TEXT)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN LOWER(wallet) IN (
+        LOWER('0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B'),
+        LOWER('0x455DF75735d2a18c26f0AfDefa93217B60369fe5')
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ─── PRE-FLIGHT CHECK ────────────────────────────────────────────────────────
+-- ✅ No x-user-wallet header policies (was spoofable via DevTools)
+-- ✅ All write operations blocked from client (RLS default deny)
+-- ✅ SERVICE_ROLE_KEY bypasses RLS safely — only used server-side in API Routes
+-- ✅ Public reads still work for leaderboard, task list, and claim history
+-- ✅ is_admin_wallet() updated with both correct admin addresses

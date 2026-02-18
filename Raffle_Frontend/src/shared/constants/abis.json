@@ -85,6 +85,24 @@
         {
             "inputs": [
                 {
+                    "internalType": "address[]",
+                    "name": "_users",
+                    "type": "address[]"
+                },
+                {
+                    "internalType": "uint8[]",
+                    "name": "_tiers",
+                    "type": "uint8[]"
+                }
+            ],
+            "name": "batchUpdateUserTiers",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
                     "internalType": "uint256",
                     "name": "amount",
                     "type": "uint256"
