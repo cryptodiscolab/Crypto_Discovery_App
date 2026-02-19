@@ -208,7 +208,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                 </header>
 
                 {/* Body Content */}
-                <div className="p-4 md:p-6 lg:p-8 max-w-[1240px] mx-auto w-full flex-1">
+                <div className="p-4 md:p-8 lg:p-12 w-full flex-1">
                     <React.Suspense fallback={
                         <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
                             <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4 opacity-50" />
