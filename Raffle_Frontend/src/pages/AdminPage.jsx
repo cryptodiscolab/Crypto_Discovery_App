@@ -132,34 +132,24 @@ export function AdminPage({ initialTab = 'pool' }) {
     ];
 
     return (
-        <div className="min-h-screen pt-24 pb-12 px-4">
-            <div className="container mx-auto max-w-5xl">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
-                    <div className="flex items-center gap-4">
-                        <div className="p-4 bg-indigo-500/20 rounded-2xl border border-indigo-500/30">
-                            <Shield className="w-8 h-8 text-indigo-400" />
+        <div className="min-h-screen bg-[#050505] flex flex-col md:flex-row">
+            {/* --- SIDEBAR (Left) --- */}
+            <aside className="w-full md:w-64 bg-slate-900/40 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-white/5 flex-shrink-0 z-[100]">
+                <div className="p-6 flex flex-col h-full overflow-y-auto custom-scrollbar">
+                    {/* Brand */}
+                    <div className="flex items-center gap-3 mb-10 px-2">
+                        <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
+                            <Shield className="w-5 h-5 text-indigo-400" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black text-white">Management Portal</h1>
-                            <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">
-                                {address?.slice(0, 8)}...{address?.slice(-6)}
-                            </p>
+                            <h2 className="text-lg font-black text-white tracking-tight">Admin Hub</h2>
+                            <p className="text-[10px] text-indigo-500/70 font-bold uppercase tracking-widest">Protocol V2.1</p>
                         </div>
                     </div>
 
-
-                    <button
-                        onClick={() => refetchAll()}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-white/5 rounded-xl text-slate-400 hover:text-white transition-all shadow-lg"
-                    >
-                        <RefreshCw className="w-4 h-4" /> Sync Stats
-                    </button>
-                </div>
-
-                {/* Tab Navigation (Modern Wrapped Grid) */}
-                <div className="mb-10">
-                    <div className="flex flex-wrap gap-3 p-2 bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-white/5">
+                    {/* Navigation */}
+                    <nav className="flex-1 space-y-1">
+                        <p className="px-3 mb-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Management</p>
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -167,52 +157,91 @@ export function AdminPage({ initialTab = 'pool' }) {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${isActive
-                                        ? 'bg-indigo-600 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] scale-105 z-10'
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all group ${isActive
+                                        ? 'bg-indigo-600 text-white shadow-[0_10px_20px_-5px_rgba(79,70,229,0.4)]'
                                         : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                                         }`}
                                 >
-                                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-600'}`} />
-                                    <span className="text-xs md:text-sm tracking-tight">{tab.label}</span>
+                                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-white' : 'group-hover:text-indigo-400'}`} />
+                                    <span className="text-sm tracking-tight">{tab.label}</span>
                                 </button>
                             );
                         })}
+                    </nav>
+
+                    {/* Footer Actions */}
+                    <div className="mt-10 pt-6 border-t border-white/5 space-y-3">
+                        <div className="px-3 py-4 bg-white/5 rounded-2xl border border-white/5 mb-4">
+                            <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Signed As</p>
+                            <p className="text-xs font-mono text-indigo-400 truncate">
+                                {address?.slice(0, 12)}...{address?.slice(-8)}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-950/50 hover:bg-slate-900 border border-white/5 rounded-xl text-xs font-bold text-slate-400 transition-all"
+                        >
+                            <ExternalLink className="w-3 h-3" /> Exit to Homepage
+                        </button>
                     </div>
                 </div>
+            </aside>
 
-                {/* Tab Content */}
-                <React.Suspense fallback={
-                    <div className="flex flex-col items-center justify-center p-20 glass-card bg-slate-900/40">
-                        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-                        <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Optimizing Dashboard Module...</p>
+            {/* --- MAIN CONTENT (Right) --- */}
+            <main className="flex-1 min-w-0 h-screen overflow-y-auto custom-scrollbar flex flex-col relative z-10">
+                {/* Topbar */}
+                <header className="sticky top-0 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between z-50">
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-black text-white capitalize">{activeTab.replace('-', ' ')}</h2>
+                        <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live System</span>
+                        </div>
                     </div>
-                }>
-                    <div
-                        key={activeTab}
-                        className="animate-fade-in"
+
+                    <button
+                        onClick={() => refetchAll()}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-white/5 rounded-xl text-slate-400 hover:text-white transition-all text-xs font-bold"
                     >
-                        {activeTab === 'pool' && (
-                            <PoolTab
-                                balance={totalPoolBalance}
-                                onDistribute={distributeRevenue}
-                                ethPrice={ethPrice}
-                                settings={poolSettings}
-                                onUpdateSettings={updatePoolSettings}
-                            />
-                        )}
-                        {activeTab === 'system' && <SystemSettingsTab />}
-                        {activeTab === 'raffles' && <RaffleManagerTab />}
-                        {activeTab === 'tasks' && <TaskManagerTab />}
-                        {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
-                        {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
-                        {activeTab === 'roles' && <RoleManagementTab />}
-                        {activeTab === 'whitelist' && <WhitelistManagerTab />}
-                        {activeTab === 'announcement' && <AnnouncementTab />}
-                        {activeTab === 'news' && <NewsTab />}
-                        {activeTab === 'content' && <ContentTab />}
-                    </div>
-                </React.Suspense>
-            </div>
+                        <RefreshCw className="w-3 h-3" /> Sync Protocol
+                    </button>
+                </header>
+
+                {/* Body Content */}
+                <div className="p-6 md:p-10 max-w-6xl mx-auto w-full flex-1">
+                    <React.Suspense fallback={
+                        <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
+                            <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4 opacity-50" />
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Initialising Module...</p>
+                        </div>
+                    }>
+                        <div
+                            key={activeTab}
+                            className="animate-fade-in pb-20"
+                        >
+                            {activeTab === 'pool' && (
+                                <PoolTab
+                                    balance={totalPoolBalance}
+                                    onDistribute={distributeRevenue}
+                                    ethPrice={ethPrice}
+                                    settings={poolSettings}
+                                    onUpdateSettings={updatePoolSettings}
+                                />
+                            )}
+                            {activeTab === 'system' && <SystemSettingsTab />}
+                            {activeTab === 'raffles' && <RaffleManagerTab />}
+                            {activeTab === 'tasks' && <TaskManagerTab />}
+                            {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
+                            {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
+                            {activeTab === 'roles' && <RoleManagementTab />}
+                            {activeTab === 'whitelist' && <WhitelistManagerTab />}
+                            {activeTab === 'announcement' && <AnnouncementTab />}
+                            {activeTab === 'news' && <NewsTab />}
+                            {activeTab === 'content' && <ContentTab />}
+                        </div>
+                    </React.Suspense>
+                </div>
+            </main>
         </div>
     );
 }
