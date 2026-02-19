@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
     wallet_address TEXT PRIMARY KEY,
     fid BIGINT UNIQUE,
     trust_score NUMERIC DEFAULT 0,
-    xp INTEGER DEFAULT 0,
+    total_xp INTEGER DEFAULT 0,
     tier INTEGER DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
     -- Constraints
     CONSTRAINT wallet_address_lowercase CHECK (wallet_address = LOWER(wallet_address)),
     CONSTRAINT trust_score_range CHECK (trust_score >= 0 AND trust_score <= 100),
-    CONSTRAINT xp_positive CHECK (xp >= 0)
+    CONSTRAINT xp_positive CHECK (total_xp >= 0)
 );
 
 -- Index untuk performa
@@ -28,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_trust_score
     ON public.user_profiles(trust_score DESC);
 
 CREATE INDEX IF NOT EXISTS idx_user_profiles_xp 
-    ON public.user_profiles(xp DESC);
+    ON public.user_profiles(total_xp DESC);
 
 -- Enable RLS
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
@@ -180,7 +180,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     UPDATE public.user_profiles
     SET 
-        xp = (
+        total_xp = (
             SELECT COALESCE(SUM(xp_earned), 0)
             FROM public.user_task_claims
             WHERE wallet_address = NEW.wallet_address
@@ -230,7 +230,7 @@ $$ LANGUAGE plpgsql;
 -- Function: Get user stats
 CREATE OR REPLACE FUNCTION get_user_stats(wallet TEXT)
 RETURNS TABLE (
-    xp INTEGER,
+    total_xp INTEGER,
     total_claims BIGINT,
     trust_score NUMERIC,
     rank BIGINT
@@ -238,12 +238,12 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT 
-        up.xp,
+        up.total_xp,
         COUNT(utc.id) as total_claims,
         up.trust_score,
         (SELECT COUNT(*) + 1 
          FROM public.user_profiles 
-         WHERE xp > up.xp) as rank
+         WHERE total_xp > up.total_xp) as rank
     FROM public.user_profiles up
     LEFT JOIN public.user_task_claims utc ON utc.wallet_address = up.wallet_address
     WHERE up.wallet_address = LOWER(wallet)

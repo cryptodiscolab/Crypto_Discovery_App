@@ -29,7 +29,7 @@ export default function ProfilePage() {
     neynarScore: 0,
     verifications: [],
     powerBadge: false,
-    xp: 0,
+    total_xp: 0,
     rankName: 'Rookie'
   });
 

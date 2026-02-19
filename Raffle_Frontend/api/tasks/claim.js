@@ -69,7 +69,7 @@ export default async function handler(req, res) {
 
         // 6. Insert Claim (Bypass RLS)
         // Note: The trigger trg_sync_user_xp_on_claim will automatically update
-        // user_profiles.xp based on sum of xp_earned in user_task_claims.
+        // user_profiles.total_xp based on sum of xp_earned in user_task_claims.
         const { error: claimError } = await supabaseAdmin
             .from('user_task_claims')
             .insert({
