@@ -132,7 +132,7 @@ export function AdminPage({ initialTab = 'pool' }) {
     ];
 
     return (
-        <div className="min-h-screen bg-[#050505] flex flex-col md:flex-row">
+        <div className="z-[9999] pointer-events-auto relative min-h-screen bg-[#050505] flex flex-col md:flex-row">
             {/* --- SIDEBAR (Left) --- */}
             <aside className="w-full md:w-64 bg-slate-900/40 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-white/5 flex-shrink-0 z-[100]">
                 <div className="p-6 flex flex-col h-full overflow-y-auto custom-scrollbar">
@@ -208,7 +208,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                 </header>
 
                 {/* Body Content */}
-                <div className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full flex-1">
+                <div className="p-4 md:p-8 lg:p-10 w-full flex-1">
                     <React.Suspense fallback={
                         <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
                             <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4 opacity-50" />
