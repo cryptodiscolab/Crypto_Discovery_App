@@ -53,7 +53,7 @@ function App() {
                       <Route path="/leaderboard" element={<LeaderboardPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
                       <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                      <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                      <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                     </Route>
                   </Routes>
 

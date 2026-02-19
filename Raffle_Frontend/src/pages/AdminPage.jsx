@@ -9,6 +9,9 @@ const RoleManagementTab = React.lazy(() => import('../components/admin/RoleManag
 const WhitelistManagerTab = React.lazy(() => import('../components/admin/WhitelistManagerTab').then(m => ({ default: m.WhitelistManagerTab })));
 const RaffleManagerTab = React.lazy(() => import('../components/admin/RaffleManagerTab').then(m => ({ default: m.RaffleManagerTab })));
 const TaskManagerTab = React.lazy(() => import('../components/admin/TaskManagerTab').then(m => ({ default: m.TaskManagerTab })));
+const UserReputationTable = React.lazy(() => import('../components/admin/UserReputationTable'));
+const TaskClaimLogs = React.lazy(() => import('../components/admin/TaskClaimLogs'));
+const SBTRewardsDashboard = React.lazy(() => import('../components/SBTRewardsDashboard').then(module => ({ default: module.SBTRewardsDashboard })));
 
 import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
@@ -118,10 +121,12 @@ export function AdminPage({ initialTab = 'pool' }) {
     }
 
     const tabs = [
+        { id: 'reputation', label: 'Reputation', icon: LayoutList, color: 'indigo' },
         { id: 'pool', label: 'SBT Master', icon: Database, color: 'indigo' },
         { id: 'system', label: 'MasterX Controls', icon: Settings, color: 'blue' },
         { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
         { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
+        { id: 'logs', label: 'Activity Logs', icon: ClipboardList, color: 'slate' },
         { id: 'tiers', label: 'Tier Control', icon: Award, color: 'yellow' },
         { id: 'treasury', label: 'Treasury Safe', icon: Landmark, color: 'emerald' },
         { id: 'roles', label: 'Role Management', icon: UserCog, color: 'yellow' },
@@ -219,6 +224,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             key={activeTab}
                             className="animate-fade-in pb-20"
                         >
+                            {activeTab === 'reputation' && <UserReputationTable />}
                             {activeTab === 'pool' && (
                                 <PoolTab
                                     balance={totalPoolBalance}
@@ -231,6 +237,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             {activeTab === 'system' && <SystemSettingsTab />}
                             {activeTab === 'raffles' && <RaffleManagerTab />}
                             {activeTab === 'tasks' && <TaskManagerTab />}
+                            {activeTab === 'logs' && <TaskClaimLogs />}
                             {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
                             {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
                             {activeTab === 'roles' && <RoleManagementTab />}

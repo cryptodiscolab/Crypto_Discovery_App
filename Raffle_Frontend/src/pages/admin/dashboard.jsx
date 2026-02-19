@@ -33,7 +33,7 @@ const AdminDashboard = () => {
     return (
         <AdminGuard>
             <div
-                className="max-w-xl mx-auto px-4 py-4 min-h-screen bg-[#0a0a0c]"
+                className="w-full px-4 py-4 min-h-screen bg-[#0a0a0c]"
                 style={{
                     willChange: 'transform',
                     transform: 'translateZ(0)',
