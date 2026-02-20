@@ -1,5 +1,6 @@
 const { ethers } = require("ethers");
 const { createClient } = require("@supabase/supabase-js");
+const fetch = require("node-fetch");
 
 // ── CONFIG ─────────────────────────────────────────────────────
 const RPC_URL = process.env.VITE_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
@@ -8,6 +9,7 @@ const DAILY_APP = process.env.NEXT_PUBLIC_DAILY_APP_ADDRESS || "0x9BdE662649A9C0
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const NEYNAR_KEY = process.env.NEYNAR_API_KEY;
 
 const MAX_BLOCK_RANGE = 5000;
 
@@ -26,7 +28,52 @@ function makeId(seed) {
 }
 
 module.exports = async (req, res) => {
-    // 1) Auth Check
+    const { action } = req.query;
+
+    // ── ROUTING ────────────────────────────────────────────────
+    if (action === 'check') {
+        return handleFarcasterCheck(req, res);
+    } else if (action === 'sync') {
+        return handleSyncEvents(req, res);
+    } else {
+        return res.status(400).json({ error: "Invalid action. Use ?action=check or ?action=sync" });
+    }
+};
+
+// ── ACTION: Farcaster Check ────────────────────────────────────
+async function handleFarcasterCheck(req, res) {
+    const { address } = req.query;
+
+    if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
+        return res.status(400).json({ error: 'Invalid address' });
+    }
+
+    const normalizedAddress = address.toLowerCase();
+
+    try {
+        const response = await fetch(
+            `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${normalizedAddress}`,
+            {
+                headers: { 'api_key': NEYNAR_KEY || '' }
+            }
+        );
+
+        if (response.status === 404) return res.status(404).json(null);
+        if (!response.ok) return res.status(502).json({ error: 'Upstream API failure' });
+
+        const data = await response.json();
+        const userList = data[normalizedAddress] || [];
+        const user = userList.length > 0 ? userList[0] : null;
+
+        res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate');
+        return res.status(200).json(user);
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+}
+
+// ── ACTION: Sync Events ───────────────────────────────────────
+async function handleSyncEvents(req, res) {
     const authHeader = req.headers['authorization'];
     if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -40,7 +87,6 @@ module.exports = async (req, res) => {
     const provider = new ethers.JsonRpcProvider(RPC_URL);
 
     try {
-        // 2) Baca Last Block
         const { data: state } = await supabase
             .from("sync_state")
             .select("last_synced_block")
@@ -66,7 +112,6 @@ module.exports = async (req, res) => {
         ]);
 
         const rows = [];
-
         for (const log of pointEvents) {
             const [user, points, reason] = log.args;
             rows.push({
@@ -112,4 +157,4 @@ module.exports = async (req, res) => {
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }
-};
+}
