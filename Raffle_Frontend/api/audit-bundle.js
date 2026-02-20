@@ -106,10 +106,12 @@ async function handleSyncEvents(req, res) {
         }
 
         const fromBlock = lastBlock + 1;
-        const toBlock = Math.min(fromBlock + MAX_BLOCK_RANGE - 1, latestBlock);
+        // Kurangi range max menjadi 2000 block untuk menghindari timeout/limit node publik
+        const toBlock = Math.min(fromBlock + 2000 - 1, latestBlock);
 
-        const masterX = new ethers.Contract(MASTER_X, MASTER_X_ABI, provider);
-        const dailyApp = new ethers.Contract(DAILY_APP, DAILY_APP_ABI, provider);
+        // Fix ENS error: Paksa address menjadi lowercase untuk mem-bypass validasi checksum ketat Ethers v6 yang bisa keliru dan memicu resolusi ENS
+        const masterX = new ethers.Contract(MASTER_X.toLowerCase(), MASTER_X_ABI, provider);
+        const dailyApp = new ethers.Contract(DAILY_APP.toLowerCase(), DAILY_APP_ABI, provider);
 
         const [pointEvents, taskEvents] = await Promise.all([
             masterX.queryFilter("PointsAwarded", fromBlock, toBlock),
