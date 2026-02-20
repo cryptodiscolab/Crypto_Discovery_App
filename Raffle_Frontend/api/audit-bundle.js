@@ -83,7 +83,11 @@ async function handleSyncEvents(req, res) {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    const provider = new ethers.JsonRpcProvider(RPC_URL);
+
+    // Fix Alchemy 403 Forbidden: Send whitelisted Origin header
+    const fetchReq = new ethers.FetchRequest(RPC_URL);
+    fetchReq.setHeader("Origin", "https://crypto-discovery-app.vercel.app");
+    const provider = new ethers.JsonRpcProvider(fetchReq);
 
     try {
         const { data: state } = await supabase
