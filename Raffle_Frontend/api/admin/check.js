@@ -17,78 +17,74 @@ export default async function handler(req, res) {
     try {
         const { address, signature, message } = req.body;
 
-        if (!address || !signature || !message) {
-            return res.status(400).json({ error: 'address, signature, and message are required' });
-        }
-
-        // 1. Cryptographic identity verification
-        const valid = await verifyMessage({
-            address,
-            message,
-            signature,
-        });
-
-        if (!valid) {
-            return res.status(401).json({ error: 'Invalid signature' });
-        }
-
-        // 2. Replay protection: 5-minute timestamp window
-        const timeMatch = message.match(/Time:\s*(.+)$/m);
-        if (!timeMatch) {
-            return res.status(400).json({ error: 'Message missing timestamp' });
-        }
-
-        const msgTime = new Date(timeMatch[1]).getTime();
-        if (isNaN(msgTime) || Math.abs(Date.now() - msgTime) > 5 * 60 * 1000) {
-            return res.status(401).json({ error: 'Signature expired' });
+        if (!address) {
+            return res.status(400).json({ error: 'Address is required' });
         }
 
         const cleanAddress = address.trim().toLowerCase();
 
-        // 3. Replay protection (DB level): ensure this signature/timestamp hasn't been used
-        if (supabaseUrl && supabaseServiceKey) {
-            const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        // High-security path: cryptographic verification
+        if (signature && message) {
+            // 1. Cryptographic identity verification
+            const valid = await verifyMessage({
+                address,
+                message,
+                signature,
+            });
 
-            const { error: replayError } = await supabase
-                .from('api_action_log')
-                .insert([{
-                    wallet_address: cleanAddress,
-                    action: 'ADMIN_CHECK',
-                    msg_timestamp: msgTime
-                }]);
-
-            if (replayError && (replayError.code === '23505' || replayError.message?.includes('duplicate key'))) {
-                return res.status(401).json({ error: 'Signature already used (Replay attack prevention)' });
+            if (!valid) {
+                return res.status(401).json({ error: 'Invalid signature' });
             }
 
-            // 4. Admin check: hardcoded genesis admins first
-            let isAdmin = AUTHORIZED_ADMINS.includes(cleanAddress);
+            // 2. Replay protection: 5-minute timestamp window
+            const timeMatch = message.match(/Time:\s*(.+)$/m);
+            if (!timeMatch) {
+                return res.status(400).json({ error: 'Message missing timestamp' });
+            }
 
-            // 5. Dynamic admin check via DB (only if not already a genesis admin)
-            if (!isAdmin) {
-                const { data: userProfile } = await supabase
-                    .from('user_profiles')
-                    .select('is_admin')
-                    .eq('wallet_address', cleanAddress)
-                    .single();
+            const msgTime = new Date(timeMatch[1]).getTime();
+            if (isNaN(msgTime) || Math.abs(Date.now() - msgTime) > 5 * 60 * 1000) {
+                return res.status(401).json({ error: 'Signature expired' });
+            }
 
-                if (userProfile?.is_admin) {
-                    isAdmin = true;
+            // 3. Replay protection (DB level): ensure this signature/timestamp hasn't been used
+            if (supabaseUrl && supabaseServiceKey) {
+                const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+                const { error: replayError } = await supabase
+                    .from('api_action_log')
+                    .insert([{
+                        wallet_address: cleanAddress,
+                        action: 'ADMIN_CHECK_SECURE',
+                        msg_timestamp: msgTime
+                    }]);
+
+                if (replayError && (replayError.code === '23505' || replayError.message?.includes('duplicate key'))) {
+                    return res.status(401).json({ error: 'Signature already used' });
                 }
             }
-
-            if (!isAdmin) {
-                console.warn(`[Security] Unauthorized admin check attempt: ${cleanAddress.slice(0, 8)}...`);
-            }
-
-            return res.status(200).json({
-                isAdmin,
-                message: isAdmin ? 'Admin access granted' : 'Unauthorized'
-            });
         }
 
-        // Fallback for missing Supabase config (though it shouldn't happen in prod)
-        return res.status(500).json({ error: 'Server configuration error' });
+        // Admin verification logic (applied to both soft and secure checks)
+        let isAdmin = AUTHORIZED_ADMINS.includes(cleanAddress);
+
+        if (!isAdmin && supabaseUrl && supabaseServiceKey) {
+            const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            const { data: userProfile } = await supabase
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('wallet_address', cleanAddress)
+                .single();
+
+            if (userProfile?.is_admin) {
+                isAdmin = true;
+            }
+        }
+
+        return res.status(200).json({
+            isAdmin,
+            message: isAdmin ? 'Admin access granted' : 'Unauthorized'
+        });
 
     } catch (error) {
         console.error('[admin/check] Error:', error);
