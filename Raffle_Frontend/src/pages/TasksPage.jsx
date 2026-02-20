@@ -1,5 +1,5 @@
-import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight } from 'lucide-react';
-import { useAccount, useReadContract } from 'wagmi';
+import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift } from 'lucide-react';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask } from '../hooks/useContract';
 import { useVerification } from '../hooks/useVerification';
 import { usePoints } from '../shared/context/PointsContext';
@@ -244,9 +244,22 @@ export function TasksPage() {
 
 function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
     const { address } = useAccount();
+    const { writeContractAsync } = useWriteContract();
     const { verifyTask, registerTaskStart, isVerifying } = useVerification(refetchStats);
     const [verifyingStatus, setVerifyingStatus] = useState(null); // 'success', 'fail', null
     const [timer, setTimer] = useState(0);
+    const [isClaiming, setIsClaiming] = useState(false);
+
+    // Track on-chain rewards for this specific user
+    const { data: rawClaimable, refetch: refetchRewards } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'claimableRewards',
+        args: [address],
+        query: { enabled: !!address }
+    });
+
+    const claimable = rawClaimable ? Number(rawClaimable) / 1e18 : 0;
 
     // Track completion for the whole card
     const { data: progress } = useReadContract({
@@ -322,8 +335,37 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                 {verifyingStatus === 'success' && timer > 0 && (
                     <div className="bg-green-500/10 text-green-400 p-3 rounded-xl border border-green-500/20 text-center animate-pulse">
                         <p className="text-[10px] font-black uppercase tracking-widest mb-1">Status: Verified</p>
-                        <p className="text-xs font-bold">Claim rewarding in {timer}s at Profile Dashboard</p>
+                        <p className="text-xs font-bold">Claim rewarding in {timer}s...</p>
                     </div>
+                )}
+
+                {verifyingStatus === 'success' && timer === 0 && (
+                    <button
+                        onClick={async () => {
+                            const tid = toast.loading("Claiming Mission Reward...");
+                            setIsClaiming(true);
+                            try {
+                                await writeContractAsync({
+                                    address: CONTRACTS.DAILY_APP,
+                                    abi: DAILY_APP_ABI,
+                                    functionName: 'claimRewards',
+                                });
+                                toast.success("Mission Reward Claimed!", { id: tid });
+                                setVerifyingStatus(null);
+                                refetchRewards();
+                                refetchStats();
+                            } catch (err) {
+                                toast.error(err.shortMessage || "Claim failed", { id: tid });
+                            } finally {
+                                setIsClaiming(false);
+                            }
+                        }}
+                        disabled={isClaiming}
+                        className="w-full bg-green-600 hover:bg-green-500 py-3.5 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/20"
+                    >
+                        {isClaiming ? <Loader2 className="animate-spin" size={14} /> : <Gift size={14} />}
+                        Claim Task Reward
+                    </button>
                 )}
 
                 {verifyingStatus === 'fail' && (
@@ -333,7 +375,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                     </div>
                 )}
 
-                {!isGlobalCompleted && (
+                {!isGlobalCompleted && verifyingStatus !== 'success' && (
                     <button
                         onClick={handleVerifyCard}
                         disabled={isVerifying}

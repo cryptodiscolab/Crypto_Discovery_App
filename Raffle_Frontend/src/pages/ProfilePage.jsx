@@ -15,17 +15,6 @@ export default function ProfilePage() {
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
   const { writeContractAsync } = useWriteContract();
 
-  // Load claimable rewards from contract
-  const { data: rawClaimable, refetch: refetchRewards } = useReadContract({
-    address: CONTRACTS.DAILY_APP,
-    abi: DAILY_APP_ABI,
-    functionName: 'claimableRewards',
-    args: [address],
-    query: { enabled: !!address }
-  });
-
-  const claimable = rawClaimable ? Number(rawClaimable) / 1e18 : 0;
-
   // State untuk Mode Edit
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -432,53 +421,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-
-        {/* REWARD DASHBOARD (NEW) */}
-        {address && (
-          <div className="px-4 py-6">
-            <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/20 rounded-3xl p-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Sparkles size={100} className="text-indigo-400" />
-              </div>
-              <div className="relative z-10 space-y-4">
-                <div>
-                  <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Claimable Rewards</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-white italic tracking-tighter">{claimable.toFixed(2)}</span>
-                    <span className="text-xs font-bold text-slate-400">TOKENS</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={async () => {
-                      if (claimable <= 0) return toast.error("No rewards to claim!");
-                      const tid = toast.loading("Claiming Rewards (5% Fee)...");
-                      try {
-                        await writeContractAsync({
-                          address: CONTRACTS.DAILY_APP,
-                          abi: DAILY_APP_ABI,
-                          functionName: 'claimRewards',
-                        });
-                        toast.success("Rewards claimed successfully!", { id: tid });
-                        refetchRewards();
-                      } catch (err) {
-                        toast.error(err.shortMessage || "Claim failed", { id: tid });
-                      }
-                    }}
-                    disabled={claimable <= 0}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    WITHDRAW TO WALLET
-                  </button>
-                  <p className="text-[9px] text-slate-500 italic text-center">
-                    * 5% Platform Fee deducted from total reward. Gas fee paid by user.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* VERIFICATIONS LIST */}
         {profileData.verifications && profileData.verifications.length > 0 && (
