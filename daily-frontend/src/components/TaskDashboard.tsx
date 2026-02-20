@@ -80,27 +80,27 @@ export function TaskDashboard() {
 
     if (!isConnected) {
         return (
-            <div className="flex flex-col items-center justify-center p-8 text-center h-full">
+            <div className="flex flex-col items-center justify-center px-6 py-10 text-center h-full">
                 <Zap className="w-16 h-16 text-indigo-500 mb-4" style={{ animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite' }} />
-                <h1 className="text-3xl font-bold mb-2 uppercase tracking-tighter">Crypto Disco</h1>
-                <p className="text-slate-400 mb-8">Connect your wallet to earn points and rewards!</p>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2 uppercase tracking-tighter">Crypto Disco</h1>
+                <p className="text-slate-300 mb-8">Connect your wallet to earn points and rewards!</p>
             </div>
         );
     }
 
     return (
-        <div className="p-6 flex flex-col h-full overflow-y-auto pb-24">
+        <div className="px-4 py-5 sm:p-6 flex flex-col pb-24">
             {/* Header / Points Info */}
-            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 mb-6 shadow-xl shadow-indigo-500/20 text-white flex justify-between items-center relative overflow-hidden">
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-5 sm:p-6 mb-5 shadow-xl shadow-indigo-500/20 text-white flex justify-between items-center relative overflow-hidden">
                 <div className="z-10">
-                    <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-widest opacity-80">Total Points</p>
-                    <h2 className="text-4xl font-black flex items-center gap-2 tracking-tighter">
+                    <p className="text-indigo-100 text-xs font-bold uppercase tracking-[0.16em] opacity-80">Total Points</p>
+                    <h2 className="text-3xl sm:text-4xl font-black flex items-center gap-2 tracking-tighter">
                         {userPoints} <Star className="w-8 h-8 text-yellow-400 fill-yellow-400" />
                     </h2>
                 </div>
                 <div className="z-10 bg-black/20 backdrop-blur-md p-4 rounded-2xl flex flex-col items-center border border-white/10">
                     <Trophy className="w-6 h-6 text-yellow-400 mb-1" />
-                    <span className="text-[10px] uppercase font-bold text-white/60 tracking-tighter">Discovery</span>
+                    <span className="text-[11px] uppercase font-bold text-white/60 tracking-tight">Discovery</span>
                 </div>
 
                 {unsyncedPoints > 0 && (
@@ -121,7 +121,7 @@ export function TaskDashboard() {
                             }}
                         >
                             <TransactionButton
-                                className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-lg shadow-indigo-500/20 border border-indigo-400/50 transition-colors"
+                                className="px-3 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-[11px] font-black uppercase tracking-wider shadow-lg shadow-indigo-500/20 border border-indigo-400/50 transition-colors"
                                 text={`Sync ${unsyncedPoints} Pts`}
                             />
                         </Transaction>
@@ -134,7 +134,7 @@ export function TaskDashboard() {
 
             {/* Social Guard Status */}
             {/* ✅ Fix V-09: animate-bounce dihapus, diganti transition-colors (sesuai .cursorrules) */}
-            <div className={`flex items-center gap-3 p-4 rounded-2xl mb-8 border transition-colors duration-300 shadow-sm ${fcUser
+            <div className={`flex items-center gap-3 p-3.5 rounded-2xl mb-6 border transition-colors duration-300 shadow-sm ${fcUser
                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                 : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                 }`}>
@@ -143,7 +143,7 @@ export function TaskDashboard() {
                         <ShieldCheck className="w-6 h-6 flex-shrink-0" />
                         <div>
                             <p className="text-xs font-black uppercase tracking-wider">Social Identity Verified</p>
-                            <p className="text-[10px] opacity-70 uppercase font-bold tracking-tight">Accessing Gasless Rewards</p>
+                            <p className="text-[11px] opacity-70 font-semibold tracking-tight">Accessing gasless rewards</p>
                         </div>
                     </>
                 ) : (
@@ -151,14 +151,14 @@ export function TaskDashboard() {
                         <ShieldAlert className="w-6 h-6 flex-shrink-0" />
                         <div>
                             <p className="text-xs font-black uppercase tracking-wider">Social Identity Required</p>
-                            <p className="text-[10px] opacity-70 uppercase font-bold tracking-tight">Link Farcaster on Warpcast to proceed</p>
+                            <p className="text-[11px] opacity-70 font-semibold tracking-tight">Link Farcaster on Warpcast to proceed</p>
                         </div>
                     </>
                 )}
             </div>
 
             {/* Daily Admin Tasks */}
-            <h3 className="text-lg font-black mb-4 flex items-center gap-2 uppercase tracking-tight text-white/90">
+            <h3 className="text-base sm:text-lg font-black mb-3 flex items-center gap-2 uppercase tracking-tight text-white/90">
                 Daily Admin Tasks <Calendar className="w-5 h-5 text-indigo-500" />
             </h3>
             <div className="space-y-3 mb-10">
@@ -174,13 +174,13 @@ export function TaskDashboard() {
                     ))
                 ) : (
                     <div className="p-8 text-center bg-slate-900/30 rounded-3xl border border-slate-800 border-dashed">
-                        <p className="text-slate-600 font-bold uppercase tracking-widest text-[10px]">No daily tasks today</p>
+                        <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">No daily tasks today</p>
                     </div>
                 )}
             </div>
 
             {/* Sponsorship Cards */}
-            <h3 className="text-lg font-black mb-4 flex items-center gap-2 uppercase tracking-tight text-white/90">
+            <h3 className="text-base sm:text-lg font-black mb-3 flex items-center gap-2 uppercase tracking-tight text-white/90">
                 Sponsor Rewards <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
             </h3>
             <div className="space-y-6 flex-1">
@@ -255,9 +255,9 @@ function DailyTaskItem({
                     }
                 </div>
                 <div>
-                    <p className={`text-xs font-black uppercase tracking-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'
+                    <p className={`text-sm font-semibold tracking-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'
                         }`}>{desc}</p>
-                    <p className="text-[10px] font-bold text-indigo-400">+{reward.toString()} XP</p>
+                    <p className="text-xs font-semibold text-indigo-400">+{reward.toString()} XP</p>
                 </div>
             </div>
 
@@ -274,7 +274,7 @@ function DailyTaskItem({
                         }}
                     >
                         <TransactionButton
-                            className={`px-4 py-2 rounded-xl font-black uppercase text-[10px] transition-colors border-none ${isDisabled
+                            className={`px-3.5 py-2 rounded-xl font-black uppercase text-[11px] transition-colors border-none ${isDisabled
                                 ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
                                 : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                                 }`}
@@ -344,14 +344,14 @@ function SponsorCard({
     };
 
     return (
-        <div className={`bg-slate-900 border-2 rounded-[40px] p-6 transition-colors duration-300 shadow-2xl overflow-hidden relative ${isDisabled
+        <div className={`bg-slate-900 border-2 rounded-3xl p-5 transition-colors duration-300 shadow-2xl overflow-hidden relative ${isDisabled
             ? 'opacity-60 grayscale-[0.8] border-slate-800'
             : 'border-slate-800 hover:border-indigo-500/50 group'
             }`}>
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <span className="text-[10px] font-black uppercase text-indigo-500 tracking-[0.2em] mb-1 block">Sponsored By</span>
-                    <h4 className="font-black text-2xl uppercase tracking-tighter text-white">{sponsorName}</h4>
+                    <span className="text-[11px] font-black uppercase text-indigo-500 tracking-[0.18em] mb-1 block">Sponsored By</span>
+                    <h4 className="font-black text-xl sm:text-2xl uppercase tracking-tighter text-white">{sponsorName}</h4>
                 </div>
                 <div className="bg-indigo-600/10 p-3 rounded-2xl group-hover:bg-indigo-600/20 transition-colors">
                     <Zap className="w-5 h-5 text-indigo-500" />
@@ -382,7 +382,7 @@ function SponsorCard({
                     }}
                 >
                     <TransactionButton
-                        className={`w-full py-5 rounded-3xl font-black uppercase tracking-[0.1em] text-xs transition-colors border-none ${cardsDisabled
+                        className={`w-full py-4 rounded-3xl font-black uppercase tracking-[0.1em] text-sm transition-colors border-none ${cardsDisabled
                             ? '!bg-slate-800 !text-slate-500 !cursor-not-allowed'
                             : 'bg-white text-black hover:bg-slate-100 active:scale-95 shadow-xl shadow-white/5'
                             }`}
@@ -439,7 +439,7 @@ function SubTaskItem({
     return (
         <div
             onClick={() => onToggle(taskId, !!isCompleted)}
-            className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-colors cursor-pointer ${isCompleted
+            className={`flex items-center justify-between p-3.5 rounded-2xl border-2 transition-colors cursor-pointer ${isCompleted
                 ? 'bg-indigo-500/5 border-indigo-500/20 opacity-60'
                 : isSelected
                     ? 'bg-indigo-500 border-indigo-500'
@@ -461,18 +461,18 @@ function SubTaskItem({
                     )}
                 </div>
                 <div>
-                    <p className={`text-xs font-bold uppercase tracking-tight ${isCompleted ? 'line-through text-slate-500'
+                    <p className={`text-sm font-semibold tracking-tight ${isCompleted ? 'line-through text-slate-500'
                         : isSelected ? 'text-white'
                             : 'text-slate-300'
                         }`}>{desc}</p>
-                    <p className={`text-[10px] font-black ${isCompleted ? 'text-indigo-400/50'
+                    <p className={`text-xs font-semibold ${isCompleted ? 'text-indigo-400/50'
                         : isSelected ? 'text-white/80'
                             : 'text-indigo-400'
                         }`}>+{reward.toString()} XP</p>
                 </div>
             </div>
             {isCompleted && (
-                <span className="text-[8px] font-black uppercase text-indigo-400 px-2 py-1 bg-indigo-400/10 rounded-full">
+                <span className="text-[10px] font-black uppercase text-indigo-400 px-2 py-1 bg-indigo-400/10 rounded-full">
                     Completed
                 </span>
             )}

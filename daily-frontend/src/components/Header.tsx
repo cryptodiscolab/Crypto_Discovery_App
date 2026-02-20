@@ -1,16 +1,16 @@
 'use client';
 
-import { ConnectWallet, Wallet, WalletDropdown, WalletDropdownDisconnect, WalletDropdownLink, WalletDropdownBasename, WalletDropdownFundLink } from '@coinbase/onchainkit/wallet';
+import { ConnectWallet, Wallet, WalletDropdown, WalletDropdownDisconnect, WalletDropdownBasename, WalletDropdownFundLink } from '@coinbase/onchainkit/wallet';
 import { Avatar, Name, Address, EthBalance, Identity } from '@coinbase/onchainkit/identity';
 
 export function Header() {
     return (
-        <header className="px-6 py-4 flex justify-between items-center border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+        <header className="px-4 py-3 flex justify-between items-center border-b border-slate-800 bg-slate-900/70 backdrop-blur-md sticky top-0 z-50">
             <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <span className="text-xl font-bold">💿</span>
+                    <span className="text-sm font-black tracking-wider">CD</span>
                 </div>
-                <h1 className="font-bold text-lg hidden sm:block">Disco Daily</h1>
+                <h1 className="font-bold text-base tracking-tight">Disco Daily</h1>
             </div>
 
             <div className="flex items-center gap-3">
