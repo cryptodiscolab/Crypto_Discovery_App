@@ -132,6 +132,8 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     mapping(address => mapping(uint256 => uint256)) public lastTaskTime; 
     mapping(address => address) public referrerOf;
     mapping(uint256 => SponsorRequest) public sponsorRequests;
+    mapping(address => mapping(uint256 => bool)) public hasCompletedTask; // New: One-time completion tracking
+    mapping(address => uint256) public claimableRewards; // New: Accumulated pending rewards
     mapping(address => bool) private _hasJoined;
     mapping(NFTTier => string) public tierURIs;
     mapping(address => bool) public isValidReferrer;
@@ -669,7 +671,13 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         if (task.baseReward == 0) revert NotFound();
         if (!task.isActive) revert NotAllowed();
         if (stats.currentTier < task.minTier) revert InvalidTier();
-        if (block.timestamp < lastTaskTime[msg.sender][_taskId] + task.cooldown) revert CooldownActive();
+        
+        // Revised Logic: Sponsored tasks are one-time, others follow cooldown
+        if (task.sponsorshipId > 0) {
+            if (hasCompletedTask[msg.sender][_taskId]) revert NotAllowed();
+        } else {
+            if (block.timestamp < lastTaskTime[msg.sender][_taskId] + task.cooldown) revert CooldownActive();
+        }
         
         // NEW: Check verification requirement
         if (task.requiresVerification && !taskVerified[msg.sender][_taskId]) revert Unauthorized();
@@ -712,19 +720,20 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
             }
         }
         
-        // NEW: Sponsored Task Logic
+        // NEW: Sponsored Task Logic (One-Time & Pull Reward)
         if (task.sponsorshipId > 0) {
-            // Increment progress
+            hasCompletedTask[msg.sender][_taskId] = true;
+            
+            // Increment progress for sponsorship goal
             userSponsorshipProgress[msg.sender][task.sponsorshipId]++;
             uint256 currentProgress = userSponsorshipProgress[msg.sender][task.sponsorshipId];
             
-            // Check if multiple of 3
+            // Check if multiple of 3 (or whatever goal set)
             if (currentProgress % TASKS_FOR_REWARD == 0) {
                 SponsorRequest storage req = sponsorRequests[task.sponsorshipId];
-                // Check if pool has funds
                 if (req.rewardPool >= REWARD_PER_CLAIM) {
                     req.rewardPool -= REWARD_PER_CLAIM;
-                    creatorToken.safeTransfer(msg.sender, REWARD_PER_CLAIM);
+                    claimableRewards[msg.sender] += REWARD_PER_CLAIM; // Model PULL: Tambah simpanan, jangan kirim langsung
                 }
             }
         }
@@ -745,6 +754,41 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         
         globalTxCount++;
         emit TaskCompleted(msg.sender, 0, DAILY_BONUS_AMOUNT, block.timestamp); // TaskID 0 for daily bonus
+    }
+
+    /**
+     * @notice Admin can add rewards for raffle winners or other incentives
+     * @param _user The winner address
+     * @param _amount The amount of creator tokens to award
+     */
+    function addClaimableReward(address _user, uint256 _amount) 
+        external 
+        onlyRole(ADMIN_ROLE) 
+        validAddress(_user) 
+    {
+        if (_amount == 0) revert InvalidParameters();
+        claimableRewards[_user] += _amount;
+        emit TaskCompleted(_user, 888, _amount, block.timestamp); // TaskID 888 for external prize
+    }
+
+    /**
+     * @notice Claim accumulated rewards. User pays gas + 5% platform fee deducted from reward.
+     */
+    function claimRewards() external whenNotPaused nonReentrant notBlacklisted {
+        uint256 amount = claimableRewards[msg.sender];
+        if (amount == 0) revert InsufficientFunds();
+
+        claimableRewards[msg.sender] = 0;
+        
+        uint256 fee = (amount * 5) / 100; // 5% Platform Fee
+        uint256 userAmount = amount - fee;
+
+        // Send fee to contract (can be withdrawn by admin later)
+        creatorToken.safeTransfer(address(this), fee); // Already in contract, but accounting-wise held
+        // Send reward to user
+        creatorToken.safeTransfer(msg.sender, userAmount);
+
+        emit TaskCompleted(msg.sender, 999, userAmount, block.timestamp); // TaskID 999 for reward withdrawal
     }
 
     /**
@@ -933,6 +977,26 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     {
         if (tasks[_taskId].baseReward == 0) revert NotFound();
         return tasks[_taskId];
+    }
+
+    /**
+     * @notice Get multiple tasks in a range for efficient frontend loading
+     */
+    function getTasksInRange(uint256 _startId, uint256 _endId) 
+        external 
+        view 
+        returns (Task[] memory) 
+    {
+        if (_startId == 0 || _endId < _startId || _endId >= nextTaskId) revert InvalidParameters();
+        
+        uint256 size = _endId - _startId + 1;
+        Task[] memory tasksRange = new Task[](size);
+        
+        for (uint256 i = 0; i < size; i++) {
+            tasksRange[i] = tasks[_startId + i];
+        }
+        
+        return tasksRange;
     }
 
     function getSponsorRequest(uint256 _reqId) 

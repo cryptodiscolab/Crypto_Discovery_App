@@ -134,6 +134,50 @@ export const MASTER_X_ABI = [
 
 export const DAILY_APP_ABI = [
     {
+        "inputs": [
+            { "internalType": "uint256", "name": "_startId", "type": "uint256" },
+            { "internalType": "uint256", "name": "_endId", "type": "uint256" }
+        ],
+        "name": "getTasksInRange",
+        "outputs": [
+            {
+                "components": [
+                    { "internalType": "uint256", "name": "baseReward", "type": "uint256" },
+                    { "internalType": "bool", "name": "isActive", "type": "bool" },
+                    { "internalType": "uint256", "name": "cooldown", "type": "uint256" },
+                    { "internalType": "enum DailyAppV12Secured.NFTTier", "name": "minTier", "type": "uint8" },
+                    { "internalType": "string", "name": "title", "type": "string" },
+                    { "internalType": "string", "name": "link", "type": "string" },
+                    { "internalType": "uint256", "name": "createdAt", "type": "uint256" },
+                    { "internalType": "bool", "name": "requiresVerification", "type": "bool" },
+                    { "internalType": "uint256", "name": "sponsorshipId", "type": "uint256" }
+                ],
+                "internalType": "struct DailyAppV12Secured.Task[]",
+                "name": "",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "uint256", "name": "_taskId", "type": "uint256" }],
+        "name": "getTask",
+        "outputs": [
+            { "internalType": "uint256", "name": "baseReward", "type": "uint256" },
+            { "internalType": "bool", "name": "isActive", "type": "bool" },
+            { "internalType": "uint256", "name": "cooldown", "type": "uint256" },
+            { "internalType": "uint8", "name": "minTier", "type": "uint8" },
+            { "internalType": "string", "name": "title", "type": "string" },
+            { "internalType": "string", "name": "link", "type": "string" },
+            { "internalType": "uint256", "name": "createdAt", "type": "uint256" },
+            { "internalType": "bool", "name": "requiresVerification", "type": "bool" },
+            { "internalType": "uint256", "name": "sponsorshipId", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
         "name": "tasks",
         "outputs": [
@@ -258,8 +302,35 @@ export const DAILY_APP_ABI = [
         "type": "function"
     },
     {
+        "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+        "name": "claimableRewards",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "internalType": "address", "name": "", "type": "address" },
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "name": "hasCompletedTask",
+        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [],
-        "name": "claimDailyBonus",
+        "name": "claimRewards",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "internalType": "address", "name": "_user", "type": "address" },
+            { "internalType": "uint256", "name": "_amount", "type": "uint256" }
+        ],
+        "name": "addClaimableReward",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
