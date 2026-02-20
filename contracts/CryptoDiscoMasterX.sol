@@ -19,7 +19,8 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     
     // ============ Enums & Structs ============
     
-    enum SBTTier { NONE, BRONZE, SILVER, GOLD, DIAMOND }
+    // ✅ Fix V-11: Tambah PLATINUM agar cocok dengan DailyAppV12Secured (6 tier)
+    enum SBTTier { NONE, BRONZE, SILVER, GOLD, PLATINUM, DIAMOND }
     
     struct UserData {
         uint256 points;
@@ -43,11 +44,13 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     uint256 public constant POINTS_DAILY_TASK = 10;
     uint256 public constant POINTS_REFERRAL = 2;
     
-    // Tier weights
-    uint256 public constant DIAMOND_WEIGHT = 40;
-    uint256 public constant GOLD_WEIGHT = 30;
-    uint256 public constant SILVER_WEIGHT = 20;
-    uint256 public constant BRONZE_WEIGHT = 10;
+    // Tier weights — total = 100%
+    // ✅ Fix V-11: Tambah PLATINUM_WEIGHT, sesuaikan Diamond
+    uint256 public constant DIAMOND_WEIGHT  = 30;
+    uint256 public constant PLATINUM_WEIGHT = 15;
+    uint256 public constant GOLD_WEIGHT     = 25;
+    uint256 public constant SILVER_WEIGHT   = 20;
+    uint256 public constant BRONZE_WEIGHT   = 10;
 
     // Precision & Limits
     uint256 public constant REWARD_PRECISION = 1e18;
@@ -64,7 +67,9 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     uint256 public constant DISTRIBUTE_INTERVAL = 5 days;
     
     // Packed holder counts
+    // ✅ Fix V-11: Tambah platinumHolders
     uint32 public diamondHolders;
+    uint32 public platinumHolders;
     uint32 public goldHolders;
     uint32 public silverHolders;
     uint32 public bronzeHolders;
@@ -168,55 +173,75 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     function _processSBTSplit(uint256 amount) internal {
         if (amount == 0) return;
         uint256 ownerOverflow = 0;
-        
-        unchecked {
-            // Diamond
-            if (diamondHolders > 0) {
-                uint256 share = (amount * DIAMOND_WEIGHT) / 100;
-                accRewardPerShare[SBTTier.DIAMOND] += (share * REWARD_PRECISION) / diamondHolders;
-                totalLockedRewards += share;
-            } else {
-                ownerOverflow += (amount * DIAMOND_WEIGHT) / 100;
-            }
 
-            // Gold
-            if (goldHolders > 0) {
-                uint256 share = (amount * GOLD_WEIGHT) / 100;
+        // ✅ Fix V-05: accRewardPerShare update dalam unchecked (aman: hanya akumulasi per-share)
+        // ✅ Fix V-05: totalLockedRewards DIPINDAHKAN ke luar unchecked (checked arithmetic)
+
+        // Diamond
+        if (diamondHolders > 0) {
+            uint256 share = (amount * DIAMOND_WEIGHT) / 100;
+            unchecked {
+                accRewardPerShare[SBTTier.DIAMOND] += (share * REWARD_PRECISION) / diamondHolders;
+            }
+            totalLockedRewards += share; // ✅ checked — akan revert jika overflow
+        } else {
+            ownerOverflow += (amount * DIAMOND_WEIGHT) / 100;
+        }
+
+        // ✅ Fix V-11: Platinum tier
+        if (platinumHolders > 0) {
+            uint256 share = (amount * PLATINUM_WEIGHT) / 100;
+            unchecked {
+                accRewardPerShare[SBTTier.PLATINUM] += (share * REWARD_PRECISION) / platinumHolders;
+            }
+            totalLockedRewards += share; // ✅ checked
+        } else {
+            ownerOverflow += (amount * PLATINUM_WEIGHT) / 100;
+        }
+
+        // Gold
+        if (goldHolders > 0) {
+            uint256 share = (amount * GOLD_WEIGHT) / 100;
+            unchecked {
                 accRewardPerShare[SBTTier.GOLD] += (share * REWARD_PRECISION) / goldHolders;
-                totalLockedRewards += share;
-            } else {
-                ownerOverflow += (amount * GOLD_WEIGHT) / 100;
             }
-            
-            // Silver
-            if (silverHolders > 0) {
-                uint256 share = (amount * SILVER_WEIGHT) / 100;
+            totalLockedRewards += share; // ✅ checked
+        } else {
+            ownerOverflow += (amount * GOLD_WEIGHT) / 100;
+        }
+
+        // Silver
+        if (silverHolders > 0) {
+            uint256 share = (amount * SILVER_WEIGHT) / 100;
+            unchecked {
                 accRewardPerShare[SBTTier.SILVER] += (share * REWARD_PRECISION) / silverHolders;
-                totalLockedRewards += share;
-            } else {
-                ownerOverflow += (amount * SILVER_WEIGHT) / 100;
             }
-            
-            // Bronze
-            if (bronzeHolders > 0) {
-                uint256 share = (amount * BRONZE_WEIGHT) / 100;
+            totalLockedRewards += share; // ✅ checked
+        } else {
+            ownerOverflow += (amount * SILVER_WEIGHT) / 100;
+        }
+
+        // Bronze
+        if (bronzeHolders > 0) {
+            uint256 share = (amount * BRONZE_WEIGHT) / 100;
+            unchecked {
                 accRewardPerShare[SBTTier.BRONZE] += (share * REWARD_PRECISION) / bronzeHolders;
-                totalLockedRewards += share;
-            } else {
-                ownerOverflow += (amount * BRONZE_WEIGHT) / 100;
             }
+            totalLockedRewards += share; // ✅ checked
+        } else {
+            ownerOverflow += (amount * BRONZE_WEIGHT) / 100;
         }
 
         emit SBTPoolDistributed(
-            amount, 
+            amount,
             accRewardPerShare[SBTTier.DIAMOND],
-            accRewardPerShare[SBTTier.GOLD], 
-            accRewardPerShare[SBTTier.SILVER], 
-            accRewardPerShare[SBTTier.BRONZE], 
+            accRewardPerShare[SBTTier.GOLD],
+            accRewardPerShare[SBTTier.SILVER],
+            accRewardPerShare[SBTTier.BRONZE],
             block.timestamp
         );
-        
-        totalSBTPoolBalance += amount; // Historical tracking
+
+        totalSBTPoolBalance += amount;
 
         if (ownerOverflow > 0) {
             (bool success, ) = payable(owner()).call{value: ownerOverflow}("");
@@ -251,8 +276,8 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     function updateUserTier(address user, SBTTier newTier) public onlyOwner {
         SBTTier oldTier = users[user].tier;
         if (oldTier == newTier) return;
-        
-        // Settle old rewards
+
+        // Settle old rewards before switching tier
         if (oldTier != SBTTier.NONE) {
             uint256 pending = (accRewardPerShare[oldTier] - userRewardDebt[user]) / REWARD_PRECISION;
             if (pending > 0) {
@@ -263,19 +288,21 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
                 emit ClaimProcessed(user, oldTier, pending);
             }
         }
-        
+
         unchecked {
-            if (oldTier == SBTTier.DIAMOND) diamondHolders--;
-            else if (oldTier == SBTTier.GOLD) goldHolders--;
-            else if (oldTier == SBTTier.SILVER) silverHolders--;
-            else if (oldTier == SBTTier.BRONZE) bronzeHolders--;
-            
-            if (newTier == SBTTier.DIAMOND) diamondHolders++;
-            else if (newTier == SBTTier.GOLD) goldHolders++;
-            else if (newTier == SBTTier.SILVER) silverHolders++;
-            else if (newTier == SBTTier.BRONZE) bronzeHolders++;
+            if (oldTier == SBTTier.DIAMOND)  diamondHolders--;
+            else if (oldTier == SBTTier.PLATINUM) platinumHolders--; // ✅ Fix V-11
+            else if (oldTier == SBTTier.GOLD)    goldHolders--;
+            else if (oldTier == SBTTier.SILVER)  silverHolders--;
+            else if (oldTier == SBTTier.BRONZE)  bronzeHolders--;
+
+            if (newTier == SBTTier.DIAMOND)  diamondHolders++;
+            else if (newTier == SBTTier.PLATINUM) platinumHolders++; // ✅ Fix V-11
+            else if (newTier == SBTTier.GOLD)    goldHolders++;
+            else if (newTier == SBTTier.SILVER)  silverHolders++;
+            else if (newTier == SBTTier.BRONZE)  bronzeHolders++;
         }
-        
+
         users[user].tier = newTier;
         userRewardDebt[user] = accRewardPerShare[newTier];
         emit TierUpdated(user, oldTier, newTier);
@@ -352,6 +379,8 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     // ============ Admin ============
     
     function emergencyWithdraw() external onlyOwner {
+        // ✅ Fix V-07: Proteksi eksplisit agar tidak bisa drain reward pool user
+        require(address(this).balance > totalLockedRewards, "No surplus funds");
         uint256 stuck = address(this).balance - totalLockedRewards;
         require(stuck > 0, "No funds");
         (bool success, ) = payable(owner()).call{value: stuck}("");

@@ -15,8 +15,14 @@ module.exports = {
         },
     },
     networks: {
+        // camelCase (legacy)
         baseSepolia: {
-            url: "https://base-sepolia-rpc.publicnode.com",
+            url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+            accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+        },
+        // kebab-case alias — dipakai oleh scripts dengan --network base-sepolia
+        "base-sepolia": {
+            url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
             accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
         },
     },

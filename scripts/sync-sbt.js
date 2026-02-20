@@ -26,35 +26,48 @@ async function main() {
 
     try {
         // Read Data from Contract
+        // ✅ DEPLOYED CONTRACT baru: sudah ada diamond, platinum, dan lastDistributeTimestamp
         const [
             totalSBTPoolBalance,
+            diamondAcc,
+            platinumAcc,
             goldAcc,
             silverAcc,
             bronzeAcc,
             lastDist,
             totalLocked,
+            diamondHolders,
+            platinumHolders,
             goldHolders,
             silverHolders,
             bronzeHolders
         ] = await Promise.all([
             CryptoDiscoMasterX.totalSBTPoolBalance(),
-            CryptoDiscoMasterX.accRewardPerShare(3), // SBTTier.GOLD
-            CryptoDiscoMasterX.accRewardPerShare(2), // SBTTier.SILVER
-            CryptoDiscoMasterX.accRewardPerShare(1), // SBTTier.BRONZE
-            CryptoDiscoMasterX.lastDistributionTimestamp(),
+            CryptoDiscoMasterX.accRewardPerShare(4), // SBTTier.DIAMOND
+            CryptoDiscoMasterX.accRewardPerShare(3), // SBTTier.PLATINUM
+            CryptoDiscoMasterX.accRewardPerShare(2), // SBTTier.GOLD
+            CryptoDiscoMasterX.accRewardPerShare(1), // SBTTier.SILVER
+            CryptoDiscoMasterX.accRewardPerShare(0), // SBTTier.BRONZE (NONE=0 skip)
+            CryptoDiscoMasterX.lastDistributeTimestamp(),
             CryptoDiscoMasterX.totalLockedRewards(),
+            CryptoDiscoMasterX.diamondHolders(),
+            CryptoDiscoMasterX.platinumHolders(),
             CryptoDiscoMasterX.goldHolders(),
             CryptoDiscoMasterX.silverHolders(),
-            CryptoDiscoMasterX.bronzeHolders()
+            CryptoDiscoMasterX.bronzeHolders(),
         ]);
 
         const stats = {
-            id: 1, // Single row for global stats
+            id: 1,
             total_pool_balance: ethers.formatEther(totalSBTPoolBalance),
+            acc_diamond: diamondAcc.toString(),
+            acc_platinum: platinumAcc.toString(),
             acc_gold: goldAcc.toString(),
             acc_silver: silverAcc.toString(),
             acc_bronze: bronzeAcc.toString(),
             total_locked_rewards: ethers.formatEther(totalLocked),
+            diamond_holders: Number(diamondHolders),
+            platinum_holders: Number(platinumHolders),
             gold_holders: Number(goldHolders),
             silver_holders: Number(silverHolders),
             bronze_holders: Number(bronzeHolders),

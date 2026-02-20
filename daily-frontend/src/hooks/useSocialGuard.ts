@@ -8,36 +8,30 @@ interface NeynarUser {
     verifications: string[];
 }
 
+/**
+ * Hook untuk memverifikasi identitas Farcaster user.
+ * ✅ AMAN: Neynar API Key dipanggil via server-side API Route,
+ *    bukan langsung dari browser (Fix V-01).
+ */
 export function useSocialGuard(address: string | undefined) {
     return useQuery({
-        queryKey: ['farcaster-check', address],
+        queryKey: ['farcaster-check', address?.toLowerCase()],
         queryFn: async () => {
             if (!address) return null;
 
-            const response = await fetch(
-                `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${address}`,
-                {
-                    headers: {
-                        'api_key': process.env.NEXT_PUBLIC_NEYNAR_API_KEY || '',
-                    },
-                }
-            );
+            // ✅ Panggil API Route internal (server-side), bukan Neynar langsung
+            const res = await fetch(`/api/farcaster-check?address=${address.toLowerCase()}`);
 
-            if (response.status === 404) {
-                return null; // Handle 404 as "No Farcaster account found"
+            if (res.status === 404) return null;
+
+            if (!res.ok) {
+                throw new Error('Farcaster check failed');
             }
 
-            if (!response.ok) {
-                throw new Error('Neynar API failure');
-            }
-
-            const data = await response.json();
-            const normalizedAddress = address.toLowerCase();
-            const userList = data[normalizedAddress] || [];
-            return userList.length > 0 ? userList[0] : null;
+            return res.json() as Promise<NeynarUser | null>;
         },
         enabled: !!address,
-        staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-        gcTime: 1000 * 60 * 30, // Keep in memory for 30 minutes
+        staleTime: 1000 * 60 * 5,   // Cache 5 menit
+        gcTime: 1000 * 60 * 30,     // Tetap di memory 30 menit
     });
 }
