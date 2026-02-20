@@ -1,6 +1,5 @@
-const { ethers } = require("ethers");
-const { createClient } = require("@supabase/supabase-js");
-const fetch = require("node-fetch");
+import { ethers } from "ethers";
+import { createClient } from "@supabase/supabase-js";
 
 // ── CONFIG ─────────────────────────────────────────────────────
 const RPC_URL = process.env.VITE_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
@@ -27,7 +26,7 @@ function makeId(seed) {
     ].join("-");
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
     const { action } = req.query;
 
     // ── ROUTING ────────────────────────────────────────────────
@@ -38,7 +37,7 @@ module.exports = async (req, res) => {
     } else {
         return res.status(400).json({ error: "Invalid action. Use ?action=check or ?action=sync" });
     }
-};
+}
 
 // ── ACTION: Farcaster Check ────────────────────────────────────
 async function handleFarcasterCheck(req, res) {
