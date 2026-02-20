@@ -109,9 +109,13 @@ async function handleSyncEvents(req, res) {
         // Kurangi range max menjadi 2000 block untuk menghindari timeout/limit node publik
         const toBlock = Math.min(fromBlock + 2000 - 1, latestBlock);
 
-        // Fix ENS error: Paksa address menjadi lowercase untuk mem-bypass validasi checksum ketat Ethers v6 yang bisa keliru dan memicu resolusi ENS
-        const masterX = new ethers.Contract(MASTER_X.toLowerCase(), MASTER_X_ABI, provider);
-        const dailyApp = new ethers.Contract(DAILY_APP.toLowerCase(), DAILY_APP_ABI, provider);
+        // Fix ENS error: Paksa hilangkan hidden whitespace (\n / \r) dari Vercel Env Vars hasil 'echo'
+        // Jika length != 42, ethers v6 memicu ENS lookup.
+        const masterXAddr = MASTER_X.trim().toLowerCase();
+        const dailyAppAddr = DAILY_APP.trim().toLowerCase();
+
+        const masterX = new ethers.Contract(masterXAddr, MASTER_X_ABI, provider);
+        const dailyApp = new ethers.Contract(dailyAppAddr, DAILY_APP_ABI, provider);
 
         const [pointEvents, taskEvents] = await Promise.all([
             masterX.queryFilter("PointsAwarded", fromBlock, toBlock),
