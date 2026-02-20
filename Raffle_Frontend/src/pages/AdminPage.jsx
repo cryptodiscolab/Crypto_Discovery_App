@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Award, Landmark, Settings, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList } from 'lucide-react';
+import { Shield, Award, Landmark, Settings, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList, Sliders } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
@@ -12,6 +12,8 @@ const TaskManagerTab = React.lazy(() => import('../components/admin/TaskManagerT
 const UserReputationTable = React.lazy(() => import('../components/admin/UserReputationTable'));
 const TaskClaimLogs = React.lazy(() => import('../components/admin/TaskClaimLogs'));
 const SBTRewardsDashboard = React.lazy(() => import('../components/SBTRewardsDashboard').then(module => ({ default: module.SBTRewardsDashboard })));
+const AdminSystemSettings = React.lazy(() => import('../components/admin/AdminSystemSettings'));
+const AdminCMSContent = React.lazy(() => import('../components/admin/AdminCMSContent'));
 
 import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
@@ -122,8 +124,10 @@ export function AdminPage({ initialTab = 'pool' }) {
 
     const tabs = [
         { id: 'reputation', label: 'Reputation', icon: LayoutList, color: 'indigo' },
+        { id: 'sbt', label: 'SBT Rewards', icon: Award, color: 'indigo' },
         { id: 'pool', label: 'SBT Master', icon: Database, color: 'indigo' },
-        { id: 'system', label: 'MasterX Controls', icon: Settings, color: 'blue' },
+        { id: 'system', label: 'System Settings', icon: Sliders, color: 'blue' },
+        { id: 'masterx', label: 'MasterX Controls', icon: Settings, color: 'blue' },
         { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
         { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
         { id: 'logs', label: 'Activity Logs', icon: ClipboardList, color: 'slate' },
@@ -133,7 +137,7 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'whitelist', label: 'Sponsored Access', icon: Shield, color: 'purple' },
         { id: 'announcement', label: 'Announcement', icon: Edit3, color: 'blue' },
         { id: 'news', label: 'News & Updates', icon: Newspaper, color: 'green' },
-        { id: 'content', label: 'Feature Cards', icon: Database, color: 'indigo' },
+        { id: 'content', label: 'Feature Cards (CMS)', icon: Database, color: 'indigo' },
     ];
 
     return (
@@ -225,6 +229,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             className="animate-fade-in pb-20"
                         >
                             {activeTab === 'reputation' && <UserReputationTable />}
+                            {activeTab === 'sbt' && <SBTRewardsDashboard />}
                             {activeTab === 'pool' && (
                                 <PoolTab
                                     balance={totalPoolBalance}
@@ -234,7 +239,8 @@ export function AdminPage({ initialTab = 'pool' }) {
                                     onUpdateSettings={updatePoolSettings}
                                 />
                             )}
-                            {activeTab === 'system' && <SystemSettingsTab />}
+                            {activeTab === 'system' && <AdminSystemSettings />}
+                            {activeTab === 'masterx' && <SystemSettingsTab />}
                             {activeTab === 'raffles' && <RaffleManagerTab />}
                             {activeTab === 'tasks' && <TaskManagerTab />}
                             {activeTab === 'logs' && <TaskClaimLogs />}
@@ -244,7 +250,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             {activeTab === 'whitelist' && <WhitelistManagerTab />}
                             {activeTab === 'announcement' && <AnnouncementTab />}
                             {activeTab === 'news' && <NewsTab />}
-                            {activeTab === 'content' && <ContentTab />}
+                            {activeTab === 'content' && <AdminCMSContent />}
                         </div>
                     </React.Suspense>
                 </div>
