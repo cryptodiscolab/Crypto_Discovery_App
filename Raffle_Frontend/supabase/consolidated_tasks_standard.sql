@@ -52,8 +52,9 @@ ON CONFLICT (wallet_address) DO UPDATE SET
     tier = GREATEST(public.user_profiles.tier, EXCLUDED.tier);
 
 -- 3. SCHEMA EVOLUTION (daily_tasks)
--- Ensure min_neynar_score exists
+-- Ensure min_neynar_score and expires_at exist
 ALTER TABLE public.daily_tasks ADD COLUMN IF NOT EXISTS min_neynar_score FLOAT DEFAULT 0;
+ALTER TABLE public.daily_tasks ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
 
 -- 4. CONSOLIDATED SYNC LOGIC
 -- A single robust function to keep user XP in sync with their claims

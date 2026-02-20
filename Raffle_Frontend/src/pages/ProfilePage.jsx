@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut, Copy, Check, ExternalLink
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame
 } from 'lucide-react';
-import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
+import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract } from 'wagmi';
+import { DAILY_APP_ABI, CONTRACTS } from '../lib/contracts';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -34,6 +35,7 @@ export default function ProfilePage() {
   });
 
   const [copied, setCopied] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle'
 
   // Load data awal dari Supabase saat component mount
   useEffect(() => {
@@ -300,6 +302,68 @@ export default function ProfilePage() {
         {/* DIVIDER */}
         <div className="h-px bg-white/5 w-full my-2" />
 
+        {/* UGC ACTION BUTTONS */}
+        <div className="px-4 py-4">
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => setActiveModal('claim')}
+              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/40 transition-all active:scale-95"
+            >
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
+                <Calendar size={20} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Daily Claim</span>
+            </button>
+
+            <button
+              onClick={() => setActiveModal('task')}
+              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-indigo-500/10 to-indigo-500/5 border border-indigo-500/20 hover:border-indigo-500/40 transition-all active:scale-95"
+            >
+              <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 group-hover:scale-110 transition-transform">
+                <Plus size={20} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Create Task</span>
+            </button>
+
+            <button
+              onClick={() => setActiveModal('raffle')}
+              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-orange-500/10 to-orange-500/5 border border-orange-500/20 hover:border-orange-500/40 transition-all active:scale-95"
+            >
+              <div className="p-2 rounded-xl bg-orange-500/20 text-orange-400 group-hover:scale-110 transition-transform">
+                <Ticket size={20} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">Create Raffle</span>
+            </button>
+
+            <button
+              onClick={() => setActiveModal('renew')}
+              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-blue-500/10 to-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all active:scale-95"
+            >
+              <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 group-hover:scale-110 transition-transform">
+                <RefreshCw size={20} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">Renew Task</span>
+            </button>
+          </div>
+        </div>
+
+        {/* MODALS */}
+        {activeModal === 'task' && <CreateTaskModal onClose={() => setActiveModal(null)} />}
+        {activeModal === 'claim' && <DailyClaimModal onClose={() => setActiveModal(null)} />}
+        {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}
+        {activeModal === 'raffle' && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="glass-card w-full max-w-sm p-8 text-center space-y-4">
+              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto">
+                <Ticket size={32} className="text-orange-400" />
+              </div>
+              <h2 className="text-xl font-black text-white">RAFFLE V2 COMING SOON</h2>
+              <p className="text-xs text-slate-400">Raffle creation is currently being optimized for better transparency.</p>
+              <button onClick={() => setActiveModal(null)} className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all">CLOSE</button>
+            </div>
+          </div>
+        )}
+
         {/* STATS LIST (Mobile Native Style) */}
         <div className="flex flex-col">
           {/* Neynar Score */}
@@ -375,6 +439,307 @@ export default function ProfilePage() {
         )}
 
         <div className="h-24" /> {/* Safe spacing for bottom nav */}
+      </div>
+    </div>
+  );
+}
+
+function CreateTaskModal({ onClose }) {
+  const [tasksBatch, setTasksBatch] = useState([
+    { platform: 'farcaster', title: '', link: '' },
+    { platform: 'x', title: '', link: '' },
+    { platform: 'base', title: '', link: '' }
+  ]);
+  const [email, setEmail] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [sybilFilters, setSybilFilters] = useState({
+    minNeynarScore: 0,
+    minFollowers: 0,
+    accountAgeDays: 0,
+    powerBadge: false,
+    requiresVerification: true
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { writeContractAsync } = useWriteContract();
+
+  const handleCreateBatch = async () => {
+    if (!email) return toast.error("Email required for contact!");
+    const validTasks = tasksBatch.filter(t => t.title && t.link);
+    if (validTasks.length === 0) return toast.error("Add at least one task!");
+
+    setIsSubmitting(true);
+    const tid = toast.loading("Initiating UGC Sponsorship ($2 Fee)...");
+    try {
+      const titles = validTasks.map(t => t.title);
+      const links = validTasks.map(t => t.link);
+
+      // Call contract with $2 USDC Platform Fee (logic inside buySponsorshipWithToken)
+      await writeContractAsync({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'buySponsorshipWithToken',
+        args: [
+          0, // Bronze
+          titles,
+          links,
+          email,
+          BigInt(5 * 1e18) // 5 Tokens Min Reward Pool
+        ],
+      });
+
+      toast.success("Sponsorship Created! Duration: 3 Days.", { id: tid });
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed: " + (error.shortMessage || error.message), { id: tid });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex flex-col">
+      <div className="flex justify-between items-center p-4 border-b border-white/5">
+        <h2 className="text-lg font-black text-white italic tracking-tighter">CREATE <span className="text-indigo-500">TASK BATCH</span></h2>
+        <button onClick={onClose} className="p-2 bg-white/5 rounded-full"><X size={20} /></button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="space-y-4">
+          {tasksBatch.map((task, idx) => (
+            <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-3xl space-y-3 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                {task.platform === 'farcaster' ? <Share2 size={80} /> : task.platform === 'x' ? <Flame size={80} /> : <Globe size={80} />}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400">{idx + 1}</div>
+                <select
+                  value={task.platform}
+                  onChange={(e) => {
+                    const newBatch = [...tasksBatch];
+                    newBatch[idx].platform = e.target.value;
+                    setTasksBatch(newBatch);
+                  }}
+                  className="bg-transparent text-xs font-bold text-slate-400 outline-none uppercase tracking-widest cursor-pointer"
+                >
+                  <option value="farcaster">Farcaster</option>
+                  <option value="x">X (Twitter)</option>
+                  <option value="base">Base App</option>
+                </select>
+              </div>
+              <input
+                type="text"
+                placeholder="Task Title (e.g. Follow @disco)"
+                value={task.title}
+                onChange={(e) => {
+                  const newBatch = [...tasksBatch];
+                  newBatch[idx].title = e.target.value;
+                  setTasksBatch(newBatch);
+                }}
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Link URL"
+                value={task.link}
+                onChange={(e) => {
+                  const newBatch = [...tasksBatch];
+                  newBatch[idx].link = e.target.value;
+                  setTasksBatch(newBatch);
+                }}
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-indigo-400 font-mono focus:border-indigo-500 outline-none"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            {showAdvanced ? <Shield size={14} /> : <Zap size={14} />}
+            {showAdvanced ? "Hide Advanced Settings" : "Configure Sybil Filters (Optional)"}
+          </button>
+
+          {showAdvanced && (
+            <div className="grid grid-cols-2 gap-3 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase">Min Neynar Score</label>
+                <input
+                  type="number"
+                  value={sybilFilters.minNeynarScore}
+                  onChange={(e) => setSybilFilters({ ...sybilFilters, minNeynarScore: e.target.value })}
+                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-indigo-500"
+                  placeholder="0-100"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-slate-500 uppercase">Min Followers</label>
+                <input
+                  type="number"
+                  value={sybilFilters.minFollowers}
+                  onChange={(e) => setSybilFilters({ ...sybilFilters, minFollowers: e.target.value })}
+                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-indigo-500"
+                />
+              </div>
+              <div className="col-span-2 flex items-center justify-between py-2 border-t border-white/5 mt-2">
+                <span className="text-[9px] font-bold text-slate-400 uppercase">Require Power Badge</span>
+                <button
+                  onClick={() => setSybilFilters({ ...sybilFilters, powerBadge: !sybilFilters.powerBadge })}
+                  className={`w-10 h-5 rounded-full transition-colors relative ${sybilFilters.powerBadge ? 'bg-indigo-600' : 'bg-slate-800'}`}
+                >
+                  <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${sybilFilters.powerBadge ? 'left-6' : 'left-1'}`} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Admin Contact Email</label>
+          <input
+            type="email"
+            placeholder="For sponsorship listing coordination"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white focus:border-indigo-500 outline-none"
+          />
+        </div>
+
+        <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 space-y-2">
+          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-indigo-400">
+            <span>Platform Fee</span>
+            <span>$2.00 USDC</span>
+          </div>
+          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <span>Duration</span>
+            <span>3 Days Active</span>
+          </div>
+          <p className="text-[9px] text-slate-500 leading-relaxed italic pt-2">
+            Sponsorship includes a $2 platform fee and a 5 token reward pool.
+            Tasks expire in 3 days but can be extended if reward tokens remain.
+            Titles and Links cannot be changed after creation.
+          </p>
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-white/5 bg-black/50 backdrop-blur-md">
+        <button
+          onClick={handleCreateBatch}
+          disabled={isSubmitting}
+          className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
+        >
+          {isSubmitting ? "TRANSACTING..." : "PAY & CREATE BATCH"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DailyClaimModal({ onClose }) {
+  const [isClaiming, setIsClaiming] = useState(false);
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="glass-card w-full max-w-sm p-8 space-y-6 text-center">
+        <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
+          <Sparkles size={40} className="text-emerald-400" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Daily <span className="text-emerald-500">Mojo</span></h2>
+          <p className="text-xs text-slate-400 mt-2">Claim your daily XP boost to climb the leaderboard!</p>
+        </div>
+
+        <button
+          onClick={async () => {
+            setIsClaiming(true);
+            const tid = toast.loading("Connecting to contract...");
+            try {
+              await writeContractAsync({
+                address: CONTRACTS.DAILY_APP,
+                abi: DAILY_APP_ABI,
+                functionName: 'claimDailyBonus',
+              });
+              toast.success("+100 XP Claimed!", { id: tid });
+              onClose();
+            } catch (err) {
+              toast.error(err.shortMessage || "Already claimed today?", { id: tid });
+            } finally {
+              setIsClaiming(false);
+            }
+          }}
+          disabled={isClaiming}
+          className="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+        >
+          {isClaiming ? "CONNECTING..." : "CLAIM DAILY (+100 XP)"}
+        </button>
+        <button onClick={onClose} className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors">Maybe later</button>
+      </div>
+    </div>
+  );
+}
+
+function RenewSponsorshipModal({ onClose }) {
+  const [reqId, setReqId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { writeContractAsync } = useWriteContract();
+
+  const handleRenew = async () => {
+    if (!reqId) return toast.error("Please enter a Sponsorship ID");
+
+    setIsSubmitting(true);
+    const tid = toast.loading("Renewing Sponsorship ($2)...");
+    try {
+      await writeContractAsync({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'renewSponsorship',
+        args: [BigInt(reqId)],
+      });
+      toast.success("Sponsorship Extended 3 Days!", { id: tid });
+      onClose();
+    } catch (err) {
+      toast.error(err.shortMessage || "Failed to renew", { id: tid });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="glass-card w-full max-w-sm p-8 space-y-6">
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto">
+            <RefreshCw size={32} className="text-blue-400" />
+          </div>
+          <h2 className="text-xl font-black text-white italic tracking-tighter uppercase">Renew <span className="text-blue-500">Visiblity</span></h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Extend your task visibility for another **3 Days** for **$2 USDC**.
+            Title and Link will remain the same.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">Sponsorship ID</label>
+            <input
+              type="number"
+              placeholder="Enter ID (e.g. 12)"
+              value={reqId}
+              onChange={(e) => setReqId(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm text-white focus:border-blue-500 outline-none"
+            />
+          </div>
+
+          <button
+            onClick={handleRenew}
+            disabled={isSubmitting}
+            className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+          >
+            {isSubmitting ? "EXTENDING..." : "PAY $2 USDC & RENEW"}
+          </button>
+          <button onClick={onClose} className="w-full text-[10px] text-slate-600 uppercase font-black hover:text-white transition-colors">Cancel</button>
+        </div>
       </div>
     </div>
   );

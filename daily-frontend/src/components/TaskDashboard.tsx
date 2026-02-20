@@ -49,12 +49,27 @@ export function TaskDashboard() {
 
     const sponsorshipIds: number[] = [];
     if (nextSponsorId) {
-        for (let i = 1; i < Number(nextSponsorId); i++) {
+        // Optimasi: Membatasi maksimal 10 sponsor terbaru untuk menghindari N+1 query problem pada RPC
+        const maxSponsors = 10;
+        const total = Number(nextSponsorId);
+        const start = Math.max(1, total - maxSponsors);
+
+        for (let i = start; i < total; i++) {
             sponsorshipIds.push(i);
         }
+        sponsorshipIds.reverse(); // Tampilkan yang terbaru di atas
     }
 
+    const { data: unsyncedPointsRaw } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'unsyncedPoints',
+        args: [address!],
+        query: { enabled: !!address },
+    });
+
     const userPoints = userData ? Number(userData[0]) : 0;
+    const unsyncedPoints = unsyncedPointsRaw ? Number(unsyncedPointsRaw) : 0;
 
     // ✅ Fix V-03 & V-10: Invalidate hanya query kontrak yang relevan, bukan semua query
     const handleTransactionSuccess = useCallback(() => {
@@ -87,6 +102,32 @@ export function TaskDashboard() {
                     <Trophy className="w-6 h-6 text-yellow-400 mb-1" />
                     <span className="text-[10px] uppercase font-bold text-white/60 tracking-tighter">Discovery</span>
                 </div>
+
+                {unsyncedPoints > 0 && (
+                    <div className="absolute top-4 right-4 z-[9999] pointer-events-auto">
+                        <Transaction
+                            calls={[{
+                                to: CONTRACTS.DAILY_APP,
+                                data: encodeFunctionData({
+                                    abi: DAILY_APP_ABI,
+                                    functionName: 'syncMasterXPoints',
+                                }),
+                            }]}
+                            onSuccess={handleTransactionSuccess}
+                            capabilities={{
+                                paymasterService: {
+                                    url: `https://api.developer.coinbase.com/rpc/v1/base-sepolia/${process.env.NEXT_PUBLIC_CDP_API_KEY}`,
+                                },
+                            }}
+                        >
+                            <TransactionButton
+                                className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-lg shadow-indigo-500/20 border border-indigo-400/50 transition-colors"
+                                text={`Sync ${unsyncedPoints} Pts`}
+                            />
+                        </Transaction>
+                    </div>
+                )}
+
                 {/* ✅ Fix V-08: pointer-events-none agar elemen dekoratif tidak block klik */}
                 <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none" />
             </div>
@@ -94,8 +135,8 @@ export function TaskDashboard() {
             {/* Social Guard Status */}
             {/* ✅ Fix V-09: animate-bounce dihapus, diganti transition-colors (sesuai .cursorrules) */}
             <div className={`flex items-center gap-3 p-4 rounded-2xl mb-8 border transition-colors duration-300 shadow-sm ${fcUser
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                 }`}>
                 {fcUser ? (
                     <>
@@ -205,8 +246,8 @@ function DailyTaskItem({
             }`}>
             <div className="flex items-center gap-4">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isCompleted
-                        ? 'bg-indigo-500/20 text-indigo-500'
-                        : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                    ? 'bg-indigo-500/20 text-indigo-500'
+                    : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                     }`}>
                     {isCompleted
                         ? <Check className="w-5 h-5" strokeWidth={3} />
@@ -234,8 +275,8 @@ function DailyTaskItem({
                     >
                         <TransactionButton
                             className={`px-4 py-2 rounded-xl font-black uppercase text-[10px] transition-colors border-none ${isDisabled
-                                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                                ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                                : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                                 }`}
                             text={isDisabled ? 'Locked' : 'Claim'}
                             disabled={isDisabled}
@@ -304,8 +345,8 @@ function SponsorCard({
 
     return (
         <div className={`bg-slate-900 border-2 rounded-[40px] p-6 transition-colors duration-300 shadow-2xl overflow-hidden relative ${isDisabled
-                ? 'opacity-60 grayscale-[0.8] border-slate-800'
-                : 'border-slate-800 hover:border-indigo-500/50 group'
+            ? 'opacity-60 grayscale-[0.8] border-slate-800'
+            : 'border-slate-800 hover:border-indigo-500/50 group'
             }`}>
             <div className="flex justify-between items-center mb-6">
                 <div>
@@ -342,8 +383,8 @@ function SponsorCard({
                 >
                     <TransactionButton
                         className={`w-full py-5 rounded-3xl font-black uppercase tracking-[0.1em] text-xs transition-colors border-none ${cardsDisabled
-                                ? '!bg-slate-800 !text-slate-500 !cursor-not-allowed'
-                                : 'bg-white text-black hover:bg-slate-100 active:scale-95 shadow-xl shadow-white/5'
+                            ? '!bg-slate-800 !text-slate-500 !cursor-not-allowed'
+                            : 'bg-white text-black hover:bg-slate-100 active:scale-95 shadow-xl shadow-white/5'
                             }`}
                         text={
                             isDisabled
@@ -399,18 +440,18 @@ function SubTaskItem({
         <div
             onClick={() => onToggle(taskId, !!isCompleted)}
             className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-colors cursor-pointer ${isCompleted
-                    ? 'bg-indigo-500/5 border-indigo-500/20 opacity-60'
-                    : isSelected
-                        ? 'bg-indigo-500 border-indigo-500'
-                        : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                ? 'bg-indigo-500/5 border-indigo-500/20 opacity-60'
+                : isSelected
+                    ? 'bg-indigo-500 border-indigo-500'
+                    : 'bg-slate-800 border-slate-700 hover:border-slate-600'
                 }`}
         >
             <div className="flex items-center gap-3">
                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-colors ${isCompleted
-                        ? 'bg-indigo-500 border-indigo-500'
-                        : isSelected
-                            ? 'bg-white border-white'
-                            : 'border-slate-600 bg-slate-900'
+                    ? 'bg-indigo-500 border-indigo-500'
+                    : isSelected
+                        ? 'bg-white border-white'
+                        : 'border-slate-600 bg-slate-900'
                     }`}>
                     {(isCompleted || isSelected) && (
                         <Check
@@ -421,12 +462,12 @@ function SubTaskItem({
                 </div>
                 <div>
                     <p className={`text-xs font-bold uppercase tracking-tight ${isCompleted ? 'line-through text-slate-500'
-                            : isSelected ? 'text-white'
-                                : 'text-slate-300'
+                        : isSelected ? 'text-white'
+                            : 'text-slate-300'
                         }`}>{desc}</p>
                     <p className={`text-[10px] font-black ${isCompleted ? 'text-indigo-400/50'
-                            : isSelected ? 'text-white/80'
-                                : 'text-indigo-400'
+                        : isSelected ? 'text-white/80'
+                            : 'text-indigo-400'
                         }`}>+{reward.toString()} XP</p>
                 </div>
             </div>

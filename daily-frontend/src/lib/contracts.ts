@@ -137,24 +137,77 @@ export const DAILY_APP_ABI = [
         "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
         "name": "tasks",
         "outputs": [
-            { "internalType": "string", "name": "desc", "type": "string" },
-            { "internalType": "uint256", "name": "pointReward", "type": "uint256" }
+            { "internalType": "uint256", "name": "baseReward", "type": "uint256" },
+            { "internalType": "bool", "name": "isActive", "type": "bool" },
+            { "internalType": "uint256", "name": "cooldown", "type": "uint256" },
+            { "internalType": "uint8", "name": "minTier", "type": "uint8" },
+            { "internalType": "string", "name": "title", "type": "string" },
+            { "internalType": "string", "name": "link", "type": "string" },
+            { "internalType": "uint256", "name": "createdAt", "type": "uint256" },
+            { "internalType": "bool", "name": "requiresVerification", "type": "bool" },
+            { "internalType": "uint256", "name": "sponsorshipId", "type": "uint256" }
         ],
         "stateMutability": "view",
         "type": "function"
     },
     {
         "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "name": "sponsorships",
+        "name": "sponsorRequests",
         "outputs": [
-            { "internalType": "string", "name": "name", "type": "string" }
+            { "internalType": "address", "name": "sponsor", "type": "address" },
+            { "internalType": "uint8", "name": "level", "type": "uint8" },
+            { "internalType": "string", "name": "contactEmail", "type": "string" },
+            { "internalType": "uint256", "name": "rewardPool", "type": "uint256" },
+            { "internalType": "uint8", "name": "status", "type": "uint8" },
+            { "internalType": "uint256", "name": "timestamp", "type": "uint256" }
         ],
         "stateMutability": "view",
         "type": "function"
     },
     {
-        "inputs": [{ "internalType": "address", "name": "", "type": "address" }, { "internalType": "uint256", "name": "", "type": "uint256" }],
-        "name": "hasDoneTask",
+        "inputs": [
+            { "internalType": "uint8", "name": "_level", "type": "uint8" },
+            { "internalType": "string[]", "name": "_titles", "type": "string[]" },
+            { "internalType": "string[]", "name": "_links", "type": "string[]" },
+            { "internalType": "string", "name": "_email", "type": "string" },
+            { "internalType": "uint256", "name": "_rewardPoolAmount", "type": "uint256" }
+        ],
+        "name": "buySponsorshipWithToken",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "uint256", "name": "_reqId", "type": "uint256" }],
+        "name": "approveSponsorship",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "uint256", "name": "_fee", "type": "uint256" }],
+        "name": "setSponsorshipPlatformFee",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "bool", "name": "_status", "type": "bool" }],
+        "name": "setAutoApproveSponsorship",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "sponsorshipPlatformFee",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "autoApproveSponsorship",
         "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
         "stateMutability": "view",
         "type": "function"
@@ -163,27 +216,6 @@ export const DAILY_APP_ABI = [
         "inputs": [],
         "name": "nextTaskId",
         "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "nextSponsorId",
-        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "name": "dailyTaskIds",
-        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getDailyTasks",
-        "outputs": [{ "internalType": "uint256[]", "name": "", "type": "uint256[]" }],
         "stateMutability": "view",
         "type": "function"
     },
@@ -205,10 +237,31 @@ export const DAILY_APP_ABI = [
         "type": "function"
     },
     {
-        "inputs": [{ "internalType": "uint256", "name": "_sponsorId", "type": "uint256" }],
-        "name": "getSponsorTasks",
-        "outputs": [{ "internalType": "uint256[]", "name": "", "type": "uint256[]" }],
+        "inputs": [],
+        "name": "syncMasterXPoints",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+        "name": "unsyncedPoints",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "uint256", "name": "_reqId", "type": "uint256" }],
+        "name": "renewSponsorship",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "claimDailyBonus",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     }
 ] as const;

@@ -425,6 +425,7 @@ export default function AdminSystemSettings() {
                 <div className="flex gap-2 p-1 bg-black/30 rounded-xl w-fit border border-white/5">
                     {[
                         { id: 'settings', label: 'Points & Logic', icon: Settings },
+                        { id: 'sponsorship', label: 'Sponsorship Config', icon: Plus },
                         { id: 'ens', label: 'ENS Management', icon: Globe },
                         { id: 'logs', label: 'Audit Logs', icon: History }
                     ].map(tab => {
@@ -856,6 +857,12 @@ export default function AdminSystemSettings() {
                 </div>
             )}
 
+            {activeTab === 'sponsorship' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-2">
+                    <SponsorshipConfigSection />
+                </div>
+            )}
+
             <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex items-start gap-3">
                 <Info className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
                 <p className="text-[10px] text-slate-400 leading-relaxed uppercase tracking-wide font-black">
@@ -863,6 +870,114 @@ export default function AdminSystemSettings() {
                     Ens identity sync is off-chain via ccip-read.
                 </p>
             </div>
+        </div>
+    );
+}
+
+function SponsorshipConfigSection() {
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
+    const [fee, setFee] = useState('1');
+    const [autoApprove, setAutoApprove] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const { data: currentFee } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'sponsorshipPlatformFee',
+    });
+
+    const { data: currentAutoApprove } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'autoApproveSponsorship',
+    });
+
+    useEffect(() => {
+        if (currentFee) setFee((Number(currentFee) / 1e6).toString());
+        if (currentAutoApprove !== undefined) setAutoApprove(currentAutoApprove);
+    }, [currentFee, currentAutoApprove]);
+
+    const { writeContractAsync } = useWriteContract();
+
+    const handleSaveSponsorshipConfig = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Updating Sponsorship Config...");
+        try {
+            // Update Fee
+            if (fee !== (Number(currentFee) / 1e6).toString()) {
+                await writeContractAsync({
+                    address: CONTRACTS.DAILY_APP,
+                    abi: DAILY_APP_ABI,
+                    functionName: 'setSponsorshipPlatformFee',
+                    args: [BigInt(Number(fee) * 1e6)],
+                });
+            }
+
+            // Update Auto-Approve
+            if (autoApprove !== currentAutoApprove) {
+                await writeContractAsync({
+                    address: CONTRACTS.DAILY_APP,
+                    abi: DAILY_APP_ABI,
+                    functionName: 'setAutoApproveSponsorship',
+                    args: [autoApprove],
+                });
+            }
+
+            toast.success("Settings Updated On-Chain!", { id: tid });
+        } catch (error) {
+            console.error(error);
+            toast.error("Update Failed: " + (error.shortMessage || error.message), { id: tid });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="glass-card p-8 bg-slate-900/40 border border-white/5 space-y-6">
+            <div>
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-indigo-500" /> SPONSORSHIP CONTROL
+                </h3>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Configure UGC Task parameters</p>
+            </div>
+
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Platform Fee (USDC)</label>
+                    <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">$</span>
+                        <input
+                            type="number"
+                            value={fee}
+                            onChange={(e) => setFee(e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                        />
+                    </div>
+                    <p className="text-[9px] text-slate-600 italic">This is the fee charged to users for listing their tasks.</p>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
+                    <div>
+                        <p className="text-xs font-bold text-white uppercase">Auto-Approve UGC</p>
+                        <p className="text-[9px] text-slate-500">When enabled, user tasks go live instantly after payment.</p>
+                    </div>
+                    <button
+                        onClick={() => setAutoApprove(!autoApprove)}
+                        className={`w-12 h-6 rounded-full transition-all relative ${autoApprove ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                    >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${autoApprove ? 'right-1' : 'left-1'}`} />
+                    </button>
+                </div>
+            </div>
+
+            <button
+                onClick={handleSaveSponsorshipConfig}
+                disabled={isSaving}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-500/10 active:scale-[0.98] disabled:opacity-50"
+            >
+                {isSaving ? "TRANSACTING..." : "PUSH CONFIG TO BLOCKCHAIN"}
+            </button>
         </div>
     );
 }
