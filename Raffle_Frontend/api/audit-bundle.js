@@ -2,7 +2,9 @@ import { ethers } from "ethers";
 import { createClient } from "@supabase/supabase-js";
 
 // ── CONFIG ─────────────────────────────────────────────────────
-const RPC_URL = process.env.VITE_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
+// Fix: Alchemy Free Tier strictly limits eth_getLogs to 10 blocks.
+// We force the use of Base Sepolia Public Node to allow 5000 block ranges.
+const RPC_URL = "https://sepolia.base.org";
 const MASTER_X = process.env.NEXT_PUBLIC_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461";
 const DAILY_APP = process.env.NEXT_PUBLIC_DAILY_APP_ADDRESS || "0x9BdE662649A9C080E96086f70Ed2e5BDa091E653";
 const CRON_SECRET = process.env.CRON_SECRET;
