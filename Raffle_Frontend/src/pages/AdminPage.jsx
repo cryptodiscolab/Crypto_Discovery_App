@@ -14,6 +14,7 @@ const TaskClaimLogs = React.lazy(() => import('../components/admin/TaskClaimLogs
 const SBTRewardsDashboard = React.lazy(() => import('../components/SBTRewardsDashboard').then(module => ({ default: module.SBTRewardsDashboard })));
 const AdminSystemSettings = React.lazy(() => import('../components/admin/AdminSystemSettings'));
 const AdminCMSContent = React.lazy(() => import('../components/admin/AdminCMSContent'));
+const TaskManager = React.lazy(() => import('../components/admin/TaskManager').then(m => ({ default: m.TaskManager })));
 
 import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
@@ -130,6 +131,7 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'masterx', label: 'MasterX Controls', icon: Settings, color: 'blue' },
         { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
         { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
+        { id: 'quick-tasks', label: 'Quick Task Master', icon: ClipboardList, color: 'indigo' },
         { id: 'logs', label: 'Activity Logs', icon: ClipboardList, color: 'slate' },
         { id: 'tiers', label: 'Tier Control', icon: Award, color: 'yellow' },
         { id: 'treasury', label: 'Treasury Safe', icon: Landmark, color: 'emerald' },
@@ -243,6 +245,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             {activeTab === 'masterx' && <SystemSettingsTab />}
                             {activeTab === 'raffles' && <RaffleManagerTab />}
                             {activeTab === 'tasks' && <TaskManagerTab />}
+                            {activeTab === 'quick-tasks' && <TaskManager />}
                             {activeTab === 'logs' && <TaskClaimLogs />}
                             {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
                             {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
