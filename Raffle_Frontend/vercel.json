@@ -9,6 +9,18 @@
             "destination": "/api/audit-bundle?action=sync"
         },
         {
+            "source": "/api/admin/tasks/:action",
+            "destination": "/api/admin/tasks-bundle?action=:action"
+        },
+        {
+            "source": "/api/admin/check",
+            "destination": "/api/admin/admin-bundle?action=check"
+        },
+        {
+            "source": "/api/admin/sync-tiers",
+            "destination": "/api/admin/admin-bundle?action=sync-tiers"
+        },
+        {
             "source": "/((?!api/).*)",
             "destination": "/index.html"
         }
