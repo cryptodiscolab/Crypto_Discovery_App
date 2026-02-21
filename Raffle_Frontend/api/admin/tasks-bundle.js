@@ -19,15 +19,16 @@ export default async function handler(req, res) {
     const action = req.body.action || req.query.action;
 
     try {
-        const { wallet_address, signature, message } = req.body;
+        const { address, wallet_address, signature, message } = req.body;
+        const targetAddress = address || wallet_address;
 
-        if (!wallet_address || !signature || !message) {
-            return res.status(400).json({ error: 'Missing required auth fields' });
+        if (!targetAddress || !signature || !message) {
+            return res.status(400).json({ error: 'Missing required auth fields (address, signature, or message)' });
         }
 
         // 1. Verify Signature
         const valid = await verifyMessage({
-            address: wallet_address,
+            address: targetAddress,
             message: message,
             signature: signature,
         });
@@ -39,10 +40,10 @@ export default async function handler(req, res) {
         if (!timeMatch) return res.status(400).json({ error: 'Message missing timestamp' });
         const msgTime = new Date(timeMatch[1]).getTime();
         if (isNaN(msgTime) || Math.abs(Date.now() - msgTime) > 5 * 60 * 1000) {
-            return res.status(401).json({ error: 'Signature expired' });
+            return res.status(401).json({ error: 'Signature expired (Replay protection)' });
         }
 
-        const cleanAddress = wallet_address.toLowerCase();
+        const cleanAddress = targetAddress.toLowerCase();
 
         // 3. Admin Authorization
         let isAuthorized = AUTHORIZED_ADMINS.includes(cleanAddress);
