@@ -121,3 +121,7 @@ dist
 .idea
 .vercel
 .env*.local
+
+# Build Statistics
+stats.html
+stats.json
