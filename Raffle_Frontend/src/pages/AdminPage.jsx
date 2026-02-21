@@ -36,6 +36,7 @@ export function AdminPage({ initialTab = 'pool' }) {
     } = useCMS();
 
     const [activeTab, setActiveTab] = useState(initialTab);
+    const [taskSubTab, setTaskSubTab] = useState('batch'); // 'batch' | 'quick'
     const [hasManagerAccess, setHasManagerAccess] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -131,7 +132,6 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'masterx', label: 'MasterX Controls', icon: Settings, color: 'blue' },
         { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
         { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
-        { id: 'quick-tasks', label: 'Quick Task Master', icon: ClipboardList, color: 'indigo' },
         { id: 'logs', label: 'Activity Logs', icon: ClipboardList, color: 'slate' },
         { id: 'tiers', label: 'Tier Control', icon: Award, color: 'yellow' },
         { id: 'treasury', label: 'Treasury Safe', icon: Landmark, color: 'emerald' },
@@ -244,8 +244,27 @@ export function AdminPage({ initialTab = 'pool' }) {
                             {activeTab === 'system' && <AdminSystemSettings />}
                             {activeTab === 'masterx' && <SystemSettingsTab />}
                             {activeTab === 'raffles' && <RaffleManagerTab />}
-                            {activeTab === 'tasks' && <TaskManagerTab />}
-                            {activeTab === 'quick-tasks' && <TaskManager />}
+                            {activeTab === 'tasks' && (
+                                <div className="space-y-6">
+                                    {/* Task Sub-Nav */}
+                                    <div className="flex gap-4 border-b border-white/5 pb-4 mb-8">
+                                        <button
+                                            onClick={() => setTaskSubTab('batch')}
+                                            className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'batch' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                        >
+                                            Smart Batch Creator
+                                        </button>
+                                        <button
+                                            onClick={() => setTaskSubTab('quick')}
+                                            className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'quick' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                        >
+                                            Quick Task Manager
+                                        </button>
+                                    </div>
+
+                                    {taskSubTab === 'batch' ? <TaskManagerTab /> : <TaskManager />}
+                                </div>
+                            )}
                             {activeTab === 'logs' && <TaskClaimLogs />}
                             {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
                             {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
