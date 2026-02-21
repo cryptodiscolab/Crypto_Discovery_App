@@ -27,6 +27,7 @@ export function TaskList() {
                 .from('daily_tasks')
                 .select('*')
                 .eq('is_active', true)
+                .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
                 .order('created_at', { ascending: false });
 
             if (tasksError) throw tasksError;

@@ -173,6 +173,7 @@ export function TaskManager() {
     // Daily Task State
     const [dailyDesc, setDailyDesc] = useState('');
     const [dailyPoints, setDailyPoints] = useState('');
+    const [dailyExpire, setDailyExpire] = useState(true);
 
     // Sponsor State
     const [sponsorName, setSponsorName] = useState('');
@@ -287,7 +288,8 @@ export function TaskManager() {
                     message,
                     task_data: {
                         description: dailyDesc,
-                        xp_reward: parseInt(dailyPoints)
+                        xp_reward: parseInt(dailyPoints),
+                        expires_at: dailyExpire ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null
                     }
                 })
             });
@@ -350,6 +352,33 @@ export function TaskManager() {
         const newTasks = [...sponsorTasks];
         newTasks[index][field] = value;
         setSponsorTasks(newTasks);
+    };
+
+    const handleClearAllDaily = async () => {
+        if (!window.confirm("CRITICAL: This will delete/deactivate ALL daily tasks. Proceed?")) return;
+        const tid = toast.loading("Cleaning up database...");
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Cleanup All Tasks\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/tasks/cleanup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action: 'CLEAR_ALL'
+                })
+            });
+
+            if (!response.ok) throw new Error("Cleanup failed");
+            toast.success("Database Cleared!", { id: tid });
+            fetchAdminTasks();
+        } catch (err) {
+            toast.error(err.message, { id: tid });
+        }
     };
 
     const isLoading = isPending || isWaiting;
@@ -442,6 +471,19 @@ export function TaskManager() {
                             onChange={(e) => setDailyPoints(e.target.value)}
                             className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-indigo-400 font-black outline-none border-indigo-500/30 transition-colors font-mono"
                         />
+                    </div>
+
+                    <div className="flex items-center gap-2 px-1">
+                        <input
+                            type="checkbox"
+                            id="dailyExpire"
+                            checked={dailyExpire}
+                            onChange={(e) => setDailyExpire(e.target.checked)}
+                            className="w-4 h-4 rounded border-white/5 bg-[#0a0a0c] text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <label htmlFor="dailyExpire" className="text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer">
+                            Auto-Expire (24 Hours)
+                        </label>
                     </div>
 
                     <button
@@ -566,6 +608,15 @@ export function TaskManager() {
                                 <div className="p-4 bg-[#0a0a0c] rounded-xl border border-white/5 text-center">
                                     <p className="text-[10px] text-slate-500 italic">No tasks found in database.</p>
                                 </div>
+                            )}
+
+                            {tasks.length > 0 && (
+                                <button
+                                    onClick={handleClearAllDaily}
+                                    className="w-full mt-4 py-3 bg-red-950/20 hover:bg-red-500/20 border border-red-500/30 text-red-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                                >
+                                    Clear All Daily Tasks (Data Archive)
+                                </button>
                             )}
                         </div>
                     </div>

@@ -68,6 +68,7 @@ export default async function handler(req, res) {
             .insert({
                 description: task_data.description,
                 xp_reward: task_data.xp_reward,
+                expires_at: task_data.expires_at || null,
                 is_active: true
             })
             .select()
