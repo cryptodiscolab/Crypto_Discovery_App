@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { isAddress } from 'viem';
 import { cleanWallet } from '../../utils/cleanWallet';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
 import { supabase } from '../../lib/supabaseClient';
+import { CONTRACTS, DAILY_APP_ABI } from '../../lib/contracts';
 import {
     Settings,
     TrendingUp,
