@@ -178,6 +178,35 @@ export function TaskManager() {
     const [sponsorName, setSponsorName] = useState('');
     const [sponsorTasks, setSponsorTasks] = useState([{ desc: '', points: '' }]);
 
+    const [pointSettings, setPointSettings] = useState([]);
+    const [isLoadingPoints, setIsLoadingPoints] = useState(true);
+
+    // MISI 1: Fetch Point Settings as Source of Truth
+    const fetchPoints = async () => {
+        setIsLoadingPoints(true);
+        try {
+            const { data, error } = await supabase
+                .from('point_settings')
+                .select('*')
+                .eq('is_active', true);
+            if (!error && data) setPointSettings(data);
+        } catch (err) {
+            console.error('[FetchPoints Error]', err);
+        } finally {
+            setIsLoadingPoints(false);
+        }
+    };
+
+    // Helper: Match standardized points
+    const getGlobalPoints = (desc) => {
+        if (!pointSettings.length) return 0;
+        const normalized = desc.toLowerCase();
+        // Simple heuristic matching
+        if (normalized.includes('check-in')) return pointSettings.find(s => s.activity_key === 'daily_checkin')?.points_value || 50;
+        if (normalized.includes('follow')) return pointSettings.find(s => s.activity_key === 'social_follow')?.points_value || 100;
+        return 0;
+    };
+
     // Database Tasks State (MISI 1)
     const [tasks, setTasks] = useState([]);
     const [isFetching, setIsFetching] = useState(false);
@@ -218,6 +247,7 @@ export function TaskManager() {
     // MISI 1: Auto-fetch saat component mount
     useEffect(() => {
         fetchAdminTasks();
+        fetchPoints();
     }, []);
 
     // Reset forms on success
@@ -372,6 +402,27 @@ export function TaskManager() {
                     </div>
 
                     <div className="space-y-1">
+                        <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest px-1">Activity Type (Global Points)</label>
+                        <select
+                            onChange={(e) => {
+                                const selected = pointSettings.find(s => s.activity_key === e.target.value);
+                                if (selected) {
+                                    setDailyPoints(selected.points_value);
+                                    if (!dailyDesc) setDailyDesc(selected.activity_key.replace(/_/g, ' ').toUpperCase());
+                                }
+                            }}
+                            className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500/50 transition-colors"
+                        >
+                            <option value="">-- Select Standard Activity --</option>
+                            {pointSettings.map(s => (
+                                <option key={s.id} value={s.activity_key}>
+                                    {s.activity_key.toUpperCase()} (+{s.points_value} XP)
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
                         <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest px-1">Description</label>
                         <input
                             type="text"
@@ -383,13 +434,13 @@ export function TaskManager() {
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest px-1">XP Reward</label>
+                        <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest px-1">XP Reward (Auto-filled from Database)</label>
                         <input
                             type="number"
                             placeholder="100"
                             value={dailyPoints}
                             onChange={(e) => setDailyPoints(e.target.value)}
-                            className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500/50 transition-colors font-mono"
+                            className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-indigo-400 font-black outline-none border-indigo-500/30 transition-colors font-mono"
                         />
                     </div>
 
