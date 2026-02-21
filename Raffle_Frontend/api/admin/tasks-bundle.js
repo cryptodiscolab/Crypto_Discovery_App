@@ -78,10 +78,12 @@ export default async function handler(req, res) {
 
             case 'CLEAR_ALL': // Match what frontend sends
             case 'cleanup': {
+                // Use a valid UUID filter to delete all rows (id is never null)
                 const { error } = await supabaseAdmin
                     .from('daily_tasks')
                     .delete()
-                    .neq('id', 0);
+                    .not('id', 'is', 'null');
+
                 if (error) throw error;
 
                 await supabaseAdmin.from('admin_audit_logs').insert({
