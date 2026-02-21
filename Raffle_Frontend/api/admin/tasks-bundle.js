@@ -115,6 +115,40 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true, synced: tasks.length });
             }
 
+            case 'RESET_SEASON': {
+                // CRITICAL: Permanently resets all progress
+                // 1. Clear all user claims
+                const { error: claimErr } = await supabaseAdmin
+                    .from('user_task_claims')
+                    .delete()
+                    .not('id', 'is', 'null');
+
+                if (claimErr) throw claimErr;
+
+                // 2. Reset scores in user_profiles
+                const { error: profileErr } = await supabaseAdmin
+                    .from('user_profiles')
+                    .update({
+                        xp: 0,
+                        points: 0,
+                        total_xp: 0,
+                        tier: 1,
+                        updated_at: new Date().toISOString()
+                    })
+                    .not('wallet_address', 'is', 'null');
+
+                if (profileErr) throw profileErr;
+
+                // 3. Log this massive action
+                await supabaseAdmin.from('admin_audit_logs').insert({
+                    admin_address: cleanAddress,
+                    action: 'SEASON_RESET',
+                    details: 'Admin performed a full XP & Tier reset for a new season'
+                });
+
+                return res.status(200).json({ success: true, message: 'Season reset successfully' });
+            }
+
             default:
                 return res.status(400).json({ error: 'Invalid action: ' + action });
         }

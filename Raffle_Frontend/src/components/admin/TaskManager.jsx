@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
-import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star, Database } from 'lucide-react';
+import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star, Database, Download, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -381,6 +381,87 @@ export function TaskManager() {
         }
     };
 
+    const handleDownloadCSV = async () => {
+        const tid = toast.loading("Preparing CSV backup...");
+        try {
+            const { data, error } = await supabase
+                .from('v_user_full_profile')
+                .select('wallet_address, username, display_name, xp, tier, rank_name');
+
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                toast.error("No user data found to backup", { id: tid });
+                return;
+            }
+
+            // Convert to CSV
+            const headers = ['Wallet Address', 'Username', 'Display Name', 'XP', 'Tier', 'Rank'];
+            const csvRows = [
+                headers.join(','),
+                ...data.map(user => [
+                    user.wallet_address,
+                    `"${user.username}"`,
+                    `"${user.display_name}"`,
+                    user.xp,
+                    user.tier,
+                    user.rank_name
+                ].join(','))
+            ];
+            const csvBuffer = csvRows.join('\n');
+            const blob = new Blob([csvBuffer], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `season_backup_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            toast.success("Backup Downloaded!", { id: tid });
+        } catch (err) {
+            console.error("CSV Export Error:", err);
+            toast.error("Failed to export data: " + err.message, { id: tid });
+        }
+    };
+
+    const handleResetSeason = async () => {
+        const firstConfirm = window.confirm("🚨 WARNING: This will permanently RESET all user XP and Tiers to zero for the new season. Have you downloaded the CSV backup?");
+        if (!firstConfirm) return;
+
+        const secondConfirm = window.prompt("To confirm, please type 'RESET SEASON' in ALL CAPS below:");
+        if (secondConfirm !== 'RESET_SEASON') {
+            toast.error("Reset cancelled: Confirmation text did not match.");
+            return;
+        }
+
+        const tid = toast.loading("Executing Season Reset...");
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Full Season Reset\nAdmin: ${address}\nTime: ${timestamp}\nAction: Permanently wipe all progression.`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/tasks/cleanup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action: 'RESET_SEASON'
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Reset failed");
+
+            toast.success("SEASON RESET SUCCESSFUL!", { id: tid });
+            fetchAdminTasks(); // Refresh list if any changes (though reset clears claims)
+        } catch (err) {
+            toast.error("Reset failed: " + err.message, { id: tid });
+        }
+    };
+
     const isLoading = isPending || isWaiting;
 
     return (
@@ -618,6 +699,27 @@ export function TaskManager() {
                                     Clear All Daily Tasks (Data Archive)
                                 </button>
                             )}
+
+                            {/* SEASON RESET TOOLS */}
+                            <div className="pt-4 mt-4 border-t border-white/5 space-y-3">
+                                <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Season Management</h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={handleDownloadCSV}
+                                        className="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                                    >
+                                        <Download className="w-3 h-3 text-indigo-400" />
+                                        Backup CSV
+                                    </button>
+                                    <button
+                                        onClick={handleResetSeason}
+                                        className="flex items-center justify-center gap-2 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                                    >
+                                        <RefreshCw className="w-3 h-3" />
+                                        Reset Season
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
