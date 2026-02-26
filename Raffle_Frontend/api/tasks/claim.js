@@ -85,8 +85,8 @@ export default async function handler(req, res) {
             throw claimError;
         }
 
-        // 7. Log Audit
-        await supabaseAdmin.from('admin_audit_logs').insert([{
+        // 7. Log Audit (Non-blocking: don't crash if audit table fails)
+        supabaseAdmin.from('admin_audit_logs').insert([{
             admin_address: 'SYSTEM_CLAIMER',
             action: 'TASK_CLAIMED',
             details: {
@@ -95,7 +95,9 @@ export default async function handler(req, res) {
                 xp_reward: actualXPReward,
                 timestamp: new Date().toISOString()
             }
-        }]);
+        }]).catch(err => {
+            console.warn('[API] Audit logging failed (table might be missing):', err.message);
+        });
 
         return res.status(200).json({
             success: true,

@@ -6,6 +6,7 @@ import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadCon
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
+import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
 
 export default function ProfilePage() {
   const { address } = useAccount();

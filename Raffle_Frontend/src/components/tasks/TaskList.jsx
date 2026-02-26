@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Loader2, CheckCircle2, Zap, Clock, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePoints } from '../../shared/context/PointsContext';
+import { useVerifiedAction } from '../../hooks/useVerifiedAction';
 
 
 export function TaskList() {
@@ -14,9 +15,8 @@ export function TaskList() {
     const [userClaims, setUserClaims] = useState(new Set());
     const [isLoading, setIsLoading] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
-    const [claimingTask, setClaimingTask] = useState(null);
+    const { execute: executeClaim } = useVerifiedAction();
     const { refetch } = usePoints();
-
 
     // Fetch Tasks & User Claims
     const fetchData = async () => {
@@ -27,6 +27,7 @@ export function TaskList() {
                 .from('daily_tasks')
                 .select('*')
                 .eq('is_active', true)
+                .neq('task_type', 'system')
                 .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
                 .order('created_at', { ascending: false });
 
@@ -94,36 +95,15 @@ export function TaskList() {
         }
 
         setClaimingTask(task.id);
-        const toastId = toast.loading("Requesting signature...");
+        const toastId = toast.loading("Processing claim...");
 
         try {
-            // 1. Prepare Message
-            const timestamp = new Date().toISOString();
-            const message = `Claim Task: ${task.description}\nID: ${task.id}\nWallet: ${address.toLowerCase()}\nTime: ${timestamp}`;
-
-            // 2. Request Signature
-            const signature = await signMessageAsync({ message });
-
-            toast.loading("Verifying on server...", { id: toastId });
-
-            // 3. Call Secure API
-            const response = await fetch('/api/tasks/claim', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    wallet_address: address,
-                    signature,
-                    message,
-                    task_id: task.id,
-                    xp_reward: task.xp_reward
-                })
+            // ── SECURE CLAIM FLOW ──
+            // Using unified secure API route via custom hook
+            await executeClaim('claim_task', {
+                task_id: task.id,
+                xp_earned: task.xp_reward
             });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || "Claim failed");
-            }
 
             toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
             setUserClaims(prev => new Set(prev).add(task.id));
@@ -141,6 +121,7 @@ export function TaskList() {
             setClaimingTask(null);
         }
     };
+
 
     if (isLoading && tasks.length === 0) {
         return (

@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.daily_tasks (
     -- Constraints
     CONSTRAINT xp_reward_positive CHECK (xp_reward >= 0),
     CONSTRAINT current_claims_positive CHECK (current_claims >= 0),
-    CONSTRAINT task_type_valid CHECK (task_type IN ('daily', 'weekly', 'special', 'onetime'))
+    CONSTRAINT task_type_valid CHECK (task_type IN ('daily', 'weekly', 'special', 'onetime', 'system'))
 );
 
 -- Index untuk performa

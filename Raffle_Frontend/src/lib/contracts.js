@@ -176,6 +176,33 @@ export const DAILY_APP_ABI = [
         "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
         "stateMutability": "view",
         "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "claimDailyBonus",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "internalType": "uint8", "name": "_level", "type": "uint8" },
+            { "internalType": "string[]", "name": "_titles", "type": "string[]" },
+            { "internalType": "string[]", "name": "_links", "type": "string[]" },
+            { "internalType": "string", "name": "_email", "type": "string" },
+            { "internalType": "uint256", "name": "_rewardPoolAmount", "type": "uint256" }
+        ],
+        "name": "buySponsorshipWithToken",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "uint256", "name": "_reqId", "type": "uint256" }],
+        "name": "renewSponsorship",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
     }
 ];
 
