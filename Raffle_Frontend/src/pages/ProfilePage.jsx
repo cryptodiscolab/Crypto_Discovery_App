@@ -692,10 +692,12 @@ function DailyClaimModal({ onClose }) {
             setIsClaiming(true);
             const tid = toast.loading("Connecting to contract...");
             try {
+              console.log("[DailyClaim] Executing on:", CONTRACTS.DAILY_APP);
               await writeContractAsync({
                 address: CONTRACTS.DAILY_APP,
                 abi: DAILY_APP_ABI,
                 functionName: 'claimDailyBonus',
+                gas: 100000n, // Explicit gas buffer for L2/Base stability
               });
               toast.success("+100 XP Claimed!", { id: tid });
               onClose();
