@@ -639,20 +639,56 @@ function CreateTaskModal({ onClose }) {
 }
 
 function DailyClaimModal({ onClose }) {
+  const { address } = useAccount();
   const [isClaiming, setIsClaiming] = useState(false);
+  const { writeContractAsync } = useWriteContract();
+
+  // Read userStats to check cooldown
+  const { data: userData } = useReadContract({
+    address: CONTRACTS.DAILY_APP,
+    abi: DAILY_APP_ABI,
+    functionName: 'userStats',
+    args: [address],
+    query: {
+      enabled: !!address,
+    }
+  });
+
+  // userData[5] is lastDailyBonusClaim (timestamp in seconds)
+  const lastClaim = userData ? Number(userData[5]) : 0;
+  const nextClaimTime = lastClaim > 0 ? (lastClaim + 24 * 60 * 60) * 1000 : 0;
+  const isCooldown = Date.now() < nextClaimTime;
+
+  // Formatting remaining time if on cooldown
+  const getRemainingTime = () => {
+    if (!isCooldown) return null;
+    const diff = nextClaimTime - Date.now();
+    const h = Math.floor(diff / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${h}h ${m}m remaining`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-card w-full max-w-sm p-8 space-y-6 text-center">
-        <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
-          <Sparkles size={40} className="text-emerald-400" />
+      <div className="glass-card w-full max-sm:max-w-xs max-w-sm p-8 space-y-6 text-center">
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto ${isCooldown ? 'bg-slate-500/10' : 'bg-emerald-500/20 animate-pulse'}`}>
+          <Sparkles size={40} className={isCooldown ? 'text-slate-500' : 'text-emerald-400'} />
         </div>
         <div>
           <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Daily <span className="text-emerald-500">Mojo</span></h2>
-          <p className="text-xs text-slate-400 mt-2">Claim your daily XP boost to climb the leaderboard!</p>
+          <p className="text-xs text-slate-400 mt-2">
+            {isCooldown
+              ? "You've claimed your bonus! Come back later for more XP."
+              : "Claim your daily XP boost to climb the leaderboard!"}
+          </p>
+          {isCooldown && (
+            <p className="text-[10px] text-indigo-400 font-mono mt-2 uppercase tracking-widest">{getRemainingTime()}</p>
+          )}
         </div>
 
         <button
           onClick={async () => {
+            if (isCooldown) return toast.error("Cooldown active! Please wait.");
             setIsClaiming(true);
             const tid = toast.loading("Connecting to contract...");
             try {
@@ -664,15 +700,24 @@ function DailyClaimModal({ onClose }) {
               toast.success("+100 XP Claimed!", { id: tid });
               onClose();
             } catch (err) {
-              toast.error(err.shortMessage || "Already claimed today?", { id: tid });
+              console.error("Daily Claim Error:", err);
+              // Smart distinction of errors
+              const errMsg = err.shortMessage || err.message || "";
+              if (errMsg.includes("User rejected")) {
+                toast.error("Transaction cancelled", { id: tid });
+              } else if (errMsg.includes("CooldownActive") || errMsg.includes("already claimed")) {
+                toast.error("Already claimed today!", { id: tid });
+              } else {
+                toast.error("Claim failed: " + (err.shortMessage || "Contract error"), { id: tid });
+              }
             } finally {
               setIsClaiming(false);
             }
           }}
-          disabled={isClaiming}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+          disabled={isClaiming || isCooldown}
+          className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${isCooldown ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
         >
-          {isClaiming ? "CONNECTING..." : "CLAIM DAILY (+100 XP)"}
+          {isClaiming ? "CONNECTING..." : isCooldown ? "CLAIMED" : "CLAIM DAILY (+100 XP)"}
         </button>
         <button onClick={onClose} className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors">Maybe later</button>
       </div>

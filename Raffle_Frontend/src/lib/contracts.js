@@ -203,6 +203,21 @@ export const DAILY_APP_ABI = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+        "name": "userStats",
+        "outputs": [
+            { "internalType": "uint256", "name": "points", "type": "uint256" },
+            { "internalType": "uint256", "name": "totalTasksCompleted", "type": "uint256" },
+            { "internalType": "uint256", "name": "referralCount", "type": "uint256" },
+            { "internalType": "uint8", "name": "currentTier", "type": "uint8" },
+            { "internalType": "uint256", "name": "tasksForReferralProgress", "type": "uint256" },
+            { "internalType": "uint256", "name": "lastDailyBonusClaim", "type": "uint256" },
+            { "internalType": "bool", "name": "isBlacklisted", "type": "bool" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     }
 ];
 
