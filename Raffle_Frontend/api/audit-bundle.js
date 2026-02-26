@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 // We force the use of Base Sepolia Public Node to allow 5000 block ranges.
 const RPC_URL = "https://sepolia.base.org";
 const MASTER_X = process.env.NEXT_PUBLIC_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461";
-const DAILY_APP = process.env.NEXT_PUBLIC_DAILY_APP_ADDRESS || "0x9BdE662649A9C080E96086f70Ed2e5BDa091E653";
+const DAILY_APP = process.env.NEXT_PUBLIC_DAILY_APP_ADDRESS || process.env.DAILY_APP_ADDRESS || "0x5d7338Cd98029a73283F959fe24935a5099771b7";
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

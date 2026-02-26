@@ -1,32 +1,37 @@
+'use client';
+
 import { useState } from 'react';
 import { useSignMessage } from 'wagmi';
-import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
-export function useVerification(refetchStats) {
+interface Task {
+    id: number;
+    title: string;
+    platform?: string;
+    action_type?: string;
+    reward_points?: number;
+    baseReward?: number;
+    targetFid?: number;
+    castHash?: string;
+    tweetId?: string;
+    targetUserId?: string;
+    socialId?: number;
+}
+
+export function useVerification(onSuccess?: () => void) {
     const [isVerifying, setIsVerifying] = useState(false);
-    const [lastActionTime, setLastActionTime] = useState({});
+    const [error, setError] = useState<string | null>(null);
     const { signMessageAsync } = useSignMessage();
+    const queryClient = useQueryClient();
 
-    const verifyTask = async (task, address, taskId) => {
-        // 0. Anti-Fraud: 30s Delay Check
-        const now = Date.now();
-        const lastTime = lastActionTime[taskId] || 0;
-        const timeElapsed = (now - lastTime) / 1000;
-        const WAIT_DELAY = 30;
-
-        if (timeElapsed < WAIT_DELAY) {
-            const remaining = Math.ceil(WAIT_DELAY - timeElapsed);
-            toast.error(`Anti-Fraud: Tunggu ${remaining} detik agar perubahan sosial ter-index.`);
-            return false;
-        }
-
+    const verifyTask = async (task: Task, address: string, taskId: number) => {
         if (!address) {
-            toast.error("Wallet not connected");
+            setError("Wallet not connected");
             return false;
         }
 
         setIsVerifying(true);
-        const tid = toast.loading("Requesting signature for Verification...");
+        setError(null);
 
         try {
             // 1. Request Signature for Zero-Trust verification
@@ -34,19 +39,16 @@ export function useVerification(refetchStats) {
             const message = `Verify Task Action\nTask: ${task.title}\nID: ${taskId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            toast.loading("Verifying on server...", { id: tid });
-
-            const platform = task.platform?.toLowerCase() || 'farcaster';
+            const platform = (task.platform || 'farcaster').toLowerCase();
             const isSocialTask = ['farcaster', 'twitter'].includes(platform);
 
             let response;
             if (isSocialTask) {
                 // ── CALL VERIFICATION SERVER (SOCIAL) ──
-                const serverUrl = import.meta.env.VITE_VERIFY_SERVER_URL || 'http://localhost:3000';
-                const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET;
+                const serverUrl = process.env.NEXT_PUBLIC_VERIFY_SERVER_URL || 'http://localhost:3000';
+                const apiSecret = process.env.NEXT_PUBLIC_VERIFY_API_SECRET;
 
-                // Determine social ID (FID for Farcaster, etc.)
-                // In production, this should come from the user session/context
+                // Determine social ID
                 const socialId = task.socialId || 0;
 
                 const endpoint = `${serverUrl}/api/verify/${platform}/${task.action_type || 'like'}`;
@@ -55,7 +57,7 @@ export function useVerification(refetchStats) {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-api-secret': apiSecret
+                        'x-api-secret': apiSecret || ''
                     },
                     body: JSON.stringify({
                         userAddress: address,
@@ -64,7 +66,6 @@ export function useVerification(refetchStats) {
                         userId: platform === 'twitter' ? socialId : undefined,
                         signature,
                         message,
-                        // Add any other specific params needed by the server
                         targetFid: task.targetFid,
                         castHash: task.castHash,
                         tweetId: task.tweetId,
@@ -73,6 +74,8 @@ export function useVerification(refetchStats) {
                 });
             } else {
                 // ── CALL INTERNAL API (REGULAR) ──
+                // If daily-frontend has an internal task verification API, call it here.
+                // For now, mirroring Raffle_Frontend logic
                 response = await fetch('/api/tasks/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -91,35 +94,24 @@ export function useVerification(refetchStats) {
             const result = await response.json();
 
             if (response.ok) {
-                toast.success(result.message || "Verified! Poin telah ditambahkan.", { id: tid });
-                if (refetchStats) refetchStats();
+                if (onSuccess) onSuccess();
                 return true;
             } else {
-                toast.error(result.error || "Gagal verifikasi.", { id: tid });
+                setError(result.error || "Gagal verifikasi.");
                 return false;
             }
-        } catch (error) {
-            console.error('[Verification Error]', error);
-            const errMsg = error.message || "Server error";
-            if (error.code === 4001) {
-                toast.error("Signature rejected", { id: tid });
-            } else {
-                toast.error(`Error: ${errMsg}`, { id: tid });
-            }
+        } catch (err: any) {
+            console.error('[Verification Error]', err);
+            setError(err.message || "Server error");
             return false;
         } finally {
             setIsVerifying(false);
         }
     };
 
-    const registerTaskStart = (taskId) => {
-        setLastActionTime(prev => ({ ...prev, [taskId]: Date.now() }));
-    };
-
     return {
         verifyTask,
-        registerTaskStart,
         isVerifying,
-        lastActionTime
+        error
     };
 }

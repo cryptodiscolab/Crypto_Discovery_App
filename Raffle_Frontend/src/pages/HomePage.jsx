@@ -18,6 +18,8 @@ import { useCMS } from '../hooks/useCMS';
 import { formatUnits } from 'viem';
 import { AnnouncementBanner } from '../components/AnnouncementBanner';
 import { FeatureCardSkeleton } from '../components/FeatureCardSkeleton';
+import { UnifiedDashboard } from '../components/UnifiedDashboard';
+
 
 // Icon mapping for dynamic feature cards
 const iconMap = {
@@ -144,7 +146,11 @@ export function HomePage() {
           </div>
         </div>
 
+        {/* Unified Tasks & Identity Dashboard */}
+        <UnifiedDashboard />
+
         {/* Feature Cards Grid - Dynamic from CMS */}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
           {isLoadingCards && displayCards.length === 0 ? (
             <FeatureCardSkeleton count={6} />

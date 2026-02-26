@@ -8,14 +8,24 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// SECURITY FIX: Whitelist allowed origins instead of wildcard '*'
+const ALLOWED_ORIGINS = [
+    'https://crypto-discovery-app.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+];
+
 export default async function handler(req, res) {
-    // CORS Headers (Optional, but good for local dev)
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    // CORS Headers (Hardened: domain-specific)
+    const origin = req.headers.origin;
+    if (ALLOWED_ORIGINS.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader(
         'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+        'Content-Type, Authorization'
     );
 
     if (req.method === 'OPTIONS') {
@@ -80,6 +90,16 @@ export default async function handler(req, res) {
 
         if (error) throw error;
 
+        // 4. Audit Log (C5 Fix: was missing)
+        await supabaseAdmin.from('admin_audit_logs').insert([{
+            admin_address: cleanAddress,
+            action: 'PROFILE_UPDATE',
+            details: {
+                fields_updated: Object.keys(safeProfileData).filter(k => safeProfileData[k] !== undefined),
+                timestamp: new Date().toISOString()
+            }
+        }]).catch(() => { }); // Non-blocking audit
+
         return res.status(200).json({ success: true, data });
 
     } catch (error) {
@@ -87,3 +107,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+

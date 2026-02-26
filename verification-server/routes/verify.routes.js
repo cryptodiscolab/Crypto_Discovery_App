@@ -10,12 +10,12 @@ const router = express.Router();
  */
 router.post('/farcaster/follow', async (req, res) => {
     try {
-        const { userAddress, taskId, fid, targetFid } = req.body;
+        const { userAddress, taskId, fid, targetFid, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !fid || !targetFid) {
+        if (!userAddress || !taskId || !fid || !targetFid || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, targetFid',
+                error: 'Missing required fields: userAddress, taskId, fid, targetFid, signature, message',
             });
         }
 
@@ -26,6 +26,8 @@ router.post('/farcaster/follow', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: parseInt(fid),
             actionParams: { targetFid: parseInt(targetFid) },
+            signature,
+            message
         });
 
         res.json(result);
@@ -45,12 +47,12 @@ router.post('/farcaster/follow', async (req, res) => {
  */
 router.post('/farcaster/like', async (req, res) => {
     try {
-        const { userAddress, taskId, fid, castHash } = req.body;
+        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !fid || !castHash) {
+        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash',
+                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
             });
         }
 
@@ -61,6 +63,8 @@ router.post('/farcaster/like', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: parseInt(fid),
             actionParams: { castHash },
+            signature,
+            message
         });
 
         res.json(result);
@@ -80,12 +84,12 @@ router.post('/farcaster/like', async (req, res) => {
  */
 router.post('/farcaster/recast', async (req, res) => {
     try {
-        const { userAddress, taskId, fid, castHash } = req.body;
+        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !fid || !castHash) {
+        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash',
+                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
             });
         }
 
@@ -96,6 +100,8 @@ router.post('/farcaster/recast', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: parseInt(fid),
             actionParams: { castHash },
+            signature,
+            message
         });
 
         res.json(result);
@@ -115,12 +121,12 @@ router.post('/farcaster/recast', async (req, res) => {
  */
 router.post('/farcaster/quote', async (req, res) => {
     try {
-        const { userAddress, taskId, fid, castHash } = req.body;
+        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !fid || !castHash) {
+        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash',
+                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
             });
         }
 
@@ -131,6 +137,8 @@ router.post('/farcaster/quote', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: parseInt(fid),
             actionParams: { castHash },
+            signature,
+            message
         });
 
         res.json(result);
@@ -150,12 +158,12 @@ router.post('/farcaster/quote', async (req, res) => {
  */
 router.post('/farcaster/comment', async (req, res) => {
     try {
-        const { userAddress, taskId, fid, castHash } = req.body;
+        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !fid || !castHash) {
+        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash',
+                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
             });
         }
 
@@ -166,6 +174,8 @@ router.post('/farcaster/comment', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: parseInt(fid),
             actionParams: { castHash },
+            signature,
+            message
         });
 
         res.json(result);
@@ -185,12 +195,12 @@ router.post('/farcaster/comment', async (req, res) => {
  */
 router.post('/twitter/follow', async (req, res) => {
     try {
-        const { userAddress, taskId, userId, targetUserId } = req.body;
+        const { userAddress, taskId, userId, targetUserId, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !userId || !targetUserId) {
+        if (!userAddress || !taskId || !userId || !targetUserId || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, targetUserId',
+                error: 'Missing required fields: userAddress, taskId, userId, targetUserId, signature, message',
             });
         }
 
@@ -201,6 +211,8 @@ router.post('/twitter/follow', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: userId,
             actionParams: { targetUserId },
+            signature,
+            message
         });
 
         res.json(result);
@@ -220,12 +232,12 @@ router.post('/twitter/follow', async (req, res) => {
  */
 router.post('/twitter/like', async (req, res) => {
     try {
-        const { userAddress, taskId, userId, tweetId } = req.body;
+        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !userId || !tweetId) {
+        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId',
+                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
             });
         }
 
@@ -236,6 +248,8 @@ router.post('/twitter/like', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: userId,
             actionParams: { tweetId },
+            signature,
+            message
         });
 
         res.json(result);
@@ -255,12 +269,12 @@ router.post('/twitter/like', async (req, res) => {
  */
 router.post('/twitter/retweet', async (req, res) => {
     try {
-        const { userAddress, taskId, userId, tweetId } = req.body;
+        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !userId || !tweetId) {
+        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId',
+                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
             });
         }
 
@@ -271,6 +285,8 @@ router.post('/twitter/retweet', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: userId,
             actionParams: { tweetId },
+            signature,
+            message
         });
 
         res.json(result);
@@ -290,12 +306,12 @@ router.post('/twitter/retweet', async (req, res) => {
  */
 router.post('/twitter/quote', async (req, res) => {
     try {
-        const { userAddress, taskId, userId, tweetId } = req.body;
+        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !userId || !tweetId) {
+        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId',
+                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
             });
         }
 
@@ -306,6 +322,8 @@ router.post('/twitter/quote', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: userId,
             actionParams: { tweetId },
+            signature,
+            message
         });
 
         res.json(result);
@@ -325,12 +343,12 @@ router.post('/twitter/quote', async (req, res) => {
  */
 router.post('/twitter/comment', async (req, res) => {
     try {
-        const { userAddress, taskId, userId, tweetId } = req.body;
+        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
 
-        if (!userAddress || !taskId || !userId || !tweetId) {
+        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId',
+                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
             });
         }
 
@@ -341,6 +359,8 @@ router.post('/twitter/comment', async (req, res) => {
             taskId: parseInt(taskId),
             socialId: userId,
             actionParams: { tweetId },
+            signature,
+            message
         });
 
         res.json(result);
@@ -360,12 +380,20 @@ router.post('/twitter/comment', async (req, res) => {
  */
 router.post('/twitter/link', async (req, res) => {
     try {
-        const { userId, userAddress, verificationCode } = req.body;
+        const { userId, userAddress, verificationCode, signature, message } = req.body;
 
-        if (!userId || !userAddress || !verificationCode) {
+        if (!userId || !userAddress || !verificationCode || !signature || !message) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields: userId, userAddress, verificationCode',
+                error: 'Missing required fields: userId, userAddress, verificationCode, signature, message',
+            });
+        }
+
+        // ── Security Check: Verify that the person requesting the link owns the wallet ──
+        if (!verificationService.verifySignature(userAddress, signature, message)) {
+            return res.status(401).json({
+                success: false,
+                error: '[Security] Cryptographic verification failed. Linkage requires a valid signature.',
             });
         }
 

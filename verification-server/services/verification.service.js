@@ -31,6 +31,40 @@ class VerificationService {
     }
 
     /**
+     * Verify cryptographic signature (SIWE)
+     * @param {string} address - Expected signer address
+     * @param {string} signature - Hex signature
+     * @param {string} message - Original message
+     * @returns {boolean}
+     */
+    verifySignature(address, signature, message) {
+        if (!address || !signature || !message) return false;
+        try {
+            const recoveredAddress = ethers.verifyMessage(message, signature);
+            if (recoveredAddress.toLowerCase() !== address.toLowerCase()) return false;
+
+            // Replay protection: Check timestamp in message (Format: "Verify ... Time: ISOString")
+            // This format must be consistent with the frontend signing logic.
+            const timeMatch = message.match(/Time:\s*(.+)$/m);
+            if (!timeMatch) return false;
+
+            const msgTime = new Date(timeMatch[1]).getTime();
+            if (isNaN(msgTime)) return false;
+
+            const diff = Math.abs(Date.now() - msgTime);
+            if (diff > 10 * 60 * 1000) { // 10 minutes window
+                console.warn(`[SIWE] Signature expired. Diff: ${diff}ms`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('[SIWE] Signature verification error:', error.message);
+            return false;
+        }
+    }
+
+    /**
      * Verify and store Twitter-to-Wallet linkage
      * @param {string} userId - Twitter User ID
      * @param {string} userAddress - Wallet address
@@ -162,9 +196,17 @@ class VerificationService {
      * @returns {Promise<Object>}
      */
     async verifyAndMarkTask(params) {
-        const { platform, action, userAddress, taskId, socialId, actionParams } = params;
+        const { platform, action, userAddress, taskId, socialId, actionParams, signature, message } = params;
 
         try {
+            // ── ZERO TRUST FIX: Cryptographic Verification ──
+            if (!this.verifySignature(userAddress, signature, message)) {
+                return {
+                    success: false,
+                    error: '[Security] Cryptographic verification failed. Please re-sign the verification request.'
+                };
+            }
+
             // Check cache first
             const cacheKey = `${userAddress}-${taskId}`;
             if (this.cache.has(cacheKey)) {

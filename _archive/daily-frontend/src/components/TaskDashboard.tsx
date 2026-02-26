@@ -12,6 +12,9 @@ import {
 import { MASTER_X_ABI, DAILY_APP_ABI, CONTRACTS } from '@/lib/contracts';
 import { Trophy, Star, Zap, ShieldCheck, ShieldAlert, Check, Calendar } from 'lucide-react';
 import { useSocialGuard } from '@/hooks/useSocialGuard';
+import { useVerification } from '@/hooks/useVerification';
+import { useTaskInfo } from '@/hooks/useTaskInfo';
+
 import { encodeFunctionData } from 'viem';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -419,26 +422,44 @@ function SubTaskItem({
     onToggle: (id: number, completed: boolean) => void;
     address: `0x${string}`;
 }) {
-    const { data: task } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'tasks',
-        args: [BigInt(taskId)],
-    });
+    const { task, isLoading: isTaskLoading } = useTaskInfo(taskId);
+    const { verifyTask, isVerifying } = useVerification();
 
-    const { data: isCompleted } = useReadContract({
+    const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'hasDoneTask',
         args: [address, BigInt(taskId)],
     });
 
-    if (!task) return null;
-    const [desc, reward] = task;
+    const { data: isVerified, refetch: refetchVerification } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'isTaskVerified',
+        args: [address, BigInt(taskId)],
+    });
+
+    if (isTaskLoading || !task) return null;
+
+    const needsVerify = task.requiresVerification && !isVerified;
+
+    const handleAction = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (needsVerify) {
+            window.open(task.link, '_blank');
+            const success = await verifyTask(task, address, taskId);
+            if (success) {
+                refetchVerification();
+                refetchCompletion();
+            }
+        } else {
+            onToggle(taskId, !!isCompleted);
+        }
+    };
 
     return (
         <div
-            onClick={() => onToggle(taskId, !!isCompleted)}
+            onClick={handleAction}
             className={`flex items-center justify-between p-3.5 rounded-2xl border-2 transition-colors cursor-pointer ${isCompleted
                 ? 'bg-indigo-500/5 border-indigo-500/20 opacity-60'
                 : isSelected
@@ -461,21 +482,36 @@ function SubTaskItem({
                     )}
                 </div>
                 <div>
-                    <p className={`text-sm font-semibold tracking-tight ${isCompleted ? 'line-through text-slate-500'
-                        : isSelected ? 'text-white'
-                            : 'text-slate-300'
-                        }`}>{desc}</p>
+                    <div className="flex items-center gap-2">
+                        <p className={`text-sm font-semibold tracking-tight ${isCompleted ? 'line-through text-slate-500'
+                            : isSelected ? 'text-white'
+                                : 'text-slate-300'
+                            }`}>{task.title}</p>
+                        {task.requiresVerification && (
+                            <ShieldCheck className={`w-3 h-3 ${isVerified ? 'text-emerald-400' : 'text-amber-400'}`} />
+                        )}
+                    </div>
                     <p className={`text-xs font-semibold ${isCompleted ? 'text-indigo-400/50'
                         : isSelected ? 'text-white/80'
                             : 'text-indigo-400'
-                        }`}>+{reward.toString()} XP</p>
+                        }`}>+{task.baseReward.toString()} XP</p>
                 </div>
             </div>
-            {isCompleted && (
-                <span className="text-[10px] font-black uppercase text-indigo-400 px-2 py-1 bg-indigo-400/10 rounded-full">
-                    Completed
-                </span>
-            )}
+
+            <div className="flex items-center gap-2">
+                {needsVerify ? (
+                    <button
+                        disabled={isVerifying}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black py-1.5 px-3 rounded-lg transition-all"
+                    >
+                        {isVerifying ? 'Wait...' : 'Verify'}
+                    </button>
+                ) : isCompleted ? (
+                    <span className="text-[10px] font-black uppercase text-indigo-400 px-2 py-1 bg-indigo-400/10 rounded-full">
+                        Completed
+                    </span>
+                ) : null}
+            </div>
         </div>
     );
 }
