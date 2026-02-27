@@ -1,75 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage } from 'wagmi';
-import { parseEther, decodeEventLog } from 'viem';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSignMessage } from 'wagmi';
+import {
+    Transaction,
+    TransactionButton,
+    TransactionStatus,
+    TransactionStatusLabel,
+    TransactionStatusAction,
+} from '@coinbase/onchainkit/transaction';
+import { encodeFunctionData } from 'viem';
 import { Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle, X, Star, Database, Download, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
+import { DAILY_APP_ABI, CONTRACTS } from '../../lib/contracts';
 
-const DAILY_APP_ABI = [
-    {
-        "inputs": [
-            { "internalType": "string", "name": "_desc", "type": "string" },
-            { "internalType": "uint256", "name": "_pointReward", "type": "uint256" }
-        ],
-        "name": "createDailyTask",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            { "internalType": "string", "name": "_name", "type": "string" },
-            { "internalType": "string[]", "name": "_descs", "type": "string[]" },
-            { "internalType": "uint256[]", "name": "_rewards", "type": "uint256[]" }
-        ],
-        "name": "createSponsorship",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getDailyTasks",
-        "outputs": [{ "internalType": "uint256[]", "name": "", "type": "uint256[]" }],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "name": "tasks",
-        "outputs": [
-            { "internalType": "string", "name": "desc", "type": "string" },
-            { "internalType": "uint256", "name": "pointReward", "type": "uint256" }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{ "internalType": "uint256", "name": "_sponsorId", "type": "uint256" }],
-        "name": "getSponsorTasks",
-        "outputs": [{ "internalType": "uint256[]", "name": "", "type": "uint256[]" }],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "name": "sponsorships",
-        "outputs": [
-            { "internalType": "string", "name": "name", "type": "string" }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "nextSponsorId",
-        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
-
-const DAILY_APP_ADDRESS = import.meta.env.VITE_DAILY_APP_ADDRESS;
+const DAILY_APP_ADDRESS = CONTRACTS.DAILY_APP;
 
 /**
  * TaskViewer sub-component to show existing data
@@ -215,11 +159,6 @@ export function TaskManager() {
     // Wagmi hooks
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
-
-    const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
-        hash,
-    });
 
     // MISI 1: Fetch Admin Tasks dari Supabase
     const fetchAdminTasks = async () => {
@@ -252,88 +191,38 @@ export function TaskManager() {
     }, []);
 
     // Reset forms on success
-    React.useEffect(() => {
-        if (isSuccess) {
-            toast.success("Transaction Confirmed!");
-            setDailyDesc('');
-            setDailyPoints('');
-            setSponsorName('');
-            setSponsorTasks([{ desc: '', points: '' }]);
-            // Refresh tasks setelah insert berhasil
-            fetchAdminTasks();
-        }
-    }, [isSuccess]);
-
-    const handleCreateDaily = async () => {
-        if (!dailyDesc || !dailyPoints) return toast.error("Fill all fields");
-        if (!address) return toast.error("Wallet not connected");
-
-        const toastId = toast.loading("Requesting Admin Signature...");
-
-        try {
-            // 1. Prepare & Sign Message
-            const timestamp = new Date().toISOString();
-            const message = `Create Daily Task: ${dailyDesc}\nReward: ${dailyPoints} XP\nAdmin: ${address}\nTime: ${timestamp}`;
-            const signature = await signMessageAsync({ message });
-
-            toast.loading("Saving to secure database...", { id: toastId });
-
-            // 2. Insert to Supabase via Secure API
-            const response = await fetch('/api/admin/tasks/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    wallet_address: address,
-                    signature,
-                    message,
-                    task_data: {
-                        description: dailyDesc,
-                        xp_reward: parseInt(dailyPoints),
-                        expires_at: dailyExpire ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null
-                    }
-                })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || "Failed to save task");
-            }
-
-            toast.success('Task saved to database! Now deploying to blockchain...', { id: toastId });
-
-            // 3. Deploy to Blockchain
-            writeContract({
-                address: DAILY_APP_ADDRESS,
-                abi: DAILY_APP_ABI,
-                functionName: 'createDailyTask',
-                args: [dailyDesc, BigInt(dailyPoints)],
-            });
-        } catch (error) {
-            console.error('Error creating task:', error);
-            const errMsg = error.message || "Unknown error";
-            if (error.code === 4001) {
-                toast.error("Signature rejected", { id: toastId });
-            } else {
-                toast.error(`Failed: ${errMsg}`, { id: toastId });
-            }
-        }
+    const handleTxSuccess = () => {
+        toast.success('Sponsorship deployed on-chain!');
+        setDailyDesc('');
+        setSponsorName('');
+        setSponsorTasks([{ desc: '', points: '' }]);
+        fetchAdminTasks();
     };
 
-    const handleCreateSponsor = () => {
-        if (!sponsorName || sponsorTasks.some(t => !t.desc || !t.points)) {
-            return toast.error("Fill all fields");
-        }
-        writeContract({
-            address: DAILY_APP_ADDRESS,
-            abi: DAILY_APP_ABI,
-            functionName: 'createSponsorship',
-            args: [
-                sponsorName,
-                sponsorTasks.map(t => t.desc),
-                sponsorTasks.map(t => BigInt(t.points))
-            ],
-        });
+    // Build calls for adminCreateSponsorship (daily = Bronze + 1 task, sponsor = up to 3)
+    const buildSponsorCalls = () => {
+        const titles = mode === 'daily'
+            ? [dailyDesc].filter(Boolean)
+            : sponsorTasks.filter(t => t.desc && t.link).map(t => t.desc);
+        const links = mode === 'daily'
+            ? [''] // daily tasks have no specific link
+            : sponsorTasks.filter(t => t.desc && t.link).map(t => t.link);
+
+        if (!titles.length) return [];
+
+        return [{
+            to: DAILY_APP_ADDRESS,
+            data: encodeFunctionData({
+                abi: DAILY_APP_ABI,
+                functionName: 'adminCreateSponsorship',
+                args: [
+                    0, // SponsorLevel.BRONZE
+                    titles,
+                    links,
+                    '' // email not required for admin
+                ],
+            }),
+        }];
     };
 
     const addSponsorTask = () => {
@@ -567,13 +456,19 @@ export function TaskManager() {
                         </label>
                     </div>
 
-                    <button
-                        onClick={handleCreateDaily}
-                        disabled={isLoading}
-                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-2"
+                    <Transaction
+                        calls={buildSponsorCalls()}
+                        onSuccess={handleTxSuccess}
+                        onError={(e) => toast.error(e.shortMessage || 'Deploy failed')}
                     >
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Deploy Daily Task"}
-                    </button>
+                        <TransactionButton
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-indigo-500/10"
+                            text="DEPLOY DAILY TASK (FREE)"
+                        />
+                        <div className="mt-2 text-[10px] text-slate-500 text-center">
+                            <TransactionStatus><TransactionStatusLabel /><TransactionStatusAction /></TransactionStatus>
+                        </div>
+                    </Transaction>
                 </div>
             )}
 
@@ -638,13 +533,19 @@ export function TaskManager() {
                         ))}
                     </div>
 
-                    <button
-                        onClick={handleCreateSponsor}
-                        disabled={isLoading}
-                        className="w-full py-4 bg-white hover:bg-slate-100 disabled:bg-slate-800 text-black disabled:text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl flex items-center justify-center gap-2"
+                    <Transaction
+                        calls={buildSponsorCalls()}
+                        onSuccess={handleTxSuccess}
+                        onError={(e) => toast.error(e.shortMessage || 'Deploy failed')}
                     >
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Deploy Sponsor Card"}
-                    </button>
+                        <TransactionButton
+                            className="w-full py-4 bg-white hover:bg-slate-100 text-black rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl"
+                            text="DEPLOY SPONSOR CARD (FREE)"
+                        />
+                        <div className="mt-2 text-[10px] text-slate-500 text-center">
+                            <TransactionStatus><TransactionStatusLabel /><TransactionStatusAction /></TransactionStatus>
+                        </div>
+                    </Transaction>
                 </div>
             )}
 

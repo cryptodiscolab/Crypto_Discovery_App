@@ -495,6 +495,49 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         autoApproveSponsorship = _status;
     }
 
+    /**
+     * @notice Admin creates a sponsorship for free (bypasses USDC fee + token pool).
+     * Same storage & flow as buySponsorshipWithToken but no payment required.
+     * Auto-approved immediately.
+     */
+    function adminCreateSponsorship(
+        SponsorLevel _level,
+        string[] calldata _titles,
+        string[] calldata _links,
+        string calldata _email
+    ) external onlyRole(ADMIN_ROLE) {
+        if (_titles.length == 0 || _titles.length > 3) revert InvalidParameters();
+        if (_titles.length != _links.length) revert InvalidParameters();
+
+        totalSponsorRequests++;
+        uint256 requestId = totalSponsorRequests;
+
+        sponsorRequests[requestId] = SponsorRequest({
+            sponsor: msg.sender,
+            level: _level,
+            titles: _titles,
+            links: _links,
+            contactEmail: _email,
+            rewardPool: 0,
+            status: RequestStatus.PENDING,
+            timestamp: block.timestamp
+        });
+
+        emit SponsorshipRequested(requestId, msg.sender, _level, 0);
+        _approveSponsorshipInternal(requestId);
+    }
+
+    /**
+     * @notice Admin toggles a task active/inactive without payment.
+     */
+    function adminSetTaskActive(uint256 _taskId, bool _active)
+        external
+        onlyRole(ADMIN_ROLE)
+    {
+        if (tasks[_taskId].baseReward == 0) revert NotFound();
+        tasks[_taskId].isActive = _active;
+    }
+
     // --- ADMIN: FINANCIAL CONTROLS ---
 
     function withdrawETH() external onlyRole(ADMIN_ROLE) {

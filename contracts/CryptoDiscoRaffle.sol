@@ -343,4 +343,39 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
     function setMaster(address _m) external onlyOwner { masterContract = ICryptoDiscoMaster(_m); }
+
+    /**
+     * @notice Admin creates a raffle for free (no ETH deposit required).
+     * Same storage as createSponsorshipRaffle. sponsor = address(0) → admin raffle.
+     */
+    function adminCreateRaffle(
+        uint256 _winnerCount,
+        uint256 _maxTickets,
+        uint256 _durationDays,
+        string calldata _metadataURI
+    ) external onlyOwner {
+        require(_winnerCount > 0 && _winnerCount <= 10, "Invalid winner count");
+        require(_durationDays > 0 && _durationDays <= 25, "Max 25 days");
+        require(_maxTickets > 0 && _maxTickets <= MAX_PARTICIPANTS, "Exceeds max");
+
+        currentRaffleId++;
+        RaffleData storage r = raffles[currentRaffleId];
+        r.raffleId = currentRaffleId;
+        r.isActive = true;
+        r.winnerCount = _winnerCount;
+        r.maxTickets = _maxTickets;
+        r.endTime = block.timestamp + (_durationDays * 1 days);
+        r.metadataURI = _metadataURI;
+        r.prizePool = 0;       // No deposit — prize comes from ticket revenue
+        r.sponsor = address(0); // Admin raffle
+
+        emit RaffleCreated(currentRaffleId, block.timestamp);
+    }
+
+    /**
+     * @notice Get the raffleIdCounter (alias for currentRaffleId) for BUG-3 fix compatibility.
+     */
+    function raffleIdCounter() external view returns (uint256) {
+        return currentRaffleId;
+    }
 }

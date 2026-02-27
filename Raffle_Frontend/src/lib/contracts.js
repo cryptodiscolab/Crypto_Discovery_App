@@ -218,6 +218,28 @@ export const DAILY_APP_ABI = [
         ],
         "stateMutability": "view",
         "type": "function"
+    },
+    {
+        "inputs": [
+            { "internalType": "uint8", "name": "_level", "type": "uint8" },
+            { "internalType": "string[]", "name": "_titles", "type": "string[]" },
+            { "internalType": "string[]", "name": "_links", "type": "string[]" },
+            { "internalType": "string", "name": "_email", "type": "string" }
+        ],
+        "name": "adminCreateSponsorship",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "internalType": "uint256", "name": "_taskId", "type": "uint256" },
+            { "internalType": "bool", "name": "_active", "type": "bool" }
+        ],
+        "name": "adminSetTaskActive",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
     }
 ];
 
