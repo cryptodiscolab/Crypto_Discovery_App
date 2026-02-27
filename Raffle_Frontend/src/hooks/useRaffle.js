@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient } from 'wagmi';
 import { usePoints } from '../shared/context/PointsContext';
 import { RAFFLE_ABI } from '../shared/constants/abis';
 import { awardTaskXP } from '../dailyAppLogic';
@@ -13,6 +13,7 @@ export function useRaffle() {
     const { signMessageAsync } = useSignMessage();
     const [isDrawing, setIsDrawing] = useState(false);
     const { writeContractAsync } = useWriteContract();
+    const publicClient = usePublicClient();
 
     const buyTickets = async (raffleId, amount, useFreeTickets = false) => {
         const hash = await writeContractAsync({
@@ -118,18 +119,22 @@ export function useRaffle() {
         });
 
         if (hash) {
-            // No direct ID returned from writeContractAsync, usually we wait for receipt
-            // But for now, we can prompt the user or handle it.
-            // A better way is to wait for the receipt and parse events.
-            toast.success("Raffle created on blockchain!");
+            toast.success("Raffle created! Fetching ID...");
             try {
-                // We'll needing the latest raffle ID.
+                // BUG-3 fix: wait for confirmation, then read real ID from chain
+                await publicClient.waitForTransactionReceipt({ hash });
+
+                const counter = await publicClient.readContract({
+                    address: RAFFLE_ADDRESS,
+                    abi: RAFFLE_ABI,
+                    functionName: 'raffleIdCounter',
+                });
+                const actualRaffleId = Number(counter) - 1; // counter increments after creation
+
                 const timestamp = new Date().toISOString();
                 const message = `Sync New Raffle\nCreator: ${address.toLowerCase()}\nTime: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
 
-                // We get the next ID from the refetch or just sync a generic "newest"
-                // For simplicity, let's just notify that sync is pending or call a batch sync
                 await fetch('/api/admin/system/update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -139,7 +144,7 @@ export function useRaffle() {
                         message,
                         action_type: 'SYNC_RAFFLE',
                         payload: {
-                            raffle_id: 999, // Placeholder or fetch latest
+                            raffle_id: actualRaffleId, // real ID from chain
                             creator: address,
                             nft_address: nftContracts[0],
                             token_id: Number(tokenIds[0]),
@@ -147,6 +152,7 @@ export function useRaffle() {
                         }
                     })
                 });
+                toast.success(`Raffle #${actualRaffleId} synced!`);
             } catch (e) {
                 console.warn("Database sync failed:", e.message);
             }
