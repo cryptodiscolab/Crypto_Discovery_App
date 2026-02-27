@@ -1,72 +1,58 @@
 /**
  * Notification Service
- * Handles sending notifications to users via various channels (e.g., Farcaster via Neynar).
+ * Semua panggilan Neynar dilakukan melalui /api/notify (server-side).
+ * NEYNAR_API_KEY TIDAK pernah ada di client bundle ini. (Rule §6 .cursorrules)
  */
-
-// ⚠️ SECURITY NOTE: NEYNAR_API_KEY di client side akan terekspos di bundle.
-// Pindahkan panggilan API ke /api/notify route (Next.js/Vercel) untuk produksi.
-const NEYNAR_API_KEY = import.meta.env.VITE_NEYNAR_API_KEY;
 
 export const NotificationService = {
     /**
-     * Send a notification to a Farcaster user via Neynar API.
-     * @param {string} fid - The Farcaster ID of the recipient.
-     * @param {string} message - The message content.
+     * Kirim notifikasi ke Farcaster user via server endpoint /api/notify.
+     * @param {number|string} fid - Farcaster ID penerima.
+     * @param {string} message - Isi pesan (max 500 karakter).
+     * @param {"mention"|"cast"} type - Tipe notifikasi.
      */
-    async sendFarcasterNotification(fid, message) {
-        if (!NEYNAR_API_KEY) {
-            console.warn("NotificationService: Missing VITE_NEYNAR_API_KEY");
-            return;
+    async sendFarcasterNotification(fid, message, type = 'mention') {
+        if (!fid || !message) {
+            console.warn('[NotificationService] Missing fid or message');
+            return false;
         }
 
         try {
-            // Placeholder for actual Neynar API endpoint for sending notifications/casts
-            // Currently Neynar focuses on reading/writing casts. Direct notifications might be via frame interactions or specific bot logic.
-            // This is a template structure.
-
-
-
-            /*
-            // NEYNAR API Example for proper mentions
-            const response = await fetch('https://api.neynar.com/v2/farcaster/cast', {
+            const response = await fetch('/api/notify', {
                 method: 'POST',
-                headers: {
-                    'api_key': NEYNAR_API_KEY,
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                    signer_uuid: 'YOUR_SIGNER_UUID', 
-                    // To mention a user, simply include their handle with @ in the text
-                    // Neynar automatically parses it if valid.
-                    // Or for FIDs specifically without knowing the handle: 
-                    // text: `Hey, you won!`, embeds: [], mentions: [fid], mentions_positions: [0]
-                    
-                    text: `@user ${message}`, // <-- MENTION FORMAT HERE
-                    parent_author_fid: fid // Explicitly reply to the user
-                })
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ fid, message, type })
             });
-            */
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                console.error('[NotificationService] Server error:', err.error || response.status);
+                return false;
+            }
 
             return true;
         } catch (error) {
-            console.error("NotificationService Error:", error);
+            console.error('[NotificationService] Fetch error:', error.message);
             return false;
         }
     },
 
     /**
-     * Check for urgent deadlines and notify.
-     * Can be called by the frontend or a periodic service.
+     * Cek deadline reward dan trigger notifikasi jika diperlukan.
+     * Logika ini berjalan di client — hanya memeriksa, tidak kirim langsung ke Neynar.
      */
     checkDeadlinesAndNotify(unclaimedRewards) {
         const now = Date.now();
         unclaimedRewards.forEach(reward => {
             if (!reward.isClaimed && reward.deadline) {
                 const timeLeft = reward.deadline - now;
-
-                // Logic already exists in PointsContext, but this service could centralize external API calls
-                if (timeLeft < 3600000 && timeLeft > 0) {
-
+                // 1 jam sebelum deadline: trigger notification via server
+                if (timeLeft < 3600000 && timeLeft > 0 && reward.fid) {
+                    this.sendFarcasterNotification(
+                        reward.fid,
+                        `⏰ Klaim reward kamu sebelum expired dalam 1 jam!`,
+                        'mention'
+                    );
                 }
             }
         });
