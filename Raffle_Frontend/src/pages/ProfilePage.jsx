@@ -515,7 +515,7 @@ function CreateTaskModal({ onClose }) {
     requiresVerification: true
   });
   const { writeContractAsync } = useWriteContract();
-
+  const { address } = useAccount();
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex flex-col">
@@ -657,12 +657,18 @@ function CreateTaskModal({ onClose }) {
                   tasksBatch.filter(t => t.title && t.link).map(t => t.title),
                   tasksBatch.filter(t => t.title && t.link).map(t => t.link),
                   email,
-                  BigInt(5 * 1e18)
+                  5n * 10n ** 18n  // BUG-8 fix: safe BigInt, no precision loss
                 ],
               }),
             }]}
             onSuccess={() => {
               toast.success("Sponsorship Created! Duration: 3 Days.");
+              // BUG-8 fix: sync XP on-chain ke DB setelah payment
+              fetch('/api/user/sync', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ action: 'xp', wallet_address: address }),
+              }).catch(() => { });
               onClose();
             }}
             onError={(err) => {
