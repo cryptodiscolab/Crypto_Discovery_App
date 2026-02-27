@@ -2,19 +2,11 @@ import { useState, useEffect } from 'react';
 import {
   RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield
 } from 'lucide-react';
-import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract } from 'wagmi';
+import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
-import {
-  Transaction,
-  TransactionButton,
-  TransactionStatus,
-  TransactionStatusLabel,
-  TransactionStatusAction,
-} from '@coinbase/onchainkit/transaction';
-import { encodeFunctionData } from 'viem';
 
 export default function ProfilePage() {
   const { address } = useAccount();
@@ -644,6 +636,8 @@ function CreateTaskModal({ onClose }) {
 function DailyClaimModal({ onClose }) {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
+  const [isClaiming, setIsClaiming] = useState(false);
 
   // Read userStats to check cooldown
   const { data: userData } = useReadContract({
@@ -670,6 +664,57 @@ function DailyClaimModal({ onClose }) {
     return `${h}h ${m}m remaining`;
   };
 
+  const handleClaim = async () => {
+    if (isCooldown) return toast.error("Cooldown active! Come back later.");
+    setIsClaiming(true);
+    const tid = toast.loading("Preparing claim...");
+    try {
+      // Estimasi gas secara presisi dari node, lalu tambah buffer 1.5x
+      let gasLimit;
+      try {
+        const estimated = await publicClient.estimateContractGas({
+          address: CONTRACTS.DAILY_APP,
+          abi: DAILY_APP_ABI,
+          functionName: 'claimDailyBonus',
+          account: address,
+        });
+        gasLimit = BigInt(Math.ceil(Number(estimated) * 1.5));
+        console.log('[DailyClaim] Estimated gas:', estimated.toString(), '→ limit:', gasLimit.toString());
+      } catch (estErr) {
+        // Jika estimasi gagal (biasanya karena cooldown aktif di chain)
+        console.warn('[DailyClaim] Gas estimation failed:', estErr.shortMessage || estErr.message);
+        if (estErr.message?.includes('CooldownActive') || estErr.message?.includes('execution reverted')) {
+          toast.error('Already claimed today! Cooldown belum selesai.', { id: tid });
+          setIsClaiming(false);
+          return;
+        }
+        gasLimit = BigInt(200000); // Fallback gas limit
+      }
+
+      await writeContractAsync({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'claimDailyBonus',
+        gas: gasLimit,
+      });
+
+      toast.success("+100 XP Claimed! ", { id: tid });
+      onClose();
+    } catch (err) {
+      console.error('Daily Claim Error:', err);
+      const msg = err.shortMessage || err.message || '';
+      if (msg.includes('User rejected') || msg.includes('user rejected')) {
+        toast.error('Transaction cancelled.', { id: tid });
+      } else if (msg.includes('CooldownActive')) {
+        toast.error('Already claimed today!', { id: tid });
+      } else {
+        toast.error('Claim failed: ' + (err.shortMessage || 'Try again'), { id: tid });
+      }
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="glass-card w-full max-sm:max-w-xs max-w-sm p-8 space-y-6 text-center">
@@ -688,37 +733,13 @@ function DailyClaimModal({ onClose }) {
           )}
         </div>
 
-        <div className="relative z-[9999] pointer-events-auto">
-          <Transaction
-            calls={[{
-              to: CONTRACTS.DAILY_APP,
-              data: encodeFunctionData({
-                abi: DAILY_APP_ABI,
-                functionName: 'claimDailyBonus',
-              }),
-            }]}
-            onSuccess={() => {
-              toast.success("+100 XP Claimed!");
-              onClose();
-            }}
-            onError={(err) => {
-              console.error("Daily Claim Error:", err);
-              toast.error("Claim failed: " + (err.shortMessage || "Contract error"));
-            }}
-          >
-            <TransactionButton
-              disabled={isCooldown}
-              className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${isCooldown ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
-              text={isCooldown ? "CLAIMED" : "CLAIM DAILY (+100 XP)"}
-            />
-            <div className="mt-2 text-[10px] text-slate-500 font-mono">
-              <TransactionStatus>
-                <TransactionStatusLabel />
-                <TransactionStatusAction />
-              </TransactionStatus>
-            </div>
-          </Transaction>
-        </div>
+        <button
+          onClick={handleClaim}
+          disabled={isClaiming || isCooldown}
+          className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${isCooldown ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+        >
+          {isClaiming ? 'PROCESSING...' : isCooldown ? 'CLAIMED' : 'CLAIM DAILY (+100 XP)'}
+        </button>
         <button onClick={onClose} className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors">Maybe later</button>
       </div>
     </div>
