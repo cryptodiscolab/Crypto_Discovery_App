@@ -67,23 +67,30 @@ export default async function handler(req, res) {
             .from('user_profiles')
             .upsert({ wallet_address: cleanAddress }, { onConflict: 'wallet_address' });
 
-        // 6. Insert Claim (Bypass RLS)
-        // Note: The trigger trg_sync_user_xp_on_claim will automatically update
-        // user_profiles.total_xp based on sum of xp_earned in user_task_claims.
+        // 6. Insert Completion — canonical table (same as tasks/verify.js)
+        // BUG-6 fix: was writing to user_task_claims, now unified to user_task_completions
         const { error: claimError } = await supabaseAdmin
-            .from('user_task_claims')
+            .from('user_task_completions')
             .insert({
-                wallet_address: cleanAddress,
+                user_address: cleanAddress,
                 task_id: task_id,
-                xp_earned: actualXPReward
+                platform: 'claim',
+                action_type: 'task',
+                points_awarded: actualXPReward
             });
 
         if (claimError) {
-            if (claimError.code === '23505') { // Unique violation
+            if (claimError.code === '23505') {
                 return res.status(409).json({ error: 'You already claimed this task today' });
             }
             throw claimError;
         }
+
+        // 7. Atomic XP increment (consistent with verify.js)
+        await supabaseAdmin.rpc('fn_increment_user_xp', {
+            p_wallet: cleanAddress,
+            p_xp: actualXPReward
+        });
 
         // 7. Log Audit (Non-blocking: don't crash if audit table fails)
         supabaseAdmin.from('admin_audit_logs').insert([{

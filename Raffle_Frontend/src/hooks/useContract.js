@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignMessage, usePublicClient } from 'wagmi';
-import { V12_ABI } from '../shared/constants/abis';
+import { DAILY_APP_ABI, CONTRACTS } from '../lib/contracts'; // BUG-7 fix: use canonical ABI
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
-const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";
+const V12_ADDRESS = CONTRACTS.DAILY_APP; // single source of truth
 
 export function useUserInfo(address) {
     const { data: userInfo, isLoading, refetch } = useReadContract({
         address: V12_ADDRESS,
-        abi: V12_ABI,
-        functionName: 'getUserStats',
+        abi: DAILY_APP_ABI,
+        functionName: 'userStats', // BUG-7: was getUserStats (not in DAILY_APP_ABI)
         args: [address],
         query: { enabled: !!address }
     });
@@ -18,13 +18,13 @@ export function useUserInfo(address) {
     const stats = useMemo(() => {
         if (!userInfo) return null;
         return {
-            points: userInfo[0],
-            totalTasksCompleted: userInfo[1],
-            referralCount: userInfo[2],
-            currentTier: userInfo[3],
-            tasksForReferralProgress: userInfo[4],
-            lastDailyBonusClaim: userInfo[5],
-            isBlacklisted: userInfo[6]
+            points: userInfo.points ?? userInfo[0],
+            totalTasksCompleted: userInfo.totalTasksCompleted ?? userInfo[1],
+            referralCount: userInfo.referralCount ?? userInfo[2],
+            currentTier: userInfo.currentTier ?? userInfo[3],
+            tasksForReferralProgress: userInfo.tasksForReferralProgress ?? userInfo[4],
+            lastDailyBonusClaim: userInfo.lastDailyBonusClaim ?? userInfo[5],
+            isBlacklisted: userInfo.isBlacklisted ?? userInfo[6],
         };
     }, [userInfo]);
 
@@ -62,7 +62,7 @@ export function useUserV12Stats(address) {
 export function useAllTasks() {
     const { data: totalTasks, isLoading } = useReadContract({
         address: V12_ADDRESS,
-        abi: V12_ABI,
+        abi: DAILY_APP_ABI,
         functionName: 'nextTaskId',
     });
 
@@ -75,7 +75,7 @@ export function useAllTasks() {
 export function useTaskInfo(taskId) {
     const { data: task, isLoading } = useReadContract({
         address: V12_ADDRESS,
-        abi: V12_ABI,
+        abi: DAILY_APP_ABI,
         functionName: 'getTask',
         args: [BigInt(taskId)],
     });
@@ -110,7 +110,7 @@ export function useDoTask() {
     const doTask = async (taskId, referrer = "0x0000000000000000000000000000000000000000") => {
         const hash = await writeContractAsync({
             address: V12_ADDRESS,
-            abi: V12_ABI,
+            abi: DAILY_APP_ABI,
             functionName: 'doTask',
             args: [BigInt(taskId), referrer],
         });
@@ -122,7 +122,7 @@ export function useDoTask() {
             try {
                 // Secure Awarding Logic
                 const timestamp = new Date().toISOString();
-                const message = `Claim XP for Task Completion\nID: ${taskId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
+                const message = `Claim XP for Task Completion\nID: ${taskId} \nUser: ${address.toLowerCase()} \nTime: ${timestamp} `;
                 const signature = await signMessageAsync({ message });
 
                 await awardTaskXP(address, signature, message, taskId, 0); // Reward value handled by backend Activity Key
