@@ -17,14 +17,16 @@ export default function TaskClaimLogs() {
             const rangeStart = currentPage * limit;
 
             const { data, count, error } = await supabase
-                .from('user_task_claims')
+                .from('user_task_completions')  // ADMIN-BUG-1 fix: canonical table
                 .select(`
                     id,
-                    claimed_at,
-                    wallet_address,
+                    created_at,
+                    user_address,
+                    points_awarded,
+                    platform,
                     task:daily_tasks(id, description, xp_reward)
                 `, { count: 'exact' })
-                .order('claimed_at', { ascending: false })
+                .order('created_at', { ascending: false })
                 .range(rangeStart, rangeStart + limit - 1);
 
 
@@ -87,11 +89,11 @@ export default function TaskClaimLogs() {
                                             <div className="flex items-center gap-1">
                                                 <User className="w-2.5 h-2.5 text-slate-500" />
                                                 <span className="text-[9px] font-mono text-slate-500">
-                                                    {log.wallet_address.slice(0, 6)}...{log.wallet_address.slice(-4)}
+                                                    {log.user_address?.slice(0, 6)}...{log.user_address?.slice(-4)}
                                                 </span>
                                             </div>
                                             <span className="text-[9px] font-black text-indigo-500 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                                                +{log.task?.xp_reward || 0} XP
+                                                +{log.points_awarded || log.task?.xp_reward || 0} XP
                                             </span>
                                         </div>
                                     </div>
@@ -101,7 +103,7 @@ export default function TaskClaimLogs() {
                                             {new Date(log.claimed_at).toLocaleDateString()} {new Date(log.claimed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                         <a
-                                            href={`https://basescan.org/address/${log.wallet_address}`}
+                                            href={`https://basescan.org/address/${log.user_address}`}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="text-indigo-400 hover:text-indigo-300 transition-colors"

@@ -117,9 +117,9 @@ export default async function handler(req, res) {
 
             case 'RESET_SEASON': {
                 // CRITICAL: Permanently resets all progress
-                // 1. Clear all user claims
+                // 1. Clear all user completions (ADMIN-BUG-3 fix: was user_task_claims)
                 const { error: claimErr } = await supabaseAdmin
-                    .from('user_task_claims')
+                    .from('user_task_completions')
                     .delete()
                     .not('id', 'is', 'null');
 

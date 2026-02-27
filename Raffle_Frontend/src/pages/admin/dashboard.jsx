@@ -165,11 +165,16 @@ const AdminDashboard = () => {
                             <TaskClaimLogs />
                         ) : activeTab === 'cms' ? (
                             <AdminCMSContent />
+                        ) : activeTab === 'raffles' ? (
+                            <RaffleManagerTab />
+                        ) : activeTab === 'pool' ? (
+                            <WhitelistManagerTab />
                         ) : activeTab === 'system' ? (
                             <AdminSystemSettings />
+                        ) : activeTab === 'announcement' || activeTab === 'news' ? (
+                            <AdminCMSContent />
                         ) : (
-                            /* Fallback to legacy components for missing tabs */
-                            <AdminPage initialTab={activeTab} />
+                            <AdminSystemSettings />
                         )}
 
 
