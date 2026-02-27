@@ -165,7 +165,7 @@ export default function UserReputationTable() {
             toast.success('Override applied!', { id: tid });
             // Refresh list to show new tier
             setUsers(prev => prev.map(u =>
-                u.wallet_address === targetWallet ? { ...u, tier_override: tierId } : u
+                u.wallet_address?.toLowerCase() === targetWallet?.toLowerCase() ? { ...u, tier_override: tierId } : u
             ));
         } catch (error) {
             toast.error('Override failed: ' + error.message, { id: tid });

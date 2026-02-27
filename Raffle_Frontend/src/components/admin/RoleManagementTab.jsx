@@ -139,7 +139,7 @@ export function RoleManagementTab() {
             toast.success("Operator Role Revoked & Synced!", { id: tid });
 
             // Remove from local list
-            setOperators(operators.filter(op => op.address !== addr));
+            setOperators(operators.filter(op => op.address?.toLowerCase() !== addr?.toLowerCase()));
             refetchAll();
         } catch (e) {
             console.error(e);

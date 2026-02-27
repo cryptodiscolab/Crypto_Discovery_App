@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
 // Multi-instance fix: Import from wagmiConfig to break circular dependency (Note: removed direct import for hook usage)
 
-const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS;
+const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS || "0x555D06933CC45038c42a1ba1F74140A5e4E0695d";
 const PRICE_FEED_ADDRESS = "0x4aDC67696bA383F43fD60604633031d935f9584b"; // ETH/USD Base Sepolia
 const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
 

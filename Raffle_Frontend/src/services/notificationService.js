@@ -3,7 +3,9 @@
  * Handles sending notifications to users via various channels (e.g., Farcaster via Neynar).
  */
 
-const NEYNAR_API_KEY = process.env.VITE_NEYNAR_API_KEY; // Ensure this is in .env
+// ⚠️ SECURITY NOTE: NEYNAR_API_KEY di client side akan terekspos di bundle.
+// Pindahkan panggilan API ke /api/notify route (Next.js/Vercel) untuk produksi.
+const NEYNAR_API_KEY = import.meta.env.VITE_NEYNAR_API_KEY;
 
 export const NotificationService = {
     /**

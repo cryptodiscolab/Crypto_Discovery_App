@@ -11,11 +11,12 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Hardhat Config**: Always use `viaIR: true` and `runs: 200` to optimize for size.
 - **Bytecode Limit**: 24KB (Spurious Dragon). If exceeded, propose contract splitting/modularization.
 - **Core Infrastructure (VERIFIED ADDRESSES - DO NOT GUESS):**
-  - MasterX V2: `0xf074b0457d5c092bb67e62734B13C5f4cBC69e89` (Central Hub)
-  - Raffle (Main): `0x18C64ed185C15F46d17C1888e12168DBA409e2EE` (Linked to MasterX V2)
-  - Raffle (Frontend/VITE): `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` (`VITE_CONTRACT_ADDRESS`)
-  - DailyApp: `0x5d7338Cd98029a73283F959fe24935a5099771b7` (Authorized Satellite)
-  - CMS V2: `0xf55280bba6F34C68B1459aFd70B8798A07A8A613` (`VITE_CMS_CONTRACT_ADDRESS`)
+  - MasterX V2 (LATEST): `0x09b672B7B23ae226d80cD60777Ce7751fEbdd461` (`VITE_MASTER_X_ADDRESS`)
+  - MasterX V1 (Deprecated): `0xf074b0457d5c092bb67e62734B13C5f4cBC69e89` — jangan gunakan
+  - Raffle (Main): `0x18C64ed185C15F46d17C1888e12168DBA409e2EE` (`VITE_RAFFLE_ADDRESS`)
+  - DailyApp V12 (LATEST): `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` (`VITE_V12_CONTRACT_ADDRESS`)
+  - DailyApp V11 (Deprecated): `0x5d7338Cd98029a73283F959fe24935a5099771b7` — jangan gunakan
+  - CMS V2: `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` (`VITE_CMS_CONTRACT_ADDRESS`)
   - API3 Airnode RRP: `0x2ab9f26E18b6103274414940251539D0105e2Add`
   - API3 Airnode (Nodary): `0x6238772544f029ecaBfDED4300f13A3c4FE84E1D`
   - Sponsor Wallet: `0x7186e5D35f126c3C809670F567b594582f3C7d61`

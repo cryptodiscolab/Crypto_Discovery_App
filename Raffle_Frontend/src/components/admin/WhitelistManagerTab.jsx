@@ -220,7 +220,7 @@ export function WhitelistManagerTab() {
 
             // Remove from local list
             setWhitelistedUsers(whitelistedUsers.filter(
-                u => !(u.address === userAddr && u.featureId === featureId)
+                u => !(u.address?.toLowerCase() === userAddr?.toLowerCase() && u.featureId === featureId)
             ));
 
             refetchAll();
