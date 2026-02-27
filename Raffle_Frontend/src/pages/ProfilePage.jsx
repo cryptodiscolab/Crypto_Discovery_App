@@ -638,6 +638,8 @@ function DailyClaimModal({ onClose }) {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const [isClaiming, setIsClaiming] = useState(false);
+  const [countdown, setCountdown] = useState('');
+  const [isCooldown, setIsCooldown] = useState(false);
 
   // Read userStats to check cooldown
   const { data: userData } = useReadContract({
@@ -651,18 +653,29 @@ function DailyClaimModal({ onClose }) {
   });
 
   // userData[5] is lastDailyBonusClaim (timestamp in seconds)
-  const lastClaim = userData ? Number(userData[5]) : 0;
-  const nextClaimTime = lastClaim > 0 ? (lastClaim + 24 * 60 * 60) * 1000 : 0;
-  const isCooldown = Date.now() < nextClaimTime;
+  const nextClaimTime = userData ? (Number(userData[5]) + 24 * 60 * 60) * 1000 : 0;
 
-  // Formatting remaining time if on cooldown
-  const getRemainingTime = () => {
-    if (!isCooldown) return null;
-    const diff = nextClaimTime - Date.now();
-    const h = Math.floor(diff / (1000 * 60 * 60));
-    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${h}h ${m}m remaining`;
-  };
+  // Real-time countdown — ticks every second
+  useEffect(() => {
+    const tick = () => {
+      const diff = nextClaimTime - Date.now();
+      if (diff <= 0) {
+        setIsCooldown(false);
+        setCountdown('');
+        return;
+      }
+      setIsCooldown(true);
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(
+        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      );
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [nextClaimTime]);
 
   const handleClaim = async () => {
     if (isCooldown) return toast.error("Cooldown active! Come back later.");
@@ -722,29 +735,57 @@ function DailyClaimModal({ onClose }) {
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="glass-card w-full max-sm:max-w-xs max-w-sm p-8 space-y-6 text-center">
-        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto ${isCooldown ? 'bg-slate-500/10' : 'bg-emerald-500/20 animate-pulse'}`}>
+
+        {/* Icon */}
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto transition-all duration-500 ${isCooldown ? 'bg-slate-500/10' : 'bg-emerald-500/20 animate-pulse'}`}>
           <Sparkles size={40} className={isCooldown ? 'text-slate-500' : 'text-emerald-400'} />
         </div>
+
+        {/* Title */}
         <div>
-          <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Daily <span className="text-emerald-500">Mojo</span></h2>
+          <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">
+            Daily <span className="text-emerald-500">Mojo</span>
+          </h2>
           <p className="text-xs text-slate-400 mt-2">
             {isCooldown
-              ? "You've claimed your bonus! Come back later for more XP."
+              ? "You've claimed today! Next bonus in:"
               : "Claim your daily XP boost to climb the leaderboard!"}
           </p>
-          {isCooldown && (
-            <p className="text-[10px] text-indigo-400 font-mono mt-2 uppercase tracking-widest">{getRemainingTime()}</p>
-          )}
         </div>
 
+        {/* Live Countdown Box */}
+        {isCooldown && countdown && (
+          <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl py-4 px-6">
+            <p className="text-3xl font-black font-mono text-indigo-400 tracking-widest tabular-nums">
+              {countdown}
+            </p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-1">HH : MM : SS</p>
+          </div>
+        )}
+
+        {/* Claim Button */}
         <button
           onClick={handleClaim}
           disabled={isClaiming || isCooldown}
-          className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${isCooldown ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+          className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-60
+            ${isCooldown
+              ? 'bg-slate-800 border border-slate-700 cursor-not-allowed text-slate-500'
+              : 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20'
+            }`}
         >
-          {isClaiming ? 'PROCESSING...' : isCooldown ? 'CLAIMED' : 'CLAIM DAILY (+100 XP)'}
+          {isClaiming
+            ? '⏳ PROCESSING...'
+            : isCooldown
+              ? `⏰ COMEBACK IN ${countdown}`
+              : '✨ CLAIM DAILY (+100 XP)'}
         </button>
-        <button onClick={onClose} className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors">Maybe later</button>
+
+        <button
+          onClick={onClose}
+          className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors"
+        >
+          Maybe later
+        </button>
       </div>
     </div>
   );
