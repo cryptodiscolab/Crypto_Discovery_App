@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Trophy, Ticket, ArrowRight, Timer, RefreshCw, Zap, Gift, ExternalLink, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
 import toast from 'react-hot-toast';
 
-function RaffleRow({ raffleId }) {
+function RaffleRow({ raffleId, filter = 'all' }) {
   const { address } = useAccount();
   const { raffle, isLoading } = useRaffleInfo(raffleId);
   const { buyTickets, claimPrize } = useRaffle();
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (isLoading || !raffle) return null;
+  if (filter === 'active' && !raffle.isActive) return null;
+  if (filter === 'completed' && !raffle.isFinalized) return null;
 
   const isWinner = raffle.winners?.some(w => w.toLowerCase() === address?.toLowerCase());
   const isFinalized = raffle.isFinalized;
@@ -114,6 +116,10 @@ export function RafflesPage() {
   const [filter, setFilter] = useState('all');
   const { raffleIds } = useRaffleList();
 
+  // Filter is applied via the RaffleRow's raffle data — we pass the active filter down
+  // For accurate filtering we filter inside RaffleRow using raffle.isActive / isFinalized.
+  // Here we just pass the filter prop so each row can hide itself.
+
   return (
     <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
       <div className="max-w-screen-lg mx-auto">
@@ -153,7 +159,7 @@ export function RafflesPage() {
           ) : (
             <>
               {[...raffleIds].reverse().map((id) => (
-                <RaffleRow key={id.toString()} raffleId={id} />
+                <RaffleRow key={id.toString()} raffleId={id} filter={filter} />
               ))}
             </>
           )}

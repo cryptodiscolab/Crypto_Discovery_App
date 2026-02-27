@@ -118,7 +118,7 @@ export function useDoTask() {
             try {
                 // Secure Awarding Logic
                 const timestamp = new Date().toISOString();
-                const message = `Claim XP for Task Completion\nTask: ${taskId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
+                const message = `Claim XP for Task Completion\nID: ${taskId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
 
                 await awardTaskXP(address, signature, message, taskId, 0); // Reward value handled by backend Activity Key

@@ -42,7 +42,7 @@ export function useVerification(refetchStats) {
             let response;
             if (isSocialTask) {
                 // ── CALL VERIFICATION SERVER (SOCIAL) ──
-                const serverUrl = import.meta.env.VITE_VERIFY_SERVER_URL || 'http://localhost:3000';
+                const serverUrl = import.meta.env.VITE_VERIFY_SERVER_URL || '';
                 const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET;
 
                 // Determine social ID (FID for Farcaster, etc.)
