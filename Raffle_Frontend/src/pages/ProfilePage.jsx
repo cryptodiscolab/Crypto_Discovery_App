@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, UserCheck, ShieldCheck, Hash, AtSign, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield
 } from 'lucide-react';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
+import {
+  Transaction,
+  TransactionButton,
+  TransactionStatus,
+  TransactionStatusLabel,
+  TransactionStatusAction,
+} from '@coinbase/onchainkit/transaction';
+import { encodeFunctionData } from 'viem';
 
 export default function ProfilePage() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
-  const { writeContractAsync } = useWriteContract();
 
   // State untuk Mode Edit
   const [isEditing, setIsEditing] = useState(false);
@@ -688,25 +695,25 @@ function DailyClaimModal({ onClose }) {
   const [countdown, setCountdown] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
 
-  // userData is dari `getUserStats` — keamanan indexing via named field
-  // staleTime:0 + refetchOnMount memastikan data FRESH saat modal dibuka
+  // userData is dari `userStats` public mapping getter (ada di DAILY_APP_ABI)
+  // staleTime:0 + refetchOnMount memastikan data FRESH setiap kali modal dibuka
   const { data: userData, refetch: refetchStats } = useReadContract({
     address: CONTRACTS.DAILY_APP,
     abi: DAILY_APP_ABI,
-    functionName: 'getUserStats',
+    functionName: 'userStats',   // ← BENAR: ini yang ada di ABI, bukan getUserStats
     args: [address],
     query: {
       enabled: !!address,
-      staleTime: 0,         // Selalu fetch fresh — jangan pakai cache
-      refetchOnMount: true, // Fetch ulang setiap kali modal dibuka
+      staleTime: 0,
+      refetchOnMount: true,
     }
   });
 
-  // getUserStats return tuple dengan named field 'lastDailyBonusClaim'
-  // Jika = 0 artinya belum pernah claim sama sekali
+  // userStats returns named fields — lastDailyBonusClaim ada di index 5
+  // Jika = 0 artinya belum pernah claim → tidak ada cooldown
   const lastDailyClaim = userData?.lastDailyBonusClaim
     ? Number(userData.lastDailyBonusClaim)
-    : (userData ? Number(userData[5]) : 0); // fallback ke index jika named prop tidak ada
+    : 0;
   const nextClaimTime = lastDailyClaim > 0 ? (lastDailyClaim + 86400) * 1000 : 0;
 
   // Real-time countdown — ticks every second
