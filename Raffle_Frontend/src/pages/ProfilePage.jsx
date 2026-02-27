@@ -681,14 +681,18 @@ function DailyClaimModal({ onClose }) {
         gasLimit = BigInt(Math.ceil(Number(estimated) * 1.5));
         console.log('[DailyClaim] Estimated gas:', estimated.toString(), '→ limit:', gasLimit.toString());
       } catch (estErr) {
-        // Jika estimasi gagal (biasanya karena cooldown aktif di chain)
-        console.warn('[DailyClaim] Gas estimation failed:', estErr.shortMessage || estErr.message);
-        if (estErr.message?.includes('CooldownActive') || estErr.message?.includes('execution reverted')) {
-          toast.error('Already claimed today! Cooldown belum selesai.', { id: tid });
-          setIsClaiming(false);
-          return;
+        // Jika gas estimation revert = kontrak PASTI akan revert juga.
+        // Kondisi revert claimDailyBonus: CooldownActive, Blacklisted, atau Paused.
+        // Jangan submit TX — langsung hentikan dan info user.
+        console.warn('[DailyClaim] Contract will revert:', estErr.shortMessage || estErr.message);
+        const isUserRejected = estErr.message?.toLowerCase().includes('user rejected');
+        if (isUserRejected) {
+          toast.dismiss(tid);
+        } else {
+          toast.error('Already claimed today! Try again after 24 hours.', { id: tid });
         }
-        gasLimit = BigInt(200000); // Fallback gas limit
+        setIsClaiming(false);
+        return; // STOP — jangan submit TX yang akan gagal
       }
 
       await writeContractAsync({
