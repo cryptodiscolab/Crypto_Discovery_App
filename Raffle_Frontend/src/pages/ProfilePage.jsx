@@ -37,6 +37,39 @@ export default function ProfilePage() {
 
   const [copied, setCopied] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle'
+  const [claimCountdown, setClaimCountdown] = useState('');
+  const [claimReady, setClaimReady] = useState(true);
+
+  // === READ ON-CHAIN: Cek cooldown Daily Claim ===
+  const { data: onChainUserData } = useReadContract({
+    address: CONTRACTS.DAILY_APP,
+    abi: DAILY_APP_ABI,
+    functionName: 'userStats',
+    args: [address],
+    query: { enabled: !!address, refetchInterval: 60000 }
+  });
+
+  // onChainUserData[5] = lastDailyBonusClaim (unix timestamp seconds)
+  const lastClaimTimestamp = onChainUserData ? Number(onChainUserData[5]) : 0;
+  // Jika lastClaim === 0, artinya user belum pernah claim sama sekali → bukan cooldown
+  const nextClaimAt = lastClaimTimestamp > 0 ? (lastClaimTimestamp + 86400) * 1000 : 0;
+
+  // === COUNTDOWN REAL-TIME untuk Quick Action button ===
+  useEffect(() => {
+    const tick = () => {
+      if (nextClaimAt === 0) { setClaimReady(true); setClaimCountdown(''); return; }
+      const diff = nextClaimAt - Date.now();
+      if (diff <= 0) { setClaimReady(true); setClaimCountdown(''); return; }
+      setClaimReady(false);
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setClaimCountdown(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [nextClaimAt]);
 
   // Load data awal dari Supabase saat component mount
   useEffect(() => {
@@ -308,12 +341,26 @@ export default function ProfilePage() {
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => setActiveModal('claim')}
-              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/40 transition-all active:scale-95"
+              className={`group flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl border transition-all active:scale-95
+                ${claimReady
+                  ? 'bg-gradient-to-b from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/40'
+                  : 'bg-gradient-to-b from-slate-700/20 to-slate-700/10 border-slate-600/20'
+                }`}
             >
-              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
+              <div className={`p-2 rounded-xl transition-transform group-hover:scale-110 ${claimReady ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600/30 text-slate-500'}`}>
                 <Calendar size={20} />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Daily Claim</span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${claimReady ? 'text-emerald-500' : 'text-slate-500'}`}>
+                Daily Claim
+              </span>
+              {!claimReady && claimCountdown && (
+                <span className="text-[9px] font-mono font-bold text-indigo-400 tabular-nums leading-none">
+                  {claimCountdown}
+                </span>
+              )}
+              {claimReady && (
+                <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">READY ✓</span>
+              )}
             </button>
 
             <button
