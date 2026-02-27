@@ -772,12 +772,11 @@ function DailyClaimModal({ onClose }) {
       // Sync XP on-chain ke DB setelah TX confirmed
       toast.loading('Syncing XP...', { id: tid });
       try {
-        await fetch('/api/user/sync-xp', {
+        await fetch('/api/user/sync', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ wallet_address: address }),
+          body: JSON.stringify({ action: 'xp', wallet_address: address }),
         });
-        // Refresh on-chain data di modal
         await refetchStats();
       } catch (syncErr) {
         console.warn('[DailyClaim] XP sync failed (non-critical):', syncErr.message);

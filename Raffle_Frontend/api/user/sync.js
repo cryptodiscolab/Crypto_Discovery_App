@@ -1,103 +1,164 @@
-import { createClient } from '@supabase/supabase-js';
-import { verifyMessage } from 'viem';
+/**
+ * POST /api/user/sync
+ * ====================
+ * Multi-action user sync endpoint. Routing via `action` field in body.
+ *
+ * Actions:
+ *  - "login"    — Sync user login state (requires signature)
+ *  - "xp"       — Read XP from on-chain and update DB (no signature needed, zero-trust via RPC)
+ *
+ * Consolidated to stay within Vercel Hobby 12-function limit.
+ */
 
-// Init Supabase Admin
+import { createClient } from '@supabase/supabase-js';
+import { createPublicClient, http, verifyMessage } from 'viem';
+import { baseSepolia } from 'viem/chains';
+
 const supabaseAdmin = createClient(
-    process.env.VITE_SUPABASE_URL,
+    process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+/* ---- On-chain client for XP sync ---- */
+const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
+const GET_USER_STATS_ABI = [{
+    inputs: [{ name: '_user', type: 'address' }],
+    name: 'getUserStats',
+    outputs: [{
+        components: [
+            { name: 'points', type: 'uint256' },
+            { name: 'totalTasksCompleted', type: 'uint256' },
+            { name: 'referralCount', type: 'uint256' },
+            { name: 'currentTier', type: 'uint8' },
+            { name: 'tasksForReferralProgress', type: 'uint256' },
+            { name: 'lastDailyBonusClaim', type: 'uint256' },
+            { name: 'isBlacklisted', type: 'bool' },
+        ],
+        name: '', type: 'tuple',
+    }],
+    stateMutability: 'view',
+    type: 'function',
+}];
+
+const rpcClient = createPublicClient({
+    chain: baseSepolia,
+    transport: http(process.env.VITE_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'),
+});
+
+/* ====== HANDLER ====== */
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    const { action = 'login', wallet_address } = req.body || {};
+
+    if (!wallet_address || !wallet_address.startsWith('0x')) {
+        return res.status(400).json({ error: 'Invalid wallet_address' });
     }
 
-    try {
-        const { wallet_address, signature, message, fid, metadata } = req.body;
+    // ── ACTION: XP SYNC (no signature required — verified on-chain) ──
+    if (action === 'xp') {
+        return handleXpSync(req, res, wallet_address);
+    }
 
-        if (!wallet_address || !signature || !message) {
-            return res.status(400).json({ error: 'Missing required fields' });
+    // ── ACTION: LOGIN SYNC (signature required) ──
+    return handleLoginSync(req, res, wallet_address);
+}
+
+/* ---------- XP Sync ---------- */
+async function handleXpSync(req, res, wallet_address) {
+    const cleanWallet = wallet_address.trim().toLowerCase();
+    try {
+        const stats = await rpcClient.readContract({
+            address: DAILY_APP_ADDRESS,
+            abi: GET_USER_STATS_ABI,
+            functionName: 'getUserStats',
+            args: [wallet_address],
+        });
+
+        const onChainXP = Number(stats.points);
+        const tasksDone = Number(stats.totalTasksCompleted);
+        const lastClaimTs = Number(stats.lastDailyBonusClaim);
+        const lastClaimAt = lastClaimTs > 0 ? new Date(lastClaimTs * 1000).toISOString() : null;
+
+        const { error } = await supabaseAdmin
+            .from('user_profiles')
+            .upsert({
+                wallet_address: cleanWallet,
+                total_xp: onChainXP,
+                tasks_completed: tasksDone,
+                last_daily_claim_at: lastClaimAt,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'wallet_address' });
+
+        if (error) {
+            console.error('[sync/xp] DB error:', error.code, error.message);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        return res.status(200).json({ ok: true, xp: onChainXP, tasksDone, lastClaimAt });
+
+    } catch (err) {
+        console.error('[sync/xp] Fatal:', err.message);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+/* ---------- Login Sync ---------- */
+async function handleLoginSync(req, res, wallet_address) {
+    try {
+        const { signature, message, fid, metadata } = req.body;
+
+        if (!signature || !message) {
+            return res.status(400).json({ error: 'Missing signature or message' });
         }
 
         // 1. Verify Signature (SIWE)
-        const valid = await verifyMessage({
-            address: wallet_address,
-            message: message,
-            signature: signature,
-        });
+        const valid = await verifyMessage({ address: wallet_address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        if (!valid) {
-            return res.status(401).json({ error: 'Invalid signature! Security verification failed.' });
-        }
-
-        // 2. Replay Protection: Validate Timestamp
+        // 2. Replay Protection: Timestamp
         const timeMatch = message.match(/Time:\s*(.+)$/m);
         if (!timeMatch) return res.status(400).json({ error: 'Message missing timestamp' });
-
         const msgTime = new Date(timeMatch[1]).getTime();
-        const diff = Math.abs(Date.now() - msgTime);
-        if (diff > 5 * 60 * 1000) { // 5 minutes window
-            return res.status(401).json({ error: 'Signature expired (Replay Protection)' });
+        if (Math.abs(Date.now() - msgTime) > 5 * 60 * 1000) {
+            return res.status(401).json({ error: 'Signature expired' });
         }
 
         const cleanAddress = wallet_address.toLowerCase();
 
-        // 3. Replay Protection: (DB Level)
+        // 3. Replay Protection: DB Level
         const { error: replayError } = await supabaseAdmin
             .from('api_action_log')
-            .insert([{
-                wallet_address: cleanAddress,
-                action: 'USER_SYNC',
-                msg_timestamp: msgTime
-            }]);
+            .insert([{ wallet_address: cleanAddress, action: 'USER_SYNC', msg_timestamp: msgTime }]);
 
-        if (replayError && (replayError.code === '23505' || replayError.message?.includes('duplicate key'))) {
-            // It's possible for user/sync to be called twice very fast (e.g. double trigger in FE)
-            // If the action is USER_SYNC, we can be more lenient or just skip the update.
-            // But for audit compliance, we enforce replay protection strictly.
+        if (replayError?.code === '23505') {
             return res.status(401).json({ error: 'Signature already used (Replay attack prevention)' });
         }
 
-        // 4. Synchronize User Profile
+        // 4. Sync Profile
         const { data: profile, error: upsertError } = await supabaseAdmin
             .from('user_profiles')
-            .upsert(
-                {
-                    wallet_address: cleanAddress,
-                    fid: fid || null,
-                    last_login_at: new Date().toISOString(),
-                    last_seen_at: new Date().toISOString(),
-                    ...(metadata || {})
-                },
-                {
-                    onConflict: 'wallet_address',
-                    ignoreDuplicates: false
-                }
-            )
-            .select()
-            .single();
+            .upsert({
+                wallet_address: cleanAddress,
+                fid: fid || null,
+                last_login_at: new Date().toISOString(),
+                last_seen_at: new Date().toISOString(),
+                ...(metadata || {}),
+            }, { onConflict: 'wallet_address', ignoreDuplicates: false })
+            .select().single();
 
         if (upsertError) throw upsertError;
 
-        // 4. Log Audit
         await supabaseAdmin.from('admin_audit_logs').insert([{
             admin_address: 'SYSTEM_SYNC',
             action: 'USER_LOGIN_SYNC',
-            details: {
-                address: cleanAddress,
-                fid: fid,
-                timestamp: new Date().toISOString()
-            }
+            details: { address: cleanAddress, fid, timestamp: new Date().toISOString() },
         }]);
 
-        return res.status(200).json({
-            success: true,
-            message: 'User synchronized successfully.',
-            profile
-        });
+        return res.status(200).json({ success: true, message: 'User synchronized successfully.', profile });
 
     } catch (error) {
-        console.error('[API] User Sync Error:', error);
+        console.error('[sync/login] Error:', error);
         return res.status(500).json({ error: error.message });
     }
 }
