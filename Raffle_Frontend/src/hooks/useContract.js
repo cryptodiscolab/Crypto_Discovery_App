@@ -4,7 +4,7 @@ import { V12_ABI } from '../shared/constants/abis';
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
-const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || import.meta.env.VITE_CONTRACT_ADDRESS;
+const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";
 
 export function useUserInfo(address) {
     const { data: userInfo, isLoading, refetch } = useReadContract({

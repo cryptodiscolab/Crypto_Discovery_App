@@ -222,7 +222,12 @@ export const DAILY_APP_ABI = [
 ];
 
 export const CONTRACTS = {
-    MASTER_X: import.meta.env.VITE_CONTRACT_ADDRESS || "0xf074b0457d5c092bb67e62734B13C5f4cBC69e89",
+    // Master X: XP, Revenue Sharing, SBT tiers (LATEST DEPLOYED)
+    MASTER_X: import.meta.env.VITE_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461",
+    // Daily App V12: Tasks, Sponsorship, Daily Claim (LATEST DEPLOYED)
     DAILY_APP: import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4",
+    // Raffle Contract (LATEST DEPLOYED)
+    RAFFLE: import.meta.env.VITE_RAFFLE_ADDRESS || "0x18C64ed185C15F46d17C1888e12168DBA409e2EE",
+    // Content CMS V2 (LATEST DEPLOYED)
+    CMS: import.meta.env.VITE_CMS_CONTRACT_ADDRESS || "0x555D06933CC45038c42a1ba1F74140A5e4E0695d",
 };
-

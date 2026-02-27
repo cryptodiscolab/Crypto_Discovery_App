@@ -2,7 +2,7 @@ import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { DISCO_MASTER_ABI } from '../shared/constants/abis';
 import { useEffect, useState } from 'react';
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+const CONTRACT_ADDRESS = import.meta.env.VITE_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461";
 
 export function useSBT() {
     const { address, isConnected } = useAccount();

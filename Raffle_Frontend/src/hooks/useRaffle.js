@@ -5,7 +5,7 @@ import { RAFFLE_ABI } from '../shared/constants/abis';
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
-const RAFFLE_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || "0x18C64ed185C15F46d17C1888e12168DBA409e2EE";
 
 export function useRaffle() {
     const { address } = useAccount();
