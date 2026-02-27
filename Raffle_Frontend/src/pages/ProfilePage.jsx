@@ -688,19 +688,26 @@ function DailyClaimModal({ onClose }) {
   const [countdown, setCountdown] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
 
-  // Read userStats to check cooldown
-  const { data: userData } = useReadContract({
+  // userData is dari `getUserStats` — keamanan indexing via named field
+  // staleTime:0 + refetchOnMount memastikan data FRESH saat modal dibuka
+  const { data: userData, refetch: refetchStats } = useReadContract({
     address: CONTRACTS.DAILY_APP,
     abi: DAILY_APP_ABI,
-    functionName: 'userStats',
+    functionName: 'getUserStats',
     args: [address],
     query: {
       enabled: !!address,
+      staleTime: 0,         // Selalu fetch fresh — jangan pakai cache
+      refetchOnMount: true, // Fetch ulang setiap kali modal dibuka
     }
   });
 
-  // userData[5] is lastDailyBonusClaim (timestamp in seconds)
-  const nextClaimTime = userData ? (Number(userData[5]) + 24 * 60 * 60) * 1000 : 0;
+  // getUserStats return tuple dengan named field 'lastDailyBonusClaim'
+  // Jika = 0 artinya belum pernah claim sama sekali
+  const lastDailyClaim = userData?.lastDailyBonusClaim
+    ? Number(userData.lastDailyBonusClaim)
+    : (userData ? Number(userData[5]) : 0); // fallback ke index jika named prop tidak ada
+  const nextClaimTime = lastDailyClaim > 0 ? (lastDailyClaim + 86400) * 1000 : 0;
 
   // Real-time countdown — ticks every second
   useEffect(() => {
@@ -762,7 +769,21 @@ function DailyClaimModal({ onClose }) {
         gas: gasLimit,
       });
 
-      toast.success("+100 XP Claimed! ", { id: tid });
+      // Sync XP on-chain ke DB setelah TX confirmed
+      toast.loading('Syncing XP...', { id: tid });
+      try {
+        await fetch('/api/user/sync-xp', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ wallet_address: address }),
+        });
+        // Refresh on-chain data di modal
+        await refetchStats();
+      } catch (syncErr) {
+        console.warn('[DailyClaim] XP sync failed (non-critical):', syncErr.message);
+      }
+
+      toast.success("+100 XP Claimed! 🎉", { id: tid });
       onClose();
     } catch (err) {
       console.error('Daily Claim Error:', err);
