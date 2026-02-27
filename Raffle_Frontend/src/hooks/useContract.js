@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignMessage } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignMessage, usePublicClient } from 'wagmi';
 import { V12_ABI } from '../shared/constants/abis';
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
@@ -105,6 +105,8 @@ export function useDoTask() {
     const { writeContractAsync, data: hash, isPending: isConfirming } = useWriteContract();
     const { isLoading: isWaiting } = useWaitForTransactionReceipt({ hash });
 
+    const publicClient = usePublicClient();
+
     const doTask = async (taskId, referrer = "0x0000000000000000000000000000000000000000") => {
         const hash = await writeContractAsync({
             address: V12_ADDRESS,
@@ -114,7 +116,9 @@ export function useDoTask() {
         });
 
         if (hash) {
-            toast.success("Task submitted! Requesting signature for XP rewards...");
+            // BUG-5 fix: tunggu block confirmation sebelum award XP
+            await publicClient.waitForTransactionReceipt({ hash });
+            toast.success("Task confirmed! Requesting signature for XP rewards...");
             try {
                 // Secure Awarding Logic
                 const timestamp = new Date().toISOString();

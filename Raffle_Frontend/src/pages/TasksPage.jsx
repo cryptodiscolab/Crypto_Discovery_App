@@ -352,6 +352,12 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                                     functionName: 'claimRewards',
                                 });
                                 toast.success("Mission Reward Claimed!", { id: tid });
+                                // BUG-4 fix: sync XP on-chain ke DB
+                                fetch('/api/user/sync', {
+                                    method: 'POST',
+                                    headers: { 'content-type': 'application/json' },
+                                    body: JSON.stringify({ action: 'xp', wallet_address: address }),
+                                }).catch(() => { });
                                 setVerifyingStatus(null);
                                 refetchRewards();
                                 refetchStats();
