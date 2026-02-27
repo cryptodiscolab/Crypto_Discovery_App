@@ -2,26 +2,29 @@ import { config } from '../wagmiConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { baseSepolia } from 'wagmi/chains';
+import { baseSepolia, base } from 'wagmi/chains';
+import { OnchainKitProvider } from '@coinbase/onchainkit';
 
-// Instantiate outside component to prevent re-creation
 const queryClient = new QueryClient();
 
 export default function LazyWeb3Provider({ children }) {
-    // STRICTLY NO HOOKS HERE. Just render the tree.
     return (
         <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
-                <RainbowKitProvider
-                    theme={darkTheme()}
-                    modalSize="compact"
-                    initialChain={baseSepolia}
+                <OnchainKitProvider
+                    apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY}
+                    chain={base} // Default to base mainnet
                 >
-                    {/* Remove 'relative' to avoid creating a new stacking context that traps z-index */}
-                    <div className="min-h-screen bg-slate-950 text-slate-50">
-                        {children}
-                    </div>
-                </RainbowKitProvider>
+                    <RainbowKitProvider
+                        theme={darkTheme()}
+                        modalSize="compact"
+                        initialChain={base}
+                    >
+                        <div className="min-h-screen bg-slate-950 text-slate-50">
+                            {children}
+                        </div>
+                    </RainbowKitProvider>
+                </OnchainKitProvider>
             </QueryClientProvider>
         </WagmiProvider>
     );

@@ -7,6 +7,14 @@ import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
+import {
+  Transaction,
+  TransactionButton,
+  TransactionStatus,
+  TransactionStatusLabel,
+  TransactionStatusAction,
+} from '@coinbase/onchainkit/transaction';
+import { encodeFunctionData } from 'viem';
 
 export default function ProfilePage() {
   const { address } = useAccount();
@@ -460,43 +468,8 @@ function CreateTaskModal({ onClose }) {
     powerBadge: false,
     requiresVerification: true
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { writeContractAsync } = useWriteContract();
 
-  const handleCreateBatch = async () => {
-    if (!email) return toast.error("Email required for contact!");
-    const validTasks = tasksBatch.filter(t => t.title && t.link);
-    if (validTasks.length === 0) return toast.error("Add at least one task!");
-
-    setIsSubmitting(true);
-    const tid = toast.loading("Initiating UGC Sponsorship ($2 Fee)...");
-    try {
-      const titles = validTasks.map(t => t.title);
-      const links = validTasks.map(t => t.link);
-
-      // Call contract with $2 USDC Platform Fee (logic inside buySponsorshipWithToken)
-      await writeContractAsync({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'buySponsorshipWithToken',
-        args: [
-          0, // Bronze
-          titles,
-          links,
-          email,
-          BigInt(5 * 1e18) // 5 Tokens Min Reward Pool
-        ],
-      });
-
-      toast.success("Sponsorship Created! Duration: 3 Days.", { id: tid });
-      onClose();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed: " + (error.shortMessage || error.message), { id: tid });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex flex-col">
@@ -626,13 +599,43 @@ function CreateTaskModal({ onClose }) {
       </div>
 
       <div className="p-4 border-t border-white/5 bg-black/50 backdrop-blur-md">
-        <button
-          onClick={handleCreateBatch}
-          disabled={isSubmitting}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
-        >
-          {isSubmitting ? "TRANSACTING..." : "PAY & CREATE BATCH"}
-        </button>
+        <div className="relative z-[9999] pointer-events-auto">
+          <Transaction
+            calls={[{
+              to: CONTRACTS.DAILY_APP,
+              data: encodeFunctionData({
+                abi: DAILY_APP_ABI,
+                functionName: 'buySponsorshipWithToken',
+                args: [
+                  0, // Bronze
+                  tasksBatch.filter(t => t.title && t.link).map(t => t.title),
+                  tasksBatch.filter(t => t.title && t.link).map(t => t.link),
+                  email,
+                  BigInt(5 * 1e18)
+                ],
+              }),
+            }]}
+            onSuccess={() => {
+              toast.success("Sponsorship Created! Duration: 3 Days.");
+              onClose();
+            }}
+            onError={(err) => {
+              console.error(err);
+              toast.error("Failed: " + (err.shortMessage || err.message));
+            }}
+          >
+            <TransactionButton
+              className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
+              text="PAY & CREATE BATCH"
+            />
+            <div className="mt-2 text-[10px] text-slate-500 font-mono text-center">
+              <TransactionStatus>
+                <TransactionStatusLabel />
+                <TransactionStatusAction />
+              </TransactionStatus>
+            </div>
+          </Transaction>
+        </div>
       </div>
     </div>
   );
@@ -640,7 +643,6 @@ function CreateTaskModal({ onClose }) {
 
 function DailyClaimModal({ onClose }) {
   const { address } = useAccount();
-  const [isClaiming, setIsClaiming] = useState(false);
   const { writeContractAsync } = useWriteContract();
 
   // Read userStats to check cooldown
@@ -686,43 +688,37 @@ function DailyClaimModal({ onClose }) {
           )}
         </div>
 
-        <button
-          onClick={async () => {
-            if (isCooldown) return toast.error("Cooldown active! Please wait.");
-            setIsClaiming(true);
-            const tid = toast.loading("Connecting to contract...");
-            try {
-              console.log("[DailyClaim] Executing on:", CONTRACTS.DAILY_APP);
-
-              // More robust gas handling: Estimate + small buffer (1.2x)
-              // to satisfy user request for low/reasonable gas while avoiding "too low" errors.
-              await writeContractAsync({
-                address: CONTRACTS.DAILY_APP,
+        <div className="relative z-[9999] pointer-events-auto">
+          <Transaction
+            calls={[{
+              to: CONTRACTS.DAILY_APP,
+              data: encodeFunctionData({
                 abi: DAILY_APP_ABI,
                 functionName: 'claimDailyBonus',
-              });
-              toast.success("+100 XP Claimed!", { id: tid });
+              }),
+            }]}
+            onSuccess={() => {
+              toast.success("+100 XP Claimed!");
               onClose();
-            } catch (err) {
+            }}
+            onError={(err) => {
               console.error("Daily Claim Error:", err);
-              // Smart distinction of errors
-              const errMsg = err.shortMessage || err.message || "";
-              if (errMsg.includes("User rejected")) {
-                toast.error("Transaction cancelled", { id: tid });
-              } else if (errMsg.includes("CooldownActive") || errMsg.includes("already claimed")) {
-                toast.error("Already claimed today!", { id: tid });
-              } else {
-                toast.error("Claim failed: " + (err.shortMessage || "Contract error"), { id: tid });
-              }
-            } finally {
-              setIsClaiming(false);
-            }
-          }}
-          disabled={isClaiming || isCooldown}
-          className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${isCooldown ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
-        >
-          {isClaiming ? "CONNECTING..." : isCooldown ? "CLAIMED" : "CLAIM DAILY (+100 XP)"}
-        </button>
+              toast.error("Claim failed: " + (err.shortMessage || "Contract error"));
+            }}
+          >
+            <TransactionButton
+              disabled={isCooldown}
+              className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${isCooldown ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+              text={isCooldown ? "CLAIMED" : "CLAIM DAILY (+100 XP)"}
+            />
+            <div className="mt-2 text-[10px] text-slate-500 font-mono">
+              <TransactionStatus>
+                <TransactionStatusLabel />
+                <TransactionStatusAction />
+              </TransactionStatus>
+            </div>
+          </Transaction>
+        </div>
         <button onClick={onClose} className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors">Maybe later</button>
       </div>
     </div>
@@ -731,29 +727,6 @@ function DailyClaimModal({ onClose }) {
 
 function RenewSponsorshipModal({ onClose }) {
   const [reqId, setReqId] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { writeContractAsync } = useWriteContract();
-
-  const handleRenew = async () => {
-    if (!reqId) return toast.error("Please enter a Sponsorship ID");
-
-    setIsSubmitting(true);
-    const tid = toast.loading("Renewing Sponsorship ($2)...");
-    try {
-      await writeContractAsync({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'renewSponsorship',
-        args: [BigInt(reqId)],
-      });
-      toast.success("Sponsorship Extended 3 Days!", { id: tid });
-      onClose();
-    } catch (err) {
-      toast.error(err.shortMessage || "Failed to renew", { id: tid });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -781,13 +754,36 @@ function RenewSponsorshipModal({ onClose }) {
             />
           </div>
 
-          <button
-            onClick={handleRenew}
-            disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
-          >
-            {isSubmitting ? "EXTENDING..." : "PAY $2 USDC & RENEW"}
-          </button>
+          <div className="relative z-[9999] pointer-events-auto">
+            <Transaction
+              calls={[{
+                to: CONTRACTS.DAILY_APP,
+                data: encodeFunctionData({
+                  abi: DAILY_APP_ABI,
+                  functionName: 'renewSponsorship',
+                  args: [BigInt(reqId || 0)],
+                }),
+              }]}
+              onSuccess={() => {
+                toast.success("Sponsorship Extended 3 Days!");
+                onClose();
+              }}
+              onError={(err) => {
+                toast.error(err.shortMessage || "Failed to renew");
+              }}
+            >
+              <TransactionButton
+                className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+                text="PAY $2 USDC & RENEW"
+              />
+              <div className="mt-2 text-[10px] text-slate-500 font-mono text-center">
+                <TransactionStatus>
+                  <TransactionStatusLabel />
+                  <TransactionStatusAction />
+                </TransactionStatus>
+              </div>
+            </Transaction>
+          </div>
           <button onClick={onClose} className="w-full text-[10px] text-slate-600 uppercase font-black hover:text-white transition-colors">Cancel</button>
         </div>
       </div>
