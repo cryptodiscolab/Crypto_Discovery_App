@@ -6,7 +6,7 @@ import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadCon
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
+import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI } from '../lib/contracts';
 import {
   Transaction,
   TransactionButton,
@@ -514,8 +514,67 @@ function CreateTaskModal({ onClose }) {
     powerBadge: false,
     requiresVerification: true
   });
+  const [paymentToken, setPaymentToken] = useState('creator'); // 'creator' or 'eth'
   const { writeContractAsync } = useWriteContract();
   const { address } = useAccount();
+
+  // Config based on selection
+  const isEth = paymentToken === 'eth';
+  const rewardTokenAddr = isEth ? "0x0000000000000000000000000000000000000000" : CONTRACTS.CREATOR_TOKEN;
+  const rewardAmount = 5n * 10n ** 18n; // 5 tokens (assuming 18 decimals)
+  const platformFee = 2n * 10n ** 6n; // 2 USDC (assuming 6 decimals)
+
+  const buildCalls = () => {
+    const titles = tasksBatch.filter(t => t.title && t.link).map(t => t.title);
+    const links = tasksBatch.filter(t => t.title && t.link).map(t => t.link);
+
+    if (titles.length === 0) return [];
+
+    const calls = [
+      // 1. Approve USDC for platform fee
+      {
+        to: CONTRACTS.USDC,
+        data: encodeFunctionData({
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.DAILY_APP, platformFee],
+        }),
+      }
+    ];
+
+    // 2. Approve reward token (if not ETH)
+    if (!isEth) {
+      calls.push({
+        to: CONTRACTS.CREATOR_TOKEN,
+        data: encodeFunctionData({
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.DAILY_APP, rewardAmount],
+        }),
+      });
+    }
+
+    // 3. The main call
+    calls.push({
+      to: CONTRACTS.DAILY_APP,
+      data: encodeFunctionData({
+        abi: DAILY_APP_ABI,
+        functionName: 'buySponsorshipWithToken',
+        args: [
+          0, // SponsorLevel.BRONZE
+          titles,
+          links,
+          email,
+          isEth ? 0n : rewardAmount,
+          rewardTokenAddr
+        ],
+      }),
+      value: isEth ? rewardAmount : 0n,
+    });
+
+    return calls;
+  };
+
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex flex-col">
@@ -627,19 +686,42 @@ function CreateTaskModal({ onClose }) {
           />
         </div>
 
-        <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 space-y-2">
-          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-indigo-400">
-            <span>Platform Fee</span>
-            <span>$2.00 USDC</span>
+        <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 space-y-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Choose Payment Token</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setPaymentToken('creator')}
+                className={`px-4 py-3 rounded-xl border text-[10px] font-black uppercase transition-all ${paymentToken === 'creator' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-black/20 border-white/5 text-slate-500'}`}
+              >
+                Creator Token
+              </button>
+              <button
+                onClick={() => setPaymentToken('eth')}
+                className={`px-4 py-3 rounded-xl border text-[10px] font-black uppercase transition-all ${paymentToken === 'eth' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-black/20 border-white/5 text-slate-500'}`}
+              >
+                Native ETH
+              </button>
+            </div>
           </div>
-          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-            <span>Duration</span>
-            <span>3 Days Active</span>
+
+          <div className="space-y-2 pt-2 border-t border-white/5">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-indigo-400">
+              <span>Platform Fee</span>
+              <span>$2.00 USDC</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-200">
+              <span>Reward Pool</span>
+              <span>5.00 {isEth ? 'ETH' : 'TOKEN'}</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>Duration</span>
+              <span>3 Days Active</span>
+            </div>
           </div>
-          <p className="text-[9px] text-slate-500 leading-relaxed italic pt-2">
-            Sponsorship includes a $2 platform fee and a 5 token reward pool.
-            Tasks expire in 3 days but can be extended if reward tokens remain.
-            Titles and Links cannot be changed after creation.
+          <p className="text-[9px] text-slate-500 leading-relaxed italic">
+            Sponsorship includes platform fee and reward pool.
+            Native ETH or Creator Tokens can be used as reward.
           </p>
         </div>
       </div>
@@ -647,20 +729,7 @@ function CreateTaskModal({ onClose }) {
       <div className="p-4 border-t border-white/5 bg-black/50 backdrop-blur-md">
         <div className="relative z-[9999] pointer-events-auto">
           <Transaction
-            calls={[{
-              to: CONTRACTS.DAILY_APP,
-              data: encodeFunctionData({
-                abi: DAILY_APP_ABI,
-                functionName: 'buySponsorshipWithToken',
-                args: [
-                  0, // Bronze
-                  tasksBatch.filter(t => t.title && t.link).map(t => t.title),
-                  tasksBatch.filter(t => t.title && t.link).map(t => t.link),
-                  email,
-                  5n * 10n ** 18n  // BUG-8 fix: safe BigInt, no precision loss
-                ],
-              }),
-            }]}
+            calls={buildCalls()}
             onSuccess={() => {
               toast.success("Sponsorship Created! Duration: 3 Days.");
               // BUG-8 fix: sync XP on-chain ke DB setelah payment

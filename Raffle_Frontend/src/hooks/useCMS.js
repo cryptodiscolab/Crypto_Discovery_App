@@ -163,7 +163,7 @@ export function useCMS() {
 
     // Final boolean roles (Memoized for efficiency)
     const isAdmin = useMemo(() => Boolean(isAdminRaw || isEnvAdmin || isDbAdmin), [isAdminRaw, isEnvAdmin, isDbAdmin]);
-    const isOperator = useMemo(() => Boolean(isOperatorRaw || isEnvAdmin || isDbAdmin), [isOperatorRaw, isEnvAdmin, isDbAdmin]);
+    const isOperator = useMemo(() => Boolean(isOperatorRaw), [isOperatorRaw]);
     const canEdit = useMemo(() => isAdmin || isOperator, [isAdmin, isOperator]);
 
 

@@ -22,10 +22,10 @@ async function main() {
     };
 
     // --- Existing contracts from .env ---
-    const MASTER_X = process.env.VITE_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461";
-    const USDC = process.env.USDC_ADDRESS;
-    const CREATOR_TOKEN = process.env.CREATOR_TOKEN_ADDRESS;
-    const AIRNODE_RRP = process.env.AIRNODE_RRP || "0x2ab9f26E18b6103274414940251539D0105e2Add";
+    const MASTER_X = hre.ethers.getAddress((process.env.VITE_MASTER_X_ADDRESS || "0x09b672b7b23ae226d80cd60777ce7751febdd461").toLowerCase());
+    const USDC = hre.ethers.getAddress((process.env.USDC_ADDRESS || "0x036cbd53842c5426634e7929541ec2318f3dcf7e").toLowerCase());
+    const CREATOR_TOKEN = hre.ethers.getAddress((process.env.CREATOR_TOKEN_ADDRESS || "0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c").toLowerCase());
+    const AIRNODE_RRP = hre.ethers.getAddress((process.env.AIRNODE_RRP || "0x2ab9f26e18b6103274414940251539d0105e2add").toLowerCase());
 
     console.log("🔗 MasterX:", MASTER_X);
     console.log("🔗 USDC:", USDC);
@@ -39,11 +39,47 @@ async function main() {
         CREATOR_TOKEN,      // _tokenAddress (creator/reward token)
         USDC,               // _usdcToken (platform fee token)
         deployer.address,   // initialOwner (gets DEFAULT_ADMIN_ROLE + ADMIN_ROLE)
-        { gasLimit: 5000000, ...gasArgs }
+        { gasLimit: 25000000, ...gasArgs }
     );
     await daily.waitForDeployment();
     const newDailyAddr = await daily.getAddress();
-    console.log("✅ DailyAppV12Secured at:", newDailyAddr);
+    console.log(`✅ DailyAppV12Secured deployed to: ${newDailyAddr}`);
+
+    // Helper to wait
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // --- Post-Deployment Initialization ---
+    console.log("⏳ Initializing NFT Configs...");
+    const tiers = [1, 2, 3, 4, 5]; // BRONZE to DIAMOND
+    const points = [1000, 5000, 20000, 100000, 500000];
+    const prices = [
+        hre.ethers.parseEther("0.001"),
+        hre.ethers.parseEther("0.005"),
+        hre.ethers.parseEther("0.02"),
+        hre.ethers.parseEther("0.1"),
+        hre.ethers.parseEther("0.5")
+    ];
+    const bonuses = [50, 100, 200, 500, 1000];
+    const multipliers = [11000, 12000, 15000, 20000, 30000];
+    const supplies = [10000, 5000, 2000, 1000, 100];
+
+    const initTx = await daily.setNFTConfigsBatch(tiers, points, prices, bonuses, multipliers, supplies);
+    await initTx.wait(2); // Wait for 2 confirmations
+    await sleep(2000); // 2s extra buffer
+    console.log("✅ NFT Configs Initialized");
+
+    console.log("⏳ Adding initial Daily Login task...");
+    const taskTx = await daily.addTask(
+        100,            // baseReward
+        86400,          // cooldown (24h)
+        0,              // minTier (NONE)
+        "Login Harian", // title
+        "",             // link
+        false           // requiresVerification
+    );
+    await taskTx.wait(2);
+    await sleep(2000);
+    console.log("✅ Initial Task Added");
     console.log("   (deployer already has ADMIN_ROLE — granted in constructor)");
 
     // ─── 2. Deploy CryptoDiscoRaffle ──────────────────────────────────────────
@@ -56,8 +92,8 @@ async function main() {
 
     // Init first raffle
     console.log("⏳ [3/3] Initializing first raffle...");
-    const initTx = await raffle.initializeFirstRaffle({ gasLimit: 200000, ...gasArgs });
-    await initTx.wait();
+    const raffleInitTx = await raffle.initializeFirstRaffle({ gasLimit: 200000, ...gasArgs });
+    await raffleInitTx.wait();
     console.log("✅ First raffle initialized");
 
     // ─── 3. Print Summary ─────────────────────────────────────────────────────

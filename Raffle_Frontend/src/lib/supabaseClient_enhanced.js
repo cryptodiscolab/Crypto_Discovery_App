@@ -1,106 +1,20 @@
 // ============================================
-// SUPABASE CLIENT WITH CUSTOM HEADERS
-// Web3 Wallet Authentication via x-user-wallet
+// [DEPRECATED] SUPABASE CLIENT ENHANCED
+// WARNING: This file uses a legacy "x-user-wallet" pattern.
+// REQUIRED: Use Next.js API Routes for all WRITE operations.
+// See .cursorrules §8.1 (Zero Trust Frontend Policy).
 // ============================================
-
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("Supabase environment variables are missing!");
-}
 
 import { supabase, cleanWallet } from './supabaseClient';
 
-// ============================================
-// AUTHENTICATED SUPABASE CLIENT FACTORY
-// ============================================
-
-// Cache for authenticated clients to avoid "Multiple GoTrueClient instances" warnings
-const clientCache = new Map();
-
 /**
- * Creates a Supabase client with custom x-user-wallet header
- * This header is validated by RLS policies for write operations
- * 
- * @param {string} walletAddress - User's connected wallet address
- * @returns {SupabaseClient} Authenticated Supabase client
+ * @deprecated 
+ * This was used for an old RLS pattern that is now forbidden.
+ * All writes must move to /api/verify-action or similar backend routes.
  */
 export const createAuthenticatedClient = (walletAddress) => {
-    if (!walletAddress) {
-        throw new Error('Wallet address is required for authenticated operations');
-    }
-
-    const clean = cleanWallet(walletAddress);
-
-    // Return cached client if it exists
-    if (clientCache.has(clean)) {
-        return clientCache.get(clean);
-    }
-
-    const client = createClient(supabaseUrl, supabaseAnonKey, {
-        global: {
-            headers: {
-                'x-user-wallet': clean,
-            },
-        },
-        auth: {
-            persistSession: false, // Critical: Prevent multiple GoTrue instances
-        }
-    });
-
-    clientCache.set(clean, client);
-    return client;
+    console.warn("[Security] createAuthenticatedClient is deprecated. Use API Routes for writes.");
+    return supabase; // Fallback to standard client (Select only)
 };
 
 export { supabase, cleanWallet };
-
-// ============================================
-// USAGE EXAMPLES
-// ============================================
-
-/**
- * Example 1: Fetch active tasks (No auth required)
- * 
- * const { data: tasks } = await supabase
- *     .from('daily_tasks')
- *     .select('*')
- *     .eq('is_active', true);
- */
-
-/**
- * Example 2: Create user profile (Auth required)
- * 
- * const authenticatedClient = createAuthenticatedClient(userWallet);
- * const { data, error } = await authenticatedClient
- *     .from('user_profiles')
- *     .insert({ wallet_address: cleanWallet(userWallet) });
- */
-
-/**
- * Example 3: Claim task (Auth required)
- * 
- * const authenticatedClient = createAuthenticatedClient(userWallet);
- * const { data, error } = await authenticatedClient
- *     .from('user_task_claims')
- *     .insert({
- *         wallet_address: cleanWallet(userWallet),
- *         task_id: taskId,
- *         xp_earned: xpReward,
- *     });
- */
-
-/**
- * Example 4: Admin - Create task (Auth required, admin wallet only)
- * 
- * const adminClient = createAuthenticatedClient(MASTER_ADMIN_WALLET);
- * const { data, error } = await adminClient
- *     .from('daily_tasks')
- *     .insert({
- *         description: 'New daily task',
- *         xp_reward: 50,
- *         task_type: 'daily',
- *     });
- */

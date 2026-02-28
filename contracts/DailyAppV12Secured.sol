@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title IMasterX
@@ -24,7 +24,6 @@ interface IMasterX {
  * @author DailyApp Team
  */
 contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard {
-    using Strings for uint256;
     using SafeERC20 for IERC20;
 
     // --- CUSTOM ERRORS ---
@@ -145,9 +144,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     // NEW: Verification tracking
     mapping(address => mapping(uint256 => bool)) public taskVerified;  // user => taskId => verified
 
-    address[] private _userList;
     uint256 public userCount;
-    uint256 public globalTxCount;
     uint256 public totalSponsorRequests;
     uint256 public nextTaskId = 2;
 
@@ -159,6 +156,10 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     // NEW: MasterX Integration
     IMasterX public masterXContract;
     mapping(address => uint256) public unsyncedPoints;
+
+    // MULTI-TOKEN: Whitelist of allowed payment tokens for sponsorship
+    // address(0) = native ETH, any ERC20 address = that token
+    mapping(address => bool) public allowedPaymentTokens;
 
     // --- EVENTS ---
     event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp);
@@ -179,10 +180,11 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     event TaskVerified(address indexed user, uint256 indexed taskId, uint256 timestamp);  // NEW
     event ConfigUpdated(NFTTier indexed tier, uint256 pointsRequired, uint256 mintPrice, uint256 multiplierBP); // NEW
     event PointsSynced(address indexed user, uint256 points); // NEW
+    event PaymentTokenUpdated(address indexed token, bool status); // MULTI-TOKEN
 
     // --- MODIFIERS ---
     modifier validTier(NFTTier _tier) {
-        if (_tier == NFTTier.NONE || _tier > NFTTier.DIAMOND) revert InvalidTier();
+        if (_tier > NFTTier.DIAMOND) revert InvalidTier();
         _;
     }
 
@@ -209,63 +211,38 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         // Grant roles
         _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
         _grantRole(ADMIN_ROLE, initialOwner);
-        
-        nftConfigs[NFTTier.BRONZE] = NFTConfig({
-            pointsRequired: 1000,
-            mintPrice: 0.001 ether,
-            dailyBonus: 50,
-            multiplierBP: 11000,
-            maxSupply: 10000,
-            currentSupply: 0
-        });
-        
-        nftConfigs[NFTTier.SILVER] = NFTConfig({
-            pointsRequired: 5000,
-            mintPrice: 0.005 ether,
-            dailyBonus: 100,
-            multiplierBP: 12000,
-            maxSupply: 5000,
-            currentSupply: 0
-        });
-        
-        nftConfigs[NFTTier.GOLD] = NFTConfig({
-            pointsRequired: 20000,
-            mintPrice: 0.02 ether,
-            dailyBonus: 200,
-            multiplierBP: 15000,
-            maxSupply: 2000,
-            currentSupply: 0
-        });
-        
-        nftConfigs[NFTTier.PLATINUM] = NFTConfig({
-            pointsRequired: 100000,
-            mintPrice: 0.1 ether,
-            dailyBonus: 500,
-            multiplierBP: 20000,
-            maxSupply: 1000,
-            currentSupply: 0
-        });
-        
-        nftConfigs[NFTTier.DIAMOND] = NFTConfig({
-            pointsRequired: 500000,
-            mintPrice: 0.5 ether,
-            dailyBonus: 1000,
-            multiplierBP: 30000,
-            maxSupply: 100,
-            currentSupply: 0
-        });
 
-        tasks[1] = Task({
-            baseReward: 100,
-            isActive: true,
-            cooldown: 86400,
-            minTier: NFTTier.NONE,
-            title: "Login Harian",
-            link: "",
-            createdAt: block.timestamp,
-            requiresVerification: false,
-            sponsorshipId: 0
-        });
+        // Auto-whitelist creator token and ETH as default payment options
+        allowedPaymentTokens[_tokenAddress] = true;
+        allowedPaymentTokens[address(0)] = true; // ETH native
+    }
+
+    /**
+     * @notice Batch set NFT configurations to reduce constructor bloat
+     */
+    function setNFTConfigsBatch(
+        NFTTier[] calldata _tiers,
+        uint256[] calldata _pointsRequired,
+        uint256[] calldata _mintPrices,
+        uint256[] calldata _dailyBonuses,
+        uint256[] calldata _multiplierBPs,
+        uint256[] calldata _maxSupplies
+    ) external onlyRole(ADMIN_ROLE) {
+        uint256 len = _tiers.length;
+        if (len == 0 || len != _pointsRequired.length || len != _mintPrices.length || 
+            len != _dailyBonuses.length || len != _multiplierBPs.length || len != _maxSupplies.length) 
+            revert InvalidParameters();
+
+        for (uint256 i = 0; i < len; i++) {
+            nftConfigs[_tiers[i]] = NFTConfig({
+                pointsRequired: _pointsRequired[i],
+                mintPrice: _mintPrices[i],
+                dailyBonus: _dailyBonuses[i],
+                multiplierBP: _multiplierBPs[i],
+                maxSupply: _maxSupplies[i],
+                currentSupply: nftConfigs[_tiers[i]].currentSupply
+            });
+        }
     }
 
     // --- ADMIN: TASK & SYSTEM MANAGEMENT ---
@@ -282,10 +259,10 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         string calldata _link,
         bool _requiresVerification
     ) public onlyRole(ADMIN_ROLE) validTier(_minTier) {
-        if (_baseReward == 0 || _baseReward > MAX_TASK_REWARD) revert("1"); // Invalid reward
-        if (_cooldown < 1 hours) revert("2"); // Cooldown too short
-        if (bytes(_title).length == 0 || bytes(_title).length > 100) revert("3"); // Invalid title length
-        if (bytes(_link).length > 200) revert("4"); // Link too long
+        if (_baseReward == 0 || _baseReward > MAX_TASK_REWARD) revert InvalidParameters();
+        if (_cooldown < 1 hours) revert InvalidParameters();
+        if (bytes(_title).length == 0 || bytes(_title).length > 100) revert InvalidParameters();
+        if (bytes(_link).length > 200) revert InvalidParameters();
         
         uint256 taskId = nextTaskId++;
         
@@ -304,38 +281,6 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         emit TaskAdded(taskId, _title, _baseReward, _requiresVerification);
     }
 
-    /**
-     * @notice Add multiple tasks in a single transaction
-     */
-    function addTaskBatch(
-        uint256[] calldata _baseRewards,
-        uint256[] calldata _cooldowns,
-        NFTTier[] calldata _minTiers,
-        string[] calldata _titles,
-        string[] calldata _links,
-        bool[] calldata _requiresVerifications
-    ) external onlyRole(ADMIN_ROLE) {
-        uint256 length = _baseRewards.length;
-        if (length == 0) revert("5"); // Empty batch
-        if (
-            length != _cooldowns.length || 
-            length != _minTiers.length || 
-            length != _titles.length || 
-            length != _links.length || 
-            length != _requiresVerifications.length
-        ) revert("6"); // Mismatched lengths
-
-        for (uint256 i = 0; i < length; i++) {
-            addTask(
-                _baseRewards[i],
-                _cooldowns[i],
-                _minTiers[i],
-                _titles[i],
-                _links[i],
-                _requiresVerifications[i]
-            );
-        }
-    }
 
     function setTaskActive(uint256 _taskId, bool _isActive) external onlyRole(ADMIN_ROLE) {
         if (tasks[_taskId].baseReward == 0) revert NotFound();
@@ -355,9 +300,9 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         onlyRole(VERIFIER_ROLE) 
         validAddress(_user)
     {
-        if (tasks[_taskId].baseReward == 0) revert("7"); // Task not exist
-        if (!tasks[_taskId].requiresVerification) revert("8"); // Doesn't require verification
-        if (taskVerified[_user][_taskId]) revert("9"); // Already verified
+        if (tasks[_taskId].baseReward == 0) revert InvalidParameters();
+        if (!tasks[_taskId].requiresVerification) revert InvalidParameters();
+        if (taskVerified[_user][_taskId]) revert InvalidParameters();
         
         taskVerified[_user][_taskId] = true;
         
@@ -496,6 +441,17 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     }
 
     /**
+     * @notice Admin whitelist/delist a payment token for sponsorships.
+     * Use address(0) for native ETH.
+     * @param _token Token address (address(0) = ETH)
+     * @param _status true = allowed, false = removed
+     */
+    function setAllowedToken(address _token, bool _status) external onlyRole(ADMIN_ROLE) {
+        allowedPaymentTokens[_token] = _status;
+        emit PaymentTokenUpdated(_token, _status);
+    }
+
+    /**
      * @notice Admin creates a sponsorship for free (bypasses USDC fee + token pool).
      * Same storage & flow as buySponsorshipWithToken but no payment required.
      * Auto-approved immediately.
@@ -538,20 +494,6 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         tasks[_taskId].isActive = _active;
     }
 
-    // --- ADMIN: FINANCIAL CONTROLS ---
-
-    function withdrawETH() external onlyRole(ADMIN_ROLE) {
-        uint256 balance = address(this).balance;
-        if (balance == 0) revert InsufficientFunds();
-        (bool success, ) = payable(msg.sender).call{value: balance}("");
-        if (!success) revert TransferFailed();
-    }
-
-    function withdrawERC20(address _token) external onlyRole(ADMIN_ROLE) {
-        uint256 balance = IERC20(_token).balanceOf(address(this));
-        if (balance == 0) revert InsufficientFunds();
-        IERC20(_token).safeTransfer(msg.sender, balance);
-    }
 
     // --- CORE: PRICING CALCULATION ---
     
@@ -573,47 +515,64 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     // --- CORE: SPONSORSHIP SYSTEM ---
     
     /**
-     * @notice Sponsor requires:
-     * 1. USDC Platform Fee (Dynamic)
-     * 2. Creator Tokens for Reward Pool (Min Value ~$5)
+     * @notice Create a sponsorship with any whitelisted payment token or ETH.
+     * @param _level Sponsorship tier (BRONZE/SILVER/GOLD)
+     * @param _titles Array of task titles (max 3)
+     * @param _links Array of task links (same length as _titles)
+     * @param _email Contact email
+     * @param _rewardPoolAmount Amount of _paymentToken to deposit as reward pool
+     * @param _paymentToken Token to pay reward pool with. Use address(0) for native ETH.
+     *
+     * Payment flow:
+     *   - Platform Fee → always USDC (sponsorshipPlatformFee)
+     *   - Reward Pool  → any token in allowedPaymentTokens whitelist, or ETH
      */
     function buySponsorshipWithToken(
-        SponsorLevel _level, 
-        string[] calldata _titles, 
-        string[] calldata _links, 
+        SponsorLevel _level,
+        string[] calldata _titles,
+        string[] calldata _links,
         string calldata _email,
-        uint256 _rewardPoolAmount
-    ) external whenNotPaused nonReentrant notBlacklisted {
+        uint256 _rewardPoolAmount,
+        address _paymentToken
+    ) external payable whenNotPaused nonReentrant notBlacklisted {
         if (_titles.length == 0 || _titles.length > 3) revert InvalidParameters();
         if (_titles.length != _links.length) revert InvalidParameters();
         if (bytes(_email).length == 0 || bytes(_email).length > 100) revert InvalidLength();
-        
-        // 1. Charge Platform Fee
+        if (!allowedPaymentTokens[_paymentToken]) revert Unauthorized(); // Token must be whitelisted
+
+        // 1. Charge Platform Fee (always USDC)
         if (usdcToken.allowance(msg.sender, address(this)) < sponsorshipPlatformFee) revert Unauthorized();
         usdcToken.safeTransferFrom(msg.sender, address(this), sponsorshipPlatformFee);
-        
-        // 2. Charge Reward Pool (Creator Tokens)
-        if (_rewardPoolAmount < MIN_REWARD_POOL_VALUE) revert InsufficientFunds();
-        if (creatorToken.allowance(msg.sender, address(this)) < _rewardPoolAmount) revert Unauthorized();
-        creatorToken.safeTransferFrom(msg.sender, address(this), _rewardPoolAmount);
+
+        // 2. Charge Reward Pool — ETH or ERC20
+        if (_paymentToken == address(0)) {
+            // Native ETH payment
+            if (msg.value < MIN_REWARD_POOL_VALUE) revert InsufficientFunds();
+            // msg.value is automatically held by contract; _rewardPoolAmount ignored for ETH
+        } else {
+            // ERC20 payment
+            if (_rewardPoolAmount < MIN_REWARD_POOL_VALUE) revert InsufficientFunds();
+            if (IERC20(_paymentToken).allowance(msg.sender, address(this)) < _rewardPoolAmount) revert Unauthorized();
+            IERC20(_paymentToken).safeTransferFrom(msg.sender, address(this), _rewardPoolAmount);
+        }
+
+        uint256 actualPool = _paymentToken == address(0) ? msg.value : _rewardPoolAmount;
 
         totalSponsorRequests++;
         uint256 requestId = totalSponsorRequests;
-        
+
         sponsorRequests[requestId] = SponsorRequest({
             sponsor: msg.sender,
             level: _level,
             titles: _titles,
             links: _links,
             contactEmail: _email,
-            rewardPool: _rewardPoolAmount,
+            rewardPool: actualPool,
             status: RequestStatus.PENDING,
             timestamp: block.timestamp
         });
-        
-        // Expiry logic is handled by DB using block.timestamp
 
-        emit SponsorshipRequested(requestId, msg.sender, _level, _rewardPoolAmount);
+        emit SponsorshipRequested(requestId, msg.sender, _level, actualPool);
 
         // 3. Auto-Approve logic
         if (autoApproveSponsorship) {
@@ -727,7 +686,6 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
 
         if (!_hasJoined[msg.sender]) {
             if (userCount >= MAX_USERS) revert MaxLimitReached();
-            _userList.push(msg.sender);
             _hasJoined[msg.sender] = true;
             userCount++;
         }
@@ -741,14 +699,15 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
             emit NewMemberJoined(msg.sender, _referrer, block.timestamp);
         }
 
-        (,, uint256 reward) = calculateTaskReward(msg.sender, _taskId);
+        uint256 multiplier = nftConfigs[stats.currentTier].multiplierBP;
+        if (multiplier == 0) multiplier = 10000;
+        uint256 reward = (task.baseReward * multiplier) / 10000;
         
         stats.points += reward;
         unsyncedPoints[msg.sender] += reward; // Accumulate for MasterX sync!
         stats.totalTasksCompleted++;
         stats.tasksForReferralProgress++;
         lastTaskTime[msg.sender][_taskId] = block.timestamp;
-        globalTxCount++;
         
         // NEW: Reset verification flag after task completion
         if (task.requiresVerification) {
@@ -795,7 +754,6 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         stats.points += DAILY_BONUS_AMOUNT;
         unsyncedPoints[msg.sender] += DAILY_BONUS_AMOUNT;
         
-        globalTxCount++;
         emit TaskCompleted(msg.sender, 0, DAILY_BONUS_AMOUNT, block.timestamp); // TaskID 0 for daily bonus
     }
 
@@ -932,7 +890,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         
         require(
             from == address(0) || to == address(0), 
-            "10" // Soulbound transfer disabled
+            "SB" // Soulbound transfer disabled
         );
         
         return super._update(to, tokenId, auth);
@@ -940,28 +898,6 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
 
     // --- VIEW FUNCTIONS ---
     
-    function calculateTaskReward(address _user, uint256 _taskId) 
-        public 
-        view 
-        returns (uint256 base, uint256 finalReward, uint256 multiplier) 
-    {
-        base = tasks[_taskId].baseReward;
-        multiplier = nftConfigs[userStats[_user].currentTier].multiplierBP;
-        
-        if (multiplier == 0) {
-            multiplier = 10000;
-        }
-        
-        if (base > MAX_TASK_REWARD) revert InvalidParameters();
-        if (multiplier > MAX_MULTIPLIER_BP) revert InvalidParameters();
-        
-        uint256 product = base * multiplier;
-        if (product / multiplier != base) revert InvalidParameters();
-        
-        finalReward = product / 10000;
-        
-        return (base, finalReward, multiplier);
-    }
     
     function tokenURI(uint256 tokenId) 
         public 
@@ -979,39 +915,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         return uri;
     }
     
-    function getUsers(uint256 _offset, uint256 _limit) 
-        external 
-        view 
-        returns (address[] memory users, uint256 total) 
-    {
-        total = userCount;
-        
-        if (_offset >= total) {
-            return (new address[](0), total);
-        }
-        
-        uint256 end = _offset + _limit;
-        if (end > total) {
-            end = total;
-        }
-        
-        uint256 size = end - _offset;
-        users = new address[](size);
-        
-        for (uint256 i = 0; i < size; i++) {
-            users[i] = _userList[_offset + i];
-        }
-        
-        return (users, total);
-    }
     
-    function getUserStats(address _user) 
-        external 
-        view 
-        returns (UserStats memory) 
-    {
-        return userStats[_user];
-    }
 
     function getTask(uint256 _taskId) 
         external 
@@ -1022,34 +926,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         return tasks[_taskId];
     }
 
-    /**
-     * @notice Get multiple tasks in a range for efficient frontend loading
-     */
-    function getTasksInRange(uint256 _startId, uint256 _endId) 
-        external 
-        view 
-        returns (Task[] memory) 
-    {
-        if (_startId == 0 || _endId < _startId || _endId >= nextTaskId) revert InvalidParameters();
-        
-        uint256 size = _endId - _startId + 1;
-        Task[] memory tasksRange = new Task[](size);
-        
-        for (uint256 i = 0; i < size; i++) {
-            tasksRange[i] = tasks[_startId + i];
-        }
-        
-        return tasksRange;
-    }
 
-    function getSponsorRequest(uint256 _reqId) 
-        external 
-        view 
-        returns (SponsorRequest memory) 
-    {
-        if (_reqId == 0 || _reqId > totalSponsorRequests) revert NotFound();
-        return sponsorRequests[_reqId];
-    }
 
     function canDoTask(address _user, uint256 _taskId) 
         external 
@@ -1073,78 +950,29 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         return (true, "");
     }
 
-    function getContractStats() 
-        external 
-        view 
-        returns (
-            uint256 totalUsers,
-            uint256 totalTransactions,
-            uint256 totalSponsors,
-            uint256 contractTokenBalance,
-            uint256 contractETHBalance
-        ) 
-    {
-        return (
-            userCount,
-            globalTxCount,
-            totalSponsorRequests,
-            creatorToken.balanceOf(address(this)),
-            address(this).balance
-        );
-    }
 
     // --- WITHDRAWAL FUNCTIONS ---
     
-    function withdrawTokens(uint256 _amount) 
+    function emergencyWithdraw(address _token, uint256 _amount) 
         external 
         onlyRole(ADMIN_ROLE) 
         nonReentrant 
     {
-        uint256 balance = creatorToken.balanceOf(address(this));
-        if (balance == 0) revert InsufficientFunds();
-        
-        if (_amount == 0 || _amount > balance) {
-            _amount = balance;
+        if (_token == address(0)) {
+            uint256 balance = address(this).balance;
+            uint256 amount = (_amount == 0 || _amount > balance) ? balance : _amount;
+            if (amount == 0) revert InsufficientFunds();
+            (bool success, ) = payable(msg.sender).call{value: amount}("");
+            if (!success) revert TransferFailed();
+            emit EmergencyWithdraw(address(0), amount);
+        } else {
+            IERC20 token = IERC20(_token);
+            uint256 balance = token.balanceOf(address(this));
+            uint256 amount = (_amount == 0 || _amount > balance) ? balance : _amount;
+            if (amount == 0) revert InsufficientFunds();
+            token.safeTransfer(msg.sender, amount);
+            emit EmergencyWithdraw(_token, amount);
         }
-        
-        creatorToken.safeTransfer(msg.sender, _amount);
-        emit EmergencyWithdraw(address(creatorToken), _amount);
-    }
-    
-    function withdrawETH(uint256 _amount) 
-        external 
-        onlyRole(ADMIN_ROLE) 
-        nonReentrant 
-    {
-        uint256 balance = address(this).balance;
-        if (balance == 0) revert InsufficientFunds();
-        
-        if (_amount == 0 || _amount > balance) {
-            _amount = balance;
-        }
-        
-        (bool success, ) = payable(msg.sender).call{value: _amount}("");
-        if (!success) revert TransferFailed();
-        
-        emit EmergencyWithdraw(address(0), _amount);
-    }
-
-    function emergencyWithdrawToken(address _token, uint256 _amount) 
-        external 
-        onlyRole(ADMIN_ROLE) 
-        nonReentrant 
-        validAddress(_token)
-    {
-        IERC20 token = IERC20(_token);
-        uint256 balance = token.balanceOf(address(this));
-        if (balance == 0) revert InsufficientFunds();
-        
-        if (_amount == 0 || _amount > balance) {
-            _amount = balance;
-        }
-        
-        token.safeTransfer(msg.sender, _amount);
-        emit EmergencyWithdraw(_token, _amount);
     }
 
     // --- REQUIRED OVERRIDES ---

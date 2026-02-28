@@ -13,9 +13,9 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Core Infrastructure (VERIFIED ADDRESSES - DO NOT GUESS):**
   - MasterX V2 (LATEST): `0x09b672B7B23ae226d80cD60777Ce7751fEbdd461` (`VITE_MASTER_X_ADDRESS`)
   - MasterX V1 (Deprecated): `0xf074b0457d5c092bb67e62734B13C5f4cBC69e89` — jangan gunakan
-  - Raffle (Main): `0x18C64ed185C15F46d17C1888e12168DBA409e2EE` (`VITE_RAFFLE_ADDRESS`)
-  - DailyApp V12 (LATEST): `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` (`VITE_V12_CONTRACT_ADDRESS`)
-  - DailyApp V11 (Deprecated): `0x5d7338Cd98029a73283F959fe24935a5099771b7` — jangan gunakan
+  - Raffle (Main): `0xE8b6333e40D9a5A6b4a1c83dB33f0CE73179292f` (`VITE_RAFFLE_ADDRESS`)
+  - DailyApp V12 (LATEST): `0x263e7dD71845C4C2B95D50859a7396C793C76435` (`VITE_V12_CONTRACT_ADDRESS`)
+  - DailyApp V11 (Deprecated): `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` — baru diganti
   - CMS V2: `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` (`VITE_CMS_CONTRACT_ADDRESS`)
   - API3 Airnode RRP: `0x2ab9f26E18b6103274414940251539D0105e2Add`
   - API3 Airnode (Nodary): `0x6238772544f029ecaBfDED4300f13A3c4FE84E1D`
@@ -125,6 +125,8 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 | BaseScan API Key | `BASESCAN_API_KEY` = `136H9NRK6VYFR5GRHXBGK2GMVG8HHTDN4C` |
 | API3 QRNG Endpoint ID | `0xfb6d017bb87991b7495f563db3c8cf59ff87b09781947bb1e417006ad7f55a78` |
 | Max Gas Price | `50 gwei` (`MAX_GAS_PRICE`) |
+| Raffle Address (Sepolia)| `0xE8b6333e40D9a5A6b4a1c83dB33f0CE73179292f` |
+| DailyApp Address (Sepolia)| `0x263e7dD71845C4C2B95D50859a7396C793C76435` |
 | Ticket Price | `150000` = $0.15 with 6 decimals (`TICKET_PRICE_USD`) |
 
 ### Supabase

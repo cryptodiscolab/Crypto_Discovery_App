@@ -4,13 +4,13 @@ import { createClient } from "@supabase/supabase-js";
 // ── CONFIG ─────────────────────────────────────────────────────
 // Fix: Alchemy Free Tier strictly limits eth_getLogs to 10 blocks.
 // We force the use of Base Sepolia Public Node to allow 5000 block ranges.
-const RPC_URL = "https://sepolia.base.org";
-const MASTER_X = process.env.NEXT_PUBLIC_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461";
-const DAILY_APP = process.env.NEXT_PUBLIC_DAILY_APP_ADDRESS || process.env.DAILY_APP_ADDRESS || "0x5d7338Cd98029a73283F959fe24935a5099771b7";
+const MASTER_X = process.env.VITE_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461";
+const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS || "0x263e7dD71845C4C2B95D50859a7396C793C76435";
 const CRON_SECRET = process.env.CRON_SECRET;
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const NEYNAR_KEY = process.env.NEYNAR_API_KEY;
+const RPC_URL = process.env.VITE_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
 
 const MAX_BLOCK_RANGE = 5000;
 

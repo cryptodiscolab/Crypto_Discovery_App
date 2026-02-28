@@ -20,7 +20,7 @@ const supabaseAdmin = createClient(
 );
 
 /* ---- On-chain client for XP sync ---- */
-const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
+const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || '0x263e7dD71845C4C2B95D50859a7396C793C76435';
 const GET_USER_STATS_ABI = [{
     inputs: [{ name: '_user', type: 'address' }],
     name: 'getUserStats',
@@ -42,7 +42,7 @@ const GET_USER_STATS_ABI = [{
 
 const rpcClient = createPublicClient({
     chain: baseSepolia,
-    transport: http(process.env.VITE_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'),
+    transport: http(process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
 });
 
 /* ====== HANDLER ====== */

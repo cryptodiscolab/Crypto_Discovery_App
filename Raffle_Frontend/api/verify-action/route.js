@@ -71,7 +71,7 @@ export async function POST(req) {
 
         // ── 5. Initialize Supabase with SERVICE_ROLE_KEY (server-side only) ──
         const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.VITE_SUPABASE_URL,
             process.env.SUPABASE_SERVICE_ROLE_KEY  // Never expose this to client
         );
 
