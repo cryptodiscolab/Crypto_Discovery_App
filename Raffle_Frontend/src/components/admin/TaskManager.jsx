@@ -277,7 +277,7 @@ export function TaskManager() {
         try {
             const { data, error } = await supabase
                 .from('v_user_full_profile')
-                .select('wallet_address, username, display_name, xp, tier, rank_name');
+                .select('wallet_address, username, display_name, total_xp, tier, rank_name');
 
             if (error) throw error;
             if (!data || data.length === 0) {
@@ -293,7 +293,7 @@ export function TaskManager() {
                     user.wallet_address,
                     `"${user.username}"`,
                     `"${user.display_name}"`,
-                    user.xp,
+                    user.total_xp,
                     user.tier,
                     user.rank_name
                 ].join(','))
