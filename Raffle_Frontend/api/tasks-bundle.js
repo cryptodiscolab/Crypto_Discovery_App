@@ -31,10 +31,10 @@ async function handleClaim(req, res) {
         const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward').eq('id', task_id).single();
         const xp = task?.xp_reward || 0;
 
-        const { error } = await supabaseAdmin.from('user_task_completions').insert({
-            user_address: wallet_address.toLowerCase(),
+        const { error } = await supabaseAdmin.from('user_task_claims').insert({
+            wallet_address: wallet_address.toLowerCase(),
             task_id,
-            points_awarded: xp
+            xp_earned: xp
         });
 
         if (error) throw error;
@@ -54,12 +54,12 @@ async function handleVerify(req, res) {
         const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward').eq('id', task_id).single();
         const xp = task?.xp_reward || 0;
 
-        const { error } = await supabaseAdmin.from('user_task_completions').insert({
-            user_address: wallet_address.toLowerCase(),
+        const { error } = await supabaseAdmin.from('user_task_claims').insert({
+            wallet_address: wallet_address.toLowerCase(),
             task_id,
             platform,
             action_type,
-            points_awarded: xp
+            xp_earned: xp
         });
 
         if (error) throw error;

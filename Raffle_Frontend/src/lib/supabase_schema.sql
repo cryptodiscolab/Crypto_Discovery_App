@@ -104,6 +104,8 @@ CREATE TABLE IF NOT EXISTS public.user_task_claims (
     task_id UUID NOT NULL REFERENCES public.daily_tasks(id) ON DELETE CASCADE,
     claimed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     xp_earned INTEGER NOT NULL,
+    platform TEXT,
+    action_type TEXT,
     
     -- Foreign key ke user_profiles
     CONSTRAINT fk_wallet_address 
