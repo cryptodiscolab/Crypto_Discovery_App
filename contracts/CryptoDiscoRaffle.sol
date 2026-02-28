@@ -57,10 +57,15 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     ICryptoDiscoMaster public masterContract;
     IAirnodeRrpV0 public immutable airnodeRrp;
     
-    uint256 public constant POINTS_RAFFLE_TICKET = 15;
-    uint256 public constant MAX_TICKETS_PER_USER = 1000; // Increased for high-cap events
-    uint256 public constant MAX_PARTICIPANTS = 10000;
-    uint256 public constant MAINTENANCE_FEE_BP = 2000; // 20% Rake
+    uint256 public pointsRaffleTicket = 15;
+    uint256 public maxTicketsPerUser = 1000; 
+    uint256 public maxParticipants = 10000;
+    uint256 public maintenanceFeeBP = 2000; // 20% Rake
+    uint256 public surchargeBP = 500; // 5% default
+    
+    // Reward XP values
+    uint256 public raffleCreateXP = 200;
+    uint256 public raffleClaimXP = 100;
     
     // API3 QRNG Integration
     address public airnode;
@@ -103,7 +108,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         r.raffleId = currentRaffleId;
         r.isActive = true;
         r.winnerCount = 1;
-        r.maxTickets = MAX_PARTICIPANTS;
+        r.maxTickets = maxParticipants;
         r.endTime = block.timestamp + 7 days;
         r.metadataURI = "ipfs://default-admin-raffle";
         emit RaffleCreated(currentRaffleId, block.timestamp);
@@ -119,12 +124,12 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         string calldata _metadataURI
     ) external payable nonReentrant whenNotPaused {
         require(msg.value > 0, "Deposit required");
-        uint256 basePrize = msg.value * 100 / 105; // 5% is surcharge
+        uint256 basePrize = msg.value * 10000 / (10000 + surchargeBP);
         uint256 surcharge = msg.value - basePrize;
         
         require(_winnerCount > 0 && _winnerCount <= 10, "Invalid winner count");
         require(_durationDays > 0 && _durationDays <= 25, "Max 25 days");
-        require(_maxTickets > 0 && _maxTickets <= MAX_PARTICIPANTS, "Exceeds max");
+        require(_maxTickets > 0 && _maxTickets <= maxParticipants, "Exceeds max");
 
         // Forward 5% surcharge to MasterX
         if (surcharge > 0) {
@@ -144,7 +149,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         r.sponsor = msg.sender;
 
         // EXTRA POINTS for Create Raffle activity
-        masterContract.addPoints(msg.sender, 200, "Create Raffle");
+        masterContract.addPoints(msg.sender, raffleCreateXP, "Create Raffle");
 
         emit RaffleCreated(currentRaffleId, block.timestamp);
     }
@@ -158,10 +163,10 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         require(raffle.isActive, "Raffle not active");
         require(block.timestamp <= raffle.endTime, "Raffle expired");
         require(raffle.totalTickets + ticketCount <= raffle.maxTickets, "Sold out");
-        require(raffle.ticketCount[msg.sender] + ticketCount <= MAX_TICKETS_PER_USER, "Exceeds user max");
+        require(raffle.ticketCount[msg.sender] + ticketCount <= maxTicketsPerUser, "Exceeds user max");
         
         uint256 baseETH = masterContract.getTicketPriceInETH() * ticketCount;
-        uint256 requiredETH = (baseETH * 105) / 100;
+        uint256 requiredETH = baseETH * (10000 + surchargeBP) / 10000;
         require(msg.value >= requiredETH, "Insufficient ETH");
         
         // 1. Forward 5% Fee to MasterX
@@ -170,11 +175,11 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         require(s, "Fee forwarding failed");
 
         // 2. Award points via Master contract
-        masterContract.addPoints(msg.sender, ticketCount * POINTS_RAFFLE_TICKET, "Raffle Ticket");
+        masterContract.addPoints(msg.sender, ticketCount * pointsRaffleTicket, "Raffle Ticket");
         
         // 3. Add tickets
         if (raffle.ticketCount[msg.sender] == 0) {
-            require(raffle.participants.length < MAX_PARTICIPANTS, "Room limit");
+            require(raffle.participants.length < maxParticipants, "Room limit");
             raffle.participants.push(msg.sender);
         }
         raffle.ticketCount[msg.sender] += ticketCount;
@@ -241,7 +246,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         require(!raffle.isFinalized, "Already finalized");
 
         // 1. Calculate 20% Project Rake from TICKET SALES only
-        uint256 projectRake = (raffle.totalTicketRevenue * MAINTENANCE_FEE_BP) / 10000;
+        uint256 projectRake = (raffle.totalTicketRevenue * maintenanceFeeBP) / 10000;
         uint256 sponsorShare = raffle.totalTicketRevenue - projectRake;
         
         // 2. Distribute Rake to Owner
@@ -294,7 +299,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
             next.raffleId = currentRaffleId;
             next.isActive = true;
             next.winnerCount = 1;
-            next.maxTickets = MAX_PARTICIPANTS;
+            next.maxTickets = maxParticipants;
             next.endTime = block.timestamp + 7 days;
             next.metadataURI = "ipfs://default-admin-raffle";
             emit RaffleCreated(currentRaffleId, block.timestamp);
@@ -326,7 +331,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         raffle.isClaimed[msg.sender] = true;
         
         // EXTRA POINTS for Claiming Raffle Winner activity
-        masterContract.addPoints(msg.sender, 100, "Claim Raffle Prize");
+        masterContract.addPoints(msg.sender, raffleClaimXP, "Claim Raffle Prize");
 
         (bool s, ) = payable(msg.sender).call{value: prize}("");
         require(s, "Transfer failed");
@@ -351,6 +356,24 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     function unpause() external onlyOwner { _unpause(); }
     function setMaster(address _m) external onlyOwner { masterContract = ICryptoDiscoMaster(_m); }
 
+    function setRaffleFees(uint256 _rakeBP, uint256 _surchargeBP) external onlyOwner {
+        require(_rakeBP <= 5000, "Rake too high");
+        require(_surchargeBP <= 2000, "Surcharge too high");
+        maintenanceFeeBP = _rakeBP;
+        surchargeBP = _surchargeBP;
+    }
+
+    function setRaffleLimits(uint256 _maxUserTickets, uint256 _maxParticipants) external onlyOwner {
+        maxTicketsPerUser = _maxUserTickets;
+        maxParticipants = _maxParticipants;
+    }
+
+    function setRaffleXP(uint256 _create, uint256 _claim, uint256 _ticket) external onlyOwner {
+        raffleCreateXP = _create;
+        raffleClaimXP = _claim;
+        pointsRaffleTicket = _ticket;
+    }
+
     /**
      * @notice Admin creates a raffle for free (no ETH deposit required).
      * Same storage as createSponsorshipRaffle. sponsor = address(0) → admin raffle.
@@ -363,7 +386,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     ) external onlyOwner {
         require(_winnerCount > 0 && _winnerCount <= 10, "Invalid winner count");
         require(_durationDays > 0 && _durationDays <= 25, "Max 25 days");
-        require(_maxTickets > 0 && _maxTickets <= MAX_PARTICIPANTS, "Exceeds max");
+        require(_maxTickets > 0 && _maxTickets <= maxParticipants, "Exceeds max");
 
         currentRaffleId++;
         RaffleData storage r = raffles[currentRaffleId];

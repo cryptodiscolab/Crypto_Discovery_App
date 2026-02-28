@@ -20,11 +20,13 @@ import {
     Users,
     Sliders,
     Search,
+    BarChart,
+    Cpu,
     BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSBT } from '../../hooks/useSBT';
-import { Award } from 'lucide-react';
+import { Award, Zap, Cpu, BarChart } from 'lucide-react';
 
 /**
  * Admin System Settings Component
@@ -40,7 +42,7 @@ export default function AdminSystemSettings() {
     const [eligibleUsers, setEligibleUsers] = useState([]);
     const [issuedSubnames, setIssuedSubnames] = useState([]);
     const [auditLogs, setAuditLogs] = useState([]);
-    const [activeTab, setActiveTab] = useState('settings'); // 'settings' | 'ens' | 'logs'
+    const [activeTab, setActiveTab] = useState('settings'); // 'settings' | 'blockchain' | 'sponsorship' | 'ens' | 'logs'
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -426,6 +428,7 @@ export default function AdminSystemSettings() {
                 <div className="flex gap-2 p-1 bg-black/30 rounded-xl w-fit border border-white/5">
                     {[
                         { id: 'settings', label: 'Points & Logic', icon: Settings },
+                        { id: 'blockchain', label: 'Blockchain Config', icon: Award },
                         { id: 'sponsorship', label: 'Sponsorship Config', icon: Plus },
                         { id: 'ens', label: 'ENS Management', icon: Globe },
                         { id: 'logs', label: 'Audit Logs', icon: History }
@@ -858,6 +861,12 @@ export default function AdminSystemSettings() {
                 </div>
             )}
 
+            {activeTab === 'blockchain' && (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-2">
+                    <BlockchainConfigSection />
+                </div>
+            )}
+
             {activeTab === 'sponsorship' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-2">
                     <SponsorshipConfigSection />
@@ -875,37 +884,369 @@ export default function AdminSystemSettings() {
     );
 }
 
+function BlockchainConfigSection() {
+    const { address } = useAccount();
+    const { writeContractAsync } = useWriteContract();
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Form States for various configs
+    const [rewards, setRewards] = useState({ daily: '100', referral: '50' });
+    const [raffleFees, setRaffleFees] = useState({ rake: '2000', surcharge: '500' });
+    const [raffleLimits, setRaffleLimits] = useState({ maxUser: '1000', maxParticipants: '10000' });
+    const [raffleXp, setRaffleXp] = useState({ create: '500', claim: '200', purchase: '50' });
+    const [econShares, setEconShares] = useState({ owner: '4000', ops: '2000', treasury: '2000', sbt: '2000' });
+    const [tierWeights, setTierWeights] = useState({ diamond: '400', gold: '200', silver: '100', bronze: '50' });
+    const [withdrawFee, setWithdrawFee] = useState('500'); // BP
+
+    // 1. READ Global Rewards
+    const { data: qDaily } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'dailyBonusAmount' });
+    const { data: qReferral } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'baseReferralReward' });
+
+    // 2. READ Raffle Economics
+    const { data: qRake } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'maintenanceFeeBP' });
+    const { data: qSurcharge } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'surchargeBP' });
+    const { data: qMaxUser } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'maxTicketsPerUser' });
+    const { data: qMaxPart } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'maxParticipants' });
+    const { data: qXpCreate } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'rewardXpCreate' });
+    const { data: qXpClaim } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'rewardXpClaim' });
+    const { data: qXpPurchase } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'rewardXpPurchase' });
+
+    // 3. READ MasterX Economics
+    const { data: qOwner } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'ownerShare' });
+    const { data: qOps } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'opsShare' });
+    const { data: qTreasury } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'treasuryShare' });
+    const { data: qSbtShare } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'sbtPoolShare' });
+
+    const { data: qDWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'diamondWeight' });
+    const { data: qGWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'goldWeight' });
+    const { data: qSWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'silverWeight' });
+    const { data: qBWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'bronzeWeight' });
+
+    useEffect(() => {
+        if (qDaily) setRewards(prev => ({ ...prev, daily: qDaily.toString() }));
+        if (qReferral) setRewards(prev => ({ ...prev, referral: qReferral.toString() }));
+        if (qRake) setRaffleFees(prev => ({ ...prev, rake: qRake.toString() }));
+        if (qSurcharge) setRaffleFees(prev => ({ ...prev, surcharge: qSurcharge.toString() }));
+        if (qMaxUser) setRaffleLimits(prev => ({ ...prev, maxUser: qMaxUser.toString() }));
+        if (qMaxPart) setRaffleLimits(prev => ({ ...prev, maxParticipants: qMaxPart.toString() }));
+        if (qXpCreate) setRaffleXp(prev => ({ ...prev, create: qXpCreate.toString() }));
+        if (qXpClaim) setRaffleXp(prev => ({ ...prev, claim: qXpClaim.toString() }));
+        if (qXpPurchase) setRaffleXp(prev => ({ ...prev, purchase: qXpPurchase.toString() }));
+
+        if (qOwner) setEconShares(prev => ({ ...prev, owner: qOwner.toString() }));
+        if (qOps) setEconShares(prev => ({ ...prev, ops: qOps.toString() }));
+        if (qTreasury) setEconShares(prev => ({ ...prev, treasury: qTreasury.toString() }));
+        if (qSbtShare) setEconShares(prev => ({ ...prev, sbt: qSbtShare.toString() }));
+
+        if (qDWeight) setTierWeights(prev => ({ ...prev, diamond: qDWeight.toString() }));
+        if (qGWeight) setTierWeights(prev => ({ ...prev, gold: qGWeight.toString() }));
+        if (qSWeight) setTierWeights(prev => ({ ...prev, silver: qSWeight.toString() }));
+        if (qBWeight) setTierWeights(prev => ({ ...prev, bronze: qBWeight.toString() }));
+    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qGWeight, qSWeight, qBWeight]);
+
+    const handleSaveGeneral = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Syncing Rewards to Chain...");
+        try {
+            await writeContractAsync({
+                address: CONTRACTS.DAILY_APP,
+                abi: DAILY_APP_ABI,
+                functionName: 'setGlobalRewards',
+                args: [BigInt(rewards.daily), BigInt(rewards.referral)],
+            });
+            toast.success("Rewards Updated!", { id: tid });
+        } catch (e) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveRaffleFees = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Syncing Raffle Fees...");
+        try {
+            await writeContractAsync({
+                address: CONTRACTS.RAFFLE,
+                abi: DAILY_APP_ABI,
+                functionName: 'setRaffleFees',
+                args: [BigInt(raffleFees.rake), BigInt(raffleFees.surcharge)],
+            });
+            toast.success("Raffle Fees Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleSaveRaffleLimits = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Syncing Raffle Limits...");
+        try {
+            await writeContractAsync({
+                address: CONTRACTS.RAFFLE,
+                abi: DAILY_APP_ABI,
+                functionName: 'setRaffleLimits',
+                args: [BigInt(raffleLimits.maxUser), BigInt(raffleLimits.maxParticipants)],
+            });
+            toast.success("Raffle Limits Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleSaveRaffleXp = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Syncing Raffle XP Rewards...");
+        try {
+            await writeContractAsync({
+                address: CONTRACTS.RAFFLE,
+                abi: DAILY_APP_ABI,
+                functionName: 'setRaffleXP',
+                args: [BigInt(raffleXp.create), BigInt(raffleXp.claim), BigInt(raffleXp.purchase)],
+            });
+            toast.success("Raffle XP Rewards Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleSaveEconShares = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Syncing MasterX Shares...");
+        try {
+            await writeContractAsync({
+                address: CONTRACTS.MASTER_X,
+                abi: DAILY_APP_ABI,
+                functionName: 'setRevenueShares',
+                args: [BigInt(econShares.owner), BigInt(econShares.ops), BigInt(econShares.treasury), BigInt(econShares.sbt)],
+            });
+            toast.success("Revenue Shares Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleSaveTierWeights = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Syncing SBT Pool Weights...");
+        try {
+            await writeContractAsync({
+                address: CONTRACTS.MASTER_X,
+                abi: DAILY_APP_ABI,
+                functionName: 'setTierWeights',
+                args: [BigInt(tierWeights.diamond), BigInt(tierWeights.gold), BigInt(tierWeights.silver), BigInt(tierWeights.bronze)],
+            });
+            toast.success("Tier Weights Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Rewards Card */}
+            <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-yellow-400" /> GLOBAL XP REWARDS
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Daily Claim XP</label>
+                        <input type="number" value={rewards.daily} onChange={e => setRewards({ ...rewards, daily: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Referral XP</label>
+                        <input type="number" value={rewards.referral} onChange={e => setRewards({ ...rewards, referral: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                    </div>
+                </div>
+                <button onClick={handleSaveGeneral} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                    Update XP Rewards
+                </button>
+            </div>
+
+            {/* Raffle Fees Card */}
+            <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <BarChart className="w-5 h-5 text-emerald-400" /> RAFFLE ECONOMICS
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Rake BP (2000 = 20%)</label>
+                        <input type="number" value={raffleFees.rake} onChange={e => setRaffleFees({ ...raffleFees, rake: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Surcharge BP (500 = 5%)</label>
+                        <input type="number" value={raffleFees.surcharge} onChange={e => setRaffleFees({ ...raffleFees, surcharge: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                    </div>
+                </div>
+                <button onClick={handleSaveRaffleFees} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                    Update Raffle Fees
+                </button>
+
+                <div className="border-t border-white/5 pt-4 grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Max Tickets/User</label>
+                        <input type="number" value={raffleLimits.maxUser} onChange={e => setRaffleLimits({ ...raffleLimits, maxUser: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Max Participants</label>
+                        <input type="number" value={raffleLimits.maxParticipants} onChange={e => setRaffleLimits({ ...raffleLimits, maxParticipants: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                    </div>
+                </div>
+                <button onClick={handleSaveRaffleLimits} disabled={isSaving} className="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                    Update Raffle Limits
+                </button>
+            </div>
+
+            {/* Raffle XP Card */}
+            <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-indigo-400" /> RAFFLE XP REWARDS
+                </h3>
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-500 uppercase">Create</label>
+                        <input type="number" value={raffleXp.create} onChange={e => setRaffleXp({ ...raffleXp, create: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-500 uppercase">Claim</label>
+                        <input type="number" value={raffleXp.claim} onChange={e => setRaffleXp({ ...raffleXp, claim: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-500 uppercase">Purchase</label>
+                        <input type="number" value={raffleXp.purchase} onChange={e => setRaffleXp({ ...raffleXp, purchase: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                    </div>
+                </div>
+                <button onClick={handleSaveRaffleXp} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                    Update Raffle XP
+                </button>
+            </div>
+
+            {/* Withdraw Fee Card */}
+            <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-400" /> WITHDRAWAL FEE
+                </h3>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Withdraw Fee BP (e.g. 500 = 5%)</label>
+                    <input type="number" value={withdrawFee} onChange={e => setWithdrawFee(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm" />
+                </div>
+                <button
+                    onClick={async () => {
+                        setIsSaving(true);
+                        const tid = toast.loading("Updating Withdrawal Fee...");
+                        try {
+                            await writeContractAsync({
+                                address: CONTRACTS.DAILY_APP,
+                                abi: DAILY_APP_ABI,
+                                functionName: 'setWithdrawalFee',
+                                args: [BigInt(withdrawFee)],
+                            });
+                            toast.success("Fee Updated!", { id: tid });
+                        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+                        finally { setIsSaving(false); }
+                    }}
+                    disabled={isSaving}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all"
+                >
+                    Update Withdraw Fee
+                </button>
+            </div>
+
+            {/* MasterX Economics Card */}
+            <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4 lg:col-span-2">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-orange-400" /> MASTER-X REVENUE & POOL
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Revenue Shares */}
+                    <div className="space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Shares (BP - Total 10000)</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-500 uppercase">Owner</label>
+                                <input type="number" value={econShares.owner} onChange={e => setEconShares({ ...econShares, owner: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-500 uppercase">Operations</label>
+                                <input type="number" value={econShares.ops} onChange={e => setEconShares({ ...econShares, ops: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-500 uppercase">Treasury</label>
+                                <input type="number" value={econShares.treasury} onChange={e => setEconShares({ ...econShares, treasury: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-500 uppercase">SBT Pool</label>
+                                <input type="number" value={econShares.sbt} onChange={e => setEconShares({ ...econShares, sbt: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                        </div>
+                        <button onClick={handleSaveEconShares} disabled={isSaving} className="w-full bg-orange-600 hover:bg-orange-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                            Update Revenue Shares
+                        </button>
+                    </div>
+
+                    {/* Tier Weights */}
+                    <div className="space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SBT Pool Distribution Weights</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-cyan-400 uppercase">Diamond</label>
+                                <input type="number" value={tierWeights.diamond} onChange={e => setTierWeights({ ...tierWeights, diamond: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-amber-400 uppercase">Gold</label>
+                                <input type="number" value={tierWeights.gold} onChange={e => setTierWeights({ ...tierWeights, gold: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-slate-400 uppercase">Silver</label>
+                                <input type="number" value={tierWeights.silver} onChange={e => setTierWeights({ ...tierWeights, silver: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-amber-700 uppercase">Bronze</label>
+                                <input type="number" value={tierWeights.bronze} onChange={e => setTierWeights({ ...tierWeights, bronze: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                        </div>
+                        <button onClick={handleSaveTierWeights} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                            Update Tier Weights
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                <p className="text-[9px] text-yellow-400 font-bold uppercase leading-tight">
+                    Warning: These changes are applied directly to the blockchain. Gas fees will be charged.
+                </p>
+            </div>
+        </div>
+    );
+}
 function SponsorshipConfigSection() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const [fee, setFee] = useState('1');
     const [autoApprove, setAutoApprove] = useState(false);
+    const [rewardPerClaim, setRewardPerClaim] = useState('100');
+    const [tasksForReward, setTasksForReward] = useState('3');
+    const [minPool, setMinPool] = useState('10');
     const [isSaving, setIsSaving] = useState(false);
 
-    const { data: currentFee } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'sponsorshipPlatformFee',
-    });
-
-    const { data: currentAutoApprove } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'autoApproveSponsorship',
-    });
+    const { data: currentFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
+    const { data: currentAutoApprove } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'autoApproveSponsorship' });
+    const { data: currentReward } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipRewardPerClaim' });
+    const { data: currentTasks } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipTasksForReward' });
+    const { data: currentMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipMinPoolValue' });
 
     useEffect(() => {
         if (currentFee) setFee((Number(currentFee) / 1e6).toString());
         if (currentAutoApprove !== undefined) setAutoApprove(currentAutoApprove);
-    }, [currentFee, currentAutoApprove]);
+        if (currentReward) setRewardPerClaim(currentReward.toString());
+        if (currentTasks) setTasksForReward(currentTasks.toString());
+        if (currentMinPool) setMinPool((Number(currentMinPool) / 1e6).toString());
+    }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
     const { writeContractAsync } = useWriteContract();
 
     const handleSaveSponsorshipConfig = async () => {
         setIsSaving(true);
-        const tid = toast.loading("Updating Sponsorship Config...");
+        const tid = toast.loading("Updating Sponsorship Params...");
         try {
-            // Update Fee
+            // Update Platform Fee
             if (fee !== (Number(currentFee) / 1e6).toString()) {
                 await writeContractAsync({
                     address: CONTRACTS.DAILY_APP,
@@ -914,6 +1255,19 @@ function SponsorshipConfigSection() {
                     args: [BigInt(Number(fee) * 1e6)],
                 });
             }
+
+            // Update Global Params
+            await writeContractAsync({
+                address: CONTRACTS.DAILY_APP,
+                abi: DAILY_APP_ABI,
+                functionName: 'setSponsorshipParams',
+                args: [
+                    BigInt(rewardPerClaim),
+                    BigInt(tasksForReward),
+                    BigInt(Number(minPool) * 1e6),
+                    BigInt(Number(fee) * 1e6) // This also sets platform fee inside setSponsorshipParams
+                ],
+            });
 
             // Update Auto-Approve
             if (autoApprove !== currentAutoApprove) {
@@ -925,7 +1279,7 @@ function SponsorshipConfigSection() {
                 });
             }
 
-            toast.success("Settings Updated On-Chain!", { id: tid });
+            toast.success("Sponsorship Settings Updated!", { id: tid });
         } catch (error) {
             console.error(error);
             toast.error("Update Failed: " + (error.shortMessage || error.message), { id: tid });
@@ -944,18 +1298,52 @@ function SponsorshipConfigSection() {
             </div>
 
             <div className="space-y-4">
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Platform Fee (USDC)</label>
-                    <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">$</span>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Platform Fee (USDC)</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">$</span>
+                            <input
+                                type="number"
+                                value={fee}
+                                onChange={(e) => setFee(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Min Pool (USDC)</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">$</span>
+                            <input
+                                type="number"
+                                value={minPool}
+                                onChange={(e) => setMinPool(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Reward/Claim (XP)</label>
                         <input
                             type="number"
-                            value={fee}
-                            onChange={(e) => setFee(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            value={rewardPerClaim}
+                            onChange={(e) => setRewardPerClaim(e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
                         />
                     </div>
-                    <p className="text-[9px] text-slate-600 italic">This is the fee charged to users for listing their tasks.</p>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Tasks/Reward</label>
+                        <input
+                            type="number"
+                            value={tasksForReward}
+                            onChange={(e) => setTasksForReward(e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                        />
+                    </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">

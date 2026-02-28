@@ -33,11 +33,11 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
 
     // ============ State Variables ============
     
-    // Revenue shares
-    uint256 public constant OWNER_SHARE = 4000;
-    uint256 public constant OPS_SHARE = 2000;
-    uint256 public constant SBT_POOL_SHARE = 3000;
-    uint256 public constant TREASURY_SHARE = 1000;
+    // Revenue shares (Made variables for flexibility)
+    uint256 public ownerShare = 4000;
+    uint256 public opsShare = 2000;
+    uint256 public sbtPoolShare = 3000;
+    uint256 public treasuryShare = 1000;
     uint256 public constant BASIS_POINTS = 10000;
     
     // Point values
@@ -45,12 +45,11 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     uint256 public constant POINTS_REFERRAL = 2;
     
     // Tier weights — total = 100%
-    // ✅ Fix V-11: Tambah PLATINUM_WEIGHT, sesuaikan Diamond
-    uint256 public constant DIAMOND_WEIGHT  = 30;
-    uint256 public constant PLATINUM_WEIGHT = 15;
-    uint256 public constant GOLD_WEIGHT     = 25;
-    uint256 public constant SILVER_WEIGHT   = 20;
-    uint256 public constant BRONZE_WEIGHT   = 10;
+    uint256 public diamondWeight  = 30;
+    uint256 public platinumWeight = 15;
+    uint256 public goldWeight     = 25;
+    uint256 public silverWeight   = 20;
+    uint256 public bronzeWeight   = 10;
 
     // Precision & Limits
     uint256 public constant REWARD_PRECISION = 1e18;
@@ -148,10 +147,10 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
             "Cooldown active"
         );
 
-        uint256 ownerAmt = (distributable * OWNER_SHARE) / BASIS_POINTS;
-        uint256 opsAmt = (distributable * OPS_SHARE) / BASIS_POINTS;
-        uint256 sbtPoolAmt = (distributable * SBT_POOL_SHARE) / BASIS_POINTS;
-        uint256 treasuryAmt = (distributable * TREASURY_SHARE) / BASIS_POINTS;
+        uint256 ownerAmt = (distributable * ownerShare) / BASIS_POINTS;
+        uint256 opsAmt = (distributable * opsShare) / BASIS_POINTS;
+        uint256 sbtPoolAmt = (distributable * sbtPoolShare) / BASIS_POINTS;
+        uint256 treasuryAmt = (distributable * treasuryShare) / BASIS_POINTS;
 
         // 1. Process Transfers
         (bool s1, ) = payable(owner()).call{value: ownerAmt}("");
@@ -179,57 +178,57 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
 
         // Diamond
         if (diamondHolders > 0) {
-            uint256 share = (amount * DIAMOND_WEIGHT) / 100;
+            uint256 share = (amount * diamondWeight) / 100;
             unchecked {
                 accRewardPerShare[SBTTier.DIAMOND] += (share * REWARD_PRECISION) / diamondHolders;
             }
             totalLockedRewards += share; // ✅ checked — akan revert jika overflow
         } else {
-            ownerOverflow += (amount * DIAMOND_WEIGHT) / 100;
+            ownerOverflow += (amount * diamondWeight) / 100;
         }
 
         // ✅ Fix V-11: Platinum tier
         if (platinumHolders > 0) {
-            uint256 share = (amount * PLATINUM_WEIGHT) / 100;
+            uint256 share = (amount * platinumWeight) / 100;
             unchecked {
                 accRewardPerShare[SBTTier.PLATINUM] += (share * REWARD_PRECISION) / platinumHolders;
             }
             totalLockedRewards += share; // ✅ checked
         } else {
-            ownerOverflow += (amount * PLATINUM_WEIGHT) / 100;
+            ownerOverflow += (amount * platinumWeight) / 100;
         }
 
         // Gold
         if (goldHolders > 0) {
-            uint256 share = (amount * GOLD_WEIGHT) / 100;
+            uint256 share = (amount * goldWeight) / 100;
             unchecked {
                 accRewardPerShare[SBTTier.GOLD] += (share * REWARD_PRECISION) / goldHolders;
             }
             totalLockedRewards += share; // ✅ checked
         } else {
-            ownerOverflow += (amount * GOLD_WEIGHT) / 100;
+            ownerOverflow += (amount * goldWeight) / 100;
         }
 
         // Silver
         if (silverHolders > 0) {
-            uint256 share = (amount * SILVER_WEIGHT) / 100;
+            uint256 share = (amount * silverWeight) / 100;
             unchecked {
                 accRewardPerShare[SBTTier.SILVER] += (share * REWARD_PRECISION) / silverHolders;
             }
             totalLockedRewards += share; // ✅ checked
         } else {
-            ownerOverflow += (amount * SILVER_WEIGHT) / 100;
+            ownerOverflow += (amount * silverWeight) / 100;
         }
 
         // Bronze
         if (bronzeHolders > 0) {
-            uint256 share = (amount * BRONZE_WEIGHT) / 100;
+            uint256 share = (amount * bronzeWeight) / 100;
             unchecked {
                 accRewardPerShare[SBTTier.BRONZE] += (share * REWARD_PRECISION) / bronzeHolders;
             }
             totalLockedRewards += share; // ✅ checked
         } else {
-            ownerOverflow += (amount * BRONZE_WEIGHT) / 100;
+            ownerOverflow += (amount * bronzeWeight) / 100;
         }
 
         emit SBTPoolDistributed(
@@ -377,7 +376,30 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     }
 
     // ============ Admin ============
-    
+    function setRevenueShares(
+        uint256 _owner, 
+        uint256 _ops, 
+        uint256 _pool, 
+        uint256 _treasury
+    ) external onlyOwner {
+        require(_owner + _ops + _pool + _treasury == BASIS_POINTS, "Sum must be 10000");
+        ownerShare = _owner;
+        opsShare = _ops;
+        sbtPoolShare = _pool;
+        treasuryShare = _treasury;
+    }
+
+    function setTierWeights(
+        uint256 _d, uint256 _p, uint256 _g, uint256 _s, uint256 _b
+    ) external onlyOwner {
+        require(_d + _p + _g + _s + _b == 100, "Sum must be 100");
+        diamondWeight = _d;
+        platinumWeight = _p;
+        goldWeight = _g;
+        silverWeight = _s;
+        bronzeWeight = _b;
+    }
+
     function emergencyWithdraw() external onlyOwner {
         // ✅ Fix V-07: Proteksi eksplisit agar tidak bisa drain reward pool user
         require(address(this).balance > totalLockedRewards, "No surplus funds");

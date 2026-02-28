@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title IMasterX
@@ -57,19 +56,20 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     uint256 public constant MAX_MULTIPLIER_BP = 100000;
     uint256 public constant MAX_TASK_REWARD = 10000;
     uint256 public constant REFERRAL_ACTIVATION_TASK_COUNT = 3;
-    uint256 public constant BASE_REFERRAL_REWARD = 50;
     uint256 public constant PRICE_CHANGE_DELAY = 1 days;
     uint256 public constant MAX_DISCOUNT_PERCENT = 50;
     uint256 public constant REFUND_PENALTY_PERCENT = 10;
     
-    // NEW: Sponsorship State
+    // NEW: Sponsorship State (Moved from constant to variable for flexibility)
     uint256 public sponsorshipPlatformFee = 2 * 10**6; // Default $2 USDC
     bool public autoApproveSponsorship = true; 
-    uint256 public constant MIN_REWARD_POOL_VALUE = 5 * 10**18; 
-    uint256 public constant REWARD_PER_CLAIM = 5 * 10**16; 
-    uint256 public constant TASKS_FOR_REWARD = 3;
-    uint256 public constant DAILY_BONUS_AMOUNT = 100;
-    uint256 public constant SPONSOR_DURATION = 3 days;
+    uint256 public minRewardPoolValue = 5 * 10**18; 
+    uint256 public rewardPerClaim = 5 * 10**16; 
+    uint256 public tasksForReward = 3;
+    uint256 public dailyBonusAmount = 100;
+    uint256 public sponsorDuration = 3 days;
+    uint256 public baseReferralReward = 50;
+    uint256 public withdrawalFeeBP = 500; // 5% default
 
     // --- ENUMS & STRUCTS ---
     enum NFTTier { NONE, BRONZE, SILVER, GOLD, PLATINUM, DIAMOND }
@@ -452,6 +452,60 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     }
 
     /**
+     * @notice Set global reward amounts (Daily & Referral)
+     */
+    function setGlobalRewards(uint256 _daily, uint256 _referral) external onlyRole(ADMIN_ROLE) {
+        dailyBonusAmount = _daily;
+        baseReferralReward = _referral;
+    }
+
+    /**
+     * @notice Set sponsorship economic parameters
+     */
+    function setSponsorshipParams(
+        uint256 _rewardPerClaim, 
+        uint256 _tasksRequired, 
+        uint256 _minPool,
+        uint256 _platformFee
+    ) external onlyRole(ADMIN_ROLE) {
+        rewardPerClaim = _rewardPerClaim;
+        tasksForReward = _tasksRequired;
+        minRewardPoolValue = _minPool;
+        sponsorshipPlatformFee = _platformFee;
+    }
+
+    /**
+     * @notice Set withdrawal fee in basis points (e.g., 500 = 5%)
+     */
+    function setWithdrawalFee(uint256 _feeBP) external onlyRole(ADMIN_ROLE) {
+        if (_feeBP > 2000) revert InvalidParameters(); // Max 20%
+        withdrawalFeeBP = _feeBP;
+    }
+
+    function setCreatorToken(address _token) external onlyRole(ADMIN_ROLE) validAddress(_token) {
+        creatorToken = IERC20(_token);
+        allowedPaymentTokens[_token] = true;
+    }
+
+    function setUSDCToken(address _token) external onlyRole(ADMIN_ROLE) validAddress(_token) {
+        usdcToken = IERC20(_token);
+    }
+
+    function setSponsorDuration(uint256 _duration) external onlyRole(ADMIN_ROLE) {
+        if (_duration < 1 days || _duration > 30 days) revert InvalidParameters();
+        sponsorDuration = _duration;
+    }
+
+    function setTokenPriceUSD(uint256 _price) external onlyRole(ADMIN_ROLE) {
+        if (_price == 0) revert InvalidParameters();
+        tokenPriceUSD = _price;
+    }
+
+    function setPackagePricesUSD(uint256[3] calldata _prices) external onlyRole(ADMIN_ROLE) {
+        packagePricesUSD = _prices;
+    }
+
+    /**
      * @notice Admin creates a sponsorship for free (bypasses USDC fee + token pool).
      * Same storage & flow as buySponsorshipWithToken but no payment required.
      * Auto-approved immediately.
@@ -547,11 +601,11 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         // 2. Charge Reward Pool — ETH or ERC20
         if (_paymentToken == address(0)) {
             // Native ETH payment
-            if (msg.value < MIN_REWARD_POOL_VALUE) revert InsufficientFunds();
+            if (msg.value < minRewardPoolValue) revert InsufficientFunds();
             // msg.value is automatically held by contract; _rewardPoolAmount ignored for ETH
         } else {
             // ERC20 payment
-            if (_rewardPoolAmount < MIN_REWARD_POOL_VALUE) revert InsufficientFunds();
+            if (_rewardPoolAmount < minRewardPoolValue) revert InsufficientFunds();
             if (IERC20(_paymentToken).allowance(msg.sender, address(this)) < _rewardPoolAmount) revert Unauthorized();
             IERC20(_paymentToken).safeTransferFrom(msg.sender, address(this), _rewardPoolAmount);
         }
@@ -653,7 +707,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         SponsorRequest storage req = sponsorRequests[_reqId];
         if (req.status != RequestStatus.APPROVED) revert NotAllowed();
         if (req.sponsor != msg.sender) revert Unauthorized();
-        if (req.rewardPool < REWARD_PER_CLAIM) revert InsufficientFunds();
+        if (req.rewardPool < rewardPerClaim) revert InsufficientFunds();
 
         // Must pay Platform Fee again ($2 USDC)
         if (usdcToken.allowance(msg.sender, address(this)) < sponsorshipPlatformFee) revert Unauthorized();
@@ -721,7 +775,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         if (stats.tasksForReferralProgress == REFERRAL_ACTIVATION_TASK_COUNT) {
             address referrer = referrerOf[msg.sender];
             if (referrer != address(0) && !userStats[referrer].isBlacklisted) {
-                userStats[referrer].points += BASE_REFERRAL_REWARD;
+                userStats[referrer].points += baseReferralReward;
                 userStats[referrer].referralCount++;
             }
         }
@@ -735,11 +789,11 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
             uint256 currentProgress = userSponsorshipProgress[msg.sender][task.sponsorshipId];
             
             // Check if multiple of 3 (or whatever goal set)
-            if (currentProgress % TASKS_FOR_REWARD == 0) {
+            if (currentProgress % tasksForReward == 0) {
                 SponsorRequest storage req = sponsorRequests[task.sponsorshipId];
-                if (req.rewardPool >= REWARD_PER_CLAIM) {
-                    req.rewardPool -= REWARD_PER_CLAIM;
-                    claimableRewards[msg.sender] += REWARD_PER_CLAIM; // Model PULL: Tambah simpanan, jangan kirim langsung
+                if (req.rewardPool >= rewardPerClaim) {
+                    req.rewardPool -= rewardPerClaim;
+                    claimableRewards[msg.sender] += rewardPerClaim; // Model PULL: Tambah simpanan, jangan kirim langsung
                 }
             }
         }
@@ -755,10 +809,10 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         if (block.timestamp < stats.lastDailyBonusClaim + 24 hours) revert CooldownActive();
 
         stats.lastDailyBonusClaim = block.timestamp;
-        stats.points += DAILY_BONUS_AMOUNT;
-        unsyncedPoints[msg.sender] += DAILY_BONUS_AMOUNT;
+        stats.points += dailyBonusAmount;
+        unsyncedPoints[msg.sender] += dailyBonusAmount;
         
-        emit TaskCompleted(msg.sender, 0, DAILY_BONUS_AMOUNT, block.timestamp); // TaskID 0 for daily bonus
+        emit TaskCompleted(msg.sender, 0, dailyBonusAmount, block.timestamp); // TaskID 0 for daily bonus
     }
 
     /**
@@ -785,7 +839,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
 
         claimableRewards[msg.sender] = 0;
         
-        uint256 fee = (amount * 5) / 100; // 5% Platform Fee
+        uint256 fee = (amount * withdrawalFeeBP) / 10000; // Dynamic Platform Fee
         uint256 userAmount = amount - fee;
 
         // Send fee to contract (can be withdrawn by admin later)
@@ -811,9 +865,9 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
      * @notice Lazy sync accumulated points to MasterX
      */
     function syncMasterXPoints() external whenNotPaused nonReentrant notBlacklisted {
-        require(address(masterXContract) != address(0), "MasterX not set");
+        if (address(masterXContract) == address(0)) revert InvalidAddress();
         uint256 pointsToSync = unsyncedPoints[msg.sender];
-        require(pointsToSync > 0, "No points to sync");
+        if (pointsToSync == 0) revert InsufficientFunds();
         
         unsyncedPoints[msg.sender] = 0;
         masterXContract.addPoints(msg.sender, pointsToSync, "DailyApp Sync");
@@ -842,7 +896,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         notBlacklisted 
     {
         NFTTier currentTier = userStats[msg.sender].currentTier;
-        require(currentTier < NFTTier.DIAMOND, "Max tier reached");
+        if (currentTier >= NFTTier.DIAMOND) revert MaxLimitReached();
         
         NFTTier nextTier = NFTTier(uint256(currentTier) + 1);
         _mintOrUpgrade(nextTier);
@@ -892,10 +946,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     {
         address from = _ownerOf(tokenId);
         
-        require(
-            from == address(0) || to == address(0), 
-            "SB" // Soulbound transfer disabled
-        );
+        if (from != address(0) && to != address(0)) revert Unauthorized();
         
         return super._update(to, tokenId, auth);
     }
@@ -940,15 +991,15 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         Task memory task = tasks[_taskId];
         UserStats memory stats = userStats[_user];
         
-        if (task.baseReward == 0) return (false, "Task not exist");
-        if (!task.isActive) return (false, "Task inactive");
-        if (stats.isBlacklisted) return (false, "User blacklisted");
-        if (stats.currentTier < task.minTier) return (false, "Tier too low");
+        if (task.baseReward == 0) return (false, "NotFound");
+        if (!task.isActive) return (false, "Inactive");
+        if (stats.isBlacklisted) return (false, "Blacklisted");
+        if (stats.currentTier < task.minTier) return (false, "TierLow");
         if (block.timestamp < lastTaskTime[_user][_taskId] + task.cooldown) {
-            return (false, "Cooldown active");
+            return (false, "Cooldown");
         }
         if (task.requiresVerification && !taskVerified[_user][_taskId]) {
-            return (false, "Task not verified");
+            return (false, "NoVerify");
         }
         
         return (true, "");
