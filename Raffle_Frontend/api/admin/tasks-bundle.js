@@ -125,12 +125,10 @@ export default async function handler(req, res) {
 
                 if (claimErr) throw claimErr;
 
-                // 2. Reset scores in user_profiles
+                // 2. Reset scores in user_profiles (Canonical columns)
                 const { error: profileErr } = await supabaseAdmin
                     .from('user_profiles')
                     .update({
-                        xp: 0,
-                        points: 0,
                         total_xp: 0,
                         tier: 1,
                         updated_at: new Date().toISOString()
@@ -138,6 +136,18 @@ export default async function handler(req, res) {
                     .not('wallet_address', 'is', 'null');
 
                 if (profileErr) throw profileErr;
+
+                // 3. Reset scores in user_stats (Sync table)
+                const { error: statsErr } = await supabaseAdmin
+                    .from('user_stats')
+                    .update({
+                        total_xp: 0,
+                        current_level: 1,
+                        updated_at: new Date().toISOString()
+                    })
+                    .not('wallet_address', 'is', 'null');
+
+                if (statsErr) throw statsErr;
 
                 // 3. Log this massive action
                 await supabaseAdmin.from('admin_audit_logs').insert({
