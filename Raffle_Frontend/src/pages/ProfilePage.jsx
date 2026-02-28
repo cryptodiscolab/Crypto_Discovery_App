@@ -56,14 +56,16 @@ export default function ProfilePage() {
     query: { enabled: !!address, refetchInterval: 60000 }
   });
 
-  // onChainUserData[5] = lastDailyBonusClaim (unix timestamp seconds)
-  const lastClaimTimestamp = onChainUserData ? Number(onChainUserData[5]) : 0;
+  // onChainUserData.lastDailyBonusClaim = lastDailyBonusClaim (unix timestamp seconds)
+  const lastClaimTimestamp = onChainUserData?.lastDailyBonusClaim ? Number(onChainUserData.lastDailyBonusClaim) : 0;
   // Jika lastClaim === 0, artinya user belum pernah claim sama sekali → bukan cooldown
   const nextClaimAt = lastClaimTimestamp > 0 ? (lastClaimTimestamp + 86400) * 1000 : 0;
+  const isLoadingOnChain = !onChainUserData;
 
   // === COUNTDOWN REAL-TIME untuk Quick Action button ===
   useEffect(() => {
     const tick = () => {
+      if (isLoadingOnChain) { setClaimReady(false); setClaimCountdown('Loading...'); return; }
       if (nextClaimAt === 0) { setClaimReady(true); setClaimCountdown(''); return; }
       const diff = nextClaimAt - Date.now();
       if (diff <= 0) { setClaimReady(true); setClaimCountdown(''); return; }
@@ -365,8 +367,11 @@ export default function ProfilePage() {
                   {claimCountdown}
                 </span>
               )}
-              {claimReady && (
+              {claimReady && !isLoadingOnChain && (
                 <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">READY ✓</span>
+              )}
+              {isLoadingOnChain && (
+                <span className="text-[9px] font-bold text-slate-500 uppercase animate-pulse">Checking...</span>
               )}
             </button>
 
@@ -844,12 +849,16 @@ function DailyClaimModal({ onClose }) {
         return; // STOP — jangan submit TX yang akan gagal
       }
 
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'claimDailyBonus',
         gas: gasLimit,
       });
+
+      // WAIT FOR MINING -- This is the crucial fix for stale sync
+      toast.loading('Mining transaction... 🔨', { id: tid });
+      await publicClient.waitForTransactionReceipt({ hash });
 
       // Sync XP on-chain ke DB setelah TX confirmed
       toast.loading('Syncing XP...', { id: tid });

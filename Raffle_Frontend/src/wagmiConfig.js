@@ -40,11 +40,11 @@ export const config = createConfig({
     connectors, // Pakai connector yang udah dibungkus RainbowKit
     transports: {
         [base.id]: fallback([
-            http(`https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}`),
+            http(`/api/rpc?chainId=${base.id}`),
             http('https://mainnet.base.org'),
         ]),
         [baseSepolia.id]: fallback([
-            http(`https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}`),
+            http(`/api/rpc?chainId=${baseSepolia.id}`),
             http('https://sepolia.base.org'),
         ]),
     },

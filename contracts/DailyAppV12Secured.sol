@@ -574,6 +574,10 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
 
         emit SponsorshipRequested(requestId, msg.sender, _level, actualPool);
 
+        // EXTRA POINTS for Create Task activity
+        userStats[msg.sender].points += 200;
+        unsyncedPoints[msg.sender] += 200;
+
         // 3. Auto-Approve logic
         if (autoApproveSponsorship) {
             _approveSponsorshipInternal(requestId);

@@ -70,14 +70,29 @@ async function handleXpSync(req, res, wallet_address) {
     try {
         const stats = await rpcClient.readContract({
             address: DAILY_APP_ADDRESS,
-            abi: GET_USER_STATS_ABI,
-            functionName: 'getUserStats',
+            abi: [{
+                inputs: [{ name: '', type: 'address' }],
+                name: 'userStats',
+                outputs: [
+                    { name: 'points', type: 'uint256' },
+                    { name: 'totalTasksCompleted', type: 'uint256' },
+                    { name: 'referralCount', type: 'uint256' },
+                    { name: 'currentTier', type: 'uint8' },
+                    { name: 'tasksForReferralProgress', type: 'uint256' },
+                    { name: 'lastDailyBonusClaim', type: 'uint256' },
+                    { name: 'isBlacklisted', type: 'bool' },
+                ],
+                stateMutability: 'view',
+                type: 'function',
+            }],
+            functionName: 'userStats',
             args: [wallet_address],
         });
 
-        const onChainXP = Number(stats.points);
-        const tasksDone = Number(stats.totalTasksCompleted);
-        const lastClaimTs = Number(stats.lastDailyBonusClaim);
+        // Reading from array index to be safe across different RPC/Viem versions
+        const onChainXP = Number(stats[0] || stats.points || 0);
+        const tasksDone = Number(stats[1] || stats.totalTasksCompleted || 0);
+        const lastClaimTs = Number(stats[5] || stats.lastDailyBonusClaim || 0);
         const lastClaimAt = lastClaimTs > 0 ? new Date(lastClaimTs * 1000).toISOString() : null;
 
         const { error } = await supabaseAdmin

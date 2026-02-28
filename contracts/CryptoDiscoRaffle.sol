@@ -143,6 +143,9 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         r.prizePool = basePrize; // Initial prize from creator (untouched by ticket sales)
         r.sponsor = msg.sender;
 
+        // EXTRA POINTS for Create Raffle activity
+        masterContract.addPoints(msg.sender, 200, "Create Raffle");
+
         emit RaffleCreated(currentRaffleId, block.timestamp);
     }
 
@@ -321,6 +324,10 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         require(prize > 0, "No prize");
 
         raffle.isClaimed[msg.sender] = true;
+        
+        // EXTRA POINTS for Claiming Raffle Winner activity
+        masterContract.addPoints(msg.sender, 100, "Claim Raffle Prize");
+
         (bool s, ) = payable(msg.sender).call{value: prize}("");
         require(s, "Transfer failed");
 
