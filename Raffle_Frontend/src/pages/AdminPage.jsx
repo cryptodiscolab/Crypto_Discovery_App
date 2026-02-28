@@ -203,7 +203,9 @@ export function AdminPage({ initialTab = 'pool' }) {
                 {/* Topbar */}
                 <header className="sticky top-0 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between z-50">
                     <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-black text-white capitalize">{activeTab.replace('-', ' ')}</h2>
+                        <h2 className="text-xl font-black text-white capitalize">
+                            {tabs.find(t => t.id === activeTab)?.label || activeTab.replace('-', ' ')}
+                        </h2>
                         <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                             <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live System</span>
