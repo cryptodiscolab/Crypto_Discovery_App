@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSignMessage } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSignMessage, useReadContract } from 'wagmi';
 import {
     Transaction,
     TransactionButton,
@@ -159,6 +159,8 @@ export function TaskManager() {
     // Wagmi hooks
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
+    const { data: hash, error: writeError, isPending, writeContract } = useWriteContract();
+    const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({ hash });
 
     // MISI 1: Fetch Admin Tasks dari Supabase
     const fetchAdminTasks = async () => {
