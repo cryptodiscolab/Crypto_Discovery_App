@@ -1,6 +1,7 @@
-import { DISCO_MASTER_ABI } from '../shared/constants/abis';
+import { DISCO_MASTER_ABI, RAFFLE_ABI } from '../shared/constants/abis';
 
 export const MASTER_X_ABI = DISCO_MASTER_ABI;
+export { RAFFLE_ABI };
 export const DAILY_APP_ABI = [
     {
         "inputs": [
