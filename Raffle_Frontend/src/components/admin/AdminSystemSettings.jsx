@@ -22,11 +22,12 @@ import {
     Search,
     BarChart,
     Cpu,
-    BarChart3
+    BarChart3,
+    Award,
+    Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSBT } from '../../hooks/useSBT';
-import { Award, Zap, Cpu, BarChart } from 'lucide-react';
 
 /**
  * Admin System Settings Component
