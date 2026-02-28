@@ -321,7 +321,7 @@ export function TaskManager() {
         if (!firstConfirm) return;
 
         const secondConfirm = window.prompt("To confirm, please type 'RESET SEASON' in ALL CAPS below:");
-        if (secondConfirm !== 'RESET_SEASON') {
+        if (secondConfirm !== 'RESET SEASON') {
             toast.error("Reset cancelled: Confirmation text did not match.");
             return;
         }
