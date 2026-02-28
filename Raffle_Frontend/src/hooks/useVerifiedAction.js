@@ -27,7 +27,7 @@ export function useVerifiedAction() {
         const signature = await signMessageAsync({ message });
 
         // Send to secure API route
-        const res = await fetch('/api/verify-action', {
+        const res = await fetch('/api/tasks/social-verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

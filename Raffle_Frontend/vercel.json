@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/api/rpc",
+            "destination": "/api/audit-bundle?action=rpc"
+        },
+        {
             "source": "/api/farcaster-check",
             "destination": "/api/audit-bundle?action=check"
         },
@@ -9,16 +13,28 @@
             "destination": "/api/audit-bundle?action=sync"
         },
         {
+            "source": "/api/user/:action",
+            "destination": "/api/user-bundle?action=:action"
+        },
+        {
+            "source": "/api/farcaster/sync",
+            "destination": "/api/user-bundle?action=fc-sync"
+        },
+        {
+            "source": "/api/tasks/:action",
+            "destination": "/api/tasks-bundle?action=:action"
+        },
+        {
+            "source": "/api/verify-action",
+            "destination": "/api/tasks-bundle?action=social-verify"
+        },
+        {
             "source": "/api/admin/tasks/:action",
             "destination": "/api/admin/tasks-bundle?action=:action"
         },
         {
-            "source": "/api/admin/check",
-            "destination": "/api/admin/admin-bundle?action=check"
-        },
-        {
-            "source": "/api/admin/sync-tiers",
-            "destination": "/api/admin/admin-bundle?action=sync-tiers"
+            "source": "/api/admin/:action(check|sync-tiers)",
+            "destination": "/api/admin/admin-bundle?action=:action"
         },
         {
             "source": "/((?!api/).*)",

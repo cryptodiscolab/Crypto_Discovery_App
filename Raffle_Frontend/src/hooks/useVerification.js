@@ -73,7 +73,8 @@ export function useVerification(refetchStats) {
                 });
             } else {
                 // ── CALL INTERNAL API (REGULAR) ──
-                response = await fetch('/api/tasks/verify', {
+                // Send to secure API route
+                response = await fetch('/api/tasks/social-verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

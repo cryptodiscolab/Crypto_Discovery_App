@@ -143,7 +143,7 @@ export default function ProfilePage() {
       toast.loading("Verifikasi & Simpan ke Server...", { id: toastId });
 
       // 3. Kirim ke API
-      const response = await fetch('/api/profile/update', {
+      const response = await fetch('/api/user/update-profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

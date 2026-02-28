@@ -63,7 +63,7 @@ export const useFarcaster = () => {
             }
 
             // 3. Neynar SDK Sync (Via Backend Bridge)
-            const response = await fetch('/api/farcaster/sync', {
+            const response = await fetch('/api/user/fc-sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ address: wallet }),
