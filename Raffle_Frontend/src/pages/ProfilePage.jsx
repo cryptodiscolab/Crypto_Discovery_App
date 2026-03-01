@@ -273,6 +273,16 @@ export default function ProfilePage() {
                   >
                     Edit
                   </button>
+                  {/* Farcaster Referral Icon */}
+                  <a
+                    href="https://farcaster.xyz/~/code/CJ393F"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Join Farcaster"
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 active:scale-90 transition-all"
+                  >
+                    <Sparkles size={18} />
+                  </a>
                 </>
               ) : (
                 <div className="flex gap-2">
