@@ -89,7 +89,11 @@ async function handleXpSync(req, res) {
         const onChainXP = Number(stats[0] || 0);
         const { error } = await supabaseAdmin
             .from('user_profiles')
-            .update({ total_xp: onChainXP, updated_at: new Date().toISOString() })
+            .update({
+                xp: onChainXP,
+                total_xp: onChainXP,
+                updated_at: new Date().toISOString()
+            })
             .eq('wallet_address', wallet_address.toLowerCase());
 
         if (error) throw error;
