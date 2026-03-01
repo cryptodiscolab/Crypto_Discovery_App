@@ -809,7 +809,7 @@ function DailyClaimModal({ onClose }) {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
-  const { refetch } = usePoints();
+  const { refetch, manualAddPoints } = usePoints();
   const [isClaiming, setIsClaiming] = useState(false);
   const [countdown, setCountdown] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
@@ -892,7 +892,7 @@ function DailyClaimModal({ onClose }) {
       // Sync XP on-chain ke DB setelah TX confirmed
       toast.loading('Syncing XP...', { id: tid });
       try {
-        const response = await fetch('/api/user/sync', {
+        const response = await fetch('/api/user-bundle', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ action: 'xp', wallet_address: address }),
@@ -901,6 +901,9 @@ function DailyClaimModal({ onClose }) {
         if (!response.ok) {
           throw new Error(`Sync failed with status: ${response.status}`);
         }
+
+        // Optimistic Update for immediate feedback
+        manualAddPoints(100);
 
         await refetchStats();
         await refetch(); // Sync Supabase in context
