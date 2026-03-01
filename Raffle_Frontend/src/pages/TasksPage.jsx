@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift } from 'lucide-react';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/useContract';
 import { useVerification } from '../hooks/useVerification';
 import { usePoints } from '../shared/context/PointsContext';
+import { useFarcaster } from '../hooks/useFarcaster';
 import { DAILY_APP_ABI, CONTRACTS } from '../lib/contracts';
 import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
@@ -13,7 +14,35 @@ function TaskRow({ taskId, userStats, refetchStats }) {
     const { doTask, isLoading: isDoing } = useDoTask();
     const { address } = useAccount();
     const { userTier } = usePoints();
+    const { profileData } = useFarcaster();
     const { verifyTask, isVerifying, registerTaskStart, lastActionTime } = useVerification(refetchStats);
+    const [timeLeft, setTimeLeft] = useState(0);
+
+    // Countdown Logic
+    useEffect(() => {
+        const lastTime = lastActionTime[taskId];
+        if (!lastTime) return;
+
+        const updateTimer = () => {
+            const now = Date.now();
+            const diff = Math.floor((now - lastTime) / 1000);
+            const remaining = Math.max(0, 30 - diff);
+            setTimeLeft(remaining);
+            return remaining;
+        };
+
+        const initialRemaining = updateTimer();
+        if (initialRemaining <= 0) return;
+
+        const interval = setInterval(() => {
+            const remaining = updateTimer();
+            if (remaining <= 0) {
+                clearInterval(interval);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [lastActionTime, taskId]);
 
     // NEW: Check if task is already completed (One-time logic)
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
@@ -45,6 +74,31 @@ function TaskRow({ taskId, userStats, refetchStats }) {
             return;
         }
 
+        // Farcaster Account Check
+        if (!profileData?.fid && (task.link.includes('warpcast.com') || task.link.includes('farcaster'))) {
+            toast((t) => (
+                <div className="flex flex-col gap-3 p-1">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
+                        <Sparkles className="w-3 h-3 text-indigo-400" />
+                        Farcaster Required
+                    </span>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight leading-relaxed">
+                        This task requires a Farcaster account. Join now to start earning XP!
+                    </p>
+                    <a
+                        href="https://farcaster.xyz/~/code/CJ393F"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[9px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+                        onClick={() => toast.dismiss(t.id)}
+                    >
+                        Sign Up with Code CJ393F
+                    </a>
+                </div>
+            ), { duration: 8000, id: 'fc-referral-nudge' });
+            return;
+        }
+
         // 1. Register start time for anti-fraud (30s)
         registerTaskStart(taskId);
 
@@ -64,8 +118,34 @@ function TaskRow({ taskId, userStats, refetchStats }) {
 
     const handleVerify = async (e) => {
         e.stopPropagation();
-        if (!canDo) return;
-        const success = await verifyTask(task, address, taskId);
+        if (!canDo || isVerifying || timeLeft > 0) return;
+
+        // Farcaster Referral Nudge
+        if (!profileData?.fid && (task.link.includes('warpcast.com') || task.link.includes('farcaster'))) {
+            toast((t) => (
+                <div className="flex flex-col gap-3 p-1">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
+                        <Sparkles className="w-3 h-3 text-indigo-400" />
+                        Verification Blocked
+                    </span>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight leading-relaxed">
+                        Cannot verify Farcaster tasks without a connected account.
+                    </p>
+                    <a
+                        href="https://farcaster.xyz/~/code/CJ393F"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[9px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+                        onClick={() => toast.dismiss(t.id)}
+                    >
+                        Sign Up with Code CJ393F
+                    </a>
+                </div>
+            ), { duration: 8000, id: 'fc-verify-blocked' });
+            return;
+        }
+
+        const success = await verifyTask(task, address, taskId, profileData?.fid);
         if (success) refetchCompletion();
     };
 
@@ -119,10 +199,19 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                 ) : task.requiresVerification ? (
                     <button
                         onClick={handleVerify}
-                        disabled={isVerifying || isTierLocked}
-                        className="px-4 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-900/20 active:scale-95 transition-transform disabled:opacity-50"
+                        disabled={isVerifying || isTierLocked || timeLeft > 0}
+                        className={`px-4 py-1.5 rounded-full text-white text-xs font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-slate-700 shadow-none' : 'bg-blue-600 shadow-blue-900/20'}`}
                     >
-                        {isVerifying ? <Loader2 size={14} className="animate-spin" /> : "Verify"}
+                        {isVerifying ? (
+                            <Loader2 size={14} className="animate-spin" />
+                        ) : timeLeft > 0 ? (
+                            <>
+                                <Clock size={12} className="animate-pulse" />
+                                {timeLeft}s
+                            </>
+                        ) : (
+                            "Verify"
+                        )}
                     </button>
                 ) : (
                     <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">

@@ -7,7 +7,7 @@ export function useVerification(refetchStats) {
     const [lastActionTime, setLastActionTime] = useState({});
     const { signMessageAsync } = useSignMessage();
 
-    const verifyTask = async (task, address, taskId) => {
+    const verifyTask = async (task, address, taskId, userFid = null) => {
         // 0. Anti-Fraud: 30s Delay Check
         const now = Date.now();
         const lastTime = lastActionTime[taskId] || 0;
@@ -60,8 +60,8 @@ export function useVerification(refetchStats) {
                     body: JSON.stringify({
                         userAddress: address,
                         taskId: taskId,
-                        fid: platform === 'farcaster' ? socialId : undefined,
-                        userId: platform === 'twitter' ? socialId : undefined,
+                        fid: platform === 'farcaster' ? (userFid || task.socialId || 0) : undefined,
+                        userId: platform === 'twitter' ? (userFid || task.socialId || 0) : undefined,
                         signature,
                         message,
                         // Add any other specific params needed by the server

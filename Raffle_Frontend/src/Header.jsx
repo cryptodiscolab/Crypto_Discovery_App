@@ -73,10 +73,19 @@ export function Header() {
               </div>
               <span className="hidden lg:inline tracking-tighter">CRYPTO <span className="text-indigo-400">DISCO</span></span>
             </Link>
-            {frameUser && (
+            {frameUser ? (
               <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mt-1 ml-1 animate-pulse">
                 Welcome, @{frameUser.username}
               </p>
+            ) : (
+              <a
+                href="https://farcaster.xyz/~/code/CJ393F"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] font-bold text-slate-500 hover:text-indigo-400 uppercase tracking-widest mt-1 ml-1 transition-colors flex items-center gap-1"
+              >
+                Join Farcaster <Sparkles className="w-2.5 h-2.5" />
+              </a>
             )}
           </div>
 

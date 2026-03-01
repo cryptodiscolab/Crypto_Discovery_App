@@ -3,6 +3,8 @@ import {
   RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield
 } from 'lucide-react';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
+import { useUserInfo } from '../hooks/useContract';
+import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -20,6 +22,7 @@ export default function ProfilePage() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
+  const { refetch } = usePoints();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
   // State untuk Mode Edit
@@ -48,19 +51,13 @@ export default function ProfilePage() {
   const [claimReady, setClaimReady] = useState(true);
 
   // === READ ON-CHAIN: Cek cooldown Daily Claim ===
-  const { data: onChainUserData } = useReadContract({
-    address: CONTRACTS.DAILY_APP,
-    abi: DAILY_APP_ABI,
-    functionName: 'userStats',
-    args: [address],
-    query: { enabled: !!address, refetchInterval: 60000 }
-  });
+  const { stats: onChainUserData, refetch: refetchOnChainStats, isLoading: statsLoading } = useUserInfo(address);
 
   // onChainUserData.lastDailyBonusClaim = lastDailyBonusClaim (unix timestamp seconds)
   const lastClaimTimestamp = onChainUserData?.lastDailyBonusClaim ? Number(onChainUserData.lastDailyBonusClaim) : 0;
   // Jika lastClaim === 0, artinya user belum pernah claim sama sekali → bukan cooldown
   const nextClaimAt = lastClaimTimestamp > 0 ? (lastClaimTimestamp + 86400) * 1000 : 0;
-  const isLoadingOnChain = !onChainUserData;
+  const isLoadingOnChain = statsLoading;
 
   // === COUNTDOWN REAL-TIME untuk Quick Action button ===
   useEffect(() => {
@@ -771,23 +768,14 @@ function DailyClaimModal({ onClose }) {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
+  const { refetch } = usePoints();
   const [isClaiming, setIsClaiming] = useState(false);
   const [countdown, setCountdown] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
 
   // userData is dari `userStats` public mapping getter (ada di DAILY_APP_ABI)
   // staleTime:0 + refetchOnMount memastikan data FRESH setiap kali modal dibuka
-  const { data: userData, refetch: refetchStats } = useReadContract({
-    address: CONTRACTS.DAILY_APP,
-    abi: DAILY_APP_ABI,
-    functionName: 'userStats',   // ← BENAR: ini yang ada di ABI, bukan getUserStats
-    args: [address],
-    query: {
-      enabled: !!address,
-      staleTime: 0,
-      refetchOnMount: true,
-    }
-  });
+  const { stats: userData, refetch: refetchStats } = useUserInfo(address);
 
   // userStats returns named fields — lastDailyBonusClaim ada di index 5
   // Jika = 0 artinya belum pernah claim → tidak ada cooldown
@@ -863,14 +851,21 @@ function DailyClaimModal({ onClose }) {
       // Sync XP on-chain ke DB setelah TX confirmed
       toast.loading('Syncing XP...', { id: tid });
       try {
-        await fetch('/api/user/sync', {
+        const response = await fetch('/api/user/sync', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ action: 'xp', wallet_address: address }),
         });
+
+        if (!response.ok) {
+          throw new Error(`Sync failed with status: ${response.status}`);
+        }
+
         await refetchStats();
+        await refetch(); // Sync Supabase in context
       } catch (syncErr) {
-        console.warn('[DailyClaim] XP sync failed (non-critical):', syncErr.message);
+        console.warn('[DailyClaim] XP sync failed:', syncErr.message);
+        toast.error("Sync failed, but transaction confirmed. XP will update later.", { duration: 5000 });
       }
 
       toast.success("+100 XP Claimed! 🎉", { id: tid });

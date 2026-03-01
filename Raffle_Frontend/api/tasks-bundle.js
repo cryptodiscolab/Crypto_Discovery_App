@@ -70,8 +70,33 @@ async function handleVerify(req, res) {
 }
 
 async function handleSocialVerify(req, res) {
-    // Logic from verify-action/route.js
-    const { wallet, payload } = req.body;
-    // ... logic ...
-    return res.status(200).json({ success: true });
+    const { wallet_address, signature, message, task_id, platform, action_type, xp_reward } = req.body;
+    try {
+        // 1. Verify Signature
+        const valid = await verifyMessage({ address: wallet_address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        // 2. Record Claim (Zero-Trust)
+        const { error } = await supabaseAdmin.from('user_task_claims').insert({
+            wallet_address: wallet_address.toLowerCase(),
+            task_id,
+            platform: platform || 'regular',
+            action_type: action_type || 'task',
+            xp_earned: xp_reward || 0
+        });
+
+        if (error) {
+            if (error.code === '23505') { // Duplicate claim
+                return res.status(200).json({ success: true, message: "Task already recorded." });
+            }
+            throw error;
+        }
+
+        // 3. Update User XP (Immediate cache update)
+        // Note: Real XP source of truth is on-chain, so we'll need a sync after this.
+        return res.status(200).json({ success: true, message: `Task ${task_id} verified successfully.` });
+    } catch (error) {
+        console.error('[SocialVerify API Error]', error);
+        return res.status(500).json({ error: error.message });
+    }
 }

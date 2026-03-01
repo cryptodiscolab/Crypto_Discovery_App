@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useSwitchChain } from 'wagmi';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, ExternalLink } from 'lucide-react';
 import { baseSepolia } from 'wagmi/chains';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
@@ -174,7 +174,22 @@ export function LoginPage() {
                     </div>
                 </div>
 
-                <div className="mt-10 text-center text-[8px] text-slate-600 font-bold uppercase tracking-widest leading-relaxed relative z-10">
+                <div className="mt-8 pt-6 border-t border-slate-800 text-center relative z-10">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-3">
+                        New to Farcaster?
+                    </p>
+                    <a
+                        href="https://farcaster.xyz/~/code/CJ393F"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
+                    >
+                        Get Account & Join the Gacha
+                        <ExternalLink className="w-3 h-3" />
+                    </a>
+                </div>
+
+                <div className="mt-8 text-center text-[8px] text-slate-600 font-bold uppercase tracking-widest leading-relaxed relative z-10">
                     Identity verification follows the Security Mandate.<br />
                     No Riba. No Interest. Honest Data Only.
                 </div>
