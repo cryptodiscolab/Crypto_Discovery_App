@@ -126,9 +126,11 @@ export default async function handler(req, res) {
                 if (claimErr) throw claimErr;
 
                 // 2. Reset scores in user_profiles (Canonical columns)
+                // We reset BOTH 'xp' and 'total_xp' to ensure harmony across all views
                 const { error: profileErr } = await supabaseAdmin
                     .from('user_profiles')
                     .update({
+                        xp: 0,
                         total_xp: 0,
                         tier: 1,
                         updated_at: new Date().toISOString()
@@ -141,6 +143,7 @@ export default async function handler(req, res) {
                 const { error: statsErr } = await supabaseAdmin
                     .from('user_stats')
                     .update({
+                        xp: 0,
                         total_xp: 0,
                         current_level: 1,
                         updated_at: new Date().toISOString()
