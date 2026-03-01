@@ -87,14 +87,17 @@ async function handleXpSync(req, res) {
         });
 
         const onChainXP = Number(stats[0] || 0);
+
+        // Small delay to allow RPC indexing/propagation
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         const { error } = await supabaseAdmin
             .from('user_profiles')
-            .update({
-                xp: onChainXP,
+            .upsert({
+                wallet_address: wallet_address.toLowerCase(),
                 total_xp: onChainXP,
                 updated_at: new Date().toISOString()
-            })
-            .eq('wallet_address', wallet_address.toLowerCase());
+            }, { onConflict: 'wallet_address' });
 
         if (error) throw error;
         return res.status(200).json({ ok: true, xp: onChainXP });
