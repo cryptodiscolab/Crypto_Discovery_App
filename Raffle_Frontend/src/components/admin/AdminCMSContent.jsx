@@ -93,12 +93,12 @@ export default function AdminCMSContent() {
 
         // Validation
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            toast.error("Format file tidak didukung! (Gunakan JPG, PNG, atau WEBP)");
+            toast.error("File format not supported! (Use JPG, PNG, or WEBP)");
             return;
         }
 
         if (file.size > 2 * 1024 * 1024) {
-            toast.error("File terlalu besar! Maksimal 2MB.");
+            toast.error("File too large! Maximum 2MB.");
             return;
         }
 

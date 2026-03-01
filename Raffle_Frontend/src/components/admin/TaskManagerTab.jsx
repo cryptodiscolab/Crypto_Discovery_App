@@ -108,7 +108,7 @@ export function TaskManagerTab() {
                 }
             } catch (err) {
                 console.error('[FetchPoints Error]', err);
-                toast.error("Gagal mengambil data poin!");
+                toast.error("Failed to fetch points data!");
             } finally {
                 setIsLoadingPoints(false);
             }
@@ -164,7 +164,7 @@ export function TaskManagerTab() {
                 syncedHashes.current.add(receipt.transactionHash);
 
                 const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
-                const tid = toast.loading("Transaksi sukses! Meminta tanda tangan admin untuk sinkronisasi DB...");
+                const tid = toast.loading("Transaction successful! Requesting admin signature for DB sync...");
 
                 try {
                     // 1. Prepare Message & Signature
@@ -172,7 +172,7 @@ export function TaskManagerTab() {
                     const message = `Sync Batch Tasks\nTX: ${receipt.transactionHash}\nAdmin: ${address}\nTime: ${timestamp}`;
                     const signature = await signMessageAsync({ message });
 
-                    toast.loading("Mengupdate database via Secure API...", { id: tid });
+                    toast.loading("Updating database via Secure API...", { id: tid });
 
                     // 2. Prepare Data for API
                     const tasksToSync = validTasks.map(task => ({
@@ -209,7 +209,7 @@ export function TaskManagerTab() {
                         throw new Error(result.error || "Sync failed");
                     }
 
-                    toast.success("Selesai! Task on-chain & DB sinkron.", { id: tid });
+                    toast.success("Done! On-chain task & DB synchronized.", { id: tid });
 
                     // Reset
                     setTasksBatch([
@@ -224,9 +224,9 @@ export function TaskManagerTab() {
                     console.error('Sync Error:', error);
                     const errMsg = error.message || "Unknown error";
                     if (error.code === 4001) {
-                        toast.error("Signature rejected. Data DB tidak sinkron!", { id: tid });
+                        toast.error("Signature rejected. DB data not synchronized!", { id: tid });
                     } else {
-                        toast.error(`Gagal sinkron: ${errMsg}`, { id: tid });
+                        toast.error(`Sync failed: ${errMsg}`, { id: tid });
                     }
                 } finally {
                     setIsSaving(false);
@@ -236,7 +236,7 @@ export function TaskManagerTab() {
             // Handle Failure (Unlocking UI)
             if (isTxError) {
                 console.error('Wait Error:', txError);
-                toast.error(`Konfirmasi Blockchain Gagal: ${txError?.shortMessage || txError?.message || "Internal Error"}`);
+                toast.error(`Blockchain Confirmation Failed: ${txError?.shortMessage || txError?.message || "Internal Error"}`);
                 setIsSaving(false);
                 setTxHash(null);
             }
@@ -249,7 +249,7 @@ export function TaskManagerTab() {
         const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
 
         if (validTasks.length === 0) {
-            toast.error("Isi minimal satu Nama Task!");
+            toast.error("Enter at least one Task Name!");
             return;
         }
 
@@ -260,7 +260,7 @@ export function TaskManagerTab() {
         }
 
         setIsSaving(true);
-        const tid = toast.loading("Minta tanda tangan wallet...");
+        const tid = toast.loading("Requesting wallet signature...");
 
         try {
             const baseRewards = validTasks.map(t => BigInt(t.baseReward));
@@ -284,15 +284,15 @@ export function TaskManagerTab() {
                 ],
             });
 
-            if (!hash) throw new Error("Gagal mendapatkan transaction hash!");
+            if (!hash) throw new Error("Failed to get transaction hash!");
 
             setTxHash(hash);
             // Update toast to information state, keep it loading for mining
-            toast.loading("Mengirim ke Base Network...", { id: tid });
+            toast.loading("Sending to Base Network...", { id: tid });
 
         } catch (e) {
             console.error("Batch Deployment Error:", e);
-            toast.error(e.shortMessage || e.message || "Gagal mendaftarkan task", { id: tid });
+            toast.error(e.shortMessage || e.message || "Failed to register task", { id: tid });
             setIsSaving(false); // Unlock UI ONLY on premature error
         }
     };
@@ -531,7 +531,7 @@ export function TaskManagerTab() {
                                                 readOnly
                                                 value={task.baseReward}
                                                 className="w-full bg-slate-900 border border-white/5 p-3 pl-8 rounded-xl text-slate-400 font-black text-sm outline-none cursor-not-allowed"
-                                                title="Poin dikunci oleh kebijakan Admin SBT"
+                                                title="Points locked by SBT Admin policy"
                                             />
                                         </div>
                                     </div>

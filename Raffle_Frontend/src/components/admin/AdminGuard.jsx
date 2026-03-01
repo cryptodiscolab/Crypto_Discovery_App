@@ -66,7 +66,7 @@ const AdminGuard = ({ children }) => {
                     onClick={() => navigate('/')}
                     className="mt-8 flex items-center gap-2 bg-indigo-600 px-8 py-3 rounded-2xl text-white font-bold hover:bg-indigo-500 transition-all shadow-xl active:scale-95"
                 >
-                    <ArrowLeft className="w-4 h-4" /> Balik ke Home
+                    <ArrowLeft className="w-4 h-4" /> Back to Home
                 </button>
             </div>
         );

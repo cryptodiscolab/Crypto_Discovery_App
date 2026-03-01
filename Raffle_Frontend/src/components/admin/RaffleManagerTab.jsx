@@ -150,7 +150,7 @@ export function RaffleManagerTab() {
                     <Plus className="w-3.5 h-3.5 text-blue-400" />
                     <span className="text-[10px] font-black text-white uppercase tracking-tighter">Create Admin Raffle (Free)</span>
                 </div>
-                <p className="text-[9px] text-slate-500 px-1">Buat raffle gratis tanpa deposit ETH. Hadiah bersumber dari ticket revenue.</p>
+                <p className="text-[9px] text-slate-500 px-1">Create free raffles without an ETH deposit. Rewards come from ticket revenue.</p>
                 <AdminRaffleCreateForm />
             </div>
 

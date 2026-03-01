@@ -106,7 +106,7 @@ export default function AdminSystemSettings() {
 
         } catch (error) {
             console.error('Fetch Error:', error);
-            toast.error('Gagal sinkron data DB: ' + error.message);
+            toast.error("Failed to sync DB data: " + error.message);
         } finally {
             setLoading(false);
         }
@@ -135,7 +135,7 @@ export default function AdminSystemSettings() {
             is_active: true
         };
         setPointSettings([...pointSettings, newActivity]);
-        toast.success(`Baris activity baru ditambahkan secara lokal.`);
+        toast.success(`New activity row added locally.`);
     };
 
     const removePointActivity = (id) => {
@@ -161,12 +161,12 @@ export default function AdminSystemSettings() {
                 });
 
             if (cleanData.length === 0) {
-                throw new Error("Tidak ada data valid untuk disimpan.");
+                throw new Error("No valid data to save.");
             }
 
             const keys = cleanData.map(s => s.activity_key);
             if (new Set(keys).size !== keys.length) {
-                throw new Error("Activity Key harus unik.");
+                throw new Error("Activity Key must be unique.");
             }
 
             // 1. Prepare and Sign Message
@@ -190,10 +190,10 @@ export default function AdminSystemSettings() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Failed to update points");
 
-            toast.success('SYNC BERHASIL: Point Settings terupdate via API!', { id: tid });
+            toast.success('SYNC SUCCESSFUL: Point Settings updated via API!', { id: tid });
             await fetchPointSettings();
         } catch (error) {
-            toast.error('Gagal menyimpan poin: ' + error.message, { id: tid });
+            toast.error('Failed to save points: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }
@@ -220,7 +220,7 @@ export default function AdminSystemSettings() {
             badge_url: ''
         };
         setSbtThresholds([...sbtThresholds, newLevel]);
-        toast.success(`Baris level ${nextLevel} ditambahkan secara lokal.`);
+        toast.success(`Level ${nextLevel} row added locally.`);
     };
 
     const removeSbtLevel = (id) => {
@@ -233,7 +233,7 @@ export default function AdminSystemSettings() {
         try {
             const levels = sbtThresholds.map(s => s.level);
             if (new Set(levels).size !== levels.length) {
-                throw new Error("Level ID (Lvl) harus unik, tidak boleh ada yang kembar.");
+                throw new Error("Level ID (Lvl) must be unique.");
             }
 
             const dataToSave = sbtThresholds.map(({ id, ...rest }) => rest);
@@ -259,17 +259,17 @@ export default function AdminSystemSettings() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Failed to update thresholds");
 
-            toast.success('SYNC BERHASIL: SBT Thresholds terupdate via API!', { id: tid });
+            toast.success('SYNC SUCCESSFUL: SBT Thresholds updated via API!', { id: tid });
             fetchPointSettings();
         } catch (error) {
-            toast.error('Gagal menyimpan level: ' + error.message, { id: tid });
+            toast.error('Failed to save level: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }
     };
 
     const handleSyncTiers = async () => {
-        if (!window.confirm('PUSH LEADERBOARD KE BLOCKCHAIN?\n\nIni akan menghitung ulang Tier semua user di DB berdasarkan rank XP (Top 10% Gold, etc) dan mengupdate contract CryptoDiscoMasterX secara on-chain.')) return;
+        if (!window.confirm('PUSH LEADERBOARD TO BLOCKCHAIN?\n\nThis will recalculate all user tiers in the DB based on XP rank (Top 10% Gold, etc) and update the CryptoDiscoMasterX contract on-chain.')) return;
 
         setSaving(true);
         try {
@@ -316,7 +316,7 @@ export default function AdminSystemSettings() {
 
     const handleManualOverride = async () => {
         if (!isAddress(targetWallet)) {
-            toast.error('Wallet address tidak valid');
+            toast.error('Invalid wallet address');
             return;
         }
         setSaving(true);
@@ -345,7 +345,7 @@ export default function AdminSystemSettings() {
             setTargetWallet('');
             fetchTierDistribution();
         } catch (error) {
-            toast.error('Override gagal: ' + error.message, { id: tid });
+            toast.error('Override failed: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }
@@ -353,7 +353,7 @@ export default function AdminSystemSettings() {
 
     const issueSubname = async (user, label) => {
         if (!label || label.length < 3) {
-            toast.error('Label minimal 3 karakter');
+            toast.error('Label must be at least 3 characters');
             return;
         }
         setSaving(true);
@@ -388,10 +388,10 @@ export default function AdminSystemSettings() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Failed to issue subname");
 
-            toast.success(`Subname ${fullName} berhasil diterbitkan via API!`, { id: tid });
+            toast.success(`Subname ${fullName} successfully issued via API!`, { id: tid });
             fetchPointSettings();
         } catch (error) {
-            toast.error('Gagal menerbitkan subname: ' + error.message, { id: tid });
+            toast.error('Failed to issue subname: ' + error.message, { id: tid });
         } finally {
             setSaving(false);
         }

@@ -42,7 +42,7 @@ export default function TaskClaimLogs() {
             setTotalCount(count || 0);
         } catch (e) {
             console.error('[Task Logs] Fetch failure:', e.message);
-            toast.error("Gagal sinkron log tugas.");
+            toast.error("Failed to sync task logs.");
         } finally {
             setLoading(false);
         }
@@ -59,7 +59,7 @@ export default function TaskClaimLogs() {
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <ClipboardList className="w-5 h-5 text-indigo-500" />
-                    <h2 className="text-lg font-bold text-white uppercase tracking-tighter">Riwayat Klaim Misi</h2>
+                    <h2 className="text-lg font-bold text-white uppercase tracking-tighter">Mission Claim History</h2>
                 </div>
                 <button
                     onClick={() => fetchLogs(true)}
@@ -73,7 +73,7 @@ export default function TaskClaimLogs() {
             <div className="bg-[#0a0a0c] rounded-2xl border border-white/5 overflow-hidden">
                 {logs.length === 0 && !loading ? (
                     <div className="p-10 text-center text-slate-700 text-[10px] font-black uppercase tracking-widest">
-                        Belum ada riwayat klaim.
+                        No claim history found.
                     </div>
                 ) : (
                     <div className="divide-y divide-white/5">
@@ -123,7 +123,7 @@ export default function TaskClaimLogs() {
                         onClick={() => fetchLogs()}
                         className="w-full py-4 bg-[#121214] text-[9px] font-black text-slate-700 uppercase tracking-widest hover:text-indigo-500 transition-colors"
                     >
-                        {loading ? 'Memuat...' : 'Lihat Lebih Banyak'}
+                        {loading ? 'Loading...' : 'View More'}
                     </button>
                 )}
             </div>

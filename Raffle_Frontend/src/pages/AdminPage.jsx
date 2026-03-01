@@ -680,7 +680,7 @@ function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSettings }
                         {isBusy ? "Opening..." : "Open Community Claim"}
                     </button>
                     <p className="text-xs text-slate-500 mt-6 italic max-w-lg mx-auto leading-relaxed">
-                        "Membuka klaim akan membagi saldo di atas ke tier Bronze, Silver, dan Gold berdasarkan weight yang berlaku."
+                        "Opening the claim will distribute the balance above to Bronze, Silver, and Gold tiers based on the active weights."
                     </p>
                 </div>
             </div>

@@ -4,8 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 // ── CONFIG ─────────────────────────────────────────────────────
 // Fix: Alchemy Free Tier strictly limits eth_getLogs to 10 blocks.
 // We force the use of Base Sepolia Public Node to allow 5000 block ranges.
-const MASTER_X = process.env.VITE_MASTER_X_ADDRESS || "0x09b672B7B23ae226d80cD60777Ce7751fEbdd461";
-const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS || "0x263e7dD71845C4C2B95D50859a7396C793C76435";
+const MASTER_X = process.env.VITE_MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84";
+const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS || "0xfc12f4FEFf825860c5145680bde38BF222cC669A";
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

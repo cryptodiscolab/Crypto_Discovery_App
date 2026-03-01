@@ -15,7 +15,7 @@ const rpcClient = createPublicClient({
     transport: http(process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
 });
 
-const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || '0x263e7dD71845C4C2B95D50859a7396C793C76435';
+const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || '0xfc12f4FEFf825860c5145680bde38BF222cC669A';
 
 export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;

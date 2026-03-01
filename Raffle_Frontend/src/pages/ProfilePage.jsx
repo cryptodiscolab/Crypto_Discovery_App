@@ -128,10 +128,10 @@ export default function ProfilePage() {
 
   // --- CORE LOGIC: SECURE SAVE ---
   const handleSaveProfile = async () => {
-    if (!address) return toast.error("Connect wallet dulu bos!");
+    if (!address) return toast.error("Please connect your wallet!");
 
     setIsSaving(true);
-    const toastId = toast.loading("Meminta tanda tangan wallet...");
+    const toastId = toast.loading("Requesting wallet signature...");
 
     try {
       // 1. Siapkan Pesan Unik (Anti-Replay Attack)
@@ -140,7 +140,7 @@ export default function ProfilePage() {
       // 2. Trigger Wallet Signature
       const signature = await signMessageAsync({ message: messageToSign });
 
-      toast.loading("Verifikasi & Simpan ke Server...", { id: toastId });
+      toast.loading("Verifying & Saving to Server...", { id: toastId });
 
       // 3. Kirim ke API
       const response = await fetch('/api/user/update-profile', {
@@ -164,11 +164,11 @@ export default function ProfilePage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Gagal update profile");
+        throw new Error(result.error || "Failed to update profile");
       }
 
       // 4. Sukses!
-      toast.success("Profile berhasil diupdate!", { id: toastId });
+      toast.success("Profile updated successfully!", { id: toastId });
       setIsEditing(false);
 
       // Refresh data di UI biar sinkron
@@ -177,7 +177,7 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Save Error:", error);
       if (error.code === 4001 || error.message.includes("rejected")) {
-        toast.error("Tanda tangan dibatalkan user", { id: toastId });
+        toast.error("Signature rejected by user", { id: toastId });
       } else {
         toast.error(`Error: ${error.message}`, { id: toastId });
       }
@@ -242,7 +242,7 @@ export default function ProfilePage() {
                 <>
                   <button
                     onClick={async () => {
-                      if (!address) return toast.error("Connect wallet dulu!");
+                      if (!address) return toast.error("Please connect your wallet!");
                       const toastId = toast.loading("Syncing...");
                       try {
                         await syncUser(address, true);
