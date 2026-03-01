@@ -277,7 +277,7 @@ export function TaskManager() {
         try {
             const { data, error } = await supabase
                 .from('v_user_full_profile')
-                .select('wallet_address, username, display_name, total_xp, tier, rank_name');
+                .select('wallet_address, username, display_name, total_xp, rank_name');
 
             if (error) throw error;
             if (!data || data.length === 0) {
@@ -286,7 +286,7 @@ export function TaskManager() {
             }
 
             // Convert to CSV
-            const headers = ['Wallet Address', 'Username', 'Display Name', 'XP', 'Tier', 'Rank'];
+            const headers = ['Wallet Address', 'Username', 'Display Name', 'XP', 'Rank'];
             const csvRows = [
                 headers.join(','),
                 ...data.map(user => [
@@ -294,7 +294,6 @@ export function TaskManager() {
                     `"${user.username}"`,
                     `"${user.display_name}"`,
                     user.total_xp,
-                    user.tier,
                     user.rank_name
                 ].join(','))
             ];
