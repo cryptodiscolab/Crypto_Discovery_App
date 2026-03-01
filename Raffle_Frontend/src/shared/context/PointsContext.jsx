@@ -27,6 +27,24 @@ export function PointsProvider({ children }) {
     const [offChainLevel, setOffChainLevel] = useState(0);
 
     // ==========================================
+    // SYNC LOGS (For Admin/Debug)
+    // ==========================================
+    const [syncLogs, setSyncLogs] = useState([]);
+
+    const addSyncLog = (type, dbXP, visualXP) => {
+        const log = {
+            id: Date.now(),
+            timestamp: new Date().toLocaleTimeString(),
+            fullTimestamp: new Date().toISOString(),
+            type, // 'manual' or 'refetch'
+            dbXP: dbXP.toString(),
+            visualXP: visualXP.toString(),
+            diff: (visualXP - dbXP).toString()
+        };
+        setSyncLogs(prev => [log, ...prev].slice(0, 50)); // Keep last 50
+    };
+
+    // ==========================================
     // REAL-TIME SYNC (SUPABASE SOURCE)
     // ==========================================
     const fetchUserData = async () => {
@@ -41,9 +59,13 @@ export function PointsProvider({ children }) {
                 .single();
 
             if (data) {
-                setUserPoints(BigInt(data.total_xp || 0));
+                const newXP = BigInt(data.total_xp || 0);
+                setUserPoints(newXP);
                 setUserTier(data.tier || 1);
                 setRankName(data.rank_name || 'Rookie');
+
+                // Log the refetch sync
+                addSyncLog('refetch', newXP, newXP);
             }
 
             // Optional: Get total tasks count if needed
@@ -172,8 +194,16 @@ export function PointsProvider({ children }) {
 
     // Manual add points (for local optimistic updates like Daily Claim)
     const manualAddPoints = (amount) => {
-        setUserPoints(prev => prev + BigInt(amount));
+        const added = BigInt(amount);
+        const oldPoints = userPoints;
+        const newPoints = oldPoints + added;
+
+        setUserPoints(newPoints);
         setOffChainPoints(prev => prev + amount); // Sync off-chain state
+
+        // Log the manual (optimistic) sync
+        // In this case, 'dbXP' is effectively the old points since we haven't refetched yet
+        addSyncLog('manual_optimistic', oldPoints, newPoints);
     };
 
     const value = {
@@ -193,7 +223,9 @@ export function PointsProvider({ children }) {
         sbtThresholds,
         fid,
         offChainPoints,
-        offChainLevel
+        offChainLevel,
+        syncLogs,
+        clearLogs: () => setSyncLogs([])
     };
 
     return (

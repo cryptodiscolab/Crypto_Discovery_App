@@ -140,6 +140,7 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'announcement', label: 'Announcement', icon: Edit3, color: 'blue' },
         { id: 'news', label: 'News & Updates', icon: Newspaper, color: 'green' },
         { id: 'content', label: 'Feature Cards (CMS)', icon: Database, color: 'indigo' },
+        { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
     ];
 
     return (
@@ -275,6 +276,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             {activeTab === 'announcement' && <AnnouncementTab />}
                             {activeTab === 'news' && <NewsTab />}
                             {activeTab === 'content' && <AdminCMSContent />}
+                            {activeTab === 'sync-logs' && <SyncLogTab />}
                         </div>
                     </React.Suspense>
                 </div>
@@ -1424,3 +1426,99 @@ function ContentTab() {
     );
 }
 
+
+// ============================================
+// SYNC LOG TAB (Debugging Visual vs DB)
+// ============================================
+import { usePoints } from '../shared/context/PointsContext';
+
+function SyncLogTab() {
+    const { syncLogs, clearLogs } = usePoints();
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between mb-2">
+                <div>
+                    <h3 className="text-xl font-bold text-white">Synchronization Monitoring</h3>
+                    <p className="text-xs text-slate-500">Real-time comparison between Visual (Optimistic) and Database (Real) XP.</p>
+                </div>
+                <button
+                    onClick={clearLogs}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-bold rounded-lg transition-all"
+                >
+                    Clear History
+                </button>
+            </div>
+
+            <div className="glass-card overflow-hidden border border-white/10">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            <th className="px-6 py-4">Timestamp</th>
+                            <th className="px-6 py-4">Type</th>
+                            <th className="px-6 py-4">DB XP</th>
+                            <th className="px-6 py-4">Visual XP</th>
+                            <th className="px-6 py-4 text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {syncLogs.length === 0 ? (
+                            <tr>
+                                <td colSpan="5" className="px-6 py-20 text-center text-slate-600 italic text-sm">
+                                    No sync activity recorded yet.
+                                </td>
+                            </tr>
+                        ) : (
+                            syncLogs.map((log) => (
+                                <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-white">{log.timestamp}</span>
+                                            <span className="text-[10px] text-slate-600 font-mono">{log.fullTimestamp.slice(0, 10)}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${log.type === 'manual_optimistic'
+                                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                                                : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'
+                                            }`}>
+                                            {log.type.replace('_', ' ')}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 font-mono text-sm text-slate-400">{log.dbXP}</td>
+                                    <td className="px-6 py-4 font-mono text-sm text-indigo-400 font-bold">{log.visualXP}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2 text-xs font-bold">
+                                            {log.diff === '0' ? (
+                                                <>
+                                                    <CheckCircle size={14} className="text-emerald-500" />
+                                                    <span className="text-emerald-500">BALANCED</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <TrendingUp size={14} className="text-amber-500" />
+                                                    <span className="text-amber-500">+{log.diff} DIFF</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
+                <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <Zap size={14} /> System Insight
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                    <strong>Manual Optimistic</strong> logs represent points added instantly to the UI before database confirmation.
+                    <strong>Refetch</strong> logs indicate when the system has successfully pulled the "Source of Truth" back from Supabase.
+                    A healthy cycle shows an <em>Optimistic</em> log followed by a <em>Balanced Refetch</em> within seconds.
+                </p>
+            </div>
+        </div>
+    );
+}
