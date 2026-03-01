@@ -240,23 +240,36 @@ export default function ProfilePage() {
                   <button
                     onClick={async () => {
                       if (!address) return toast.error("Please connect your wallet!");
-                      const toastId = toast.loading("Syncing...");
+                      const toastId = toast.loading("Syncing with Farcaster...");
                       try {
-                        await syncUser(address, true);
+                        const synced = await syncUser(address, true);
                         await fetchProfile();
-                        toast.success("Synced!", { id: toastId });
+                        if (synced?.fid) {
+                          toast.success("Farcaster identity synced!", { id: toastId });
+                        } else {
+                          toast.error("No Farcaster account found for this wallet.", { id: toastId });
+                        }
                       } catch (e) {
-                        toast.error("Failed", { id: toastId });
+                        toast.error(e.message || "Sync failed", { id: toastId });
                       }
                     }}
                     disabled={isFarcasterLoading}
-                    className="px-4 py-1.5 rounded-full border border-white/20 text-sm font-medium hover:bg-white/5 active:scale-95 transition-transform"
+                    className={`px-4 py-1.5 rounded-full border text-sm font-bold active:scale-95 transition-all flex items-center gap-2 ${!profileData.fid ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'border-white/20 text-white hover:bg-white/5'}`}
                   >
-                    {isFarcasterLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Sync"}
+                    {isFarcasterLoading ? (
+                      <Loader2 className="animate-spin w-4 h-4" />
+                    ) : !profileData.fid ? (
+                      <>
+                        <RefreshCw size={14} />
+                        Sync Farcaster
+                      </>
+                    ) : (
+                      "Sync"
+                    )}
                   </button>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-1.5 rounded-full border border-white/20 text-sm font-medium hover:bg-white/5 active:scale-95 transition-transform"
+                    className="px-4 py-1.5 rounded-full border border-white/20 text-sm font-medium hover:bg-white/10 active:scale-95 transition-transform"
                   >
                     Edit
                   </button>
@@ -280,6 +293,24 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+
+          {!profileData.fid && !isEditing && (
+            <div className="px-4 mb-6">
+              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-start gap-3 shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck size={18} className="text-indigo-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[12px] text-indigo-300 font-black uppercase tracking-wider mb-1">Verify Your Farcaster Account</p>
+                  <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                    Belum terdeteksi? Pastikan wallet Anda sudah diverifikasi di: <br />
+                    <span className="text-white">Warpcast &gt; Settings &gt; Verified Addresses</span>. <br />
+                    Setelah itu, klik tombol <b>Sync Farcaster</b> di atas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* NAME & BIO */}
           <div className="space-y-1">
