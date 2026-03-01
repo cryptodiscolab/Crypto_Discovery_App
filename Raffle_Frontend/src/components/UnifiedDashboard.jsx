@@ -80,46 +80,6 @@ export function UnifiedDashboard() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 mb-12">
-            {/* XP Stats Card */}
-            <div className="glass-card relative overflow-hidden bg-gradient-to-br from-indigo-600/20 to-violet-700/20 border-indigo-500/30">
-                <div className="relative z-10 p-6 flex justify-between items-center">
-                    <div>
-                        <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total XP Points</p>
-                        <div className="flex items-baseline gap-2">
-                            <h2 className="text-4xl font-black text-white tracking-tighter">
-                                {userPoints.toLocaleString()}
-                            </h2>
-                            <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        {unsyncedPoints > 0 && (
-                            <div className="relative z-[9999] pointer-events-auto">
-                                <Transaction
-                                    calls={[{
-                                        to: CONTRACTS.DAILY_APP,
-                                        data: encodeFunctionData({
-                                            abi: DAILY_APP_ABI,
-                                            functionName: 'syncMasterXPoints',
-                                        }),
-                                    }]}
-                                    onSuccess={handleTransactionSuccess}
-                                >
-                                    <TransactionButton
-                                        className="btn-primary py-2 px-4 text-[10px]"
-                                        text={`Sync ${unsyncedPoints} Pts`}
-                                    />
-                                </Transaction>
-                            </div>
-                        )}
-                        <div className="bg-white/5 backdrop-blur-md p-3 rounded-2xl flex flex-col items-center border border-white/10">
-                            <Trophy className="w-5 h-5 text-yellow-400 mb-1" />
-                            <span className="text-[9px] uppercase font-black text-white/60 tracking-widest">Master</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* Social Verification Guard */}
             <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${fcUser
@@ -145,9 +105,6 @@ export function UnifiedDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Daily Admin Tasks */}
                 <div className="space-y-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-indigo-500" /> Daily Admin Tasks
-                    </h3>
                     <div className="space-y-3">
                         {dailyTaskIds?.map((tid) => (
                             <DailyTaskItem
@@ -163,9 +120,6 @@ export function UnifiedDashboard() {
 
                 {/* Sponsorship Missions */}
                 <div className="space-y-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" /> Sponsor Missions
-                    </h3>
                     <div className="space-y-4">
                         {sponsorshipIds.map((id) => (
                             <SponsorCard
