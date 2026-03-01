@@ -2,7 +2,7 @@ import { config } from '../wagmiConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { base } from 'wagmi/chains';
+import { baseSepolia } from 'wagmi/chains';
 
 // Instantiate outside component to prevent re-creation
 const queryClient = new QueryClient();
@@ -14,7 +14,7 @@ export default function LazyWeb3Provider({ children }) {
                 <RainbowKitProvider
                     theme={darkTheme()}
                     modalSize="compact"
-                    initialChain={base}
+                    initialChain={baseSepolia}
                 >
                     <div className="min-h-screen bg-slate-950 text-slate-50">
                         {children}

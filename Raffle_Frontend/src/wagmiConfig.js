@@ -1,5 +1,5 @@
 import { createConfig, http, fallback } from 'wagmi';
-import { baseSepolia, base } from 'wagmi/chains';
+import { baseSepolia } from 'wagmi/chains';
 // IMPORT WAJIB DARI RAINBOWKIT:
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import {
@@ -36,13 +36,9 @@ const connectors = connectorsForWallets(
 );
 
 export const config = createConfig({
-    chains: [base, baseSepolia],
+    chains: [baseSepolia],
     connectors, // Pakai connector yang udah dibungkus RainbowKit
     transports: {
-        [base.id]: fallback([
-            http(`/api/rpc?chainId=${base.id}`),
-            http('https://mainnet.base.org'),
-        ]),
         [baseSepolia.id]: fallback([
             http(`/api/rpc?chainId=${baseSepolia.id}`),
             http('https://sepolia.base.org'),
