@@ -1,19 +1,27 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign } from 'lucide-react';
-import { useAccount } from 'wagmi';
-import { parseEther } from 'viem';
+import { useAccount, useReadContract } from 'wagmi';
+import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { CONTRACTS, MASTER_X_ABI } from '../lib/contracts';
 
 export function CreateRafflePage() {
     const { isConnected } = useAccount();
     const navigate = useNavigate();
     const { createSponsorshipRaffle } = useRaffle();
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const { data: globalTicketPrice } = useReadContract({
+        address: CONTRACTS.MASTER_X,
+        abi: MASTER_X_ABI,
+        functionName: 'getTicketPriceInETH',
+    });
+
     const [formData, setFormData] = useState({
         prizeDeposit: '0.1',
-        ticketPrice: '0.001',
+        ticketPrice: '0.001', // Manual fallback
         maxTickets: '200',
         winnerCount: '1',
         durationDays: '7',
@@ -21,10 +29,17 @@ export function CreateRafflePage() {
         metadataURI: ''
     });
 
+    // Sync manual ticketPrice with global price when it loads
+    useEffect(() => {
+        if (globalTicketPrice) {
+            setFormData(prev => ({ ...prev, ticketPrice: formatEther(globalTicketPrice) }));
+        }
+    }, [globalTicketPrice]);
+
     // Calculator Logic
     const stats = useMemo(() => {
         const deposit = parseFloat(formData.prizeDeposit) || 0;
-        const price = parseFloat(formData.ticketPrice) || 0;
+        const price = globalTicketPrice ? parseFloat(formatEther(globalTicketPrice)) : (parseFloat(formData.ticketPrice) || 0);
         const tickets = parseInt(formData.maxTickets) || 0;
 
         const surcharge = deposit * 0.05;
@@ -34,15 +49,16 @@ export function CreateRafflePage() {
         const sponsorPayback = totalRevenue * 0.80;
 
         return {
+            price: price, // actual price being used
             surcharge: surcharge.toFixed(4),
             totalPayment: totalPayment.toFixed(4),
             totalRevenue: totalRevenue.toFixed(4),
             projectRake: projectRake.toFixed(4),
             sponsorPayback: sponsorPayback.toFixed(4),
-            netReturn: (deposit + sponsorPayback).toFixed(4), // Fixed variable name
+            netReturn: (deposit + sponsorPayback).toFixed(4),
             profit: sponsorPayback.toFixed(4)
         };
-    }, [formData]);
+    }, [formData, globalTicketPrice]);
 
     const handleCreate = async (e) => {
         e.preventDefault();

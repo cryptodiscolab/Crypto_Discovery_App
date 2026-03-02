@@ -38,7 +38,6 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         uint256 targetPrizePool; // Target amount in ETH
         uint256 prizePool;
         address[] participants;
-        mapping(address => uint256) ticketCount;
         address[] winners;      // Support for multiple winners
         uint256 winnerCount;    // Number of winners to pick
         uint256 randomNumber;
@@ -47,7 +46,6 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         address sponsor;        // User who created the raffle (address(0) for Admin)
         string metadataURI;     // JSON with Image, Title, Description
         uint256 endTime;        // End timestamp
-        mapping(address => bool) isClaimed; 
         uint256 prizePerWinner; // Calculated at finalization
         uint256 totalTicketRevenue; // Amount collected from ticket sales
     }
@@ -75,12 +73,16 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     mapping(uint256 => RaffleData) public raffles;
     uint256 public currentRaffleId;
     mapping(bytes32 => uint256) public requestToRaffleId;
-    mapping(address => uint256) public sponsorBalances; // Claimable earnings for creators
+    
+    // NEW: Separated mappings from struct to allow struct-return in getRaffleInfo
+    mapping(uint256 => mapping(address => uint256)) public ticketCountPerUser;
+    mapping(uint256 => mapping(address => bool)) public hasClaimedPrize;
+    mapping(address => uint256) public sponsorBalances;
 
     // ============ Events ============
     
     event RaffleCreated(uint256 indexed raffleId, uint256 timestamp);
-    event TicketPurchased(address indexed user, uint256 indexed raffleId, uint256 ticketCount);
+    event TicketPurchased(address indexed user, uint256 indexed raffleId, uint256 count);
     event QRNGRequested(bytes32 indexed requestId, uint256 indexed raffleId);
     event QRNGFulfilled(bytes32 indexed requestId, uint256 randomNumber);
     event RaffleWinner(uint256 indexed raffleId, address indexed winner, uint256 prize);
@@ -156,14 +158,14 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
 
     // ============ Raffle Logic ============
     
-    function purchaseRaffleTickets(uint256 ticketCount) external payable nonReentrant whenNotPaused {
+    function buyTickets(uint256 raffleId, uint256 ticketCount) external payable nonReentrant whenNotPaused {
         require(ticketCount > 0, "Invalid count");
         
-        RaffleData storage raffle = raffles[currentRaffleId];
+        RaffleData storage raffle = raffles[raffleId];
         require(raffle.isActive, "Raffle not active");
         require(block.timestamp <= raffle.endTime, "Raffle expired");
         require(raffle.totalTickets + ticketCount <= raffle.maxTickets, "Sold out");
-        require(raffle.ticketCount[msg.sender] + ticketCount <= maxTicketsPerUser, "Exceeds user max");
+        require(ticketCountPerUser[raffleId][msg.sender] + ticketCount <= maxTicketsPerUser, "Exceeds user max");
         
         uint256 baseETH = masterContract.getTicketPriceInETH() * ticketCount;
         uint256 requiredETH = baseETH * (10000 + surchargeBP) / 10000;
@@ -178,11 +180,11 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         masterContract.addPoints(msg.sender, ticketCount * pointsRaffleTicket, "Raffle Ticket");
         
         // 3. Add tickets
-        if (raffle.ticketCount[msg.sender] == 0) {
+        if (ticketCountPerUser[raffleId][msg.sender] == 0) {
             require(raffle.participants.length < maxParticipants, "Room limit");
             raffle.participants.push(msg.sender);
         }
-        raffle.ticketCount[msg.sender] += ticketCount;
+        ticketCountPerUser[raffleId][msg.sender] += ticketCount;
         raffle.totalTickets += ticketCount;
         raffle.totalTicketRevenue += baseETH; 
         
@@ -192,7 +194,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
             require(success, "Refund failed");
         }
         
-        emit TicketPurchased(msg.sender, currentRaffleId, ticketCount);
+        emit TicketPurchased(msg.sender, raffleId, ticketCount);
     }
 
     // ============ API3 QRNG ============
@@ -203,7 +205,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         sponsorWallet = _sw;
     }
 
-    function requestRaffleWinner(uint256 raffleId) external {
+    function drawWinner(uint256 raffleId) external {
         RaffleData storage raffle = raffles[raffleId];
         require(raffle.isActive, "Not active");
         require(raffle.totalTickets > 0, "No tickets");
@@ -258,6 +260,9 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         // 3. Credit Sponsor (80% of sales + original PrizePool deposit)
         if (raffle.sponsor != address(0)) {
             sponsorBalances[raffle.sponsor] += (sponsorShare + raffle.prizePool);
+        } else {
+            // Admin Raffle: Ticket revenue becomes the prize
+            raffle.prizePool += sponsorShare;
         }
 
         // 4. Select Multiple Winners
@@ -266,8 +271,10 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
             winnersToPick = raffle.participants.length;
         }
 
-        // Winners share the ORIGINAL prize pool provided by sponsor
-        uint256 prizePerWinner = raffle.prizePool / winnersToPick;
+        // Winners share the prize pool
+        // For admin raffles, this is now the ticket revenue.
+        // For sponsorship, this is the original prize deposit.
+        uint256 prizePerWinner = winnersToPick > 0 ? (raffle.prizePool / winnersToPick) : 0;
 
         for (uint256 i = 0; i < winnersToPick; i++) {
             // Derive unique random for each winner slot
@@ -279,7 +286,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
             
             for (uint256 j = 0; j < raffle.participants.length; j++) {
                 address p = raffle.participants[j];
-                ticketCounter += raffle.ticketCount[p];
+                ticketCounter += ticketCountPerUser[raffleId][p];
                 if (winningTicket < ticketCounter) {
                     winner = p;
                     break;
@@ -312,7 +319,6 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     function claimRafflePrize(uint256 raffleId) external nonReentrant {
         RaffleData storage raffle = raffles[raffleId];
         require(raffle.isFinalized, "Not finalized");
-        require(!raffle.isClaimed[msg.sender], "Already claimed");
         
         // Check if user is a winner
         bool isWinner = false;
@@ -324,11 +330,12 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
             }
         }
         require(isWinner, "Not a winner");
+        require(!hasClaimedPrize[raffleId][msg.sender], "Already claimed");
 
         uint256 prize = raffle.prizePerWinner;
         require(prize > 0, "No prize");
 
-        raffle.isClaimed[msg.sender] = true;
+        hasClaimedPrize[raffleId][msg.sender] = true;
         
         // EXTRA POINTS for Claiming Raffle Winner activity
         masterContract.addPoints(msg.sender, raffleClaimXP, "Claim Raffle Prize");
@@ -407,5 +414,26 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
      */
     function raffleIdCounter() external view returns (uint256) {
         return currentRaffleId;
+    }
+
+    /**
+     * @notice Fetch complete raffle info in one call (matches ABI)
+     */
+    function getRaffleInfo(uint256 _raffleId) external view returns (RaffleData memory) {
+        return raffles[_raffleId];
+    }
+
+    /**
+     * @notice Helper to check user tickets (since struct mapping was removed)
+     */
+    function getUserTickets(uint256 _raffleId, address _user) external view returns (uint256) {
+        return ticketCountPerUser[_raffleId][_user];
+    }
+
+    /**
+     * @notice Helper to check if user claimed (since struct mapping was removed)
+     */
+    function hasUserClaimed(uint256 _raffleId, address _user) external view returns (bool) {
+        return hasClaimedPrize[_raffleId][_user];
     }
 }

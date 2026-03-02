@@ -10,7 +10,7 @@ const router = express.Router();
  */
 router.post('/farcaster/follow', async (req, res) => {
     try {
-        const { userAddress, taskId, fid, targetFid, signature, message } = req.body;
+        const { userAddress, taskId, dbTaskId, xpEarned, fid, targetFid, signature, message } = req.body;
 
         if (!userAddress || !taskId || !fid || !targetFid || !signature || !message) {
             return res.status(400).json({
@@ -23,7 +23,9 @@ router.post('/farcaster/follow', async (req, res) => {
             platform: 'farcaster',
             action: 'follow',
             userAddress,
-            taskId: parseInt(taskId),
+            taskId: isNaN(taskId) ? taskId : parseInt(taskId),
+            dbTaskId,
+            xpEarned: parseInt(xpEarned || 0),
             socialId: parseInt(fid),
             actionParams: { targetFid: parseInt(targetFid) },
             signature,
@@ -47,7 +49,7 @@ router.post('/farcaster/follow', async (req, res) => {
  */
 router.post('/farcaster/like', async (req, res) => {
     try {
-        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
+        const { userAddress, taskId, dbTaskId, xpEarned, fid, castHash, signature, message } = req.body;
 
         if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
             return res.status(400).json({
@@ -60,7 +62,9 @@ router.post('/farcaster/like', async (req, res) => {
             platform: 'farcaster',
             action: 'like',
             userAddress,
-            taskId: parseInt(taskId),
+            taskId: isNaN(taskId) ? taskId : parseInt(taskId),
+            dbTaskId,
+            xpEarned: parseInt(xpEarned || 0),
             socialId: parseInt(fid),
             actionParams: { castHash },
             signature,

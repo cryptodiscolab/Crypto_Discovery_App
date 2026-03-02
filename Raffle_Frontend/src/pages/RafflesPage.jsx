@@ -1,15 +1,24 @@
 import { useState, useMemo } from 'react';
 import { Trophy, Ticket, ArrowRight, Timer, RefreshCw, Zap, Gift, ExternalLink, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useReadContract } from 'wagmi';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
+import { GaslessBadge } from '../components/GaslessBadge';
 import toast from 'react-hot-toast';
+import { formatEther } from 'viem';
+import { CONTRACTS, MASTER_X_ABI } from '../lib/contracts';
 
 function RaffleRow({ raffleId, filter = 'all' }) {
   const { address } = useAccount();
   const { raffle, isLoading } = useRaffleInfo(raffleId);
-  const { buyTickets, claimPrize } = useRaffle();
+  const { buyTicketsGasless, claimPrize, isGaslessSupported } = useRaffle();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const { data: ticketPriceETH } = useReadContract({
+    address: CONTRACTS.MASTER_X,
+    abi: MASTER_X_ABI,
+    functionName: 'getTicketPriceInETH',
+  });
 
   if (isLoading || !raffle) return null;
   if (filter === 'active' && !raffle.isActive) return null;
@@ -30,8 +39,9 @@ function RaffleRow({ raffleId, filter = 'all' }) {
         await claimPrize(raffleId);
         toast.success("Prize claimed!", { id: tid });
       } else {
-        await buyTickets(raffleId, 1);
-        toast.success("Ticket purchased!", { id: tid });
+        // Gunakan gasless jika Smart Wallet terdeteksi, fallback ke normal jika tidak
+        await buyTicketsGasless(raffleId, 1);
+        toast.dismiss(tid);
       }
     } catch (e) {
       toast.error(e.shortMessage || "Action failed", { id: tid });
@@ -61,7 +71,7 @@ function RaffleRow({ raffleId, filter = 'all' }) {
                 {raffle.isActive ? 'LIVE' : 'CLOSED'}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">
-                Entry: 0.01 ETH
+                Entry: {ticketPriceETH ? parseFloat(formatEther(ticketPriceETH)).toFixed(6) : '...'} ETH
               </span>
             </div>
           </div>
@@ -105,7 +115,7 @@ function RaffleRow({ raffleId, filter = 'all' }) {
           className={`w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform ${isFinalized || !raffle.isActive ? 'bg-slate-800 text-slate-500' : 'bg-white/10 text-white hover:bg-white/20'}`}
         >
           {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <Ticket size={16} />}
-          {isFinalized ? 'Results Out' : 'Buy Ticket'}
+          {isFinalized ? 'Results Out' : isGaslessSupported ? '⛽ Buy Free' : 'Buy Ticket'}
         </button>
       )}
     </div>
@@ -128,7 +138,10 @@ export function RafflesPage() {
           <div className="flex justify-between items-end mb-4">
             <div>
               <h1 className="text-2xl font-black text-white mb-1">NFT Raffles</h1>
-              <p className="text-slate-500 text-sm">Win exclusive prizes.</p>
+              <div className="flex items-center gap-2">
+                <p className="text-slate-500 text-sm">Win exclusive prizes.</p>
+                <GaslessBadge />
+              </div>
             </div>
             <Link to="/create-raffle" className="p-2 rounded-full bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 active:scale-95 transition-transform">
               <Gift size={20} />

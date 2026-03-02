@@ -1,48 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Zap, Clock, Shield, Award, ExternalLink, RefreshCw, Send, List, Share2, Twitter, MessageCircle, Heart, Repeat } from 'lucide-react';
 import { useWriteContract, useReadContract, useAccount, useWaitForTransactionReceipt, useSignMessage } from 'wagmi';
-import { V12_ABI } from '../../shared/constants/abis';
+import { CONTRACTS, DAILY_APP_ABI } from '../../lib/contracts';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 
-const V12_ADDRESS = import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";
+const V12_ADDRESS = CONTRACTS.DAILY_APP;
+const DAILY_APP_ADDRESS = V12_ADDRESS;
 
 const PLATFORMS = {
     'Farcaster': { id: 'farcaster', domain: 'https://warpcast.com/...', icon: <Share2 className="w-4 h-4" /> },
     'X': { id: 'x', domain: 'https://x.com/...', icon: <Twitter className="w-4 h-4" /> },
     'Base App': { id: 'base', domain: 'https://base.app/...', icon: <img src="/base-logo.png" className="w-4 h-4 grayscale opacity-50" alt="Base" /> }
 };
-
-const DAILY_APP_ADDRESS = import.meta.env.VITE_DAILY_APP_ADDRESS;
-const DAILY_APP_ABI = [
-    {
-        "inputs": [
-            { "internalType": "string", "name": "_name", "type": "string" },
-            { "internalType": "string[]", "name": "_descs", "type": "string[]" },
-            { "internalType": "uint256[]", "name": "_rewards", "type": "uint256[]" }
-        ],
-        "name": "createSponsorship",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "nextSponsorId",
-        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "name": "sponsorships",
-        "outputs": [
-            { "internalType": "string", "name": "name", "type": "string" }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
 
 const ACTIONS = {
     'Follow': { id: 'follow', label: 'Follow', icon: <Plus className="w-3 h-3" /> },
@@ -253,9 +223,9 @@ export function TaskManagerTab() {
             return;
         }
 
-        const EXPECTED_CHAIN_ID = 8453;
+        const EXPECTED_CHAIN_ID = 84532;
         if (chainId !== EXPECTED_CHAIN_ID) {
-            toast.error(`Wrong Network! Please switch to Base Mainnet (Connected: ${chainId || 'Unknown'})`);
+            toast.error(`Wrong Network! Please switch to Base Sepolia (Connected: ${chainId || 'Unknown'})`);
             return;
         }
 
@@ -270,23 +240,26 @@ export function TaskManagerTab() {
             const links = validTasks.map(t => t.link || 'https://warpcast.com/CryptoDisco');
             const requiresVerifications = validTasks.map(t => t.requiresVerification);
 
-            const hash = await writeContractAsync({
-                address: V12_ADDRESS,
-                abi: V12_ABI,
-                functionName: 'addTaskBatch',
-                args: [
-                    baseRewards,
-                    cooldowns,
-                    minTiers,
-                    titles,
-                    links,
-                    requiresVerifications
-                ],
-            });
+            let lastHash = null;
+            for (const t of validTasks) {
+                lastHash = await writeContractAsync({
+                    address: V12_ADDRESS,
+                    abi: DAILY_APP_ABI,
+                    functionName: 'addTask',
+                    args: [
+                        BigInt(t.baseReward),
+                        BigInt(t.cooldown),
+                        t.minTier,
+                        t.title,
+                        t.link || 'https://warpcast.com/CryptoDisco',
+                        t.requiresVerification
+                    ],
+                });
+            }
 
-            if (!hash) throw new Error("Failed to get transaction hash!");
+            if (!lastHash) throw new Error("Failed to get transaction hash!");
 
-            setTxHash(hash);
+            setTxHash(lastHash);
             // Update toast to information state, keep it loading for mining
             toast.loading("Sending to Base Network...", { id: tid });
 
@@ -347,11 +320,12 @@ export function TaskManagerTab() {
             const hash = await writeContractAsync({
                 address: DAILY_APP_ADDRESS,
                 abi: DAILY_APP_ABI,
-                functionName: 'createSponsorship',
+                functionName: 'adminCreateSponsorship',
                 args: [
-                    sponsorName,
+                    0, // BRONZE
                     sponsorTasks.map(t => t.desc),
-                    sponsorTasks.map(t => BigInt(t.points))
+                    sponsorTasks.map(t => t.link || "https://warpcast.com/CryptoDisco"),
+                    sponsorName // using name as email for now
                 ]
             });
 

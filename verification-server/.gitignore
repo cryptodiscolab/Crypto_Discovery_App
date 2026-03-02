@@ -6,3 +6,9 @@ node_modules/
 deployments/
 cache/
 artifacts/
+
+# Debug & Audit Scripts (Temporary — DO NOT COMMIT)
+debug_*.js
+audit_*.js
+check_*.js
+test_pg_meta.js

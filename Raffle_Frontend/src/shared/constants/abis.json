@@ -600,6 +600,34 @@
                     "type": "string"
                 }
             ],
+            "name": "adminCreateRaffle",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_winnerCount",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_maxTickets",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_durationDays",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "string",
+                    "name": "_metadataURI",
+                    "type": "string"
+                }
+            ],
             "name": "createSponsorshipRaffle",
             "outputs": [],
             "stateMutability": "payable",
@@ -609,13 +637,31 @@
             "inputs": [
                 {
                     "internalType": "uint256",
+                    "name": "raffleId",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
                     "name": "ticketCount",
                     "type": "uint256"
                 }
             ],
-            "name": "purchaseRaffleTickets",
+            "name": "buyTickets",
             "outputs": [],
             "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "raffleId",
+                    "type": "uint256"
+                }
+            ],
+            "name": "drawWinner",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         },
         {
@@ -887,6 +933,45 @@
         {
             "inputs": [],
             "name": "rewardXpPurchase",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_winnerCount",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_maxTickets",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_durationDays",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "string",
+                    "name": "_metadataURI",
+                    "type": "string"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "currentRaffleId",
             "outputs": [
                 {
                     "internalType": "uint256",

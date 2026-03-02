@@ -3,29 +3,31 @@ import { baseSepolia } from 'wagmi/chains';
 // IMPORT WAJIB DARI RAINBOWKIT:
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import {
-    coinbaseWallet,
     metaMaskWallet,
-    bitgetWallet,
+    coinbaseWallet,
+    rainbowWallet,
+    walletConnectWallet,
     rabbyWallet,
-    walletConnectWallet
+    bitgetWallet
 } from '@rainbow-me/rainbowkit/wallets';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
 
-// KITA SUSUN URUTAN DOMPETNYA DI SINI
+// PROTOCOL COMPLIANT WALLET ORDER (Rule 4)
 const connectors = connectorsForWallets(
     [
         {
             groupName: 'Recommended',
             wallets: [
+                metaMaskWallet,
                 (opts) => coinbaseWallet({
                     ...opts,
                     preference: 'all'
                 }),
-                metaMaskWallet,
-                bitgetWallet,
-                rabbyWallet,
+                rainbowWallet,
                 walletConnectWallet,
+                rabbyWallet,
+                bitgetWallet,
             ],
         },
     ],

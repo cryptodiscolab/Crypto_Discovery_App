@@ -92,11 +92,32 @@ export function useVerification(refetchStats) {
             const result = await response.json();
 
             if (response.ok) {
-                toast.success(result.message || "Verified! Poin telah ditambahkan.", { id: tid });
+                // NEW: Record claim in Supabase immediately for Real-Time UX
+                // This ensures XP shows up before the next cron sync
+                if (isSocialTask) {
+                    try {
+                        await fetch('/api/tasks/social-verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                wallet_address: address,
+                                signature,
+                                message,
+                                task_id: taskId,
+                                platform: platform,
+                                action_type: task.action_type || 'social'
+                            })
+                        });
+                    } catch (e) {
+                        console.warn("[Sync] Instant XP update skipped:", e.message);
+                    }
+                }
+
+                toast.success(result.message || "Verified! Points added successfully.", { id: tid });
                 if (refetchStats) refetchStats();
                 return true;
             } else {
-                toast.error(result.error || "Gagal verifikasi.", { id: tid });
+                toast.error(result.error || "Verification failed.", { id: tid });
                 return false;
             }
         } catch (error) {

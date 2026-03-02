@@ -4,27 +4,28 @@ import { DAILY_APP_ABI, CONTRACTS } from '../lib/contracts'; // BUG-7 fix: use c
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
-const V12_ADDRESS = CONTRACTS.DAILY_APP; // single source of truth
+const V12_ADDRESS = CONTRACTS.DAILY_APP;
 
 export function useUserInfo(address) {
     const { data: userInfo, isLoading, refetch } = useReadContract({
         address: V12_ADDRESS,
         abi: DAILY_APP_ABI,
-        functionName: 'userStats', // BUG-7: was getUserStats (not in DAILY_APP_ABI)
+        functionName: 'userStats',
         args: [address],
         query: { enabled: !!address }
     });
 
     const stats = useMemo(() => {
         if (!userInfo) return null;
+        // In Ethers/Wagmi, return value can be array-like or object with keys
         return {
-            points: userInfo.points ?? userInfo[0],
-            totalTasksCompleted: userInfo.totalTasksCompleted ?? userInfo[1],
-            referralCount: userInfo.referralCount ?? userInfo[2],
-            currentTier: userInfo.currentTier ?? userInfo[3],
-            tasksForReferralProgress: userInfo.tasksForReferralProgress ?? userInfo[4],
-            lastDailyBonusClaim: userInfo.lastDailyBonusClaim ?? userInfo[5],
-            isBlacklisted: userInfo.isBlacklisted ?? userInfo[6],
+            points: userInfo.points !== undefined ? Number(userInfo.points) : Number(userInfo[0]),
+            totalTasksCompleted: userInfo.totalTasksCompleted !== undefined ? Number(userInfo.totalTasksCompleted) : Number(userInfo[1]),
+            referralCount: userInfo.referralCount !== undefined ? Number(userInfo.referralCount) : Number(userInfo[2]),
+            currentTier: userInfo.currentTier !== undefined ? Number(userInfo.currentTier) : Number(userInfo[3]),
+            tasksForReferralProgress: userInfo.tasksForReferralProgress !== undefined ? Number(userInfo.tasksForReferralProgress) : Number(userInfo[4]),
+            lastDailyBonusClaim: userInfo.lastDailyBonusClaim !== undefined ? Number(userInfo.lastDailyBonusClaim) : Number(userInfo[5]),
+            isBlacklisted: userInfo.isBlacklisted !== undefined ? userInfo.isBlacklisted : userInfo[6],
         };
     }, [userInfo]);
 
@@ -38,20 +39,22 @@ export function useUserInfo(address) {
 }
 
 export function useV12Stats() {
-    const { data } = useReadContract({
+    const { data: userCount } = useReadContract({
         address: V12_ADDRESS,
-        abi: V12_ABI,
-        functionName: 'getContractStats',
+        abi: DAILY_APP_ABI,
+        functionName: 'userCount',
     });
 
-    if (!data) return { totalUsers: 0, totalTransactions: 0, totalSponsors: 0 };
+    const { data: totalSponsors } = useReadContract({
+        address: V12_ADDRESS,
+        abi: DAILY_APP_ABI,
+        functionName: 'totalSponsorRequests',
+    });
 
     return {
-        totalUsers: Number(data[0]),
-        totalTransactions: Number(data[1]),
-        totalSponsors: Number(data[2]),
-        contractTokenBalance: data[3],
-        contractETHBalance: data[4]
+        totalUsers: userCount ? Number(userCount) : 0,
+        totalTransactions: 0, // Not explicitly tracked
+        totalSponsors: totalSponsors ? Number(totalSponsors) : 0,
     };
 }
 

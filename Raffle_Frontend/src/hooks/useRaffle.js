@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls } from 'wagmi';
+import { encodeFunctionData } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
-import { RAFFLE_ABI } from '../shared/constants/abis';
+import { CONTRACTS, RAFFLE_ABI } from '../lib/contracts';
 import { awardTaskXP } from '../dailyAppLogic';
+import { usePaymaster } from './usePaymaster';
 import toast from 'react-hot-toast';
 
-const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || "0x18C64ed185C15F46d17C1888e12168DBA409e2EE";
+const RAFFLE_ADDRESS = CONTRACTS.RAFFLE;
 
 export function useRaffle() {
     const { address } = useAccount();
@@ -15,28 +17,71 @@ export function useRaffle() {
     const { writeContractAsync } = useWriteContract();
     const publicClient = usePublicClient();
 
-    const buyTickets = async (raffleId, amount, useFreeTickets = false) => {
+    // ⛽ Paymaster support (Base Paymaster / EIP-5792)
+    const { isGaslessSupported, paymasterCapabilities } = usePaymaster();
+    const { sendCallsAsync } = useSendCalls();
+
+    /**
+     * buyTickets - Standard tx (semua wallet)
+     */
+    const buyTickets = async (raffleId, amount) => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: RAFFLE_ABI,
             functionName: 'buyTickets',
-            args: [BigInt(raffleId), BigInt(amount), useFreeTickets],
+            args: [BigInt(raffleId), BigInt(amount)],
         });
 
         if (hash) {
-            toast.success("Tickets bought! Requesting signature for XP rewards...");
+            toast.success("Tickets bought! Signing for XP...");
             try {
                 const timestamp = new Date().toISOString();
                 const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
-
-                await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}`, 0); // Reward value handled by backend Activity Key
+                await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}`, 0);
                 if (refetch) refetch();
             } catch (e) {
-                console.warn("XP Awarding skipped or failed:", e.message);
+                console.warn("XP Awarding skipped:", e.message);
             }
         }
         return hash;
+    };
+
+    /**
+     * buyTicketsGasless - Gasless via Base Paymaster (Coinbase Smart Wallet only)
+     * Fallback otomatis ke buyTickets jika wallet tidak support EIP-5792.
+     */
+    const buyTicketsGasless = async (raffleId, amount) => {
+        // Fallback ke tx biasa jika tidak support gasless
+        if (!isGaslessSupported) {
+            return buyTickets(raffleId, amount);
+        }
+
+        const callData = encodeFunctionData({
+            abi: RAFFLE_ABI,
+            functionName: 'buyTickets',
+            args: [BigInt(raffleId), BigInt(amount)],
+        });
+
+        const callId = await sendCallsAsync({
+            calls: [{ to: RAFFLE_ADDRESS, data: callData }],
+            capabilities: paymasterCapabilities,
+        });
+
+        toast.success("⛽ Gasless tickets purchased!");
+
+        // Award XP setelah gasless purchase
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+            await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}`, 0);
+            if (refetch) refetch();
+        } catch (e) {
+            console.warn("XP Awarding skipped:", e.message);
+        }
+
+        return callId;
     };
 
     const drawRaffle = async (raffleId) => {
@@ -75,7 +120,6 @@ export function useRaffle() {
     };
 
     const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH }) => {
-        // Total value includes 5% platform fee (105%)
         const totalValue = (BigInt(depositETH) * 105n) / 100n;
 
         const hash = await writeContractAsync({
@@ -110,63 +154,31 @@ export function useRaffle() {
         return hash;
     };
 
-    const createRaffle = async (nftContracts, tokenIds, duration) => {
+    const adminCreateRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI }) => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: RAFFLE_ABI,
-            functionName: 'createRaffle',
-            args: [nftContracts, tokenIds, BigInt(duration)],
+            functionName: 'adminCreateRaffle',
+            args: [
+                BigInt(winnerCount),
+                BigInt(maxTickets),
+                BigInt(durationDays),
+                metadataURI
+            ],
         });
-
-        if (hash) {
-            toast.success("Raffle created! Fetching ID...");
-            try {
-                // BUG-3 fix: wait for confirmation, then read real ID from chain
-                await publicClient.waitForTransactionReceipt({ hash });
-
-                const counter = await publicClient.readContract({
-                    address: RAFFLE_ADDRESS,
-                    abi: RAFFLE_ABI,
-                    functionName: 'raffleIdCounter',
-                });
-                const actualRaffleId = Number(counter) - 1; // counter increments after creation
-
-                const timestamp = new Date().toISOString();
-                const message = `Sync New Raffle\nCreator: ${address.toLowerCase()}\nTime: ${timestamp}`;
-                const signature = await signMessageAsync({ message });
-
-                await fetch('/api/admin/system/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        wallet_address: address,
-                        signature,
-                        message,
-                        action_type: 'SYNC_RAFFLE',
-                        payload: {
-                            raffle_id: actualRaffleId, // real ID from chain
-                            creator: address,
-                            nft_address: nftContracts[0],
-                            token_id: Number(tokenIds[0]),
-                            end_time: new Date(Date.now() + duration * 1000).toISOString()
-                        }
-                    })
-                });
-                toast.success(`Raffle #${actualRaffleId} synced!`);
-            } catch (e) {
-                console.warn("Database sync failed:", e.message);
-            }
-        }
         return hash;
     };
 
     return {
         buyTickets,
+        buyTicketsGasless,
         drawRaffle,
         createSponsorshipRaffle,
+        adminCreateRaffle,
         withdrawEarnings,
         claimPrize,
-        isDrawing
+        isDrawing,
+        isGaslessSupported,
     };
 }
 
@@ -174,11 +186,12 @@ export function useRaffleList() {
     const { data: totalRaffles } = useReadContract({
         address: RAFFLE_ADDRESS,
         abi: RAFFLE_ABI,
-        functionName: 'raffleIdCounter',
+        functionName: 'currentRaffleId',
     });
 
     const count = totalRaffles ? Number(totalRaffles) : 0;
-    const raffleIds = Array.from({ length: count }, (_, i) => i);
+    // Indexing is 1-based in the contract, so we generate IDs from 1 to count
+    const raffleIds = count > 0 ? Array.from({ length: count }, (_, i) => i + 1) : [];
 
     return { raffleIds, count };
 }

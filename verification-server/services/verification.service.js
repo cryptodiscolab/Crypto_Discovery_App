@@ -2,6 +2,7 @@ const { ethers } = require('ethers');
 const config = require('../config');
 const neynarService = require('./neynar.service');
 const twitterService = require('./twitter.service');
+const supabaseService = require('./supabase.service');
 
 // Smart contract ABI (only the functions we need)
 const CONTRACT_ABI = [
@@ -249,20 +250,46 @@ class VerificationService {
                 };
             }
 
-            // Mark as verified on blockchain
-            const result = await this.markTaskAsVerified(userAddress, taskId);
+            // 1. Mark as verified on blockchain (Contract uses numeric ID)
+            // If taskId is UUID, we might need a mapping. 
+            // For now, assume taskId is the numeric ID for contract.
+            const contractResult = await this.markTaskAsVerified(userAddress, taskId);
 
-            // Cache the result
-            this.cache.set(cacheKey, {
-                verified: true,
-                timestamp: Date.now(),
-            });
+            // 2. Record claim in Supabase (Database uses UUID)
+            // We'll pass the payload's taskId (if it's UUID) or look it up.
+            // For resilience, we wrap DB write in try-catch to not fail the whole req if on-chain succeeded.
+            let dbResult = { success: false };
+            try {
+                // If the frontend sends 'dbTaskId' in params, use it. Otherwise use taskId.
+                const uuidToUse = params.dbTaskId || taskId;
+                dbResult = await supabaseService.recordClaim(
+                    userAddress,
+                    uuidToUse,
+                    params.xpEarned || 0, // Fallback if not provided
+                    platform,
+                    action
+                );
+
+                // Update Neynar Score if available
+                if (platform === 'farcaster' && socialId) {
+                    const user = await neynarService.getUserByFid(socialId);
+                    if (user && user.active_status) {
+                        await supabaseService.updateUserScore(userAddress, user.active_status === 'active' ? 100 : 50);
+                    }
+                }
+            } catch (dbErr) {
+                console.error('[VerificationService] Database logging failed after on-chain success:', dbErr.message);
+                // We still return success: true because on-chain part worked.
+                dbResult.error = 'On-chain verified, but DB logging failed: ' + dbErr.message;
+            }
 
             return {
                 success: true,
                 verified: true,
-                txHash: result.txHash,
-                blockNumber: result.blockNumber,
+                txHash: contractResult.txHash,
+                blockNumber: contractResult.blockNumber,
+                dbStatus: dbResult.success ? 'synced' : 'pending',
+                dbError: dbResult.error
             };
         } catch (error) {
             console.error('Error in verification flow:', error);

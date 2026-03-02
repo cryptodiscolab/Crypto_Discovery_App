@@ -20,10 +20,10 @@
 
 ### Step 3: Frontend Integration [/]
 - [ ] Setup React/Next.js scaffold (Farcaster/Mini App optimized).
-- [ ] Implement NFT Raffle Buy & Claim functions.
-- [ ] Implement Daily Claim & Reward Pool Distribution logic.
-- [ ] Neynar API Integration (Social Verification).
-- [ ] Base Paymaster Integration (Gasless transactions).
+- [x] Implement NFT Raffle Buy & Claim functions. (Zero-Trust XP Sync + useRaffle hook)
+- [x] Implement Daily Claim & Reward Pool Distribution logic. (Zero-Trust Backend Synced)
+- [x] Neynar API Integration (Social Verification).
+- [x] Base Paymaster Integration (Gasless transactions). (EIP-5792 via useSendCalls + auto-fallback)
 
 ## Immediate Protocol Constraints
 - **Immutable Architect Protocol**: `viaIR: true`, `runs: 200`.

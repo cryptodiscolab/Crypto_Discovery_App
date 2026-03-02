@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const verifyRoutes = require('../routes/verify.routes');
+const userRoutes = require('../routes/user.routes');
 
 const app = express();
 
@@ -20,12 +21,19 @@ app.use((req, res, next) => {
     }
 
     if (!apiSecret) {
-        console.warn('⚠️ WARNING: API_SECRET is not configured. Server is running in insecure mode.');
+        if (config.server.nodeEnv === 'production') {
+            console.error('❌ CRITICAL SECURITY ERROR: API_SECRET is not configured in production!');
+            return res.status(500).json({
+                success: false,
+                error: 'Server configuration error: Security key missing',
+            });
+        }
+        console.warn('⚠️ WARNING: API_SECRET is not configured. Server is running in insecure mode (Development only).');
         return next();
     }
 
     const providedSecret = req.headers['x-api-secret'];
-    if (providedSecret !== apiSecret) {
+    if (!providedSecret || providedSecret !== apiSecret) {
         return res.status(401).json({
             success: false,
             error: 'Unauthorized: Invalid or missing X-API-SECRET header',
@@ -42,6 +50,8 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/verify', verifyRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/tasks', userRoutes); // /api/tasks/verify is handled in userRoutes
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -62,6 +72,10 @@ app.get('/', (req, res) => {
                 'POST /api/verify/twitter/retweet',
                 'POST /api/verify/twitter/quote',
                 'POST /api/verify/twitter/comment',
+            ],
+            user: [
+                'POST /api/user/sync',
+                'POST /api/tasks/verify',
             ],
             health: 'GET /api/verify/health',
         },

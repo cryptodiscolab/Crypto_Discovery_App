@@ -18,24 +18,45 @@ export function useVerifiedAction() {
     const execute = useCallback(async (action, payload) => {
         if (!address) throw new Error('Wallet not connected');
 
+        const serverUrl = import.meta.env.VITE_VERIFY_SERVER_URL || 'http://localhost:3000';
+        const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET;
+
         // Build a deterministic, human-readable message
-        // Include wallet + timestamp to prevent replay attacks
         const timestamp = Math.floor(Date.now() / 1000);
         const message = `Crypto Disco App\nAction: ${action}\nWallet: ${address.toLowerCase()}\nTimestamp: ${timestamp}`;
 
-        // Sign the message via wagmi (triggers wallet popup)
+        // Sign the message via wagmi
         const signature = await signMessageAsync({ message });
 
-        // Send to secure API route
-        const res = await fetch('/api/tasks/social-verify', {
+        // Map generic actions to specific verification server endpoints
+        let endpoint = `${serverUrl}/api/verify/${action.replace('_', '/')}`;
+
+        // Special case for legacy 'claim_task' or social tasks
+        if (action === 'claim_task' || payload.platform) {
+            const platform = payload.platform || 'farcaster';
+            const actionType = payload.actionType || 'follow';
+            endpoint = `${serverUrl}/api/verify/${platform}/${actionType}`;
+        }
+
+        const res = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-secret': apiSecret
+            },
             body: JSON.stringify({
-                action,
-                wallet: address.toLowerCase(),
-                message,
+                userAddress: address.toLowerCase(),
+                taskId: payload.task_id_contract || payload.task_id, // contract ID
+                dbTaskId: payload.task_id, // database UUID
+                xpEarned: payload.xp_earned,
+                fid: payload.fid,
+                targetFid: payload.targetFid,
+                castHash: payload.castHash,
+                userId: payload.userId,
+                tweetId: payload.tweetId,
+                targetUserId: payload.targetUserId,
                 signature,
-                payload,
+                message,
             }),
         });
 

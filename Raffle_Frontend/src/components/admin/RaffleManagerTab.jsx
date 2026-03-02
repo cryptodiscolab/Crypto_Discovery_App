@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
-import { useAccount, useReadContract, usePublicClient } from 'wagmi';
+import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
 import {
     Transaction,
     TransactionButton,
@@ -13,33 +13,11 @@ import { RAFFLE_ABI, CONTRACTS } from '../../lib/contracts';
 import { useRaffleList, useRaffleInfo } from '../../hooks/useRaffle';
 import toast from 'react-hot-toast';
 
-// Augment RAFFLE_ABI with adminCreateRaffle (added in new contract deploy)
-const ADMIN_RAFFLE_ABI_ENTRIES = [
-    {
-        "inputs": [
-            { "internalType": "uint256", "name": "_winnerCount", "type": "uint256" },
-            { "internalType": "uint256", "name": "_maxTickets", "type": "uint256" },
-            { "internalType": "uint256", "name": "_durationDays", "type": "uint256" },
-            { "internalType": "string", "name": "_metadataURI", "type": "string" }
-        ],
-        "name": "adminCreateRaffle",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "raffleIdCounter",
-        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
-
-const FULL_RAFFLE_ABI = [...(RAFFLE_ABI || []), ...ADMIN_RAFFLE_ABI_ENTRIES];
-const RAFFLE_ADDRESS = CONTRACTS?.RAFFLE || import.meta.env.VITE_RAFFLE_ADDRESS || "0x18C64ed185C15F46d17C1888e12168DBA409e2EE";
+const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE || "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08";
 
 function AdminRaffleCreateForm() {
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const publicClient = usePublicClient();
     const [form, setForm] = useState({
         winnerCount: '1',
@@ -51,7 +29,7 @@ function AdminRaffleCreateForm() {
     const calls = [{
         to: RAFFLE_ADDRESS,
         data: encodeFunctionData({
-            abi: FULL_RAFFLE_ABI,
+            abi: RAFFLE_ABI,
             functionName: 'adminCreateRaffle',
             args: [
                 BigInt(form.winnerCount || 1),
@@ -64,15 +42,48 @@ function AdminRaffleCreateForm() {
 
     const handleSuccess = async () => {
         try {
-            const counter = await publicClient.readContract({
+            // real-time read to confirm new ID
+            const currentId = await publicClient.readContract({
                 address: RAFFLE_ADDRESS,
-                abi: FULL_RAFFLE_ABI,
-                functionName: 'raffleIdCounter',
+                abi: RAFFLE_ABI,
+                functionName: 'currentRaffleId',
             });
-            const actualId = Number(counter);
+            const actualId = Number(currentId);
+
+            // Sync to Supabase for Real-Time UX
+            if (address) {
+                try {
+                    const timestamp = new Date().toISOString();
+                    const message = `Sync Admin Raffle\nID: ${actualId}\nTime: ${timestamp}`;
+                    const signature = await signMessageAsync({ message });
+
+                    await fetch('/api/admin/system/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            wallet_address: address,
+                            signature,
+                            message,
+                            action_type: 'SYNC_RAFFLE',
+                            payload: {
+                                raffle_id: actualId,
+                                creator: address,
+                                end_time: new Date(Date.now() + Number(form.durationDays) * 86400 * 1000).toISOString(),
+                                max_tickets: Number(form.maxTickets),
+                                metadata_uri: form.metadataURI || 'ipfs://admin-raffle'
+                            }
+                        })
+                    });
+                    toast.success(`Raffle #${actualId} synced to DB!`);
+                } catch (e) {
+                    console.warn("DB Sync failed:", e.message);
+                }
+            }
+
             toast.success(`Raffle #${actualId} created successfully!`);
             setForm({ winnerCount: '1', maxTickets: '100', durationDays: '3', metadataURI: '' });
-        } catch {
+        } catch (e) {
+            console.error("Read currentId failed:", e);
             toast.success('Raffle created on-chain!');
         }
     };
@@ -184,8 +195,17 @@ export function RaffleManagerTab() {
 }
 
 function AdminRaffleRow({ raffleId }) {
-    const { useRaffleInfo: info } = { useRaffleInfo: () => ({ raffle: null, isLoading: true }) };
-    const { raffle, isLoading } = useRaffleInfo(raffleId);
+    const { raffle, isLoading, refetch } = useRaffleInfo(raffleId);
+    const { drawRaffle, isDrawing } = useRaffle();
+
+    const handleDraw = async () => {
+        try {
+            await drawRaffle(raffleId);
+            refetch();
+        } catch (e) {
+            // Error handled in hook
+        }
+    };
 
     if (isLoading || !raffle) return (
         <div className="p-3 bg-[#0a0a0c] border border-white/5 rounded-xl animate-pulse">
@@ -193,19 +213,42 @@ function AdminRaffleRow({ raffleId }) {
         </div>
     );
 
+    const canDraw = raffle.isActive && (raffle.totalTickets >= raffle.maxTickets || Date.now() / 1000 >= raffle.endTime);
+
     return (
         <div className="flex items-center justify-between p-3 bg-[#0a0a0c] border border-white/5 rounded-xl">
-            <div>
-                <p className="text-[10px] font-black text-white">Raffle #{raffle.id?.toString()}</p>
-                <p className="text-[8px] text-slate-500 font-mono mt-0.5">
-                    {raffle.isActive ? '🟢 Active' : raffle.isFinalized ? '✅ Finalized' : '⚫ Closed'} •{' '}
-                    {Number(raffle.totalTickets || 0)}/{Number(raffle.maxTickets || 0)} tickets
+            <div className="flex-1">
+                <div className="flex items-center gap-2">
+                    <p className="text-[10px] font-black text-white uppercase flex items-center gap-1.5">
+                        <Ticket size={10} className="text-indigo-400" />
+                        Raffle #{raffle.id}
+                    </p>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                        {raffle.isActive ? 'LIVE' : raffle.isFinalized ? 'DONE' : 'CLOSED'}
+                    </span>
+                </div>
+                <p className="text-[8px] text-slate-500 font-mono mt-1">
+                    {Number(raffle.totalTickets || 0)}/{Number(raffle.maxTickets || 0)} tickets • {raffle.winnerCount} Winners
                 </p>
             </div>
-            <span className={`text-[8px] font-black px-2 py-1 rounded uppercase ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'
-                }`}>
-                {raffle.isActive ? 'LIVE' : 'ENDED'}
-            </span>
+
+            <div className="flex items-center gap-2">
+                {raffle.isActive && (
+                    <button
+                        onClick={handleDraw}
+                        disabled={isDrawing}
+                        className={`text-[9px] font-black px-3 py-1.5 rounded uppercase transition-all ${canDraw
+                            ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20'
+                            : 'bg-slate-800/50 text-slate-600 cursor-not-allowed opacity-50'
+                            }`}
+                    >
+                        {isDrawing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Draw Winner'}
+                    </button>
+                )}
+                {raffle.isFinalized && (
+                    <Trophy size={14} className="text-yellow-500 mr-2" />
+                )}
+            </div>
         </div>
     );
 }

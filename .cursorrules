@@ -126,7 +126,9 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 | API3 QRNG Endpoint ID | `0xfb6d017bb87991b7495f563db3c8cf59ff87b09781947bb1e417006ad7f55a78` |
 | Max Gas Price | `50 gwei` (`MAX_GAS_PRICE`) |
 | Raffle Address (Sepolia)| `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
+| MasterX Address (Sepolia)| `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
 | DailyApp Address (Sepolia)| `0xfc12f4FEFf825860c5145680bde38BF222cC669A` |
+| Content CMS V2 (Sepolia)| `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
 | Ticket Price | `150000` = $0.15 with 6 decimals (`TICKET_PRICE_USD`) |
 
 ### Supabase
@@ -147,3 +149,12 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis kepada pengguna.
 - **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI aplikasi, label, pesan error di frontend, dan teks yang dilihat oleh pengguna akhir.
+## 12. LATEST CONTRACTS & PRIVACY MANDATE
+- **Contract Updates**: ALWAYS use the latest, most updated, and complete smart contracts. If a newer valid contract is found (e.g., from `.env` or recent deployments), immediately update `.env`, `.cursorrules`, and architecture documents to prevent confusion.
+- **PRIVATE_KEY SAFETY**: THE `PRIVATE_KEY` in the `.env` file is CRITICAL SENSITIVE DATA. It MUST:
+  - NEVER be uploaded or pushed to any repository.
+  - NEVER be included in any frontend bundle (e.g., as `VITE_PRIVATE_KEY` - FORBIDDEN).
+  - NEVER be shared or exposed in logs, chat, or 3rd party tools.
+- **Privacy & Git-Safety**: ALL sensitive data (Private Keys, API Keys, `.env` files, production database URLs) MUST be added to `.gitignore`.
+- **Confidentiality**: NEVER push, upload, or expose sensitive files or data to public repositories (GitHub), frontend bundles, or any 3rd party analysis tools.
+- **Verification**: Double-check `.gitignore` entries before every push to ensure no leakage.

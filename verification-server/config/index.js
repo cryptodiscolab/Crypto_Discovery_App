@@ -34,4 +34,10 @@ module.exports = {
     apiSecret: process.env.API_SECRET?.trim(), // NEW: Secure header key
     rateLimit: parseInt(process.env.RATE_LIMIT || '10'),
   },
+
+  // Supabase
+  supabase: {
+    url: process.env.SUPABASE_URL?.trim(),
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+  },
 };
