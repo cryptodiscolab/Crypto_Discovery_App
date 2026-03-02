@@ -27,7 +27,28 @@ module.exports = {
         },
     },
     etherscan: {
-        apiKey: process.env.BASESCAN_API_KEY || "",
+        apiKey: {
+            baseSepolia: process.env.BASESCAN_API_KEY || "",
+            "base-sepolia": process.env.BASESCAN_API_KEY || "",
+        },
+        customChains: [
+            {
+                network: "baseSepolia",
+                chainId: 84532,
+                urls: {
+                    apiURL: "https://api-sepolia.basescan.org/api",
+                    browserURL: "https://sepolia.basescan.org",
+                },
+            },
+            {
+                network: "base-sepolia",
+                chainId: 84532,
+                urls: {
+                    apiURL: "https://api-sepolia.basescan.org/api",
+                    browserURL: "https://sepolia.basescan.org",
+                },
+            },
+        ],
     },
     // Contract size checker — run manually: npx hardhat size-contracts
     contractSizer: {

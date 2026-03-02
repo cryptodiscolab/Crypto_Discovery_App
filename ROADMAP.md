@@ -8,13 +8,13 @@
 
 ### Step 1: Satellite Deployment [/]
 - [x] Develop `DailyApp.sol` (Lightweight Task System).
-- [ ] Deploy `DailyApp.sol` to Base Sepolia.
-- [ ] Link `DailyApp` as an authorized satellite in `MasterX`.
+- [x] Deploy `DailyApp.sol` to Base Sepolia.
+- [x] Link `DailyApp` as an authorized satellite in `MasterX`.
 
 ### Step 2: Verification [ ]
-- [ ] Verify `MasterX` on BaseScan.
-- [ ] Verify `Raffle` on BaseScan.
-- [ ] Verify `DailyApp` on BaseScan.
+- [x] Verify `MasterX` on BaseScan.
+- [x] Verify `Raffle` on BaseScan.
+- [x] Verify `DailyApp` on BaseScan.
 
 ### Step 3: Frontend Integration [ ]
 - [ ] Setup React/Next.js scaffold (Farcaster/Mini App optimized).
