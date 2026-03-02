@@ -21,6 +21,7 @@ hardhat.config.js.backup
 .vscode/
 .idea/
 .cursorrules
+.agents/
 .DS_Store
 
 # Logs
