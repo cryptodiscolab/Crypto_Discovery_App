@@ -1464,43 +1464,47 @@ function SyncLogTab() {
                     <tbody className="divide-y divide-white/5">
                         {syncLogs.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="px-6 py-20 text-center text-slate-600 italic text-sm">
-                                    No sync activity recorded yet.
+                                <td colSpan="5" className="px-6 py-12 text-center text-slate-700 text-[10px] font-black uppercase tracking-widest">
+                                    No activity recorded yet.
                                 </td>
                             </tr>
                         ) : (
                             syncLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-white">{log.timestamp}</span>
-                                            <span className="text-[10px] text-slate-600 font-mono">{log.fullTimestamp.slice(0, 10)}</span>
+                                            <span className="text-[10px] text-white font-mono font-bold">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                                            <span className="text-[8px] text-slate-600 font-black uppercase">{new Date(log.timestamp).toLocaleDateString()}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${log.type === 'manual_optimistic'
-                                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                                                : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'
-                                            }`}>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${log.type === 'refetch' ? 'bg-blue-500/10 text-blue-400' : log.type === 'manual_optimistic' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-red-500/10 text-red-400'}`}>
                                             {log.type.replace('_', ' ')}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 font-mono text-sm text-slate-400">{log.dbXP}</td>
-                                    <td className="px-6 py-4 font-mono text-sm text-indigo-400 font-bold">{log.visualXP}</td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 text-xs font-bold">
-                                            {log.diff === '0' ? (
-                                                <>
-                                                    <CheckCircle size={14} className="text-emerald-500" />
-                                                    <span className="text-emerald-500">BALANCED</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <TrendingUp size={14} className="text-amber-500" />
-                                                    <span className="text-amber-500">+{log.diff} DIFF</span>
-                                                </>
+                                    <td className="px-6 py-4 whitespace-nowrap font-mono font-bold text-xs text-slate-400">
+                                        <div className="flex flex-col">
+                                            <span>{log.dbXp} XP</span>
+                                            {log.prevVisualXp !== null && log.prevVisualXp !== log.dbXp && (
+                                                <span className="text-[8px] text-amber-500 italic">Was: {log.prevVisualXp}</span>
                                             )}
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap font-mono font-bold text-xs text-white">
+                                        {log.visualXp} XP
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {Math.abs(log.diff) === 0 ? (
+                                            <div className="flex items-center gap-1.5 text-emerald-500">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Balanced</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5 text-amber-500">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Diff ({log.diff > 0 ? '+' : ''}{log.diff})</span>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))

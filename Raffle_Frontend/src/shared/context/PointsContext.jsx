@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { useUserV12Stats } from '../../hooks/useContract';
-import { getSBTThresholds, getUserStatsByFid } from '../../dailyAppLogic';
+import { getSBTThresholds } from '../../dailyAppLogic';
 import { supabase } from '../../lib/supabaseClient';
 
 const PointsContext = createContext(null);
@@ -10,7 +9,9 @@ export function PointsProvider({ children }) {
     const { address, isConnected } = useAccount();
 
     const [userPoints, setUserPoints] = useState(0n); // BigInt for safety
+    const userPointsRef = useRef(0); // Ref for sync tracking (Number)
     const [userTier, setUserTier] = useState(0);
+    const [pointsToNext, setPointsToNext] = useState(0);
     const [rankName, setRankName] = useState('Rookie');
     const [totalTasksCompleted, setTotalTasksCompleted] = useState(0);
 
@@ -29,43 +30,67 @@ export function PointsProvider({ children }) {
     // ==========================================
     // SYNC LOGS (For Admin/Debug)
     // ==========================================
-    const [syncLogs, setSyncLogs] = useState([]);
+    const [syncLogs, setSyncLogs] = useState(() => {
+        try {
+            const saved = localStorage.getItem('disco_sync_logs');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.warn('[PointsContext] Failed to load sync logs:', e);
+            return [];
+        }
+    });
 
-    const addSyncLog = (type, dbXP, visualXP) => {
+    // Persist logs to localStorage
+    useEffect(() => {
+        try {
+            localStorage.setItem('disco_sync_logs', JSON.stringify(syncLogs.slice(0, 50))); // Keep last 50
+        } catch (e) {
+            console.warn('[PointsContext] Failed to save sync logs:', e);
+        }
+    }, [syncLogs]);
+
+    const addSyncLog = useCallback((type, dbXp, visualXp, prevVisualXp = null) => {
         const log = {
             id: Date.now(),
-            timestamp: new Date().toLocaleTimeString(),
-            fullTimestamp: new Date().toISOString(),
-            type, // 'manual' or 'refetch'
-            dbXP: dbXP.toString(),
-            visualXP: visualXP.toString(),
-            diff: (visualXP - dbXP).toString()
+            timestamp: new Date().toISOString(),
+            type, // 'manual_optimistic', 'refetch', 'forced', 'error'
+            dbXp,
+            visualXp,
+            prevVisualXp,
+            diff: visualXp - dbXp
         };
-        setSyncLogs(prev => [log, ...prev].slice(0, 50)); // Keep last 50
-    };
+        setSyncLogs(prev => [log, ...prev].slice(0, 50));
+    }, []);
 
     // ==========================================
     // REAL-TIME SYNC (SUPABASE SOURCE)
     // ==========================================
-    const fetchUserData = async () => {
+    const fetchUserData = useCallback(async (forced = false) => {
         if (!address) return;
         setIsLoading(true);
+
         try {
             // Priority: Fetch from 'v_user_full_profile' (The Consolidated View)
             const { data, error } = await supabase
                 .from('v_user_full_profile')
-                .select('total_xp, tier, rank_name')
+                .select('*') // Changed to select all as per instruction
                 .eq('wallet_address', address.toLowerCase())
                 .single();
 
-            if (data) {
-                const newXP = BigInt(data.total_xp || 0);
-                setUserPoints(newXP);
-                setUserTier(data.tier || 1);
-                setRankName(data.rank_name || 'Rookie');
+            if (error) throw error;
 
-                // Log the refetch sync
-                addSyncLog('refetch', newXP, newXP);
+            if (data) {
+                const dbPoints = Number(data.total_xp || 0);
+                const prevVisual = userPointsRef.current;
+
+                setUserPoints(BigInt(dbPoints));
+                userPointsRef.current = dbPoints; // Update ref
+                setUserTier(data.current_tier || 1); // Changed to current_tier as per instruction
+                setPointsToNext(data.xp_to_next || 0); // New state setter
+                setRankName(data.rank_name || "Rookie"); // Updated rank_name default
+
+                // Log the sync with prev context
+                addSyncLog(forced ? 'forced' : 'refetch', dbPoints, dbPoints, prevVisual);
             }
 
             // Optional: Get total tasks count if needed
@@ -78,10 +103,11 @@ export function PointsProvider({ children }) {
 
         } catch (err) {
             console.error("[PointsContext] Sync Error:", err);
+            addSyncLog('error', 0, userPointsRef.current);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [address, addSyncLog]);
 
     // Public Refetcher
     const refetch = () => {
@@ -194,16 +220,16 @@ export function PointsProvider({ children }) {
 
     // Manual add points (for local optimistic updates like Daily Claim)
     const manualAddPoints = (amount) => {
-        const added = BigInt(amount);
-        const oldPoints = userPoints;
+        const added = Number(amount);
+        const oldPoints = userPointsRef.current;
         const newPoints = oldPoints + added;
 
-        setUserPoints(newPoints);
+        setUserPoints(BigInt(newPoints));
+        userPointsRef.current = newPoints;
         setOffChainPoints(prev => prev + amount); // Sync off-chain state
 
         // Log the manual (optimistic) sync
-        // In this case, 'dbXP' is effectively the old points since we haven't refetched yet
-        addSyncLog('manual_optimistic', oldPoints, newPoints);
+        addSyncLog('manual_optimistic', oldPoints, newPoints, oldPoints);
     };
 
     const value = {
@@ -225,7 +251,10 @@ export function PointsProvider({ children }) {
         offChainPoints,
         offChainLevel,
         syncLogs,
-        clearLogs: () => setSyncLogs([])
+        clearLogs: () => {
+            setSyncLogs([]);
+            try { localStorage.removeItem('disco_sync_logs'); } catch (e) { /* ignore */ }
+        }
     };
 
     return (

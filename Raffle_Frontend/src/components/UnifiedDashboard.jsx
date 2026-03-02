@@ -71,10 +71,33 @@ export function UnifiedDashboard() {
     const userPoints = userData ? Number(userData[0]) : 0;
     const unsyncedPoints = unsyncedPointsRaw ? Number(unsyncedPointsRaw) : 0;
 
-    const handleTransactionSuccess = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['readContract'] });
-        if (refetchStats) refetchStats();
-    }, [queryClient, refetchStats]);
+    const handleTransactionSuccess = useCallback(async () => {
+        // BUG-SYNC fix: Trigger backend XP sync immediately after transaction confirmation
+        if (address) {
+            try {
+                // Call /api/user/xp — Vercel routes this to user-bundle?action=xp
+                fetch('/api/user/xp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ wallet_address: address }),
+                }).then(async (res) => {
+                    if (!res.ok) {
+                        const err = await res.json();
+                        console.warn('[Dashboard Sync] XP sync failed:', err.error);
+                    } else {
+                        console.log('[Dashboard Sync] XP synced to DB');
+                    }
+                    // Refetch local stats after backend updates
+                    if (refetchStats) refetchStats();
+                    queryClient.invalidateQueries({ queryKey: ['readContract'] });
+                }).catch((e) => {
+                    console.warn('[Dashboard Sync] Network error during XP sync:', e);
+                });
+            } catch (e) {
+                console.warn('[Dashboard Sync] Failed to trigger backend sync:', e);
+            }
+        }
+    }, [address, queryClient, refetchStats]);
 
     if (!mounted || !isConnected) return null;
 

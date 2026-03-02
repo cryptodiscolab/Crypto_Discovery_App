@@ -441,12 +441,23 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                                     functionName: 'claimRewards',
                                 });
                                 toast.success("Mission Reward Claimed!", { id: tid });
-                                // BUG-4 fix: sync XP on-chain ke DB
-                                fetch('/api/user/sync', {
+                                // BUG-4 fix: sync XP on-chain ke DB — call /api/user/xp via Vercel rewrites
+                                fetch('/api/user/xp', {
                                     method: 'POST',
                                     headers: { 'content-type': 'application/json' },
-                                    body: JSON.stringify({ action: 'xp', wallet_address: address }),
-                                }).catch(() => { });
+                                    body: JSON.stringify({ wallet_address: address }),
+                                })
+                                    .then(async (res) => {
+                                        if (!res.ok) {
+                                            const errorData = await res.json();
+                                            console.error('[Sync Error]', errorData.error || 'Unknown error');
+                                        } else {
+                                            console.log('[Sync Success] XP synchronized');
+                                        }
+                                    })
+                                    .catch((err) => {
+                                        console.error('[Sync Fetch Error]', err);
+                                    });
                                 setVerifyingStatus(null);
                                 refetchRewards();
                                 refetchStats();
