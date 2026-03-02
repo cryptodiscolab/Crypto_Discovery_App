@@ -8,8 +8,8 @@ const supabaseAdmin = createClient(
 );
 
 const AUTHORIZED_ADMINS = [
-    '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b',
-    '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'
+    '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b',
+    '0x455df75735d2a18c26f0afdefa93217b60369fe5'
 ].map(a => a.toLowerCase());
 
 export default async function handler(req, res) {
@@ -99,10 +99,12 @@ export default async function handler(req, res) {
                 if (!tasks || !tx_hash) throw new Error("Missing sync data");
 
                 for (const task of tasks) {
-                    await supabaseAdmin.from('tasks').insert([{
-                        ...task,
-                        transaction_hash: tx_hash,
-                        is_active: true,
+                    await supabaseAdmin.from('daily_tasks').insert([{
+                        description: task.description,
+                        xp_reward: task.xp_reward,
+                        is_active: task.is_active !== undefined ? task.is_active : true,
+                        expires_at: task.expires_at || null,
+                        task_type: task.task_type || 'daily',
                         created_at: new Date().toISOString()
                     }]);
 

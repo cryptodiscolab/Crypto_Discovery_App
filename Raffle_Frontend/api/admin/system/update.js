@@ -216,6 +216,31 @@ export default async function handler(req, res) {
                     .select());
                 break;
 
+            case 'CREATE_CAMPAIGN':
+                // payload: campaign data
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('campaigns')
+                    .insert([payload])
+                    .select());
+                break;
+
+            case 'UPDATE_CAMPAIGN_STATUS':
+                // payload: { id, status }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('campaigns')
+                    .update({ status: payload.status })
+                    .eq('id', payload.id)
+                    .select());
+                break;
+
+            case 'DELETE_CAMPAIGN':
+                // payload: { id }
+                ({ data: result, error: dbError } = await supabaseAdmin
+                    .from('campaigns')
+                    .delete()
+                    .eq('id', payload.id));
+                break;
+
             default:
                 return res.status(400).json({ error: 'Invalid action type' });
         }

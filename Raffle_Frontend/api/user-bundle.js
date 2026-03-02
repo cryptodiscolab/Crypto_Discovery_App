@@ -61,10 +61,12 @@ async function handleLoginSync(req, res) {
 }
 
 async function handleXpSync(req, res) {
-    const { wallet_address } = req.body;
-    if (!wallet_address) return res.status(400).json({ error: 'Missing wallet' });
+    const { wallet_address, signature, message } = req.body;
+    if (!wallet_address || !signature || !message) return res.status(400).json({ error: 'Missing sync data' });
 
     try {
+        const valid = await verifyMessage({ address: wallet_address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         const stats = await rpcClient.readContract({
             address: DAILY_APP_ADDRESS,
             abi: [{
@@ -107,10 +109,13 @@ async function handleXpSync(req, res) {
 }
 
 async function handleFarcasterSync(req, res) {
-    const { address } = req.body;
-    if (!address) return res.status(400).json({ error: 'Missing address' });
+    const { address, signature, message } = req.body;
+    if (!address || !signature || !message) return res.status(400).json({ error: 'Missing sync data' });
 
     try {
+        // Verify Signature
+        const valid = await verifyMessage({ address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         const response = await neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [address] });
         const fcUser = response?.[address.toLowerCase()]?.[0];
 
@@ -135,14 +140,23 @@ async function handleFarcasterSync(req, res) {
 }
 
 async function handleUpdateProfile(req, res) {
-    // Logic from verify-action/route.js
-    const { wallet, payload } = req.body;
-    if (!wallet || !payload) return res.status(400).json({ error: 'Missing data' });
+    const { wallet, signature, message, payload } = req.body;
+    if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing update data' });
 
     try {
+        // 1. Verify Signature (Zero-Trust)
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        // 2. Security: Strip sensitive fields to prevent privilege escalation
+        const sanitizedPayload = { ...payload };
+        delete sanitizedPayload.is_admin;
+        delete sanitizedPayload.wallet_address;
+        delete sanitizedPayload.total_xp;
+
         const { error } = await supabaseAdmin
             .from('user_profiles')
-            .update(payload)
+            .update(sanitizedPayload)
             .eq('wallet_address', wallet.toLowerCase());
         if (error) throw error;
         return res.status(200).json({ success: true });

@@ -1,38 +1,45 @@
-/**
- * /api/notify
- * ===========
- * Secure Neynar notification endpoint.
- * NEYNAR_API_KEY disimpan di server — TIDAK pernah dikirim ke client.
- *
- * POST body: { fid: number, message: string, type?: "mention"|"cast" }
- */
+import { verifyMessage } from 'viem';
+import { createClient } from '@supabase/supabase-js';
 
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
+const supabaseAdmin = createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export default async function handler(req, res) {
-    // ── Method Guard ──
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    // ── Server Config Guard ──
     if (!NEYNAR_API_KEY) {
-        console.error('[Notify] Missing NEYNAR_API_KEY on server');
         return res.status(500).json({ error: 'Internal server error' });
     }
 
-    const { fid, message, type = 'mention' } = req.body || {};
+    const { fid, message, type = 'mention', signature, signedMessage, wallet } = req.body || {};
 
-    // ── Input Validation ──
-    if (!fid || !message) {
-        return res.status(400).json({ error: 'Missing required fields: fid, message' });
-    }
-    if (typeof message !== 'string' || message.length > 500) {
-        return res.status(400).json({ error: 'Invalid message format or too long' });
+    if (!fid || !message || !signature || !signedMessage || !wallet) {
+        return res.status(400).json({ error: 'Missing required security fields' });
     }
 
     try {
-        // ── Neynar API Call (server-side only) ──
+        // 1. Verify Signature
+        const validSignature = await verifyMessage({ address: wallet, message: signedMessage, signature });
+        if (!validSignature) return res.status(401).json({ error: 'Invalid signature' });
+
+        // 2. Security Check: Does this wallet own this FID?
+        // This prevents users from mentioning others via our API.
+        const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('fid')
+            .eq('wallet_address', wallet.toLowerCase())
+            .single();
+
+        if (!profile || Number(profile.fid) !== Number(fid)) {
+            return res.status(403).json({ error: 'Unauthorized: You can only notify your own FID' });
+        }
+
+        // 3. Neynar API Call
         const response = await fetch('https://api.neynar.com/v2/farcaster/cast', {
             method: 'POST',
             headers: {
@@ -42,7 +49,6 @@ export default async function handler(req, res) {
             body: JSON.stringify({
                 signer_uuid: process.env.NEYNAR_SIGNER_UUID || '',
                 text: message,
-                // Mention user by FID if type is 'mention'
                 ...(type === 'mention' ? {
                     mentions: [fid],
                     mentions_positions: [0]
@@ -51,16 +57,12 @@ export default async function handler(req, res) {
         });
 
         if (!response.ok) {
-            // Non-blocking: Log error but don't expose Neynar internals
-            const errText = await response.text().catch(() => '');
-            console.error(`[Notify] Neynar API error ${response.status}:`, errText.slice(0, 200));
             return res.status(502).json({ error: 'Notification service unavailable' });
         }
 
         return res.status(200).json({ ok: true });
 
     } catch (err) {
-        // ZERO TRUST: Never expose stack trace or env status to client
         console.error('[Notify] Fatal error:', err.message);
         return res.status(500).json({ error: 'Internal server error' });
     }

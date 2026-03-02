@@ -17,6 +17,7 @@ const CreateRafflePage = lazy(() => import('./pages/CreateRafflePage').then(m =>
 const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.default || m.TasksPage })));
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.default || m.AdminPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.default || m.LoginPage })));
+const CampaignsPage = lazy(() => import('./pages/CampaignsPage').then(m => ({ default: m.default || m.CampaignsPage })));
 
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx').then(m => ({ default: m.default || m.AdminDashboard })));
 const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx').then(m => ({ default: m.default || m.AdminGuard })));
@@ -53,6 +54,7 @@ function App() {
                       <Route path="/leaderboard" element={<LeaderboardPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
                       <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                      <Route path="/campaigns" element={<CampaignsPage />} />
                       <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                     </Route>
                   </Routes>

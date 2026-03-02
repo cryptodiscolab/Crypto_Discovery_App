@@ -139,21 +139,21 @@ export default function ProfilePage() {
 
       toast.loading("Verifying & Saving to Server...", { id: toastId });
 
-      // 3. Kirim ke API
-      const response = await fetch('/api/user/update-profile', {
+      // 3. Kirim ke API (Secured)
+      const response = await fetch('/api/user-bundle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          wallet_address: address.toLowerCase(),
+          action: 'update-profile',
+          wallet: address.toLowerCase(),
           signature: signature,
           message: messageToSign,
-          profile_data: {
+          payload: {
             display_name: profileData.displayName,
             bio: profileData.bio,
-            avatar_url: profileData.avatarUrl
-            // Note: Data Neynar (FID, Username, Stats) biasanya read-only dari sync, tidak diedit manual
+            pfp_url: profileData.avatarUrl
           }
         }),
       });
@@ -775,11 +775,20 @@ function CreateTaskModal({ onClose }) {
             calls={buildCalls()}
             onSuccess={() => {
               toast.success("Sponsorship Created! Duration: 3 Days.");
-              // BUG-8 fix: sync XP on-chain ke DB setelah payment
-              fetch('/api/user/sync', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ action: 'xp', wallet_address: address }),
+              // BUG-8 fix: sync XP on-chain ke DB setelah payment (Secured)
+              const timestamp = new Date().toISOString();
+              const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
+              signMessageAsync({ message }).then(signature => {
+                fetch('/api/user-bundle', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'xp',
+                    wallet_address: address,
+                    signature,
+                    message
+                  }),
+                }).catch(() => { });
               }).catch(() => { });
               onClose();
             }}
@@ -807,6 +816,7 @@ function CreateTaskModal({ onClose }) {
 
 function DailyClaimModal({ onClose }) {
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const { refetch, manualAddPoints } = usePoints();
@@ -814,18 +824,13 @@ function DailyClaimModal({ onClose }) {
   const [countdown, setCountdown] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
 
-  // userData is dari `userStats` public mapping getter (ada di DAILY_APP_ABI)
-  // staleTime:0 + refetchOnMount memastikan data FRESH setiap kali modal dibuka
   const { stats: userData, refetch: refetchStats } = useUserInfo(address);
 
-  // userStats returns named fields — lastDailyBonusClaim ada di index 5
-  // Jika = 0 artinya belum pernah claim → tidak ada cooldown
   const lastDailyClaim = userData?.lastDailyBonusClaim
     ? Number(userData.lastDailyBonusClaim)
     : 0;
   const nextClaimTime = lastDailyClaim > 0 ? (lastDailyClaim + 86400) * 1000 : 0;
 
-  // Real-time countdown — ticks every second
   useEffect(() => {
     const tick = () => {
       const diff = nextClaimTime - Date.now();
@@ -852,7 +857,6 @@ function DailyClaimModal({ onClose }) {
     setIsClaiming(true);
     const tid = toast.loading("Preparing claim...");
     try {
-      // Estimasi gas secara presisi dari node, lalu tambah buffer 1.5x
       let gasLimit;
       try {
         const estimated = await publicClient.estimateContractGas({
@@ -862,20 +866,15 @@ function DailyClaimModal({ onClose }) {
           account: address,
         });
         gasLimit = BigInt(Math.ceil(Number(estimated) * 1.5));
-        console.log('[DailyClaim] Estimated gas:', estimated.toString(), '→ limit:', gasLimit.toString());
       } catch (estErr) {
-        // Jika gas estimation revert = kontrak PASTI akan revert juga.
-        // Kondisi revert claimDailyBonus: CooldownActive, Blacklisted, atau Paused.
-        // Jangan submit TX — langsung hentikan dan info user.
-        console.warn('[DailyClaim] Contract will revert:', estErr.shortMessage || estErr.message);
-        const isUserRejected = estErr.message?.toLowerCase().includes('user rejected');
-        if (isUserRejected) {
+        console.warn('[DailyClaim] Gas estimation failed:', estErr.message);
+        if (estErr.message?.toLowerCase().includes('user rejected')) {
           toast.dismiss(tid);
         } else {
-          toast.error('Already claimed today! Try again after 24 hours.', { id: tid });
+          toast.error('Already claimed today! Try again later.', { id: tid });
         }
         setIsClaiming(false);
-        return; // STOP — jangan submit TX yang akan gagal
+        return;
       }
 
       const hash = await writeContractAsync({
@@ -885,45 +884,41 @@ function DailyClaimModal({ onClose }) {
         gas: gasLimit,
       });
 
-      // WAIT FOR MINING -- This is the crucial fix for stale sync
       toast.loading('Mining transaction... 🔨', { id: tid });
       await publicClient.waitForTransactionReceipt({ hash });
 
-      // Sync XP on-chain ke DB setelah TX confirmed
+      // Secured Sync XP
       toast.loading('Syncing XP...', { id: tid });
       try {
+        const timestamp = new Date().toISOString();
+        const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
+        const signature = await signMessageAsync({ message });
+
         const response = await fetch('/api/user-bundle', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ action: 'xp', wallet_address: address }),
+          body: JSON.stringify({
+            action: 'xp',
+            wallet_address: address,
+            signature,
+            message
+          }),
         });
 
-        if (!response.ok) {
-          throw new Error(`Sync failed with status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error("Sync API failed");
 
-        // Optimistic Update for immediate feedback
         manualAddPoints(100);
-
         await refetchStats();
-        await refetch(); // Sync Supabase in context
+        await refetch();
       } catch (syncErr) {
         console.warn('[DailyClaim] XP sync failed:', syncErr.message);
-        toast.error("Sync failed, but transaction confirmed. XP will update later.", { duration: 5000 });
       }
 
       toast.success("+100 XP Claimed! 🎉", { id: tid });
       onClose();
     } catch (err) {
       console.error('Daily Claim Error:', err);
-      const msg = err.shortMessage || err.message || '';
-      if (msg.includes('User rejected') || msg.includes('user rejected')) {
-        toast.error('Transaction cancelled.', { id: tid });
-      } else if (msg.includes('CooldownActive')) {
-        toast.error('Already claimed today!', { id: tid });
-      } else {
-        toast.error('Claim failed: ' + (err.shortMessage || 'Try again'), { id: tid });
-      }
+      toast.error('Claim failed: ' + (err.shortMessage || 'Try again'), { id: tid });
     } finally {
       setIsClaiming(false);
     }
@@ -932,13 +927,9 @@ function DailyClaimModal({ onClose }) {
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="glass-card w-full max-sm:max-w-xs max-w-sm p-8 space-y-6 text-center">
-
-        {/* Icon */}
         <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto transition-all duration-500 ${isCooldown ? 'bg-slate-500/10' : 'bg-emerald-500/20 animate-pulse'}`}>
           <Sparkles size={40} className={isCooldown ? 'text-slate-500' : 'text-emerald-400'} />
         </div>
-
-        {/* Title */}
         <div>
           <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">
             Daily <span className="text-emerald-500">Mojo</span>
@@ -949,8 +940,6 @@ function DailyClaimModal({ onClose }) {
               : "Claim your daily XP boost to climb the leaderboard!"}
           </p>
         </div>
-
-        {/* Live Countdown Box */}
         {isCooldown && countdown && (
           <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl py-4 px-6">
             <p className="text-3xl font-black font-mono text-indigo-400 tracking-widest tabular-nums">
@@ -959,8 +948,6 @@ function DailyClaimModal({ onClose }) {
             <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-1">HH : MM : SS</p>
           </div>
         )}
-
-        {/* Claim Button */}
         <button
           onClick={handleClaim}
           disabled={isClaiming || isCooldown}
@@ -976,7 +963,6 @@ function DailyClaimModal({ onClose }) {
               ? `⏰ COMEBACK IN ${countdown}`
               : '✨ CLAIM DAILY (+100 XP)'}
         </button>
-
         <button
           onClick={onClose}
           className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors"

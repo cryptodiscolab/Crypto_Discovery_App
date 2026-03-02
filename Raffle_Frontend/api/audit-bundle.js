@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import { createClient } from "@supabase/supabase-js";
+import { verifyMessage } from "viem";
 
 // ── CONFIG ─────────────────────────────────────────────────────
 // Fix: Alchemy Free Tier strictly limits eth_getLogs to 10 blocks.
@@ -49,6 +50,23 @@ async function handleRpcProxy(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // WHITELIST: Only allow read-only or estimation methods to prevent abuse
+    const ALLOWED_METHODS = [
+        'eth_call',
+        'eth_estimateGas',
+        'eth_blockNumber',
+        'eth_getTransactionReceipt',
+        'eth_getTransactionByHash',
+        'eth_getCode',
+        'eth_getStorageAt',
+        'eth_getBalance'
+    ];
+
+    const { method } = req.body || {};
+    if (!ALLOWED_METHODS.includes(method)) {
+        return res.status(403).json({ error: `Method ${method} is not allowed via proxy` });
+    }
+
     const ALCHEMY_KEY = process.env.VITE_ALCHEMY_API_KEY || process.env.ALCHEMY_API_KEY;
     const CHAIN_ID = req.query.chainId || '84532'; // Default to Base Sepolia
 
@@ -77,15 +95,22 @@ async function handleRpcProxy(req, res) {
 
 // ── ACTION: Farcaster Check ────────────────────────────────────
 async function handleFarcasterCheck(req, res) {
-    const { address } = req.query;
+    const { address, signature, message } = req.query;
 
     if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
         return res.status(400).json({ error: 'Invalid address' });
     }
 
-    const normalizedAddress = address.toLowerCase();
+    // MANDATORY: Signature Verification to prevent Neynar Key abuse
+    if (!signature || !message) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
 
     try {
+        const valid = await verifyMessage({ address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const normalizedAddress = address.toLowerCase();
         const response = await fetch(
             `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${normalizedAddress}`,
             {

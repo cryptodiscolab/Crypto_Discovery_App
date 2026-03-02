@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useSignMessage } from 'wagmi';
 import { supabase } from '@/lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
 
@@ -10,6 +11,7 @@ export const useFarcaster = () => {
     const [profileData, setProfileData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const { signMessageAsync } = useSignMessage();
 
     const abortControllerRef = useRef(null);
 
@@ -62,11 +64,19 @@ export const useFarcaster = () => {
                 }
             }
 
-            // 3. Neynar SDK Sync (Via Backend Bridge)
+            // 3. Neynar SDK Sync (Via Backend Bridge) - SECURED with Signature
+            const timestamp = new Date().toISOString();
+            const message = `Sync Farcaster for ${wallet}\nTimestamp: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
             const response = await fetch('/api/user/fc-sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address: wallet }),
+                body: JSON.stringify({
+                    address: wallet,
+                    signature,
+                    message
+                }),
                 signal: abortControllerRef.current.signal
             });
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet } from 'lucide-react';
+import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, Megaphone } from 'lucide-react';
 import { useCMS } from '../hooks/useCMS';
 
 const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
@@ -27,11 +27,12 @@ export function BottomNav() {
     const navItems = [
         { path: '/', label: 'Home', icon: <Home className="w-5 h-5" /> },
         { path: '/tasks', label: 'Tasks', icon: <Zap className="w-5 h-5" /> },
+        { path: '/campaigns', label: 'Offer', icon: <Megaphone className="w-5 h-5" /> },
         { path: '/raffles', label: 'Raffles', icon: <Ticket className="w-5 h-5" /> },
         { path: '/leaderboard', label: 'Rank', icon: <Trophy className="w-5 h-5" /> },
     ];
 
-    const gridCols = isAdmin ? 'grid-cols-6' : 'grid-cols-5';
+    const gridCols = isAdmin ? 'grid-cols-7' : 'grid-cols-6';
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto bg-[#0B0E14]/90 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 px-2 shadow-2xl md:hidden">

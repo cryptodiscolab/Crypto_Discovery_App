@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift } from 'lucide-react';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/useContract';
 import { useVerification } from '../hooks/useVerification';
 import { usePoints } from '../shared/context/PointsContext';
@@ -225,6 +225,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
 
 export function TasksPage() {
     const { address, isConnected } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { totalTasks: tasksCount } = useAllTasks();
     const totalTasks = tasksCount || 0;
     const { userPoints, userTier, rankName } = usePoints();
@@ -441,11 +442,20 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                                     functionName: 'claimRewards',
                                 });
                                 toast.success("Mission Reward Claimed!", { id: tid });
-                                // BUG-4 fix: sync XP on-chain ke DB — call /api/user/xp via Vercel rewrites
-                                fetch('/api/user/xp', {
+                                // BUG-4 fix: sync XP on-chain ke DB (Secured)
+                                const timestamp = new Date().toISOString();
+                                const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
+                                const signature = await signMessageAsync({ message });
+
+                                fetch('/api/user-bundle', {
                                     method: 'POST',
                                     headers: { 'content-type': 'application/json' },
-                                    body: JSON.stringify({ wallet_address: address }),
+                                    body: JSON.stringify({
+                                        action: 'xp',
+                                        wallet_address: address,
+                                        signature,
+                                        message
+                                    }),
                                 })
                                     .then(async (res) => {
                                         if (!res.ok) {

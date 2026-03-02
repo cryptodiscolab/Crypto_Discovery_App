@@ -15,6 +15,7 @@ const SBTRewardsDashboard = React.lazy(() => import('../components/SBTRewardsDas
 const AdminSystemSettings = React.lazy(() => import('../components/admin/AdminSystemSettings'));
 const AdminCMSContent = React.lazy(() => import('../components/admin/AdminCMSContent'));
 const TaskManager = React.lazy(() => import('../components/admin/TaskManager').then(m => ({ default: m.TaskManager })));
+const AdminCampaignTab = React.lazy(() => import('../components/admin/AdminCampaignTab'));
 
 import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
@@ -138,6 +139,7 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'roles', label: 'Role Management', icon: UserCog, color: 'yellow' },
         { id: 'whitelist', label: 'Sponsored Access', icon: Shield, color: 'purple' },
         { id: 'announcement', label: 'Announcement', icon: Edit3, color: 'blue' },
+        { id: 'campaigns', label: 'Campaigns', icon: Megaphone, color: 'indigo' },
         { id: 'news', label: 'News & Updates', icon: Newspaper, color: 'green' },
         { id: 'content', label: 'Feature Cards (CMS)', icon: Database, color: 'indigo' },
         { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
@@ -274,6 +276,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             {activeTab === 'roles' && <RoleManagementTab />}
                             {activeTab === 'whitelist' && <WhitelistManagerTab />}
                             {activeTab === 'announcement' && <AnnouncementTab />}
+                            {activeTab === 'campaigns' && <AdminCampaignTab />}
                             {activeTab === 'news' && <NewsTab />}
                             {activeTab === 'content' && <AdminCMSContent />}
                             {activeTab === 'sync-logs' && <SyncLogTab />}
