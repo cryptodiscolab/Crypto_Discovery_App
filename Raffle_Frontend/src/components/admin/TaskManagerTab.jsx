@@ -53,7 +53,7 @@ export function TaskManagerTab() {
 
     const { data: nextTaskId, refetch: refetchCount } = useReadContract({
         address: V12_ADDRESS,
-        abi: V12_ABI,
+        abi: DAILY_APP_ABI,
         functionName: 'nextTaskId',
     });
 
