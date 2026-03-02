@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Award, Landmark, Settings, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList, Sliders } from 'lucide-react';
+import { Shield, Award, Landmark, Settings, Users, ArrowUpRight, DollarSign, Database, CheckCircle, AlertTriangle, ExternalLink, RefreshCw, Edit3, Save, Eye, EyeOff, UserCog, Newspaper, TrendingUp, Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList, Sliders, Megaphone } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
@@ -17,7 +17,7 @@ const AdminCMSContent = React.lazy(() => import('../components/admin/AdminCMSCon
 const TaskManager = React.lazy(() => import('../components/admin/TaskManager').then(m => ({ default: m.TaskManager })));
 const AdminCampaignTab = React.lazy(() => import('../components/admin/AdminCampaignTab'));
 
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits, parseUnits, parseEther } from 'viem';
 import toast from 'react-hot-toast';
 import { getSBTThresholds } from '../dailyAppLogic';
 import { cleanWallet } from '../utils/cleanWallet';
