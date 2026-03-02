@@ -11,12 +11,14 @@
 - [x] Deploy `DailyApp.sol` to Base Sepolia.
 - [x] Link `DailyApp` as an authorized satellite in `MasterX`.
 
-### Step 2: Verification [ ]
+### Step 2: Verification [x]
 - [x] Verify `MasterX` on BaseScan.
 - [x] Verify `Raffle` on BaseScan.
 - [x] Verify `DailyApp` on BaseScan.
+- [x] Deploy `Verification Server` to Vercel.
+- [x] Sync `VITE_VERIFY_SERVER_URL` in frontend.
 
-### Step 3: Frontend Integration [ ]
+### Step 3: Frontend Integration [/]
 - [ ] Setup React/Next.js scaffold (Farcaster/Mini App optimized).
 - [ ] Implement NFT Raffle Buy & Claim functions.
 - [ ] Implement Daily Claim & Reward Pool Distribution logic.
