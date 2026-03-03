@@ -73,14 +73,15 @@ async function handleXpSync(req, res) {
 
         const cleanAddress = wallet_address.toLowerCase();
 
-        // 2. Fetch Current DB XP (to calculate delta)
-        const { data: profile } = await supabaseAdmin
-            .from('user_profiles')
-            .select('total_xp')
+        // 2. Fetch Current On-Chain XP recorded in DB (NOT total_xp, to prevent negative deltas)
+        const { data: claims } = await supabaseAdmin
+            .from('user_task_claims')
+            .select('xp_earned')
             .eq('wallet_address', cleanAddress)
-            .single();
+            .eq('platform', 'blockchain');
 
-        const currentDbXP = profile?.total_xp || 0;
+        const dbOnChainXP = claims ? claims.reduce((acc, curr) => acc + (curr.xp_earned || 0), 0) : 0;
+
         let onChainXP = 0;
         let xpDelta = 0;
         let attempts = 0;
@@ -111,7 +112,7 @@ async function handleXpSync(req, res) {
             });
 
             onChainXP = Number(stats[0] || 0);
-            xpDelta = onChainXP - currentDbXP;
+            xpDelta = onChainXP - dbOnChainXP;
 
             if (xpDelta > 0) break; // Found gains!
 
@@ -122,7 +123,7 @@ async function handleXpSync(req, res) {
             }
         }
 
-        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, DB=${currentDbXP}, Delta=${xpDelta}`);
+        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, DB(OnChainOnly)=${dbOnChainXP}, Delta=${xpDelta}`);
 
         // 4. Ensure profile exists (Identity Foundation)
         // We must do this BEFORE inserting the claim so the trigger 'sync_user_xp' 
@@ -165,12 +166,12 @@ async function handleXpSync(req, res) {
                 }
             }
         } else if (xpDelta < 0) {
-            console.warn(`[XP Sync] On-chain XP (${onChainXP}) is lower than DB (${currentDbXP}) for ${cleanAddress}`);
+            console.warn(`[XP Sync] On-chain XP (${onChainXP}) is lower than DB OnChain record (${dbOnChainXP}) for ${cleanAddress}`);
         }
 
         return res.status(200).json({
             ok: true,
-            xp: Math.max(onChainXP, currentDbXP),
+            xp: Math.max(onChainXP, dbOnChainXP),
             synced: xpDelta > 0
         });
     } catch (error) {
