@@ -20,7 +20,7 @@ export default defineConfig({
       'react/jsx-dev-runtime': path.resolve(__dirname, 'node_modules/react/jsx-dev-runtime'),
       'react-dom/client': path.resolve(__dirname, 'node_modules/react-dom/client'),
       'react-is': path.resolve(__dirname, 'node_modules/react-is'),
-      'lucide-react': path.resolve(__dirname, 'node_modules/lucide-react'),
+      'lucide-react': path.resolve(__dirname, './node_modules/lucide-react'),
     },
     dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom/client', 'react-is', 'lucide-react'],
   },
@@ -34,7 +34,7 @@ export default defineConfig({
     sourcemap: false,
     cssCodeSplit: true,
     rollupOptions: {
-      treeshake: true, // CRITICAL: Enable dead code elimination
+      treeshake: true, // Re-enabled: root cause (invalid viem import) fixed
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],

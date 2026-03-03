@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClient } from 'wagmi';
-import { CMS_CONTRACT_ABI, CHAINLINK_ORACLE_ABI } from '../shared/constants/abis';
+import { ABIS, CONTRACTS } from '../lib/contracts';
 import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
@@ -37,7 +37,7 @@ export function useCMS() {
         error: announcementError
     } = useReadContract({
         address: CMS_CONTRACT_ADDRESS,
-        abi: CMS_CONTRACT_ABI,
+        abi: ABIS.CMS,
         functionName: 'getAnnouncement',
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
@@ -50,7 +50,7 @@ export function useCMS() {
     // Resolves CORS/429 issues from CoinGecko
     const { data: priceRaw } = useReadContract({
         address: PRICE_FEED_ADDRESS,
-        abi: CHAINLINK_ORACLE_ABI,
+        abi: ABIS.CHAINLINK,
         functionName: 'latestRoundData',
         query: {
             refetchInterval: 300 * 1000, // Update every 5 minutes (reduced from 1m)
@@ -73,7 +73,7 @@ export function useCMS() {
         error: newsError
     } = useReadContract({
         address: CMS_CONTRACT_ADDRESS,
-        abi: CMS_CONTRACT_ABI,
+        abi: ABIS.CMS,
         functionName: 'getNews',
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
@@ -89,7 +89,7 @@ export function useCMS() {
         error: cardsError
     } = useReadContract({
         address: CMS_CONTRACT_ADDRESS,
-        abi: CMS_CONTRACT_ABI,
+        abi: ABIS.CMS,
         functionName: 'getFeatureCards',
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
@@ -105,7 +105,7 @@ export function useCMS() {
 
     const { data: isAdminRaw } = useReadContract({
         address: CMS_CONTRACT_ADDRESS,
-        abi: CMS_CONTRACT_ABI,
+        abi: ABIS.CMS,
         functionName: 'hasRole',
         args: [DEFAULT_ADMIN_ROLE, address || "0x0000000000000000000000000000000000000000"],
         query: {
@@ -115,7 +115,7 @@ export function useCMS() {
 
     const { data: isOperatorRaw } = useReadContract({
         address: CMS_CONTRACT_ADDRESS,
-        abi: CMS_CONTRACT_ABI,
+        abi: ABIS.CMS,
         functionName: 'isOperator',
         args: [address || "0x0000000000000000000000000000000000000000"],
         query: {
@@ -267,7 +267,7 @@ export function useCMS() {
         const jsonString = JSON.stringify(newSettings);
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'updateAnnouncement',
             args: [jsonString],
         });
@@ -283,7 +283,7 @@ export function useCMS() {
         const jsonString = JSON.stringify(newSettings);
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'updateAnnouncement',
             args: [jsonString],
         });
@@ -294,7 +294,7 @@ export function useCMS() {
         const jsonString = JSON.stringify(newNews);
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'updateNews',
             args: [jsonString],
         });
@@ -305,7 +305,7 @@ export function useCMS() {
         const jsonString = JSON.stringify(newCards);
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'updateFeatureCards',
             args: [jsonString],
         });
@@ -315,7 +315,7 @@ export function useCMS() {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'batchUpdate',
             args: [
                 JSON.stringify(newAnnouncement),
@@ -333,7 +333,7 @@ export function useCMS() {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'grantOperator',
             args: [operatorAddress],
         });
@@ -343,7 +343,7 @@ export function useCMS() {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'revokeOperator',
             args: [operatorAddress],
         });
@@ -357,7 +357,7 @@ export function useCMS() {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'grantPrivilege',
             args: [userAddress, featureId],
         });
@@ -367,7 +367,7 @@ export function useCMS() {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'revokePrivilege',
             args: [userAddress, featureId],
         });
@@ -377,7 +377,7 @@ export function useCMS() {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
-            abi: CMS_CONTRACT_ABI,
+            abi: ABIS.CMS,
             functionName: 'batchGrantPrivileges',
             args: [userAddresses, featureIds],
         });
@@ -397,7 +397,7 @@ export function useCMS() {
             if (!publicClient) return false;
             const result = await publicClient.readContract({
                 address: CMS_CONTRACT_ADDRESS,
-                abi: CMS_CONTRACT_ABI,
+                abi: ABIS.CMS,
                 functionName: 'hasAccess',
                 args: [userAddress, featureId],
             });

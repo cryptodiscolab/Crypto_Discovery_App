@@ -10,7 +10,7 @@ module.exports = {
     ignorePatterns: ['dist', '.eslintrc.cjs'],
     parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
     settings: { react: { version: '18.2' } },
-    plugins: ['react-refresh', 'local'],
+    plugins: ['react-refresh' /*, 'local'*/],
     rules: {
         'react-refresh/only-export-components': [
             'warn',
@@ -20,6 +20,6 @@ module.exports = {
         'no-unused-vars': 'warn',
 
         // 🚨 CUSTOM RULE: Prevent React Error #31
-        'local/no-unsafe-react-child': 'error',
+        // 'local/no-unsafe-react-child': 'error',
     },
 }

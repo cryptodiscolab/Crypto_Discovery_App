@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignMessage, usePublicClient } from 'wagmi';
-import { DAILY_APP_ABI, CONTRACTS } from '../lib/contracts'; // BUG-7 fix: use canonical ABI
+import { ABIS, CONTRACTS } from '../lib/contracts'; // BUG-7 fix: use canonical ABI
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
@@ -9,7 +9,7 @@ const V12_ADDRESS = CONTRACTS.DAILY_APP;
 export function useUserInfo(address) {
     const { data: userInfo, isLoading, refetch } = useReadContract({
         address: V12_ADDRESS,
-        abi: DAILY_APP_ABI,
+        abi: ABIS.DAILY_APP,
         functionName: 'userStats',
         args: [address],
         query: { enabled: !!address }
@@ -41,13 +41,13 @@ export function useUserInfo(address) {
 export function useV12Stats() {
     const { data: userCount } = useReadContract({
         address: V12_ADDRESS,
-        abi: DAILY_APP_ABI,
+        abi: ABIS.DAILY_APP,
         functionName: 'userCount',
     });
 
     const { data: totalSponsors } = useReadContract({
         address: V12_ADDRESS,
-        abi: DAILY_APP_ABI,
+        abi: ABIS.DAILY_APP,
         functionName: 'totalSponsorRequests',
     });
 
@@ -65,7 +65,7 @@ export function useUserV12Stats(address) {
 export function useAllTasks() {
     const { data: totalTasks, isLoading } = useReadContract({
         address: V12_ADDRESS,
-        abi: DAILY_APP_ABI,
+        abi: ABIS.DAILY_APP,
         functionName: 'nextTaskId',
     });
 
@@ -78,7 +78,7 @@ export function useAllTasks() {
 export function useTaskInfo(taskId) {
     const { data: task, isLoading } = useReadContract({
         address: V12_ADDRESS,
-        abi: DAILY_APP_ABI,
+        abi: ABIS.DAILY_APP,
         functionName: 'getTask',
         args: [BigInt(taskId)],
     });
@@ -113,7 +113,7 @@ export function useDoTask() {
     const doTask = async (taskId, referrer = "0x0000000000000000000000000000000000000000") => {
         const hash = await writeContractAsync({
             address: V12_ADDRESS,
-            abi: DAILY_APP_ABI,
+            abi: ABIS.DAILY_APP,
             functionName: 'doTask',
             args: [BigInt(taskId), referrer],
         });
@@ -148,7 +148,7 @@ export function useDailyAppAdmin() {
     const grantRole = async (role, account) => {
         return await writeContractAsync({
             address: V12_ADDRESS,
-            abi: DAILY_APP_ABI,
+            abi: ABIS.DAILY_APP,
             functionName: 'grantRole',
             args: [role, account],
         });
@@ -157,7 +157,7 @@ export function useDailyAppAdmin() {
     const revokeRole = async (role, account) => {
         return await writeContractAsync({
             address: V12_ADDRESS,
-            abi: DAILY_APP_ABI,
+            abi: ABIS.DAILY_APP,
             functionName: 'revokeRole',
             args: [role, account],
         });
@@ -166,7 +166,7 @@ export function useDailyAppAdmin() {
     const approveSponsorship = async (requestId) => {
         return await writeContractAsync({
             address: V12_ADDRESS,
-            abi: DAILY_APP_ABI,
+            abi: ABIS.DAILY_APP,
             functionName: 'approveSponsorship',
             args: [BigInt(requestId)],
         });
@@ -175,7 +175,7 @@ export function useDailyAppAdmin() {
     const rejectSponsorship = async (requestId, reason) => {
         return await writeContractAsync({
             address: V12_ADDRESS,
-            abi: DAILY_APP_ABI,
+            abi: ABIS.DAILY_APP,
             functionName: 'rejectSponsorship',
             args: [BigInt(requestId), reason],
         });

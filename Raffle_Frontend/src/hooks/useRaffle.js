@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls } from 'wagmi';
 import { encodeFunctionData } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
-import { CONTRACTS, RAFFLE_ABI } from '../lib/contracts';
+import { ABIS, CONTRACTS } from '../lib/contracts';
 import { awardTaskXP } from '../dailyAppLogic';
 import { usePaymaster } from './usePaymaster';
 import toast from 'react-hot-toast';
@@ -27,7 +27,7 @@ export function useRaffle() {
     const buyTickets = async (raffleId, amount) => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
-            abi: RAFFLE_ABI,
+            abi: ABIS.RAFFLE,
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount)],
         });
@@ -58,7 +58,7 @@ export function useRaffle() {
         }
 
         const callData = encodeFunctionData({
-            abi: RAFFLE_ABI,
+            abi: ABIS.RAFFLE,
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount)],
         });
@@ -90,7 +90,7 @@ export function useRaffle() {
         try {
             const hash = await writeContractAsync({
                 address: RAFFLE_ADDRESS,
-                abi: RAFFLE_ABI,
+                abi: ABIS.RAFFLE,
                 functionName: 'drawWinner',
                 args: [BigInt(raffleId)],
             });
@@ -107,7 +107,7 @@ export function useRaffle() {
     const claimPrize = async (raffleId) => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
-            abi: RAFFLE_ABI,
+            abi: ABIS.RAFFLE,
             functionName: 'claimRafflePrize',
             args: [BigInt(raffleId)],
         });
@@ -124,7 +124,7 @@ export function useRaffle() {
 
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
-            abi: RAFFLE_ABI,
+            abi: ABIS.RAFFLE,
             functionName: 'createSponsorshipRaffle',
             args: [
                 BigInt(winnerCount),
@@ -144,7 +144,7 @@ export function useRaffle() {
     const withdrawEarnings = async () => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
-            abi: RAFFLE_ABI,
+            abi: ABIS.RAFFLE,
             functionName: 'withdrawSponsorBalance'
         });
 
@@ -157,7 +157,7 @@ export function useRaffle() {
     const adminCreateRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI }) => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
-            abi: RAFFLE_ABI,
+            abi: ABIS.RAFFLE,
             functionName: 'adminCreateRaffle',
             args: [
                 BigInt(winnerCount),
@@ -185,7 +185,7 @@ export function useRaffle() {
 export function useRaffleList() {
     const { data: totalRaffles } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: RAFFLE_ABI,
+        abi: ABIS.RAFFLE,
         functionName: 'currentRaffleId',
     });
 
@@ -199,7 +199,7 @@ export function useRaffleList() {
 export function useRaffleInfo(raffleId) {
     const { data, isLoading, refetch } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: RAFFLE_ABI,
+        abi: ABIS.RAFFLE,
         functionName: 'getRaffleInfo',
         args: [BigInt(raffleId)],
     });

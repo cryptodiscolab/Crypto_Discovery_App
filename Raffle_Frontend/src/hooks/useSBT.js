@@ -1,5 +1,5 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
-import { DISCO_MASTER_ABI } from '../shared/constants/abis';
+import { ABIS } from '../lib/contracts';
 import { useEffect, useState } from 'react';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84";
@@ -11,7 +11,7 @@ export function useSBT() {
     // 1. Fetch Total Pool Balance
     const { data: totalPoolBalance, refetch: refetchPool } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'totalSBTPoolBalance',
         query: {
             staleTime: 60 * 60 * 1000, // 1 hour cache
@@ -22,7 +22,7 @@ export function useSBT() {
     // 2. Fetch User Data
     const { data: userRawData, refetch: refetchUser } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'users',
         args: [address],
         query: {
@@ -33,7 +33,7 @@ export function useSBT() {
     // 3. Fetch Owner for access control
     const { data: contractOwner } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'owner',
     });
 
@@ -42,7 +42,7 @@ export function useSBT() {
     // 3. Fetch Claimable Amount for current user tier
     const { data: claimableAmount, refetch: refetchClaimable } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'tierClaimablePerHolder',
         args: [userTier],
         query: {
@@ -53,31 +53,31 @@ export function useSBT() {
     // 4. Fetch System Settings
     const { data: maxGasPrice, refetch: refetchGas } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'maxGasPrice',
     });
 
     const { data: ticketPriceUSDC, refetch: refetchPrice } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'ticketPriceUSDC',
     });
 
     const { data: pointsPerTicket, refetch: refetchPointsPer } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'pointsPerTicket',
     });
 
     const { data: lastDistributeTimestamp, refetch: refetchLastDist } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'lastDistributeTimestamp',
     });
 
     const { data: ticketDescription, refetch: refetchDesc } = useReadContract({
         address: CONTRACT_ADDRESS,
-        abi: DISCO_MASTER_ABI,
+        abi: ABIS.MASTER_X,
         functionName: 'ticketDescription',
     });
 
@@ -85,7 +85,7 @@ export function useSBT() {
         if (!isConnected) throw new Error("Wallet not connected");
         return await writeContractAsync({
             address: CONTRACT_ADDRESS,
-            abi: DISCO_MASTER_ABI,
+            abi: ABIS.MASTER_X,
             functionName: 'claimSBTRewards',
         });
     };
@@ -93,7 +93,7 @@ export function useSBT() {
     const distributeRevenue = async () => {
         return await writeContractAsync({
             address: CONTRACT_ADDRESS,
-            abi: DISCO_MASTER_ABI,
+            abi: ABIS.MASTER_X,
             functionName: 'distributeRevenue',
         });
     };
@@ -101,7 +101,7 @@ export function useSBT() {
     const updateTier = async (userAddress, newTier) => {
         return await writeContractAsync({
             address: CONTRACT_ADDRESS,
-            abi: DISCO_MASTER_ABI,
+            abi: ABIS.MASTER_X,
             functionName: 'updateUserTier',
             args: [userAddress, newTier],
         });
@@ -110,7 +110,7 @@ export function useSBT() {
     const withdrawTreasury = async (amount) => {
         return await writeContractAsync({
             address: CONTRACT_ADDRESS,
-            abi: DISCO_MASTER_ABI,
+            abi: ABIS.MASTER_X,
             functionName: 'withdrawTreasury',
             args: [amount],
         });
@@ -119,7 +119,7 @@ export function useSBT() {
     const setMasterParams = async (tUSDC, mGas, pPerTicket, desc) => {
         return await writeContractAsync({
             address: CONTRACT_ADDRESS,
-            abi: DISCO_MASTER_ABI,
+            abi: ABIS.MASTER_X,
             functionName: 'setParams',
             args: [tUSDC, mGas, pPerTicket, desc],
         });
@@ -157,7 +157,7 @@ export function useSBT() {
 
             const tx = await writeContractAsync({
                 address: CONTRACT_ADDRESS,
-                abi: DISCO_MASTER_ABI,
+                abi: ABIS.MASTER_X,
                 functionName: 'batchUpdateUserTiers',
                 args: [userAddresses, userTiers],
             });

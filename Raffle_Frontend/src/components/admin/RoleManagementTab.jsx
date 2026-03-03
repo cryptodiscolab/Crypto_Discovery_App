@@ -4,7 +4,7 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { useCMS } from '../../hooks/useCMS';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { isAddress, keccak256, toUtf8Bytes } from 'viem';
+import { isAddress, keccak256, stringToHex } from 'viem';
 import { useDailyAppAdmin } from '../../hooks/useContract';
 
 export function RoleManagementTab() {
@@ -162,7 +162,7 @@ export function RoleManagementTab() {
         const tid = toast.loading("Granting verifier role...");
 
         try {
-            const VERIFIER_ROLE = keccak256(toUtf8Bytes('VERIFIER_ROLE'));
+            const VERIFIER_ROLE = keccak256(stringToHex('VERIFIER_ROLE', { size: 32 }));
             const hash = await grantRole(VERIFIER_ROLE, verifierAddress);
             showSuccessToast("Verifier Role Granted on Blockchain!", hash);
 
