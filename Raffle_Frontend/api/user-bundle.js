@@ -62,48 +62,119 @@ async function handleLoginSync(req, res) {
 
 async function handleXpSync(req, res) {
     const { wallet_address, signature, message } = req.body;
-    if (!wallet_address || !signature || !message) return res.status(400).json({ error: 'Missing sync data' });
+    if (!wallet_address || !signature || !message) {
+        return res.status(400).json({ error: 'Missing sync data' });
+    }
 
     try {
+        // 1. Verify Signature
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
-        const stats = await rpcClient.readContract({
-            address: DAILY_APP_ADDRESS,
-            abi: [{
-                inputs: [{ name: '', type: 'address' }],
-                name: 'userStats',
-                outputs: [
-                    { name: 'points', type: 'uint256' },
-                    { name: 'totalTasksCompleted', type: 'uint256' },
-                    { name: 'referralCount', type: 'uint256' },
-                    { name: 'currentTier', type: 'uint8' },
-                    { name: 'tasksForReferralProgress', type: 'uint256' },
-                    { name: 'lastDailyBonusClaim', type: 'uint256' },
-                    { name: 'isBlacklisted', type: 'bool' },
-                ],
-                stateMutability: 'view',
-                type: 'function',
-            }],
-            functionName: 'userStats',
-            args: [wallet_address],
-        });
 
-        const onChainXP = Number(stats[0] || 0);
+        const cleanAddress = wallet_address.toLowerCase();
 
-        // Small delay to allow RPC indexing/propagation
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 2. Fetch Current DB XP (to calculate delta)
+        const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('total_xp')
+            .eq('wallet_address', cleanAddress)
+            .single();
 
-        const { error } = await supabaseAdmin
+        const currentDbXP = profile?.total_xp || 0;
+        let onChainXP = 0;
+        let xpDelta = 0;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        // 3. Retry Loop for On-Chain reading (Handling RPC Indexing Lag)
+        // Helps if the block was just mined but the RPC node hasn't indexed it yet.
+        while (attempts < maxAttempts) {
+            const stats = await rpcClient.readContract({
+                address: DAILY_APP_ADDRESS,
+                abi: [{
+                    inputs: [{ name: '', type: 'address' }],
+                    name: 'userStats',
+                    outputs: [
+                        { name: 'points', type: 'uint256' },
+                        { name: 'totalTasksCompleted', type: 'uint256' },
+                        { name: 'referralCount', type: 'uint256' },
+                        { name: 'currentTier', type: 'uint8' },
+                        { name: 'tasksForReferralProgress', type: 'uint256' },
+                        { name: 'lastDailyBonusClaim', type: 'uint256' },
+                        { name: 'isBlacklisted', type: 'bool' },
+                    ],
+                    stateMutability: 'view',
+                    type: 'function',
+                }],
+                functionName: 'userStats',
+                args: [cleanAddress],
+            });
+
+            onChainXP = Number(stats[0] || 0);
+            xpDelta = onChainXP - currentDbXP;
+
+            if (xpDelta > 0) break; // Found gains!
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                console.log(`[XP Sync] No gains found for ${cleanAddress}. Retrying in 2s... (Attempt ${attempts}/${maxAttempts})`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+
+        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, DB=${currentDbXP}, Delta=${xpDelta}`);
+
+        // 4. Ensure profile exists (Identity Foundation)
+        // We must do this BEFORE inserting the claim so the trigger 'sync_user_xp' 
+        // has a target row to update.
+        await supabaseAdmin
             .from('user_profiles')
             .upsert({
-                wallet_address: wallet_address.toLowerCase(),
-                total_xp: onChainXP,
+                wallet_address: cleanAddress,
+                last_seen_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             }, { onConflict: 'wallet_address' });
 
-        if (error) throw error;
-        return res.status(200).json({ ok: true, xp: onChainXP });
+        if (xpDelta > 0) {
+            // Determine Task ID for the claim
+            // 288596d8-b5a9-4faf-bde0-0dd28aaba902 is "Daily Bonus Claim (On-Chain)"
+            // 885535d2-4c5c-4a80-9af5-36666192c244 is general "DailyApp Contract Sync"
+            const taskId = (xpDelta === 100)
+                ? '288596d8-b5a9-4faf-bde0-0dd28aaba902'
+                : '885535d2-4c5c-4a80-9af5-36666192c244';
+
+            // 5. Record Claim to update total_xp via trigger
+            // This is "Trigger-Safe" because sync_user_xp sums all claims.
+            const { error: claimError } = await supabaseAdmin
+                .from('user_task_claims')
+                .insert({
+                    wallet_address: cleanAddress,
+                    task_id: taskId,
+                    xp_earned: xpDelta,
+                    claimed_at: new Date().toISOString(),
+                    platform: 'blockchain',
+                    action_type: 'contract_sync'
+                });
+
+            if (claimError) {
+                // If it's a unique constraint error, it means sync already happened today for this taskId
+                if (claimError.code === '23505') {
+                    console.warn(`[XP Sync] Duplicate sync for ${cleanAddress} today. Skipping insert.`);
+                } else {
+                    throw claimError;
+                }
+            }
+        } else if (xpDelta < 0) {
+            console.warn(`[XP Sync] On-chain XP (${onChainXP}) is lower than DB (${currentDbXP}) for ${cleanAddress}`);
+        }
+
+        return res.status(200).json({
+            ok: true,
+            xp: Math.max(onChainXP, currentDbXP),
+            synced: xpDelta > 0
+        });
     } catch (error) {
+        console.error('[XP Sync Error]', error);
         return res.status(500).json({ error: error.message });
     }
 }

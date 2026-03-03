@@ -157,27 +157,8 @@ class SupabaseService {
                 throw claimError;
             }
 
-            // 2. Increment total_xp via RPC (preferred — atomic)
-            const { error: rpcError } = await this.client.rpc('increment_user_xp', {
-                p_wallet: walletAddress,
-                p_xp: xpReward,
-            });
-
-            // Fallback: manual read-modify-write if RPC not deployed
-            if (rpcError) {
-                console.warn('[SupabaseService] RPC increment_user_xp unavailable, using fallback');
-                const { data: profileData } = await this.client
-                    .from('user_profiles')
-                    .select('total_xp')
-                    .eq('wallet_address', walletAddress)
-                    .single();
-
-                const currentXP = Number(profileData?.total_xp || 0);
-                await this.client
-                    .from('user_profiles')
-                    .update({ total_xp: currentXP + xpReward })
-                    .eq('wallet_address', walletAddress);
-            }
+            // 2. Increment total_xp: Handled by database trigger 'trg_sync_user_xp_on_claim'
+            // in Supabase. The trigger automatically sums all claims for the user.
 
             return { success: true, claim, xpAwarded: xpReward };
         } catch (error) {

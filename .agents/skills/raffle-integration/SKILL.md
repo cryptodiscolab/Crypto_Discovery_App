@@ -11,8 +11,8 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 
 ### 1. Contract Interaction Standard
 - **Address Canonical**: Selalu gunakan `CONTRACTS.RAFFLE` dari `src/lib/contracts.js` — JANGAN hardcode.
-- **ABI Source**: `RAFFLE_ABI` harus diimport dari `src/shared/constants/abis.js` (via `abis.json`).
-- **Verified Contract**: `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` (Base Sepolia)
+- **ABI Source**: `RAFFLE_ABI` harus diimport dari `src/shared/constants/abis.js`.
+- **Verified Raffle (Sepolia)**: `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` (`VITE_RAFFLE_ADDRESS`)
 
 ### 2. Core Hook: useRaffle.js
 Semua interaksi raffle harus melalui hook `useRaffle`:
@@ -22,11 +22,11 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - **`createSponsorshipRaffle({...})`**: Sponsor buat raffle baru + deposit + fee 5%.
 - **`withdrawEarnings()`**: Sponsor tarik pendapatan tiket (`withdrawSponsorBalance`).
 
-### 3. XP Awarding Pattern (Zero-Trust)
+### 3. XP Awarding Pattern (Zero-Trust Backend)
 Setelah `buyTickets` berhasil on-chain:
 1. Frontend sign message `Claim XP for Raffle Purchase\\nRaffle ID: ...`
-2. Call `awardTaskXP(address, signature, message, taskId, 0)` dari `dailyAppLogic.js`
-3. Backend `/api/tasks/verify` memverifikasi signature → insert ke `user_task_claims` → increment `total_xp`
+2. Call backend via Next.js API Routes (Server-Side). **DILARANG** melakukan update XP langsung melalui Supabase client side.
+3. Backend `/api/tasks/verify` memverifikasi signature → insert ke `user_task_claims` via Service Role Key → increment `total_xp`.
 
 ### 4. Data Display Standard (useRaffleInfo)
 Field yang dikembalikan oleh `getRaffleInfo`:

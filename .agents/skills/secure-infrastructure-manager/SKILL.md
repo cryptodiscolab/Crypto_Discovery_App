@@ -19,19 +19,20 @@ This skill defines the mandatory protocol for managing the Crypto Disco App's co
 
 ### 2. PRIVATE_KEY & Sensitive Data Security
 - **Strict Privacy**: The `PRIVATE_KEY` in `.env` is the highest level of secret data. 
-- **Zero Exposure**: 
-  - Never push or upload `PRIVATE_KEY` to any public/remote repository (GitHub, Vercel logs, etc.).
-  - Never include `PRIVATE_KEY` in frontend bundles. Frontend code must NEVER know a private key.
-  - Never output private keys or full API secrets in plain text during chat or logging.
-- **Git Safety**: Ensure all sensitive files (`.env`, `.env.local`, `.env.*`) are registered in `.gitignore` at both root and sub-project levels.
+- **Zero Exposure Mandate**: 
+  - NEVER push or upload `PRIVATE_KEY` to any remote repository.
+  - NEVER include `PRIVATE_KEY` in frontend bundles (e.g., as `VITE_PRIVATE_KEY` is FORBIDDEN).
+  - NEVER share or expose in logs, chat, or 3rd party tools.
+- **Git Safety**: Ensure all sensitive files (`.env`, `.env.local`) are in `.gitignore`. Double-check before every push.
 
 ### 3. Zero-Trust Frontend Architecture
 - **No Direct Writes**: Never suggest or implement direct database writes (Supabase `insert`/`upsert`/`delete`) from the React/Frontend side.
 - **Signature-Driven Backend**: All state mutations must be handled by a secure Backend API (Next.js/Verification Server) after verifying a SIWE or Viem-based cryptographic signature.
 
 ### 4. Code & Protocol Alignment
-- **Mirror .env to .cursorrules**: The "Verified Infrastructure Reference" in `.cursorrules` must always match the source of truth in `.env`.
-- **Language Protocol**: Maintain technical explanations in Bahasa Indonesia while keeping UI elements and error messages in English.
+- **Mirror .env to .cursorrules**: The "Verified Infrastructure Reference" in `.cursorrules` must always match `.env`.
+- **Language Protocol**: Technical explanations in **Bahasa Indonesia**, UI/Error messages in **English**.
+- **RPC Fallback**: Always use a fallback transport (Alchemy + Public Base) to prevent 401/429 errors.
 
 ## 🛡️ Operational Checklist
 Before finalizing any change involving инфраструктури, verify:

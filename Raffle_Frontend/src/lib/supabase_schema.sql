@@ -45,8 +45,9 @@ CREATE POLICY "Public can view profiles"
 CREATE POLICY "Users can manage own profile"
     ON public.user_profiles
     FOR ALL
-    USING (true)
-    WITH CHECK (true);
+    USING (false)
+    WITH CHECK (false);
+-- NOTE: Default to false (deny). Writes must happen via Service Role.
 
 -- ============================================
 -- 2. DAILY TASKS TABLE
@@ -91,8 +92,9 @@ CREATE POLICY "Public can view active tasks"
 CREATE POLICY "Admin can manage tasks"
     ON public.daily_tasks
     FOR ALL
-    USING (true)
-    WITH CHECK (true);
+    USING (false)
+    WITH CHECK (false);
+-- NOTE: Default to false. Writes must happen via API Route + Service Role.
 
 -- ============================================
 -- 3. USER TASK CLAIMS TABLE (Web3 Native)
@@ -151,7 +153,8 @@ CREATE POLICY "Public can view claims"
 CREATE POLICY "Users can insert claims"
     ON public.user_task_claims
     FOR INSERT
-    WITH CHECK (true);
+    WITH CHECK (false);
+-- NOTE: Manual inserts blocked. Claims happen via signed API requests.
 
 -- ============================================
 -- 4. TRIGGERS & FUNCTIONS
@@ -164,7 +167,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 CREATE TRIGGER update_user_profiles_updated_at
     BEFORE UPDATE ON public.user_profiles
@@ -192,7 +195,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 CREATE TRIGGER trg_sync_user_xp_on_claim
     AFTER INSERT ON public.user_task_claims
@@ -209,7 +212,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 CREATE TRIGGER increment_claims_counter
     AFTER INSERT ON public.user_task_claims
@@ -220,14 +223,15 @@ CREATE TRIGGER increment_claims_counter
 -- 5. HELPER FUNCTIONS
 -- ============================================
 
--- Function: Check if wallet is admin
 CREATE OR REPLACE FUNCTION is_admin_wallet(wallet TEXT)
 RETURNS BOOLEAN AS $$
 BEGIN
-    -- MASTER_ADMIN address (ganti dengan address lengkap)
-    RETURN LOWER(wallet) = LOWER('0x0845204b4b5e5f8aa7a0cfd2c6c6b5e8d4f3e2d1');
+    RETURN LOWER(wallet) IN (
+        LOWER('0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B'),
+        LOWER('0x455DF75735d2a18c26f0AfDefa93217B60369fe5')
+    );
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Function: Get user stats
 CREATE OR REPLACE FUNCTION get_user_stats(wallet TEXT)
