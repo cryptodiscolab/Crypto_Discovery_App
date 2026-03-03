@@ -141,3 +141,45 @@ export function useDoTask() {
         isLoading: isConfirming || isWaiting
     };
 }
+
+export function useDailyAppAdmin() {
+    const { writeContractAsync } = useWriteContract();
+
+    const grantRole = async (role, account) => {
+        return await writeContractAsync({
+            address: V12_ADDRESS,
+            abi: DAILY_APP_ABI,
+            functionName: 'grantRole',
+            args: [role, account],
+        });
+    };
+
+    const revokeRole = async (role, account) => {
+        return await writeContractAsync({
+            address: V12_ADDRESS,
+            abi: DAILY_APP_ABI,
+            functionName: 'revokeRole',
+            args: [role, account],
+        });
+    };
+
+    const approveSponsorship = async (requestId) => {
+        return await writeContractAsync({
+            address: V12_ADDRESS,
+            abi: DAILY_APP_ABI,
+            functionName: 'approveSponsorship',
+            args: [BigInt(requestId)],
+        });
+    };
+
+    const rejectSponsorship = async (requestId, reason) => {
+        return await writeContractAsync({
+            address: V12_ADDRESS,
+            abi: DAILY_APP_ABI,
+            functionName: 'rejectSponsorship',
+            args: [BigInt(requestId), reason],
+        });
+    };
+
+    return { grantRole, revokeRole, approveSponsorship, rejectSponsorship };
+}

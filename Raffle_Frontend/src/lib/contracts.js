@@ -1058,6 +1058,83 @@ export const DAILY_APP_ABI = [
   {
     "inputs": [
       {
+        "internalType": "uint256[]",
+        "name": "_baseRewards",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_cooldowns",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "enum DailyAppV12Secured.NFTTier[]",
+        "name": "_minTiers",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "string[]",
+        "name": "_titles",
+        "type": "string[]"
+      },
+      {
+        "internalType": "string[]",
+        "name": "_links",
+        "type": "string[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "_requiresVerifications",
+        "type": "bool[]"
+      }
+    ],
+    "name": "addTaskBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_platformFee", "type": "uint256" },
+      { "internalType": "uint256", "name": "_minPoolUSD", "type": "uint256" },
+      { "internalType": "uint256", "name": "_minRewardPerUserUSD", "type": "uint256" }
+    ],
+    "name": "setSponsorshipParams",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "sponsorshipPlatformFee",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minRewardPoolUSD",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minRewardPerUserUSD",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenPriceUSD",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "enum DailyAppV12Secured.SponsorLevel",
         "name": "_level",
         "type": "uint8"
@@ -1204,14 +1281,14 @@ export const DAILY_APP_ABI = [
         "type": "uint8"
       },
       {
-        "internalType": "string[]",
-        "name": "_titles",
-        "type": "string[]"
+        "internalType": "string",
+        "name": "_title",
+        "type": "string"
       },
       {
-        "internalType": "string[]",
-        "name": "_links",
-        "type": "string[]"
+        "internalType": "string",
+        "name": "_link",
+        "type": "string"
       },
       {
         "internalType": "string",
@@ -1220,18 +1297,18 @@ export const DAILY_APP_ABI = [
       },
       {
         "internalType": "uint256",
-        "name": "_rewardPoolAmount",
+        "name": "_rewardPerUserUSD",
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "_paymentToken",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "_totalClaims",
+        "type": "uint256"
       }
     ],
     "name": "buySponsorshipWithToken",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -2860,9 +2937,86 @@ export const DAILY_APP_ABI = [
     "type": "function"
   },
   {
-    "stateMutability": "payable",
-    "type": "receive"
-  }
+    "inputs": [
+      { "internalType": "uint256", "name": "_platformFee", "type": "uint256" },
+      { "internalType": "uint256", "name": "_minPoolUSD", "type": "uint256" },
+      { "internalType": "uint256", "name": "_minRewardPerUserUSD", "type": "uint256" }
+    ],
+    "name": "setSponsorshipParams",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_newPrice", "type": "uint256" }],
+    "name": "scheduleTokenPriceUpdate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "executePriceChange",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "sponsorshipPlatformFee",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minRewardPoolUSD",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenPriceUSD",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "enum DailyAppV12Secured.SponsorLevel", "name": "_level", "type": "uint8" },
+      { "internalType": "string", "name": "_title", "type": "string" },
+      { "internalType": "string", "name": "_link", "type": "string" },
+      { "internalType": "string", "name": "_email", "type": "string" },
+      { "internalType": "uint256", "name": "_rewardPerUserUSD", "type": "uint256" },
+      { "internalType": "uint256", "name": "_totalClaims", "type": "uint256" }
+    ],
+    "name": "buySponsorshipWithToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  { "stateMutability": "payable", "type": "receive" }
 ];
 
 export const ERC20_ABI = [
@@ -2912,15 +3066,15 @@ export const ERC20_ABI = [
 ];
 
 export const CONTRACTS = {
-    // Master X: XP, Revenue Sharing, SBT tiers (LATEST DEPLOYED)
-    MASTER_X: import.meta.env.VITE_MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84",
-    // Daily App V12: Tasks, Sponsorship, Daily Claim (LATEST DEPLOYED)
-    DAILY_APP: import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xfc12f4FEFf825860c5145680bde38BF222cC669A",
-    // Raffle Contract (LATEST DEPLOYED)
-    RAFFLE: import.meta.env.VITE_RAFFLE_ADDRESS || "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08",
-    // Content CMS V2 (LATEST DEPLOYED)
-    CMS: import.meta.env.VITE_CMS_CONTRACT_ADDRESS || "0x555D06933CC45038c42a1ba1F74140A5e4E0695d",
-    // Tokens
-    USDC: import.meta.env.VITE_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-    CREATOR_TOKEN: import.meta.env.VITE_CREATOR_TOKEN_ADDRESS || "0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c",
+  // Master X: XP, Revenue Sharing, SBT tiers (LATEST DEPLOYED)
+  MASTER_X: import.meta.env.VITE_MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84",
+  // Daily App V12: Tasks, Sponsorship, Daily Claim (LATEST DEPLOYED)
+  DAILY_APP: import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xfc12f4FEFf825860c5145680bde38BF222cC669A",
+  // Raffle Contract (LATEST DEPLOYED)
+  RAFFLE: import.meta.env.VITE_RAFFLE_ADDRESS || "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08",
+  // Content CMS V2 (LATEST DEPLOYED)
+  CMS: import.meta.env.VITE_CMS_CONTRACT_ADDRESS || "0x555D06933CC45038c42a1ba1F74140A5e4E0695d",
+  // Tokens
+  USDC: import.meta.env.VITE_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  CREATOR_TOKEN: import.meta.env.VITE_CREATOR_TOKEN_ADDRESS || "0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c",
 };

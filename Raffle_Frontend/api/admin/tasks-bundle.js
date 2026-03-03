@@ -99,19 +99,40 @@ export default async function handler(req, res) {
                 if (!tasks || !tx_hash) throw new Error("Missing sync data");
 
                 for (const task of tasks) {
-                    await supabaseAdmin.from('daily_tasks').insert([{
-                        description: task.description,
-                        xp_reward: task.xp_reward,
-                        is_active: task.is_active !== undefined ? task.is_active : true,
-                        expires_at: task.expires_at || null,
-                        task_type: task.task_type || 'daily',
-                        created_at: new Date().toISOString()
-                    }]);
+                    // Map frontend fields (TaskManagerTab.jsx) to DB columns
+                    const { data: dbTask, error: dbError } = await supabaseAdmin
+                        .from('daily_tasks')
+                        .insert([{
+                            description: task.title,
+                            xp_reward: task.reward_points,
+                            platform: task.platform,
+                            action_type: task.action_type,
+                            link: task.link,
+                            min_tier: task.min_tier || 1,
+                            requires_verification: task.requires_verification || false,
+                            min_neynar_score: task.min_neynar_score || 0,
+                            min_followers: task.min_followers || 0,
+                            account_age_requirement: task.account_age_requirement || 0,
+                            power_badge_required: task.power_badge_required || false,
+                            no_spam_filter: task.no_spam_filter || true,
+                            is_active: true,
+                            created_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
 
+                    if (dbError) throw dbError;
+
+                    // Audit Log Deployment
                     await supabaseAdmin.from('admin_audit_logs').insert([{
                         admin_address: cleanAddress,
                         action: 'DEPLOY_BATCH_TASK',
-                        details: { ...task, tx_hash }
+                        details: {
+                            task_id: dbTask.id,
+                            title: task.title,
+                            platform: task.platform,
+                            tx_hash
+                        }
                     }]);
                 }
                 return res.status(200).json({ success: true, synced: tasks.length });
@@ -149,6 +170,50 @@ export default async function handler(req, res) {
                 });
 
                 return res.status(200).json({ success: true, message: 'Season reset successfully' });
+            }
+
+            case 'AUDIT_GOVERNANCE': {
+                const { tx_hash, governor_action, details } = req.body;
+                if (!tx_hash || !governor_action) throw new Error("Missing governance data");
+
+                await supabaseAdmin.from('admin_audit_logs').insert([{
+                    admin_address: cleanAddress,
+                    action: governor_action,
+                    details: {
+                        tx_hash,
+                        ...details
+                    }
+                }]);
+                return res.status(200).json({ success: true, message: 'Governance action logged' });
+            }
+
+            case 'SYNC_ECONOMY': {
+                const { token_price_usd, tx_hash } = req.body;
+                if (token_price_usd === undefined) throw new Error("Missing price data");
+
+                // Update global point settings for calculations
+                const { error: upsertErr } = await supabaseAdmin
+                    .from('point_settings')
+                    .upsert({
+                        activity_key: 'global_token_price',
+                        points_per_unit: token_price_usd,
+                        is_active: true,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'activity_key' });
+
+                if (upsertErr) throw upsertErr;
+
+                // Log the economic update
+                await supabaseAdmin.from('admin_audit_logs').insert([{
+                    admin_address: cleanAddress,
+                    action: 'SYNC_ECONOMY_PRICE',
+                    details: {
+                        new_price: token_price_usd,
+                        tx_hash
+                    }
+                }]);
+
+                return res.status(200).json({ success: true, message: 'Economy synchronized' });
             }
 
             default:

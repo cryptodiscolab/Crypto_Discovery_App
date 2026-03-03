@@ -2,9 +2,12 @@ name: Supabase Database Audit & Architecture Manager
 description: Protokol khusus untuk melakukan audit struktur, kebijakan RLS, integritas data, dan manajemen arsitektur multi-schema (public & auth) di Supabase.
 ---
 
-# Supabase Database Audit & Security Manager Skill
+# Supabase Database Audit & Master Protocol Architect
 
-Skill ini menetapkan protokol wajib bagi asisten untuk memantau, memvalidasi, dan mengamankan infrastruktur database Supabase, memastikan kepatuhan terhadap standar **Zero Trust Frontend**.
+Skill ini menetapkan protokol wajib bagi Agent untuk memantau, memvalidasi, dan mengamankan infrastruktur database Supabase dengan menjadikan **.cursorrules (Master Architect Protocol)** sebagai panduan utama. Integritas data dan keamanan **Zero Trust** adalah prioritas mutlak.
+
+## 📜 Otoritas Data: Master Architect Protocol (.cursorrules)
+Audit skema database, kebijakan RLS, dan fungsi SQL wajib mematuhi aturan keamanan yang tertuang dalam `.cursorrules`, termasuk penggunaan `SERVICE_ROLE_KEY` yang hanya boleh di sisi server dan verifikasi signature kriptografis.
 
 ## 🛡️ Kompetensi Inti
 

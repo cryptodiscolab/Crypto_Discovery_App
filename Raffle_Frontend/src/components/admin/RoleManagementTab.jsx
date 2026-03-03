@@ -4,14 +4,17 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { useCMS } from '../../hooks/useCMS';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { isAddress } from 'viem';
+import { isAddress, keccak256, toUtf8Bytes } from 'viem';
+import { useDailyAppAdmin } from '../../hooks/useContract';
 
 export function RoleManagementTab() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { grantOperator, revokeOperator, showSuccessToast, refetchAll, isAdmin, isLoading: loadingCMS } = useCMS();
+    const { grantRole, revokeRole } = useDailyAppAdmin();
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
+    const [verifierAddress, setVerifierAddress] = useState('0x455DF75735d2a18c26f0AfDefa93217B60369fe5'); // Default derived from server .env
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     // Operators list (fetched from database)
@@ -149,6 +152,46 @@ export function RoleManagementTab() {
         }
     };
 
+    const handleGrantVerifier = async () => {
+        if (!isAddress(verifierAddress)) {
+            toast.error("Invalid verifier address");
+            return;
+        }
+
+        setIsSaving(true);
+        const tid = toast.loading("Granting verifier role...");
+
+        try {
+            const VERIFIER_ROLE = keccak256(toUtf8Bytes('VERIFIER_ROLE'));
+            const hash = await grantRole(VERIFIER_ROLE, verifierAddress);
+            showSuccessToast("Verifier Role Granted on Blockchain!", hash);
+
+            // Database Sync
+            const timestamp = new Date().toISOString();
+            const message = `Grant Verifier Role\nTarget: ${verifierAddress.toLowerCase()}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'GRANT_VERIFIER',
+                    payload: { target_address: verifierAddress }
+                })
+            });
+
+            toast.success("Verifier Role Active!", { id: tid });
+            refetchAll();
+        } catch (e) {
+            toast.error(e.message || "Grant verifier failed", { id: tid });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     if (!isAdmin) {
         return (
             <div className="glass-card p-8 text-center">
@@ -214,6 +257,34 @@ export function RoleManagementTab() {
                     >
                         <UserPlus className="w-5 h-5" />
                         Grant
+                    </button>
+                </div>
+            </div>
+
+            {/* Verification Service Role */}
+            <div className="glass-card p-6 bg-emerald-950/10 border border-emerald-500/10">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-emerald-400" /> System: Verification Service
+                </h3>
+                <p className="text-xs text-slate-400 mb-4">
+                    The Verification Service requires the <code className="text-emerald-400">VERIFIER_ROLE</code> on the DailyApp contract to validate social tasks (Twitter/Farcaster) on-chain.
+                </p>
+
+                <div className="flex gap-3">
+                    <input
+                        type="text"
+                        value={verifierAddress}
+                        onChange={(e) => setVerifierAddress(e.target.value)}
+                        placeholder="0x... (verifier address)"
+                        className="flex-1 bg-slate-900 border border-white/5 p-3 rounded-xl text-white focus:border-emerald-500/50 outline-none transition-all font-mono text-sm"
+                    />
+                    <button
+                        onClick={handleGrantVerifier}
+                        disabled={isSaving || !verifierAddress}
+                        className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-white"
+                    >
+                        <Shield className="w-5 h-5" />
+                        Authorize Verifier
                     </button>
                 </div>
             </div>

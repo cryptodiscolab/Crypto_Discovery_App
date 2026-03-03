@@ -36,3 +36,6 @@ stats.html
 
 # Vite temp files
 *.timestamp-*.mjs
+
+# Local scratch files
+tmp/

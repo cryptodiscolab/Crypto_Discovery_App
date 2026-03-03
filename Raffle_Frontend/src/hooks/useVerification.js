@@ -16,7 +16,7 @@ export function useVerification(refetchStats) {
 
         if (timeElapsed < WAIT_DELAY) {
             const remaining = Math.ceil(WAIT_DELAY - timeElapsed);
-            toast.error(`Anti-Fraud: Tunggu ${remaining} detik agar perubahan sosial ter-index.`);
+            toast.error(`Anti-Fraud: Please wait ${remaining} seconds for social changes to be indexed.`);
             return false;
         }
 

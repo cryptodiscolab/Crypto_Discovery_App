@@ -36,10 +36,10 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     uint256 public constant MAX_DISCOUNT_PERCENT = 50;
     uint256 public constant REFUND_PENALTY_PERCENT = 10;
     
-    // NEW: Sponsorship Constants
-    uint256 public constant SPONSORSHIP_PLATFORM_FEE = 1 * 10**6; // $1 USDC
-    uint256 public constant MIN_REWARD_POOL_VALUE = 5 * 10**18; // 5 Tokens (Assuming $1 parity for simplicity or logic handling)
-    uint256 public constant REWARD_PER_CLAIM = 5 * 10**16; // 0.05 Tokens (Example)
+    // NEW: Sponsorship Variables (Customizable by Admin)
+    uint256 public sponsorshipPlatformFee = 1 * 10**6; // $1 USDC default
+    uint256 public minRewardPoolUSD = 5 ether; // $5 USD (18 decimals for USD precision)
+    uint256 public minRewardPerUserUSD = 0.01 ether; // $0.01 USD (18 decimals for USD precision)
     uint256 public constant TASKS_FOR_REWARD = 3;
 
     // --- ENUMS & STRUCTS ---
@@ -84,7 +84,9 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         string title; 
         string link; 
         string contactEmail; 
-        uint256 rewardPool;    // NEW: Amount of Creator Tokens for rewards
+        uint256 rewardPool;    // Amount of Creator Tokens deposited
+        uint256 rewardPerUserUSD; // Value in USD per claim (min $0.01)
+        uint256 targetClaims;  // Total number of users who can claim
         RequestStatus status; 
         uint256 timestamp; 
     }
@@ -413,6 +415,23 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         config.multiplierBP = _multiplierBP;
     }
 
+    /**
+     * @notice Update global sponsorship parameters
+     */
+    function setSponsorshipParams(
+        uint256 _platformFee, 
+        uint256 _minPoolUSD, 
+        uint256 _minRewardPerUserUSD
+    ) external onlyRole(ADMIN_ROLE) {
+        require(_platformFee >= 1 * 10**6, "Min fee $1 USDC");
+        require(_minPoolUSD >= 5 ether, "Min pool $5 USD");
+        require(_minRewardPerUserUSD >= 0.001 ether, "Min reward $0.001 USD");
+        
+        sponsorshipPlatformFee = _platformFee;
+        minRewardPoolUSD = _minPoolUSD;
+        minRewardPerUserUSD = _minRewardPerUserUSD;
+    }
+
     // --- ADMIN: USER MANAGEMENT ---
     
     function setUserBlacklist(address _user, bool _status) 
@@ -463,30 +482,35 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     
     /**
      * @notice Sponsor requires:
-     * 1. 1 USDC Platform Fee
-     * 2. Creator Tokens for Reward Pool (Min Value ~$5)
+     * 1. Dynamic Platform Fee (Admin set)
+     * 2. Creator Tokens for Reward Pool (Min Value $5 USD)
      */
     function buySponsorshipWithToken(
         SponsorLevel _level, 
         string calldata _title, 
         string calldata _link, 
         string calldata _email,
-        uint256 _rewardPoolAmount
+        uint256 _rewardPerUserUSD,
+        uint256 _totalClaims
     ) external whenNotPaused nonReentrant notBlacklisted {
         require(bytes(_title).length > 0 && bytes(_title).length <= 100, "Invalid title");
         require(bytes(_link).length > 0 && bytes(_link).length <= 200, "Invalid link");
         require(bytes(_email).length > 0 && bytes(_email).length <= 100, "Invalid email");
+        require(_rewardPerUserUSD >= minRewardPerUserUSD, "Reward per user too low");
         
-        // 1. Charge Platform Fee (1 USDC)
-        require(usdcToken.allowance(msg.sender, address(this)) >= SPONSORSHIP_PLATFORM_FEE, "Approvals missing: Fee");
-        usdcToken.safeTransferFrom(msg.sender, address(this), SPONSORSHIP_PLATFORM_FEE);
+        uint256 totalPoolUSD = _rewardPerUserUSD * _totalClaims;
+        require(totalPoolUSD >= minRewardPoolUSD, "Total reward pool < $5 USD");
+
+        // Calculate amount of Creator Tokens needed for the pool
+        uint256 requiredTokens = (totalPoolUSD * 1e18) / tokenPriceUSD;
         
-        // 2. Charge Reward Pool (Creator Tokens)
-        // Check if amount >= Minimum Value (Simplified check: quantity check)
-        // User must calculate roughly $5 worth of tokens off-chain
-        require(_rewardPoolAmount >= MIN_REWARD_POOL_VALUE, "Reward pool too small (min ~$5)");
-        require(creatorToken.allowance(msg.sender, address(this)) >= _rewardPoolAmount, "Approvals missing: Pool");
-        creatorToken.safeTransferFrom(msg.sender, address(this), _rewardPoolAmount);
+        // 1. Charge Platform Fee in USDC
+        require(usdcToken.allowance(msg.sender, address(this)) >= sponsorshipPlatformFee, "USDC Allowance error");
+        usdcToken.safeTransferFrom(msg.sender, address(this), sponsorshipPlatformFee);
+        
+        // 2. Charge Reward Pool in Creator Tokens
+        require(creatorToken.allowance(msg.sender, address(this)) >= requiredTokens, "Token Allowance error");
+        creatorToken.safeTransferFrom(msg.sender, address(this), requiredTokens);
 
         totalSponsorRequests++;
         uint256 requestId = totalSponsorRequests;
@@ -497,12 +521,14 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
             title: _title,
             link: _link,
             contactEmail: _email,
-            rewardPool: _rewardPoolAmount,
+            rewardPool: requiredTokens,
+            rewardPerUserUSD: _rewardPerUserUSD,
+            targetClaims: _totalClaims,
             status: RequestStatus.PENDING,
             timestamp: block.timestamp
         });
 
-        emit SponsorshipRequested(requestId, msg.sender, _level, _rewardPoolAmount);
+        emit SponsorshipRequested(requestId, msg.sender, _level, requiredTokens);
     }
 
     function approveSponsorship(uint256 _reqId) external onlyRole(ADMIN_ROLE) {
@@ -622,17 +648,19 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         
         // NEW: Sponsored Task Logic
         if (task.sponsorshipId > 0) {
+            SponsorRequest storage req = sponsorRequests[task.sponsorshipId];
             // Increment progress
             userSponsorshipProgress[msg.sender][task.sponsorshipId]++;
             uint256 currentProgress = userSponsorshipProgress[msg.sender][task.sponsorshipId];
             
             // Check if multiple of 3
             if (currentProgress % TASKS_FOR_REWARD == 0) {
-                SponsorRequest storage req = sponsorRequests[task.sponsorshipId];
-                // Check if pool has funds
-                if (req.rewardPool >= REWARD_PER_CLAIM) {
-                    req.rewardPool -= REWARD_PER_CLAIM;
-                    creatorToken.safeTransfer(msg.sender, REWARD_PER_CLAIM);
+                // Check if pool has funds and user hasn't exceeded targetClaims
+                uint256 tokensPerClaim = (req.rewardPerUserUSD * 1e18) / tokenPriceUSD;
+                
+                if (req.rewardPool >= tokensPerClaim) {
+                    req.rewardPool -= tokensPerClaim;
+                    creatorToken.safeTransfer(msg.sender, tokensPerClaim);
                 }
             }
         }
