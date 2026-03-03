@@ -1,0 +1,37 @@
+name: Autonomous Ecosystem Sentinel (Cron)
+
+on:
+  schedule:
+    # Berjalan otomatis setiap hari pada jam 00:00 UTC
+    - cron: '0 0 * * *'
+  # Memungkinkan Anda men-trigger script secara manual kapan saja dari tab Actions
+  workflow_dispatch:
+
+jobs:
+  audit-and-sync:
+    name: Run Sentinel Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install Dependencies
+        run: npm install
+        working-directory: Raffle_Frontend
+        
+      - name: 🕵️‍♂️ Run Security & UI Audit (Sentinel)
+        run: node .agents/skills/ecosystem-sentinel/scripts/sentinel-audit.js
+        
+      # (Opsional) Jika Anda ingin script sync-cloud berjalan otomatis
+      # tambahkan juga eksekusi node untuk sync-cloud.js:
+      # - name: ☁️ Sync Skills to Supabase
+      #   run: node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js
+      #   env:
+      #     SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      #     SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
