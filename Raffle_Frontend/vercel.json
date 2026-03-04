@@ -9,6 +9,10 @@
             "destination": "/api/audit-bundle?action=check"
         },
         {
+            "source": "/api/farcaster/check",
+            "destination": "/api/audit-bundle?action=check"
+        },
+        {
             "source": "/api/cron/sync-events",
             "destination": "/api/audit-bundle?action=sync"
         },
