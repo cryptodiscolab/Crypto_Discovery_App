@@ -110,27 +110,30 @@ async function handleRpcProxy(req, res) {
 async function handleFarcasterCheck(req, res) {
     const { address, signature, message } = req.query;
 
-    if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
-        return res.status(400).json({ error: 'Invalid address' });
+    // Normalize and validate address
+    const cleanAddress = (address || '').trim().toLowerCase();
+
+    if (!cleanAddress || !/^0x[0-9a-fA-F]{40}$/.test(cleanAddress)) {
+        console.error(`[farcaster-check] 400 - Invalid or missing address: "${address}"`, req.query);
+        return res.status(400).json({ error: 'Invalid address format' });
     }
 
     // Signature Verification (Recommended to prevent Neynar Key abuse)
     // For now, we allow legacy checks without signatures to avoid breaking existing UI
     if (signature && message) {
         try {
-            const valid = await verifyMessage({ address, message, signature });
+            const valid = await verifyMessage({ address: cleanAddress, message, signature });
             if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         } catch (err) {
             return res.status(401).json({ error: 'Signature verification failed' });
         }
     } else {
-        console.warn(`[farcaster-check] Calling without signature for address: ${address}`);
+        console.warn(`[farcaster-check] Calling without signature for address: ${cleanAddress}`);
     }
 
     try {
-        const normalizedAddress = address.toLowerCase();
         const response = await fetch(
-            `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${normalizedAddress}`,
+            `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${cleanAddress}`,
             {
                 headers: {
                     'api_key': NEYNAR_KEY || '',
