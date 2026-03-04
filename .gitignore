@@ -17,11 +17,15 @@ coverage.json
 # Hardhat
 hardhat.config.js.backup
 
-# IDE
+# IDE & Agent Config
 .vscode/
 .idea/
 .cursorrules
-.agents/
+# Agent config: ignore private/sensitive files tapi TRACK scripts (dibutuhkan GitHub Actions cron)
+.agents/**/credentials*
+.agents/**/secrets*
+.agents/**/*.key
+.agents/**/.env*
 .DS_Store
 
 # Logs

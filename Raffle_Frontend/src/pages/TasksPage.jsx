@@ -335,6 +335,7 @@ export function TasksPage() {
 
 function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { writeContractAsync } = useWriteContract();
     const { verifyTask, registerTaskStart, isVerifying } = useVerification(refetchStats);
     const [verifyingStatus, setVerifyingStatus] = useState(null); // 'success', 'fail', null
