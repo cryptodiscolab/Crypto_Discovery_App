@@ -39,9 +39,10 @@ jobs:
         env:
           NODE_ENV: ci
 
-      # Cloud Sync via Supabase (aktifkan jika secrets sudah tersedia di GitHub)
-      # - name: ☁️ Sync Skills to Supabase
-      #   run: node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js
-      #   env:
-      #     SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      #     SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # Cloud Sync ke Supabase Storage (backup .agents/skills & .cursorrules)
+      - name: ☁️ Sync Skills to Supabase Storage
+        run: node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js
+        continue-on-error: true  # Jika cloud sync gagal, audit tetap tercatat sukses
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

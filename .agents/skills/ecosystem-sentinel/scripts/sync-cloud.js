@@ -1,124 +1,171 @@
-import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-import { execSync } from 'child_process';
+#!/usr/bin/env node
+'use strict';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT_DIR = path.resolve(__dirname, '../../../..');
+/**
+ * Ecosystem Sentinel — Cloud Config Sync
+ * Upload .agents/skills & .cursorrules ke Supabase Storage sebagai backup cloud.
+ *
+ * Dijalankan dari ROOT repo:
+ *   node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js
+ *
+ * Requires (tersedia di Raffle_Frontend/node_modules):
+ *   - @supabase/supabase-js
+ *   - dotenv
+ *
+ * GitHub Secrets yang dibutuhkan:
+ *   - SUPABASE_URL
+ *   - SUPABASE_SERVICE_ROLE_KEY
+ */
 
-// Load environment variables
-const envPath = path.join(ROOT_DIR, '.env');
-dotenv.config({ path: envPath });
+const fs = require('fs');
+const path = require('path');
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://rbgzwhsdqnhwrwimjjfm.supabase.co';
+const ROOT_DIR = path.resolve(__dirname, '../../../../');
+const RAFFLE_MODULES = path.join(ROOT_DIR, 'Raffle_Frontend', 'node_modules');
+
+// ── Resolve dependencies dari Raffle_Frontend/node_modules ───────────────────
+// (Di CI, npm ci dijalankan di Raffle_Frontend sehingga modules ada di sana)
+let createClient, dotenv;
+try {
+    ({ createClient } = require(path.join(RAFFLE_MODULES, '@supabase/supabase-js')));
+    dotenv = require(path.join(RAFFLE_MODULES, 'dotenv'));
+} catch (e) {
+    console.error('❌ [FATAL] Cannot load @supabase/supabase-js or dotenv.');
+    console.error('   Pastikan `npm ci` sudah dijalankan di Raffle_Frontend/');
+    console.error('   Detail:', e.message);
+    process.exit(1);
+}
+
+// Load .env jika ada (lokal). Di CI, env vars datang dari GitHub Secrets.
+const envPath = path.join(ROOT_DIR, 'Raffle_Frontend', '.env');
+if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+}
+
+// ── Supabase Client ───────────────────────────────────────────────────────────
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseKey) {
-    console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY is required to push AI configs to Supabase.');
+if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ [FATAL] Missing required environment variables:');
+    if (!supabaseUrl) console.error('   → SUPABASE_URL (or VITE_SUPABASE_URL)');
+    if (!supabaseKey) console.error('   → SUPABASE_SERVICE_ROLE_KEY');
+    console.error('   Set these as GitHub Secrets untuk CI, atau di .env lokal.');
     process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-const STORAGE_BUCKET = 'ai-config'; // Pastikan bucket ini dibuat di Supabase
+const STORAGE_BUCKET = 'ai-config'; // Bucket private di Supabase Storage
+
+// ── File/Dir yang di-sync ke Supabase Storage ────────────────────────────────
+// .cursorrules mungkin tidak ada di CI (gitignored) — skip gracefully
+const SYNC_TARGETS = [
+    { local: '.cursorrules', dest: 'config/.cursorrules', optional: true },
+    { local: '.agents/skills', dest: 'agents/skills', optional: false, isDir: true },
+    { local: '.agents/workflows', dest: 'agents/workflows', optional: true, isDir: true },
+];
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
 async function ensureBucketExists() {
     const { data: buckets, error } = await supabase.storage.listBuckets();
-    if (error) throw error;
+    if (error) throw new Error(`List buckets failed: ${error.message}`);
 
-    const bucketExists = buckets.some(b => b.name === STORAGE_BUCKET);
-    if (!bucketExists) {
-        console.log(`🪣 Creating bucket: ${STORAGE_BUCKET}`);
-        const { error: createError } = await supabase.storage.createBucket(STORAGE_BUCKET, {
-            public: false, // Internal AI config
+    const exists = buckets.some(b => b.name === STORAGE_BUCKET);
+    if (!exists) {
+        console.log(`🪣 Creating private bucket: ${STORAGE_BUCKET}`);
+        const { error: createErr } = await supabase.storage.createBucket(STORAGE_BUCKET, {
+            public: false,
         });
-        if (createError) throw createError;
+        if (createErr) throw new Error(`Create bucket failed: ${createErr.message}`);
+        console.log(`  ✅ Bucket "${STORAGE_BUCKET}" created.`);
+    } else {
+        console.log(`  ✅ Bucket "${STORAGE_BUCKET}" exists.`);
     }
 }
 
-async function uploadFile(filePath, destinationPath) {
-    try {
-        const fullPath = path.join(ROOT_DIR, filePath);
-        if (!fs.existsSync(fullPath)) {
-            console.warn(`⚠️ Warning: File not found: ${filePath}`);
-            return;
-        }
+async function uploadFile(localAbsPath, destPath) {
+    if (!fs.existsSync(localAbsPath)) return false;
 
-        const fileBuffer = fs.readFileSync(fullPath);
+    const buffer = fs.readFileSync(localAbsPath);
+    const contentType = localAbsPath.endsWith('.json') ? 'application/json' : 'text/plain';
 
-        // Gunakan upsert agar file yang sudah ada ditimpa
-        const { data, error } = await supabase.storage
-            .from(STORAGE_BUCKET)
-            .upload(destinationPath, fileBuffer, {
-                upsert: true,
-                contentType: 'text/plain',
-            });
+    const { error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(destPath, buffer, { upsert: true, contentType });
 
-        if (error) throw error;
-        console.log(`✅ Uploaded: ${filePath} -> ${STORAGE_BUCKET}/${destinationPath}`);
-    } catch (err) {
-        console.error(`❌ Failed to upload ${filePath}:`, err.message);
+    if (error) {
+        console.error(`  ❌ Upload failed [${destPath}]: ${error.message}`);
+        return false;
     }
+    console.log(`  ✅ Uploaded: ${destPath}`);
+    return true;
 }
 
-async function uploadDirectory(dirPath, destDir = '') {
-    const fullDirPath = path.join(ROOT_DIR, dirPath);
-    if (!fs.existsSync(fullDirPath)) return;
+async function uploadDirectory(localAbsDir, destBaseDir) {
+    if (!fs.existsSync(localAbsDir)) return;
 
-    const files = fs.readdirSync(fullDirPath);
-    for (const file of files) {
-        const filePath = path.join(fullDirPath, file);
-        const relPath = path.join(dirPath, file);
-        const destPath = path.posix.join(destDir, file);
+    const entries = fs.readdirSync(localAbsDir);
+    for (const entry of entries) {
+        const fullLocal = path.join(localAbsDir, entry);
+        const fullDest = `${destBaseDir}/${entry}`;
+        const stat = fs.statSync(fullLocal);
 
-        if (fs.statSync(filePath).isDirectory()) {
-            await uploadDirectory(relPath, destPath);
+        if (stat.isDirectory()) {
+            await uploadDirectory(fullLocal, fullDest);
         } else {
-            await uploadFile(relPath, destPath);
+            await uploadFile(fullLocal, fullDest);
         }
     }
 }
 
-async function syncVercelEnv() {
-    console.log('🔄 Triggering Vercel deployment/env check...');
-    try {
-        // Memastikan vercel CLI tersedia. 
-        // Ini mengasumsikan user telah melakukan vercel login sebelumnya.
-        console.log('Verifikasi Vercel CLI (Membutuhkan instalasi & login Vercel lokal)');
-        const vercelVersion = execSync('npx vercel --version', { encoding: 'utf-8', stdio: 'pipe' });
-        console.log(`Vercel CLI v${vercelVersion.trim()} active.`);
-
-        // Contoh command: `npx vercel env pull .env.local`
-        // Namun untuk push local to cloud, kita butuh eksekusi manual per key 
-        // atau menggunakan vercel commands.
-        console.log('✅ Vercel automation hook ready. Gunakan `npx vercel` untuk mendeploy terbaru.');
-    } catch (err) {
-        console.warn('⚠️ Vercel CLI tidak terdeteksi atau error. Abaikan jika Vercel terhubung via Git.');
-    }
-}
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-    console.log('🛡️ Ecosystem Sentinel - Cloud Sync Protocol Initiated');
+    console.log('☁️  Ecosystem Sentinel — Cloud Config Sync');
+    console.log(`📁 ROOT_DIR: ${ROOT_DIR}`);
+    console.log(`🪣 Target bucket: ${STORAGE_BUCKET}\n`);
 
-    try {
-        await ensureBucketExists();
+    // 1. Pastikan bucket ada
+    await ensureBucketExists();
 
-        console.log('\n📤 Uploading .cursorrules...');
-        await uploadFile('.cursorrules', '.cursorrules');
+    let success = 0;
+    let skipped = 0;
 
-        console.log('\n📤 Uploading .agents/ directory...');
-        await uploadDirectory('.agents', '.agents');
+    // 2. Upload semua target
+    for (const target of SYNC_TARGETS) {
+        const localAbs = path.join(ROOT_DIR, target.local);
 
-        console.log('\n🌐 Syncing Vercel Infrastructure...');
-        await syncVercelEnv();
+        if (!fs.existsSync(localAbs)) {
+            if (target.optional) {
+                console.warn(`⚠️  Skip (not found / gitignored): ${target.local}`);
+                skipped++;
+            } else {
+                console.error(`❌ Required target missing: ${target.local}`);
+            }
+            continue;
+        }
 
-        console.log('\n✅ Cloud Sync Complete.');
-    } catch (e) {
-        console.error('❌ Sync Failed:', e);
-        process.exit(1);
+        console.log(`\n📤 Syncing: ${target.local} → ${STORAGE_BUCKET}/${target.dest}`);
+
+        if (target.isDir) {
+            await uploadDirectory(localAbs, target.dest);
+        } else {
+            await uploadFile(localAbs, target.dest);
+        }
+        success++;
     }
+
+    // 3. Summary
+    console.log('\n══════════════════════════════════════════');
+    console.log('📋 CLOUD SYNC SUMMARY');
+    console.log('══════════════════════════════════════════');
+    console.log(`  ✅ Synced targets : ${success}`);
+    if (skipped > 0) console.log(`  ⚠️  Skipped (optional): ${skipped}`);
+    console.log('\n✨ Cloud sync complete!');
 }
 
-main();
+main().catch(err => {
+    console.error('\n❌ [FATAL] Sync failed:', err.message);
+    process.exit(1);
+});
