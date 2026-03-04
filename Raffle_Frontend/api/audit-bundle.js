@@ -85,10 +85,18 @@ async function handleRpcProxy(req, res) {
             body: JSON.stringify(req.body)
         });
 
-        const data = await response.json();
+        const rawText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (parseError) {
+            console.error(`[RPC Proxy Error]: Non-JSON response (Status: ${response.status}):`, rawText.substring(0, 100));
+            return res.status(502).json({ error: 'Invalid proxy response from upstream', details: rawText.substring(0, 100) });
+        }
+
         return res.status(response.status).json(data);
     } catch (error) {
-        console.error('[RPC Proxy Error]:', error);
+        console.error('[RPC Proxy Error]:', error.message);
         return res.status(500).json({ error: 'Failed to proxy RPC request' });
     }
 }
