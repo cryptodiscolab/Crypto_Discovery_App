@@ -81,7 +81,12 @@ async function handleRpcProxy(req, res) {
     try {
         const response = await fetch(rpcUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                // Fix: Alchemy 403 Forbidden "Unspecified origin not on whitelist"
+                'Origin': 'https://crypto-discovery-app.vercel.app',
+                'Referer': 'https://crypto-discovery-app.vercel.app/'
+            },
             body: JSON.stringify(req.body)
         });
 
