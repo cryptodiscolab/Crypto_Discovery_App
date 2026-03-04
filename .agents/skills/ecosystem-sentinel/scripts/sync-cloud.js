@@ -25,21 +25,27 @@ const RAFFLE_MODULES = path.join(ROOT_DIR, 'Raffle_Frontend', 'node_modules');
 
 // ── Resolve dependencies dari Raffle_Frontend/node_modules ───────────────────
 // (Di CI, npm ci dijalankan di Raffle_Frontend sehingga modules ada di sana)
-let createClient, dotenv;
+let createClient;
 try {
     ({ createClient } = require(path.join(RAFFLE_MODULES, '@supabase/supabase-js')));
-    dotenv = require(path.join(RAFFLE_MODULES, 'dotenv'));
 } catch (e) {
-    console.error('❌ [FATAL] Cannot load @supabase/supabase-js or dotenv.');
+    console.error('❌ [FATAL] Cannot load @supabase/supabase-js.');
     console.error('   Pastikan `npm ci` sudah dijalankan di Raffle_Frontend/');
     console.error('   Detail:', e.message);
     process.exit(1);
 }
 
-// Load .env jika ada (lokal). Di CI, env vars datang dari GitHub Secrets.
+// Load .env jika ada (lokal). Di CI, env vars datang dari GitHub Secrets,
+// dan `dotenv` tidak terinstall di dependencies, jadi pemanggilan ini optional.
 const envPath = path.join(ROOT_DIR, 'Raffle_Frontend', '.env');
 if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
+    try {
+        // Coba load dotenv, tapi abaikan jika gagal (misal di GitHub Actions)
+        const dotenv = require(path.join(RAFFLE_MODULES, 'dotenv'));
+        dotenv.config({ path: envPath });
+    } catch (e) {
+        console.warn('⚠️ Warning: dotenv tidak ditemukan. Mengandalkan process.env (GitHub Secrets).');
+    }
 }
 
 // ── Supabase Client ───────────────────────────────────────────────────────────
