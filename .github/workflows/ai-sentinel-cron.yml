@@ -11,6 +11,9 @@ jobs:
   audit-and-sync:
     name: Run Sentinel Audit
     runs-on: ubuntu-latest
+    # ⬇️ Wajib agar Environment secrets (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) ter-inject
+    # Sesuaikan nama environment dengan yang ada di GitHub Settings → Environments
+    environment: Production
 
     # Set default working-directory ke root repository agar semua path relatif konsisten
     defaults:
