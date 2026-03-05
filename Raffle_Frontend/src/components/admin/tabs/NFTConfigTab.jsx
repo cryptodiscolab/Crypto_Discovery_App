@@ -207,203 +207,149 @@ export function NFTConfigTab({ ethPrice }) {
             </div>
 
             {/* Global Economy & Batch Save */}
-            <div className="glass-card p-6 rounded-3xl border border-white/5 bg-slate-900/40 space-y-6">
-                <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                        <Settings className="w-4 h-4 text-slate-400" /> Global Economic Core
-                    </h4>
-                    <button
-                        onClick={handleSaveBatch}
-                        className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl font-black text-[10px] text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
-                    >
-                        <ShieldCheck className="w-4 h-4" /> FINAL SOURCE RUN (BATCH SAVE ALL TIERS)
-                    </button>
-                </div>
-                <div className="flex flex-col md:flex-row gap-6 items-end">
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Token Price (USD)</label>
-                            <input
-                                type="number"
-                                value={localEco.tokenP}
-                                step="0.0001"
-                                onChange={e => setLocalEco({ ...localEco, tokenP: e.target.value })}
-                                className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sponsor: Bronze (USD)</label>
-                            <input
-                                type="number"
-                                value={localEco.b}
-                                onChange={e => setLocalEco({ ...localEco, b: parseInt(e.target.value) })}
-                                className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sponsor: Silver (USD)</label>
-                            <input
-                                type="number"
-                                value={localEco.s}
-                                onChange={e => setLocalEco({ ...localEco, s: parseInt(e.target.value) })}
-                                className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sponsor: Gold (USD)</label>
-                            <input
-                                type="number"
-                                value={localEco.g}
-                                onChange={e => setLocalEco({ ...localEco, g: parseInt(e.target.value) })}
-                                className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500 outline-none"
-                            />
-                        </div>
+            <div className="bg-[#0A0A0A] p-8 rounded-2xl border border-white/5 space-y-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-6">
+                    <div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                            <Settings className="w-4 h-4 text-indigo-400" /> Economic Core
+                        </h4>
+                        <p className="text-[10px] text-slate-500 mt-1">Global parameters affecting all tier logic.</p>
                     </div>
                     <button
-                        onClick={handleSaveEconomy}
-                        className="bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl font-black text-xs text-white transition-all shadow-lg shadow-emerald-600/20"
+                        onClick={handleSaveBatch}
+                        className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
                     >
-                        Save Economy
+                        <ShieldCheck className="w-4 h-4" /> BATCH SAVE ALL TIERS
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[
+                        { label: 'Token Price (USD)', key: 'tokenP', step: '0.0001' },
+                        { label: 'Bronze Sponsor (USD)', key: 'b' },
+                        { label: 'Silver Sponsor (USD)', key: 's' },
+                        { label: 'Gold Sponsor (USD)', key: 'g' }
+                    ].map((item) => (
+                        <div key={item.key} className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</label>
+                            <input
+                                type="number"
+                                step={item.step || '1'}
+                                value={localEco[item.key]}
+                                onChange={e => setLocalEco({ ...localEco, [item.key]: item.step ? e.target.value : parseInt(e.target.value) })}
+                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex justify-end pt-2">
+                    <button
+                        onClick={handleSaveEconomy}
+                        className="w-full md:w-auto bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-10 py-3 rounded-xl font-bold text-xs text-emerald-400 transition-all"
+                    >
+                        Save Economics
                     </button>
                 </div>
             </div>
 
             {/* SBT REVENUE DISTRIBUTION (WEIGHTS) */}
-            <div className="glass-card p-6 rounded-3xl border border-indigo-500/20 bg-indigo-500/5 space-y-6">
-                <div className="flex justify-between items-center border-b border-indigo-500/10 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-500/20 rounded-xl">
+            <div className="bg-[#0A0A0A] p-8 rounded-2xl border border-indigo-500/10 space-y-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-indigo-500/10 rounded-xl">
                             <Layers className="w-5 h-5 text-indigo-400" />
                         </div>
                         <div>
-                            <h4 className="text-sm font-black text-white uppercase tracking-widest">SBT Shared Weights</h4>
-                            <p className="text-[10px] text-slate-500 font-bold">% Share of SBT Reward Pool per Tier</p>
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest">Reward Weights</h4>
+                            <p className="text-[10px] text-slate-500 mt-0.5">% Share of SBT Reward Pool per Tier</p>
                         </div>
                     </div>
                     <button
                         onClick={handleSaveWeights}
-                        className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl font-black text-[10px] text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+                        className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
                     >
-                        <Save className="w-4 h-4" /> SAVE REVENUE SPLIT
+                        <Save className="w-4 h-4" /> SAVE WEIGHTS
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1">
-                            Diamond (Lv5) (%)
-                        </label>
-                        <input
-                            type="number"
-                            value={localWeights.d}
-                            onChange={e => setLocalWeights({ ...localWeights, d: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-blue-500 outline-none"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Platinum (Lv4) (%)</label>
-                        <input
-                            type="number"
-                            value={localWeights.p}
-                            onChange={e => setLocalWeights({ ...localWeights, p: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-400 outline-none"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Gold (Lv3) (%)</label>
-                        <input
-                            type="number"
-                            value={localWeights.g}
-                            onChange={e => setLocalWeights({ ...localWeights, g: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-yellow-500 outline-none"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Silver (Lv2) (%)</label>
-                        <input
-                            type="number"
-                            value={localWeights.s}
-                            onChange={e => setLocalWeights({ ...localWeights, s: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-slate-500 outline-none"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Bronze (Lv1) (%)</label>
-                        <input
-                            type="number"
-                            value={localWeights.b}
-                            onChange={e => setLocalWeights({ ...localWeights, b: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-sm focus:border-orange-500 outline-none"
-                        />
-                    </div>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+                    {[
+                        { label: 'Diamond', key: 'd', color: 'text-blue-400', border: 'focus:border-blue-500/50' },
+                        { label: 'Platinum', key: 'p', color: 'text-indigo-400', border: 'focus:border-indigo-500/50' },
+                        { label: 'Gold', key: 'g', color: 'text-amber-400', border: 'focus:border-amber-500/50' },
+                        { label: 'Silver', key: 's', color: 'text-slate-400', border: 'focus:border-slate-500/50' },
+                        { label: 'Bronze', key: 'b', color: 'text-orange-400', border: 'focus:border-orange-500/50' }
+                    ].map((t) => (
+                        <div key={t.key} className="space-y-2">
+                            <label className={`text-[11px] font-bold uppercase tracking-wider ${t.color}`}>{t.label} (%)</label>
+                            <input
+                                type="number"
+                                value={localWeights[t.key]}
+                                onChange={e => setLocalWeights({ ...localWeights, [t.key]: parseInt(e.target.value) || 0 })}
+                                className={`w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm outline-none transition-all ${t.border}`}
+                            />
+                        </div>
+                    ))}
                 </div>
 
-                <div className={`p-4 rounded-2xl flex items-center justify-between border ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
-                    <div className="flex items-center gap-2">
-                        <Info className={`w-4 h-4 ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400'}`} />
-                        <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wide">
-                            Current Total: {localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b}%
-                        </span>
+                <div className={`p-4 rounded-xl flex items-center justify-between border ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-red-500/5 border-red-500/10'}`}>
+                    <div className="flex items-center gap-3">
+                        <Info className={`w-4 h-4 shrink-0 ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400'}`} />
+                        <p className="text-[11px] font-bold text-slate-400">
+                            CURRENT TOTAL: <span className={localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400'}>{localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b}%</span>
+                        </p>
                     </div>
-                    <span className={`text-[10px] font-black uppercase ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400 animation-pulse'}`}>
-                        {localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? '✅ Valid Ratio' : '❌ Total must be 100%'}
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400 animate-pulse'}`}>
+                        {localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? '✓ Valid' : '× Error'}
                     </span>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-8">
                 {localConfigs.map((tier, idx) => (
-                    <div key={tier.id} className={`glass-card p-8 rounded-3xl border transition-all ${tier.isOpen ? 'border-white/5 bg-slate-900/40' : 'border-red-500/20 bg-red-950/5 grayscale-[0.5]'}`}>
-                        <div className="flex flex-col lg:flex-row gap-8">
+                    <div key={tier.id} className={`p-8 rounded-2xl border transition-all ${tier.isOpen ? 'border-white/5 bg-[#0A0A0A]' : 'border-red-500/10 bg-red-500/5 grayscale-[0.5]'}`}>
+                        <div className="flex flex-col lg:flex-row gap-10">
                             {/* Left: Branding & Status */}
-                            <div className="lg:w-1/4 space-y-4">
+                            <div className="lg:w-48 space-y-6">
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${tier.name === 'Diamond' ? 'bg-blue-500/20 text-blue-400 shadow-blue-500/10' :
-                                        tier.name === 'Platinum' ? 'bg-indigo-300/20 text-indigo-300' :
-                                            tier.name === 'Gold' ? 'bg-yellow-400/20 text-yellow-500 shadow-yellow-500/10' :
-                                                tier.name === 'Silver' ? 'bg-slate-300/20 text-slate-300' : 'bg-orange-400/20 text-orange-400'
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${tier.name === 'Diamond' ? 'bg-blue-500/10 text-blue-400' :
+                                        tier.name === 'Platinum' ? 'bg-indigo-300/10 text-indigo-300' :
+                                            tier.name === 'Gold' ? 'bg-yellow-400/10 text-yellow-500' :
+                                                tier.name === 'Silver' ? 'bg-slate-300/10 text-slate-300' : 'bg-orange-400/10 text-orange-400'
                                         }`}>
                                         <Zap className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h4 className="text-2xl font-black text-white">{tier.name}</h4>
+                                        <h4 className="text-xl font-black text-white">{tier.name}</h4>
                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Level {tier.id}</p>
                                     </div>
                                 </div>
 
-                                <div className="p-4 bg-black/40 rounded-2xl border border-white/5 space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Status</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${tier.isOpen ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                                            {tier.isOpen ? 'Active' : 'Disabled'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Supply</span>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center px-1">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Supply</span>
                                         <span className="text-xs font-mono text-white font-bold">{tier.currentSupply} / {tier.maxSupply}</span>
                                     </div>
-
                                     <button
                                         onClick={() => handleToggle(tier)}
-                                        className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl font-bold text-xs transition-all ${tier.isOpen
+                                        className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${tier.isOpen
                                             ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white'
                                             : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white'
                                             }`}
                                     >
-                                        <Power className="w-3 h-3" /> {tier.isOpen ? 'Turn OFF' : 'Turn ON'}
+                                        {tier.isOpen ? 'Disable Tier' : 'Enable Tier'}
                                     </button>
                                 </div>
                             </div>
 
                             {/* Center: Main Settings */}
-                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-6">
                                     {/* Price Config */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                            <DollarSign className="w-3 h-3" /> Minting Price (ETH)
-                                        </label>
-                                        <div className="relative group">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Minting Price (ETH)</label>
+                                        <div className="relative">
                                             <input
                                                 type="number"
                                                 value={tier.mintPriceETH}
@@ -413,21 +359,16 @@ export function NFTConfigTab({ ethPrice }) {
                                                     updated[idx].mintPriceETH = e.target.value;
                                                     setLocalConfigs(updated);
                                                 }}
-                                                className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-lg focus:border-indigo-500 outline-none transition-all"
+                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
                                             />
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 font-bold">ETH</div>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase">ETH</div>
                                         </div>
-                                        <div className="px-3 py-1 bg-indigo-500/5 rounded-lg border border-indigo-500/10 flex justify-between items-center">
-                                            <span className="text-[9px] font-bold text-indigo-400/50 uppercase">USD Est.</span>
-                                            <span className="text-xs font-bold text-indigo-400 font-mono">${getUSD(tier.mintPriceETH)}</span>
-                                        </div>
+                                        <p className="text-[10px] text-indigo-400 font-bold px-1">EST: ${getUSD(tier.mintPriceETH)} USD</p>
                                     </div>
 
                                     {/* Points Config */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                            XP Required for Level Up
-                                        </label>
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">XP Threshold</label>
                                         <input
                                             type="number"
                                             value={tier.pointsRequired}
@@ -436,32 +377,30 @@ export function NFTConfigTab({ ethPrice }) {
                                                 updated[idx].pointsRequired = Math.max(0, parseInt(e.target.value) || 0);
                                                 setLocalConfigs(updated);
                                             }}
-                                            className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white font-mono text-lg focus:border-indigo-500 outline-none transition-all"
+                                            className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     {/* Metadata URI */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                            <LinkIcon className="w-3 h-3" /> Metadata URI (IPFS/JSON)
-                                        </label>
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Metadata URI</label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
-                                                placeholder="https://ipfs.io/ipfs/..."
+                                                placeholder="ipfs://..."
                                                 value={tier.localURI}
                                                 onChange={(e) => {
                                                     const updated = [...localConfigs];
                                                     updated[idx].localURI = e.target.value;
                                                     setLocalConfigs(updated);
                                                 }}
-                                                className="flex-1 bg-black/40 border border-white/10 p-2.5 rounded-xl text-white font-mono text-[10px] focus:border-indigo-500 outline-none transition-all"
+                                                className="flex-1 bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[10px] focus:border-indigo-500/50 outline-none transition-all"
                                             />
                                             <button
                                                 onClick={() => handleUpdateURI(tier)}
-                                                className="bg-slate-800 hover:bg-slate-700 p-2.5 rounded-xl text-indigo-400"
+                                                className="bg-white/5 hover:bg-white/10 p-3 rounded-xl text-indigo-400 border border-white/5"
                                             >
                                                 <Save className="w-4 h-4" />
                                             </button>
@@ -469,58 +408,45 @@ export function NFTConfigTab({ ethPrice }) {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Multiplier BP</label>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Multiplier (BP)</label>
                                             <input
                                                 type="number"
                                                 value={tier.multiplierBP}
+                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-xs focus:border-indigo-500/50 outline-none transition-all"
                                                 onChange={(e) => {
                                                     const updated = [...localConfigs];
                                                     updated[idx].multiplierBP = Math.max(10000, parseInt(e.target.value) || 10000);
                                                     setLocalConfigs(updated);
                                                 }}
-                                                className="w-full bg-black/40 border border-white/10 p-2.5 rounded-xl text-white font-mono text-xs focus:border-indigo-500 outline-none transition-all"
                                             />
                                         </div>
-                                        <div>
-                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Daily Bonus</label>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Daily Bonus</label>
                                             <input
                                                 type="number"
                                                 value={tier.dailyBonus}
+                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-xs focus:border-indigo-500/50 outline-none transition-all"
                                                 onChange={(e) => {
                                                     const updated = [...localConfigs];
                                                     updated[idx].dailyBonus = Math.max(0, parseInt(e.target.value) || 0);
                                                     setLocalConfigs(updated);
                                                 }}
-                                                className="w-full bg-black/40 border border-white/10 p-2.5 rounded-xl text-white font-mono text-xs focus:border-indigo-500 outline-none transition-all"
                                             />
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Max Supply Cap</label>
-                                        <input
-                                            type="number"
-                                            value={tier.maxSupply}
-                                            onChange={(e) => {
-                                                const updated = [...localConfigs];
-                                                updated[idx].maxSupply = Math.max(0, parseInt(e.target.value) || 0);
-                                                setLocalConfigs(updated);
-                                            }}
-                                            className="w-full bg-black/40 border border-white/10 p-2.5 rounded-xl text-white font-mono text-xs focus:border-indigo-500 outline-none transition-all"
-                                        />
                                     </div>
                                 </div>
                             </div>
 
                             {/* Action Button */}
-                            <div className="lg:w-auto flex items-end">
+                            <div className="lg:w-32 flex flex-col justify-end">
                                 <button
                                     onClick={() => handleUpdate(tier)}
                                     disabled={isSaving === tier.id}
-                                    className="w-full lg:w-32 h-14 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-2xl font-black text-xs text-white flex flex-col items-center justify-center gap-1 transition-all shadow-lg shadow-indigo-600/20"
+                                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded-xl font-bold text-[10px] uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all"
                                 >
                                     {isSaving === tier.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    <span>Update Tech</span>
+                                    Update
                                 </button>
                             </div>
                         </div>

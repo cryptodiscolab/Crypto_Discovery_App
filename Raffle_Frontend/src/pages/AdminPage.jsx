@@ -143,21 +143,21 @@ export function AdminPage({ initialTab = 'pool' }) {
     ];
 
     return (
-        <div className="z-[9999] pointer-events-auto relative min-h-screen bg-[#050505] flex flex-col md:flex-row">
-            <aside className="w-full md:w-64 bg-slate-900/40 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-white/5 flex-shrink-0 z-[100]">
-                <div className="p-6 flex flex-col h-full overflow-y-auto custom-scrollbar">
-                    <div className="flex items-center gap-3 mb-10 px-2">
-                        <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
+        <div className="z-[9999] pointer-events-auto relative h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden">
+            {/* Sidebar — Slimmer & Cleaner */}
+            <aside className="w-full md:w-60 bg-[#080808] border-b md:border-b-0 md:border-r border-white/5 flex-shrink-0 z-[100]">
+                <div className="p-6 flex flex-col h-full">
+                    <div className="flex items-center gap-3 mb-10 px-1">
+                        <div className="p-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
                             <Shield className="w-5 h-5 text-indigo-400" />
                         </div>
                         <div className="text-left">
-                            <h2 className="text-lg font-black text-white tracking-tight">Admin Hub</h2>
-                            <p className="text-[10px] text-indigo-500/70 font-bold uppercase tracking-widest">Protocol V2.1</p>
+                            <h2 className="text-lg font-black text-white tracking-tight">Admin<span className="text-indigo-500">Hub</span></h2>
+                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Protocol V2</p>
                         </div>
                     </div>
 
-                    <nav className="flex-1 space-y-1">
-                        <p className="px-3 mb-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-left">Management</p>
+                    <nav className="flex-1 space-y-0.5 overflow-y-auto no-scrollbar -mx-2 px-2">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -165,110 +165,103 @@ export function AdminPage({ initialTab = 'pool' }) {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all group ${isActive
-                                        ? 'bg-indigo-600 text-white shadow-[0_10px_20px_-5px_rgba(79,70,229,0.4)]'
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold transition-all group ${isActive
+                                        ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
                                         : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                                         }`}
                                 >
-                                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-white' : 'group-hover:text-indigo-400'}`} />
-                                    <span className="text-sm tracking-tight">{tab.label}</span>
+                                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-indigo-400' : 'group-hover:text-indigo-400'}`} />
+                                    <span className="text-xs">{tab.label}</span>
                                 </button>
                             );
                         })}
                     </nav>
 
-                    <div className="mt-10 pt-6 border-t border-white/5 space-y-3">
-                        <div className="px-3 py-4 bg-white/5 rounded-2xl border border-white/5 mb-4 text-left">
-                            <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Signed As</p>
-                            <p className="text-xs font-mono text-indigo-400 truncate">
-                                {address?.slice(0, 12)}...{address?.slice(-8)}
-                            </p>
-                        </div>
+                    <div className="mt-auto pt-6 border-t border-white/5">
                         <button
                             onClick={() => navigate('/')}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-950/50 hover:bg-slate-900 border border-white/5 rounded-xl text-xs font-bold text-slate-400 transition-all"
+                            className="w-full h-11 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all border border-white/5"
                         >
-                            <ExternalLink className="w-3 h-3" /> Exit to Homepage
+                            <ExternalLink className="w-3 h-3" /> Exit
                         </button>
                     </div>
                 </div>
             </aside>
 
-            <main className="flex-1 min-w-0 h-screen overflow-y-auto custom-scrollbar flex flex-col relative z-10">
-                <header className="sticky top-0 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between z-50">
+            {/* Content Area — Controlled Width */}
+            <main className="flex-1 min-w-0 bg-[#050505] flex flex-col overflow-hidden">
+                <header className="h-16 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-8 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-black text-white capitalize">
-                            {tabs.find(t => t.id === activeTab)?.label || activeTab.replace('-', ' ')}
+                        <h2 className="text-sm font-black text-white uppercase tracking-widest">
+                            {tabs.find(t => t.id === activeTab)?.label || activeTab}
                         </h2>
-                        <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live System</span>
-                        </div>
                     </div>
 
                     <button
                         onClick={() => { refetchAll(); refetchCMS(); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-white/5 rounded-xl text-slate-400 hover:text-white transition-all text-xs font-bold"
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-indigo-400 transition-all text-[10px] font-black uppercase tracking-widest"
                     >
-                        <RefreshCw className="w-3 h-3" /> Sync Protocol
+                        <RefreshCw className="w-3 h-3" /> Sync
                     </button>
                 </header>
 
-                <div className="p-4 md:p-8 lg:p-12 w-full flex-1">
-                    <React.Suspense fallback={
-                        <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
-                            <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4 opacity-50" />
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Initialising Module...</p>
-                        </div>
-                    }>
-                        <div key={activeTab} className="animate-fade-in pb-20">
-                            {activeTab === 'reputation' && <UserReputationTable />}
-                            {activeTab === 'sbt' && <SBTRewardsDashboard />}
-                            {activeTab === 'pool' && (
-                                <PoolTab
-                                    balance={totalPoolBalance}
-                                    onDistribute={distributeRevenue}
-                                    ethPrice={ethPrice}
-                                    settings={poolSettings}
-                                    onUpdateSettings={updatePoolSettings}
-                                    onRefetch={refetchCMS}
-                                />
-                            )}
-                            {activeTab === 'system' && <AdminSystemSettings />}
-                            {activeTab === 'masterx' && <SystemSettingsTab />}
-                            {activeTab === 'raffles' && <RaffleManagerTab />}
-                            {activeTab === 'tasks' && (
-                                <div className="space-y-6">
-                                    <div className="flex gap-4 border-b border-white/5 pb-4 mb-8">
-                                        <button
-                                            onClick={() => setTaskSubTab('batch')}
-                                            className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'batch' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
-                                        >
-                                            Smart Batch Creator
-                                        </button>
-                                        <button
-                                            onClick={() => setTaskSubTab('quick')}
-                                            className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'quick' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
-                                        >
-                                            Quick Task Manager
-                                        </button>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
+                    <div className="max-w-6xl mx-auto w-full">
+                        <React.Suspense fallback={
+                            <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
+                                <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4 opacity-50" />
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Initialising Module...</p>
+                            </div>
+                        }>
+                            <div key={activeTab} className="animate-fade-in pb-20">
+                                {activeTab === 'reputation' && <UserReputationTable />}
+                                {activeTab === 'sbt' && <SBTRewardsDashboard />}
+                                {activeTab === 'pool' && (
+                                    <PoolTab
+                                        balance={totalPoolBalance}
+                                        onDistribute={distributeRevenue}
+                                        ethPrice={ethPrice}
+                                        settings={poolSettings}
+                                        onUpdateSettings={updatePoolSettings}
+                                        onRefetch={refetchCMS}
+                                    />
+                                )}
+                                {activeTab === 'system' && <AdminSystemSettings />}
+                                {activeTab === 'masterx' && <SystemSettingsTab />}
+                                {activeTab === 'raffles' && <RaffleManagerTab />}
+                                {activeTab === 'tasks' && (
+                                    <div className="space-y-6">
+                                        <div className="flex gap-4 border-b border-white/5 pb-4 mb-8">
+                                            <button
+                                                onClick={() => setTaskSubTab('batch')}
+                                                className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'batch' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                            >
+                                                Smart Batch Creator
+                                            </button>
+                                            <button
+                                                onClick={() => setTaskSubTab('quick')}
+                                                className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'quick' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                            >
+                                                Quick Task Manager
+                                            </button>
+                                        </div>
+                                        {taskSubTab === 'batch' ? <TaskManagerTab /> : <TaskManager />}
                                     </div>
-                                    {taskSubTab === 'batch' ? <TaskManagerTab /> : <TaskManager />}
-                                </div>
-                            )}
-                            {activeTab === 'logs' && <TaskClaimLogs />}
-                            {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
-                            {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
-                            {activeTab === 'roles' && <RoleManagementTab />}
-                            {activeTab === 'whitelist' && <WhitelistManagerTab />}
-                            {activeTab === 'announcement' && <AnnouncementTab />}
-                            {activeTab === 'campaigns' && <AdminCampaignTab />}
-                            {activeTab === 'news' && <NewsTab />}
-                            {activeTab === 'content' && <AdminCMSContent />}
-                            {activeTab === 'sync-logs' && <SyncLogTab />}
-                            {activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
-                        </div>
-                    </React.Suspense>
+                                )}
+                                {activeTab === 'logs' && <TaskClaimLogs />}
+                                {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
+                                {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
+                                {activeTab === 'roles' && <RoleManagementTab />}
+                                {activeTab === 'whitelist' && <WhitelistManagerTab />}
+                                {activeTab === 'announcement' && <AnnouncementTab />}
+                                {activeTab === 'campaigns' && <AdminCampaignTab />}
+                                {activeTab === 'news' && <NewsTab />}
+                                {activeTab === 'content' && <AdminCMSContent />}
+                                {activeTab === 'sync-logs' && <SyncLogTab />}
+                                {activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
+                            </div>
+                        </React.Suspense>
+                    </div>
                 </div>
             </main>
         </div>
