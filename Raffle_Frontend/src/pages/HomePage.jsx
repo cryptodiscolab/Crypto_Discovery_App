@@ -52,8 +52,8 @@ export function HomePage() {
     // Tidak perlu min-h-screen atau pt di sini — sudah di-handle App.jsx main
     <div className="w-full bg-[#0B0E14]">
 
-      {/* HypeFeed — sticky tepat di bawah header, z cukup 10 agar tidak tabrakan dengan BottomNav */}
-      <div className="sticky top-16 z-10 w-full">
+      {/* HypeFeed — flow normal, tidak perlu sticky (Header sudah fixed) */}
+      <div className="w-full">
         <HypeFeed />
       </div>
 
