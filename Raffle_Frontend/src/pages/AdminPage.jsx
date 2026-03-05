@@ -142,12 +142,34 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
     ];
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     return (
         <div className="z-[9999] pointer-events-auto relative h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden">
-            {/* Sidebar — Slimmer & Cleaner */}
-            <aside className="w-full md:w-60 bg-[#080808] border-b md:border-b-0 md:border-r border-white/5 flex-shrink-0 z-[100]">
+            {/* Mobile Header — Only visible on mobile */}
+            <header className="md:hidden h-16 bg-[#080808] border-b border-white/5 px-6 flex items-center justify-between shrink-0 z-[101]">
+                <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-indigo-400" />
+                    <h2 className="text-sm font-black text-white uppercase tracking-widest truncate max-w-[150px]">
+                        {tabs.find(t => t.id === activeTab)?.label || 'Admin'}
+                    </h2>
+                </div>
+                <button
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="p-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400"
+                >
+                    {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+            </header>
+
+            {/* Sidebar — Responsive Drawer on Mobile, Static on Desktop */}
+            <aside className={`
+                fixed inset-0 z-[100] bg-[#050505]/95 backdrop-blur-xl transition-transform duration-300 md:relative md:inset-auto md:translate-x-0 md:bg-[#080808] md:w-60 md:border-r border-white/5 flex-shrink-0
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            `}>
                 <div className="p-6 flex flex-col h-full">
-                    <div className="flex items-center gap-3 mb-10 px-1">
+                    {/* Desktop Sidebar Header */}
+                    <div className="hidden md:flex items-center gap-3 mb-10 px-1">
                         <div className="p-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
                             <Shield className="w-5 h-5 text-indigo-400" />
                         </div>
@@ -157,21 +179,24 @@ export function AdminPage({ initialTab = 'pool' }) {
                         </div>
                     </div>
 
-                    <nav className="flex-1 space-y-0.5 overflow-y-auto no-scrollbar -mx-2 px-2">
+                    <nav className="flex-1 space-y-0.5 overflow-y-auto no-scrollbar -mx-2 px-2 pt-16 md:pt-0">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold transition-all group ${isActive
+                                    onClick={() => {
+                                        setActiveTab(tab.id);
+                                        setIsSidebarOpen(false); // Close on selection
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-bold transition-all group ${isActive
                                         ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
                                         : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                                         }`}
                                 >
                                     <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-indigo-400' : 'group-hover:text-indigo-400'}`} />
-                                    <span className="text-xs">{tab.label}</span>
+                                    <span className="text-xs md:text-[11px] uppercase tracking-wider">{tab.label}</span>
                                 </button>
                             );
                         })}
@@ -190,7 +215,7 @@ export function AdminPage({ initialTab = 'pool' }) {
 
             {/* Content Area — Controlled Width */}
             <main className="flex-1 min-w-0 bg-[#050505] flex flex-col overflow-hidden">
-                <header className="h-16 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-8 flex items-center justify-between shrink-0">
+                <header className="hidden md:flex h-16 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-8 items-center justify-between shrink-0">
                     <div className="flex items-center gap-4">
                         <h2 className="text-sm font-black text-white uppercase tracking-widest">
                             {tabs.find(t => t.id === activeTab)?.label || activeTab}
@@ -205,7 +230,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                     </button>
                 </header>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-10 pb-32 md:pb-10">
                     <div className="max-w-6xl mx-auto w-full">
                         <React.Suspense fallback={
                             <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
