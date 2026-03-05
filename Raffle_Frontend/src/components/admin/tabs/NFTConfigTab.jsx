@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, RefreshCw, Power, Zap, TrendingUp, Info, DollarSign, Activity, ShieldCheck, Database, Link as LinkIcon } from 'lucide-react';
+import { Settings, Save, RefreshCw, Power, Zap, TrendingUp, Info, DollarSign, Activity, ShieldCheck, Database, Layers, Link as LinkIcon } from 'lucide-react';
 import { useNFTTiers } from '../../../hooks/useNFTTiers';
 import { useSBT } from '../../../hooks/useSBT';
 import { formatEther, parseEther } from 'viem';
