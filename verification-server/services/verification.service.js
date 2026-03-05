@@ -249,6 +249,39 @@ class VerificationService {
                 };
             }
 
+            // --- AUTOFILL PROFILE ON SUCCESSFUL VERIFICATION ---
+            if (platform === 'twitter' && socialId) {
+                try {
+                    // Cek jika profil di database masih kosong menggunakan backend-to-backend atau local lookup
+                    const { data: dbProfile } = await supabaseService.client
+                        .from('user_profiles')
+                        .select('display_name, pfp_url, bio')
+                        .eq('wallet_address', userAddress.toLowerCase())
+                        .single();
+
+                    if (!dbProfile?.display_name || !dbProfile?.pfp_url) {
+                        const twitterUser = await twitterService.getUserById(socialId);
+                        if (twitterUser) {
+                            // Replace 'normal' size with high-res '400x400' if possible
+                            const highResPfp = twitterUser.profile_image_url ? twitterUser.profile_image_url.replace('_normal', '_400x400') : null;
+
+                            await supabaseService.client
+                                .from('user_profiles')
+                                .update({
+                                    display_name: dbProfile?.display_name || twitterUser.name,
+                                    username: twitterUser.username,
+                                    pfp_url: dbProfile?.pfp_url || highResPfp,
+                                    bio: dbProfile?.bio || twitterUser.description || ''
+                                })
+                                .eq('wallet_address', userAddress.toLowerCase());
+                            console.log(`[Verification] Profile autofilled from Twitter for ${userAddress}`);
+                        }
+                    }
+                } catch (afErr) {
+                    console.error('[VerificationService] Autofill failed, continuing process:', afErr.message);
+                }
+            }
+
             // 1. Mark as verified on blockchain (Contract uses numeric ID)
             // If taskId is UUID, we might need a mapping. 
             // For now, assume taskId is the numeric ID for contract.

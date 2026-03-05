@@ -162,7 +162,9 @@ class TwitterService {
      */
     async getUserById(userId) {
         try {
-            const response = await this.readOnlyClient.v2.user(userId);
+            const response = await this.readOnlyClient.v2.user(userId, {
+                'user.fields': ['profile_image_url', 'description']
+            });
             return response.data || null;
         } catch (error) {
             console.error('Error fetching Twitter user:', error);

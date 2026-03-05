@@ -156,7 +156,8 @@ export default function ProfilePage() {
           payload: {
             display_name: profileData.displayName,
             bio: profileData.bio,
-            pfp_url: profileData.avatarUrl
+            pfp_url: profileData.avatarUrl,
+            username: profileData.username
           }
         }),
       });
@@ -222,7 +223,7 @@ export default function ProfilePage() {
             <div className="relative">
               <div className="w-20 h-20 rounded-full bg-gray-800 overflow-hidden border-4 border-[#0B0E14] shadow-sm">
                 {profileData.avatarUrl ? (
-                  <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  <img src={profileData.avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-900">
                     <Users size={32} />
@@ -325,11 +326,26 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* NAME & BIO */}
-          <div className="space-y-1">
+          <div className="space-y-3">
+            {isEditing && (
+              <div className="space-y-1">
+                <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Avatar URL (GIF/PNG/WebP)</label>
+                <input
+                  type="url"
+                  maxLength={500}
+                  value={profileData.avatarUrl}
+                  onChange={(e) => setProfileData({ ...profileData, avatarUrl: e.target.value })}
+                  className="w-full bg-transparent border-b border-gray-700 py-1 text-sm text-indigo-400 focus:border-indigo-500 outline-none placeholder-slate-600"
+                  placeholder="https://example.com/my-avatar.gif"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Gunakan link langsung. Hindari file raksasa untuk performa loading yang baik.</p>
+              </div>
+            )}
+
             {isEditing ? (
               <input
                 type="text"
+                maxLength={50}
                 value={profileData.displayName}
                 onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
                 className="w-full bg-transparent border-b border-gray-700 py-1 text-xl font-bold text-white focus:border-indigo-500 outline-none"
@@ -340,7 +356,21 @@ export default function ProfilePage() {
             )}
 
             <div className="flex items-center gap-2 text-slate-500 text-sm">
-              <span className="text-slate-400">@{profileData.username || 'username'}</span>
+              {isEditing ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">@</span>
+                  <input
+                    type="text"
+                    maxLength={30}
+                    value={profileData.username || ''}
+                    onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
+                    className="bg-transparent border-b border-gray-700 py-0.5 text-sm text-slate-400 focus:border-indigo-500 outline-none w-32"
+                    placeholder="username"
+                  />
+                </div>
+              ) : (
+                <span className="text-slate-400">@{profileData.username || 'username'}</span>
+              )}
               {profileData.fid && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] text-slate-500">FID: {profileData.fid}</span>}
             </div>
           </div>
@@ -348,6 +378,7 @@ export default function ProfilePage() {
           <div className="mt-3">
             {isEditing ? (
               <textarea
+                maxLength={160}
                 value={profileData.bio}
                 onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                 className="w-full bg-transparent border border-gray-700 rounded p-2 text-sm text-slate-300 focus:border-indigo-500 outline-none h-20"
