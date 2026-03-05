@@ -264,15 +264,19 @@ async function handleUpdateProfile(req, res) {
                 console.warn(`[Profile Update] Failed to check image size for ${sanitizedPayload.pfp_url}:`, err.message);
                 // Allow passing if HEAD request is blocked, relying on client-side constraints.
             }
-        }
+            // 4. Force length limits (Rule 8.8)
+            if (sanitizedPayload.display_name) sanitizedPayload.display_name = sanitizedPayload.display_name.substring(0, 50);
+            if (sanitizedPayload.username) sanitizedPayload.username = sanitizedPayload.username.substring(0, 30);
+            if (sanitizedPayload.bio) sanitizedPayload.bio = sanitizedPayload.bio.substring(0, 160);
+            if (sanitizedPayload.pfp_url) sanitizedPayload.pfp_url = sanitizedPayload.pfp_url.substring(0, 500);
 
-        const { error } = await supabaseAdmin
-            .from('user_profiles')
-            .update(sanitizedPayload)
-            .eq('wallet_address', wallet.toLowerCase());
-        if (error) throw error;
-        return res.status(200).json({ success: true });
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
+            const { error } = await supabaseAdmin
+                .from('user_profiles')
+                .update(sanitizedPayload)
+                .eq('wallet_address', wallet.toLowerCase());
+            if (error) throw error;
+            return res.status(200).json({ success: true });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
     }
-}

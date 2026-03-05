@@ -262,16 +262,20 @@ class VerificationService {
                     if (!dbProfile?.display_name || !dbProfile?.pfp_url) {
                         const twitterUser = await twitterService.getUserById(socialId);
                         if (twitterUser) {
-                            // Replace 'normal' size with high-res '400x400' if possible
-                            const highResPfp = twitterUser.profile_image_url ? twitterUser.profile_image_url.replace('_normal', '_400x400') : null;
+                            // Apply length limits from rule 8.8
+                            const displayName = (dbProfile?.display_name || twitterUser.name || '').substring(0, 50);
+                            const username = (twitterUser.username || '').substring(0, 30);
+                            const bio = (dbProfile?.bio || twitterUser.description || '').substring(0, 160);
+                            const rawPfp = dbProfile?.pfp_url || twitterUser.profile_image_url || '';
+                            const highResPfp = rawPfp.replace('_normal', '_400x400').substring(0, 500);
 
                             await supabaseService.client
                                 .from('user_profiles')
                                 .update({
-                                    display_name: dbProfile?.display_name || twitterUser.name,
-                                    username: twitterUser.username,
-                                    pfp_url: dbProfile?.pfp_url || highResPfp,
-                                    bio: dbProfile?.bio || twitterUser.description || ''
+                                    display_name: displayName,
+                                    username: username,
+                                    pfp_url: highResPfp,
+                                    bio: bio
                                 })
                                 .eq('wallet_address', userAddress.toLowerCase());
                             console.log(`[Verification] Profile autofilled from Twitter for ${userAddress}`);
