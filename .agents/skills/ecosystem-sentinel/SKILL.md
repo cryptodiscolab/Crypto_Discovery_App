@@ -42,6 +42,16 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
   - Kontras warna yang aksesibel.
   - Penggunaan CSS-only animations (anti Framer-Motion).
 
+### 2. Admin UI/UX Architecture Standards (NEW)
+- **Controlled Width**: Fokus konten utama harus dibatasi (`max-w-6xl`) untuk menghindari *extreme stretching* di monitor ultra-wide.
+- **Mobile Responsive Drawer**: Gunakan pola "Overlay Menu" atau "Bottom Drawer" untuk navigasi Admin yang panjang di mobile. Jangan biarkan menu mendorong konten utama ke bawah.
+- **Fixed Header Toggle**: Pastikan header admin memiliki toggle menu yang jelas di mobile untuk akses cepat ke fitur.
+- **Typography Clarity**: Gunakan `inter` atau sans-serif modern dengan kontras tinggi. Kurangi penggunaan `uppercase letter-spacing` yang berlebihan jika menghambat keterbacaan data.
+
+### 3. Sensitive Guard Protocol (UX & Security)
+- **No-Auto-Sign**: Dilarang memicu `signMessage` secara otomatis didalam `useEffect` pada saat render awal (mount). Ini mencegah popup MetaMask "spam" yang mengganggu alur navigasi user.
+- **Manual Unlock**: Tampilkan data finansial/sensitif dalam keadaan "Locked" (placeholder) secara default. Berikan button eksplisit "Unlock Data" yang meminta tanda tangan wallet hanya saat user benar-benar membutuhkannya.
+
 ### 2. Upgrading & Version Control Automation
 - **Version Sync**: Memastikan versi kontrak di `.env`, `.cursorrules`, dan `contracts.js` selalu sinkron setelah upgrade (misal: V12 ke V13).
 - **ABI Auto-Update**: Mengotomatisasi pembaruan ABI di frontend setiap kali ada perubahan pada `.sol` file agar tidak terjadi *mismatch error*.
@@ -136,7 +146,8 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Dev Plan**: Apakah sudah memberikan Development Plan dan mendapat persetujuan sebelum eksekusi?
 - [ ] **Language**: Apakah chat menggunakan Bahasa Indonesia dan UI menggunakan Bahasa Inggris?
 - [ ] **Build**: Apakah `npm run build` lokal berhasil (exit code 0)?
-- [ ] **UI/UX**: Apakah layout sudah responsif, bebas overflow, dan mengikuti Minimalist Modern Standards?
+- [ ] **UI/UX**: Apakah layout sudah responsif, bebas overflow, mengikuti pola Mobile Drawer, dan menggunakan `max-w-6xl` untuk Admin?
+- [ ] **Sensitive Guard**: Apakah ada pengambilan data yang memicu popup signature otomatis? (Wajib diubah jadi manual unlock).
 - [ ] **Cloud Sync**: Apakah `sync-cloud.js` sudah dijalankan setelah perubahan `.agents`?
 
 ## 🚨 Pantangan

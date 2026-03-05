@@ -45,6 +45,10 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **No Direct Writes**: DILARANG menulis langsung ke Supabase (`insert`/`upsert`) dari frontend.
 - **Signature-Driven Backend**: Semua mutasi data harus melalui API Backend setelah verifikasi signature (`viem`).
 
+### 4. Database Schema Integrity (NEW)
+- **SQL Migration Mandate**: Setiap fitur baru yang bergantung pada tabel database (misal: `user_privileges`) WAJIB menyertakan file SQL Migration (`CREATE TABLE IF NOT EXISTS`).
+- **Graceful Error Handling**: Frontend harus mendeteksi jika tabel belum ada (fail gracefully) dan memberikan instruksi admin yang jelas (SQL script) daripada sekadar crash.
+
 ### 4. ABI Architecture Standard (Proxy Pattern)
 ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untuk mencegah Rollup AST stack overflow.
 
