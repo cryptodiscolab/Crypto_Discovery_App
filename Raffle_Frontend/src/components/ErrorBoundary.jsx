@@ -11,6 +11,16 @@ export class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
+        // Auto-reload on chunk loading error caused by new deployments
+        const isChunkLoadFailed = error?.message?.includes('Failed to fetch dynamically imported module') ||
+            error?.message?.includes('Importing a module script failed');
+
+        if (isChunkLoadFailed) {
+            console.warn('Update detected! Reloading page to fetch new chunks...');
+            window.location.reload();
+            return;
+        }
+
         // Log error details to console
         console.error('🚨 ErrorBoundary caught an error:');
         console.error('Error:', error);

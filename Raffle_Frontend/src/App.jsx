@@ -42,26 +42,27 @@ function App() {
             <div className="dark min-h-screen bg-[#0B0E14] text-slate-100 pointer-events-none">
               <Header />
               <main className="pt-20 pb-24 md:pb-0 pointer-events-auto min-h-screen">
-                <Suspense fallback={
-                  <div className="min-h-screen flex items-start justify-center pt-8">
-                    <SkeletonLoader />
-                  </div>
-                }>
-                  <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route element={<ProtectedLayout />}>
-                      <Route path="/" element={<ErrorBoundary><HomePage /></ErrorBoundary>} />
-                      <Route path="/tasks" element={<TasksPage />} />
-                      <Route path="/raffles" element={<RafflesPage />} />
-                      <Route path="/leaderboard" element={<LeaderboardPage />} />
-                      <Route path="/profile" element={<ProfilePage />} />
-                      <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                      <Route path="/campaigns" element={<CampaignsPage />} />
-                      <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
-                    </Route>
-                  </Routes>
-
-                </Suspense>
+                <ErrorBoundary>
+                  <Suspense fallback={
+                    <div className="min-h-screen flex items-start justify-center pt-8">
+                      <SkeletonLoader />
+                    </div>
+                  }>
+                    <Routes>
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route element={<ProtectedLayout />}>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/tasks" element={<TasksPage />} />
+                        <Route path="/raffles" element={<RafflesPage />} />
+                        <Route path="/leaderboard" element={<LeaderboardPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                        <Route path="/campaigns" element={<CampaignsPage />} />
+                        <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+                      </Route>
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
               </main>
               <BottomNav />
               <Toaster position="bottom-right" toastOptions={{ style: { background: '#161B22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
