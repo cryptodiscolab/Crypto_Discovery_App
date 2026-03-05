@@ -115,8 +115,13 @@ Build Error: "findVariable" stack overflow or AST recursion
 ### ABI Import Standard (contracts.js Architecture)
 ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untuk mencegah Rollup stack overflow.
 
+### 9. Consistency & Address Guard (ANTI-DEBT)
+- **Protocol Sync**: Secara proaktif memverifikasi keselarasan alamat kontrak antara `.cursorrules`, `.env`, dan `abis_data.txt`. Jika ditemukan perbedaan, Agent HARUS segera melakukan sinkronisasi otomatis.
+- **Mismatch Detection**: Mendeteksi jika ada alamat kontrak yang memiliki code `0x` (Empty) di jaringan target untuk mencegah transaksi revert.
+
 ## 🤖 Otomatisasi Sentinel (Scripts)
 - **Sync Validator**: `node .agents/skills/ecosystem-sentinel/scripts/sync-check.js`
+- **Address Prober**: `node .agents/skills/ecosystem-sentinel/scripts/probe-conflict.js` (Temporary/Audit usage)
 - **Security & UI Auditor**: `node .agents/skills/ecosystem-sentinel/scripts/sentinel-audit.js`
 - **Cloud Config Sync**: `node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js`
 

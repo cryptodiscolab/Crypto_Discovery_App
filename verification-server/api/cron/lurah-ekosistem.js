@@ -17,7 +17,7 @@ const telegramChatId = process.env.TELEGRAM_CHAT_ID;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = async (req, res) => {
-    console.log('🤖 [Lurah Ekosistem] Memulai audit harian...');
+    console.log('🤖 [Lurah Ekosistem] Starting daily audit...');
 
     try {
         // 1. Ambil Peraturan (Knowledge) dari Vault
@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
             3. Rekomendasi tindakan untuk Admin.
         `;
 
-        let aiResponse = "Analisa AI tidak tersedia (Missing API Key).";
+        let aiResponse = "AI Analysis not available (Missing API Key).";
         if (geminiApiKey) {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
                 method: 'POST',
@@ -90,7 +90,7 @@ module.exports = async (req, res) => {
             });
         }
 
-        console.log('✅ [Lurah Ekosistem] Audit Selesai.');
+        console.log('✅ [Lurah Ekosistem] Audit Complete.');
         return res.status(200).json({ success: true, report: aiResponse });
 
     } catch (error) {

@@ -54,7 +54,7 @@ app.use('/api/cron/:job', async (req, res) => {
         if (typeof handler === 'function') {
             return await handler(req, res);
         }
-        res.status(500).json({ error: `Hanyalah fungsi yang bisa diekstrusi untuk job: ${job}` });
+        res.status(500).json({ error: `Handler for job ${job} is not a function` });
     } catch (err) {
         console.error(`[Cron Error] Job ${job} not found:`, err.message);
         res.status(404).json({ error: `Job ${job} not found` });
