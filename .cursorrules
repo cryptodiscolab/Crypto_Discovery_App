@@ -137,8 +137,8 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 | API3 QRNG Endpoint ID | `0xfb6d017bb87991b7495f563db3c8cf59ff87b09781947bb1e417006ad7f55a78` |
 | Max Gas Price | `50 gwei` (`MAX_GAS_PRICE`) |
 | Raffle Address (Sepolia)| `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| MasterX Address (Sepolia)| `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
-| DailyApp Address (Sepolia)| `0xfc12f4FEFf825860c5145680bde38BF222cC669A` |
+| MasterX Address (Sepolia)| `0x6136d93F57271049B85E46dfd2a09dD247daAD66` |
+| DailyApp Address (Sepolia)| `0x3ba0C1fA4D6F2f758B8Fb222B063b8f6969dAFB4` |
 | Content CMS V2 (Sepolia)| `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
 | Ticket Price | `150000` = $0.15 with 6 decimals (`TICKET_PRICE_USD`) |
 
