@@ -60,12 +60,13 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Signature-First API**: Semua API Backend (Vercel Functions/verification-server) yang melakukan modifikasi data (Internal DB atau On-Chain) WAJIB memvalidasi **EIP-191 Signature** dari wallet user/admin.
 - **Replay Protection**: Gunakan timestamp dalam pesan signature dengan window validasi maksimal 5 menit.
 - **Normalized Mapping**: Pastikan mapping address (Farcaster/Twitter) menggunakan clean lowercase address untuk menghindari 404 pada API Neynar.
+- **Zero-Trust Ecosystem Guard**: Endpoint yang menerima link media eksternal WAJIB melakukan validasi *HEAD Request Content-Length* (Maksimal 1MB) secara back-end. Elemen UI yang me-render resource raksasa harus dideteksi dan diberikan `loading="lazy"` berikut limitasi *MaxLength* input (`Profile URL`, dll) guna mencegah kerentanan OOM / Denial of Service di Client-Side.
 
 ### 6. PnL Health Guardian
 - **Financial Integrity**: Selalu pantau data `totalSBTPoolBalance` vs `totalLockedRewards`. Jangan perbolehkan dashboard admin menyarankan pengeluaran yang melebihi `Net Surplus`.
 - **Dynamic Proportionality**: Pastikan pembagian revenue (SBT Weights) selalu berjumlah tepat 100% dan tercermin dalam UI admin dengan visual validation.
 
-### 5. Cloud Infrastructure Config Sync (Supabase & Vercel)
+### 8. Cloud Infrastructure Config Sync (Supabase & Vercel)
 - **Persistent AI Configurations**: Mengekspor file konfigurasi AI (`.agents/*` dan `.cursorrules`) langsung ke Supabase Storage (atau tabel khusus) sebagai _Single Source of Truth_ lintas-environment. 
 - **Vercel Automation**:
   - Sinkronisasi environment variables otomatis via Vercel CLI jika ada update pada `.env`.

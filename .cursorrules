@@ -97,6 +97,11 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **LAZY RESET:** On-chain tiers reset every season. Database synchronization (`audit-bundle`) must handle `SeasonReset` events by archiving old peak tiers to `user_season_history` and resetting active tiers in `user_profiles`.
 - **UPGRADE FEE:** Tier upgrades require both an ETH fee and a specific XP threshold. Validate both in the UI before triggering `upgradeTier`.
 
+### 8.8 Media & Ecosystem Performance Guard (NEW)
+- **ZERO-TRUST SIZE VALIDATION:** All external media links (Avatar/GIFs) MUST be validated on the backend API via a `HEAD` request before saving to the DB. `content-length` MUST be <= 1MB (1048576 bytes) to prevent Client-Side DoS and OOM attacks.
+- **LAZY LOADING:** All `<img>` tags for user-generated content or external URLs MUST include `loading="lazy"` and strict structural bounds (e.g., `w-full h-full object-cover`).
+- **INPUT SANITIZATION:** Enforce strict `maxLength` attributes on frontend UI inputs: Avatar URL (500), Username (30), Name (50), Bio (160). Database columns should reflect these limits where applicable.
+
 ## 9. STRICT CODING GUIDELINES (ANTI-GUESSING PROTOCOL)
 - **MANDATORY**: Before implementing ANY external library method, you MUST read the actual module source code in `node_modules` or the official documentation.
 - **NO GUESSING**: Never assume a method name based on intuition or previous versions. Verify deeply.
