@@ -149,16 +149,22 @@ async function handleFarcasterCheck(req, res) {
         );
 
         if (response.status === 404) return res.status(404).json(null);
-        if (!response.ok) return res.status(502).json({ error: 'Upstream API failure' });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[Neynar Error] HTTP ${response.status}:`, errorText);
+            return res.status(502).json({ error: 'Neynar Upstream API failure', status: response.status });
+        }
 
         const data = await response.json();
-        const userList = data[normalizedAddress] || [];
+        // Neynar bulk-by-address returns an object where keys are the addresses
+        const userList = data[cleanAddress] || [];
         const user = userList.length > 0 ? userList[0] : null;
 
-        res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate');
-        return res.status(200).json(user);
+        res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=600');
+        return res.status(user ? 200 : 404).json(user);
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('[Neynar Internal Error]:', err.message);
+        return res.status(500).json({ error: 'Discovery failure', details: err.message });
     }
 }
 
@@ -175,8 +181,9 @@ async function handleSyncEvents(req, res) {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Fix Alchemy 403 Forbidden: Send whitelisted Origin header
-    const fetchReq = new ethers.FetchRequest(RPC_URL);
+    // Fix Alchemy 10-block limit: Force use of public node for getLogs
+    const PUBLIC_RPC = "https://sepolia.base.org";
+    const fetchReq = new ethers.FetchRequest(PUBLIC_RPC);
     fetchReq.setHeader("Origin", "https://crypto-discovery-app.vercel.app");
     const provider = new ethers.JsonRpcProvider(fetchReq);
 
