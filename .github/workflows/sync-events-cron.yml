@@ -12,5 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Hit Endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -sS -X GET "https://crypto-discovery-app.vercel.app/api/cron/sync-events"
+          if [ -n "$CRON_SECRET" ]; then
+            curl -sS -X GET -H "Authorization: Bearer $CRON_SECRET" "https://crypto-discovery-app.vercel.app/api/cron/sync-events"
+          else
+            curl -sS -X GET "https://crypto-discovery-app.vercel.app/api/cron/sync-events"
+          fi
