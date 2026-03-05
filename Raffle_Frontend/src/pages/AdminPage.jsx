@@ -4,7 +4,8 @@ import {
     Shield, Award, Landmark, Settings, Users, Database,
     CheckCircle, AlertTriangle, ExternalLink, RefreshCw,
     Edit3, Save, Eye, EyeOff, UserCog, Newspaper,
-    Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList, Sliders, Megaphone
+    Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList, Sliders, Megaphone,
+    Menu, X
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
@@ -55,6 +56,7 @@ export function AdminPage({ initialTab = 'pool' }) {
     const [taskSubTab, setTaskSubTab] = useState('batch');
     const [hasManagerAccess, setHasManagerAccess] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         if (initialTab) setActiveTab(initialTab);
@@ -141,8 +143,6 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
         { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
     ];
-
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
         <div className="z-[9999] pointer-events-auto relative h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden">
