@@ -1,11 +1,13 @@
 -- ============================================================
--- CRYPTO DISCO APP — SBT ENFORCEMENT & TIER HARDENING v2
--- Fix: Corrected column references to match profiles schema.
+-- CRYPTO DISCO APP — SBT ENFORCEMENT & TIER HARDENING v3
+-- Fix: Corrected ALL column references based on real schema:
+--   profiles table -> address, display_name, bio, pfp_url, neynar_score, updated_at
+--   user_profiles  -> wallet_address, fid, username, tier, total_xp, referred_by, etc.
 -- ============================================================
 
 -- 1. Hardened Leaderboard Tier Computation
 --    Users with tier 0 (Guest) cannot be promoted via XP alone.
---    They MUST have their tier updated by an admin after minting SBT.
+--    They MUST have their tier updated by the cron job after detecting on-chain SBT.
 CREATE OR REPLACE FUNCTION public.fn_compute_leaderboard_tiers()
 RETURNS TABLE (
     wallet_address TEXT,
@@ -29,9 +31,9 @@ BEGIN
         SELECT 
             p.wallet_address,
             p.total_xp,
-            p.tier as current_tier,
+            p.tier AS current_tier,
             p.tier_override,
-            PERCENT_RANK() OVER (ORDER BY p.total_xp DESC) as percentile
+            PERCENT_RANK() OVER (ORDER BY p.total_xp DESC) AS percentile
         FROM public.user_profiles p
         WHERE p.total_xp > 0 OR p.tier_override IS NOT NULL
     )
@@ -39,7 +41,7 @@ BEGIN
         ru.wallet_address,
         CASE 
             WHEN ru.tier_override IS NOT NULL THEN ru.tier_override
-            -- *** SBT GATE: If user has never minted SBT (tier = 0), keep at 0 ***
+            -- *** SBT GATE: If user has not minted SBT (tier = 0), keep at 0 ***
             WHEN ru.current_tier = 0 THEN 0
             -- If SBT Holder, compute grade from XP percentile
             WHEN ru.percentile <= diamond_p THEN 4 -- DIAMOND
@@ -47,59 +49,63 @@ BEGIN
             WHEN ru.percentile <= silver_p  THEN 2 -- SILVER
             WHEN ru.percentile <= bronze_p  THEN 1 -- BRONZE
             ELSE 1 -- Minimum bronze for all SBT holders
-        END::INTEGER as computed_tier
+        END::INTEGER AS computed_tier
     FROM RankedUsers ru;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
--- 2. Secure v_user_full_profile View
--- Locks rank_name to 'Guest' for non-SBT holders.
--- Fixed: uses p.fid, p.farcaster_username, p.neynar_score as per correct profiles schema.
+-- 2. Secure v_user_full_profile View (SCHEMA-CORRECT VERSION)
+-- profiles  -> address, display_name, bio, pfp_url, neynar_score
+-- user_profiles -> wallet_address, fid, username, tier, total_xp, referred_by, etc.
 DROP VIEW IF EXISTS public.v_user_full_profile;
 
 CREATE OR REPLACE VIEW public.v_user_full_profile AS
 WITH all_wallets AS (
-    SELECT LOWER(address) as w_address FROM public.profiles
+    SELECT LOWER(address) AS w_address FROM public.profiles
     UNION
     SELECT LOWER(wallet_address) FROM public.user_profiles
     UNION
     SELECT LOWER(wallet_address) FROM public.ens_subdomains
 )
 SELECT 
-    w.w_address as wallet_address,
-    p.fid,
-    COALESCE(p.farcaster_username, p.display_name, '') as username,
+    w.w_address                                             AS wallet_address,
+    up.fid,
+    COALESCE(up.username, up.display_name, '')              AS username,
     COALESCE(
+        NULLIF(up.display_name, ''),
         NULLIF(p.display_name, ''),
         ens.full_name,
-        '0x' || substring(w.w_address from 3 for 4) || '...' || substring(w.w_address from length(w.w_address)-3)
-    ) as display_name, 
-    p.bio,
-    p.pfp_url,
-    COALESCE(p.neynar_score, 0) as neynar_score,
-    COALESCE(up.total_xp, 0) as total_xp,
-    COALESCE(up.tier, 0) as tier,
+        '0x' || substring(w.w_address FROM 3 FOR 4) || '...' || RIGHT(w.w_address, 4)
+    )                                                       AS display_name,
+    COALESCE(up.bio, p.bio, '')                             AS bio,
+    COALESCE(NULLIF(up.pfp_url, ''), p.pfp_url, '')         AS pfp_url,
+    COALESCE(up.neynar_score, p.neynar_score, 0)            AS neynar_score,
+    COALESCE(up.total_xp, 0)                                AS total_xp,
+    COALESCE(up.tier, 0)                                    AS tier,
     up.referred_by,
     CASE 
-        -- *** SBT GATE: If tier = 0 (no SBT minted), always 'Guest' ***
+        -- *** SBT GATE: No SBT = always 'Guest', cannot rank up ***
         WHEN COALESCE(up.tier, 0) = 0 THEN 'Guest'
-        -- SBT Holder rank names based on synced tier
+        -- SBT Holder rank names based on synced on-chain tier
         WHEN COALESCE(up.tier, 0) >= 4 THEN 'Diamond'
         WHEN COALESCE(up.tier, 0) = 3  THEN 'Platinum'
         WHEN COALESCE(up.tier, 0) = 2  THEN 'Gold'
-        -- Tier 1 = Bronze, but display based on XP milestone within Bronze
+        -- Tier 1 Bronze: display based on XP earned
         WHEN COALESCE(up.total_xp, 0) >= 1000 THEN 'Bronze'
         ELSE 'Rookie'
-    END as rank_name,
-    ens.full_name as ens_name,
-    COALESCE(p.updated_at, up.created_at, ens.created_at) as updated_at
+    END                                                     AS rank_name,
+    ens.full_name                                           AS ens_name,
+    COALESCE(p.updated_at, up.created_at, ens.created_at)  AS updated_at
 FROM all_wallets w
-LEFT JOIN public.profiles p ON w.w_address = LOWER(p.address)
-LEFT JOIN public.user_profiles up ON w.w_address = LOWER(up.wallet_address)
-LEFT JOIN public.ens_subdomains ens ON w.w_address = LOWER(ens.wallet_address);
+LEFT JOIN public.profiles p
+    ON w.w_address = LOWER(p.address)
+LEFT JOIN public.user_profiles up
+    ON w.w_address = LOWER(up.wallet_address)
+LEFT JOIN public.ens_subdomains ens
+    ON w.w_address = LOWER(ens.wallet_address);
 
 -- Grant access
 GRANT SELECT ON public.v_user_full_profile TO anon, authenticated;
 
-COMMENT ON VIEW public.v_user_full_profile IS 'Master View with SBT Gate: Non-SBT users (tier=0) show as Guest.';
+COMMENT ON VIEW public.v_user_full_profile IS 'Master View with SBT Gate: Users with tier=0 (no SBT minted) display as Guest.';
