@@ -44,7 +44,9 @@ export function EconomyMetrics() {
     };
 
     useEffect(() => {
-        fetchStats();
+        // We no longer auto-fetch on mount to prevent annoying MetaMask popups
+        // when navigating between admin tabs.
+        // fetchStats(); 
     }, [address]);
 
     return (
@@ -58,7 +60,7 @@ export function EconomyMetrics() {
                     <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-full">Revenue</span>
                 </div>
                 <h4 className="text-3xl font-black text-white mb-1">
-                    {loading ? '...' : `$${stats?.totalRevenueUSDC || '0.00'}`}
+                    {!stats ? '----' : `$${stats?.totalRevenueUSDC || '0.00'}`}
                 </h4>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Gross Listing Revenue (USDC)</p>
             </div>
@@ -72,7 +74,7 @@ export function EconomyMetrics() {
                     <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-full">P&L</span>
                 </div>
                 <h4 className="text-3xl font-black text-white mb-1">
-                    {loading ? '...' : `$${stats?.netProfit || '0.00'}`}
+                    {!stats ? '----' : `$${stats?.netProfit || '0.00'}`}
                 </h4>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Estimated Net Profit (70% Margin)</p>
             </div>
@@ -86,7 +88,7 @@ export function EconomyMetrics() {
                     <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest bg-purple-500/10 px-2 py-1 rounded-full">Engagement</span>
                 </div>
                 <h4 className="text-3xl font-black text-white mb-1">
-                    {loading ? '...' : (stats?.communityXp / 1000).toFixed(1) + 'k'}
+                    {!stats ? '----' : (stats?.communityXp / 1000).toFixed(1) + 'k'}
                 </h4>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Total XP Distributed to Users</p>
             </div>
@@ -111,10 +113,13 @@ export function EconomyMetrics() {
 
             <button
                 onClick={fetchStats}
-                className="md:col-span-3 lg:col-span-4 py-3 bg-slate-900/50 hover:bg-slate-900/80 border border-white/5 rounded-2xl text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all mt-2"
+                className={`md:col-span-3 lg:col-span-4 py-3 border rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all mt-2 ${!stats
+                    ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30 hover:bg-indigo-600/30'
+                    : 'bg-slate-900/50 hover:bg-slate-900/80 border-white/5 text-slate-500'
+                    }`}
             >
                 <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                Refresh Economy Command Center
+                {!stats ? 'UNLOCK COMMAND CENTER (REQUIRES SIGNATURE)' : 'REFRESH METRICS'}
             </button>
         </div>
     );
