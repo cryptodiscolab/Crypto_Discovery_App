@@ -270,6 +270,11 @@
                     },
                     {
                         "internalType": "uint256",
+                        "name": "_p",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
                         "name": "_g",
                         "type": "uint256"
                     },
@@ -370,6 +375,19 @@
             {
                 "inputs": [],
                 "name": "silverWeight",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "platinumWeight",
                 "outputs": [
                     {
                         "internalType": "uint256",
@@ -1394,6 +1412,11 @@
                         "internalType": "uint256",
                         "name": "currentSupply",
                         "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isOpen",
+                        "type": "bool"
                     }
                 ],
                 "stateMutability": "view",
@@ -1667,6 +1690,24 @@
                     }
                 ],
                 "name": "setPackagePricesUSD",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier",
+                        "name": "_tier",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_status",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setTierStatus",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
@@ -2027,6 +2068,21 @@
                         "internalType": "uint256",
                         "name": "_multiplierBP",
                         "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_dailyBonus",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_maxSupply",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_isOpen",
+                        "type": "bool"
                     }
                 ],
                 "name": "updateNFTConfig",

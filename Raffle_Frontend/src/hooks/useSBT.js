@@ -13,10 +13,12 @@ export function useSBT() {
         address: CONTRACT_ADDRESS,
         abi: ABIS.MASTER_X,
         functionName: 'totalSBTPoolBalance',
-        query: {
-            staleTime: 60 * 60 * 1000, // 1 hour cache
-            gcTime: 24 * 60 * 60 * 1000, // 24 hours persistence
-        }
+    });
+
+    const { data: totalLockedRewards, refetch: refetchLocked } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'totalLockedRewards',
     });
 
     // 2. Fetch User Data
@@ -81,6 +83,33 @@ export function useSBT() {
         functionName: 'ticketDescription',
     });
 
+    // 5. Fetch Tier Weights
+    const { data: diamondWeight } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'diamondWeight',
+    });
+    const { data: platinumWeight } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'platinumWeight',
+    });
+    const { data: goldWeight } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'goldWeight',
+    });
+    const { data: silverWeight } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'silverWeight',
+    });
+    const { data: bronzeWeight } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'bronzeWeight',
+    });
+
     const claimRewards = async () => {
         if (!isConnected) throw new Error("Wallet not connected");
         return await writeContractAsync({
@@ -122,6 +151,15 @@ export function useSBT() {
             abi: ABIS.MASTER_X,
             functionName: 'setParams',
             args: [tUSDC, mGas, pPerTicket, desc],
+        });
+    };
+
+    const setTierWeights = async (d, p, g, s, b) => {
+        return await writeContractAsync({
+            address: CONTRACT_ADDRESS,
+            abi: ABIS.MASTER_X,
+            functionName: 'setTierWeights',
+            args: [BigInt(d), BigInt(p), BigInt(g), BigInt(s), BigInt(b)],
         });
     };
 
@@ -174,6 +212,7 @@ export function useSBT() {
 
     const refetchAll = () => {
         refetchPool();
+        refetchLocked();
         refetchUser();
         refetchClaimable();
         refetchGas();
@@ -185,6 +224,7 @@ export function useSBT() {
 
     return {
         totalPoolBalance: totalPoolBalance || 0n,
+        totalLockedRewards: totalLockedRewards || 0n,
         userTier,
         claimableAmount: claimableAmount || 0n,
         maxGasPrice: maxGasPrice || 0n,
@@ -194,12 +234,18 @@ export function useSBT() {
         updateTier,
         withdrawTreasury,
         setMasterParams,
+        setTierWeights,
         syncTiersToContract,
         refetchAll,
         ticketPriceUSDC: ticketPriceUSDC || 0n,
         pointsPerTicket: pointsPerTicket || 0n,
         ticketDescription: ticketDescription || '',
         lastDistributeTimestamp: lastDistributeTimestamp || 0n,
+        diamondWeight: Number(diamondWeight || 0),
+        platinumWeight: Number(platinumWeight || 0),
+        goldWeight: Number(goldWeight || 0),
+        silverWeight: Number(silverWeight || 0),
+        bronzeWeight: Number(bronzeWeight || 0),
         isLoading: refetchPool && (totalPoolBalance === undefined || userRawData === undefined)
     };
 }

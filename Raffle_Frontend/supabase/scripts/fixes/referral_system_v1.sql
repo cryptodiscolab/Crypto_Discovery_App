@@ -24,16 +24,13 @@ WITH all_wallets AS (
 )
 SELECT 
     w.w_address as wallet_address,
-    p.fid,
-    COALESCE(p.farcaster_username, p.display_name, '') as username,
+    COALESCE(up.fid, p.fid) as fid,
+    COALESCE(p.display_name, '') as username,
     COALESCE(
-        NULLIF(p.display_name, ''), 
-        ens.full_name,
+        NULLIF(p.display_name, ''),
         '0x' || substring(w.w_address from 3 for 4) || '...' || substring(w.w_address from length(w.w_address)-3)
     ) as display_name, 
-    p.bio,
-    p.pfp_url,
-    COALESCE(p.neynar_score, 0) as neynar_score,
+    COALESCE(p.pfp_url, '') as pfp_url,
     COALESCE(up.total_xp, 0) as total_xp,
     COALESCE(up.tier, 1) as tier,
     up.referred_by,
@@ -46,7 +43,7 @@ SELECT
     ens.full_name as ens_name,
     COALESCE(p.updated_at, up.created_at, ens.created_at) as updated_at
 FROM all_wallets w
-LEFT JOIN public.profiles p ON w.w_address = LOWER(p.address)
+LEFT JOIN public.profiles p ON w.w_address = LOWER(p.wallet_address)
 LEFT JOIN public.user_profiles up ON w.w_address = LOWER(up.wallet_address)
 LEFT JOIN public.ens_subdomains ens ON w.w_address = LOWER(ens.wallet_address);
 

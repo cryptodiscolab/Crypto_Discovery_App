@@ -89,9 +89,15 @@ export function useVerification(refetchStats) {
                 });
             }
 
-            const result = await response.json();
+            let result;
+            try {
+                result = await response.json();
+            } catch (jsonErr) {
+                // If the response is not JSON, the server likely crashed or returned the Vercel error page
+                throw new Error(`Server returned an invalid response (${response.status}). The Verifier API might be down.`);
+            }
 
-            if (response.ok) {
+            if (response.ok && result.success) {
                 // NEW: Record claim in Supabase immediately for Real-Time UX
                 // This ensures XP shows up before the next cron sync
                 if (isSocialTask) {
@@ -117,16 +123,21 @@ export function useVerification(refetchStats) {
                 if (refetchStats) refetchStats();
                 return true;
             } else {
-                toast.error(result.error || "Verification failed.", { id: tid });
+                // Return descriptive error from server or fallback
+                const detail = result?.error || "Social action not detected or indexing delay.";
+                toast.error(detail, { id: tid, duration: 5000 });
                 return false;
             }
         } catch (error) {
             console.error('[Verification Error]', error);
-            const errMsg = error.message || "Server error";
-            if (error.code === 4001) {
-                toast.error("Signature rejected", { id: tid });
+            const errMsg = error.message || "Unknown Verification error";
+
+            if (error.code === 4001 || error.message?.includes('rejected')) {
+                toast.error("Signature rejected by user.", { id: tid });
+            } else if (error.message?.includes('failed to fetch') || error.message?.includes('NetworkError')) {
+                toast.error("Network Error: Verification server is unreachable.", { id: tid });
             } else {
-                toast.error(`Error: ${errMsg}`, { id: tid });
+                toast.error(errMsg, { id: tid });
             }
             return false;
         } finally {
