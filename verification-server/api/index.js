@@ -33,6 +33,10 @@ app.use((req, res, next) => {
     }
 
     const providedSecret = req.headers['x-api-secret'];
+    const isCron = req.headers['authorization'] === `Bearer ${process.env.CRON_SECRET}`;
+
+    if (isCron) return next(); // Allow Vercel Cron automatically
+
     if (!providedSecret || providedSecret !== apiSecret) {
         return res.status(401).json({
             success: false,
@@ -40,6 +44,21 @@ app.use((req, res, next) => {
         });
     }
     next();
+});
+
+// --- NEW: Cron Jobs Handler ---
+app.use('/api/cron/:job', async (req, res) => {
+    const job = req.params.job;
+    try {
+        const handler = require(`./cron/${job}.js`);
+        if (typeof handler === 'function') {
+            return await handler(req, res);
+        }
+        res.status(500).json({ error: `Hanyalah fungsi yang bisa diekstrusi untuk job: ${job}` });
+    } catch (err) {
+        console.error(`[Cron Error] Job ${job} not found:`, err.message);
+        res.status(404).json({ error: `Job ${job} not found` });
+    }
 });
 
 // 🚀 Rate Limiting: Prevent Neynar/Twitter API spam

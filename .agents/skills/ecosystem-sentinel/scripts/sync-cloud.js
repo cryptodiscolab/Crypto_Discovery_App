@@ -101,10 +101,31 @@ async function uploadFile(localAbsPath, destPath) {
         .upload(destPath, buffer, { upsert: true, contentType });
 
     if (error) {
-        console.error(`  ❌ Upload failed [${destPath}]: ${error.message}`);
+        console.error(`  ❌ Upload to Storage failed [${destPath}]: ${error.message}`);
         return false;
     }
-    console.log(`  ✅ Uploaded: ${destPath}`);
+
+    // --- NEW: Sync to Database Vault ---
+    const content = buffer.toString('utf8');
+    const category = destPath.includes('cursorrules') ? 'protocol' :
+        destPath.includes('skills') ? 'skill' : 'script';
+
+    const { error: dbError } = await supabase
+        .from('agent_vault')
+        .upsert({
+            file_path: destPath,
+            content: content,
+            category: category,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'file_path' });
+
+    if (dbError) {
+        console.warn(`  ⚠️  Database sync failed for [${destPath}]: ${dbError.message}`);
+    } else {
+        console.log(`  ✅ Database Vault Synced: ${destPath}`);
+    }
+
+    console.log(`  ✅ Uploaded to Storage: ${destPath}`);
     return true;
 }
 
