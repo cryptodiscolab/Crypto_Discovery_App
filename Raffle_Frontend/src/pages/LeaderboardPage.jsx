@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Crown, Sparkles, Medal } from 'lucide-react';
+import { Trophy, Crown, Sparkles, Medal, Users, Shield } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
 
@@ -87,10 +87,11 @@ export function LeaderboardPage() {
 
   const tabs = [
     { id: 'All', label: 'All', icon: Trophy, color: 'text-indigo-400' },
-    { id: 'Elite', label: 'Elite', icon: Crown, color: 'text-purple-400' },
-    { id: 'Gold', label: 'Gold', icon: Sparkles, color: 'text-yellow-500' },
+    { id: 'Diamond', label: 'Diamond', icon: Crown, color: 'text-blue-400' },
+    { id: 'Platinum', label: 'Platinum', icon: Sparkles, color: 'text-purple-400' },
+    { id: 'Gold', label: 'Gold', icon: Shield, color: 'text-yellow-500' },
     { id: 'Silver', label: 'Silver', icon: Medal, color: 'text-slate-300' },
-    { id: 'Rookie', label: 'Rookie', icon: Users, color: 'text-amber-700' },
+    { id: 'Bronze', label: 'Bronze', icon: Users, color: 'text-amber-700' },
   ];
 
   useEffect(() => {
@@ -100,8 +101,6 @@ export function LeaderboardPage() {
   useEffect(() => {
     if (activeTab === 'All') {
       setFilteredUsers(allUsers);
-    } else if (activeTab === 'Elite') {
-      setFilteredUsers(allUsers.filter(u => u.rank_name === 'Diamond' || u.rank_name === 'Platinum'));
     } else {
       setFilteredUsers(allUsers.filter(u => u.rank_name === activeTab));
     }

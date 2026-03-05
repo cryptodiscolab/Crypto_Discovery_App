@@ -10,7 +10,8 @@ export function TierTab({ onUpdate }) {
     const { signMessageAsync } = useSignMessage();
     const {
         diamondWeight, platinumWeight, goldWeight, silverWeight, bronzeWeight,
-        setTierWeights, refetchAll
+        setTierWeights, refetchAll,
+        currentSeasonId, setTierConfig, resetSeason
     } = useSBT();
 
     const [targetUser, setTargetUser] = useState('');
@@ -19,6 +20,7 @@ export function TierTab({ onUpdate }) {
     const [thresholds, setThresholds] = useState([]);
     const [isSavingConfig, setIsSavingConfig] = useState(false);
     const [isSavingWeights, setIsSavingWeights] = useState(false);
+    const [isResettingSeason, setIsResettingSeason] = useState(false);
 
     // Weight local state
     const [weights, setWeights] = useState({
@@ -87,15 +89,31 @@ export function TierTab({ onUpdate }) {
         }
     };
 
-    const handleConfigSave = async (id, min_xp) => {
-        setIsSavingConfig(true);
-        const tid = toast.loading("Requesting Admin Signature...");
+    const handleResetSeason = async () => {
+        const newSeasonId = prompt("Enter New Season ID (Numeric):", currentSeasonId + 1);
+        if (!newSeasonId || isNaN(newSeasonId)) return;
+
+        setIsResettingSeason(true);
+        const tid = toast.loading(`Resetting Season to ${newSeasonId}...`);
         try {
+            await resetSeason(newSeasonId);
+            toast.success(`Season Reset to ${newSeasonId}!`, { id: tid });
+            refetchAll();
+        } catch (e) {
+            toast.error(e.shortMessage || "Reset failed", { id: tid });
+        } finally {
+            setIsResettingSeason(false);
+        }
+    };
+
+    const handleConfigSave = async (id, min_xp, upgrade_fee_eth = 0) => {
+        setIsSavingConfig(true);
+        const tid = toast.loading("Saving configuration...");
+        try {
+            // 1. Update Supabase
             const timestamp = new Date().toISOString();
             const message = `Update SBT Threshold: Tier ID ${id}\nNew Min XP: ${min_xp}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
-
-            toast.loading("Updating via secure API...", { id: tid });
 
             const response = await fetch('/api/admin/system/update', {
                 method: 'POST',
@@ -105,14 +123,24 @@ export function TierTab({ onUpdate }) {
                     signature,
                     message,
                     action_type: 'UPDATE_THRESHOLDS',
-                    payload: [{ id, min_xp }]
+                    payload: [{ id, min_xp, upgrade_fee_eth }]
                 })
             });
 
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Update failed");
+            if (!response.ok) throw new Error(result.error || "DB Update failed");
 
-            toast.success("Threshold Updated!", { id: tid });
+            // 2. Sync to Smart Contract
+            const currentTierObj = thresholds.find(t => t.id === id);
+            if (currentTierObj) {
+                const tierLevel = currentTierObj.level;
+                const feeWei = BigInt(Math.floor(upgrade_fee_eth * 1e18));
+
+                toast.loading(`Syncing Tier ${tierLevel} to contract...`, { id: tid });
+                await setTierConfig(tierLevel, feeWei, min_xp);
+            }
+
+            toast.success("Threshold Updated in DB & Contract!", { id: tid });
             loadConfig();
         } catch (e) {
             console.error(e);
@@ -164,8 +192,8 @@ export function TierTab({ onUpdate }) {
                 <div className="flex items-center justify-between gap-6 p-4 bg-black/40 rounded-xl border border-white/5">
                     <div className="flex items-center gap-4">
                         <div className={`px-4 py-2 rounded-lg font-black font-mono text-xl ${(Number(weights.d) + Number(weights.p) + Number(weights.g) + Number(weights.s) + Number(weights.b)) === 100
-                                ? 'text-emerald-400 bg-emerald-500/10'
-                                : 'text-red-400 bg-red-500/10'
+                            ? 'text-emerald-400 bg-emerald-500/10'
+                            : 'text-red-400 bg-red-500/10'
                             }`}>
                             {Number(weights.d) + Number(weights.p) + Number(weights.g) + Number(weights.s) + Number(weights.b)}%
                         </div>
@@ -180,6 +208,30 @@ export function TierTab({ onUpdate }) {
                         <Save className="w-4 h-4" /> Save Weights
                     </button>
                 </div>
+            </div>
+
+            {/* 1.5. Season Management (NEW) */}
+            <div className="glass-card p-8 bg-purple-900/10 border border-purple-500/20 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                    <RefreshCw className="w-24 h-24 text-purple-400 rotate-12" />
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-purple-400" /> Seasonal Soulbound System
+                </h3>
+                <p className="text-xs text-slate-500 mb-8 max-w-xl">
+                    Advancing to a new season will reset all temporary SBT tiers in the database and contract.
+                    <span className="text-purple-400 font-bold ml-1">Current Season ID: {currentSeasonId}</span>
+                </p>
+
+                <button
+                    onClick={handleResetSeason}
+                    disabled={isResettingSeason}
+                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-xl font-bold transition-all flex items-center gap-2 text-white shadow-lg shadow-purple-600/20"
+                >
+                    {isResettingSeason ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    Start New Season
+                </button>
             </div>
 
             {/* 2. On-Chain Assign (Manual Override) */}
@@ -235,28 +287,44 @@ export function TierTab({ onUpdate }) {
                         <div key={t.id} className="bg-slate-900 p-4 rounded-xl border border-white/5">
                             <div className="flex justify-between items-center mb-2">
                                 <span className={`text-sm font-black uppercase tracking-widest ${t.tier_name === 'Diamond' ? 'text-blue-400' :
-                                        t.tier_name === 'Platinum' ? 'text-indigo-300' :
-                                            t.tier_name === 'Gold' ? 'text-yellow-400' :
-                                                t.tier_name === 'Silver' ? 'text-slate-300' : 'text-orange-400'
+                                    t.tier_name === 'Platinum' ? 'text-indigo-300' :
+                                        t.tier_name === 'Gold' ? 'text-yellow-400' :
+                                            t.tier_name === 'Silver' ? 'text-slate-300' : 'text-orange-400'
                                     }`}>{t.tier_name} Tier</span>
                                 <span className="text-xs text-slate-500">Level {t.level}</span>
                             </div>
 
-                            <label className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Required XP</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    defaultValue={t.min_xp}
-                                    onBlur={(e) => {
-                                        if (Number(e.target.value) !== t.min_xp) {
-                                            handleConfigSave(t.id, Number(e.target.value));
-                                        }
-                                    }}
-                                    className="w-full bg-black/40 border border-white/10 p-2 rounded-lg text-white font-mono text-sm focus:border-yellow-500/50 outline-none"
-                                />
-                                <div className="flex items-center justify-center w-8 bg-slate-800 rounded-lg">
-                                    {isSavingConfig ? <RefreshCw className="w-3 h-3 animate-spin text-slate-400" /> : <Save className="w-3 h-3 text-slate-500" />}
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Req XP</label>
+                                    <input
+                                        type="number"
+                                        defaultValue={t.min_xp}
+                                        onBlur={(e) => {
+                                            if (Number(e.target.value) !== t.min_xp) {
+                                                handleConfigSave(t.id, Number(e.target.value), t.upgrade_fee_eth);
+                                            }
+                                        }}
+                                        className="w-full bg-black/40 border border-white/10 p-2 rounded-lg text-white font-mono text-xs focus:border-yellow-500/50 outline-none"
+                                    />
                                 </div>
+                                <div>
+                                    <label className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Fee (ETH)</label>
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        defaultValue={t.upgrade_fee_eth || 0}
+                                        onBlur={(e) => {
+                                            if (Number(e.target.value) !== (t.upgrade_fee_eth || 0)) {
+                                                handleConfigSave(t.id, t.min_xp, Number(e.target.value));
+                                            }
+                                        }}
+                                        className="w-full bg-black/40 border border-white/10 p-2 rounded-lg text-white font-mono text-xs focus:border-yellow-500/50 outline-none"
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-2 flex items-center justify-center p-1 bg-slate-800 rounded-lg">
+                                {isSavingConfig ? <RefreshCw className="w-3 h-3 animate-spin text-slate-400" /> : <Save className="w-3 h-3 text-slate-500" />}
                             </div>
                         </div>
                     ))}

@@ -830,6 +830,34 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     }
 
     /**
+     * @notice Burn points from a user (used by MasterX for tier upgrades)
+     * @param _user The user to burn points from
+     * @param _amount Number of points to deduct
+     */
+    function burnPoints(address _user, uint256 _amount) external {
+        if (msg.sender != address(masterXContract) && !hasRole(ADMIN_ROLE, msg.sender)) revert Unauthorized();
+        if (userStats[_user].points < _amount) revert InsufficientFunds();
+        
+        userStats[_user].points -= _amount;
+    }
+
+    /**
+     * @notice Update user tier in DailyApp (used by MasterX to keep in sync)
+     */
+    function updateUserTier(address _user, NFTTier _tier) external {
+        if (msg.sender != address(masterXContract) && !hasRole(ADMIN_ROLE, msg.sender)) revert Unauthorized();
+        userStats[_user].currentTier = _tier;
+        // Also mint the soulbound NFT if they don't have one yet
+        if (balanceOf(_user) == 0) {
+            uint256 tokenId = uint256(uint160(_user));
+            _mint(_user, tokenId);
+            emit NFTMinted(_user, _tier, tokenId);
+        } else {
+            emit NFTUpgraded(_user, NFTTier.NONE, _tier);
+        }
+    }
+
+    /**
      * @notice Admin can add rewards for raffle winners or other incentives
      * @param _user The winner address
      * @param _amount The amount of creator tokens to award

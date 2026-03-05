@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import { useNFTTiers } from '../hooks/useNFTTiers';
 import { usePoints } from '../shared/context/PointsContext';
+import { useSBT } from '../hooks/useSBT';
 import { formatEther } from 'viem';
 import { Sparkles, ArrowUpCircle, Lock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,7 +10,8 @@ import toast from 'react-hot-toast';
 export function SBTUpgradeCard() {
     const { address } = useAccount();
     const { userPoints, userTier, rankName, refetch: refetchPoints } = usePoints();
-    const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
+    const { tiers, refetch: refetchTiers } = useNFTTiers();
+    const { upgradeTier, currentSeasonId, refetchAll } = useSBT();
     const { data: balanceData } = useBalance({ address });
 
     // Find current and next tier
@@ -44,15 +46,16 @@ export function SBTUpgradeCard() {
             return toast.error(`You need ${xpShortfall.toLocaleString()} more XP to upgrade!`);
         }
 
-        const tid = toast.loading(`Upgrading to ${nextTier.name}...`);
+        const tid = toast.loading(`Ascending to ${nextTier.name}...`);
         try {
-            await mintTier(nextTier.id, nextTier.mintPrice);
-            toast.success(`Success! Welcome to ${nextTier.name} Tier!`, { id: tid });
+            await upgradeTier(nextTier.mintPrice.toString());
+            toast.success(`Ascension Success! Welcome to ${nextTier.name} Tier!`, { id: tid });
             refetchPoints();
             refetchTiers();
+            refetchAll();
         } catch (err) {
             console.error(err);
-            toast.error(err.shortMessage || "Upgrade failed. Check balance or gas.", { id: tid });
+            toast.error(err.shortMessage || "Ascension failed. Check balance or gas.", { id: tid });
         }
     };
 

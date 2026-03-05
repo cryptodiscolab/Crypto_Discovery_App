@@ -48,6 +48,11 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 ### 4. ABI Architecture Standard (Proxy Pattern)
 ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untuk mencegah Rollup AST stack overflow.
 
+### 5. Seasonal & Tier Upgrade Management (NEW)
+- **Lazy Reset Protocol**: Memastikan integrasi frontend mendukung reset tier berbasis `currentSeasonId` secara transparan (Lazy Reset di Contract).
+- **XP-Burn Coordination**: Sinkronisasi mutasi XP di database (`user_task_claims`) secara negatif saat terjadi `TierUpgraded` event untuk mencerminkan burn XP.
+- **On-Chain Tier Gating**: Verifikasi kepemilikan SBT (Soulbound Token) via `masterX.users(address).tier` sebelum mengizinkan fitur eksklusif di frontend.
+
 ## 🛡️ Operational Checklist
 - [ ] Apakah kontrak yang digunakan adalah versi terbaru (V12 / MasterX V2)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?

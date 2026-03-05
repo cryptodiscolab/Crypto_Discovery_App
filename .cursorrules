@@ -91,6 +91,12 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **REQUIRED:** Use real-time ETH/USD price conversion (Oracle or Backend API) for all administrative price setting to prevent input errors.
 - **FORBIDDEN:** Never suggest treasury withdrawals that would cause the contract balance to fall below `totalLockedRewards`.
 
+### 8.7 Seasonal Soulbound Tier Protocol (SBT)
+- **SBT GATE:** Users with `tier = 0` (Guest) in database MUST be treated as "Not Minted". They cannot be promoted via XP alone.
+- **XP BURN:** Every `TierUpgraded` event MUST be synced to the database as a negative XP entry in `user_task_claims` (Source: `TierUpgrade`) to maintain historical XP integrity.
+- **LAZY RESET:** On-chain tiers reset every season. Database synchronization (`audit-bundle`) must handle `SeasonReset` events by archiving old peak tiers to `user_season_history` and resetting active tiers in `user_profiles`.
+- **UPGRADE FEE:** Tier upgrades require both an ETH fee and a specific XP threshold. Validate both in the UI before triggering `upgradeTier`.
+
 ## 9. STRICT CODING GUIDELINES (ANTI-GUESSING PROTOCOL)
 - **MANDATORY**: Before implementing ANY external library method, you MUST read the actual module source code in `node_modules` or the official documentation.
 - **NO GUESSING**: Never assume a method name based on intuition or previous versions. Verify deeply.

@@ -37,11 +37,9 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - **`claimPrize(raffleId)`**: Klaim hadiah jika user adalah pemenang (`claimRafflePrize`).
 - **`drawRaffle(raffleId)`**: Admin draw pemenang (`drawWinner` — admin only).
 
-### 3. XP Awarding Pattern (Zero-Trust Backend)
-Setelah `buyTickets` berhasil on-chain:
-1. Frontend sign message bukti pembelian.
-2. Call backend via Next.js API Routes. **DILARANG** update XP langsung dari frontend.
-3. Backend memverifikasi signature dan mencatat klaim.
+### 4. Tier-Based Entry Gating (NEW)
+- **Gated Raffle Access**: Sebelum mengizinkan `buyTickets`, periksa Tier user di `user_profiles`. Jika raffle memiliki metadata `min_tier_id`, berikan feedback UI "Upgrade Tier required".
+- **Dynamic Multiplier**: Sesuaikan tampilan estimasi reward/points di UI berdasarkan multiplier tier user (Bronze=1x, Diamond=2x, dll).
 
 ## ⛽ Paymaster Integration (Gasless)
 - Gunakan `usePaymaster.js` untuk mendeteksi kapabilitas gasless (Coinbase Smart Wallet).

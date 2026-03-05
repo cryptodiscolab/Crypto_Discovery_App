@@ -5,6 +5,7 @@ import {
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { useUserInfo } from '../hooks/useContract';
 import { SBTUpgradeCard } from '../components/SBTUpgradeCard';
+import { SBTGallery } from '../components/SBTGallery';
 import { ReferralCard } from '../components/ReferralCard';
 import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../hooks/useFarcaster';
@@ -467,6 +468,11 @@ export default function ProfilePage() {
         {/* TIER ASCENSION CARD */}
         <div className="px-4 mb-4">
           <SBTUpgradeCard />
+        </div>
+
+        {/* SBT ACHIEVEMENT GALLERY */}
+        <div className="px-4 mb-6">
+          <SBTGallery />
         </div>
 
         {/* REFERRAL SYSTEM */}

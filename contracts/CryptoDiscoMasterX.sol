@@ -10,6 +10,20 @@ interface AggregatorV3Interface {
     function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80);
 }
 
+interface IDailyApp {
+    function burnPoints(address user, uint256 amount) external;
+    function updateUserTier(address user, uint8 tier) external;
+    function userStats(address user) external view returns (
+        uint256 points, 
+        uint256 totalTasksCompleted, 
+        uint256 referralCount, 
+        uint8 currentTier, 
+        uint256 tasksForReferralProgress, 
+        uint256 lastDailyBonusClaim,
+        bool isBlacklisted
+    );
+}
+
 /**
  * @title CryptoDiscoMasterX
  * @notice Optimized Revenue Distribution & Point System
@@ -29,6 +43,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         SBTTier tier;
         bool isVerified;
         address referrer;
+        uint32 lastUpdateSeasonId;
     }
 
     // ============ State Variables ============
@@ -83,6 +98,13 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     mapping(address => uint256) public userRewardDebt;
     mapping(address => bool) public isSatellite;
 
+    // Seasonal & Upgrade Config
+    uint256 public currentSeasonId = 1;
+    address public dailyAppContract;
+    mapping(SBTTier => uint256) public tierUpgradeFeeWei;
+    mapping(SBTTier => uint256) public tierMinXP;
+    mapping(address => mapping(uint256 => SBTTier)) public userSeasonPeak;
+
     // ============ Events ============
     
     event RevenueReceived(uint256 amount, uint256 timestamp);
@@ -94,6 +116,8 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     event EmergencyWithdrawal(address indexed owner, uint256 amount);
     event TicketsPurchased(address indexed user, uint256 quantity, uint256 totalPaid);
     event RevenueDistributed(uint256 totalAmount, uint256 timestamp);
+    event TierUpgraded(address indexed user, SBTTier oldTier, SBTTier newTier, uint256 xpBurned, uint256 feePaid);
+    event SeasonReset(uint256 indexed oldSeasonId, uint256 indexed newSeasonId);
 
     // ============ Constructor ============
     
@@ -271,10 +295,84 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     }
 
     // ============ User Management ============
-    
-    function updateUserTier(address user, SBTTier newTier) public onlyOwner {
+
+    function setTierConfig(SBTTier tier, uint256 feeWei, uint256 minXP) external onlyOwner {
+        tierUpgradeFeeWei[tier] = feeWei;
+        tierMinXP[tier] = minXP;
+    }
+
+    function setDailyAppContract(address _dailyApp) external onlyOwner {
+        dailyAppContract = _dailyApp;
+    }
+
+    /**
+     * @notice Self-upgrade tier by paying fee and spending XP
+     */
+    function upgradeTier() external payable nonReentrant whenNotPaused {
+        UserData storage user = users[msg.sender];
+        
+        // Handle season reset for user lazily
+        if (user.lastUpdateSeasonId < currentSeasonId) {
+            _resetUserTierLazily(msg.sender);
+        }
+
+        SBTTier currentTier = user.tier;
+        require(currentTier < SBTTier.DIAMOND, "Max tier reached");
+        
+        SBTTier nextTier = SBTTier(uint256(currentTier) + 1);
+        uint256 fee = tierUpgradeFeeWei[nextTier];
+        uint256 minXP = tierMinXP[nextTier];
+        
+        require(msg.value >= fee, "Insufficient fee");
+        
+        // 1. Check XP from DailyApp
+        IDailyApp dailyApp = IDailyApp(dailyAppContract);
+        (uint256 points,,,,,,) = dailyApp.userStats(msg.sender);
+        require(points >= minXP, "Insufficient XP");
+        
+        // 2. Consume XP
+        dailyApp.burnPoints(msg.sender, minXP);
+        
+        // 3. Update Tier
+        updateUserTier(msg.sender, nextTier);
+        
+        // Store peak for season collectible eligibility
+        if (nextTier > userSeasonPeak[msg.sender][currentSeasonId]) {
+            userSeasonPeak[msg.sender][currentSeasonId] = nextTier;
+        }
+
+        if (msg.value > fee) {
+            uint256 refund = msg.value - fee;
+            (bool success, ) = payable(msg.sender).call{value: refund}("");
+            require(success, "Refund failed");
+        }
+        
+        emit TierUpgraded(msg.sender, currentTier, nextTier, minXP, fee);
+    }
+
+    function resetSeason(uint256 _newSeasonId) external onlyOwner {
+        require(_newSeasonId > currentSeasonId, "Invalid season ID");
+        uint256 oldId = currentSeasonId;
+        currentSeasonId = _newSeasonId;
+        emit SeasonReset(oldId, _newSeasonId);
+    }
+
+    function _resetUserTierLazily(address userAddr) internal {
+        UserData storage user = users[userAddr];
+        // Only reset if they were actually in a tier before
+        if (user.tier != SBTTier.NONE) {
+            updateUserTier(userAddr, SBTTier.NONE);
+        }
+        user.lastUpdateSeasonId = uint32(currentSeasonId);
+    }
+
+    function updateUserTier(address user, SBTTier newTier) public {
+        require(msg.sender == owner() || msg.sender == address(this), "Unauthorized");
         SBTTier oldTier = users[user].tier;
-        if (oldTier == newTier) return;
+        if (oldTier == newTier && users[user].lastUpdateSeasonId == currentSeasonId) return;
+
+        // Ensure user's season state is tracked
+        users[user].lastUpdateSeasonId = uint32(currentSeasonId);
 
         // Settle old rewards before switching tier
         if (oldTier != SBTTier.NONE) {
@@ -304,6 +402,12 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
 
         users[user].tier = newTier;
         userRewardDebt[user] = accRewardPerShare[newTier];
+
+        // ✅ Sync with DailyApp if configured
+        if (dailyAppContract != address(0)) {
+            IDailyApp(dailyAppContract).updateUserTier(user, uint8(newTier));
+        }
+
         emit TierUpdated(user, oldTier, newTier);
     }
 

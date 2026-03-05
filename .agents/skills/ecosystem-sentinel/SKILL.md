@@ -48,6 +48,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 ### 4. Total Ecosystem Synchronization (T.E.S)
 - **Contract-to-DB Sync**: Memastikan parameter di Smart Contract (misal: `minRewardPoolUSD`) tercermin dengan benar di tabel Supabase (`point_settings` / `campaigns`).
+- **Seasonal Audit & Reset**: Memastikan script `audit-bundle` mendeteksi `SeasonReset` dan mengarsipkan data `user_season_history` sebelum mereset `tier` di `user_profiles`.
 - **Admin-to-App Sync**: Memastikan dashboard Admin memiliki kendali penuh atas fitur baru tanpa perlu campur tangan developer (No manual coding for Admin actions).
 
 ### 7. Viral Growth & Social Proof (NEW)

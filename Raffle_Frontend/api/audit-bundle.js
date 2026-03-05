@@ -17,6 +17,8 @@ const MAX_BLOCK_RANGE = 5000;
 
 const MASTER_X_ABI = [
     "event PointsAwarded(address indexed user, uint256 points, string reason)",
+    "event TierUpgraded(address indexed user, uint8 oldTier, uint8 newTier, uint256 xpBurned, uint256 feePaid)",
+    "event SeasonReset(uint256 indexed oldSeasonId, uint256 indexed newSeasonId)",
     "function users(address) view returns (uint256 points, uint8 tier, uint256 lastClaimTimestamp, uint256 referralCount, bool isVerified, address referrer)"
 ];
 const DAILY_APP_ABI = [
@@ -214,9 +216,11 @@ async function handleSyncEvents(req, res) {
         const masterX = new ethers.Contract(masterXAddr, MASTER_X_ABI, provider);
         const dailyApp = new ethers.Contract(dailyAppAddr, DAILY_APP_ABI, provider);
 
-        const [pointEvents, taskEvents] = await Promise.all([
+        const [pointEvents, taskEvents, upgradeEvents, seasonEvents] = await Promise.all([
             masterX.queryFilter("PointsAwarded", fromBlock, toBlock),
             dailyApp.queryFilter("TaskCompleted", fromBlock, toBlock),
+            masterX.queryFilter("TierUpgraded", fromBlock, toBlock),
+            masterX.queryFilter("SeasonReset", fromBlock, toBlock),
         ]);
 
         const rows = [];
@@ -244,6 +248,55 @@ async function handleSyncEvents(req, res) {
                 tx_hash: log.transactionHash,
                 source: `DailyApp:task_${taskId}`,
             });
+        }
+
+        // SYNC: Self-Upgrade Tiers
+        for (const log of upgradeEvents) {
+            const [user, oldTier, newTier, xpBurned, feePaid] = log.args;
+            const wallet = user.toLowerCase();
+
+            // 1. Log the upgrade activity
+            rows.push({
+                id: makeId(`UPGRADE_${log.transactionHash}_${log.index}`),
+                wallet_address: wallet,
+                task_id: "2c1e23f5-0ded-4ca1-af04-e8b6924823e2", // Dedicated Upgrade task ID
+                xp_earned: -Number(xpBurned), // Negative XP to reflect burn in history
+                claimed_at: new Date().toISOString(),
+                tx_hash: log.transactionHash,
+                source: `TierUpgrade:${oldTier}->${newTier}`,
+            });
+
+            // 2. Immediate DB update for the tier
+            await supabase
+                .from('user_profiles')
+                .update({
+                    tier: Number(newTier),
+                    updated_at: new Date().toISOString()
+                })
+                .eq('wallet_address', wallet);
+
+            console.log(`[Sync] User ${wallet} upgraded to Tier ${newTier}`);
+        }
+
+        // SYNC: Season Reset
+        for (const log of seasonEvents) {
+            const [oldSeasonId, newSeasonId] = log.args;
+            const sOld = Number(oldSeasonId);
+            const sNew = Number(newSeasonId);
+
+            console.log(`[Sync] 🔥 Season Reset detected: ${sOld} -> ${sNew}. Archiving and resetting tiers...`);
+
+            // Use the Postgres function for one-step archival and reset (Atomic & Fast)
+            const { error } = await supabase.rpc('fn_archive_and_reset_season', {
+                p_old_season_id: sOld,
+                p_new_season_id: sNew
+            });
+
+            if (error) {
+                console.error(`[Sync] ❌ Season Archival Error:`, error.message);
+            } else {
+                console.log(`[Sync] ✅ Season ${sOld} archived. New Season ${sNew} active in DB.`);
+            }
         }
 
         if (rows.length > 0) {

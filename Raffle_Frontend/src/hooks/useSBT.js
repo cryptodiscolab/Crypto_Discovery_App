@@ -210,6 +210,47 @@ export function useSBT() {
         }
     };
 
+    // 6. Fetch Seasonal & Upgrade Settings
+    const { data: currentSeasonId, refetch: refetchSeason } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'currentSeasonId',
+    });
+
+    const setTierConfig = async (tier, feeWei, minXP) => {
+        return await writeContractAsync({
+            address: CONTRACT_ADDRESS,
+            abi: ABIS.MASTER_X,
+            functionName: 'setTierConfig',
+            args: [Number(tier), BigInt(feeWei), BigInt(minXP)],
+        });
+    };
+
+    const resetSeason = async (newSeasonId) => {
+        return await writeContractAsync({
+            address: CONTRACT_ADDRESS,
+            abi: ABIS.MASTER_X,
+            functionName: 'resetSeason',
+            args: [BigInt(newSeasonId)],
+        });
+    };
+
+    const upgradeTier = async (feeValueWei) => {
+        return await writeContractAsync({
+            address: CONTRACT_ADDRESS,
+            abi: ABIS.MASTER_X,
+            functionName: 'upgradeTier',
+            value: BigInt(feeValueWei),
+        });
+    };
+
+    const getSeasonPeak = async (userAddr, seasonId) => {
+        // Since we want to use useReadContract usually, but for a specific call 
+        // that depends on arguments not available at hook init, we can use a helper or another hook instance.
+        // For simplicity, we'll let the component handle the specific season read if needed, 
+        // but here we can provide a generic way if we want to fetch current season peak.
+    };
+
     const refetchAll = () => {
         refetchPool();
         refetchLocked();
@@ -220,6 +261,7 @@ export function useSBT() {
         refetchPointsPer();
         refetchDesc();
         refetchLastDist();
+        refetchSeason();
     };
 
     return {
@@ -241,6 +283,10 @@ export function useSBT() {
         pointsPerTicket: pointsPerTicket || 0n,
         ticketDescription: ticketDescription || '',
         lastDistributeTimestamp: lastDistributeTimestamp || 0n,
+        currentSeasonId: currentSeasonId ? Number(currentSeasonId) : 0,
+        setTierConfig,
+        resetSeason,
+        upgradeTier,
         diamondWeight: Number(diamondWeight || 0),
         platinumWeight: Number(platinumWeight || 0),
         goldWeight: Number(goldWeight || 0),

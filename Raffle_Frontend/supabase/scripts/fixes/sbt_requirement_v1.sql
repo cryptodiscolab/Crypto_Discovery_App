@@ -1,17 +1,16 @@
 -- ==========================================
--- REFERRAL SYSTEM MIGRATION v1
--- Adds referred_by tracking to user_profiles and updates view.
+-- SECURITY PATCH: SBT ENFORCEMENT v1
+-- Prevents users from ranking up without on-chain SBT.
 -- ==========================================
 
--- 1. Add referred_by to user_profiles
-ALTER TABLE public.user_profiles 
-ADD COLUMN IF NOT EXISTS referred_by TEXT;
+-- 1. Reset default tier to 0 (None/Guest)
+ALTER TABLE public.user_profiles ALTER COLUMN tier SET DEFAULT 0;
 
--- Index for fast lookup of referral network
-CREATE INDEX IF NOT EXISTS idx_user_profiles_referred_by 
-ON public.user_profiles(referred_by);
+-- Update existing unverified users to tier 0
+-- (Assuming users with 0 tier in contract should be 0 here)
+UPDATE public.user_profiles SET tier = 0 WHERE tier = 1;
 
--- 2. Update v_user_full_profile view to include referred_by
+-- 2. Modify v_user_full_profile to enforce SBT requirement
 DROP VIEW IF EXISTS public.v_user_full_profile;
 
 CREATE OR REPLACE VIEW public.v_user_full_profile AS
@@ -32,9 +31,13 @@ SELECT
     ) as display_name, 
     COALESCE(p.pfp_url, '') as pfp_url,
     COALESCE(up.total_xp, 0) as total_xp,
-    COALESCE(up.tier, 1) as tier,
+    COALESCE(up.tier, 0) as tier,
     up.referred_by,
     CASE 
+        -- IF TIER IS 0 (No SBT), ALWAYS RETURN 'Guest'
+        WHEN COALESCE(up.tier, 0) = 0 THEN 'Guest'
+        
+        -- ONLY IF TIER >= 1, CALCULATE BASED ON XP
         WHEN COALESCE(up.total_xp, 0) >= 10000 THEN 'Gold'
         WHEN COALESCE(up.total_xp, 0) >= 5000 THEN 'Silver'
         WHEN COALESCE(up.total_xp, 0) >= 1000 THEN 'Bronze'
@@ -47,7 +50,7 @@ LEFT JOIN public.profiles p ON w.w_address = LOWER(p.address)
 LEFT JOIN public.user_profiles up ON w.w_address = LOWER(up.wallet_address)
 LEFT JOIN public.ens_subdomains ens ON w.w_address = LOWER(ens.wallet_address);
 
--- Grant permissions (Safety Mandate)
+-- Grant permissions
 GRANT SELECT ON public.v_user_full_profile TO anon, authenticated;
 
-COMMENT ON VIEW public.v_user_full_profile IS 'Master View updated with Referral System tracking.';
+COMMENT ON VIEW public.v_user_full_profile IS 'Secure View: Rank name restricted to SBT Holders (Tier > 0).';

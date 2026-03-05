@@ -85,9 +85,8 @@ export function PointsProvider({ children }) {
 
                 setUserPoints(BigInt(dbPoints));
                 userPointsRef.current = dbPoints; // Update ref
-                setUserTier(data.current_tier || 1); // Changed to current_tier as per instruction
-                setPointsToNext(data.xp_to_next || 0); // New state setter
-                setRankName(data.rank_name || "Rookie"); // Updated rank_name default
+                setUserTier(data.tier !== undefined ? Number(data.tier) : 0);
+                setRankName(data.rank_name || "Guest");
 
                 // Log the sync with prev context
                 addSyncLog(forced ? 'forced' : 'refetch', dbPoints, dbPoints, prevVisual);

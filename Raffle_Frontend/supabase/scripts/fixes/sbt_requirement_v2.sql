@@ -88,12 +88,12 @@ SELECT
         -- *** SBT GATE: No SBT = always 'Guest', cannot rank up ***
         WHEN COALESCE(up.tier, 0) = 0 THEN 'Guest'
         -- SBT Holder rank names based on synced on-chain tier
-        WHEN COALESCE(up.tier, 0) >= 4 THEN 'Diamond'
-        WHEN COALESCE(up.tier, 0) = 3  THEN 'Platinum'
-        WHEN COALESCE(up.tier, 0) = 2  THEN 'Gold'
-        -- Tier 1 Bronze: display based on XP earned
-        WHEN COALESCE(up.total_xp, 0) >= 1000 THEN 'Bronze'
-        ELSE 'Rookie'
+        WHEN COALESCE(up.tier, 0) = 5 THEN 'Diamond'
+        WHEN COALESCE(up.tier, 0) = 4 THEN 'Platinum'
+        WHEN COALESCE(up.tier, 0) = 3  THEN 'Gold'
+        WHEN COALESCE(up.tier, 0) = 2  THEN 'Silver'
+        WHEN COALESCE(up.tier, 0) = 1  THEN 'Bronze'
+        ELSE 'Guest'
     END                                                     AS rank_name,
     ens.full_name                                           AS ens_name,
     COALESCE(p.updated_at, up.created_at, ens.created_at)  AS updated_at
