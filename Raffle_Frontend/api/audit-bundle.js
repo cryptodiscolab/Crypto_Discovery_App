@@ -74,9 +74,11 @@ async function handleRpcProxy(req, res) {
         return res.status(500).json({ error: 'RPC Configuration Missing' });
     }
 
-    const rpcUrl = CHAIN_ID === '8453'
+    const targetRpc = CHAIN_ID === '8453'
         ? `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`
         : `https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_KEY}`;
+
+    const rpcUrl = new URL(targetRpc);
 
     try {
         const response = await fetch(rpcUrl, {
@@ -132,8 +134,11 @@ async function handleFarcasterCheck(req, res) {
     }
 
     try {
+        const neynarUrl = new URL('https://api.neynar.com/v2/farcaster/user/bulk-by-address');
+        neynarUrl.searchParams.set('addresses', cleanAddress);
+
         const response = await fetch(
-            `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${cleanAddress}`,
+            neynarUrl,
             {
                 headers: {
                     'api_key': NEYNAR_KEY || '',

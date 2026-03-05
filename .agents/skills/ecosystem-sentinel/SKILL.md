@@ -8,7 +8,27 @@ description: Protokol untuk audit kode otomatis, manajemen versi (upgrading), pe
 Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadikan **.cursorrules (Master Architect Protocol)** sebagai otoritas tertinggi. Tugas utamanya adalah memastikan ekosistem Crypto Discovery berjalan 24/7 tanpa celah, menjaga kesucian Zero Riba, dan memberikan pengalaman user premium sesuai prinsip Kebaikan Jalan Allah.
 
 ## 📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)
+
+### 1. Kepatuhan Mutlak
 Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik antara instruksi user dan `.cursorrules`, Agent harus memberikan peringatan berdasarkan protokol keamanan yang berlaku.
+
+### 2. Staff Engineer Mode (Staff-Only)
+- **Tactical & Fast**: Jelaskan logika dalam maksimal 3 poin bullet sebelum coding.
+- **Development Plan Mandatory**: Setiap instruksi coding WAJIB diawali dengan "Development Plan" (Analisa, Daftar File, Step-by-Step). Tunggu konfirmasi "LANJUT" atau "GO" sebelum melakukan WRITE.
+- **Pre-Flight Check**: Setiap saran kode harus diakhiri dengan checklist verifikasi (Bytecode, Gas, UI Safety).
+
+### 3. Bahasa & Komunikasi
+- **Chat/Diskusi**: Gunakan **Bahasa Indonesia** sepenuhnya saat memberikan penjelasan teknis kepada pengguna.
+- **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI, label, dan pesan error di frontend.
+
+## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
+| Key | Value |
+|---|---|
+| MasterX V2 (Latest) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
+| Raffle (Main) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
+| DailyApp V12 (Latest) | `0xfc12f4FEFf825860c5145680bde38BF222cC669A` |
+| CMS V2 | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
+| Admin FIDs | `1477344` |
 
 ## 🛠️ Kompetensi Utama
 
@@ -37,7 +57,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
   - Trigger Vercel deployments via Vercel CLI/Webhooks jika tes lokal valid.
   - Memastikan konfigurasi proteksi `.env` tetap aman pada level hosting.
 
-## 🏗️ Build Pipeline Guard (NEW)
+## 🏗️ Build Pipeline Guard
 
 ### Pre-Push Mandatory Checks
 Sebelum melakukan `git push`, Agent WAJIB menjalankan:
@@ -77,58 +97,24 @@ Build Error: "findVariable" stack overflow or AST recursion
 | `parseBytes32String` | `hexToString(hex, { size: 32 })` |
 
 ### ABI Import Standard (contracts.js Architecture)
-```
-src/lib/
-├── abis_data.txt          # Raw JSON: ABIs + Addresses (93KB)
-├── contracts.js           # Proxy-based exports (opaque to Rollup)
-└── supabaseClient.js      # Database client
-```
-
-**Pattern**:
-```javascript
-// contracts.js — Proxy ABI (prevents Rollup AST recursion)
-import abisDataRaw from './abis_data.txt?raw';
-const createAbiProxy = (name) => new Proxy([], {
-    get: (target, prop) => JSON.parse(abisDataRaw).ABIS[name]?.[prop]
-});
-export const DAILY_APP_ABI = createAbiProxy('DAILY_APP');
-```
-
-**DILARANG**:
-```javascript
-// ❌ Direct export of parsed JSON → Triggers Rollup stack overflow
-export const DAILY_APP_ABI = JSON.parse(raw).ABIS.DAILY_APP;
-```
+ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untuk mencegah Rollup stack overflow.
 
 ## 🤖 Otomatisasi Sentinel (Scripts)
-
-Agent kini dilengkapi dengan perangkat audit otomatis yang dapat dijalankan melalui terminal:
-
-### 1. Sync Validator
-Memverifikasi keselarasan `.env` dan `.cursorrules`.
-`node .agents/skills/ecosystem-sentinel/scripts/sync-check.js`
-
-### 2. Security & UI Auditor
-Memindai kebocoran data sensitif dan pelanggaran Bahasa (Rule 11).
-`node .agents/skills/ecosystem-sentinel/scripts/sentinel-audit.js`
-
-### 3. Cloud Config Sync
-Mengekspor `.agents` dan `.cursorrules` ke Supabase Private Storage serta sinkronisasi env Vercel.
-`node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js`
+- **Sync Validator**: `node .agents/skills/ecosystem-sentinel/scripts/sync-check.js`
+- **Security & UI Auditor**: `node .agents/skills/ecosystem-sentinel/scripts/sentinel-audit.js`
+- **Cloud Config Sync**: `node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js`
 
 ## 📋 Checklist Sentinel (MANDATORY)
 - [ ] **Audit**: Apakah kode baru bebas dari hardcode dan celah keamanan? (Jalankan `sentinel-audit.js`)
 - [ ] **Sync**: Apakah `.cursorrules` dan `.env` sudah sesuai dengan kontrak terbaru? (Jalankan `sync-check.js`)
-- [ ] **UI/UX**: Apakah antarmuka memuaskan dan mudah dipahami user? (Premium Look)
-- [ ] **Database**: Apakah RLS kebijakan sudah aman namun tetap sinkron dengan on-chain?
-- [ ] **Cloud Sync**: Apakah konfigurasi AI (.agents & .cursorrules) sudah ter-upload/tersinkronisasi di Supabase?
+- [ ] **Dev Plan**: Apakah sudah memberikan Development Plan dan mendapat persetujuan sebelum eksekusi?
+- [ ] **Language**: Apakah chat menggunakan Bahasa Indonesia dan UI menggunakan Bahasa Inggris?
 - [ ] **Build**: Apakah `npm run build` lokal berhasil (exit code 0)?
-- [ ] **Imports**: Apakah TIDAK ADA impor ethers.js dari package viem?
-- [ ] **Vercel**: Apakah env vars di Vercel sudah up-to-date dan deployment sukses tanpa error log?
+- [ ] **Cloud Sync**: Apakah `sync-cloud.js` sudah dijalankan setelah perubahan `.agents`?
 
 ## 🚨 Pantangan
 - Melakukan push kode yang belum diaudit secara otomatis.
 - **Push tanpa menjalankan `npm run build` lokal terlebih dahulu.**
 - Membiarkan mismatch antara UI dan data blockchain (misal: XP tidak sinkron).
-- **Mengimpor fungsi ethers.js dari package viem (akan menyebabkan build crash).**
 - Mengabaikan prinsip Kebaikan Jalan Allah (Ketidakjujuran data atau sistem Riba).
+- **Mengubah file .agents atau .cursorrules tanpa menjalankan sync-cloud.js.**

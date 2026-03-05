@@ -5,101 +5,58 @@ description: Protokol dan standar untuk mengintegrasikan NFT Raffle ke frontend,
 
 # Raffle Frontend Integration Manager Skill
 
-Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada frontend Crypto Disco App. Setiap interaksi dengan smart contract `CryptoDiscoRaffle.sol` harus mengikuti protokol ini.
+Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada frontend Crypto Disco App dengan kepatuhan mutlak pada **.cursorrules (Master Architect Protocol)**.
+
+## 📜 Master Architect Protocol Alignment
+
+### 1. Staff Engineer Mode (Staff-Only)
+- **Logika Cepat**: Jelaskan alur interaksi kontrak dalam maksimal 3 poin bullet.
+- **Dev Plan Mandatory**: Sebelum modifikasi hook atau komponen raffle, sajikan "Development Plan" dan tunggu konfirmasi "LANJUT".
+- **Pre-Flight Check**: Pastikan `buyTickets` dan `drawWinner` menggunakan nama fungsi terbaru.
+
+### 2. Verified Infrastructure Reference (DO NOT GUESS)
+| Key | Value |
+|---|---|
+| Raffle (Main) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
+| MasterX V2 (Latest) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
+| Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
+
+### 3. Bahasa & Komunikasi
+- **Teknis/Chat**: **Bahasa Indonesia**.
+- **Frontend/UI**: **Bahasa Inggris (English)** (e.g., "Buy Ticket", "Draw Winner").
 
 ## 🎰 Kompetensi Inti
 
 ### 1. Contract Interaction Standard
 - **Address Canonical**: Selalu gunakan `CONTRACTS.RAFFLE` dari `src/lib/contracts.js` — JANGAN hardcode.
-- **ABI Source**: Gunakan `ABIS.RAFFLE` atau `RAFFLE_ABI` dari `src/lib/contracts.js` (keduanya Proxy-based, backward compatible).
-- **Verified Raffle (Sepolia)**: `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` (`VITE_RAFFLE_ADDRESS`)
+- **ABI Source**: Gunakan `ABIS.RAFFLE` dari `src/lib/contracts.js` (Proxy-based).
 
-### 2. Import Standard
-```javascript
-// ✅ Preferred (new code):
-import { ABIS, CONTRACTS } from '../lib/contracts';
-const RAFFLE_ADDRESS = CONTRACTS.RAFFLE;
-// Usage: abi: ABIS.RAFFLE
-
-// ✅ Legacy (still works):
-import { RAFFLE_ABI, CONTRACTS } from '../lib/contracts';
-// Usage: abi: RAFFLE_ABI (transparent proxy)
-```
-
-### 3. Core Hook: useRaffle.js
+### 2. Core Hook: useRaffle.js
 Semua interaksi raffle harus melalui hook `useRaffle`:
-- **`buyTickets(raffleId, amount)`**: Beli tiket → tunggu tx receipt → award XP via backend.
+- **`buyTickets(raffleId, amount)`**: Beli tiket → tunggu tx receipt → reward XP via backend.
 - **`claimPrize(raffleId)`**: Klaim hadiah jika user adalah pemenang (`claimRafflePrize`).
 - **`drawRaffle(raffleId)`**: Admin draw pemenang (`drawWinner` — admin only).
-- **`createSponsorshipRaffle({...})`**: Sponsor buat raffle baru + deposit + fee 5%.
-- **`withdrawEarnings()`**: Sponsor tarik pendapatan tiket (`withdrawSponsorBalance`).
 
-### 4. XP Awarding Pattern (Zero-Trust Backend)
+### 3. XP Awarding Pattern (Zero-Trust Backend)
 Setelah `buyTickets` berhasil on-chain:
-1. Frontend sign message `Claim XP for Raffle Purchase\\nRaffle ID: ...`
-2. Call backend via Next.js API Routes (Server-Side). **DILARANG** melakukan update XP langsung melalui Supabase client side.
-3. Backend `/api/tasks/verify` memverifikasi signature → insert ke `user_task_claims` via Service Role Key → increment `total_xp`.
+1. Frontend sign message bukti pembelian.
+2. Call backend via Next.js API Routes. **DILARANG** update XP langsung dari frontend.
+3. Backend memverifikasi signature dan mencatat klaim.
 
-### 5. Data Display Standard (useRaffleInfo)
-Field yang dikembalikan oleh `getRaffleInfo`:
-```
-raffleId, totalTickets, maxTickets, targetPrizePool, prizePool,
-participants[], winners[], winnerCount, isActive, isFinalized,
-sponsor, metadataURI, endTime, prizePerWinner
-```
-- Gunakan `formatEther` dari `viem` untuk display nilai ETH.
-- Hitung `progress = (totalTickets / maxTickets) * 100`.
-- Hitung `timeLeft` dari `endTime - Date.now()/1000`.
+## ⛽ Paymaster Integration (Gasless)
+- Gunakan `usePaymaster.js` untuk mendeteksi kapabilitas gasless (Coinbase Smart Wallet).
+- Tampilkan `<GaslessBadge />` dan ubah label tombol menjadi "⛽ Buy Free" jika tersedia.
 
-### 6. RafflesPage Filter Logic
-Filter dilakukan di dalam `<RaffleRow>` bukan di parent:
-- `filter === 'active'` → sembunyikan jika `!raffle.isActive`
-- `filter === 'completed'` → sembunyikan jika `!raffle.isFinalized`
-
-### 7. Ticket Price
-Harga tiket diambil dari kontrak `MasterX` via:
-```js
-functionName: 'getTicketPriceInETH' // CONTRACTS.MASTER_X
-```
-BUKAN dari kontrak Raffle. Ini adalah design intentional.
-
-## ⛽ Paymaster Integration (Gasless Transactions)
-
-**Hook**: `usePaymaster.js` — mendeteksi EIP-5792 via `useCapabilities` dari Wagmi v2.
-
-### Flow Gasless:
-1. `useCapabilities()` → cek `chainCapabilities.paymasterService.supported`
-2. Jika supported → `useSendCalls` dengan `{ calls: [...], capabilities: { paymasterService: { url: VITE_PAYMASTER_URL } } }`
-3. Jika tidak supported → fallback otomatis ke `writeContractAsync` (tx biasa)
-
-### Env Variable:
-```
-VITE_PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base-sepolia/{ONCHAINKIT_API_KEY}
-```
-
-### UI Indicator:
-- `<GaslessBadge />` muncul otomatis jika wallet mendukung (Coinbase Smart Wallet).
-- Label tombol berubah dari "Buy Ticket" → "⛽ Buy Free".
-
-### Kompatibilitas:
-| Wallet | Gasless |
-|---|---|
-| Coinbase Smart Wallet | ✅ |
-| Coinbase Wallet (Smart mode) | ✅ |
-| MetaMask | ❌ (fallback ke normal) |
-| Rainbow | ❌ (fallback ke normal) |
-
-## 📋 Checklist Sebelum Deploy Raffle Feature
-- [ ] `RAFFLE_ABI` sudah include `buyTickets(uint256 raffleId, uint256 amount)`
-- [ ] `drawWinner` (bukan `requestRaffleWinner`) sudah di ABI
-- [ ] `claimRafflePrize(uint256 raffleId)` sudah di ABI
-- [ ] `createSponsorshipRaffle` menerima value (ETH deposit + 5% fee)
-- [ ] XP flowtesting: signature valid → backend `/api/tasks/verify` → DB updated
-- [ ] `currentRaffleId()` untuk list raffles (1-indexed)
-- [ ] Build lokal berhasil (`npm run build` exit code 0)
+## 📋 Checklist Raffle Feature
+- [ ] Apakah fungsi `buyTickets` digunakan (bukan `purchaseRaffleTickets`)?
+- [ ] Apakah `drawWinner` digunakan (bukan `requestRaffleWinner`)?
+- [ ] Apakah XP awarding mengikuti pola Zero-Trust Backend?
+- [ ] Apakah ABI diimpor via Proxy dari `contracts.js`?
+- [ ] Apakah build lokal berhasil (`npm run build`)?
+- [ ] Apakah chat teknis menggunakan Bahasa Indonesia?
 
 ## 🚨 Pantangan
-- JANGAN langsung tulis ke `user_task_claims` dari frontend.
-- JANGAN gunakan `purchaseRaffleTickets` — sudah direname ke `buyTickets`.
-- JANGAN hardcode nilai ETH atau ticket price — selalu baca dari kontrak.
-- **JANGAN impor ABI sebagai direct constant — gunakan Proxy dari `contracts.js`.**
+- Menulis langsung ke database dari frontend.
+- Menggunakan nama fungsi kontrak lama yang sudah dideprecated.
+- **Mengimpor ABI sebagai konstanta langsung — gunakan Proxy.**
+- Menggunakan Bahasa Indonesia di elemen UI/Label aplikasi.
