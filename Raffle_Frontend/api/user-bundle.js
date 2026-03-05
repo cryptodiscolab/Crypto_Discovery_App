@@ -250,6 +250,22 @@ async function handleUpdateProfile(req, res) {
         delete sanitizedPayload.referred_by;
         delete sanitizedPayload.tier; // Tier can ONLY be updated by cron/admin via SBT sync
 
+        // 3. Size Validation: Validate avatar URL file size (max 1MB)
+        if (sanitizedPayload.pfp_url) {
+            try {
+                const imgRes = await fetch(sanitizedPayload.pfp_url, { method: 'HEAD' });
+                if (imgRes.ok) {
+                    const contentLength = imgRes.headers.get('content-length');
+                    if (contentLength && parseInt(contentLength, 10) > 1048576) { // 1MB in bytes
+                        return res.status(400).json({ error: 'Avatar image size exceeds the 1MB limit. Please use a smaller image file.' });
+                    }
+                }
+            } catch (err) {
+                console.warn(`[Profile Update] Failed to check image size for ${sanitizedPayload.pfp_url}:`, err.message);
+                // Allow passing if HEAD request is blocked, relying on client-side constraints.
+            }
+        }
+
         const { error } = await supabaseAdmin
             .from('user_profiles')
             .update(sanitizedPayload)
