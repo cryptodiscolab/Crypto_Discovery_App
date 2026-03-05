@@ -55,6 +55,13 @@ async function handleRpcProxy(req, res) {
 
     // WHITELIST: Only allow read-only or estimation methods to prevent abuse
     const ALLOWED_METHODS = [
+        'eth_sendRawTransaction',
+        'eth_getTransactionCount',
+        'eth_chainId',
+        'eth_gasPrice',
+        'eth_maxPriorityFeePerGas',
+        'eth_feeHistory',
+        'eth_getBlockByNumber',
         'eth_call',
         'eth_estimateGas',
         'eth_blockNumber',
@@ -62,7 +69,11 @@ async function handleRpcProxy(req, res) {
         'eth_getTransactionByHash',
         'eth_getCode',
         'eth_getStorageAt',
-        'eth_getBalance'
+        'eth_getBalance',
+        'net_version',
+        'net_listening',
+        'eth_protocolVersion',
+        'web3_clientVersion'
     ];
 
     const { method } = req.body || {};

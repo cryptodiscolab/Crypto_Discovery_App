@@ -3,7 +3,7 @@ import { Database, TrendingUp, RefreshCw, Timer as TimerIcon } from 'lucide-reac
 import { formatUnits } from 'viem';
 import toast from 'react-hot-toast';
 
-export function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSettings }) {
+export function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSettings, onRefetch }) {
     const [isBusy, setIsBusy] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -31,6 +31,7 @@ export function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSet
         const tid = toast.loading("Updating pool settings...");
         try {
             await onUpdateSettings(formData);
+            if (onRefetch) onRefetch();
             toast.success("Pool Settings Updated!", { id: tid });
         } catch (e) {
             toast.error(e.shortMessage || "Update failed", { id: tid });

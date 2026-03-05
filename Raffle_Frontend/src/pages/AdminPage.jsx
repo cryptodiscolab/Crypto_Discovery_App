@@ -47,7 +47,8 @@ export function AdminPage({ initialTab = 'pool' }) {
         isLoading: loadingCMS,
         poolSettings,
         ethPrice,
-        updatePoolSettings
+        updatePoolSettings,
+        refetchAll: refetchCMS
     } = useCMS();
 
     const [activeTab, setActiveTab] = useState(initialTab);
@@ -206,7 +207,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                     </div>
 
                     <button
-                        onClick={() => refetchAll()}
+                        onClick={() => { refetchAll(); refetchCMS(); }}
                         className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-white/5 rounded-xl text-slate-400 hover:text-white transition-all text-xs font-bold"
                     >
                         <RefreshCw className="w-3 h-3" /> Sync Protocol
@@ -230,6 +231,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                                     ethPrice={ethPrice}
                                     settings={poolSettings}
                                     onUpdateSettings={updatePoolSettings}
+                                    onRefetch={refetchCMS}
                                 />
                             )}
                             {activeTab === 'system' && <AdminSystemSettings />}

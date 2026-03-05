@@ -42,7 +42,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
-            staleTime: 60 * 60 * 1000, // 1 hour
+            staleTime: 0,
         }
     });
 
@@ -78,7 +78,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
-            staleTime: 120 * 60 * 1000, // 2 hours
+            staleTime: 0,
         }
     });
 
@@ -94,7 +94,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
-            staleTime: 60 * 60 * 1000, // 1 hour
+            staleTime: 0,
         }
     });
 
@@ -265,13 +265,18 @@ export function useCMS() {
             pool: poolSettings
         };
         const jsonString = JSON.stringify(newSettings);
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateAnnouncement',
             args: [jsonString],
         });
-    }, [poolSettings, writeContractAsync]);
+
+        if (publicClient) {
+            await publicClient.waitForTransactionReceipt({ hash });
+        }
+        return hash;
+    }, [poolSettings, writeContractAsync, publicClient]);
 
     const updatePoolSettings = useCallback(async (newPoolSettings) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
@@ -281,39 +286,54 @@ export function useCMS() {
             pool: newPoolSettings
         };
         const jsonString = JSON.stringify(newSettings);
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateAnnouncement',
             args: [jsonString],
         });
-    }, [announcement, writeContractAsync]);
+
+        if (publicClient) {
+            await publicClient.waitForTransactionReceipt({ hash });
+        }
+        return hash;
+    }, [announcement, writeContractAsync, publicClient]);
 
     const updateNews = useCallback(async (newNews) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newNews);
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateNews',
             args: [jsonString],
         });
-    }, [writeContractAsync]);
+
+        if (publicClient) {
+            await publicClient.waitForTransactionReceipt({ hash });
+        }
+        return hash;
+    }, [writeContractAsync, publicClient]);
 
     const updateFeatureCards = useCallback(async (newCards) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newCards);
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateFeatureCards',
             args: [jsonString],
         });
-    }, [writeContractAsync]);
+
+        if (publicClient) {
+            await publicClient.waitForTransactionReceipt({ hash });
+        }
+        return hash;
+    }, [writeContractAsync, publicClient]);
 
     const batchUpdate = useCallback(async (newAnnouncement, newNews, newCards) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
-        return await writeContractAsync({
+        const hash = await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'batchUpdate',
@@ -323,7 +343,12 @@ export function useCMS() {
                 JSON.stringify(newCards)
             ],
         });
-    }, [writeContractAsync]);
+
+        if (publicClient) {
+            await publicClient.waitForTransactionReceipt({ hash });
+        }
+        return hash;
+    }, [writeContractAsync, publicClient]);
 
     // ============================================
     // WRITE FUNCTIONS - ROLE MANAGEMENT
@@ -449,16 +474,6 @@ export function useCMS() {
         updateNews,
         updateFeatureCards,
         batchUpdate,
-
-        // Role management functions
-        grantOperator,
-        revokeOperator,
-
-        // Sponsored access functions
-        grantPrivilege,
-        revokePrivilege,
-        batchGrantPrivileges,
-        checkAccess,
 
         // Helpers
         showSuccessToast,

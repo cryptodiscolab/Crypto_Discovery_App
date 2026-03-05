@@ -105,22 +105,20 @@ export function UnifiedDashboard() {
         <div className="max-w-4xl mx-auto space-y-6 mb-12">
 
             {/* Social Verification Guard */}
-            <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${fcUser
-                ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
-                : 'bg-amber-500/5 border-amber-500/20 text-amber-400'
+            <div className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${fcUser
+                ? 'bg-emerald-500/10 text-emerald-400'
+                : 'bg-amber-500/10 text-amber-400'
                 }`}>
-                <div className={`p-2 rounded-xl ${fcUser ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
-                    {fcUser ? <ShieldCheck className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
-                </div>
-                <div className="flex-1">
-                    <p className="text-xs font-black uppercase tracking-[0.1em]">{fcUser ? 'Identity Verified' : 'Identity Required'}</p>
-                    <p className="text-[11px] opacity-70 font-medium">
-                        {fcUser ? `Linked to @${fcUser.username}` : 'Connect Farcaster to enable gasless rewards'}
+                {fcUser ? <ShieldCheck className="w-5 h-5 shrink-0" /> : <ShieldAlert className="w-5 h-5 shrink-0 animate-pulse" />}
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold">{fcUser ? 'Identity Verified' : 'Identity Required'}</p>
+                    <p className="text-[11px] opacity-70">
+                        {fcUser ? `Linked to @${fcUser.username}` : 'Connect Farcaster to unlock gasless rewards'}
                     </p>
                 </div>
                 {!fcUser && (
-                    <a href="https://warpcast.com" target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase underline tracking-wider">
-                        Link Now
+                    <a href="https://warpcast.com" target="_blank" rel="noreferrer" className="text-[10px] font-bold text-amber-400 underline underline-offset-2 shrink-0">
+                        Link
                     </a>
                 )}
             </div>
@@ -203,7 +201,7 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
     };
 
     return (
-        <div className={`glass-card p-4 flex justify-between items-center transition-all ${isCompleted ? 'opacity-50 grayscale' : 'hover:border-indigo-500/50'}`}>
+        <div className={`glass-card p-4 flex justify-between items-center transition-colors ${isCompleted ? 'opacity-40' : 'hover:bg-zinc-800/60'}`}>
             <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isCompleted ? 'bg-indigo-500/20 text-indigo-500' : 'bg-indigo-600 text-white'}`}>
                     {isCompleted ? <Check className="w-4 h-4" /> : <Zap className="w-3 h-3 fill-white" />}
@@ -285,7 +283,7 @@ function SponsorCard({ sponsorId, isDisabled, address, onSuccess }) {
     };
 
     return (
-        <div className={`glass-card p-5 relative overflow-hidden transition-all ${isDisabled ? 'opacity-50 grayscale' : 'hover:border-indigo-500/40'}`}>
+        <div className={`glass-card p-5 relative overflow-hidden transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-zinc-800/60'}`}>
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <span className="text-[9px] font-black uppercase text-indigo-500 tracking-widest block mb-1">Partner</span>
@@ -358,11 +356,11 @@ function SubTaskItem({ taskId, isSelected, onToggle, address }) {
     return (
         <div
             onClick={handleAction}
-            className={`flex items-center justify-between p-3.5 rounded-2xl border transition-colors cursor-pointer ${isCompleted
-                ? 'bg-emerald-500/5 border-emerald-500/10 opacity-60'
-                : isSelected
-                    ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]'
-                    : 'bg-white/5 border-white/5 hover:border-white/10'
+            className={`flex items-center justify-between p-3 rounded-xl transition-colors cursor-pointer select-none ${isCompleted
+                    ? 'bg-zinc-800/50 opacity-60'
+                    : isSelected
+                        ? 'bg-indigo-600'
+                        : 'bg-zinc-800 hover:bg-zinc-700/80'
                 }`}
         >
             <div className="flex items-center gap-3">

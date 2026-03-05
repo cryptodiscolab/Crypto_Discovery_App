@@ -1,6 +1,6 @@
 ---
 name: Ecosystem Sentinel & Automation Auditor
-description: Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI, dan Build Pipeline Guard.
+description: Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), dan Build Pipeline Guard.
 ---
 
 # Ecosystem Sentinel & Master Architect Enforcer
@@ -35,7 +35,12 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 ### 1. Automation Code Audit & Fix
 - **Static Analysis**: Secara otomatis melakukan audit pada file yang dimodifikasi untuk mendeteksi *hardcoded values*, kerentanan keamanan (reentrancy), atau inefisiensi gas.
 - **Auto-Fixing**: Jika ditemukan error atau logika yang membingungkan, Agent wajib memberikan solusi perbaikan instan sebelum melakukan commit/push.
-- **UX/UI Polish**: Memastikan elemen UI terasa premium (glassmorphism, micro-animations) dan tidak ada "Glass Wall" (elemen tidak bisa diklik).
+- **UX/UI Polish (Senior UI/UX Standards)**: Memastikan elemen UI terasa premium (glassmorphism, micro-animations) dan tidak ada "Glass Wall" (elemen tidak bisa diklik). Mengikuti prinsip "Clean & Rugged", "Atomic Layout", dan "Minimalist Modern Standards" (Section 13 of .cursorrules).
+- **UI/UX Audit**: Melakukan audit visual untuk memastikan:
+  - Horizontal overflow tidak terjadi di mobile.
+  - Button hit area minimal 44x44px di mobile.
+  - Kontras warna yang aksesibel.
+  - Penggunaan CSS-only animations (anti Framer-Motion).
 
 ### 2. Upgrading & Version Control Automation
 - **Version Sync**: Memastikan versi kontrak di `.env`, `.cursorrules`, dan `contracts.js` selalu sinkron setelah upgrade (misal: V12 ke V13).
@@ -131,6 +136,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Dev Plan**: Apakah sudah memberikan Development Plan dan mendapat persetujuan sebelum eksekusi?
 - [ ] **Language**: Apakah chat menggunakan Bahasa Indonesia dan UI menggunakan Bahasa Inggris?
 - [ ] **Build**: Apakah `npm run build` lokal berhasil (exit code 0)?
+- [ ] **UI/UX**: Apakah layout sudah responsif, bebas overflow, dan mengikuti Minimalist Modern Standards?
 - [ ] **Cloud Sync**: Apakah `sync-cloud.js` sudah dijalankan setelah perubahan `.agents`?
 
 ## 🚨 Pantangan

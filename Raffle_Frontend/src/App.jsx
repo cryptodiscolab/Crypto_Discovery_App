@@ -39,12 +39,14 @@ function App() {
         <FarcasterProvider>
           <BrowserRouter>
             <ReferralTracker />
-            <div className="dark min-h-screen bg-[#0B0E14] text-slate-100 pointer-events-none">
+            {/* Root wrapper: pointer-events-auto required — never set to none here */}
+            <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
               <Header />
-              <main className="pt-20 pb-24 md:pb-0 pointer-events-auto min-h-screen">
+              {/* pt-16 = Header height (h-16). pb-20 = BottomNav safe area on mobile. md:pb-0 = no BottomNav on desktop */}
+              <main className="pt-16 pb-20 md:pb-6 min-h-screen">
                 <ErrorBoundary>
                   <Suspense fallback={
-                    <div className="min-h-screen flex items-start justify-center pt-8">
+                    <div className="min-h-[60vh] flex items-center justify-center">
                       <SkeletonLoader />
                     </div>
                   }>
@@ -65,7 +67,18 @@ function App() {
                 </ErrorBoundary>
               </main>
               <BottomNav />
-              <Toaster position="bottom-right" toastOptions={{ style: { background: '#161B22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
+              <Toaster
+                position="bottom-right"
+                toastOptions={{
+                  style: {
+                    background: '#161B22',
+                    color: '#e2e8f0',
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }
+                }}
+              />
             </div>
           </BrowserRouter>
         </FarcasterProvider>

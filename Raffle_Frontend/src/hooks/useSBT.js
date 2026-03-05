@@ -13,12 +13,14 @@ export function useSBT() {
         address: CONTRACT_ADDRESS,
         abi: ABIS.MASTER_X,
         functionName: 'totalSBTPoolBalance',
+        query: { staleTime: 0 }
     });
 
     const { data: totalLockedRewards, refetch: refetchLocked } = useReadContract({
         address: CONTRACT_ADDRESS,
         abi: ABIS.MASTER_X,
         functionName: 'totalLockedRewards',
+        query: { staleTime: 0 }
     });
 
     // 2. Fetch User Data

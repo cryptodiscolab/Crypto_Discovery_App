@@ -58,18 +58,18 @@ export function Header() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[9999] pointer-events-auto bg-[#0B0E14]/70 backdrop-blur-xl border-b border-white/5">
-      <div className="max-w-screen-lg mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+    <header className="fixed top-0 left-0 right-0 z-[9999] pointer-events-auto bg-[#0B0E14]/80 backdrop-blur-2xl">
+      <div className="max-w-screen-xl mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
 
           {/* Left: Logo & Farcaster Welcome */}
           <div className="flex-1 flex flex-col justify-center">
             <Link
               to="/"
-              className="flex items-center gap-3 font-black text-2xl text-white hover:text-indigo-400 transition-all group"
+              className="flex items-center gap-2.5 font-black text-xl text-white hover:text-indigo-400 transition-colors group"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6 text-white" />
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
+                <Sparkles className="w-4 h-4 text-white" />
               </div>
               <span className="hidden lg:inline tracking-tighter">CRYPTO <span className="text-indigo-400">DISCO</span></span>
             </Link>
@@ -81,31 +81,24 @@ export function Header() {
           </div>
 
           {/* Center: Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-x-1 lg:gap-x-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+          <nav className="hidden md:flex items-center gap-x-1 bg-white/5 p-1 rounded-xl">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-5 py-2 text-sm font-bold rounded-xl transition-all relative group ${isActive
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${isActive
                     ? item.isAdmin
                       ? 'text-yellow-400 bg-yellow-400/10'
-                      : 'text-white bg-indigo-600 shadow-lg shadow-indigo-500/20'
+                      : 'text-white bg-indigo-600'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <div className="flex items-center gap-2">
-                    {item.isAdmin && <Shield className="w-3.5 h-3.5 text-yellow-500" />}
+                  <div className="flex items-center gap-1.5">
+                    {item.isAdmin && <Shield className="w-3 h-3 text-yellow-500" />}
                     {item.label}
                   </div>
-                  {/* Premium Hover Border Effect */}
-                  {!isActive && (
-                    <div className="absolute inset-0 border border-transparent group-hover:border-indigo-500/50 rounded-xl transition-all duration-300 pointer-events-none" />
-                  )}
-                  {!isActive && (
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-indigo-500 group-hover:w-1/2 transition-all duration-300" />
-                  )}
                 </Link>
               );
             })}
@@ -148,10 +141,10 @@ export function Header() {
                           <button
                             onClick={openConnectModal}
                             type="button"
-                            className="flex items-center gap-3 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 transition-all rounded-xl shadow-lg shadow-indigo-500/20 group"
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 transition-colors rounded-lg min-h-[44px]"
                           >
-                            <Wallet className="w-4 h-4 text-white group-hover:scale-110 transition-transform" strokeWidth={2.5} />
-                            <span className="text-xs font-black text-white uppercase tracking-widest">Connect Wallet</span>
+                            <Wallet className="w-4 h-4 text-white" strokeWidth={2.5} />
+                            <span className="text-sm font-bold text-white">Connect</span>
                           </button>
                         );
                       }
@@ -161,7 +154,7 @@ export function Header() {
                           <button
                             onClick={() => switchChain({ chainId: baseSepolia.id })}
                             type="button"
-                            className="px-5 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-600 transition-all"
+                            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-bold transition-colors min-h-[44px]"
                           >
                             Switch to Base
                           </button>
@@ -172,10 +165,10 @@ export function Header() {
                         <button
                           onClick={openAccountModal}
                           type="button"
-                          className="flex items-center gap-3 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+                          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors min-h-[44px]"
                         >
-                          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                          <span className="text-xs font-bold text-white uppercase tracking-widest">{account.displayName}</span>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="text-sm font-semibold text-white">{account.displayName}</span>
                         </button>
                       );
                     })()}

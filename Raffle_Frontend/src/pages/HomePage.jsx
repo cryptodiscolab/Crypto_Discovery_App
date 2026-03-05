@@ -7,9 +7,9 @@ import {
   Ticket,
   Shield,
   TrendingUp,
-  DollarSign,
+  Timer as TimerIcon,
   CheckCircle,
-  Timer as TimerIcon
+  DollarSign,
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { usePoints } from '../shared/context/PointsContext';
@@ -21,8 +21,6 @@ import { FeatureCardSkeleton } from '../components/FeatureCardSkeleton';
 import { UnifiedDashboard } from '../components/UnifiedDashboard';
 import { HypeFeed } from '../components/HypeFeed';
 
-
-// Icon mapping for dynamic feature cards
 const iconMap = {
   Sparkles,
   Trophy,
@@ -31,9 +29,6 @@ const iconMap = {
   Shield,
   TrendingUp,
 };
-
-// Default feature cards if CMS is empty or loading
-
 
 export function HomePage() {
   const { isConnected } = useAccount();
@@ -47,146 +42,132 @@ export function HomePage() {
     isLoadingCards
   } = useCMS();
 
-
-
-  // Use CMS cards if available, otherwise fall back to defaults
-  // Use CMS cards if available
   const displayCards = featureCards;
+  const poolUSD = parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice;
+  const poolETH = parseFloat(formatUnits(totalPoolBalance || 0n, 18)).toFixed(4);
+  const targetUSDC = poolSettings?.targetUSDC || 5000;
+  const progressPct = Math.min((poolUSD / targetUSDC) * 100, 100).toFixed(1);
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] pt-12 pb-12">
-      <div className="sticky top-20 z-10 w-full mb-6">
+    // Tidak perlu min-h-screen atau pt di sini — sudah di-handle App.jsx main
+    <div className="w-full bg-[#0B0E14]">
+
+      {/* HypeFeed — sticky tepat di bawah header, z cukup 10 agar tidak tabrakan dengan BottomNav */}
+      <div className="sticky top-16 z-10 w-full">
         <HypeFeed />
       </div>
 
-      <div className="container mx-auto px-4 pt-4">
+      {/* Page content wrapper — generous padding px-4, maks lebar konten */}
+      <div className="max-w-4xl mx-auto px-4">
 
-        {/* Hero Section */}
-        <div className="text-center py-12 mb-8">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">
+        {/* ── Hero Section ─────────────────────────────────────────────────── */}
+        {/* Lebih kecil di mobile (py-8), lebih besar di desktop (md:py-14) */}
+        <div className="text-center py-8 md:py-14">
+          <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight">
             Crypto Disco
           </h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Complete daily tasks, earn points, and win premium NFTs through our quantum-powered raffle system.
+          <p className="text-sm md:text-base text-zinc-400 max-w-md mx-auto leading-relaxed">
+            Complete daily tasks, earn points, and win premium NFTs through our on-chain raffle system.
           </p>
         </div>
 
-        {/* Announcement Banner (from on-chain CMS) */}
+        {/* ── Announcement Banner ───────────────────────────────────────── */}
         <AnnouncementBanner announcement={announcement} />
 
-        {/* SBT Community Sharing Pool - MODERN PROGRESS WIDGET */}
-        <div className="max-w-4xl mx-auto mb-12">
-          <div className="glass-card relative overflow-hidden group border-indigo-500/20 bg-slate-900/40">
-            {/* Animated background glow */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+        {/* ── Pool Widget ──────────────────────────────────────────────────── */}
+        {/* Minimalist: bg-zinc-900, tanpa border warna, tanpa glow overlay berlapis */}
+        <div className="w-full mb-8">
+          <div className="bg-zinc-900 rounded-2xl p-6 md:p-8">
 
-            <div className="relative z-10 p-8 md:p-10">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                <div>
-                  <p className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em] mb-3">
-                    Pool Reward Collected
-                  </p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <TimerIcon className="w-3 h-3 text-indigo-500" />
-                    Updates every 24h at 07:00 UTC
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter">
-                      ${String(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 }))}
-                    </h2>
-                    <span className="text-slate-500 font-bold text-xl uppercase italic">USDC</span>
-                  </div>
-                  <p className="text-slate-500 text-sm mt-1 flex items-center gap-1 font-mono">
-                    ≈ {String(parseFloat(formatUnits(totalPoolBalance || 0n, 18)).toFixed(4))} ETH
-                  </p>
-                </div>
-
-                {poolSettings?.claimTimestamp > Date.now() && (
-                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4 flex items-center gap-4">
-                    <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center animate-pulse">
-                      <TimerIcon className="w-6 h-6 text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Next Distribution</p>
-                      <div className="text-lg font-black text-white font-mono">
-                        <HomeCountdown timestamp={poolSettings.claimTimestamp} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Progress Bar Container */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-end">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reward Progress</span>
-                  <span className="text-sm font-black text-indigo-400">
-                    {Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}% to Target
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+              <div>
+                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">
+                  SBT Reward Pool
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl md:text-5xl font-black text-white tabular-nums">
+                    ${poolUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </span>
+                  <span className="text-zinc-500 font-semibold text-base">USDC</span>
                 </div>
-
-                <div className="h-6 bg-black/40 rounded-full border border-white/5 p-1 relative overflow-hidden">
-                  <div
-                    style={{ width: `${Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100)}%` }}
-                    className="h-full bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-400 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-1000 ease-out"
-                  />
-                </div>
-
-                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tighter pt-1">
-                  <span>Start: $0</span>
-                  <span className="text-slate-300">Phase Goal: ${String(poolSettings?.targetUSDC?.toLocaleString() || '5,000')}</span>
-                </div>
+                <p className="text-zinc-600 text-xs mt-1 font-mono">≈ {poolETH} ETH</p>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-white/5 flex flex-wrap gap-x-6 gap-y-2">
-                <div className="flex items-center gap-2 text-[11px] text-green-400 font-bold uppercase tracking-wide">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  No Riba / Verified On-Chain
+              {poolSettings?.claimTimestamp > Date.now() && (
+                <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3 self-start sm:self-auto">
+                  <TimerIcon className="w-5 h-5 text-indigo-400 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Next Drop</p>
+                    <div className="text-sm font-black text-white font-mono">
+                      <HomeCountdown timestamp={poolSettings.claimTimestamp} />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500 italic">
-                  * Live conversion rate based on market price
-                </div>
+              )}
+            </div>
+
+            {/* Progress Bar — bersih, tanpa glow shadow berat */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-zinc-500 font-medium">Reward Progress</span>
+                <span className="text-xs font-bold text-indigo-400">{progressPct}% of ${targetUSDC.toLocaleString()}</span>
               </div>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  style={{ width: `${progressPct}%` }}
+                  className="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-zinc-800 flex items-center gap-2 text-xs text-emerald-500 font-semibold">
+              <CheckCircle className="w-3.5 h-3.5" />
+              No Riba · Verified On-Chain · Live Rate
             </div>
           </div>
         </div>
 
-        {/* Unified Tasks & Identity Dashboard */}
+        {/* ── Unified Dashboard (Tasks & Identity) ─────────────────────── */}
         <UnifiedDashboard />
 
-        {/* Feature Cards Grid - Dynamic from CMS */}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        {/* ── Feature Cards Grid ────────────────────────────────────────── */}
+        {/* grid-cols-1 mobile, 2 tablet, 3 desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 mb-6">
           {isLoadingCards && displayCards.length === 0 ? (
             <FeatureCardSkeleton count={6} />
           ) : (
             displayCards
-              .filter(card => card.visible !== false) // Only show visible cards
+              .filter(card => card.visible !== false)
               .map((card, index) => {
                 const isCustomImage = card.icon && typeof card.icon === 'string' && card.icon.startsWith('http');
                 const IconComponent = iconMap[card.icon] || Sparkles;
 
                 return (
-                  <Link key={index} to={card.link || '/'}>
-                    <div className={`bg-[#161B22] border border-white/${card.borderOpacity || '10'} rounded-2xl p-6 shadow-xl hover:border-indigo-500/50 transition-all hover:-translate-y-1 cursor-pointer h-full`}>
-                      <div className={`w-12 h-12 bg-${card.color || 'indigo'}-500/10 rounded-xl flex items-center justify-center mb-4 overflow-hidden`}>
+                  <Link key={index} to={card.link || '/'} className="group">
+                    {/* Card: bg-zinc-900 on bg-black — subtle elevation tanpa border tebal */}
+                    <div className="bg-zinc-900 rounded-xl p-5 h-full hover:bg-zinc-800 transition-colors duration-150">
+                      {/* Icon */}
+                      <div className="w-10 h-10 bg-zinc-800 rounded-lg flex items-center justify-center mb-4 group-hover:bg-indigo-600/20 transition-colors overflow-hidden">
                         {isCustomImage ? (
-                          <img src={card.icon} alt={card.title} className="w-full h-full object-cover" />
+                          <img src={card.icon} alt={card.title} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
-                          <IconComponent className={`w-6 h-6 text-${card.color || 'indigo'}-400`} />
+                          <IconComponent className={`w-5 h-5 text-${card.color || 'indigo'}-400`} />
                         )}
                       </div>
-                      <h3 className="text-xl font-bold text-white mb-2">{String(card.title || '')}</h3>
-                      <p className="text-slate-400 text-sm mb-4">
+
+                      <h3 className="text-base font-bold text-white mb-1 leading-snug">{String(card.title || '')}</h3>
+                      <p className="text-zinc-500 text-sm leading-relaxed">
                         {String(card.description || '')}
                       </p>
+
                       {card.linkText && (
-                        <div className={`flex items-center text-${card.color || 'indigo'}-400 font-medium text-sm`}>
-                          {String(card.linkText)}
+                        <div className={`flex items-center mt-3 text-sm font-semibold text-${card.color || 'indigo'}-400 group-hover:underline`}>
+                          {String(card.linkText)} →
                         </div>
                       )}
+
                       {card.badge && (
-                        <div className="flex items-center gap-1 text-xs text-slate-500 mt-2">
+                        <div className="flex items-center gap-1 text-xs text-zinc-600 mt-2">
                           <Shield className="w-3 h-3" />
                           <span>{String(card.badge)}</span>
                         </div>
@@ -197,31 +178,26 @@ export function HomePage() {
               })
           )}
         </div>
+
       </div>
     </div>
   );
 }
 
-// Helper: Simple countdown for home page
+// Helper: countdown display
 function HomeCountdown({ timestamp }) {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     const update = () => {
       const diff = timestamp - Date.now();
-      if (diff <= 0) {
-        setTimeLeft('READY');
-        return;
-      }
-
+      if (diff <= 0) { setTimeLeft('READY'); return; }
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const m = Math.floor((diff / 1000 / 60) % 60);
       const s = Math.floor((diff / 1000) % 60);
-
       setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
     };
-
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);

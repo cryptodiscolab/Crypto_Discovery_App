@@ -273,7 +273,7 @@ export function TasksPage() {
     }, [allTasksRaw]);
 
     return (
-        <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
+        <div className="w-full bg-[#0B0E14]">
             <div className="max-w-screen-lg mx-auto">
                 {/* Header (Flat) */}
                 <div className="px-4 py-6 border-b-subtle">
@@ -404,8 +404,8 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
     };
 
     return (
-        <div className={`glass-card overflow-hidden border transition-all duration-500 ${verifyingStatus === 'success' ? 'border-green-500/50 shadow-lg shadow-green-500/10' : 'border-white/10'}`}>
-            <div className="p-4 bg-gradient-to-r from-indigo-500/10 to-transparent border-b border-white/5 flex justify-between items-center">
+        <div className={`glass-card overflow-hidden transition-colors ${verifyingStatus === 'success' ? 'ring-1 ring-green-500/40' : ''}`}>
+            <div className="px-4 py-3 bg-zinc-800/60 border-b border-white/5 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <Award className="text-yellow-400" size={18} />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white italic">Sponsored Mission</span>
