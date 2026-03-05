@@ -80,12 +80,32 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
 
 export function LeaderboardPage() {
   const { address } = useAccount();
-  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('All'); // 'All', 'Elite', 'Gold', 'Silver', 'Rookie'
+
+  const tabs = [
+    { id: 'All', label: 'All', icon: Trophy, color: 'text-indigo-400' },
+    { id: 'Elite', label: 'Elite', icon: Crown, color: 'text-purple-400' },
+    { id: 'Gold', label: 'Gold', icon: Sparkles, color: 'text-yellow-500' },
+    { id: 'Silver', label: 'Silver', icon: Medal, color: 'text-slate-300' },
+    { id: 'Rookie', label: 'Rookie', icon: Users, color: 'text-amber-700' },
+  ];
 
   useEffect(() => {
     fetchLeaderboard();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'All') {
+      setFilteredUsers(allUsers);
+    } else if (activeTab === 'Elite') {
+      setFilteredUsers(allUsers.filter(u => u.rank_name === 'Diamond' || u.rank_name === 'Platinum'));
+    } else {
+      setFilteredUsers(allUsers.filter(u => u.rank_name === activeTab));
+    }
+  }, [activeTab, allUsers]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -93,12 +113,11 @@ export function LeaderboardPage() {
         .from('v_user_full_profile')
         .select('wallet_address, total_xp, rank_name, display_name, username, pfp_url')
         .order('total_xp', { ascending: false })
-        .limit(50);
+        .limit(100);
 
-      if (error) {
-        throw error;
-      }
-      setUsers(data || []);
+      if (error) throw error;
+      setAllUsers(data || []);
+      setFilteredUsers(data || []);
     } catch (err) {
       console.error("Error fetching leaderboard:", err);
     } finally {
@@ -109,22 +128,46 @@ export function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
       <div className="max-w-screen-md mx-auto">
-        {/* Header (Farcaster-Style) */}
-        <div className="flex flex-col border-b border-white/10 pb-6 pt-6">
+        {/* Header Section */}
+        <div className="flex flex-col border-b border-white/5 pb-0 pt-6 bg-[#0B0E14] sticky top-0 z-20">
           <div className="flex items-center gap-2 px-4 mb-2">
             <Trophy className="text-yellow-500 w-5 h-5" />
-            <h1 className="text-xl font-bold tracking-tight text-white uppercase">Leaderboard</h1>
+            <h1 className="text-xl font-black tracking-tight text-white uppercase italic">Leaderboard</h1>
           </div>
-          <p className="px-4 text-slate-400 text-sm leading-snug mb-3">
-            Top 50 legendary hunters fighting for glory and XP.
+          <p className="px-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-4">
+            Season 1: The Gacha Awakening
           </p>
-          <div className="px-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/5 border border-yellow-500/10">
-              <Sparkles size={12} className="text-yellow-500" />
-              <span className="text-[10px] text-yellow-500/80 font-black uppercase tracking-widest">
-                Data updates every 24h at 07:00 UTC
-              </span>
-            </div>
+
+          {/* Sliding Tabs (Carousel Mode) */}
+          <div className="flex overflow-x-auto no-scrollbar gap-2 px-4 pb-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95
+                  ${activeTab === tab.id
+                    ? 'bg-white/10 border-white/20 text-white shadow-lg'
+                    : 'bg-transparent border-white/5 text-slate-500 hover:text-slate-300'}`}
+              >
+                <tab.icon size={12} className={activeTab === tab.id ? tab.color : ''} />
+                {tab.label}
+                {activeTab === tab.id && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/10 text-[8px]">
+                    {filteredUsers.length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Info Banner */}
+        <div className="p-4">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 mb-4">
+            <Sparkles size={14} className="text-indigo-400 animate-pulse" />
+            <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest leading-none">
+              {activeTab === 'All' ? 'Showing top 100 global hunters' : `Showing users in ${activeTab} league`}
+            </span>
           </div>
         </div>
 
@@ -143,13 +186,19 @@ export function LeaderboardPage() {
                 </div>
               ))}
             </div>
-          ) : users.length === 0 ? (
-            <div className="py-20 text-center text-slate-500 text-sm">
-              No data available.
+          ) : filteredUsers.length === 0 ? (
+            <div className="py-20 flex flex-col items-center gap-4 text-center px-8">
+              <div className="p-4 bg-slate-900/50 rounded-full text-slate-700">
+                <Trophy size={48} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-400">Liga Belum Terisi</h3>
+                <p className="text-xs text-slate-600 max-w-[200px]">Jadilah yang pertama untuk mencapai rank ini dan pimpin papan peringkat!</p>
+              </div>
             </div>
           ) : (
             <div className="divide-y divide-white/5 border-b border-white/5">
-              {users.map((user, index) => (
+              {filteredUsers.map((user, index) => (
                 <LeaderboardRow
                   key={user.wallet_address || index}
                   user={user}

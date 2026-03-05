@@ -1,5 +1,6 @@
 import { supabase } from './lib/supabaseClient';
 import { cleanWallet } from './utils/cleanWallet';
+import { referralUtils } from './utils/referralUtils';
 
 /**
  * ensureUserProfile: Securely guarantee a record exists in user_profiles via Backend API.
@@ -10,6 +11,7 @@ import { cleanWallet } from './utils/cleanWallet';
 export async function ensureUserProfile(walletAddress, signature, message, fid = null) {
     if (!walletAddress || !signature || !message) return null;
     const normalizedAddress = cleanWallet(walletAddress);
+    const referred_by = referralUtils.getReferrer();
 
     try {
         const response = await fetch('/api/user/sync', {
@@ -19,12 +21,16 @@ export async function ensureUserProfile(walletAddress, signature, message, fid =
                 wallet_address: normalizedAddress,
                 signature,
                 message,
-                fid
+                fid,
+                referred_by
             })
         });
 
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Profile sync failed");
+
+        // Clear referrer after successful sync to prevent re-attribution
+        if (referred_by) referralUtils.clearReferrer();
 
         return result.profile;
     } catch (err) {

@@ -19,6 +19,7 @@ import { formatUnits } from 'viem';
 import { AnnouncementBanner } from '../components/AnnouncementBanner';
 import { FeatureCardSkeleton } from '../components/FeatureCardSkeleton';
 import { UnifiedDashboard } from '../components/UnifiedDashboard';
+import { HypeFeed } from '../components/HypeFeed';
 
 
 // Icon mapping for dynamic feature cards
@@ -54,7 +55,11 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0B0E14] pt-12 pb-12">
-      <div className="container mx-auto px-4 pt-10">
+      <div className="sticky top-20 z-10 w-full mb-6">
+        <HypeFeed />
+      </div>
+
+      <div className="container mx-auto px-4 pt-4">
 
         {/* Hero Section */}
         <div className="text-center py-12 mb-8">

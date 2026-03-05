@@ -34,6 +34,7 @@ const ContentTab = React.lazy(() => import('../components/admin/tabs/ContentTab'
 const SyncLogTab = React.lazy(() => import('../components/admin/tabs/SyncLogTab').then(m => ({ default: m.SyncLogTab })));
 const TierTab = React.lazy(() => import('../components/admin/tabs/TierTab').then(m => ({ default: m.TierTab })));
 const TreasuryTab = React.lazy(() => import('../components/admin/tabs/TreasuryTab').then(m => ({ default: m.TreasuryTab })));
+const NFTConfigTab = React.lazy(() => import('../components/admin/tabs/NFTConfigTab').then(m => ({ default: m.NFTConfigTab })));
 
 export function AdminPage({ initialTab = 'pool' }) {
     const navigate = useNavigate();
@@ -137,6 +138,7 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'news', label: 'News & Updates', icon: Newspaper, color: 'green' },
         { id: 'content', label: 'Feature Cards (CMS)', icon: Database, color: 'indigo' },
         { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
+        { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
     ];
 
     return (
@@ -262,6 +264,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                             {activeTab === 'news' && <NewsTab />}
                             {activeTab === 'content' && <AdminCMSContent />}
                             {activeTab === 'sync-logs' && <SyncLogTab />}
+                            {activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
                         </div>
                     </React.Suspense>
                 </div>

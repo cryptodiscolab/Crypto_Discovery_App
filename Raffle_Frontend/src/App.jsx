@@ -7,6 +7,7 @@ import { PointsProvider } from './shared/context/PointsContext';
 import { Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SkeletonLoader } from './components/SkeletonLoader';
+import { ReferralTracker } from './components/ReferralTracker';
 
 // Lazy Load Pages (Non-critical components)
 const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.default || m.HomePage })));
@@ -37,6 +38,7 @@ function App() {
       <PointsProvider>
         <FarcasterProvider>
           <BrowserRouter>
+            <ReferralTracker />
             <div className="dark min-h-screen bg-[#0B0E14] text-slate-100 pointer-events-none">
               <Header />
               <main className="pt-20 pb-24 md:pb-0 pointer-events-auto min-h-screen">

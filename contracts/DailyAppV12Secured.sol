@@ -83,6 +83,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         uint256 multiplierBP; 
         uint256 maxSupply; 
         uint256 currentSupply; 
+        bool isOpen; // NEW: Single switch for Tier Availability
     }
     
     struct Task { 
@@ -226,11 +227,13 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         uint256[] calldata _mintPrices,
         uint256[] calldata _dailyBonuses,
         uint256[] calldata _multiplierBPs,
-        uint256[] calldata _maxSupplies
+        uint256[] calldata _maxSupplies,
+        bool[] calldata _isOpen
     ) external onlyRole(ADMIN_ROLE) {
         uint256 len = _tiers.length;
         if (len == 0 || len != _pointsRequired.length || len != _mintPrices.length || 
-            len != _dailyBonuses.length || len != _multiplierBPs.length || len != _maxSupplies.length) 
+            len != _dailyBonuses.length || len != _multiplierBPs.length || 
+            len != _maxSupplies.length || len != _isOpen.length) 
             revert InvalidParameters();
 
         for (uint256 i = 0; i < len; i++) {
@@ -240,7 +243,8 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
                 dailyBonus: _dailyBonuses[i],
                 multiplierBP: _multiplierBPs[i],
                 maxSupply: _maxSupplies[i],
-                currentSupply: nftConfigs[_tiers[i]].currentSupply
+                currentSupply: nftConfigs[_tiers[i]].currentSupply,
+                isOpen: _isOpen[i]
             });
         }
     }
@@ -388,7 +392,10 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         NFTTier _tier,
         uint256 _pointsRequired,
         uint256 _mintPrice,
-        uint256 _multiplierBP
+        uint256 _multiplierBP,
+        uint256 _dailyBonus,
+        uint256 _maxSupply,
+        bool _isOpen
     ) external onlyRole(ADMIN_ROLE) validTier(_tier) {
         if (_pointsRequired == 0) revert InvalidParameters();
         if (_multiplierBP < 10000 || _multiplierBP > MAX_MULTIPLIER_BP) revert InvalidParameters();
@@ -397,8 +404,15 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         config.pointsRequired = _pointsRequired;
         config.mintPrice = _mintPrice;
         config.multiplierBP = _multiplierBP;
+        config.dailyBonus = _dailyBonus;
+        config.maxSupply = _maxSupply;
+        config.isOpen = _isOpen;
         
         emit ConfigUpdated(_tier, _pointsRequired, _mintPrice, _multiplierBP);
+    }
+
+    function setTierStatus(NFTTier _tier, bool _status) external onlyRole(ADMIN_ROLE) validTier(_tier) {
+        nftConfigs[_tier].isOpen = _status;
     }
 
     // --- ADMIN: USER MANAGEMENT ---
@@ -913,6 +927,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         if (stats.points < config.pointsRequired) revert InsufficientFunds();
         if (msg.value < config.mintPrice) revert InsufficientFunds();
         
+        if (!config.isOpen) revert Unauthorized(); // NEW: Check if tier is logically open
         if (config.currentSupply >= config.maxSupply) revert MaxLimitReached();
 
         stats.points -= config.pointsRequired;

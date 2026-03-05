@@ -44,9 +44,8 @@ class VerificationService {
             const recoveredAddress = ethers.verifyMessage(message, signature);
             if (recoveredAddress.toLowerCase() !== address.toLowerCase()) return false;
 
-            // Replay protection: Check timestamp in message (Format: "Verify ... Time: ISOString")
-            // This format must be consistent with the frontend signing logic.
-            const timeMatch = message.match(/Time:\s*(.+)$/m);
+            // Replay protection: Check timestamp in message (Format: "Verify ... Time: ISOString" OR "Timestamp: Number")
+            const timeMatch = message.match(/(?:Time|Timestamp):\s*(.+)$/m);
             if (!timeMatch) return false;
 
             const msgTime = new Date(timeMatch[1]).getTime();

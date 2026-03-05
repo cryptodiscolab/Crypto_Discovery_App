@@ -4,6 +4,8 @@ import {
 } from 'lucide-react';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { useUserInfo } from '../hooks/useContract';
+import { SBTUpgradeCard } from '../components/SBTUpgradeCard';
+import { ReferralCard } from '../components/ReferralCard';
 import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
@@ -461,6 +463,16 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* TIER ASCENSION CARD */}
+        <div className="px-4 mb-4">
+          <SBTUpgradeCard />
+        </div>
+
+        {/* REFERRAL SYSTEM */}
+        <div className="px-4 mb-6">
+          <ReferralCard address={address} />
+        </div>
 
         {/* STATS LIST (Mobile Native Style) */}
         <div className="flex flex-col">

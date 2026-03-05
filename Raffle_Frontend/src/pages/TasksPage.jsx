@@ -65,7 +65,10 @@ function TaskRow({ taskId, userStats, refetchStats }) {
         }
 
         if (isTierLocked) {
-            toast.error(`Tier ${task.minTier} required for this task!`);
+            toast.error(`Tier ${task.minTier} required for this task! Upgrade in your Profile.`, {
+                icon: '🔒',
+                duration: 4000
+            });
             return;
         }
 

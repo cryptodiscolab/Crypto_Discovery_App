@@ -50,6 +50,20 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Contract-to-DB Sync**: Memastikan parameter di Smart Contract (misal: `minRewardPoolUSD`) tercermin dengan benar di tabel Supabase (`point_settings` / `campaigns`).
 - **Admin-to-App Sync**: Memastikan dashboard Admin memiliki kendali penuh atas fitur baru tanpa perlu campur tangan developer (No manual coding for Admin actions).
 
+### 7. Viral Growth & Social Proof (NEW)
+- **Referral Mandate**: Setiap user baru wajib dicek `ref` param-nya di URL dan disimpan di `localStorage` sebelum sync profile.
+- **Proof of Activity (PoA)**: Referral dianggap aktif hanya jika memiliki > 500 XP. Jangan tampilkan reward untuk referral dormant.
+- **Hype Engine Logic**: Gunakan `HypeFeed` untuk menampilkan aktivitas real-time guna meningkatkan retensi dan FOMO.
+
+### 5. Zero-Trust Security Standard (MANDATORY)
+- **Signature-First API**: Semua API Backend (Vercel Functions/verification-server) yang melakukan modifikasi data (Internal DB atau On-Chain) WAJIB memvalidasi **EIP-191 Signature** dari wallet user/admin.
+- **Replay Protection**: Gunakan timestamp dalam pesan signature dengan window validasi maksimal 5 menit.
+- **Normalized Mapping**: Pastikan mapping address (Farcaster/Twitter) menggunakan clean lowercase address untuk menghindari 404 pada API Neynar.
+
+### 6. PnL Health Guardian
+- **Financial Integrity**: Selalu pantau data `totalSBTPoolBalance` vs `totalLockedRewards`. Jangan perbolehkan dashboard admin menyarankan pengeluaran yang melebihi `Net Surplus`.
+- **Dynamic Proportionality**: Pastikan pembagian revenue (SBT Weights) selalu berjumlah tepat 100% dan tercermin dalam UI admin dengan visual validation.
+
 ### 5. Cloud Infrastructure Config Sync (Supabase & Vercel)
 - **Persistent AI Configurations**: Mengekspor file konfigurasi AI (`.agents/*` dan `.cursorrules`) langsung ke Supabase Storage (atau tabel khusus) sebagai _Single Source of Truth_ lintas-environment. 
 - **Vercel Automation**:

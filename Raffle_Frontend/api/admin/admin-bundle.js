@@ -7,10 +7,21 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const AUTHORIZED_ADMINS = [
+// AUTHORIZATION: Load from environment
+const rawAdmins = [
+    process.env.VITE_ADMIN_ADDRESS,
+    process.env.VITE_ADMIN_WALLETS,
+    process.env.ADMIN_ADDRESS,
     '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b',
     '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'
-].map(a => a.toLowerCase());
+];
+
+const AUTHORIZED_ADMINS = rawAdmins
+    .filter(Boolean)
+    .join(',')
+    .split(',')
+    .map(a => a.trim().toLowerCase())
+    .filter(a => a.startsWith('0x'));
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -90,7 +101,7 @@ export default async function handler(req, res) {
                 // Background refresh rank scores
                 supabaseAdmin.rpc('fn_refresh_rank_scores').catch(e => console.error('[Sync] Rank scores refresh failed:', e));
 
-                return res.status(200).json({ success: true, count: data.length });
+                return res.status(200).json({ success: true, count: data.length, data });
             }
 
             default:

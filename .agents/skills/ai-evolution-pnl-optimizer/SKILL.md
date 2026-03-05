@@ -30,6 +30,11 @@ Setiap kali melakukan perubahan pada `.agents/` atau `.cursorrules`, Agent **WAJ
 - **Premium UI Conversion**: Proaktif menyarankan AI-generated visuals (glassmorphism/animations) untuk meningkatkan interaksi user.
 - **Sponsorship Retention**: Mempermudah flow deposit bagi sponsor sebagai sumber 5% platform fee.
 
+### 4. Viral & Social Optimization (OFFENSE)
+- **Referral Sharing**: Pastikan UI sharing referral (Warpcast/X) selalu premium dan mudah diakses dari Profile.
+- **Tiered Competition**: Kelola Leaderboard dalam liga (Elite, Gold, etc.) untuk menjaga semangat kompetitif antar level.
+- **AI Social Proof**: Dorong automasi pengumuman milestone (misal: "X just hit Diamond") untuk memicu gelombang upgrade.
+
 ## 📋 Checklist Eksekusi PnL & Evolusi
 - [ ] Apakah ada knowledge baru yang perlu ditulis ke `.agents`?
 - [ ] Apakah `sync-cloud.js` sudah dijalankan setelah modifikasi skill?

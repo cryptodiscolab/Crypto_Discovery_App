@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 }
 
 async function handleLoginSync(req, res) {
-    const { wallet_address, signature, message, fid, metadata } = req.body;
+    const { wallet_address, signature, message, fid, metadata, referred_by } = req.body;
     if (!wallet_address || !signature || !message) return res.status(400).json({ error: 'Missing fields' });
 
     try {
@@ -43,14 +43,30 @@ async function handleLoginSync(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const cleanAddress = wallet_address.toLowerCase();
+
+        // 1. Check if user already exists and if they have a referrer
+        const { data: existing } = await supabaseAdmin
+            .from('user_profiles')
+            .select('referred_by')
+            .eq('wallet_address', cleanAddress)
+            .maybeSingle();
+
+        // 2. Prepare update data (Explicit fields ONLY - Security Fix)
+        const updateData = {
+            wallet_address: cleanAddress,
+            fid: fid || null,
+            last_login_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        // 3. ONLY set referred_by if it doesn't exist yet and it's not self-referral
+        if (!existing?.referred_by && referred_by && referred_by.toLowerCase() !== cleanAddress) {
+            updateData.referred_by = referred_by.toLowerCase();
+        }
+
         const { data, error } = await supabaseAdmin
             .from('user_profiles')
-            .upsert({
-                wallet_address: cleanAddress,
-                fid: fid || null,
-                last_login_at: new Date().toISOString(),
-                ...(metadata || {}),
-            }, { onConflict: 'wallet_address' })
+            .upsert(updateData, { onConflict: 'wallet_address' })
             .select().single();
 
         if (error) throw error;

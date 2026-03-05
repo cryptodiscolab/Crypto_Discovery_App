@@ -42,6 +42,43 @@ app.use((req, res, next) => {
     next();
 });
 
+// 🚀 Rate Limiting: Prevent Neynar/Twitter API spam
+const requestCounts = new Map();
+const LIMIT = 10; // requests per minute
+const WINDOW = 60 * 1000;
+
+app.use('/api/verify', (req, res, next) => {
+    // Health check bypass
+    if (req.path === '/health') return next();
+
+    const identifiers = [
+        req.headers['x-forwarded-for'],
+        req.socket.remoteAddress,
+        req.body?.userAddress
+    ].filter(Boolean);
+
+    const id = identifiers[0] || 'default';
+    const now = Date.now();
+    const data = requestCounts.get(id) || { count: 0, reset: now + WINDOW };
+
+    if (now > data.reset) {
+        data.count = 0;
+        data.reset = now + WINDOW;
+    }
+
+    data.count++;
+    requestCounts.set(id, data);
+
+    if (data.count > LIMIT) {
+        return res.status(429).json({
+            success: false,
+            error: 'Rate limit exceeded. Please wait 1 minute before verifying more tasks.',
+            retryAfter: Math.ceil((data.reset - now) / 1000)
+        });
+    }
+    next();
+});
+
 // Request logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
