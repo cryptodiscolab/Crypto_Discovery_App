@@ -196,24 +196,21 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] text-slate-100 pb-20">
+    <div className="w-full text-slate-100">
       {/* 
         FLAT-NATIVE HEADER 
-        Mimic Farcaster/Twitter: Cover Image (Optional) -> Avatar -> Info 
-        Since we don't have a cover image, we start with simple padding.
+        Minimalist elevation via bg contrast.
       */}
 
       {/* Top Action Bar (Mobile only usually, or simplified header) */}
-      <div className="flex justify-between items-center px-4 py-3 border-b-subtle sticky top-0 bg-[#0B0E14]/95 backdrop-blur-md z-10 md:hidden">
-        <h1 className="text-base font-bold text-white">Profile</h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => disconnect()}
-            className="text-red-400 hover:text-red-300"
-          >
-            <LogOut size={20} />
-          </button>
-        </div>
+      <div className="flex justify-between items-center px-4 h-14 bg-zinc-900/50 backdrop-blur-md md:hidden">
+        <h1 className="text-sm font-bold text-white uppercase tracking-wider">Profile</h1>
+        <button
+          onClick={() => disconnect()}
+          className="text-zinc-500 hover:text-red-400 p-2"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
 
       <div className="max-w-screen-md mx-auto">
@@ -244,31 +241,28 @@ export default function ProfilePage() {
                   <button
                     onClick={async () => {
                       if (!address) return toast.error("Please connect your wallet!");
-                      const toastId = toast.loading("Syncing with Farcaster...");
+                      const toastId = toast.loading("Syncing...");
                       try {
                         const synced = await syncUser(address, true);
                         await fetchProfile();
                         if (synced?.fid) {
-                          toast.success("Farcaster identity synced!", { id: toastId });
+                          toast.success("Identity synced!", { id: toastId });
                         } else {
-                          toast.error("No Farcaster account found for this wallet.", { id: toastId });
+                          toast.error("Account not found", { id: toastId });
                         }
                       } catch (e) {
-                        toast.error(e.message || "Sync failed", { id: toastId });
+                        toast.error("Sync failed", { id: toastId });
                       }
                     }}
                     disabled={isFarcasterLoading}
-                    className={`px-4 py-1.5 rounded-full border text-sm font-bold active:scale-95 transition-all flex items-center gap-2 ${!profileData.fid ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'border-white/20 text-white hover:bg-white/5'}`}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${!profileData.fid ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
                   >
                     {isFarcasterLoading ? (
                       <Loader2 className="animate-spin w-4 h-4" />
                     ) : !profileData.fid ? (
-                      <>
-                        <RefreshCw size={14} />
-                        Sync Farcaster
-                      </>
+                      "Sync Farcaster"
                     ) : (
-                      "Sync"
+                      "Refresh"
                     )}
                   </button>
                   <button
@@ -419,62 +413,39 @@ export default function ProfilePage() {
 
         {/* UGC ACTION BUTTONS */}
         <div className="px-4 py-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               onClick={() => setActiveModal('claim')}
-              className={`group flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl border transition-all active:scale-95
-                ${claimReady
-                  ? 'bg-gradient-to-b from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/40'
-                  : 'bg-gradient-to-b from-slate-700/20 to-slate-700/10 border-slate-600/20'
-                }`}
+              className={`flex flex-col items-center justify-center gap-1 p-4 rounded-xl transition-colors
+                ${claimReady ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-900 text-zinc-600 opacity-50'}`}
             >
-              <div className={`p-2 rounded-xl transition-transform group-hover:scale-110 ${claimReady ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600/30 text-slate-500'}`}>
-                <Calendar size={20} />
-              </div>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${claimReady ? 'text-emerald-500' : 'text-slate-500'}`}>
-                Daily Claim
-              </span>
-              {!claimReady && claimCountdown && (
-                <span className="text-[9px] font-mono font-bold text-indigo-400 tabular-nums leading-none">
-                  {claimCountdown}
-                </span>
-              )}
-              {claimReady && !isLoadingOnChain && (
-                <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">READY ✓</span>
-              )}
-              {isLoadingOnChain && (
-                <span className="text-[9px] font-bold text-slate-500 uppercase animate-pulse">Checking...</span>
-              )}
+              <Calendar size={18} />
+              <span className="text-[10px] font-bold uppercase tracking-tight">Daily Bonus</span>
+              {claimCountdown && <span className="text-[9px] font-mono">{claimCountdown}</span>}
             </button>
 
             <button
               onClick={() => setActiveModal('task')}
-              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-indigo-500/10 to-indigo-500/5 border border-indigo-500/20 hover:border-indigo-500/40 transition-all active:scale-95"
+              className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
-              <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 group-hover:scale-110 transition-transform">
-                <Plus size={20} />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Create Task</span>
+              <Plus size={18} />
+              <span className="text-[10px] font-bold uppercase tracking-tight">Create Task</span>
             </button>
 
             <button
               onClick={() => setActiveModal('raffle')}
-              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-orange-500/10 to-orange-500/5 border border-orange-500/20 hover:border-orange-500/40 transition-all active:scale-95"
+              className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
-              <div className="p-2 rounded-xl bg-orange-500/20 text-orange-400 group-hover:scale-110 transition-transform">
-                <Ticket size={20} />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">Create Raffle</span>
+              <Ticket size={18} />
+              <span className="text-[10px] font-bold uppercase tracking-tight">Launch Raffle</span>
             </button>
 
             <button
               onClick={() => setActiveModal('renew')}
-              className="group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-blue-500/10 to-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all active:scale-95"
+              className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
-              <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 group-hover:scale-110 transition-transform">
-                <RefreshCw size={20} />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">Renew Task</span>
+              <RefreshCw size={18} />
+              <span className="text-[10px] font-bold uppercase tracking-tight">Renew Job</span>
             </button>
           </div>
         </div>
@@ -669,7 +640,7 @@ function CreateTaskModal({ onClose }) {
 
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex flex-col">
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[10001] flex flex-col animate-in fade-in duration-200">
       <div className="flex justify-between items-center p-4 border-b border-white/5">
         <h2 className="text-lg font-black text-white italic tracking-tighter">CREATE <span className="text-indigo-500">TASK BATCH</span></h2>
         <button onClick={onClose} className="p-2 bg-white/5 rounded-full"><X size={20} /></button>
@@ -678,7 +649,7 @@ function CreateTaskModal({ onClose }) {
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className="space-y-4">
           {tasksBatch.map((task, idx) => (
-            <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-3xl space-y-3 relative overflow-hidden group">
+            <div key={idx} className="bg-zinc-900 border border-white/5 p-4 rounded-2xl space-y-3 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 {task.platform === 'farcaster' ? <Share2 size={80} /> : task.platform === 'x' ? <Flame size={80} /> : <Globe size={80} />}
               </div>
@@ -784,13 +755,13 @@ function CreateTaskModal({ onClose }) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setPaymentToken('creator')}
-                className={`px-4 py-3 rounded-xl border text-[10px] font-black uppercase transition-all ${paymentToken === 'creator' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-black/20 border-white/5 text-slate-500'}`}
+                className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase transition-all ${paymentToken === 'creator' ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
               >
                 Creator Token
               </button>
               <button
                 onClick={() => setPaymentToken('eth')}
-                className={`px-4 py-3 rounded-xl border text-[10px] font-black uppercase transition-all ${paymentToken === 'eth' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-black/20 border-white/5 text-slate-500'}`}
+                className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase transition-all ${paymentToken === 'eth' ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
               >
                 Native ETH
               </button>
@@ -847,8 +818,8 @@ function CreateTaskModal({ onClose }) {
             }}
           >
             <TransactionButton
-              className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
-              text="PAY & CREATE BATCH"
+              className="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+              text="PAY & CREATE MISSION"
             />
             <div className="mt-2 text-[10px] text-slate-500 font-mono text-center">
               <TransactionStatus>
