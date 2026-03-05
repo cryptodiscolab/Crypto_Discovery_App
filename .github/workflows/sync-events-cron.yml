@@ -1,0 +1,16 @@
+name: 5-Minute Event Sync (Cron)
+
+on:
+  schedule:
+    # Runs every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync_events:
+    name: Sync Blockchain Events to Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit Endpoint
+        run: |
+          curl -sS -X GET "https://crypto-discovery-app.vercel.app/api/cron/sync-events"

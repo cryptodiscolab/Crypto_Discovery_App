@@ -45,12 +45,6 @@
             "destination": "/index.html"
         }
     ],
-    "crons": [
-        {
-            "path": "/api/cron/sync-events",
-            "schedule": "*/5 * * * *"
-        }
-    ],
     "headers": [
         {
             "source": "/(.*)",
