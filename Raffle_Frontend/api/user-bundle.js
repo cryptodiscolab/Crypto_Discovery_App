@@ -64,6 +64,12 @@ async function handleLoginSync(req, res) {
             updateData.referred_by = referred_by.toLowerCase();
         }
 
+        // 4. SBT GATE: New users start at tier=0 (Guest).
+        //    Tier is ONLY elevated by the cron job after detecting on-chain SBT.
+        if (!existing) {
+            updateData.tier = 0;
+        }
+
         const { data, error } = await supabaseAdmin
             .from('user_profiles')
             .upsert(updateData, { onConflict: 'wallet_address' })
@@ -241,6 +247,8 @@ async function handleUpdateProfile(req, res) {
         delete sanitizedPayload.is_admin;
         delete sanitizedPayload.wallet_address;
         delete sanitizedPayload.total_xp;
+        delete sanitizedPayload.referred_by;
+        delete sanitizedPayload.tier; // Tier can ONLY be updated by cron/admin via SBT sync
 
         const { error } = await supabaseAdmin
             .from('user_profiles')

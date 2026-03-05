@@ -17,6 +17,7 @@ const MAX_BLOCK_RANGE = 5000;
 
 const MASTER_X_ABI = [
     "event PointsAwarded(address indexed user, uint256 points, string reason)",
+    "function users(address) view returns (uint256 points, uint8 tier, uint256 lastClaimTimestamp, uint256 referralCount, bool isVerified, address referrer)"
 ];
 const DAILY_APP_ABI = [
     "event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp)",
@@ -249,6 +250,59 @@ async function handleSyncEvents(req, res) {
             await supabase.from("user_task_claims").upsert(rows, { onConflict: "id" });
         }
 
+        // ── SBT TIER SYNC ─────────────────────────────────────────────
+        // For every unique wallet that had activity in this block range,
+        // read their on-chain tier from MasterX and sync it to Supabase.
+        // This is the fully automated SBT enforcement gate.
+        const activeWallets = [...new Set(rows.map(r => r.wallet_address))];
+        if (activeWallets.length > 0) {
+            const tierUpdates = [];
+            for (const wallet of activeWallets) {
+                try {
+                    const userData = await masterX.users(wallet);
+                    const onChainTier = Number(userData.tier);
+                    tierUpdates.push({ wallet_address: wallet, on_chain_tier: onChainTier });
+                } catch (e) {
+                    console.warn(`[SBT Sync] Failed to read tier for ${wallet}:`, e.message);
+                }
+            }
+
+            // Batch update DB tiers to match on-chain reality
+            for (const { wallet_address, on_chain_tier } of tierUpdates) {
+                await supabase
+                    .from('user_profiles')
+                    .update({ tier: on_chain_tier, updated_at: new Date().toISOString() })
+                    .eq('wallet_address', wallet_address)
+                    .lt('tier', on_chain_tier); // ONLY UPGRADE, never downgrade (safety)
+            }
+
+            // Also check ALL profiles with tier=0 to pick up any SBT mints
+            // that may have happened outside of the event range (e.g., wallet was
+            // inactive for a while but now has XP in DB)
+            const { data: guestProfiles } = await supabase
+                .from('user_profiles')
+                .select('wallet_address')
+                .eq('tier', 0)
+                .gt('total_xp', 0) // Only bother checking if they have XP
+                .limit(20); // Throttle to avoid rate limits
+
+            for (const profile of (guestProfiles || [])) {
+                try {
+                    const userData = await masterX.users(profile.wallet_address);
+                    const onChainTier = Number(userData.tier);
+                    if (onChainTier > 0) {
+                        await supabase
+                            .from('user_profiles')
+                            .update({ tier: onChainTier, updated_at: new Date().toISOString() })
+                            .eq('wallet_address', profile.wallet_address);
+                        console.log(`[SBT Sync] ✅ Promoted ${profile.wallet_address} to Tier ${onChainTier}`);
+                    }
+                } catch (e) {
+                    console.warn(`[SBT Sync] Failed guest-check for ${profile.wallet_address}:`, e.message);
+                }
+            }
+        }
+
         await supabase.from("sync_state").upsert({
             id: "main",
             last_synced_block: toBlock,
@@ -259,6 +313,7 @@ async function handleSyncEvents(req, res) {
             status: "ok",
             scanned: `${fromBlock} → ${toBlock}`,
             events_found: rows.length,
+            sbt_wallets_checked: activeWallets.length,
             latestBlock
         });
     } catch (err) {

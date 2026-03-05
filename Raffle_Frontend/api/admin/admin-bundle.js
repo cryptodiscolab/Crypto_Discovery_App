@@ -95,13 +95,34 @@ export default async function handler(req, res) {
                 }
                 if (!isAuthorized) return res.status(403).json({ error: 'Unauthorized: Admin only' });
 
+                // 1. Fetch current user profiles to check SBT status (Tier > 0)
+                const { data: profiles } = await supabaseAdmin
+                    .from('user_profiles')
+                    .select('wallet_address, tier');
+
+                // 2. Compute tiers via RPC
                 const { data, error } = await supabaseAdmin.rpc('fn_compute_leaderboard_tiers');
                 if (error) throw error;
+
+                // 3. SECURE FILTER: Only sync users who already have an SBT (Tier > 0)
+                // This prevents "Guest" users from being promoted to Bronze+ on-chain accidentally.
+                const sbtHolders = new Set(
+                    (profiles || [])
+                        .filter(p => (p.tier || 0) > 0)
+                        .map(p => p.wallet_address.toLowerCase())
+                );
+
+                const filteredData = data.filter(item => sbtHolders.has(item.wallet_address.toLowerCase()));
 
                 // Background refresh rank scores
                 supabaseAdmin.rpc('fn_refresh_rank_scores').catch(e => console.error('[Sync] Rank scores refresh failed:', e));
 
-                return res.status(200).json({ success: true, count: data.length, data });
+                return res.status(200).json({
+                    success: true,
+                    total_calculated: data.length,
+                    sync_ready: filteredData.length,
+                    data: filteredData
+                });
             }
 
             default:
