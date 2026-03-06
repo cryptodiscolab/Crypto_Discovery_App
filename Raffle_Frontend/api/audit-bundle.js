@@ -107,6 +107,11 @@ async function handleRpcProxy(req, res) {
         });
 
         const rawText = await response.text();
+        if (!response.ok) {
+            console.error(`[RPC Proxy Upstream Error] Status: ${response.status}`, rawText.substring(0, 500));
+            return res.status(response.status).send(rawText);
+        }
+
         let data;
         try {
             data = JSON.parse(rawText);

@@ -272,11 +272,8 @@ export function useCMS() {
             args: [jsonString],
         });
 
-        if (publicClient) {
-            await publicClient.waitForTransactionReceipt({ hash });
-        }
         return hash;
-    }, [poolSettings, writeContractAsync, publicClient]);
+    }, [poolSettings, writeContractAsync]);
 
     const updatePoolSettings = useCallback(async (newPoolSettings) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
@@ -293,11 +290,8 @@ export function useCMS() {
             args: [jsonString],
         });
 
-        if (publicClient) {
-            await publicClient.waitForTransactionReceipt({ hash });
-        }
         return hash;
-    }, [announcement, writeContractAsync, publicClient]);
+    }, [announcement, writeContractAsync]);
 
     const updateNews = useCallback(async (newNews) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
@@ -309,11 +303,8 @@ export function useCMS() {
             args: [jsonString],
         });
 
-        if (publicClient) {
-            await publicClient.waitForTransactionReceipt({ hash });
-        }
         return hash;
-    }, [writeContractAsync, publicClient]);
+    }, [writeContractAsync]);
 
     const updateFeatureCards = useCallback(async (newCards) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
@@ -325,11 +316,8 @@ export function useCMS() {
             args: [jsonString],
         });
 
-        if (publicClient) {
-            await publicClient.waitForTransactionReceipt({ hash });
-        }
         return hash;
-    }, [writeContractAsync, publicClient]);
+    }, [writeContractAsync]);
 
     const batchUpdate = useCallback(async (newAnnouncement, newNews, newCards) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
@@ -344,11 +332,8 @@ export function useCMS() {
             ],
         });
 
-        if (publicClient) {
-            await publicClient.waitForTransactionReceipt({ hash });
-        }
         return hash;
-    }, [writeContractAsync, publicClient]);
+    }, [writeContractAsync]);
 
     // ============================================
     // WRITE FUNCTIONS - ROLE MANAGEMENT
