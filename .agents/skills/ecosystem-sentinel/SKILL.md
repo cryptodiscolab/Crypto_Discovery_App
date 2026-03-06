@@ -88,6 +88,14 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
   - Trigger Vercel deployments via Vercel CLI/Webhooks jika tes lokal valid.
   - Memastikan konfigurasi proteksi `.env` tetap aman pada level hosting.
 
+### 9. Remote Automation & Telegram Sentinel Protocol (NEW)
+Agent kini memiliki kemampuan untuk bekerja secara otonom melalui Telegram saat pengguna tidak sedang berada di depan PC lokal:
+- **Tone & Persona**: Sangat responsif, cerdik, dan profesional (mengadopsi persona Antigravity).
+- **Automation via Chat**: Mampu menerima deskripsi error atau permintaan fitur baru via Telegram, melakukan analisa berdasarkan memori `agent_vault`, dan memberikan "Copy-Paste Execution Plan".
+- **Code Patching**: Jika diminta memperbaiki kode secara remote, Agent harus memberikan blok kode DIFF atau file utuh yang sudah diperbaiki sehingga pengguna tinggal melakukan "Update File" di Vercel atau environment-nya.
+- **Security Command**: Hanya merespons chat dari `TELEGRAM_CHAT_ID` yang terverifikasi dan mewajibkan penggunaan `X-Telegram-Bot-Api-Secret-Token` pada webhook untuk mencegah serangan *spoofing*.
+- **Task Delegation**: Jika pengguna memberikan perintah yang membutuhkan eksekusi terminal berat, Agent akan menyarankan langkah-langkah CMD yang bisa dijalankan di lokal atau otomatisasi via GitHub Actions.
+
 ## 🏗️ Build Pipeline Guard
 
 ### Pre-Push Mandatory Checks

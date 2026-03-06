@@ -21,9 +21,19 @@ module.exports = async (req, res) => {
 
     const { message } = req.body;
 
-    // 1. Security Check: Hanya balas chat dari owner
+    // 1. MAXIMUM Security Check (Anti-Spoofing & Zero Trust)
+    // Telegram will send X-Telegram-Bot-Api-Secret-Token if configured. We use bot token as secret.
+    const secretToken = req.headers['x-telegram-bot-api-secret-token'];
+
+    // Skip secret token check in local mode to allow CLI testing
+    if (process.env.LURAH_LOCAL_MODE !== 'true' && secretToken !== telegramBotToken) {
+        console.error(`[Security Alert] Invalid or missing Telegram Secret Token. IP: ${req.headers['x-forwarded-for']}`);
+        return res.status(401).json({ error: 'Unauthorized: Invalid Security Token' });
+    }
+
+    // 2. Identity Check: Hanya balas chat dari owner (Anda)
     if (!message || !message.chat || String(message.chat.id) !== String(telegramChatId)) {
-        console.log(`[Webhook] Ignored message from: ${message?.chat?.id}`);
+        console.log(`[Webhook] Ignored unauthorized chat ID: ${message?.chat?.id}`);
         return res.status(200).json({ ok: true });
     }
 
@@ -118,7 +128,60 @@ module.exports = async (req, res) => {
             await sendTelegram(chatId, `🛠️ *HASIL ANALISA ERROR LURAH*\n\n${fixResponse}`);
         }
         else {
-            await sendTelegram(chatId, "Maaf, Lurah belum mengerti perintah itu. Gunakan /start untuk bantuan.");
+            // Conversational Mode: Talk like Local Agent (Antigravity/Lurah)
+            await sendTelegram(chatId, "⏳ Memproses pemikiran...");
+
+            const { data: vault } = await supabase.from('agent_vault').select('content, category');
+            const protocols = vault?.filter(v => v.category === 'protocol').map(v => v.content).join('\n\n');
+            const skills = vault?.filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
+
+            const prompt = `
+                Kamu adalah "Lurah Ekosistem" (atau Antigravity), Agen Otonom Tingkat Senior (Senior Web3 Staff Engineer) untuk proyek Crypto Disco App.
+                Pengguna saat ini sedang bekerja secara remote melalui Telegram, jauh dari PC lokal.
+                
+                Gaya Bicaramu:
+                - Profesional, sangat cerdas, responsif, dan langsung ke intinya (seperti saat kamu bekerja di Cursor IDE).
+                - Gunakan Bahasa Indonesia.
+                - Jika diminta untuk melakukan tugas, tulislah pemikiranmu, lalu berikan blok kode (code blocks) persis apa yang harus dirubah (diff/patch) atau panduan eksekusi "copy-paste" untuk pengguna.
+                - Sertakan jaminan keamanan (Bytecode Impact, Gas Impact, Zero Trust).
+
+                [PERTANYAAN/PERINTAH DARI OWNER]:
+                ${text}
+
+                PROTOKOL ARSITEKTUR REPOSITORY INI (.cursorrules):
+                ${protocols || 'Tidak tersedia'}
+
+                KEAHLIAN AUTOMATION DAN SENTINEL (SKILLS):
+                ${skills || 'Tidak tersedia'}
+                
+                Pastikan respons formatnya rapi menggunakan Markdown Telegram.
+            `;
+
+            let chatResponse = "Gagal menghubungi AI Service.";
+            if (geminiApiKey) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.error) {
+                        chatResponse = `ℹ️ Analisa AI tertunda: ${result.error.message}`;
+                    } else {
+                        chatResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak merespons.";
+                    }
+                } catch (aiErr) {
+                    console.error('❌ AI Fetch Error:', aiErr.message);
+                }
+            }
+
+            if (chatResponse.length > 4000) {
+                chatResponse = chatResponse.substring(0, 4000) + '\n... (Pesan terlalu panjang untuk Telegram)';
+            }
+            await sendTelegram(chatId, chatResponse);
         }
 
         return res.status(200).json({ ok: true });
@@ -130,6 +193,10 @@ module.exports = async (req, res) => {
 };
 
 async function sendTelegram(chatId, text) {
+    if (process.env.LURAH_LOCAL_MODE === 'true') {
+        console.log('\n🤖 [LURAH DI TERMINAL] 🤖\n' + text + '\n-------------------------\n');
+    }
+
     const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
