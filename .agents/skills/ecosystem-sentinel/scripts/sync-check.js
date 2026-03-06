@@ -12,7 +12,7 @@ const RULES_PATH = path.join(ROOT_DIR, '.cursorrules');
 
 function parseEnv(content) {
     const env = {};
-    content.split('\n').forEach(line => {
+    content.split(/\r?\n/).forEach(line => {
         // Match key=value, ignoring comments and handling optional quotes
         const match = line.match(/^\s*([^#=\s]+)\s*=\s*(.*)$/);
         if (match) {
@@ -45,8 +45,26 @@ function auditSync() {
     const env = parseEnv(envContent);
 
     const checkList = [
-        { key: 'VITE_DAILY_APP_ADDRESS', label: 'DailyApp V12', envKey: 'VITE_DAILY_APP_ADDRESS' },
-        { key: 'VITE_RAFFLE_ADDRESS', label: 'Raffle V2', envKey: 'VITE_RAFFLE_ADDRESS' }
+        {
+            label: 'DailyApp V12',
+            envKey: 'VITE_V12_CONTRACT_ADDRESS',
+            cursorrulesAddr: '0xfc12f4FEFf825860c5145680bde38BF222cC669A'
+        },
+        {
+            label: 'Raffle V2',
+            envKey: 'VITE_RAFFLE_ADDRESS',
+            cursorrulesAddr: '0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08'
+        },
+        {
+            label: 'MasterX V2',
+            envKey: 'VITE_MASTER_X_ADDRESS',
+            cursorrulesAddr: '0x78a566a11AcDA14b2A4F776227f61097C7381C84'
+        },
+        {
+            label: 'CMS V2',
+            envKey: 'VITE_CMS_CONTRACT_ADDRESS',
+            cursorrulesAddr: '0x555D06933CC45038c42a1ba1F74140A5e4E0695d'
+        }
     ];
 
     let hasMismatch = false;
@@ -54,22 +72,20 @@ function auditSync() {
     console.log("\n--- Contract Address Sync ---");
     checkList.forEach(item => {
         const envAddr = env[item.envKey]?.toLowerCase();
-        // Simple regex to find the address in .cursorrules
-        const ruleRegex = new RegExp(`${item.key}\\s*[:=]\\s*(0x[a-fA-F0-9]{40})`, 'i');
-        const ruleMatch = rulesContent.match(ruleRegex);
-        const ruleAddr = ruleMatch ? ruleMatch[1].toLowerCase() : null;
+        const expectedAddr = item.cursorrulesAddr.toLowerCase();
+        const inCursorrules = rulesContent.toLowerCase().includes(expectedAddr);
 
         if (!envAddr) {
             console.warn(`⚠️ Warning: ${item.envKey} missing in .env`);
-        } else if (!ruleAddr) {
-            console.warn(`⚠️ Warning: ${item.key} missing in .cursorrules`);
-        } else if (envAddr !== ruleAddr) {
+        } else if (!inCursorrules) {
+            console.warn(`⚠️ Warning: ${item.label} address not found in .cursorrules`);
+        } else if (envAddr !== expectedAddr) {
             console.error(`❌ Mismatch [${item.label}]:`);
             console.error(`   .env:         ${envAddr}`);
-            console.error(`   .cursorrules: ${ruleAddr}`);
+            console.error(`   .cursorrules: ${expectedAddr}`);
             hasMismatch = true;
         } else {
-            console.log(`✅ ${item.label} synchronized: ${envAddr}`);
+            console.log(`✅ ${item.label} (${item.envKey}): synchronized`);
         }
     });
 
