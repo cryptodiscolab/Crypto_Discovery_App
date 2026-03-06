@@ -28,13 +28,34 @@ async function handleClaim(req, res) {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward').eq('id', task_id).single();
-        const xp = task?.xp_reward || 0;
+        let xp = 0;
+        let targetId = null;
+
+        if (task_id && task_id.startsWith('raffle_buy_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
+            xp = setting?.points_value || 500;
+            targetId = task_id.replace('raffle_buy_', '');
+        } else {
+            const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward, target_id').eq('id', task_id).single();
+            xp = task?.xp_reward || 0;
+            targetId = task?.target_id;
+        }
+
+        // Anti-Cheat: Check for target duplication
+        if (targetId) {
+            const { count } = await supabaseAdmin
+                .from('user_task_claims')
+                .select('id', { count: 'exact', head: true })
+                .eq('wallet_address', wallet_address.toLowerCase())
+                .eq('target_id', targetId);
+            if (count > 0) return res.status(401).json({ error: '[Security] Target account already claimed' });
+        }
 
         const { error } = await supabaseAdmin.from('user_task_claims').insert({
             wallet_address: wallet_address.toLowerCase(),
             task_id,
-            xp_earned: xp
+            xp_earned: xp,
+            target_id: targetId
         });
 
         if (error) throw error;
@@ -51,15 +72,36 @@ async function handleVerify(req, res) {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward').eq('id', task_id).single();
-        const xp = task?.xp_reward || 0;
+        let xp = 0;
+        let targetId = null;
+
+        if (task_id && task_id.startsWith('raffle_buy_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
+            xp = setting?.points_value || 500;
+            targetId = task_id.replace('raffle_buy_', '');
+        } else {
+            const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward, target_id').eq('id', task_id).single();
+            xp = task?.xp_reward || 0;
+            targetId = task?.target_id;
+        }
+
+        // Anti-Cheat: Check for target duplication
+        if (targetId) {
+            const { count } = await supabaseAdmin
+                .from('user_task_claims')
+                .select('id', { count: 'exact', head: true })
+                .eq('wallet_address', wallet_address.toLowerCase())
+                .eq('target_id', targetId);
+            if (count > 0) return res.status(401).json({ error: '[Security] Target account already claimed' });
+        }
 
         const { error } = await supabaseAdmin.from('user_task_claims').insert({
             wallet_address: wallet_address.toLowerCase(),
             task_id,
             platform,
             action_type,
-            xp_earned: xp
+            xp_earned: xp,
+            target_id: targetId
         });
 
         if (error) throw error;
@@ -77,13 +119,32 @@ async function handleSocialVerify(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         // 2. Security Check: Fetch authoritative reward from DB
-        const { data: task } = await supabaseAdmin
-            .from('daily_tasks')
-            .select('xp_reward')
-            .eq('id', task_id)
-            .single();
+        let xp = 0;
+        let targetId = null;
 
-        const xp = task?.xp_reward || 0;
+        if (task_id && task_id.startsWith('raffle_buy_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
+            xp = setting?.points_value || 500;
+            targetId = task_id.replace('raffle_buy_', '');
+        } else {
+            const { data: task } = await supabaseAdmin
+                .from('daily_tasks')
+                .select('xp_reward, target_id')
+                .eq('id', task_id)
+                .single();
+            xp = task?.xp_reward || 0;
+            targetId = task?.target_id;
+        }
+
+        // Anti-Cheat: Check for target duplication
+        if (targetId) {
+            const { count } = await supabaseAdmin
+                .from('user_task_claims')
+                .select('id', { count: 'exact', head: true })
+                .eq('wallet_address', wallet_address.toLowerCase())
+                .eq('target_id', targetId);
+            if (count > 0) return res.status(401).json({ error: '[Security] Target account already claimed' });
+        }
 
         // 3. Record Claim (Zero-Trust)
         const { error } = await supabaseAdmin.from('user_task_claims').insert({
@@ -91,7 +152,8 @@ async function handleSocialVerify(req, res) {
             task_id,
             platform: platform || 'regular',
             action_type: action_type || 'task',
-            xp_earned: xp
+            xp_earned: xp,
+            target_id: targetId
         });
 
         if (error) {

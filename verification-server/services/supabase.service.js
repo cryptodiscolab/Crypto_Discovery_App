@@ -97,7 +97,21 @@ class SupabaseService {
             if (checkError) throw checkError;
             if (existing) {
                 console.warn(`[Supabase] Claim already exists for wallet ${walletAddress} and task ${taskId}`);
-                return { success: false, error: 'Task already claimed in database today' }; // Keep original error message for consistency
+                return { success: false, error: 'Task already claimed in database today' };
+            }
+
+            // NEW: Anti-Cheat - Double check by target_id if provided
+            if (targetId) {
+                const hasClaimedTarget = await this.hasAlreadyClaimedTarget(
+                    normalizedWallet,
+                    platform,
+                    actionType,
+                    targetId
+                );
+                if (hasClaimedTarget) {
+                    console.warn(`[Supabase] Anti-Cheat: User ${walletAddress} already claimed target ${targetId}`);
+                    return { success: false, error: '[Security] Target account already claimed by this user' };
+                }
             }
 
             // Insert new claim
@@ -146,21 +160,142 @@ class SupabaseService {
     }
 
     /**
+     * Link a Twitter account to a wallet address (Sybil Protection)
+     * @param {string} walletAddress - User's wallet
+     * @param {string} twitterId - Twitter numerical ID
+     * @param {string} twitterUsername - Twitter handle
+     */
+    async linkTwitterAccount(walletAddress, twitterId, twitterUsername) {
+        if (!this.client) throw new Error('Supabase client not initialized');
+        const normalizedWallet = walletAddress.toLowerCase();
+
+        try {
+            // Check if twitterId is already linked to another wallet
+            const { data: existing, error: checkError } = await this.client
+                .from('user_profiles')
+                .select('wallet_address')
+                .eq('twitter_id', twitterId)
+                .neq('wallet_address', normalizedWallet)
+                .maybeSingle();
+
+            if (checkError) throw checkError;
+            if (existing) {
+                throw new Error(`[Security] Twitter account ${twitterUsername} is already linked to wallet ${existing.wallet_address}. Sybil attack blocked.`);
+            }
+
+            // Update profile with twitter data
+            const { error } = await this.client
+                .from('user_profiles')
+                .update({
+                    twitter_id: twitterId,
+                    twitter_username: twitterUsername,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('wallet_address', normalizedWallet);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('[SupabaseService] Error linking twitter:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Link a Telegram account to a wallet (Sybil Protection)
+     */
+    async linkTelegramAccount(walletAddress, telegramId, telegramUsername) {
+        return this._linkSocialAccount(walletAddress, 'telegram_id', 'telegram_username', telegramId, telegramUsername);
+    }
+
+    /**
+     * Link a TikTok account to a wallet
+     */
+    async linkTikTokAccount(walletAddress, tiktokId, tiktokUsername) {
+        return this._linkSocialAccount(walletAddress, 'tiktok_id', 'tiktok_username', tiktokId, tiktokUsername);
+    }
+
+    /**
+     * Link an Instagram account to a wallet
+     */
+    async linkInstagramAccount(walletAddress, instagramId, instagramUsername) {
+        return this._linkSocialAccount(walletAddress, 'instagram_id', 'instagram_username', instagramId, instagramUsername);
+    }
+
+    /**
+     * Generic social account linking with Identity Lock
+     * @private
+     */
+    async _linkSocialAccount(walletAddress, idColumn, userColumn, socialId, socialUsername) {
+        if (!this.client) throw new Error('Supabase client not initialized');
+        const normalizedWallet = walletAddress.toLowerCase();
+
+        try {
+            const { data: existing, error: checkError } = await this.client
+                .from('user_profiles')
+                .select('wallet_address')
+                .eq(idColumn, socialId)
+                .neq('wallet_address', normalizedWallet)
+                .maybeSingle();
+
+            if (checkError) throw checkError;
+            if (existing) {
+                throw new Error(`[Security] This social account is already linked to wallet ${existing.wallet_address}.`);
+            }
+
+            const { error } = await this.client
+                .from('user_profiles')
+                .update({
+                    [idColumn]: socialId,
+                    [userColumn]: socialUsername,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('wallet_address', normalizedWallet);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error(`[SupabaseService] Error linking social account (${idColumn}):`, error.message);
+            throw error;
+        }
+    }
+
+    /**
      * Sync / Upsert user profile. Called when wallet connects.
      * Zero-Trust: only called from backend after signature verification.
      * @param {string} walletAddress - Lowercase wallet address
      * @param {number|null} fid - Optional Farcaster ID
+     * @param {Object|null} twitterData - Optional { id, username }
+     * @param {Object|null} telegramData - Optional { id, username }
+     * @param {Object|null} tiktokData - Optional { id, username }
+     * @param {Object|null} instagramData - Optional { id, username }
      */
-    async syncUserProfile(walletAddress, fid = null) {
+    async syncUserProfile(walletAddress, fid = null, twitterData = null, telegramData = null, tiktokData = null, instagramData = null) {
         if (!this.client) throw new Error('Supabase client not initialized');
 
         try {
             const upsertData = {
                 wallet_address: walletAddress,
-                last_seen_at: new Date().toISOString(),
+                last_login_at: new Date().toISOString(),
             };
 
             if (fid) upsertData.fid = parseInt(fid);
+            if (twitterData) {
+                upsertData.twitter_id = twitterData.id;
+                upsertData.twitter_username = twitterData.username;
+            }
+            if (telegramData) {
+                upsertData.telegram_id = telegramData.id;
+                upsertData.telegram_username = telegramData.username;
+            }
+            if (tiktokData) {
+                upsertData.tiktok_id = tiktokData.id;
+                upsertData.tiktok_username = tiktokData.username;
+            }
+            if (instagramData) {
+                upsertData.instagram_id = instagramData.id;
+                upsertData.instagram_username = instagramData.username;
+            }
 
             const { data, error } = await this.client
                 .from('user_profiles')
@@ -171,8 +306,21 @@ class SupabaseService {
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                // Security Check: Handle Unique Identity Lock Violation
+                if (error.code === '23505') {
+                    const detail = error.details || error.message || '';
+                    let platform = 'Social account';
+                    if (detail.includes('fid')) platform = 'Farcaster FID';
+                    else if (detail.includes('twitter_id')) platform = 'Twitter ID';
+                    else if (detail.includes('telegram_id')) platform = 'Telegram ID';
+                    else if (detail.includes('tiktok_id')) platform = 'TikTok ID';
+                    else if (detail.includes('instagram_id')) platform = 'Instagram ID';
 
+                    throw new Error(`[Security Alert] ${platform} is already linked to another wallet. Identity Lock violation blocked.`);
+                }
+                throw error;
+            }
             return data;
         } catch (error) {
             console.error('[SupabaseService] Error syncing profile:', error.message);
@@ -196,13 +344,29 @@ class SupabaseService {
             // Ensure profile exists before awarding XP
             await this.ensureProfile(walletAddress);
 
+            // 🔐 Zero-Trust Enhancement: Lookup reward from point_settings for virtual tasks
+            let finalXp = xpReward;
+            if (typeof taskId === 'string' && (taskId.startsWith('raffle_buy') || taskId.includes('_'))) {
+                const activityName = taskId.startsWith('raffle_buy') ? 'raffle_buy' : taskId;
+                const { data: setting } = await this.client
+                    .from('point_settings')
+                    .select('points_value')
+                    .eq('activity_key', activityName)
+                    .single();
+
+                if (setting) {
+                    finalXp = setting.points_value;
+                    console.log(`[Supabase] Overriding XP with Ground Truth for ${activityName}: ${finalXp}`);
+                }
+            }
+
             // 1. Insert claim record
             const { data: claim, error: claimError } = await this.client
                 .from('user_task_claims')
                 .insert({
                     wallet_address: walletAddress,
                     task_id: String(taskId),
-                    xp_earned: xpReward,
+                    xp_earned: finalXp,
                     claimed_at: new Date().toISOString(),
                 })
                 .select()
@@ -237,6 +401,35 @@ class SupabaseService {
                 .eq('wallet_address', walletAddress.toLowerCase());
         } catch (err) {
             console.error('[SupabaseService] Error updating score:', err);
+        }
+    }
+
+    /**
+     * Sync a batch of tasks from Admin Dashboard to daily_tasks table.
+     * Uses upsert to handle new or updated tasks.
+     * @param {Array} tasks - Array of task objects
+     */
+    async syncTaskBatch(tasks) {
+        if (!this.client) throw new Error('Supabase client not initialized');
+
+        try {
+            const { data, error } = await this.client
+                .from('daily_tasks')
+                .upsert(tasks.map(task => ({
+                    ...task,
+                    is_active: true, // Admin-created tasks are active by default in sync
+                    updated_at: new Date().toISOString()
+                })), {
+                    onConflict: 'platform,action_type,target_id', // Prevent duplicates
+                    ignoreDuplicates: false
+                })
+                .select();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('[SupabaseService] Error syncing task batch:', error.message);
+            throw error;
         }
     }
 }

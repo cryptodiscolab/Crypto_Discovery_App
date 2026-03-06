@@ -42,6 +42,27 @@ module.exports = async (req, res) => {
             .gt('claimed_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
             .gt('xp_earned', 5000); // Threshold anomali
 
+        // C. NEW: Cek Sybil Attacks (Satu akun sosial diklaim banyak wallet)
+        const { data: claimsForSybil } = await supabase
+            .from('user_task_claims')
+            .select('wallet_address, target_id, platform')
+            .not('target_id', 'is', 'null')
+            .gt('claimed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Cek 7 hari ke belakang
+
+        const targetMap = {};
+        claimsForSybil?.forEach(c => {
+            if (!targetMap[c.target_id]) targetMap[c.target_id] = new Set();
+            targetMap[c.target_id].add(c.wallet_address);
+        });
+
+        const sybilSuspects = Object.entries(targetMap)
+            .filter(([_, wallets]) => wallets.size > 1)
+            .map(([target, wallets]) => ({
+                target_id: target,
+                wallet_count: wallets.size,
+                wallets: Array.from(wallets)
+            }));
+
         // 3. Gunakan Otak AI untuk Analisa
         const prompt = `
             Kamu adalah "Lurah Ekosistem", Agen Otonom untuk Crypto Disco App.
@@ -53,14 +74,15 @@ module.exports = async (req, res) => {
             KEAHLIAN SENTINEL:
             ${skills || 'Tidak ada skill terdefinisi.'}
             
-            DATA AUDIT (24 JAM TERAKHIR):
-            - User Baru: ${JSON.stringify(newUsers || [])}
-            - Potensi Anomali XP: ${JSON.stringify(anomalies || [])}
+            DATA AUDIT (TEMUAN TERBARU):
+            - User Baru (24h): ${JSON.stringify(newUsers || [])}
+            - Potensi Anomali XP (24h): ${JSON.stringify(anomalies || [])}
+            - Potensi Sybil Suspects (Target ID diklaim > 1 wallet): ${JSON.stringify(sybilSuspects || [])}
             
             Berikan laporan ringkas (Bahasa Indonesia) dengan format berikut:
             1. Ringkasan kesehatan ekosistem (dalam bentuk Tabel ASCII jika ada data statistik).
-            2. Daftar pelanggaran atau anomali (dalam bentuk Tabel ASCII).
-            3. Rekomendasi tindakan untuk Admin.
+            2. Daftar potensi Sybil Attacks atau anomali (dalam bentuk Tabel ASCII). Sertakan wallet mana saja yang mencurigakan.
+            3. Rekomendasi tindakan mitigasi (misal: blacklist wallet tertentu).
             
             Gunakan blok kode (backticks) untuk tabel agar terlihat rapi di Telegram (monospaced).
         `;
@@ -68,7 +90,9 @@ module.exports = async (req, res) => {
         let aiResponse = "AI Analysis not available (Missing API Key).";
         if (geminiApiKey) {
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`, {
+                // Update to stable Gemini 1.5 Flash (or 2.0 if available)
+                const modelId = "gemini-1.5-flash";
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

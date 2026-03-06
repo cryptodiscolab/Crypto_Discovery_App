@@ -48,13 +48,23 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 ### 4. Database Schema Integrity (NEW)
 - **SQL Migration Mandate**: Setiap fitur baru yang bergantung pada tabel database (misal: `user_privileges`) WAJIB menyertakan file SQL Migration (`CREATE TABLE IF NOT EXISTS`).
 - **Graceful Error Handling**: Frontend harus mendeteksi jika tabel belum ada (fail gracefully) dan memberikan instruksi admin yang jelas (SQL script) daripada sekadar crash.
+- **ABI & Implementation Parity (NEW)**: Setiap kali melakukan perubahan logika di Smart Contract, ABI di `abis_data.txt` HARUS diupdate secara atomik agar tidak terjadi "Method Not Found" pada frontend.
 
-### 4. ABI Architecture Standard (Proxy Pattern)
+### 5. ABI Architecture Standard (Proxy Pattern)
 ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untuk mencegah Rollup AST stack overflow.
 
-### 5. Seasonal & Tier Upgrade Management (NEW)
+### 6. Seasonal & Tier Upgrade Management (NEW)
 - **Lazy Reset Protocol**: Memastikan integrasi frontend mendukung reset tier berbasis `currentSeasonId` secara transparan (Lazy Reset di Contract).
 - **XP-Burn Coordination**: Sinkronisasi mutasi XP di database (`user_task_claims`) secara negatif saat terjadi `TierUpgraded` event untuk mencerminkan burn XP.
+- **Mandatory Security Audit**:
+    - Cek apakah fungsi baru diproteksi oleh `onlyRole(ADMIN_ROLE)`.
+    - Cek apakah ada input user yang tidak divalidasi (`require` statements).
+    - Cek apakah `.env` tetap bersih dari data hardcoded.
+- **Supabase Security Mandate**:
+    - Dilarang membuat tabel tanpa kebijakan RLS yang ketat.
+    - Gunakan PostgreSQL Function/Trigger untuk data yang butuh integritas tinggi (misal: saldo XP).
+- **Professional Sync Protocol**: Memastikan audit data flow dari Contract -> Backend -> Supabase Table berjalan tanpa "data ghosting" (data hilang di tengah jalan).
+
 - **On-Chain Tier Gating**: Verifikasi kepemilikan SBT (Soulbound Token) via `masterX.users(address).tier` sebelum mengizinkan fitur eksklusif di frontend.
 
 ## 🛡️ Operational Checklist

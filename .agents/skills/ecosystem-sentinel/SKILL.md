@@ -14,6 +14,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 ### 2. Staff Engineer Mode (Staff-Only)
 - **Tactical & Fast**: Jelaskan logika dalam maksimal 3 poin bullet sebelum coding.
+- **Step-by-Step Mandate**: Bekerja secara bertahap dan melakukan verifikasi silang pada seluruh layer (Contract-ABI-DB-Frontend) untuk mencegah regresi atau mismatch.
 - **Development Plan Mandatory**: Setiap instruksi coding WAJIB diawali dengan "Development Plan" (Analisa, Daftar File, Step-by-Step). Tunggu konfirmasi "LANJUT" atau "GO" sebelum melakukan WRITE.
 - **Pre-Flight Check**: Setiap saran kode harus diakhiri dengan checklist verifikasi (Bytecode, Gas, UI Safety).
 
@@ -65,6 +66,23 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Contract-to-DB Sync**: Memastikan parameter di Smart Contract (misal: `minRewardPoolUSD`) tercermin dengan benar di tabel Supabase (`point_settings` / `campaigns`).
 - **Seasonal Audit & Reset**: Memastikan script `audit-bundle` mendeteksi `SeasonReset` dan mengarsipkan data `user_season_history` sebelum mereset `tier` di `user_profiles`.
 - **Admin-to-App Sync**: Memastikan dashboard Admin memiliki kendali penuh atas fitur baru tanpa perlu campur tangan developer (No manual coding for Admin actions).
+- **Full-Stack Synchronization Guard (NEW)**: WAJIB memverifikasi integritas mata rantai: **Fitur -> Admin -> Database -> ABI -> Smart Contract**. Jika satu mata rantai hilang (misal: ABI mismatch), Agent dilarang melanjutkan tanpa memperbaiki rantai tersebut.
+- **Multi-Platform Identity Lock Audit**: Memastikan setiap integrasi sosial (Twitter, Farcaster, Telegram, TikTok, Instagram) mengikuti aturan **1 Akun : 1 Wallet**. Gunakan `supabaseService` untuk verifikasi persistensi ID.
+- **Social Action XP Alignment**: Memastikan aksi sosial baru (seperti TikTok Comment/Repost) selalu dipetakan ke `point_settings` di database untuk mencegah inkonsistensi reward.
+- **Dynamic Task Verification (NEW)**: WAJIB memastikan bahwa *system-generated tasks* (seperti `raffle_buy_X`, `raffle_win_X`) membaca reward XP-nya secara dinamis dari tabel `point_settings`, BUKAN dari tabel `daily_tasks`. Pantau fungsi `handleVerify`/`handleClaim` di *backend* agar selalu menerapkan pengecekan `.startsWith()` guna mencegah insiden kebocoran XP (0 XP Bug).
+- **Security & Audit Protocol (STAFF-ONLY)**: Setiap perubahan harus diaudit terhadap:
+    - **Leaked Secrets**: JANGAN PERNAH menyertakan `PRIVATE_KEY` atau `API_KEY` dalam commit.
+    - **Bytecode Limit (24KB)**: Gunakan `npx hardhat size-contracts` jika ragu.
+    - **Regression Check**: Pastikan fitur eksis tidak terganggu oleh penambahan fitur baru.
+    - **Database RLS Audit**: Verifikasi kebijakan keamanan Supabase untuk setiap tabel baru yang terdampak.
+
+### 10. Professional Engineering Ownership (NEW)
+- **Defensive Flow**: Setiap API call wajib memiliki error handling dan fallback UI.
+- **End-to-End Test**: Melakukan manual probe atau unit test untuk memverifikasi bahwa data dari Blockchain tercatat benar di Database dan muncul di UI.
+
+### 11. Self-Audit & Auto-Remind (MANDATORY)
+- **Protocol Refresh**: Dilarang memulai task besar tanpa melakukan `view_file` pada `.cursorrules` dan `SKILL.md`.
+- **Sentinel Conscience**: Setiap kali memberikan `Development Plan`, Agent wajib menyertakan poin: "✅ Protocol & Security Audit: Verified".
 
 ### 7. Viral Growth & Social Proof (NEW)
 - **Referral Mandate**: Setiap user baru wajib dicek `ref` param-nya di URL dan disimpan di `localStorage` sebelum sync profile.
@@ -94,7 +112,9 @@ Agent kini memiliki kemampuan untuk bekerja secara otonom melalui Telegram saat 
 - **Automation via Chat**: Mampu menerima deskripsi error atau permintaan fitur baru via Telegram, melakukan analisa berdasarkan memori `agent_vault`, dan memberikan "Copy-Paste Execution Plan".
 - **Code Patching**: Jika diminta memperbaiki kode secara remote, Agent harus memberikan blok kode DIFF atau file utuh yang sudah diperbaiki sehingga pengguna tinggal melakukan "Update File" di Vercel atau environment-nya.
 - **Security Command**: Hanya merespons chat dari `TELEGRAM_CHAT_ID` yang terverifikasi dan mewajibkan penggunaan `X-Telegram-Bot-Api-Secret-Token` pada webhook untuk mencegah serangan *spoofing*.
-- **Task Delegation**: Jika pengguna memberikan perintah yang membutuhkan eksekusi terminal berat, Agent akan menyarankan langkah-langkah CMD yang bisa dijalankan di lokal atau otomatisasi via GitHub Actions.
+- **Remote Audit & Identity Check**: Mampu menjalankan audit identitas user lengkap via perintah `/user <wallet>` di Telegram bot, menampilkan seluruh link sosial yang terkunci (Identity Lock).
+- **The Traceability Guard**: Protokol wajib untuk melakukan audit silang antara **Bot Telegram** dan **Admin Dashboard** untuk setiap fitur baru. Dilarang menutup task sebelum backend API, database trigger, dan UI dashboard terverifikasi sinkron 100%.
+- **Self-Managed Auditor Mode**: Agent secara mandiri mengaudit seluruh fitur aplikasi tanpa instruksi spesifik, membuat daftar backlog di `task.md`, dan meminta konfirmasi manual user untuk lingkungan eksternal (SQL GUI/Vercel Env).
 
 ## 🏗️ Build Pipeline Guard
 

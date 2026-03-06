@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const verifyRoutes = require('../routes/verify.routes');
 const userRoutes = require('../routes/user.routes');
+const adminRoutes = require('../routes/admin.routes');
 
 const app = express();
 
@@ -14,35 +15,36 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     const config = require('../config');
     const apiSecret = config.security.apiSecret;
+    const nodeEnv = config.server.nodeEnv || 'development';
 
-    // Skip auth for health check and telegram webhook
-    if (req.path === '/api/verify/health' || req.path === '/' || req.path === '/api/webhook/telegram') {
+    // Skip auth for health check, root, and telegram webhook
+    const publicPaths = ['/api/verify/health', '/', '/api/webhook/telegram'];
+    if (publicPaths.includes(req.path)) {
         return next();
     }
 
-    if (!apiSecret) {
-        if (config.server.nodeEnv === 'production') {
-            console.error('❌ CRITICAL SECURITY ERROR: API_SECRET is not configured in production!');
-            return res.status(500).json({
-                success: false,
-                error: 'Server configuration error: Security key missing',
-            });
-        }
-        console.warn('⚠️ WARNING: API_SECRET is not configured. Server is running in insecure mode (Development only).');
-        return next();
+    // 1. Production Guard: Strict enforcement
+    if (nodeEnv === 'production' && !apiSecret) {
+        console.error('❌ CRITICAL SECURITY ALERT: API_SECRET is missing in production environment!');
+        return res.status(500).json({
+            success: false,
+            error: '[Security] Server configuration error: API_SECRET is required.',
+        });
     }
 
+    // 2. Secret Verification
     const providedSecret = req.headers['x-api-secret'];
     const isCron = req.headers['authorization'] === `Bearer ${process.env.CRON_SECRET}`;
 
-    if (isCron) return next(); // Allow Vercel Cron automatically
+    if (isCron) return next();
 
-    if (!providedSecret || providedSecret !== apiSecret) {
+    if (apiSecret && providedSecret !== apiSecret) {
         return res.status(401).json({
             success: false,
             error: 'Unauthorized: Invalid or missing X-API-SECRET header',
         });
     }
+
     next();
 });
 
@@ -61,22 +63,20 @@ app.use('/api/cron/:job', async (req, res) => {
     }
 });
 
-// 🚀 Rate Limiting: Prevent Neynar/Twitter API spam
+// 🚀 Robust Rate Limiting: Protection against platform API exhaustion
 const requestCounts = new Map();
-const LIMIT = 10; // requests per minute
+const LIMIT = 15; // Increased slightly for UX
 const WINDOW = 60 * 1000;
 
 app.use('/api/verify', (req, res, next) => {
     // Health check bypass
     if (req.path === '/health') return next();
 
-    const identifiers = [
-        req.headers['x-forwarded-for'],
-        req.socket.remoteAddress,
-        req.body?.userAddress
-    ].filter(Boolean);
+    // Multi-layer identifier (IP + Wallet)
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+    const wallet = req.body?.userAddress?.toLowerCase();
+    const id = wallet || ip || 'anonymous';
 
-    const id = identifiers[0] || 'default';
     const now = Date.now();
     const data = requestCounts.get(id) || { count: 0, reset: now + WINDOW };
 
@@ -89,10 +89,12 @@ app.use('/api/verify', (req, res, next) => {
     requestCounts.set(id, data);
 
     if (data.count > LIMIT) {
+        const waitSeconds = Math.ceil((data.reset - now) / 1000);
+        console.warn(`[Security] Rate limit triggered for ID: ${id}. Waiting ${waitSeconds}s`);
         return res.status(429).json({
             success: false,
-            error: 'Rate limit exceeded. Please wait 1 minute before verifying more tasks.',
-            retryAfter: Math.ceil((data.reset - now) / 1000)
+            error: 'Rate limit exceeded. Please wait a moment to prevent social platform spam.',
+            retryAfter: waitSeconds
         });
     }
     next();
@@ -108,6 +110,7 @@ app.use((req, res, next) => {
 app.use('/api/verify', verifyRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/tasks', userRoutes); // /api/tasks/verify is handled in userRoutes
+app.use('/api/admin', adminRoutes);
 
 // --- NEW: Telegram Webhook Handler ---
 app.post('/api/webhook/telegram', async (req, res) => {

@@ -105,18 +105,49 @@ export function useRaffle() {
     };
 
     const claimPrize = async (raffleId) => {
-        const hash = await writeContractAsync({
-            address: RAFFLE_ADDRESS,
-            abi: ABIS.RAFFLE,
-            functionName: 'claimRafflePrize',
-            args: [BigInt(raffleId)],
-        });
+        const tid = toast.loading("Submitting prize claim...");
+        try {
+            const hash = await writeContractAsync({
+                address: RAFFLE_ADDRESS,
+                abi: ABIS.RAFFLE,
+                functionName: 'claimRafflePrize',
+                args: [BigInt(raffleId)],
+            });
 
-        if (hash) {
-            toast.success("Prize claim submitted!");
-            if (refetch) refetch();
+            if (hash) {
+                toast.success("🎉 Prize claimed on-chain! Signing for XP bonus...", { id: tid });
+                try {
+                    const timestamp = new Date().toISOString();
+                    const message = `Claim NFT Raffle Prize\nRaffle ID: ${raffleId}\nWinner: ${address.toLowerCase()}\nTime: ${timestamp}`;
+                    const signature = await signMessageAsync({ message });
+
+                    const response = await fetch('/api/raffle/claim-prize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            wallet_address: address,
+                            signature,
+                            message,
+                            raffle_id: raffleId,
+                            tx_hash: hash
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success && result.xpAwarded) {
+                        toast.success(`You won! +${result.xpAwarded} XP added! 🏆`);
+                    }
+                    if (refetch) refetch();
+                } catch (e) {
+                    console.warn("XP Awarding skipped:", e.message);
+                    toast.success("Prize claimed! XP sync pending.", { id: tid });
+                }
+            }
+            return hash;
+        } catch (e) {
+            toast.error(e.shortMessage || "Claim failed", { id: tid });
+            throw e;
         }
-        return hash;
     };
 
     const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH }) => {

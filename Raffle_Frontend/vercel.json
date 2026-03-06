@@ -37,6 +37,10 @@
             "destination": "/api/admin/tasks-bundle?action=:action"
         },
         {
+            "source": "/api/raffle/:action",
+            "destination": "/api/raffle-bundle?action=:action"
+        },
+        {
             "source": "/api/admin/:action(check|sync-tiers)",
             "destination": "/api/admin/admin-bundle?action=:action"
         },

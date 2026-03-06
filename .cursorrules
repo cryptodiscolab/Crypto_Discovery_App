@@ -12,193 +12,121 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Bytecode Limit**: 24KB (Spurious Dragon). If exceeded, propose contract splitting/modularization.
 - **Core Infrastructure (VERIFIED ADDRESSES - DO NOT GUESS):**
   - MasterX V2 (LATEST): `0x78a566a11AcDA14b2A4F776227f61097C7381C84` (`VITE_MASTER_X_ADDRESS`)
-  - MasterX V1 (Deprecated): `0xf074b0457d5c092bb67e62734B13C5f4cBC69e89` — jangan gunakan
   - Raffle (Main): `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` (`VITE_RAFFLE_ADDRESS`)
   - DailyApp V12 (LATEST): `0xfc12f4FEFf825860c5145680bde38BF222cC669A` (`VITE_V12_CONTRACT_ADDRESS`)
-  - DailyApp V11 (Deprecated): `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` — baru diganti
   - CMS V2: `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` (`VITE_CMS_CONTRACT_ADDRESS`)
-  - API3 Airnode RRP: `0x2ab9f26E18b6103274414940251539D0105e2Add`
-  - API3 Airnode (Nodary): `0x6238772544f029ecaBfDED4300f13A3c4FE84E1D`
-  - Sponsor Wallet: `0x7186e5D35f126c3C809670F567b594582f3C7d61`
-  - Chainlink ETH/USD Feed: `0x4aDC67696bA383F43fD60604633031d935f9584b`
-- **Revenue Wallets:**
-  - Operations (20%): `0x73F76B2b436E2E50bB6F81A6e33a42875f1cDff3`
-  - Treasury (10%): `0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa`
 - **Reward Logic**: Must use `Accumulated Reward Per Share` with `1e18` precision.
 - **Safety**: `emergencyWithdraw` must always protect `totalLockedRewards`. Use `unchecked` blocks for non-overflowing arithmetic.
 
 ## 3. WEB3 FRONTEND INFRASTRUCTURE (WAGMI & RAINBOWKIT)
 - **Provider Stability**: NEVER use Wagmi hooks (e.g., `useAccount`) inside the body of the `Web3Provider` component itself.
-- **RainbowKit Mandatory**: ALWAYS ensure `import '@rainbow-me/rainbowkit/styles.css';` is present. If replacing `@coinbase/onchainkit`, remove all OnchainKit providers completely to prevent version collision.
+- **RainbowKit Mandatory**: ALWAYS ensure `import '@rainbow-me/rainbowkit/styles.css';` is present.
 - **Wallet Priority**: Base Smart Wallet is King. Always use `connectorsForWallets` to manually set `coinbaseWallet` at the very top of the list.
-- **RPC Fallback**: Always implement a fallback transport for Base and Base Sepolia (e.g., Alchemy URL + Public Base URL) to prevent 401/429 errors.
+- **RPC Fallback**: Always implement a fallback transport for Base and Base Sepolia to prevent 401/429 errors.
 
 ## 4. UI, CSS & "GLASS WALL" PREVENTION
-- **NO Heavy Animation**: DO NOT use `framer-motion`. Rely strictly on Native CSS Keyframes (`@keyframes`) and Tailwind classes.
+- **NO Heavy Animation**: DO NOT use `framer-motion`. Rely strictly on Native CSS Keyframes (@keyframes) and Tailwind classes.
 - **Z-Index & Pointer Events**: For fixed layouts (BottomNav/Header), always use `relative z-[9999] pointer-events-auto`.
-- **The "Glass Wall" Bug**: If buttons become unclickable, check for full-screen `div` overlays. Add `pointer-events-none` to background wrappers while keeping children `pointer-events-auto`.
+- **The "Glass Wall" Bug**: If buttons become unclickable, check for full-screen div overlays. Add `pointer-events-none` to background wrappers while keeping children `pointer-events-auto`.
 
 ## 5. AUTHENTICATION, ADMIN, & SECURITY (THE PROTECTOR)
-- **Master Admin Addresses (BOTH are authorized — DO NOT GUESS):**
+- **Master Admin Addresses:**
   - Primary: `0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B`
   - Secondary: `0x455DF75735d2a18c26f0AfDefa93217B60369fe5`
+- **Admin Tools (Telegram)**:
+  - `/audit`: Ecosystem audit.
+  - `/user <wallet>`: Full Social Identity Lock audit.
+  - `/daftar_task`: Manage active tasks.
 - **Admin FIDs**: `1477344` (Farcaster)
-- **Case-Insensitive EVM Checks**: ALWAYS use `.toLowerCase()` on both sides when comparing Ethereum/Base addresses to prevent "Identity Rejected" bugs.
+- **Case-Insensitive EVM Checks**: ALWAYS use `.toLowerCase()` on both sides when comparing Ethereum/Base addresses.
 - **Anti-Leak Policy**: Never output Private Keys or API Keys in plain text. Always use `.env`.
-- **Privacy First**: Keep everything local to IDX. Do not send code to untrusted 3rd party analysis tools.
 
 ## 6. NEXT-GEN INTEGRATIONS (NEYNAR & FARCASTER)
-- **Neynar SIWE Integration**: Use **Neynar SIWE (Sign-In with Ethereum)** to sync the connected Base wallet with the user's Farcaster FID.
+- **Neynar SIWE Integration**: Use Neynar SIWE to sync the connected Base wallet with the user's Farcaster FID.
 - **Neynar Client ID**: `0a715e62-512c-4b04-a51a-58b3ca51795d` (`VITE_NEYNAR_CLIENT_ID`)
-- **Neynar API Key**: Stored in `NEYNAR_API_KEY` and `VITE_NEYNAR_API_KEY` env vars (never hardcode).
-- Handle Neynar API Keys securely via Vercel Environment Variables.
-- Build SIWE as a separate, isolated layer only AFTER the base wallet connection is verified to be 100% stable.
+- **Identity Synchronization**: Build SIWE as a separate, isolated layer only AFTER the base wallet connection is verified.
 
 ## 7. OPERATIONAL MANDATE & OUTPUT FORMAT (STAFF ENGINEER MODE)
 - **Tactical & Fast**: Explain logic in 3 bullet points before coding.
 - **Pre-Flight Check**: Every code suggestion must end with a short verification checklist (Bytecode Impact, Gas Impact, UI/Z-Index Safety).
-- **Context Preservation**: Read `README.md` and `implementation_plan.md` before starting. Remind the developer to update tracking files after major milestones.
-- **Deep Reasoning**: Use "Chain of Thought" reasoning for complex bugs. Re-check code for Reentrancy or Logic flaws before finalization.
+- **Context Preservation**: Read README.md and implementation_plan.md before starting.
 
 ## 8. SECURITY & ARCHITECTURE RULES (STRICT ENFORCEMENT)
 
 ### 8.1 Zero Trust Frontend Policy
-- **FORBIDDEN:** Never suggest writing to sensitive database tables (e.g., `user_profiles`, `campaigns`, `user_claims`) directly from the Client-Side (Frontend).
-- **REQUIRED:** All sensitive "Write" operations (INSERT/UPDATE/DELETE) MUST go through a **Next.js API Route (Backend)**.
-- **REASON:** To prevent data tampering via browser dev tools. Frontend is for display and signing only.
+- **FORBIDDEN:** Never write to sensitive database tables (user_profiles, campaign_claims, etc) directly from the Frontend.
+- **REQUIRED:** All sensitive "Write" operations MUST go through a Backend API Route.
 
 ### 8.2 Authentication & Verification
-- **FORBIDDEN:** Do NOT suggest RLS policies that rely on custom headers (e.g., `current_setting('request.headers'...)`) for authentication. Headers can be spoofed.
-- **REQUIRED:** Use **Cryptographic Signature Verification** (SIWE or raw `viem.verifyMessage`) in the Backend API to prove user identity before updating data.
-- **TOOLING:** Use `viem` for all backend crypto verifications. Use `wagmi` for frontend signing.
+- **REQUIRED:** Use Cryptographic Signature Verification (SIWE or `viem.verifyMessage`) in the Backend API to prove user identity.
+- **TOOLING:** Use `viem` for backend crypto verifications.
 
 ### 8.3 Database Access (Supabase)
-- **CLIENT SIDE:** Use `createClient` with `ANON_KEY` only for **READ** operations (SELECT).
-- **SERVER SIDE:** Use `createClient` with `SERVICE_ROLE_KEY` inside API Routes (`app/api/...`) for **WRITE** operations.
-- **SAFETY:** Never expose `SERVICE_ROLE_KEY` in files starting with `VITE_` or `NEXT_PUBLIC_`. It belongs in `.env.local` only.
+- **CLIENT SIDE:** Use `createClient` with `ANON_KEY` only for READ operations.
+- **SERVER SIDE:** Use `createClient` with `SERVICE_ROLE_KEY` inside API Routes for WRITE operations.
 
-### 8.4 Specific Workflows
-- **Profile Updates:** Frontend signs message -> Backend verifies signature -> Backend updates DB.
-- **Campaign Creation:** Frontend sends TX Hash -> Backend verifies TX on-chain -> Backend inserts to DB.
-- **Claim Rewards:** Frontend requests claim -> Backend checks eligibility & date -> Backend triggers paymaster/transfer.
-
-### 8.5 Tech Stack Consistency
-- Blockchain: Focus on **Base Mainnet (8453)** and **Base Sepolia (84532)**.
-
-### 8.6 Economics & P&L Guard
-- **REQUIRED:** All financial dashboards MUST calculate `Net Surplus` using `balance - totalLockedRewards`.
-- **REQUIRED:** Proportional revenue distribution (SBT Weights) MUST be validated to sum to exactly 100% (or 10000 BP if on-chain).
-- **REQUIRED:** Use real-time ETH/USD price conversion (Oracle or Backend API) for all administrative price setting to prevent input errors.
-- **FORBIDDEN:** Never suggest treasury withdrawals that would cause the contract balance to fall below `totalLockedRewards`.
-
-### 8.7 Seasonal Soulbound Tier Protocol (SBT)
-- **SBT GATE:** Users with `tier = 0` (Guest) in database MUST be treated as "Not Minted". They cannot be promoted via XP alone.
-- **XP BURN:** Every `TierUpgraded` event MUST be synced to the database as a negative XP entry in `user_task_claims` (Source: `TierUpgrade`) to maintain historical XP integrity.
-- **LAZY RESET:** On-chain tiers reset every season. Database synchronization (`audit-bundle`) must handle `SeasonReset` events by archiving old peak tiers to `user_season_history` and resetting active tiers in `user_profiles`.
-- **UPGRADE FEE:** Tier upgrades require both an ETH fee and a specific XP threshold. Validate both in the UI before triggering `upgradeTier`.
-
-### 8.8 Media & Ecosystem Performance Guard (NEW)
-- **ZERO-TRUST SIZE VALIDATION:** All external media links (Avatar/GIFs) MUST be validated on the backend API via a `HEAD` request before saving to the DB. `content-length` MUST be <= 1MB (1048576 bytes) to prevent Client-Side DoS and OOM attacks.
-- **LAZY LOADING:** All `<img>` tags for user-generated content or external URLs MUST include `loading="lazy"` and strict structural bounds (e.g., `w-full h-full object-cover`).
-- **INPUT SANITIZATION:** Enforce strict `maxLength` attributes on frontend UI inputs: Avatar URL (500), Username (30), Name (50), Bio (160). Database columns should reflect these limits where applicable.
+### 8.4 Dynamic Activity Pattern (System Tasks)
+- **DISTINCTION:** API Handlers MUST distinguish between Static Tasks (stored in `daily_tasks`) and Dynamic System Activities (e.g., `raffle_buy_123` or `raffle_win_456`).
+- **RESOLUTION:** Dynamic activities MUST fetch their canonical `points_value` directly from the `point_settings` table using their base `activity_key` (e.g., `raffle_buy`), NEVER from `daily_tasks`.
+- **PREVENTION:** Failure to bifurcate this validation logic leads to Zero-Trust failures (`0 XP` bugs). Always implement string prefix checks (`.startsWith()`) in verification endpoints.
 
 ## 9. STRICT CODING GUIDELINES (ANTI-GUESSING PROTOCOL)
-- **MANDATORY**: Before implementing ANY external library method, you MUST read the actual module source code in `node_modules` or the official documentation.
-- **NO GUESSING**: Never assume a method name based on intuition or previous versions. Verify deeply.
-- **LOCK IN MEMORY**: If you catch yourself guessing, STOP. Go back to step 1.
-- **CONTEXT IS KING**: Always check for the latest version of installed modules to avoid legacy code issues.
-- **SELF-CORRECTION**: If an API call fails, DO NOT just try another name. STOP and READ THE SOURCE.
-
-## Crypto Disco App - Planning Protocol
-
-# Core Rule: Think Before Act
-- Setiap kali ada instruksi coding, dilarang langsung merubah kode.
-- Kamu WAJIB memberikan "Development Plan" terlebih dahulu yang berisi:
-  1. Analisa masalah atau fitur yang diminta.
-  2. Daftar file yang akan terdampak.
-  3. Step-by-step logika perubahan yang akan dilakukan.
-- Tunggu konfirmasi "LANJUT" atau "GO" dari saya sebelum melakukan edit file (WRITE).
-
-
-## Web3 & Security Standard
-- Backend: PostgreSQL + Supabase logic priority.
-
----
+- **MANDATORY**: Before implementing ANY external library method, you MUST read the actual module source code or official documentation.
+- **NO GUESSING**: Never assume a method name. Verify deeply.
 
 ## 10. VERIFIED INFRASTRUCTURE REFERENCE (SYNCED FROM .ENV)
-
-> **DO NOT GUESS** any of these values. Always reference this section.
-
-### Blockchain
-| Key | Value |
-|---|---|
-| Chain (Mainnet) | Base Mainnet `8453` |
-| Chain (Testnet) | Base Sepolia `84532` |
-| Alchemy RPC (Sepolia) | `https://base-sepolia.g.alchemy.com/v2/4fUdl1Y2lipSqhXr8JbJY` |
-| Public RPC (Sepolia) | `https://sepolia.base.org` |
-| Reown/WalletConnect Project ID | `5ae6de312908f2d0cd512576920b78cd` (`VITE_REOWN_PROJECT_ID`) |
-| OnchainKit API Key | `VITE_ONCHAINKIT_API_KEY` (env only) |
-| BaseScan API Key | `BASESCAN_API_KEY` = `136H9NRK6VYFR5GRHXBGK2GMVG8HHTDN4C` |
-| API3 QRNG Endpoint ID | `0xfb6d017bb87991b7495f563db3c8cf59ff87b09781947bb1e417006ad7f55a78` |
-| Max Gas Price | `50 gwei` (`MAX_GAS_PRICE`) |
-| Raffle Address (Sepolia)| `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| MasterX Address (Sepolia)| `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
-| DailyApp Address (Sepolia)| `0xfc12f4FEFf825860c5145680bde38BF222cC669A` |
-| Content CMS V2 (Sepolia)| `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
-| Ticket Price | `150000` = $0.15 with 6 decimals (`TICKET_PRICE_USD`) |
-
-### Supabase
-| Key | Value |
-|---|---|
-| Supabase URL | `https://rbgzwhsdqnhwrwimjjfm.supabase.co` |
-| Anon Key | `VITE_SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` (env only) |
-| Service Role Key | `SUPABASE_SERVICE_ROLE_KEY` — **SERVER SIDE ONLY, never expose to client** |
-| Publishable Key | `SUPABASE_PUBLISHABLE_KEY` = `sb_publishable_Cnj2oBLzYsUOC9ypiuxYgA_voMZidu0` |
-
-### Neynar / Farcaster
-| Key | Value |
-|---|---|
-| Neynar Client ID | `0a715e62-512c-4b04-a51a-58b3ca51795d` |
-| Neynar API Key | `NEYNAR_API_KEY` / `VITE_NEYNAR_API_KEY` (env only) |
-| Admin FIDs | `1477344` |
+> Always reference this section.
+- Chain: Base Mainnet (8453), Base Sepolia (84532)
+- Supabase URL: `https://rbgzwhsdqnhwrwimjjfm.supabase.co`
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
-- **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis kepada pengguna.
-- **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI aplikasi, label, pesan error di frontend, dan teks yang dilihat oleh pengguna akhir.
+- **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
+- **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI aplikasi.
+
 ## 12. LATEST CONTRACTS & PRIVACY MANDATE
-- **Contract Updates**: ALWAYS use the latest, most updated, and complete smart contracts. If a newer valid contract is found (e.g., from `.env` or recent deployments), immediately update `.env`, `.cursorrules`, and architecture documents to prevent confusion.
-- **PRIVATE_KEY SAFETY**: THE `PRIVATE_KEY` in the `.env` file is CRITICAL SENSITIVE DATA. It MUST:
-  - NEVER be uploaded or pushed to any repository.
-  - NEVER be included in any frontend bundle (e.g., as `VITE_PRIVATE_KEY` - FORBIDDEN).
-  - NEVER be shared or exposed in logs, chat, or 3rd party tools.
-- **Privacy & Git-Safety**: ALL sensitive data (Private Keys, API Keys, `.env` files, production database URLs) MUST be added to `.gitignore`.
-- **Confidentiality**: NEVER push, upload, or expose sensitive files or data to public repositories (GitHub), frontend bundles, or any 3rd party analysis tools.
-- **Verification**: Double-check `.gitignore` entries before every push to ensure no leakage.
+- **PRIVATE_KEY SAFETY**: THE `PRIVATE_KEY` MUST NEVER be pushed to repositories or exposed in logs/chat.
+- **Privacy**: ALL sensitive data MUST be added to `.gitignore`.
+
 ## 13. UI/UX DESIGN & FRONTEND STANDARDS (SENIOR STAFF ENGINEER MODE)
+1. **Clean & Rugged:** Modern dark-themed aesthetic. No heavy libraries like Framer-Motion.
+2. **Atomic Layout:** 100% responsiveness. Mobile uses bottom-sheets/drawers.
+3. **Z-Index Management:** ALL fixed UI components MUST use `z-[9999] pointer-events-auto`.
+4. **Minimalist Modern Standards**: Visual breathing room, subtle elevation, typography first.
 
-### Role: Senior Web3 UI/UX Staff Engineer
-You are a world-class Product Designer & Frontend Engineer specialized in Crypto Apps. Your mission is to audit and fix the "Crypto Disco App" layout for both Mobile and Web.
+## 14. FULL-STACK SYNCHRONIZATION PROTOCOL (THE INTEGRITY GUARD)
+- **THE VERIFICATION CHAIN**: feature -> Admin Bot -> Dashboard -> Backend -> Database -> Smart Contract -> Final Audit.
+- **ZERO-TRUST RLS**: Every new table MUST have Row Level Security enabled.
+- **SYNC VERIFICATION**: Every task must verify the data flow: Smart Contract Event -> Backend Indexer -> Database Record -> Frontend Display.
 
-### Design Principles:
-1. **Clean & Rugged:** Use a modern dark-themed aesthetic (Base/L2 vibes). No heavy libraries like Framer-Motion.
-2. **Atomic Layout:** Ensure 100% responsiveness. Mobile must use a bottom-sheet approach for actions; Web must use a clean grid.
-3. **Z-Index Management:** ALL fixed UI components (Action Bars/Modals) MUST use `z-[9999] pointer-events-auto` and never overlap with critical content.
-4. **Typography:** Use high-readability sans-serif fonts. All addresses must be `.toLowerCase()` and truncated (e.g., 0x084...204B).
+## 15. SOCIAL IDENTITY LOCK & ECOSYSTEM INTEGRITY MANDATE
+- **SOCIAL IDENTITY LOCK**: Every social platform (Twitter, Farcaster, Telegram, TikTok, Instagram) MUST be locked 1-to-1 with a specific wallet address. Sybil attacks are prevented by enforcing this at the Database and API layer.
+- **THE SYNC MANDATE**: Every new feature or change MUST be synchronized across the entire ecosystem:
+  1. **Smart Contract & ABI**: Verify function existence and update `abis_data.txt`.
+  2. **Database**: Ensure schema, RLS, and `point_settings` are updated.
+  3. **Verification Server**: Update logic for identity persistence and rate limiting.
+  4. **Telegram Admin Bot**: Update/add commands (e.g., `/user`, `/audit`) and auto-detection logic.
+  5. **Admin Dashboard**: Update UI components (e.g., `TaskManagerTab`) and auto-XP mappings.
+- **USER EXPERIENCE**: Any discrepancy between ini adalah "Protocol Breach". The ecosystem must feel like a single, seamless, and secure entity to the user.
 
-### Minimalist Modern Standards:
-1. **Visual Breathing Room:** Use generous whitespace (p-4 to p-8) to prevent UI clutter. Avoid cramped elements.
-2. **Subtle Elevation:** Use background contrast (e.g., bg-zinc-900 for cards on bg-black) instead of heavy borders.
-3. **Typography First:** High contrast for primary info, low-opacity (text-zinc-400) for secondary metadata. 
-4. **No-Gimmick UI:** Remove all unnecessary icons, gradients, or shadows. Only keep functional elements that assist the user's flow.
-5. **Color Palette:** Stick to a 3-color max scheme (Base Blue, Neutral Zinc/Slate, and Status Colors like Success/Error).
+## 16. THE ETERNAL MEMORY & TRACEABILITY GUARD
+- **STOPS CELEBRATING EARLY**: Jangan pernah menganggap task "Selesai" hanya karena kode satu fitur berhasil ditulis. Keberhasilan hanya tercapai jika seluruh rantai (Bot -> Dashboard -> Backend -> DB -> User App) telah terverifikasi sinkron.
+- **TRACEABILITY MANDATE**: Setiap perubahan fitur yang menyentuh data (XP, Task, Identity) WAJIB:
+  1. **Grep Search** seluruh codebase untuk menemukan semua entry points data tersebut.
+  2. **Audit Bot**: Apakah bot memiliki logika yang sesuai?
+  3. **Audit Dashboard**: Apakah dashboard memiliki UI/Logika yang sesuai?
+  4. **Audit Backend**: Apakah backend memiliki API/Handler yang sesuai?
+- **VERIFICATION OVER ASSUMPTION**: Jangan pernah berasumsi endpoint sudah ada. Baca `index.js`, `vercel.json`, dan file rute untuk SETIAP klaim fungsionalitas.
+- **SYNC VERIFICATION**: Setiap perubahan WAJIB diuji silang antara Bot (Telegram) dan Dashboard (Web) guna memastikan integritas ekosistem tetap 1-ke-1.
 
-### Technical Constraints:
-- Stack: Tailwind CSS, Wagmi, RainbowKit (Base Priority).
-- Env: Optimized for low-spec devices (IDX). Use efficient CSS over JS-heavy animations.
-- Backend: Supabase/PostgreSQL ready.
+## 17. SELF-MANAGED AUDITOR & WORKSPACE HYGIENE
+- **CONTINUOUS AUDIT**: Agent WAJIB melakukan audit fitur menyeluruh secara periodik. Jangan menunggu user bertanya; proaktiflah mencari "missing links" antar platform.
+- **TASK DISCIPLINE**: Selalu perbarui `task.md` secara real-time. Tutup task yang selesai dan buat task baru untuk setiap kekurangan yang ditemukan saat audit.
+- **EXPLICIT VERIFICATION REQUESTS**: Agent harus secara eksplisit meminta verifikasi user untuk hal-hal di luar kendali teknis agent, seperti:
+  1. Eksekusi SQL Script di Supabase SQL Editor.
+  2. Input Environment Variables di Vercel/Cloud dashboard.
+  3. Konfigurasi API platform yang memerlukan intervensi GUI (Twitter Dev Portal, dll).
+- **WORKSPACE HYGIENE**: Jika pengerjaan pada suatu file atau komponen sudah selesai dan terverifikasi sinkron, Agent harus menyatakan secara eksplisit bahwa file tersebut siap "ditutup" dari tab editor untuk menjaga fokus.
+- **SELF-TASKING**: Jika audit menemukan bug atau ketidaksinkronan, Agent dilarang melanjutkan ke fitur baru sebelum membuat task perbaikan dan menyelesaikannya.
 
-### Instructions for Audit:
-- Check for horizontal overflows on mobile.
-- Ensure buttons have a minimum hit area of 44x44px for mobile.
-- Audit the color contrast for accessibility.
-- Update your skill-tree to prioritize CSS-only animations and Flexbox/Grid layouts.
+---
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed.*

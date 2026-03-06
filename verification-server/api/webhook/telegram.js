@@ -117,7 +117,7 @@ module.exports = async (req, res) => {
     // 2. Command Router
     try {
         if (text === '/start') {
-            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/model - Pilih Otak AI (Model)\n/fix <error> - Perbaiki error via AI");
+            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/user <wallet> - Audit Identitas Lengkap User\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/model - Pilih Otak AI (Model)\n/fix <error> - Perbaiki error via AI");
         }
         else if (text === '/model') {
             await sendTelegram(chatId, "🧠 **PILIH OTAK LURAH (AI MODEL - 2026 EDITION)**\n\nKetik perintah di bawah:\n`/model_flash` - Gemini 2.5 Flash (Super Cepat & Akurat)\n`/model_pro` - Gemini 2.5 Pro (Otak Paling Cerdas & Mendalam)\n`/model_3` - Gemini 3.1 Flash (Teknologi Masa Depan)\n\n*Pilihan Anda akan disimpan secara permanen di database.*");
@@ -125,7 +125,7 @@ module.exports = async (req, res) => {
         else if (text.startsWith('/model_')) {
             const chosen = text.split('_')[1];
             let modelId = "gemini-2.5-flash"; // Default 2026
-            let modelName = "Gemini 2.5 Flash";
+            let modelName = "Gemini 2.5 Pro";
 
             if (chosen === 'pro') { modelId = "gemini-2.5-pro"; modelName = "Gemini 2.5 Pro"; }
             else if (chosen === '3') { modelId = "gemini-3.1-flash-lite-preview"; modelName = "Gemini 3.1 Flash"; }
@@ -145,19 +145,18 @@ module.exports = async (req, res) => {
             const helpMsg = `📖 **PANDUAN LURAH EKOSISTEM**
 
 **Manajemen Task:**
-• \`/tambah_task Deskripsi | Link\` - Tambah task baru (XP & Platform otomatis).
+• \`/tambah_task Deskripsi | Link\` - Tambah task baru.
 • \`/daftar_task\` - Lihat semua task & tombol hapus.
-• \`/hapus_task <uuid>\` - Hapus task secara manual.
 
-**Audit & Stats:**
+**Audit & Identitas:**
 • \`/audit\` - Jalankan audit ekosistem instan.
+• \`/user <wallet>\` - Audit identitas lengkap (Social Identity Lock).
 • \`/stats\` - Lihat statistik User, XP, dan Task.
 • \`/health\` - Cek status koneksi Database & Bot.
 
 **Siklus Sistem:**
 • **07:00 WIB**: Task lama expired (Otomatis).
-• **07:15 WIB**: Task baru aktif (Otomatis).
-• **Anti-Cheat**: Pencegahan klaim XP berulang aktif pada setiap verifikasi.
+• **Anti-Cheat**: Pencegahan klaim XP berulang aktif.
 `;
             await sendTelegram(chatId, helpMsg);
         }
@@ -198,7 +197,7 @@ module.exports = async (req, res) => {
                 }]);
             });
 
-            await fetch(`https://api.telegram.org/bot${config.telegram.botToken}/sendMessage`, {
+            await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -227,15 +226,55 @@ module.exports = async (req, res) => {
 
             if (link.includes('x.com') || link.includes('twitter.com')) {
                 platform = 'twitter';
-                actionType = 'follow'; // Default for simple links
-                // Extract username
-                const match = link.match(/(?:x|twitter)\.com\/([^\n\/\s?]+)/);
-                if (match) targetId = match[1];
+                actionType = 'Follow';
+                // Try to extract post ID first if it's a status link
+                const postMatch = link.match(/\/status\/(\d+)/);
+                if (postMatch) {
+                    targetId = postMatch[1];
+                } else {
+                    const handleMatch = link.match(/(?:x|twitter)\.com\/([^\n\/\s?]+)/);
+                    if (handleMatch) targetId = handleMatch[1];
+                }
             } else if (link.includes('warpcast.com')) {
                 platform = 'farcaster';
-                actionType = 'follow';
-                const match = link.match(/warpcast\.com\/([^\n\/\s?]+)/);
-                if (match) targetId = match[1];
+                actionType = 'Follow';
+                const match = link.match(/warpcast\.com\/[^\/]+\/([^\n\/\s?]+)/); // Extract hash if available
+                if (match) {
+                    targetId = match[1];
+                } else {
+                    const profileMatch = link.match(/warpcast\.com\/([^\n\/\s?]+)/);
+                    if (profileMatch) targetId = profileMatch[1];
+                }
+            } else if (link.includes('tiktok.com')) {
+                platform = 'tiktok';
+                actionType = 'Follow';
+                // Extract Video ID if present
+                const videoMatch = link.match(/\/video\/(\d+)/);
+                if (videoMatch) {
+                    targetId = videoMatch[1];
+                } else {
+                    const handleMatch = link.match(/tiktok\.com\/@([^\n\/\s?]+)/);
+                    if (handleMatch) targetId = handleMatch[1];
+                }
+            } else if (link.includes('instagram.com')) {
+                platform = 'instagram';
+                actionType = 'Follow';
+                // Extract Post/Reel ID if present
+                const postMatch = link.match(/\/(?:p|reels|reel)\/([^\n\/\s?]+)/);
+                if (postMatch) {
+                    targetId = postMatch[1].replace(/\/$/, ""); // Remove trailing slash
+                } else {
+                    const handleMatch = link.match(/instagram\.com\/([^\n\/\s?]+)/);
+                    if (handleMatch) targetId = handleMatch[1];
+                }
+            }
+
+            // Refine Action Type based on keywords in description
+            const descLower = descPart.toLowerCase();
+            if (descLower.includes('like')) actionType = 'Like';
+            else if (descLower.includes('comment')) actionType = 'Comment';
+            else if (descLower.includes('repost') || descLower.includes('recast') || descLower.includes('share')) {
+                actionType = (platform === 'farcaster' || platform === 'twitter') ? 'Recast/Repost' : 'Repost';
             }
 
             // 2. Fetch XP Reward from point_settings
@@ -261,6 +300,7 @@ module.exports = async (req, res) => {
             const { data: newTask, error: insertError } = await supabase
                 .from('daily_tasks')
                 .insert([{
+                    title: descPart,
                     description: descPart,
                     platform,
                     action_type: actionType,
@@ -303,6 +343,46 @@ module.exports = async (req, res) => {
 
             const table = "```\n+----------+-------+\n| Stat     | Count |\n+----------+-------+\n| Total    | " + (totalUsers || 0) + "     |\n| New (24h)| " + (newUsers || 0) + "     |\n+----------+-------+\n```";
             await sendTelegram(chatId, `📊 *Statistik Ekosistem*\n\n${table}`);
+        }
+        else if (text.startsWith('/user')) {
+            const walletAddress = text.replace('/user', '').trim().toLowerCase();
+            if (!walletAddress || !walletAddress.startsWith('0x')) {
+                await sendTelegram(chatId, "⚠️ Gunakan format: `/user <wallet_address>`\nContoh: `/user 0x123...abc`");
+                return res.status(200).json({ ok: true });
+            }
+
+            const { data: user, error } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('wallet_address', walletAddress)
+                .maybeSingle();
+
+            if (error) {
+                await sendTelegram(chatId, `❌ Database Error: ${error.message}`);
+            } else if (!user) {
+                await sendTelegram(chatId, `📭 User with wallet \`${walletAddress}\` not found in database.`);
+            } else {
+                const auditMsg = `👤 **USER IDENTITY AUDIT**
+
+🏦 **Wallet:** \`${user.wallet_address}\`
+💰 **Total XP:** \`${user.total_xp || 0}\`
+🏆 **Tier:** \`${user.tier || 1}\`
+🛡️ **Trust Score:** \`${user.trust_score || 0}/100\`
+🎟️ **Raffle Wins:** \`${user.raffle_wins || 0}\` kemenangan
+
+🔗 **SOCIAL IDENTITY LOCK:**
+• **X (Twitter):** ${user.twitter_username ? `[@${user.twitter_username}](https://x.com/${user.twitter_username})` : '❌ Not Linked'}
+• **Farcaster:** ${user.fid ? `[FID ${user.fid}](https://warpcast.com/${user.username || user.fid})` : '❌ Not Linked'}
+• **Telegram:** ${user.telegram_username ? `@${user.telegram_username}` : (user.telegram_id ? `ID: ${user.telegram_id}` : '❌ Not Linked')}
+• **TikTok:** ${user.tiktok_username ? `@${user.tiktok_username}` : '❌ Not Linked'}
+• **Instagram:** ${user.instagram_username ? `@${user.instagram_username}` : '❌ Not Linked'}
+
+🕒 **Activity:**
+• First Joined: \`${new Date(user.created_at).toLocaleDateString()}\`
+• Last Login: \`${user.last_login_at ? new Date(user.last_login_at).toLocaleString() : 'Never'}\`
+`;
+                await sendTelegram(chatId, auditMsg);
+            }
         }
         else if (text.startsWith('/fix')) {
             const errorMessage = text.replace('/fix', '').trim();

@@ -378,6 +378,76 @@ router.post('/twitter/comment', async (req, res) => {
 });
 
 /**
+ * Verify TikTok tasks
+ * POST /api/verify/tiktok/:action
+ * Body: { userAddress, taskId, tiktokHandle, ... }
+ */
+router.post('/tiktok/:action', async (req, res) => {
+    try {
+        const { action } = req.params;
+        const { userAddress, taskId, tiktokHandle, signature, message, ...actionParams } = req.body;
+
+        if (!userAddress || !taskId || !tiktokHandle || !signature || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: userAddress, taskId, tiktokHandle, signature, message',
+            });
+        }
+
+        const result = await verificationService.verifyAndMarkTask({
+            platform: 'tiktok',
+            action,
+            userAddress,
+            taskId: parseInt(taskId),
+            socialId: tiktokHandle,
+            actionParams,
+            signature,
+            message
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error(`Error in TikTok ${req.params.action} verification:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Verify Instagram tasks
+ * POST /api/verify/instagram/:action
+ * Body: { userAddress, taskId, instagramHandle, ... }
+ */
+router.post('/instagram/:action', async (req, res) => {
+    try {
+        const { action } = req.params;
+        const { userAddress, taskId, instagramHandle, signature, message, ...actionParams } = req.body;
+
+        if (!userAddress || !taskId || !instagramHandle || !signature || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: userAddress, taskId, instagramHandle, signature, message',
+            });
+        }
+
+        const result = await verificationService.verifyAndMarkTask({
+            platform: 'instagram',
+            action,
+            userAddress,
+            taskId: parseInt(taskId),
+            socialId: instagramHandle,
+            actionParams,
+            signature,
+            message
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error(`Error in Instagram ${req.params.action} verification:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * Link Twitter account to wallet address
  * POST /api/verify/twitter/link
  * Body: { userId, userAddress, verificationCode }

@@ -27,8 +27,7 @@ class VerificationService {
         // Verification cache (in production, use Redis)
         this.cache = new Map();
 
-        // Linked accounts storage (in production, use a Database/Redis)
-        this.twitterLinkages = new Map();
+        // Twitter Linkages migrated to Supabase Database (Rule: 1 Twitter : 1 Wallet)
     }
 
     /**
@@ -74,7 +73,29 @@ class VerificationService {
     async linkTwitter(userId, userAddress, verificationCode) {
         const isLinked = await twitterService.verifyLinkage(userId, userAddress, verificationCode);
         if (isLinked) {
-            this.twitterLinkages.set(userId, userAddress.toLowerCase());
+            // Persist to Database (Identity Lock)
+            const twitterUser = await twitterService.getUserById(userId);
+            const username = twitterUser?.username || 'unknown';
+
+            await supabaseService.linkTwitterAccount(userAddress, userId, username);
+
+            // Auto-fill profile details from Twitter for better UX
+            if (twitterUser) {
+                const displayName = (twitterUser.name || '').substring(0, 50);
+                const bio = (twitterUser.description || '').substring(0, 160);
+                const rawPfp = twitterUser.profile_image_url || '';
+                const highResPfp = rawPfp.replace('_normal', '_400x400').substring(0, 500);
+
+                await supabaseService.client
+                    .from('user_profiles')
+                    .update({
+                        display_name: displayName,
+                        pfp_url: highResPfp,
+                        bio: bio
+                    })
+                    .eq('wallet_address', userAddress.toLowerCase());
+            }
+
             return true;
         }
         return false;
@@ -115,6 +136,42 @@ class VerificationService {
             return verified;
         } catch (error) {
             console.error('Error verifying Farcaster task:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Verify TikTok task (Trust-Based/Manual for now)
+     * @param {string} action - 'follow', 'like', 'comment', 'repost'
+     * @param {string} tiktokId - User's TikTok ID/Handle
+     * @param {Object} params - Action-specific parameters
+     * @returns {Promise<boolean>}
+     */
+    async verifyTikTokTask(action, tiktokId, params) {
+        try {
+            console.log(`[Verification] TikTok ${action} for ${tiktokId} - Trust-Based Verification`);
+            // TODO: Integrate TikTok API when available
+            return true;
+        } catch (error) {
+            console.error('Error verifying TikTok task:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Verify Instagram task (Trust-Based/Manual for now)
+     * @param {string} action - 'follow', 'like', 'comment', 'repost'
+     * @param {string} instagramId - User's Instagram ID/Handle
+     * @param {Object} params - Action-specific parameters
+     * @returns {Promise<boolean>}
+     */
+    async verifyInstagramTask(action, instagramId, params) {
+        try {
+            console.log(`[Verification] Instagram ${action} for ${instagramId} - Trust-Based Verification`);
+            // TODO: Integrate Instagram Basic Display/Graph API when available
+            return true;
+        } catch (error) {
+            console.error('Error verifying Instagram task:', error);
             throw error;
         }
     }
@@ -213,6 +270,27 @@ class VerificationService {
                 return { success: false, error: 'Task already verified' };
             }
 
+            // NEW: Full-Stack Sync Anti-Cheat Guard
+            const taskData = await supabaseService.getTaskById(taskId);
+            if (!taskData) {
+                return { success: false, error: 'Task not found in database' };
+            }
+
+            if (taskData.target_id) {
+                const alreadyClaimed = await supabaseService.hasAlreadyClaimedTarget(
+                    userAddress,
+                    platform,
+                    action,
+                    taskData.target_id
+                );
+                if (alreadyClaimed) {
+                    return {
+                        success: false,
+                        error: `[Security] Anti-Cheat: You have already claimed XP for target "${taskData.target_id}" on a different task.`
+                    };
+                }
+            }
+
             let verified = false;
 
             // Verify based on platform
@@ -227,9 +305,14 @@ class VerificationService {
                 }
                 verified = await this.verifyFarcasterTask(action, socialId, actionParams);
             } else if (platform === 'twitter') {
-                // NEW: Security Check - Verify wallet-to-Twitter linkage
-                const linkedAddress = this.twitterLinkages.get(socialId);
-                if (!linkedAddress || linkedAddress !== userAddress.toLowerCase()) {
+                // NEW: Security Check - Verify wallet-to-Twitter linkage via Database (Identity Lock)
+                const { data: profile } = await supabaseService.client
+                    .from('user_profiles')
+                    .select('twitter_id')
+                    .eq('wallet_address', userAddress.toLowerCase())
+                    .single();
+
+                if (!profile?.twitter_id || profile.twitter_id !== socialId) {
                     return {
                         success: false,
                         error: `Security Error: Wallet ${userAddress} is not linked to Twitter ID ${socialId}. Please verify your profile first.`,
@@ -238,6 +321,40 @@ class VerificationService {
                     };
                 }
                 verified = await this.verifyTwitterTask(action, socialId, actionParams);
+            } else if (platform === 'tiktok') {
+                // Identity Lock Check: TikTok
+                const { data: profile } = await supabaseService.client
+                    .from('user_profiles')
+                    .select('tiktok_username')
+                    .eq('wallet_address', userAddress.toLowerCase())
+                    .single();
+
+                if (!profile?.tiktok_username || profile.tiktok_username !== socialId) {
+                    return {
+                        success: false,
+                        error: `Security Error: Wallet ${userAddress} is not linked to TikTok Handle ${socialId}.`,
+                        requiresLinkage: true,
+                        linkagePlatform: 'tiktok'
+                    };
+                }
+                verified = await this.verifyTikTokTask(action, socialId, actionParams);
+            } else if (platform === 'instagram') {
+                // Identity Lock Check: Instagram
+                const { data: profile } = await supabaseService.client
+                    .from('user_profiles')
+                    .select('instagram_username')
+                    .eq('wallet_address', userAddress.toLowerCase())
+                    .single();
+
+                if (!profile?.instagram_username || profile.instagram_username !== socialId) {
+                    return {
+                        success: false,
+                        error: `Security Error: Wallet ${userAddress} is not linked to Instagram Handle ${socialId}.`,
+                        requiresLinkage: true,
+                        linkagePlatform: 'instagram'
+                    };
+                }
+                verified = await this.verifyInstagramTask(action, socialId, actionParams);
             } else {
                 throw new Error(`Unknown platform: ${platform}`);
             }
@@ -250,9 +367,9 @@ class VerificationService {
             }
 
             // --- AUTOFILL PROFILE ON SUCCESSFUL VERIFICATION ---
-            if (platform === 'twitter' && socialId) {
+            if (socialId) {
                 try {
-                    // Cek jika profil di database masih kosong menggunakan backend-to-backend atau local lookup
+                    // Cek jika profil di database masih memiliki data dasar yang kosong
                     const { data: dbProfile } = await supabaseService.client
                         .from('user_profiles')
                         .select('display_name, pfp_url, bio')
@@ -260,29 +377,49 @@ class VerificationService {
                         .single();
 
                     if (!dbProfile?.display_name || !dbProfile?.pfp_url) {
-                        const twitterUser = await twitterService.getUserById(socialId);
-                        if (twitterUser) {
+                        let socialUser = null;
+
+                        if (platform === 'twitter') {
+                            socialUser = await twitterService.getUserById(socialId);
+                        } else if (platform === 'farcaster') {
+                            const fcUser = await neynarService.getUserByFid(socialId);
+                            if (fcUser) {
+                                socialUser = {
+                                    name: fcUser.display_name,
+                                    username: fcUser.username,
+                                    description: fcUser.profile?.bio?.text,
+                                    profile_image_url: fcUser.pfp_url
+                                };
+                            }
+                        }
+
+                        if (socialUser) {
                             // Apply length limits from rule 8.8
-                            const displayName = (dbProfile?.display_name || twitterUser.name || '').substring(0, 50);
-                            const username = (twitterUser.username || '').substring(0, 30);
-                            const bio = (dbProfile?.bio || twitterUser.description || '').substring(0, 160);
-                            const rawPfp = dbProfile?.pfp_url || twitterUser.profile_image_url || '';
-                            const highResPfp = rawPfp.replace('_normal', '_400x400').substring(0, 500);
+                            const displayName = (dbProfile?.display_name || socialUser.name || '').substring(0, 50);
+                            const username = (socialUser.username || '').substring(0, 30);
+                            const bio = (dbProfile?.bio || socialUser.description || '').substring(0, 160);
+                            const rawPfp = dbProfile?.pfp_url || socialUser.profile_image_url || '';
+
+                            // High-res fallback for Twitter, Farcaster usually provides good ones
+                            const finalPfp = platform === 'twitter'
+                                ? rawPfp.replace('_normal', '_400x400').substring(0, 500)
+                                : rawPfp.substring(0, 500);
 
                             await supabaseService.client
                                 .from('user_profiles')
                                 .update({
                                     display_name: displayName,
                                     username: username,
-                                    pfp_url: highResPfp,
+                                    pfp_url: finalPfp,
                                     bio: bio
                                 })
                                 .eq('wallet_address', userAddress.toLowerCase());
-                            console.log(`[Verification] Profile autofilled from Twitter for ${userAddress}`);
+
+                            console.log(`[Verification] Profile auto-filled from ${platform} for ${userAddress}`);
                         }
                     }
                 } catch (afErr) {
-                    console.error('[VerificationService] Autofill failed, continuing process:', afErr.message);
+                    console.error('[VerificationService] Autofill failed:', afErr.message);
                 }
             }
 
@@ -303,7 +440,8 @@ class VerificationService {
                     uuidToUse,
                     params.xpEarned || 0, // Fallback if not provided
                     platform,
-                    action
+                    action,
+                    taskData.target_id // NEW: Pass target_id for double-check & logging
                 );
 
                 // Update Neynar Score if available

@@ -73,6 +73,7 @@ export default async function handler(req, res) {
                         min_tier: task_data.min_tier || 1,
                         requires_verification: task_data.requires_verification !== undefined ? task_data.requires_verification : true,
                         is_active: task_data.is_active !== undefined ? task_data.is_active : false,
+                        target_id: task_data.target_id || null, // NEW: Full-Stack Sync Anti-Cheat
                         expires_at: task_data.expires_at || null,
                         created_at: new Date().toISOString()
                     })
@@ -121,6 +122,7 @@ export default async function handler(req, res) {
                             account_age_requirement: task.account_age_requirement || 0,
                             power_badge_required: task.power_badge_required || false,
                             no_spam_filter: task.no_spam_filter || true,
+                            target_id: task.target_id || null, // NEW: Full-Stack Sync Anti-Cheat
                             is_active: true,
                             created_at: new Date().toISOString()
                         }])

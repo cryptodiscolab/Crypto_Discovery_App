@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal } from 'lucide-react';
 import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
 import {
     Transaction,
@@ -152,6 +152,23 @@ function AdminRaffleCreateForm() {
 
 export function RaffleManagerTab() {
     const { raffleIds } = useRaffleList();
+    const [winners, setWinners] = useState([]);
+    const [loadingWinners, setLoadingWinners] = useState(false);
+
+    const fetchWinners = async () => {
+        setLoadingWinners(true);
+        try {
+            const res = await fetch('/api/raffle/leaderboard');
+            const data = await res.json();
+            if (data.success) setWinners(data.data || []);
+        } catch (e) {
+            console.warn('Winner fetch failed:', e.message);
+        } finally {
+            setLoadingWinners(false);
+        }
+    };
+
+    useEffect(() => { fetchWinners(); }, []);
 
     return (
         <div className="space-y-6">
@@ -186,6 +203,41 @@ export function RaffleManagerTab() {
                     <div className="space-y-2">
                         {[...raffleIds].reverse().map(id => (
                             <AdminRaffleRow key={id.toString()} raffleId={id} />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* 🏆 Top Raffle Winners Leaderboard */}
+            <div className="bg-[#121214] p-5 rounded-2xl border border-yellow-500/10 space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Medal className="w-3.5 h-3.5 text-yellow-400" />
+                        <span className="text-[10px] font-black text-yellow-300 uppercase tracking-tighter">Top Raffle Winners</span>
+                    </div>
+                    <button onClick={fetchWinners} className="p-1 hover:bg-white/5 rounded-full text-slate-500 hover:text-white transition-all">
+                        <RefreshCw className={`w-3 h-3 ${loadingWinners ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
+                {loadingWinners ? (
+                    <div className="py-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-slate-600" /></div>
+                ) : winners.length === 0 ? (
+                    <p className="text-[9px] text-slate-600 text-center py-4">No winners yet.</p>
+                ) : (
+                    <div className="space-y-1.5">
+                        {winners.map((w, i) => (
+                            <div key={w.wallet_address} className="flex items-center justify-between p-2 bg-[#0a0a0c] border border-white/5 rounded-xl">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-black text-slate-500 w-4">{i + 1}</span>
+                                    <span className="text-[9px] font-mono text-white">
+                                        {w.wallet_address.slice(0, 6)}...{w.wallet_address.slice(-4)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-[8px] text-yellow-400 font-black">🎟️ {w.raffle_wins}W</span>
+                                    <span className="text-[8px] text-indigo-400 font-mono">{(w.total_xp || 0).toLocaleString()} XP</span>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}

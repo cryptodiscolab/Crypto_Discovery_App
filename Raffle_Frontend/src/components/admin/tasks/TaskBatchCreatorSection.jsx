@@ -1,10 +1,12 @@
 import React from 'react';
-import { Plus, Zap, Shield, Send, RefreshCw, Repeat, MessageCircle, Heart, Twitter, Share2 } from 'lucide-react';
+import { Plus, Zap, Shield, Send, RefreshCw, Repeat, MessageCircle, Heart, Twitter, Share2, Video, Instagram } from 'lucide-react';
 
 const PLATFORMS = {
     'Farcaster': { id: 'farcaster', domain: 'https://warpcast.com/...', icon: <Share2 className="w-4 h-4" /> },
     'X': { id: 'x', domain: 'https://x.com/...', icon: <Twitter className="w-4 h-4" /> },
-    'Base App': { id: 'base', domain: 'https://base.app/...', icon: <img src="/base-logo.png" className="w-4 h-4 grayscale opacity-50" alt="Base" /> }
+    'Base App': { id: 'base', domain: 'https://base.app/...', icon: <img src="/base-logo.png" className="w-4 h-4 grayscale opacity-50" alt="Base" /> },
+    'TikTok': { id: 'tiktok', domain: 'https://tiktok.com/@...', icon: <Video className="w-4 h-4" /> },
+    'Instagram': { id: 'instagram', domain: 'https://instagram.com/...', icon: <Instagram className="w-4 h-4" /> }
 };
 
 const ACTIONS = {

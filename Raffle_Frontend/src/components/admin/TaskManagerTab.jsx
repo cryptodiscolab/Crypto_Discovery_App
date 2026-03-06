@@ -75,7 +75,7 @@ export function TaskManagerTab() {
 
     const getGlobalPoints = (platform, action, currentSettings = pointSettings) => {
         if (!currentSettings || currentSettings.length === 0) return 0;
-        const platMap = { 'Farcaster': 'farcaster', 'X': 'x', 'Base App': 'base' };
+        const platMap = { 'Farcaster': 'farcaster', 'X': 'x', 'Base App': 'base', 'TikTok': 'tiktok', 'Instagram': 'instagram' };
         const actMap = { 'Follow': 'follow', 'Like': 'like', 'Recast/Repost': 'recast', 'Comment': 'comment', 'Quote': 'quote' };
         const platKey = platMap[platform] || platform.toLowerCase();
         let actKey = actMap[action] || action.toLowerCase();
