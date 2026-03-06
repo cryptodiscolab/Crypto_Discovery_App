@@ -255,7 +255,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         
         tasks[taskId] = Task({
             baseReward: _baseReward,
-            isActive: true,
+            isActive: false, // Default inactive for 07:15 WIB cycle
             cooldown: _cooldown,
             minTier: _minTier,
             title: _title,
@@ -266,6 +266,39 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         });
         
         emit TaskAdded(taskId, _title, _baseReward, _requiresVerification);
+    }
+
+    /**
+     * @notice Add multiple tasks in a single transaction
+     */
+    function addTaskBatch(
+        uint256[] calldata _baseRewards,
+        uint256[] calldata _cooldowns,
+        NFTTier[] calldata _minTiers,
+        string[] calldata _titles,
+        string[] calldata _links,
+        bool[] calldata _requiresVerifications
+    ) external onlyRole(ADMIN_ROLE) {
+        uint256 length = _baseRewards.length;
+        if (length == 0) revert InvalidParameters();
+        if (
+            length != _cooldowns.length || 
+            length != _minTiers.length || 
+            length != _titles.length || 
+            length != _links.length || 
+            length != _requiresVerifications.length
+        ) revert InvalidParameters();
+
+        for (uint256 i = 0; i < length; i++) {
+            addTask(
+                _baseRewards[i],
+                _cooldowns[i],
+                _minTiers[i],
+                _titles[i],
+                _links[i],
+                _requiresVerifications[i]
+            );
+        }
     }
 
 
