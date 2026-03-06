@@ -15,8 +15,8 @@ app.use((req, res, next) => {
     const config = require('../config');
     const apiSecret = config.security.apiSecret;
 
-    // Skip auth for health check
-    if (req.path === '/api/verify/health' || req.path === '/') {
+    // Skip auth for health check and telegram webhook
+    if (req.path === '/api/verify/health' || req.path === '/' || req.path === '/api/webhook/telegram') {
         return next();
     }
 
