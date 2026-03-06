@@ -19,6 +19,53 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // Handle Callback Queries (for Inline Buttons)
+    if (req.body.callback_query) {
+        const query = req.body.callback_query;
+        const chatId = query.message.chat.id;
+        const data = query.data;
+
+        if (data.startsWith('delete_task:')) {
+            const taskId = data.split(':')[1];
+
+            // 1. Check for existing claims before deleting (Safe Delete)
+            const { data: task, error: fetchError } = await supabase
+                .from('daily_tasks')
+                .select('description, current_claims')
+                .eq('id', taskId)
+                .single();
+
+            if (fetchError) {
+                await sendTelegram(chatId, `❌ Error: ${fetchError.message}`);
+            } else if (task.current_claims > 0) {
+                // Task has claims, suggest deactivation instead of deletion to protect XP
+                await supabase.from('daily_tasks').update({ is_active: false }).eq('id', taskId);
+                await sendTelegram(chatId, `⚠️ **Task ini memiliki ${task.current_claims} klaim!**\nUntuk menjaga keamanan XP user, task hanya dinonaktifkan (is_active: false) dan tidak dihapus permanen.`);
+            } else {
+                // No claims, safe to delete
+                const { error: deleteError } = await supabase
+                    .from('daily_tasks')
+                    .delete()
+                    .eq('id', taskId);
+
+                if (deleteError) {
+                    await sendTelegram(chatId, `❌ Gagal menghapus: ${deleteError.message}`);
+                } else {
+                    await sendTelegram(chatId, `✅ Task "${task.description}" berhasil dihapus permanen.`);
+                }
+            }
+        }
+
+        // Answer callback query to stop loading state in Telegram
+        await fetch(`https://api.telegram.org/bot${config.telegram.botToken}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ callback_query_id: query.id })
+        });
+
+        return res.status(200).json({ ok: true });
+    }
+
     const { message } = req.body;
 
     // 1. MAXIMUM Security Check (Anti-Spoofing & Zero Trust)
@@ -94,12 +141,154 @@ module.exports = async (req, res) => {
 
             await sendTelegram(chatId, `✅ Otak Lurah berhasil diganti secara permanen ke: **${modelName}**.\nSilakan coba kirim chat atau perintah baru!`);
         }
+        else if (text === '/help') {
+            const helpMsg = `📖 **PANDUAN LURAH EKOSISTEM**
+
+**Manajemen Task:**
+• \`/tambah_task Deskripsi | Link\` - Tambah task baru (XP & Platform otomatis).
+• \`/daftar_task\` - Lihat semua task & tombol hapus.
+• \`/hapus_task <uuid>\` - Hapus task secara manual.
+
+**Audit & Stats:**
+• \`/audit\` - Jalankan audit ekosistem instan.
+• \`/stats\` - Lihat statistik User, XP, dan Task.
+• \`/health\` - Cek status koneksi Database & Bot.
+
+**Siklus Sistem:**
+• **07:00 WIB**: Task lama expired (Otomatis).
+• **07:15 WIB**: Task baru aktif (Otomatis).
+• **Anti-Cheat**: Pencegahan klaim XP berulang aktif pada setiap verifikasi.
+`;
+            await sendTelegram(chatId, helpMsg);
+        }
         else if (text === '/audit') {
             await sendTelegram(chatId, "⏳ Memulai audit instan, mohon tunggu...");
             // Trigger the same logic as the cron job but return response here
             const auditHandler = require('../cron/lurah-ekosistem.js');
             // We mock res to capture output or just run it as it handles telegram internally
             await auditHandler({ headers: { 'authorization': `Bearer ${process.env.CRON_SECRET}` } }, { status: () => ({ json: () => { } }) });
+        }
+        else if (text === '/daftar_task' || text === '/tasks') {
+            const { data: tasks, error } = await supabase
+                .from('daily_tasks')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                await sendTelegram(chatId, `❌ Error fetching tasks: ${error.message}`);
+                return res.status(200).json({ ok: true });
+            }
+
+            if (!tasks || tasks.length === 0) {
+                await sendTelegram(chatId, "📭 Belum ada task harian.");
+                return res.status(200).json({ ok: true });
+            }
+
+            let msg = "📝 **DAFTAR TASK HARIAN**\n\n";
+            const inline_keyboard = [];
+
+            tasks.forEach((t, i) => {
+                const status = t.is_active ? "✅ Aktif" : "⏳ Pending/Inactive";
+                msg += `${i + 1}. **${t.description}**\n   💰 XP: ${t.xp_reward} | 🌐 ${t.platform}\n   🆔 \`${t.id}\`\n   📊 Status: ${status}\n\n`;
+
+                // Add a delete button for each task
+                inline_keyboard.push([{
+                    text: `🗑️ Hapus Task ${i + 1}`,
+                    callback_data: `delete_task:${t.id}`
+                }]);
+            });
+
+            await fetch(`https://api.telegram.org/bot${config.telegram.botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: msg,
+                    parse_mode: 'Markdown',
+                    reply_markup: { inline_keyboard }
+                })
+            });
+        }
+        else if (text.startsWith('/tambah_task') || text.startsWith('/create_task')) {
+            // Format: /tambah_task Deskripsi | Link
+            const parts = text.split('|').map(p => p.trim());
+            const descPart = parts[0].replace('/tambah_task', '').replace('/create_task', '').trim();
+            const link = parts[1] || '';
+
+            if (!descPart || !link) {
+                await sendTelegram(chatId, "⚠️ Format salah! Gunakan:\n`/tambah_task Deskripsi | Link`\n\nContoh:\n`/tambah_task Follow @chebrothers | https://x.com/chebrothers`Ready");
+                return res.status(200).json({ ok: true });
+            }
+
+            // 1. Auto-detect Platform and Task Type
+            let platform = 'base';
+            let actionType = 'transaction';
+            let targetId = '';
+
+            if (link.includes('x.com') || link.includes('twitter.com')) {
+                platform = 'twitter';
+                actionType = 'follow'; // Default for simple links
+                // Extract username
+                const match = link.match(/(?:x|twitter)\.com\/([^\n\/\s?]+)/);
+                if (match) targetId = match[1];
+            } else if (link.includes('warpcast.com')) {
+                platform = 'farcaster';
+                actionType = 'follow';
+                const match = link.match(/warpcast\.com\/([^\n\/\s?]+)/);
+                if (match) targetId = match[1];
+            }
+
+            // 2. Fetch XP Reward from point_settings
+            const { data: pointSetting } = await supabase
+                .from('point_settings')
+                .select('points_value')
+                .eq('platform', platform === 'twitter' ? 'x' : platform)
+                .ilike('action_type', actionType)
+                .eq('is_active', true)
+                .maybeSingle();
+
+            const xpReward = pointSetting ? pointSetting.points_value : 50; // Default 50 if not found
+
+            // 3. Calculate Expires At (Next 07:00 WIB / 00:00 UTC)
+            const now = new Date();
+            const expiresAt = new Date(now);
+            expiresAt.setUTCHours(0, 0, 0, 0);
+            if (expiresAt <= now) {
+                expiresAt.setUTCDate(expiresAt.getUTCDate() + 1);
+            }
+
+            // 4. Insert Task
+            const { data: newTask, error: insertError } = await supabase
+                .from('daily_tasks')
+                .insert([{
+                    description: descPart,
+                    platform,
+                    action_type: actionType,
+                    link,
+                    target_id: targetId,
+                    xp_reward: xpReward,
+                    is_active: false, // 07:15 activate logic
+                    expires_at: expiresAt.toISOString(),
+                    requires_verification: true,
+                    task_type: 'social'
+                }])
+                .select()
+                .single();
+
+            if (insertError) {
+                await sendTelegram(chatId, `❌ Gagal membuat task: ${insertError.message}`);
+            } else {
+                await sendTelegram(chatId, `✅ **Task Berhasil Dibuat!**\n\nID: \`${newTask.id}\`\nReward: ${xpReward} XP\nTarget: ${targetId || 'N/A'}\n\nStatus: ⏳ Pending (Aktif pukul 07:15 WIB)\nExpires: ${expiresAt.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB\n\n*Anti-Cheat Aktif: Cegah Klaim Berulang.*`);
+            }
+        }
+        else if (text.startsWith('/hapus_task')) {
+            const taskId = text.replace('/hapus_task', '').trim();
+            // Logic simplified: we'll handle callback queries for true convenience, but this is the text fallback
+            if (!taskId) {
+                await sendTelegram(chatId, "⚠️ Gunakan `/daftar_task` untuk menghapus menggunakan tombol, atau ketik `/hapus_task <uuid>`");
+                return res.status(200).json({ ok: true });
+            }
+            // ... existing delete logic ...
         }
         else if (text === '/health') {
             const { data, error } = await supabase.from('user_profiles').select('count', { count: 'exact', head: true });

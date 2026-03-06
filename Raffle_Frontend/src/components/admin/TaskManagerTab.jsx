@@ -48,9 +48,9 @@ export function TaskManagerTab() {
 
     // Tasks Batch State
     const [tasksBatch, setTasksBatch] = useState([
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true }
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true }
     ]);
     const [pointSettings, setPointSettings] = useState([]);
     const [isLoadingPoints, setIsLoadingPoints] = useState(true);
@@ -118,6 +118,7 @@ export function TaskManagerTab() {
                         action_type: task.action.toLowerCase(),
                         title: task.title,
                         link: task.link || 'https://warpcast.com/CryptoDisco',
+                        target_id: task.target_id,
                         reward_points: task.baseReward,
                         min_tier: task.minTier,
                         requires_verification: task.requiresVerification,

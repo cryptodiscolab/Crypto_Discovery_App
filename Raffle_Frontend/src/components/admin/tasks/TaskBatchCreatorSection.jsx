@@ -78,12 +78,21 @@ export function TaskBatchCreatorSection({ tasksBatch, onUpdateTask, onDeploy, is
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Target Link</label>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest text-[#00ff88]">Target Link</label>
                                     <input
                                         value={task.link}
                                         onChange={(e) => onUpdateTask(idx, 'link', e.target.value)}
                                         placeholder={PLATFORMS[task.platform]?.domain || "https://..."}
                                         className="w-full bg-slate-950/30 border border-white/5 p-2 px-3 rounded-lg text-slate-400 text-xs italic focus:border-purple-500/30 outline-none transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest text-[#00ff88]">Username / ID Akun (Cegah Klaim Berulang)</label>
+                                    <input
+                                        value={task.target_id}
+                                        onChange={(e) => onUpdateTask(idx, 'target_id', e.target.value)}
+                                        placeholder="Contoh: chebrothers atau 12345"
+                                        className="w-full bg-slate-950/30 border border-white/5 p-2 px-3 rounded-lg text-slate-400 text-xs focus:border-[#00ff88]/30 outline-none transition-all"
                                     />
                                 </div>
                             </div>

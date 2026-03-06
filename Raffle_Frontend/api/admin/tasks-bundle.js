@@ -65,10 +65,16 @@ export default async function handler(req, res) {
                 const { data, error } = await supabaseAdmin
                     .from('daily_tasks')
                     .insert({
-                        description: task_data.description,
-                        xp_reward: task_data.xp_reward,
+                        description: task_data.description || task_data.title,
+                        xp_reward: task_data.xp_reward || 0,
+                        platform: task_data.platform || 'base',
+                        action_type: task_data.action_type || 'transaction',
+                        link: task_data.link || 'https://warpcast.com/CryptoDisco',
+                        min_tier: task_data.min_tier || 1,
+                        requires_verification: task_data.requires_verification !== undefined ? task_data.requires_verification : true,
+                        is_active: task_data.is_active !== undefined ? task_data.is_active : false,
                         expires_at: task_data.expires_at || null,
-                        is_active: true
+                        created_at: new Date().toISOString()
                     })
                     .select()
                     .single();
