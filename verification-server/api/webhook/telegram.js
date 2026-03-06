@@ -73,15 +73,15 @@ module.exports = async (req, res) => {
             await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/model - Pilih Otak AI (Model)\n/fix <error> - Perbaiki error via AI");
         }
         else if (text === '/model') {
-            await sendTelegram(chatId, "🧠 **PILIH OTAK LURAH (AI MODEL)**\n\nKetik perintah di bawah:\n`/model_flash` - Gemini 1.5 Flash (Stabil & Cepat - Recomended)\n`/model_pro` - Gemini 1.5 Pro (Sangat Cerdas, Free Tier Support)\n`/model_2` - Gemini 2.0 Flash (Modern & Baru)\n\n*Pilihan Anda akan disimpan secara permanen di database.*");
+            await sendTelegram(chatId, "🧠 **PILIH OTAK LURAH (AI MODEL - 2026 EDITION)**\n\nKetik perintah di bawah:\n`/model_flash` - Gemini 2.5 Flash (Super Cepat & Akurat)\n`/model_pro` - Gemini 2.5 Pro (Otak Paling Cerdas & Mendalam)\n`/model_3` - Gemini 3.1 Flash (Teknologi Masa Depan)\n\n*Pilihan Anda akan disimpan secara permanen di database.*");
         }
         else if (text.startsWith('/model_')) {
             const chosen = text.split('_')[1];
-            let modelId = "gemini-1.5-flash"; // Default
-            let modelName = "Gemini 1.5 Flash";
+            let modelId = "gemini-2.5-flash"; // Default 2026
+            let modelName = "Gemini 2.5 Flash";
 
-            if (chosen === 'pro') { modelId = "gemini-1.5-pro"; modelName = "Gemini 1.5 Pro"; }
-            else if (chosen === '2') { modelId = "gemini-2.0-flash"; modelName = "Gemini 2.0 Flash"; }
+            if (chosen === 'pro') { modelId = "gemini-2.5-pro"; modelName = "Gemini 2.5 Pro"; }
+            else if (chosen === '3') { modelId = "gemini-3.1-flash-lite-preview"; modelName = "Gemini 3.1 Flash"; }
 
             // Simpan ke Agent Vault (Settings)
             await supabase.from('agent_vault').upsert({
@@ -130,11 +130,11 @@ module.exports = async (req, res) => {
 
             // Get preferred model from settings
             const modelSetting = vault?.find(v => v.file_path === 'settings/preferred_model');
-            let modelId = modelSetting ? modelSetting.content : "gemini-1.5-flash";
+            let modelId = modelSetting ? modelSetting.content : "gemini-2.5-flash";
 
             // Override if mentioning specific model in chat
-            if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-1.5-pro";
-            else if (text.toLowerCase().includes("pakai 2.0")) modelId = "gemini-2.0-flash";
+            if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-2.5-pro";
+            else if (text.toLowerCase().includes("pakai 3")) modelId = "gemini-3.1-flash-lite-preview";
 
             const prompt = `
                 Kamu adalah "Lurah Ekosistem", Pemecah Masalah dan Agen Otonom untuk Crypto Disco App.
@@ -156,9 +156,8 @@ module.exports = async (req, res) => {
             let fixResponse = "Gagal menghubungi AI Service.";
             if (geminiApiKey) {
                 try {
-                    // Use v1 for stable, v1beta for newer/flash
-                    const apiVersion = modelId.includes('2.0') ? 'v1beta' : 'v1';
-                    const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent?key=${geminiApiKey}`, {
+                    // Use v1beta for most 2.5/3.x models in 2026
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -195,11 +194,11 @@ module.exports = async (req, res) => {
 
             // Get preferred model from settings
             const modelSetting = vault?.find(v => v.file_path === 'settings/preferred_model');
-            let modelId = modelSetting ? modelSetting.content : "gemini-1.5-flash";
+            let modelId = modelSetting ? modelSetting.content : "gemini-2.5-flash";
 
             // Manual override detection
-            if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-1.5-pro";
-            else if (text.toLowerCase().includes("pakai 2.0")) modelId = "gemini-2.0-flash";
+            if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-2.5-pro";
+            else if (text.toLowerCase().includes("pakai 3")) modelId = "gemini-3.1-flash-lite-preview";
 
             const prompt = `
                 Kamu adalah "Lurah Ekosistem" (atau Antigravity), Agen Otonom Tingkat Senior (Senior Web3 Staff Engineer) untuk proyek Crypto Disco App.
@@ -226,9 +225,8 @@ module.exports = async (req, res) => {
             let chatResponse = "Gagal menghubungi AI Service.";
             if (geminiApiKey) {
                 try {
-                    // Use v1 for stable, v1beta for flash/exp
-                    const apiVersion = modelId.includes('2.0') ? 'v1beta' : 'v1';
-                    const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent?key=${geminiApiKey}`, {
+                    // Use v1beta for 2026 models
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
