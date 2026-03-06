@@ -10,6 +10,7 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+const geminiApiKey = process.env.GEMINI_API_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -34,7 +35,7 @@ module.exports = async (req, res) => {
     // 2. Command Router
     try {
         if (text === '/start') {
-            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC");
+            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/fix <error> - Minta Lurah memperbaiki error berdasarkan protokol & skill");
         }
         else if (text === '/audit') {
             await sendTelegram(chatId, "⏳ Memulai audit instan, mohon tunggu...");
@@ -57,6 +58,65 @@ module.exports = async (req, res) => {
             const table = "```\n+----------+-------+\n| Stat     | Count |\n+----------+-------+\n| Total    | " + (totalUsers || 0) + "     |\n| New (24h)| " + (newUsers || 0) + "     |\n+----------+-------+\n```";
             await sendTelegram(chatId, `📊 *Statistik Ekosistem*\n\n${table}`);
         }
+        else if (text.startsWith('/fix')) {
+            const errorMessage = text.replace('/fix', '').trim();
+            if (!errorMessage) {
+                await sendTelegram(chatId, "⚠️ Mohon sertakan pesan errornya, misal:\n`/fix TypeError: Cannot read property...`");
+                return res.status(200).json({ ok: true });
+            }
+            await sendTelegram(chatId, "⏳ Lurah sedang menganalisa error berdasarkan protokol (.cursorrules) dan skills, mohon tunggu...");
+
+            // 1. Fetch knowledge from Vault
+            const { data: vault } = await supabase.from('agent_vault').select('content, category');
+            const protocols = vault?.filter(v => v.category === 'protocol').map(v => v.content).join('\n\n');
+            const skills = vault?.filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
+
+            const prompt = `
+                Kamu adalah "Lurah Ekosistem", Pemecah Masalah dan Agen Otonom untuk Crypto Disco App.
+                Tugasmu adalah menganalisa dan memberikan perbaikan (code fix/solusi) untuk error berikut:
+
+                [ERROR INPUT]:
+                ${errorMessage}
+
+                Berikan solusi berdasarkan protokol dan keahlian berikut:
+                PROTOKOL ARSITEKTUR (.cursorrules):
+                ${protocols || 'Tidak tersedia'}
+
+                KEAHLIAN SENTINEL:
+                ${skills || 'Tidak tersedia'}
+                
+                Sajikan solusi secara ringkas, profesional, dan langsung ke intinya. Gunakan block code jika memberikan perbaikan kode.
+            `;
+
+            let fixResponse = "Gagal menghubungi AI Service.";
+            if (geminiApiKey) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.error) {
+                        console.error('❌ [Lurah Ekosistem] Gemini API Error:', result.error.message);
+                        fixResponse = `ℹ️ Analisa AI tertunda: ${result.error.message}`;
+                    } else {
+                        fixResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak memberikan solusi.";
+                    }
+                } catch (aiErr) {
+                    console.error('❌ AI Fetch Error:', aiErr.message);
+                }
+            } else {
+                fixResponse = "API Key Gemini tidak dikonfigurasi.";
+            }
+
+            if (fixResponse.length > 4000) {
+                fixResponse = fixResponse.substring(0, 4000) + '\n... (Pesan dipotong karena terlalu panjang)';
+            }
+            await sendTelegram(chatId, `🛠️ *HASIL ANALISA ERROR LURAH*\n\n${fixResponse}`);
+        }
         else {
             await sendTelegram(chatId, "Maaf, Lurah belum mengerti perintah itu. Gunakan /start untuk bantuan.");
         }
@@ -70,7 +130,7 @@ module.exports = async (req, res) => {
 };
 
 async function sendTelegram(chatId, text) {
-    await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -79,4 +139,17 @@ async function sendTelegram(chatId, text) {
             parse_mode: 'Markdown'
         })
     });
+
+    const result = await res.json();
+    if (!result.ok && result.description && result.description.includes('can\'t parse entities')) {
+        // Fallback without Markdown if parsing fails
+        await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: text
+            })
+        });
+    }
 }
