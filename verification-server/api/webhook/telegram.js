@@ -73,7 +73,7 @@ module.exports = async (req, res) => {
             await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/model - Pilih Otak AI (Model)\n/fix <error> - Perbaiki error via AI");
         }
         else if (text === '/model') {
-            await sendTelegram(chatId, "🧠 **PILIH OTAK LURAH (AI MODEL)**\n\nKetik perintah di bawah:\n`/model_flash` - Gemini 1.5 Flash (Stabil & Cepat - Recomended)\n`/model_pro` - Gemini 1.5 Pro (Sangat Cerdas, Limit Ketat)\n`/model_2` - Gemini 2.0 Flash (Modern & Baru)\n\n*Default saat ini: Gemini 1.5 Flash*");
+            await sendTelegram(chatId, "🧠 **PILIH OTAK LURAH (AI MODEL)**\n\nKetik perintah di bawah:\n`/model_flash` - Gemini 1.5 Flash (Stabil & Cepat - Recomended)\n`/model_pro` - Gemini 1.5 Pro (Sangat Cerdas, Free Tier Support)\n`/model_2` - Gemini 2.0 Flash (Modern & Baru)\n\n*Pilihan Anda akan disimpan secara permanen di database.*");
         }
         else if (text.startsWith('/model_')) {
             const chosen = text.split('_')[1];
@@ -83,9 +83,16 @@ module.exports = async (req, res) => {
             if (chosen === 'pro') { modelId = "gemini-1.5-pro"; modelName = "Gemini 1.5 Pro"; }
             else if (chosen === '2') { modelId = "gemini-2.0-flash"; modelName = "Gemini 2.0 Flash"; }
 
-            // Kita simpan ke setting sementara di DB jika butuh persistensi, 
-            // Untuk sekarang kita set default via logic pendeteksi mode.
-            await sendTelegram(chatId, `✅ Otak Lurah berhasil diganti ke: **${modelName}**.\nCobalah bertanya sesuatu sekarang!`);
+            // Simpan ke Agent Vault (Settings)
+            await supabase.from('agent_vault').upsert({
+                file_path: 'settings/preferred_model',
+                content: modelId,
+                category: 'setting',
+                version: 1,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'file_path' });
+
+            await sendTelegram(chatId, `✅ Otak Lurah berhasil diganti secara permanen ke: **${modelName}**.\nSilakan coba kirim chat atau perintah baru!`);
         }
         else if (text === '/audit') {
             await sendTelegram(chatId, "⏳ Memulai audit instan, mohon tunggu...");
@@ -116,10 +123,18 @@ module.exports = async (req, res) => {
             }
             await sendTelegram(chatId, "⏳ Lurah sedang menganalisa error berdasarkan protokol (.cursorrules) dan skills, mohon tunggu...");
 
-            // 1. Fetch knowledge from Vault
-            const { data: vault } = await supabase.from('agent_vault').select('content, category');
+            // 1. Fetch knowledge & Settings from Vault
+            const { data: vault } = await supabase.from('agent_vault').select('content, category, file_path');
             const protocols = vault?.filter(v => v.category === 'protocol').map(v => v.content).join('\n\n');
             const skills = vault?.filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
+
+            // Get preferred model from settings
+            const modelSetting = vault?.find(v => v.file_path === 'settings/preferred_model');
+            let modelId = modelSetting ? modelSetting.content : "gemini-1.5-flash";
+
+            // Override if mentioning specific model in chat
+            if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-1.5-pro";
+            else if (text.toLowerCase().includes("pakai 2.0")) modelId = "gemini-2.0-flash";
 
             const prompt = `
                 Kamu adalah "Lurah Ekosistem", Pemecah Masalah dan Agen Otonom untuk Crypto Disco App.
@@ -138,15 +153,12 @@ module.exports = async (req, res) => {
                 Sajikan solusi secara ringkas, profesional, dan langsung ke intinya. Gunakan block code jika memberikan perbaikan kode.
             `;
 
-            // Choice of model logic (Default to 1.5-flash for reliability)
-            let modelId = "gemini-1.5-flash";
-            if (text.includes("model_pro")) modelId = "gemini-1.5-pro";
-            // Check if user previously set a preference (For now we auto-select based on demand or stable)
-
             let fixResponse = "Gagal menghubungi AI Service.";
             if (geminiApiKey) {
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
+                    // Use v1 for stable, v1beta for newer/flash
+                    const apiVersion = modelId.includes('2.0') ? 'v1beta' : 'v1';
+                    const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -176,9 +188,18 @@ module.exports = async (req, res) => {
             // Conversational Mode: Talk like Local Agent (Antigravity/Lurah)
             await sendTelegram(chatId, "⏳ Memproses pemikiran...");
 
-            const { data: vault } = await supabase.from('agent_vault').select('content, category');
+            // 1. Fetch knowledge & Settings from Vault
+            const { data: vault } = await supabase.from('agent_vault').select('content, category, file_path');
             const protocols = vault?.filter(v => v.category === 'protocol').map(v => v.content).join('\n\n');
             const skills = vault?.filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
+
+            // Get preferred model from settings
+            const modelSetting = vault?.find(v => v.file_path === 'settings/preferred_model');
+            let modelId = modelSetting ? modelSetting.content : "gemini-1.5-flash";
+
+            // Manual override detection
+            if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-1.5-pro";
+            else if (text.toLowerCase().includes("pakai 2.0")) modelId = "gemini-2.0-flash";
 
             const prompt = `
                 Kamu adalah "Lurah Ekosistem" (atau Antigravity), Agen Otonom Tingkat Senior (Senior Web3 Staff Engineer) untuk proyek Crypto Disco App.
@@ -205,12 +226,9 @@ module.exports = async (req, res) => {
             let chatResponse = "Gagal menghubungi AI Service.";
             if (geminiApiKey) {
                 try {
-                    // We detect model preference from text if possible, or use fallback
-                    let modelId = "gemini-1.5-flash";
-                    if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-1.5-pro";
-                    else if (text.toLowerCase().includes("pakai 2.0")) modelId = "gemini-2.0-flash-exp";
-
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
+                    // Use v1 for stable, v1beta for flash/exp
+                    const apiVersion = modelId.includes('2.0') ? 'v1beta' : 'v1';
+                    const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
