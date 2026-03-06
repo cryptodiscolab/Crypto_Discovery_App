@@ -42,52 +42,81 @@ module.exports = async (req, res) => {
             .gt('claimed_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
             .gt('xp_earned', 5000); // Threshold anomali
 
-        // 3. Gunakan Otak AI (Gemini Flash) untuk Analisa
+        // 3. Gunakan Otak AI untuk Analisa
         const prompt = `
             Kamu adalah "Lurah Ekosistem", Agen Otonom untuk Crypto Disco App.
             Tugasmu adalah mengaudit data berdasarkan protokol berikut:
             
             PROTOKOL ARSITEKTUR:
-            ${protocols}
+            ${protocols || 'Tidak ada protokol terdefinisi.'}
             
             KEAHLIAN SENTINEL:
-            ${skills}
+            ${skills || 'Tidak ada skill terdefinisi.'}
             
             DATA AUDIT (24 JAM TERAKHIR):
-            - User Baru: ${JSON.stringify(newUsers)}
-            - Potensi Anomali XP: ${JSON.stringify(anomalies)}
+            - User Baru: ${JSON.stringify(newUsers || [])}
+            - Potensi Anomali XP: ${JSON.stringify(anomalies || [])}
             
-            Berikan laporan ringkas (Bahasa Indonesia) yang mencakup:
-            1. Ringkasan kesehatan ekosistem.
-            2. Daftar pelanggaran (jika ada, misal: PFP URL terlalu panjang atau XP mencurigakan).
+            Berikan laporan ringkas (Bahasa Indonesia) dengan format berikut:
+            1. Ringkasan kesehatan ekosistem (dalam bentuk Tabel ASCII jika ada data statistik).
+            2. Daftar pelanggaran atau anomali (dalam bentuk Tabel ASCII).
             3. Rekomendasi tindakan untuk Admin.
+            
+            Gunakan blok kode (backticks) untuk tabel agar terlihat rapi di Telegram (monospaced).
         `;
 
         let aiResponse = "AI Analysis not available (Missing API Key).";
         if (geminiApiKey) {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
-            });
-            const result = await response.json();
-            aiResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI Gagal memberikan respon.";
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    console.error('❌ [Lurah Ekosistem] Gemini API Error:', result.error.message);
+                    aiResponse = `Analisa AI tertunda (Quota/Limit reached).`;
+                } else {
+                    aiResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI Gagal memberikan respon.";
+                }
+            } catch (aiErr) {
+                console.error('❌ [Lurah Ekosistem] AI Fetch Error:', aiErr.message);
+                aiResponse = "Gagal menghubungi AI Service.";
+            }
         }
 
         // 4. Kirim Notifikasi Telegram
         if (telegramBotToken && telegramChatId) {
             const message = `🚨 *LAPORAN LURAH EKOSISTEM*\n\n${aiResponse}`;
-            await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: telegramChatId,
-                    text: message,
-                    parse_mode: 'Markdown'
-                })
-            });
+            try {
+                const tgRes = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: telegramChatId,
+                        text: message,
+                        parse_mode: 'Markdown'
+                    })
+                });
+                const tgResult = await tgRes.json();
+
+                if (!tgResult.ok) {
+                    // Fallback: Send as plain text if Markdown fails
+                    await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: telegramChatId,
+                            text: `🚨 LAPORAN LURAH EKOSISTEM (Plain Text)\n\n${aiResponse}`
+                        })
+                    });
+                }
+            } catch (tgErr) {
+                console.error('❌ [Lurah Ekosistem] Telegram Fetch Error:', tgErr.message);
+            }
         }
 
         console.log('✅ [Lurah Ekosistem] Audit Complete.');

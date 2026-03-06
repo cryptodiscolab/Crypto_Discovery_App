@@ -109,6 +109,17 @@ app.use('/api/verify', verifyRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/tasks', userRoutes); // /api/tasks/verify is handled in userRoutes
 
+// --- NEW: Telegram Webhook Handler ---
+app.post('/api/webhook/telegram', async (req, res) => {
+    try {
+        const handler = require('./webhook/telegram.js');
+        await handler(req, res);
+    } catch (err) {
+        console.error('[Webhook Error] Endpoint error:', err.message);
+        res.status(500).json({ error: 'Webhook execution failed' });
+    }
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({
