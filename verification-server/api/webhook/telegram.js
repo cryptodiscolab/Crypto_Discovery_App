@@ -25,18 +25,41 @@ module.exports = async (req, res) => {
     // Telegram will send X-Telegram-Bot-Api-Secret-Token if configured.
     // We sanitize bot token (remove :) because Telegram only allows A-Z, a-z, 0-9, _ and -
     const secretToken = req.headers['x-telegram-bot-api-secret-token'];
+
+    if (!telegramBotToken) {
+        console.error('❌ TELEGRAM_BOT_TOKEN is not configured in environment variables!');
+        return res.status(500).json({ error: 'Server misconfigured: Bot token missing' });
+    }
+
     const expectedSecret = telegramBotToken.replace(/:/g, '_');
 
     // Skip secret token check in local mode to allow CLI testing
     if (process.env.LURAH_LOCAL_MODE !== 'true' && secretToken !== expectedSecret) {
-        console.error(`[Security Alert] Invalid or missing Telegram Secret Token. IP: ${req.headers['x-forwarded-for']}`);
+        console.error(`[Security Alert] Invalid or missing Telegram Secret Token. Expected: ${expectedSecret.substring(0, 5)}... Received: ${secretToken ? secretToken.substring(0, 5) : 'null'}...`);
         return res.status(401).json({ error: 'Unauthorized: Invalid Security Token' });
     }
 
     // 2. Identity Check: Hanya balas chat dari owner (Anda)
+    if (!telegramChatId) {
+        console.error('❌ TELEGRAM_CHAT_ID is not configured!');
+        return res.status(500).json({ error: 'Server misconfigured: Chat ID missing' });
+    }
+
     if (!message || !message.chat || String(message.chat.id) !== String(telegramChatId)) {
         console.log(`[Webhook] Ignored unauthorized chat ID: ${message?.chat?.id}`);
         return res.status(200).json({ ok: true });
+    }
+
+    // 3. Vault & External Keys Check
+    if (!supabaseUrl || !supabaseKey) {
+        console.error('❌ Supabase configuration is missing!');
+        await sendTelegram(chatId, "⚠️ Server Error: Supabase configuration is missing on Vercel.");
+        return res.status(500).json({ error: 'Supabase configuration missing' });
+    }
+
+    if (!geminiApiKey) {
+        console.warn('⚠️ Gemini API Key is missing!');
+        // Don't error out entirely, can still show health/stats maybe
     }
 
     const text = message.text || '';
