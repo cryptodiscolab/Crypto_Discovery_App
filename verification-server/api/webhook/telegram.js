@@ -22,11 +22,13 @@ module.exports = async (req, res) => {
     const { message } = req.body;
 
     // 1. MAXIMUM Security Check (Anti-Spoofing & Zero Trust)
-    // Telegram will send X-Telegram-Bot-Api-Secret-Token if configured. We use bot token as secret.
+    // Telegram will send X-Telegram-Bot-Api-Secret-Token if configured.
+    // We sanitize bot token (remove :) because Telegram only allows A-Z, a-z, 0-9, _ and -
     const secretToken = req.headers['x-telegram-bot-api-secret-token'];
+    const expectedSecret = telegramBotToken.replace(/:/g, '_');
 
     // Skip secret token check in local mode to allow CLI testing
-    if (process.env.LURAH_LOCAL_MODE !== 'true' && secretToken !== telegramBotToken) {
+    if (process.env.LURAH_LOCAL_MODE !== 'true' && secretToken !== expectedSecret) {
         console.error(`[Security Alert] Invalid or missing Telegram Secret Token. IP: ${req.headers['x-forwarded-for']}`);
         return res.status(401).json({ error: 'Unauthorized: Invalid Security Token' });
     }
