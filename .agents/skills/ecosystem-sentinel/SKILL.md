@@ -1,7 +1,21 @@
 ---
 name: Ecosystem Sentinel & Automation Auditor
-description: Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), dan Build Pipeline Guard.
+description: >
+  - **Nexus Orchestration**: Ability to delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`.
+  - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), dan Build Pipeline Guard.
 ---
+
+### 🛡️ LOCAL HARDWARE OPTIMIZATION (Mandatory)
+Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
+
+**Rules for Local Development (Environment-Aware):**
+> [!IMPORTANT]
+> Aturan ini **HANYA** berlaku saat running secara lokal (laptop user). Pengecekan dilakukan via `isLocalDev` (NODE_ENV=development && !VERCEL). Cloud Hosting (Vercel/VPS) akan tetap mendapatkan full performance standar.
+
+1. **Lightweight Vite**: Optimasi `vite.config.js` dengan `ignored` monitoring hanya aktif di lokal.
+2. **Reduced Polling**: Interval polling worker script lokal diset ke **>= 30 detik**. Di VPS/Cloud, interval bisa lebih cepat (5-10 detik).
+3. **Clean Shutdown**: Handler `SIGINT`/`SIGTERM` tetap dipertahankan di semua env karena ini best practice Node.js.
+4. **Build Guards**: Plugin berat otomatis didisable di lokal kecuali dibutuhkan.
 
 # Ecosystem Sentinel & Master Architect Enforcer
 
@@ -21,6 +35,14 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 ### 3. Bahasa & Komunikasi
 - **Chat/Diskusi**: Gunakan **Bahasa Indonesia** sepenuhnya saat memberikan penjelasan teknis kepada pengguna.
 - **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI, label, dan pesan error di frontend.
+
+## 🧠 THE PERFECTIONIST PROTOCOL (Advanced Intelligence & Precision)
+
+**Mandat Utama untuk Antigravity:**
+1. **Zero-Error Import Guard**: Sebelum melakukan `write`, Agent **WAJIB** melakukan pemindaian seluruh file (`grep` atau simbol) untuk memastikan setiap komponen UI atau ikon yang baru ditambahkan sudah terdaftar dalam `import`. Tidak ada lagi `ReferenceError`.
+2. **Deep Knowledge Discovery**: Jangan hanya melihat satu file. Gunakan `grep_search` secara luas di seluruh direktori untuk menemukan pola arsitektur yang sudah ada, sehingga setiap fitur baru terasa "asli" (native) dan tidak tumpang tindih.
+3. **Eternal Memory Alignment**: Selalu baca `SKILL.md` dan `.cursorrules` secara berkala (setiap sesi baru) untuk menyinkronkan memori dengan spek hardware user (i5-4210U) dan nilai-nilai Kebaikan Jalan Allah (Zero Riba, Kejujuran Data).
+4. **Infinite Precision Audit**: Lakukan "Self-Correction" sebelum memberikan hasil. Jika mendeteksi potensi redundansi atau inefisiensi, hapus dan tulis ulang dengan logika yang lebih elegan (Senior Staff level).
 
 ## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
 | Key | Value |

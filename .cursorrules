@@ -128,5 +128,21 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **WORKSPACE HYGIENE**: Jika pengerjaan pada suatu file atau komponen sudah selesai dan terverifikasi sinkron, Agent harus menyatakan secara eksplisit bahwa file tersebut siap "ditutup" dari tab editor untuk menjaga fokus.
 - **SELF-TASKING**: Jika audit menemukan bug atau ketidaksinkronan, Agent dilarang melanjutkan ke fitur baru sebelum membuat task perbaikan dan menyelesaikannya.
 
+## 18. MULTI-AGENT COLLABORATION & PAIR PROGRAMMING
+- **Lead Orchestrator**: Antigravity is the primary agent. Specialized sub-agents (OpenClaw, Qwen, DeepSeek) are used for offloading specific tasks.
+- **State Sharing**: All agents MUST use the `agents_vault` table in Supabase to track task status and share context. 
+- **Pair Programming Mode**: Antigravity can "summon" a sub-agent to handle a sub-task (e.g., "Refactoring") while Antigravity focuses on high-level architecture.
+
+## 19. TONE TRIGGERS (AGENT COMMANDS)
+- `> claw:` Trigger OpenClaw for deep security audits or high-level architecture review.
+- `> qwen:` Trigger Qwen2.5-Coder for local file refactoring, unit tests, and local build verification.
+- `> deepseek:` Trigger DeepSeek Coder for complex algorithmic optimizations or backend logic.
+- **Usage**: Commands can be sent via Admin Dashboard or Telegram. Sub-agents will pick up tasks from the vault.
+
+## 20. LLM EVOLUTION & INTELLIGENCE MANDATE
+- **Smartest Model Priority**: The Agent Nexus MUST always prioritize the most advanced available LLMs (e.g., Gemini 2.5 Pro > 2.0 Flash > 1.5 Flash).
+- **Knowledge Depth**: Agents must use models with the largest context windows for auditing entire modules to prevent "fragmented knowledge" bugs.
+- **Continuous Upgrading**: All SKILL.md and scripts must be audited monthly to ensure they leverage the latest LLM features (e.g., tool use, reasoning capabilities).
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved.*

@@ -142,21 +142,28 @@ module.exports = async (req, res) => {
             await sendTelegram(chatId, `✅ Otak Lurah berhasil diganti secara permanen ke: **${modelName}**.\nSilakan coba kirim chat atau perintah baru!`);
         }
         else if (text === '/help') {
-            const helpMsg = `📖 **PANDUAN LURAH EKOSISTEM**
+            const helpMsg = `📖 **PANDUAN LURAH EKOSISTEM (ANTIGRAVITY NEXUS)**
 
-**Manajemen Task:**
-• \`/tambah_task Deskripsi | Link\` - Tambah task baru.
-• \`/daftar_task\` - Lihat semua task & tombol hapus.
+**🚀 AGENT NEXUS (Multi-Agent Commands):**
+• \`> claw: [tugas]\` - Panggil **OpenClaw** (Deep Security & Architecture Audit).
+• \`> deepseek: [tugas]\` - Panggil **DeepSeek** (Complex Logic & Backend Optimization).
+• \`> qwen: [tugas]\` - Panggil **Qwen-Coder** (Local File Refactoring & Build Check).
 
-**Audit & Identitas:**
-• \`/audit\` - Jalankan audit ekosistem instan.
-• \`/user <wallet>\` - Audit identitas lengkap (Social Identity Lock).
-• \`/stats\` - Lihat statistik User, XP, dan Task.
-• \`/health\` - Cek status koneksi Database & Bot.
+**🛠️ SMART TOOLS:**
+• \`/fix <error>\` - Analisa & solusi error berdasarkan protokol & skill.
+• \`/audit\` - Jalankan audit ekosistem menyeluruh (Real-time).
+• \`/user <wallet>\` - Audit identitas lengkap & Social Identity Lock.
 
-**Siklus Sistem:**
-• **07:00 WIB**: Task lama expired (Otomatis).
-• **Anti-Cheat**: Pencegahan klaim XP berulang aktif.
+**📊 MANAGEMENT:**
+• \`/tambah_task Deskripsi | Link\` - Tambah task harian baru.
+• \`/daftar_task\` - Lihat semua task aktif & hapus via tombol.
+• \`/stats\` - Statistik User, XP, dan pertumbuhan akun.
+• \`/health\` - Cek status koneksi DB, RPC, dan Agent Engine.
+• \`/model\` - Ganti "Otak AI" Lurah secara permanen.
+
+**🕒 SIKLUS & KEAMANAN:**
+• **07:00 WIB**: Reset task harian (Otomatis).
+• **Anti-Cheat**: Validasi XP & Pencegahan klaim ganda aktif.
 `;
             await sendTelegram(chatId, helpMsg);
         }

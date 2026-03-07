@@ -5,7 +5,7 @@ import {
     CheckCircle, AlertTriangle, ExternalLink, RefreshCw,
     Edit3, Save, Eye, EyeOff, UserCog, Newspaper,
     Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList, Sliders, Megaphone,
-    Menu, X
+    Menu, X, Activity
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
@@ -36,6 +36,7 @@ const SyncLogTab = React.lazy(() => import('../components/admin/tabs/SyncLogTab'
 const TierTab = React.lazy(() => import('../components/admin/tabs/TierTab').then(m => ({ default: m.TierTab })));
 const TreasuryTab = React.lazy(() => import('../components/admin/tabs/TreasuryTab').then(m => ({ default: m.TreasuryTab })));
 const NFTConfigTab = React.lazy(() => import('../components/admin/tabs/NFTConfigTab').then(m => ({ default: m.NFTConfigTab })));
+const NexusMonitorTab = React.lazy(() => import('../components/admin/tabs/NexusMonitorTab').then(m => ({ default: m.NexusMonitorTab })));
 
 export function AdminPage({ initialTab = 'pool' }) {
     const navigate = useNavigate();
@@ -142,6 +143,7 @@ export function AdminPage({ initialTab = 'pool' }) {
         { id: 'content', label: 'Feature Cards (CMS)', icon: Database, color: 'indigo' },
         { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
         { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
+        { id: 'nexus', label: 'Nexus Live', icon: Activity, color: 'indigo' },
     ];
 
     return (
@@ -284,6 +286,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                                 {activeTab === 'content' && <AdminCMSContent />}
                                 {activeTab === 'sync-logs' && <SyncLogTab />}
                                 {activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
+                                {activeTab === 'nexus' && <NexusMonitorTab />}
                             </div>
                         </React.Suspense>
                     </div>
