@@ -170,5 +170,11 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **VERIFICATION**: Before finalizing any task, you MUST perform a `grep_search` for hardcoded reward strings to ensure the ecosystem remains 100% data-driven.
 - **ADMIN SYNC**: All administrative controls (e.g., `TaskManagerTab`, `SponsorshipConfig`) must use dynamic fetching for defaults to ensure the UI matches the backend reality.
 
+## 23. PRE-FLIGHT CHECK & DEPLOYMENT GUARD (STRICT MANDATE)
+- **THE SYNC BAN**: NEVER push code (`git push`) without first verifying entire ecosystem health.
+- **SYNTAX MANDATE**: You MUST run a syntax check explicitly on all modified or critical backend files before pushing.
+  - Examples: `node -c api/user-bundle.js`, `npm run lint` (Frontend).
+- **MANDATORY VERIFICATION**: If any syntax error, Linter error, or "&& token separator" error occurs in the terminal, YOU MUST FIX IT before proceeding to Git operations. Pushing broken code is a critical violation of the Lurah Protocol.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Lurah Approved.*

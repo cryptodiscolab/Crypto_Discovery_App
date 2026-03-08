@@ -167,13 +167,17 @@ Sebelum melakukan `git push`, Agent WAJIB menjalankan:
 # 1. Import Audit — Periksa impor yang tidak valid
 grep -rn "from 'viem'" src/ | grep -E "toUtf8Bytes|toUtf8String|formatBytes32String"
 
-# 2. Local Build Test
+# 2. Syntax & Linter Check (MANDATORY)
+npm run lint
+node -c api/user-bundle.js
+node -c api/admin-bundle.js
+node -c api/cron/lurah-ekosistem.js
+
+# 3. Local Build Test
 npm run build
 
-# 3. Jika build gagal, diagnosis:
-# - Disable treeshake → vite.config.js: treeshake: false
-# - Rebuild → Baca error message baru (biasanya invalid import)
-# - Fix error → Re-enable treeshake → Rebuild
+# 4. Jika terdapat error syntax atau build gagal:
+# - Fix error secara instan. DILARANG KERAS mem-push kode yang rusak ke repository.
 ```
 
 ### Build Error Decision Tree
@@ -212,6 +216,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 
 ## 📋 Checklist Sentinel (MANDATORY)
 - [ ] **Audit**: Apakah kode baru bebas dari hardcode dan celah keamanan? (Jalankan `sentinel-audit.js`)
+- [ ] **Syntax & Lint**: Apakah pengecekan sintaks backend (`node -c`) dan linter frontend (`npm run lint`) bersih tanpa error fatal?
 - [ ] **Sync**: Apakah `.cursorrules` dan `.env` sudah sesuai dengan kontrak terbaru? (Jalankan `sync-check.js`)
 - [ ] **Dev Plan**: Apakah sudah memberikan Development Plan dan mendapat persetujuan sebelum eksekusi?
 - [ ] **Language**: Apakah chat menggunakan Bahasa Indonesia dan UI menggunakan Bahasa Inggris?
@@ -223,7 +228,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 
 ## 🚨 Pantangan
 - Melakukan push kode yang belum diaudit secara otomatis.
-- **Push tanpa menjalankan `npm run build` lokal terlebih dahulu.**
+- **Push tanpa menjalankan `node -c`, `npm run lint`, dan `npm run build` lokal terlebih dahulu.**
 - Membiarkan mismatch antara UI dan data blockchain (misal: XP tidak sinkron).
 - Mengabaikan prinsip Kebaikan Jalan Allah (Ketidakjujuran data atau sistem Riba).
 - **Mengubah file .agents atau .cursorrules tanpa menjalankan sync-cloud.js.**
