@@ -167,25 +167,30 @@ async function handleXpSync(req, res) {
                 : '885535d2-4c5c-4a80-9af5-36666192c244';
 
             // 5. Record Claim to update total_xp via trigger
-            // This is "Trigger-Safe" because sync_user_xp sums all claims.
+            // Using UPSERT: fetch existing first to accumulate XP
+            const { data: existingClaim } = await supabaseAdmin
+                .from('user_task_claims')
+                .select('xp_earned')
+                .eq('wallet_address', cleanAddress)
+                .eq('task_id', taskId)
+                .maybeSingle();
+
+            const currentTaskXp = existingClaim ? (existingClaim.xp_earned || 0) : 0;
+            const newTotalTaskXp = currentTaskXp + xpDelta;
+
             const { error: claimError } = await supabaseAdmin
                 .from('user_task_claims')
-                .insert({
+                .upsert({
                     wallet_address: cleanAddress,
                     task_id: taskId,
-                    xp_earned: xpDelta,
+                    xp_earned: newTotalTaskXp,
                     claimed_at: new Date().toISOString(),
                     platform: 'blockchain',
                     action_type: 'contract_sync'
-                });
+                }, { onConflict: 'wallet_address, task_id' });
 
             if (claimError) {
-                // If it's a unique constraint error, it means sync already happened today for this taskId
-                if (claimError.code === '23505') {
-                    console.warn(`[XP Sync] Duplicate sync for ${cleanAddress} today. Skipping insert.`);
-                } else {
-                    throw claimError;
-                }
+                throw claimError;
             }
         } else if (xpDelta < 0) {
             console.warn(`[XP Sync] On-chain XP (${onChainXP}) is lower than DB OnChain record (${dbOnChainXP}) for ${cleanAddress}`);
