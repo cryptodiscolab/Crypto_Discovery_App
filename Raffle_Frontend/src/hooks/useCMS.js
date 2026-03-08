@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClient } from 'wagmi';
-import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS } from '../lib/contracts';
+import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS, ADMIN_WALLETS } from '../lib/contracts';
 import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
