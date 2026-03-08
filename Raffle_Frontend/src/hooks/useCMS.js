@@ -121,6 +121,23 @@ export function useCMS() {
         }
     });
 
+    // 3rd admin check: on-chain contract owner (DailyApp / SBT deployer)
+    // Safe — reads blockchain, no hardcode exposure
+    const { data: contractOwner } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: [{ name: 'owner', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] }],
+        functionName: 'owner',
+        query: {
+            enabled: Boolean(CONTRACTS.DAILY_APP && address),
+            staleTime: 5 * 60 * 1000,
+        }
+    });
+
+    const isContractOwner = useMemo(() => {
+        if (!address || !contractOwner) return false;
+        return address.toLowerCase() === contractOwner.toLowerCase();
+    }, [address, contractOwner]);
+
     // Robust check fallbacks removed (Centralized Authority array no longer exists)
     // Database Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);
@@ -152,7 +169,7 @@ export function useCMS() {
     }, [address]);
 
     // Final boolean roles (Memoized for efficiency)
-    const isAdmin = useMemo(() => Boolean(isAdminRaw || isDbAdmin), [isAdminRaw, isDbAdmin]);
+    const isAdmin = useMemo(() => Boolean(isAdminRaw || isDbAdmin || isContractOwner), [isAdminRaw, isDbAdmin, isContractOwner]);
     const isOperator = useMemo(() => Boolean(isOperatorRaw), [isOperatorRaw]);
     const canEdit = useMemo(() => isAdmin || isOperator, [isAdmin, isOperator]);
 

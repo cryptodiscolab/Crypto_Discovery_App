@@ -32,6 +32,51 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 
 # Ecosystem Sentinel & Master Architect Enforcer
 
+---
+
+## 📄 PRD LIVING DOCUMENT MANDATE (TASK UTAMA)
+
+> [!IMPORTANT]
+> **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
+
+### 📍 Lokasi Kanonik PRD
+**File:** `C:\Users\chiko\.gemini\antigravity\brain\044055c3-c9b8-4a4b-b419-4de1191abaa2\PRD_Crypto_Disco.md`
+
+### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
+
+1. **Baca PRD Sebelum Fitur Baru**: Setiap kali memulai fitur atau modul baru, Agent **WAJIB** membaca seksi PRD yang relevan terlebih dahulu untuk memastikan implementasi sesuai spesifikasi.
+
+2. **Update PRD Setelah Perubahan Fitur**: Setiap perubahan signifikan pada fitur (new page, baru contract, endpoint baru, perubahan ekonomi) **WAJIB** diikuti update pada PRD di seksi yang relevan. Tidak boleh ada fitur yang berjalan di production tetapi tidak terdokumentasi di PRD.
+
+3. **PRD sebagai Source of Truth**: Jika ada konflik antara kode dan PRD, **PRD yang harus diperbarui** (jika kode memang sudah diubah secara sengaja) atau **kode yang harus diperbaiki** (jika kode menyimpang dari spesifikasi tanpa alasan). Agent harus mengklarifikasi ke user sebelum memutuskan.
+
+4. **Sinkronisasi PRD dengan .cursorrules**: Setiap update kontrak, alamat, atau protokol di `.cursorrules` **WAJIB** tercermin juga di seksi "Arsitektur Sistem" dalam PRD.
+
+5. **Checklist PRD per Sesi**: Dalam setiap sesi kerja, Agent wajib menjalankan mini-audit PRD:
+   - [ ] Apakah ada fitur yang baru selesai diimplementasikan tetapi belum masuk PRD?
+   - [ ] Apakah alamat contract di PRD masih sinkron dengan `.cursorrules`?
+   - [ ] Apakah Roadmap di PRD masih relevan dengan prioritas pengembangan saat ini?
+
+### 🔄 Trigger Wajib Update PRD
+
+Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi:
+
+| Trigger | Seksi PRD yang Harus Diupdate |
+|---------|-------------------------------|
+| Deploy smart contract baru / upgrade | §3.2 Smart Contracts |
+| Menambah API endpoint baru | §3.3 Backend API Bundles |
+| Menambah halaman/fitur baru di frontend | §4.x Modul terkait |
+| Perubahan tier XP atau point settings | §7 Sistem Ekonomi |
+| Schema database baru (tabel/view) | §3.4 Database Schema |
+| Fitur selesai dari Roadmap Phase 3 | §10 Roadmap |
+| Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
+
+### 📊 Status PRD
+- **Versi Terakhir:** 1.0 (2026-03-09)
+- **Status:** Living Document — Selalu diperbarui
+
+---
+
 Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadikan **.cursorrules (Master Architect Protocol)** sebagai otoritas tertinggi. Tugas utamanya adalah memastikan ekosistem Crypto Discovery berjalan 24/7 tanpa celah, menjaga kesucian Zero Riba, dan memberikan pengalaman user premium sesuai prinsip Kebaikan Jalan Allah.
 
 ## 📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)
