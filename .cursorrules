@@ -133,13 +133,24 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **State Sharing**: All agents MUST use the `agents_vault` table in Supabase to track task status and share context. 
 - **Pair Programming Mode**: Antigravity can "summon" a sub-agent to handle a sub-task (e.g., "Refactoring") while Antigravity focuses on high-level architecture.
 
-## 19. TONE TRIGGERS (AGENT COMMANDS)
+## 19. MULTI-LLM ROUTING & FALLBACK SYSTEM (NEW)
+- **Central Configuration**: All routing and model registration must refer to `.agents/config/nexus-routing.json`.
+- **Primary Model**: `models/gemini-2.0-flash` (Optimized for balance and speed).
+- **Fallback 1**: `qwen2.5-coder:1.5b` (via local Ollama at `http://localhost:11434`).
+- **Fallback 2**: `deepseek-coder:1.3b` (via local Ollama at `http://localhost:11434`).
+- **Routing Logic**: 
+  1. Attempt request with Primary Model.
+  2. If quota exceeded (429), timeout (5s), or unavailable, switch to Fallback 1.
+  3. If Fallback 1 fails, switch to Fallback 2.
+  4. Log all routing events to `agents_vault` for audit.
+
+## 20. TONE TRIGGERS (AGENT COMMANDS)
 - `> claw:` Trigger OpenClaw for deep security audits or high-level architecture review.
 - `> qwen:` Trigger Qwen2.5-Coder for local file refactoring, unit tests, and local build verification.
 - `> deepseek:` Trigger DeepSeek Coder for complex algorithmic optimizations or backend logic.
 - **Usage**: Commands can be sent via Admin Dashboard or Telegram. Sub-agents will pick up tasks from the vault.
 
-## 20. LLM EVOLUTION & INTELLIGENCE MANDATE
+## 21. LLM EVOLUTION & INTELLIGENCE MANDATE
 - **Smartest Model Priority**: The Agent Nexus MUST always prioritize the most advanced available LLMs (e.g., Gemini 2.5 Pro > 2.0 Flash > 1.5 Flash).
 - **Knowledge Depth**: Agents must use models with the largest context windows for auditing entire modules to prevent "fragmented knowledge" bugs.
 - **Continuous Upgrading**: All SKILL.md and scripts must be audited monthly to ensure they leverage the latest LLM features (e.g., tool use, reasoning capabilities).

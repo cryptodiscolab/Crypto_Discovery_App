@@ -17,27 +17,16 @@
  *   - SUPABASE_SERVICE_ROLE_KEY
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ROOT_DIR = path.resolve(__dirname, '../../../../');
-const RAFFLE_MODULES = path.join(ROOT_DIR, 'Raffle_Frontend', 'node_modules');
-// ── Resolve dependencies ───────────────────────────────────────────────────
-let createClient;
-try {
-    // Try Raffle_Frontend first (CI fallback)
-    ({ createClient } = require(path.join(RAFFLE_MODULES, '@supabase/supabase-js')));
-} catch (e) {
-    try {
-        // Try ROOT node_modules
-        ({ createClient } = require('@supabase/supabase-js'));
-    } catch (e2) {
-        console.error('❌ [FATAL] Cannot load @supabase/supabase-js.');
-        console.error('   Pastikan `npm install` sudah dijalankan.');
-        console.error('   Detail:', e2.message);
-        process.exit(1);
-    }
-}
 
 // Load .env
 const raffleEnvPath = path.join(ROOT_DIR, 'Raffle_Frontend', '.env');
@@ -45,18 +34,8 @@ const rootEnvPath = path.join(ROOT_DIR, '.env');
 const envPath = fs.existsSync(rootEnvPath) ? rootEnvPath : raffleEnvPath;
 
 if (fs.existsSync(envPath)) {
-    try {
-        let dotenv;
-        try {
-            dotenv = require(path.join(RAFFLE_MODULES, 'dotenv'));
-        } catch (e) {
-            dotenv = require('dotenv');
-        }
-        dotenv.config({ path: envPath });
-        console.log(`✅ Loaded env from: ${envPath}`);
-    } catch (e) {
-        console.warn('⚠️ Warning: dotenv tidak ditemukan. Mengandalkan process.env (GitHub Secrets).');
-    }
+    dotenv.config({ path: envPath });
+    console.log(`✅ Loaded env from: ${envPath}`);
 }
 
 // ── Supabase Client ───────────────────────────────────────────────────────────

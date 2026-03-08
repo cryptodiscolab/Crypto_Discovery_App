@@ -1,0 +1,42 @@
+{
+    "routing_config": {
+        "default_model": "models/gemini-2.0-flash",
+        "priority_order": [
+            {
+                "provider": "google",
+                "model": "models/gemini-2.0-flash",
+                "chat_enabled": true,
+                "endpoint": "https://generativelanguage.googleapis.com"
+            },
+            {
+                "provider": "ollama",
+                "model": "qwen2.5-coder:1.5b",
+                "chat_enabled": true,
+                "endpoint": "http://localhost:11434"
+            },
+            {
+                "provider": "ollama",
+                "model": "deepseek-coder:1.3b",
+                "chat_enabled": true,
+                "endpoint": "http://localhost:11434"
+            }
+        ],
+        "fallback_threshold_ms": 5000,
+        "max_retries": 2
+    },
+    "registered_models": {
+        "gemini": [
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-2.0-flash"
+        ],
+        "qwen": [
+            "qwen2.5",
+            "qwen2.5-coder"
+        ],
+        "deepseek": [
+            "deepseek-chat",
+            "deepseek-coder"
+        ]
+    }
+}
