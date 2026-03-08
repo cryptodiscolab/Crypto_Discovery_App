@@ -52,9 +52,7 @@ export const CREATOR_TOKEN_ADDRESS = getAddr('CREATOR_TOKEN_ADDRESS', 'VITE_CREA
 export const PRICE_FEED_ADDRESS = getAddr('PRICE_FEED_ADDRESS', 'VITE_PRICE_FEED_ADDRESS') || '0x4aDC67696bA383F43fD60604633031d935f9584b';
 export const SAFE_MULTISIG = getAddr('SAFE_MULTISIG', 'VITE_SAFE_MULTISIG') || '0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa';
 
-// Administrative Constants
-export const MASTER_ADMIN = (import.meta.env.VITE_ADMIN_ADDRESS || "0x08452b1bdAa6aCD11f6cCf5268d16e2AC29c204B").toLowerCase();
-export const ADMIN_WALLETS = (import.meta.env.VITE_ADMIN_WALLETS || MASTER_ADMIN).split(',').map(a => a.trim().toLowerCase());
+// Removed purely static Admin constants to prevent them from being bundled in the frontend.
 
 // PROXY CONSTANTS (The "Cheat Code")
 export const DAILY_APP_ABI = createAbiProxy('DAILY_APP');

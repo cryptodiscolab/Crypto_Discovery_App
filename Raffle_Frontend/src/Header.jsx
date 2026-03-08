@@ -8,7 +8,7 @@ import { useCMS } from './hooks/useCMS';
 import { useFarcaster } from './shared/context/FarcasterContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
-import { ABIS, CONTRACTS, ADMIN_WALLETS } from './lib/contracts';
+import { ABIS, CONTRACTS } from './lib/contracts';
 
 export function Header() {
   const { address, isConnected } = useAccount();
@@ -21,14 +21,8 @@ export function Header() {
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
 
   const isAdmin = useMemo(() => {
-    if (!address) return isSBTAdmin || isCMSAdmin || canEditCMS;
-    const currentAddr = address.toLowerCase();
-
-    // 🛡️ Zero-Hardcode Authority Check
-    const isAuthorized = ADMIN_WALLETS.includes(currentAddr);
-
-    return isSBTAdmin || isCMSAdmin || canEditCMS || isAuthorized;
-  }, [address, isSBTAdmin, isCMSAdmin, canEditCMS]);
+    return Boolean(isSBTAdmin || isCMSAdmin || canEditCMS);
+  }, [isSBTAdmin, isCMSAdmin, canEditCMS]);
 
   const navItems = [
     { path: '/', label: 'Home' },

@@ -3,7 +3,6 @@ import { useAccount } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
 import { useCMS } from '../../hooks/useCMS';
-import { ADMIN_WALLETS } from '../../lib/contracts';
 
 /**
  * AdminGuard: BUILD-READY Security Gate.
@@ -23,12 +22,8 @@ const AdminGuard = ({ children }) => {
 
         if (isLoading) return; // Wait for CMS to load roles
 
-        const currentAddr = address?.toLowerCase();
-        // 1. Check Authority via centralized ADMIN_WALLETS
-        const isMaster = ADMIN_WALLETS.includes(currentAddr);
-
-        // 2. Check Centralized Roles (Blockchain + DB + Env)
-        if (isMaster || isAdmin) {
+        // 1. Check Centralized Roles (Blockchain + DB)
+        if (isAdmin) {
             setIsAuthorized(true);
         } else {
             setIsAuthorized(false);

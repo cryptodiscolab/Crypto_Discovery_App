@@ -72,19 +72,15 @@ export function AdminPage({ initialTab = 'pool' }) {
 
             try {
                 const fids = import.meta.env.VITE_ADMIN_FIDS || '';
-                const wallets = import.meta.env.VITE_ADMIN_WALLETS || '';
-                const fallback = import.meta.env.VITE_ADMIN_ADDRESS || '';
-
                 const adminFids = fids.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f)).filter(f => !isNaN(f));
-                const adminWallets = `${wallets},${fallback}`.split(',').map(w => cleanWallet(w)).filter(w => w !== null);
 
                 let userFid = null;
                 const currentWallet = cleanWallet(address);
                 const isSBTAccountOwner = contractOwner && currentWallet && currentWallet === cleanWallet(contractOwner);
-                const isEnvAdmin = currentWallet && adminWallets.includes(currentWallet);
                 const isFidAdmin = userFid && adminFids.includes(userFid);
 
-                const finalAccess = isSBTAccountOwner || isCMSAdmin || isOperator || isEnvAdmin || isFidAdmin || canEditCMS;
+                // FINAL ACCESS AUTHORIZATION relies purely on Backend (CMS/DB) and SBT Ownership
+                const finalAccess = isSBTAccountOwner || isCMSAdmin || isOperator || isFidAdmin || canEditCMS;
 
                 if (address) {
                     setHasManagerAccess(finalAccess);

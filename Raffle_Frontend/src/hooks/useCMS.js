@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClient } from 'wagmi';
-import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS, ADMIN_WALLETS } from '../lib/contracts';
+import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS } from '../lib/contracts';
 import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
@@ -121,12 +121,7 @@ export function useCMS() {
         }
     });
 
-    // Robust check fallbacks (using Centralized Authority from contracts.js)
-    const isEnvAdmin = useMemo(() => {
-        if (!address) return false;
-        return ADMIN_WALLETS.includes(address.toLowerCase());
-    }, [address]);
-
+    // Robust check fallbacks removed (Centralized Authority array no longer exists)
     // Database Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);
     useEffect(() => {
@@ -157,7 +152,7 @@ export function useCMS() {
     }, [address]);
 
     // Final boolean roles (Memoized for efficiency)
-    const isAdmin = useMemo(() => Boolean(isAdminRaw || isEnvAdmin || isDbAdmin), [isAdminRaw, isEnvAdmin, isDbAdmin]);
+    const isAdmin = useMemo(() => Boolean(isAdminRaw || isDbAdmin), [isAdminRaw, isDbAdmin]);
     const isOperator = useMemo(() => Boolean(isOperatorRaw), [isOperatorRaw]);
     const canEdit = useMemo(() => isAdmin || isOperator, [isAdmin, isOperator]);
 

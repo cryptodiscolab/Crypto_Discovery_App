@@ -194,11 +194,7 @@ export function PointsProvider({ children }) {
     const checkAdminStatus = async (walletAddress) => {
         if (!walletAddress) return;
 
-        // 🛡️ AUTHORITATIVE CHECK (contracts.js)
-        const { ADMIN_WALLETS } = await import('../../lib/contracts');
-        if (ADMIN_WALLETS.includes(walletAddress.toLowerCase())) {
-            setIsAdmin(true);
-        }
+        // 🛡️ AUTHORITATIVE CHECK (Backend Only)
 
         try {
             // Perform backend double-verification
