@@ -29,11 +29,47 @@ console.log('🤖 [Qwen Worker] Starting in OLLAMA mode...');
 console.log(`🎯 Target Model: ${qwenEntry.model}`);
 console.log(`⏱️  Polling interval: ${POLLING_INTERVAL / 1000}s`);
 
-async function callOllama(prompt) {
+async function extractContext(description) {
+    let contextStr = "";
+
+    // Regex to find tags like @file:src/App.jsx or @file:FlatCryptoDisco.sol
+    const fileRegex = /@file:([^\s]+)/g;
+    let match;
+
+    while ((match = fileRegex.exec(description)) !== null) {
+        const filePathParam = match[1];
+        try {
+            // Very simplistic search: assume path is relative to workspace root (process.cwd())
+            const fullPath = path.resolve(process.cwd(), filePathParam);
+
+            if (fs.existsSync(fullPath)) {
+                const content = fs.readFileSync(fullPath, 'utf8');
+                console.log(`📎 Sourced context from: ${filePathParam}`);
+                contextStr += `\n--- Contents of ${filePathParam} ---\n${content}\n---------------------------\n`;
+            } else {
+                console.warn(`⚠️ Warning: Context file not found at ${fullPath}`);
+                contextStr += `\n[System Note: User requested @file:${filePathParam} but file was not found strictly at that path.]\n`;
+            }
+        } catch (err) {
+            console.error(`Error reading context file ${filePathParam}:`, err.message);
+        }
+    }
+
+    return contextStr;
+}
+
+async function callOllama(prompt, contextStr) {
     const url = `${qwenEntry.endpoint}/api/generate`;
-    const payload = { 
-        model: qwenEntry.model, 
-        prompt: prompt, 
+
+    // Combine System Context and User Prompt
+    let finalPrompt = prompt;
+    if (contextStr) {
+        finalPrompt = `You are a Senior Staff Engineer. Here is the context provided by the user:\n${contextStr}\n\nUser Request:\n${prompt}`;
+    }
+
+    const payload = {
+        model: qwenEntry.model,
+        prompt: finalPrompt,
         stream: false,
         options: {
             num_thread: 2 // Optimized for Dual-Core i5-4210U
@@ -75,8 +111,9 @@ async function processTask(task) {
             .update({ status: 'processing', started_at: new Date().toISOString() })
             .eq('id', task.id);
 
-        console.log(`🧠 Inferencing with Ollama...`);
-        const output_data = await callOllama(task.task_description);
+        console.log(`🧠 Parsing context and inferencing with Ollama...`);
+        const contextData = await extractContext(task.task_description);
+        const output_data = await callOllama(task.task_description, contextData);
 
         await supabase.from('agents_vault')
             .update({
