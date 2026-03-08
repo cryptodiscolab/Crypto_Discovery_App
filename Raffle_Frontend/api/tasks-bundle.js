@@ -35,6 +35,14 @@ async function handleClaim(req, res) {
             const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
             xp = setting?.points_value || 500;
             targetId = task_id.replace('raffle_buy_', '');
+        } else if (task_id && task_id.startsWith('raffle_win_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').single();
+            xp = setting?.points_value || 1000;
+            targetId = task_id.replace('raffle_win_', '');
+        } else if (task_id && task_id.startsWith('raffle_draw_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_draw').single();
+            xp = setting?.points_value || 200;
+            targetId = task_id.replace('raffle_draw_', '');
         } else {
             const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward, target_id').eq('id', task_id).single();
             xp = task?.xp_reward || 0;
@@ -79,6 +87,14 @@ async function handleVerify(req, res) {
             const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
             xp = setting?.points_value || 500;
             targetId = task_id.replace('raffle_buy_', '');
+        } else if (task_id && task_id.startsWith('raffle_win_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').single();
+            xp = setting?.points_value || 1000;
+            targetId = task_id.replace('raffle_win_', '');
+        } else if (task_id && task_id.startsWith('raffle_draw_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_draw').single();
+            xp = setting?.points_value || 200;
+            targetId = task_id.replace('raffle_draw_', '');
         } else {
             const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward, target_id').eq('id', task_id).single();
             xp = task?.xp_reward || 0;
@@ -126,6 +142,14 @@ async function handleSocialVerify(req, res) {
             const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
             xp = setting?.points_value || 500;
             targetId = task_id.replace('raffle_buy_', '');
+        } else if (task_id && task_id.startsWith('raffle_win_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').single();
+            xp = setting?.points_value || 1000;
+            targetId = task_id.replace('raffle_win_', '');
+        } else if (task_id && task_id.startsWith('raffle_draw_')) {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_draw').single();
+            xp = setting?.points_value || 200;
+            targetId = task_id.replace('raffle_draw_', '');
         } else {
             const { data: task } = await supabaseAdmin
                 .from('daily_tasks')

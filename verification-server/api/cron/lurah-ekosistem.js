@@ -90,8 +90,8 @@ module.exports = async (req, res) => {
         let aiResponse = "AI Analysis not available (Missing API Key).";
         if (geminiApiKey) {
             try {
-                // Update to stable Gemini 1.5 Flash (or 2.0 if available)
-                const modelId = "gemini-1.5-flash";
+                // Update to stable Gemini 2.0 Flash (as per .cursorrules Section 19)
+                const modelId = "gemini-2.0-flash";
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

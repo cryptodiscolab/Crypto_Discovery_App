@@ -424,9 +424,18 @@ class VerificationService {
             }
 
             // 1. Mark as verified on blockchain (Contract uses numeric ID)
-            // If taskId is UUID, we might need a mapping. 
-            // For now, assume taskId is the numeric ID for contract.
-            const contractResult = await this.markTaskAsVerified(userAddress, taskId);
+            // If taskId is UUID, we MUST find the numeric_id from daily_tasks
+            let blockchainTaskId = taskId;
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+            if (uuidRegex.test(taskId)) {
+                blockchainTaskId = taskData.numeric_id || taskData.id_numeric || 0;
+                if (!blockchainTaskId || blockchainTaskId === 0) {
+                    console.warn(`[VerificationService] Task ${taskId} has no numeric_id. Falling back to default or failing.`);
+                }
+            }
+
+            const contractResult = await this.markTaskAsVerified(userAddress, blockchainTaskId);
 
             // 2. Record claim in Supabase (Database uses UUID)
             // We'll pass the payload's taskId (if it's UUID) or look it up.

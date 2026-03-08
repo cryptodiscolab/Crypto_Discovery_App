@@ -73,7 +73,8 @@ async function callOllama(prompt, contextStr) {
         stream: false,
         options: {
             num_thread: 2 // Optimized for Dual-Core i5-4210U
-        }
+        },
+        timeout: 60000 // 60s timeout to prevent worker hang
     };
     const response = await axios.post(url, payload);
     return response.data.response;
