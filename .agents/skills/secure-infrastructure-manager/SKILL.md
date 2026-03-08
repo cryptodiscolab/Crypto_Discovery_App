@@ -67,11 +67,22 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 
 - **On-Chain Tier Gating**: Verifikasi kepemilikan SBT (Soulbound Token) via `masterX.users(address).tier` sebelum mengizinkan fitur eksklusif di frontend.
 
+### 7. Activity Logging Privacy & Integrity (NEW)
+- **Log Privacy**: Gunakan tabel `user_activity_logs` dengan RLS yang memastikan user hanya bisa membaca riwayat miliknya sendiri.
+- **Atomic Integrity**: Pastikan mutasi database (XP/Claims) dan entri log riwayat terjadi secara atomik atau terverifikasi silang untuk mencegah data "ghosting".
+- **Zero-Trust Activity Logging**: All database mutates must be signature-verified.
+- **Dynamic System Governance (Zero-Hardcode)**: System parameters (XP, fees, reward multipliers) MUST be database-driven. Prohibit static infrastructure gating based on hardcoded rewards.
+- **Vercel Hobby Plan Guard**: Strictly < 12 Serverless Functions. Consolidate into `*-bundle.js`.
+
 ## 🛡️ Operational Checklist
 - [ ] Apakah kontrak yang digunakan adalah versi terbaru (V12 / MasterX V2)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?
 - [ ] Apakah mutasi data mengikuti pola Zero-Trust Backend?
 - [ ] Apakah ABI diekspor menggunakan Proxy pattern?
+- [ ] Verify `Point-Sync` integrity between code and `point_settings`.
+- [ ] Verify `Zero-Hardcode` compliance for all system constants.
+- [ ] Audit RLS for `user_activity_logs`.
+- [ ] Verify signature checks on all `*-bundle.js` write actions.
 - [ ] Apakah `npm run build` berhasil tanpa error?
 - [ ] Apakah file `.agents` sudah di-sync ke cloud (`sync-cloud.js`)?
 

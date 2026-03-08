@@ -144,6 +144,11 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
   3. If Fallback 1 fails, switch to Fallback 2.
   4. Log all routing events to `agents_vault` for audit.
 
+### 19.3. Vercel Hobby Plan Guard (Financial Integrity)
+- **Mandatory Consolidation**: All API endpoints must be bundled into existing master files (e.g., `admin-bundle.js`, `user-bundle.js`).
+- **Strict Limit**: Maintain strictly < 12 Serverless Functions to stay within the Vercel Hobby plan.
+- **Flat API Structure**: Do not create sub-directories in `api/` to avoid function duplication.
+
 ## 20. TONE TRIGGERS (AGENT COMMANDS)
 - `> claw:` Trigger OpenClaw for deep security audits or high-level architecture review.
 - `> qwen:` Trigger Qwen2.5-Coder for local file refactoring, unit tests, and local build verification.
@@ -155,5 +160,15 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Knowledge Depth**: Agents must use models with the largest context windows for auditing entire modules to prevent "fragmented knowledge" bugs.
 - **Continuous Upgrading**: All SKILL.md and scripts must be audited monthly to ensure they leverage the latest LLM features (e.g., tool use, reasoning capabilities).
 
+## 22. ZERO HARDCODE MANDATE (LURAH PROTOCOL)
+- **DEFINITION**: "Zero Hardcode" means NO system parameters (XP, Reward, Fee, Threshold, $ Price) are allowed to be hardcoded in the source code.
+- **MANDATORY**: All system-level constants MUST be fetched dynamically from the database (`point_settings`, `system_settings`) or environment variables.
+- **POINT-SYNC AUTOMATION**: 
+  - Every task reward logic MUST read from `point_settings`.
+  - Every Admin Dashboard action (Creation, Update) MUST synchronize with the canonical database point structure.
+- **AUDIT TRIGGER**: Any code containing static numbers like `100 XP`, `reward: 500`, or `points_value: 10` (outside of mock tests) is a "Protocol Breach".
+- **VERIFICATION**: Before finalizing any task, you MUST perform a `grep_search` for hardcoded reward strings to ensure the ecosystem remains 100% data-driven.
+- **ADMIN SYNC**: All administrative controls (e.g., `TaskManagerTab`, `SponsorshipConfig`) must use dynamic fetching for defaults to ensure the UI matches the backend reality.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Lurah Approved.*

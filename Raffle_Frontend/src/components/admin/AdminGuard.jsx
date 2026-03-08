@@ -3,19 +3,11 @@ import { useAccount } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
 import { useCMS } from '../../hooks/useCMS';
-
-// ALLOWED_ADMINS Addresses
-// 1. Master Admin (Lead Architect authority from .cursorrules)
-// 2. Secondary Authorized Admin Wallet
-const ALLOWED_ADMINS = [
-    "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase(), // MASTER_ADMIN
-    "0x455DF75735d2a18c26f0AfDefa93217B60369fe5".toLowerCase()
-];
-
+import { ADMIN_WALLETS } from '../../lib/contracts';
 
 /**
  * AdminGuard: BUILD-READY Security Gate.
- * Fixes: Relative pathing, strict address check, and AST efficiency.
+ * Zero-Hardcode Mandate: Inherits from centralized contracts.js
  */
 const AdminGuard = ({ children }) => {
     const { address, isConnected } = useAccount();
@@ -32,8 +24,8 @@ const AdminGuard = ({ children }) => {
         if (isLoading) return; // Wait for CMS to load roles
 
         const currentAddr = address?.toLowerCase();
-        // 1. Check Hardcoded Authority
-        const isMaster = ALLOWED_ADMINS.includes(currentAddr);
+        // 1. Check Authority via centralized ADMIN_WALLETS
+        const isMaster = ADMIN_WALLETS.includes(currentAddr);
 
         // 2. Check Centralized Roles (Blockchain + DB + Env)
         if (isMaster || isAdmin) {

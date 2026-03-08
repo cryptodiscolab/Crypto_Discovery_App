@@ -117,6 +117,17 @@ async function handleClaimPrize(req, res) {
         // ─── 6. Notify Telegram Bot ───────────────────────────────────────────
         await notifyTelegramWinner(normalizedWallet, raffle_id, xpAwarded);
 
+        // ─── 7. Log Activity (New Feature) ───────────────────────────────────
+        await logActivity({
+            wallet: normalizedWallet,
+            category: 'REWARD',
+            type: 'NFT Raffle Win',
+            description: `Claimed prize for Raffle #${raffle_id}`,
+            amount: xpAwarded,
+            symbol: 'XP',
+            txHash: tx_hash
+        });
+
         return res.status(200).json({
             success: true,
             xpAwarded,
@@ -141,5 +152,22 @@ async function handleLeaderboard(req, res) {
         return res.status(200).json({ success: true, data });
     } catch (error) {
         return res.status(500).json({ error: error.message });
+    }
+}
+
+async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }) {
+    try {
+        await supabaseAdmin.from('user_activity_logs').insert({
+            wallet_address: wallet.toLowerCase(),
+            category,
+            activity_type: type,
+            description,
+            value_amount: amount || 0,
+            value_symbol: symbol || 'XP',
+            tx_hash: txHash,
+            metadata: metadata || {}
+        });
+    } catch (err) {
+        console.error('[logActivity Error]', err.message);
     }
 }

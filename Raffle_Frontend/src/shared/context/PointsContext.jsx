@@ -21,6 +21,15 @@ export function PointsProvider({ children }) {
     const [unclaimedRewards, setUnclaimedRewards] = useState([]);
     const [isAdmin, setIsAdmin] = useState(false);
     const [sbtThresholds, setSbtThresholds] = useState([]);
+    const [ecosystemSettings, setEcosystemSettings] = useState({
+        daily_claim: 100,
+        gas_multiplier_bps: 1500,
+        max_gas_price_gwei: 100,
+        raffle_ticket_price_usdc: 0.15,
+        sponsorship_listing_fee_usdc: 1.0,
+        referral_bonus_percent: 10,
+        referral_active_threshold: 500
+    });
 
     // Anti-Halu Central State
     const [fid, setFid] = useState(null);
@@ -114,25 +123,28 @@ export function PointsProvider({ children }) {
         // checkAdminStatus(address); // Optional re-check
     };
 
+    const fetchEcosystemSettings = useCallback(async () => {
+        try {
+            const response = await fetch('/api/user-bundle?action=get-point-settings');
+            const data = await response.json();
+            if (data.success) {
+                setEcosystemSettings(prev => ({ ...prev, ...data.settings }));
+            }
+        } catch (err) {
+            console.error('[PointsContext] Failed to fetch settings:', err);
+        }
+    }, []);
+
     useEffect(() => {
-        if (isConnected && address) {
+        if (isConnected) {
             fetchUserData();
+            fetchEcosystemSettings();
         } else {
             setUserPoints(0n);
             setUserTier(0);
             setTotalTasksCompleted(0);
         }
-    }, [isConnected, address]);
-
-    // Check admin status when wallet connects
-    useEffect(() => {
-        if (isConnected && address) {
-            // Priority 1: Check if address is available before calling API
-            checkAdminStatus(address);
-        } else if (!isConnected) {
-            setIsAdmin(false);
-        }
-    }, [isConnected, address]);
+    }, [isConnected, address, fetchEcosystemSettings, fetchUserData]);
 
     useEffect(() => {
         const loadThresholds = async () => {
@@ -142,7 +154,8 @@ export function PointsProvider({ children }) {
             }
         };
         loadThresholds();
-    }, []);
+        fetchEcosystemSettings(); // Fetch once anyway for public settings
+    }, [fetchEcosystemSettings]);
 
     // FID and Off-Chain Stats loading removed to resolve build issues
 
@@ -177,21 +190,13 @@ export function PointsProvider({ children }) {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    // Admin verification function
+    // Admin verification function (Upgraded to Zero-Hardcode Centralization)
     const checkAdminStatus = async (walletAddress) => {
         if (!walletAddress) return;
 
-        // Local Check for immediate UI response (Fast Path)
-        const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
-        const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
-
-        const adminList = `${envAdmin},${envWallets}`
-            .split(',')
-            .map(a => a.trim().toLowerCase())
-            .filter(a => a.startsWith('0x'));
-
-        // If local check confirms, set it true immediately
-        if (adminList.includes(walletAddress.toLowerCase())) {
+        // 🛡️ AUTHORITATIVE CHECK (contracts.js)
+        const { ADMIN_WALLETS } = await import('../../lib/contracts');
+        if (ADMIN_WALLETS.includes(walletAddress.toLowerCase())) {
             setIsAdmin(true);
         }
 
@@ -246,6 +251,7 @@ export function PointsProvider({ children }) {
         checkAdminStatus,
         manualAddPoints,
         sbtThresholds,
+        ecosystemSettings,
         fid,
         offChainPoints,
         offChainLevel,

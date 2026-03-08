@@ -8,8 +8,7 @@ import { useCMS } from './hooks/useCMS';
 import { useFarcaster } from './shared/context/FarcasterContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
-const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
-const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
+import { ABIS, CONTRACTS, ADMIN_WALLETS } from './lib/contracts';
 
 export function Header() {
   const { address, isConnected } = useAccount();
@@ -21,27 +20,14 @@ export function Header() {
   const { isAdmin: isSBTAdmin } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
 
-
-
-
   const isAdmin = useMemo(() => {
     if (!address) return isSBTAdmin || isCMSAdmin || canEditCMS;
-
     const currentAddr = address.toLowerCase();
 
-    // Master Admin Bypass
-    if (currentAddr === MASTER_ADMIN) return true;
+    // 🛡️ Zero-Hardcode Authority Check
+    const isAuthorized = ADMIN_WALLETS.includes(currentAddr);
 
-    const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
-    const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
-    const adminList = `${envAdmin},${envWallets}`
-      .split(',')
-      .map(a => a.trim().toLowerCase())
-      .filter(a => a.startsWith('0x'));
-
-    const isManualAdmin = adminList.includes(currentAddr);
-
-    return isSBTAdmin || isCMSAdmin || canEditCMS || isManualAdmin;
+    return isSBTAdmin || isCMSAdmin || canEditCMS || isAuthorized;
   }, [address, isSBTAdmin, isCMSAdmin, canEditCMS]);
 
   const navItems = [

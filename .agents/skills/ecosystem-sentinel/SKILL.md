@@ -16,6 +16,19 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 2. **Reduced Polling**: Interval polling worker script lokal diset ke **>= 30 detik**. Di VPS/Cloud, interval bisa lebih cepat (5-10 detik).
 3. **Clean Shutdown**: Handler `SIGINT`/`SIGTERM` tetap dipertahankan di semua env karena ini best practice Node.js.
 4. **Build Guards**: Plugin berat otomatis didisable di lokal kecuali dibutuhkan.
+5. **Vercel Hobby Plan Guard (Profit-First Strategy)**:
+    - **API Consolidation Mandate**: Seluruh fitur API baru **WAJIB** masuk ke dalam bundle yang sudah ada (`admin-bundle.js`, `user-bundle.js`, `tasks-bundle.js`, `audit-bundle.js`).
+    - **Limit 12 Fungsi**: Jumlah Serverless Functions di Vercel **TIDAK BOLEH** melebihi 12 fungsi untuk menghindari biaya sebelum project mencapai PnL positif (Profit). Jika fitur baru membutuhkan endpoint baru, konsolidasi fungsionalitas ke dalam bundle yang relevan.
+    - **Folder API Root-Only**: Hindari pembuatan sub-folder dalam `api/`. Gunakan flat structure dan bundle logic di level root `api/`.
+
+6. **Activity Log & UGC Standard (Profit-First History)**:
+    - **user_activity_logs**: Seluruh riwayat aksi user (XP, Purchase, Reward) **WAJIB** dicatat di tabel `user_activity_logs`.
+    - [ ] Verify `user_activity_logs` population for UGC.
+    - [ ] Verify `Point-Sync` for all rewards (dynamic fetch vs hardcode).
+    - [ ] Verify `Zero-Hardcode` compliance across the entire feature set.
+    - [ ] Check Vercel Function Count (Stay < 12).
+    - **UGC Tracking**: Aksi User Generated Content (Mission Creation, Raffle Launch, Sponsorship Renewal) **WAJIB** memicu log dengan kategori `PURCHASE` dan menyertakan `tx_hash` serta metadata lengkap.
+    - **Frontend Reporting**: Gunakan `ActivityLogSection.jsx` untuk menampilkan riwayat ini di profil user secara real-time.
 
 # Ecosystem Sentinel & Master Architect Enforcer
 
@@ -35,6 +48,8 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 ### 3. Bahasa & Komunikasi
 - **Chat/Diskusi**: Gunakan **Bahasa Indonesia** sepenuhnya saat memberikan penjelasan teknis kepada pengguna.
 - **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI, label, dan pesan error di frontend.
+- **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic.
+- **Vercel Hobby Plan Guard**: Strictly < 12 Serverless Functions. Consolidate into `*-bundle.js`.
 
 ## 🧠 THE PERFECTIONIST PROTOCOL (Advanced Intelligence & Precision)
 
@@ -43,6 +58,11 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 2. **Deep Knowledge Discovery**: Jangan hanya melihat satu file. Gunakan `grep_search` secara luas di seluruh direktori untuk menemukan pola arsitektur yang sudah ada, sehingga setiap fitur baru terasa "asli" (native) dan tidak tumpang tindih.
 3. **Eternal Memory Alignment**: Selalu baca `SKILL.md` dan `.cursorrules` secara berkala (setiap sesi baru) untuk menyinkronkan memori dengan spek hardware user (i5-4210U) dan nilai-nilai Kebaikan Jalan Allah (Zero Riba, Kejujuran Data).
 4. **Infinite Precision Audit**: Lakukan "Self-Correction" sebelum memberikan hasil. Jika mendeteksi potensi redundansi atau inefisiensi, hapus dan tulis ulang dengan logika yang lebih elegan (Senior Staff level).
+
+## 🛡️ CORE RULES: THE PERFECTIONIST PROTOCOL
+1. **Zero-Hardcode Audit**: Perform `grep_search` on every task to detect hardcoded reward strings or pricing.
+2. **Point-Sync Automation**: Verify that every reward event fetches its `points_value` from the canonical `point_settings` table.
+3. **Admin-Dashboard Sync**: Ensure all administrative controls (Web & Bot) display and use dynamic settings.
 
 ## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
 | Key | Value |
@@ -199,6 +219,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **UI/UX**: Apakah layout sudah responsif, bebas overflow, mengikuti pola Mobile Drawer, dan menggunakan `max-w-6xl` untuk Admin?
 - [ ] **Sensitive Guard**: Apakah ada pengambilan data yang memicu popup signature otomatis? (Wajib diubah jadi manual unlock).
 - [ ] **Cloud Sync**: Apakah `sync-cloud.js` sudah dijalankan setelah perubahan `.agents`?
+- [ ] **Vercel Guard**: Apakah jumlah fungsi API tetap <= 12? Apakah fitur baru sudah dibundling ke master API?
 
 ## 🚨 Pantangan
 - Melakukan push kode yang belum diaudit secara otomatis.

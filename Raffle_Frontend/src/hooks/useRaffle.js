@@ -21,9 +21,6 @@ export function useRaffle() {
     const { isGaslessSupported, paymasterCapabilities } = usePaymaster();
     const { sendCallsAsync } = useSendCalls();
 
-    /**
-     * buyTickets - Standard tx (semua wallet)
-     */
     const buyTickets = async (raffleId, amount) => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
@@ -38,10 +35,33 @@ export function useRaffle() {
                 const timestamp = new Date().toISOString();
                 const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
+
+                // 1. Award XP (Internal Logic)
                 await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}`, 0);
+
+                // 2. Log Activity (User History)
+                await fetch('/api/user-bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'log-activity',
+                        wallet: address,
+                        signature,
+                        message,
+                        log: {
+                            category: 'PURCHASE',
+                            type: 'Raffle Ticket Buy',
+                            description: `Purchased ${amount} ticket(s) for Raffle #${raffleId}`,
+                            amount: Number(amount),
+                            symbol: 'TICKET',
+                            txHash: hash
+                        }
+                    })
+                });
+
                 if (refetch) refetch();
             } catch (e) {
-                console.warn("XP Awarding skipped:", e.message);
+                console.warn("XP Awarding/Logging skipped:", e.message);
             }
         }
         return hash;
@@ -70,15 +90,38 @@ export function useRaffle() {
 
         toast.success("⛽ Gasless tickets purchased!");
 
-        // Award XP setelah gasless purchase
+        // Award XP & Log Activity
         try {
             const timestamp = new Date().toISOString();
             const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
+
+            // 1. Award XP
             await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}`, 0);
+
+            // 2. Log Activity
+            await fetch('/api/user-bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'log-activity',
+                    wallet: address,
+                    signature,
+                    message,
+                    log: {
+                        category: 'PURCHASE',
+                        type: 'Raffle Ticket Buy (Gasless)',
+                        description: `Purchased ${amount} ticket(s) for Raffle #${raffleId}`,
+                        amount: Number(amount),
+                        symbol: 'TICKET',
+                        txHash: callId // Call ID acts as identity for gasless
+                    }
+                })
+            });
+
             if (refetch) refetch();
         } catch (e) {
-            console.warn("XP Awarding skipped:", e.message);
+            console.warn("XP Awarding/Logging skipped:", e.message);
         }
 
         return callId;
@@ -167,7 +210,36 @@ export function useRaffle() {
         });
 
         if (hash) {
-            toast.success("Raffle created successfully!");
+            toast.success("Raffle created successfully! Syncing... 🎲");
+            try {
+                const timestamp = new Date().toISOString();
+                const message = `Log activity for ${address}\nAction: UGC Raffle Creation\nTimestamp: ${timestamp}`;
+                const signature = await signMessageAsync({ message });
+
+                // Extract raffle ID from event if possible, or use a placeholder/hash
+                // For now, mirroring as Sync UGC Raffle
+                await fetch('/api/user-bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'sync-ugc-raffle',
+                        wallet: address,
+                        signature,
+                        message,
+                        payload: {
+                            raffle_id: 0, // In V1 we might need to fetch the next ID or rely on hash-based lookup
+                            end_time: Math.floor(Date.now() / 1000) + (durationDays * 86400),
+                            max_tickets: parseInt(maxTickets),
+                            winnerCount: parseInt(winnerCount),
+                            txHash: hash,
+                            depositETH: formatEther(totalValue)
+                        }
+                    })
+                });
+                toast.success("Raffle synced to explorer!");
+            } catch (logErr) {
+                console.warn('Logging UGC Raffle failed:', logErr.message);
+            }
         }
         return hash;
     };

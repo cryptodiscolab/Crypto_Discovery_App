@@ -12,6 +12,7 @@ import { useFarcaster } from '../hooks/useFarcaster';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI } from '../lib/contracts';
+import ActivityLogSection from '../components/ActivityLogSection';
 import {
   Transaction,
   TransactionButton,
@@ -49,6 +50,7 @@ export default function ProfilePage() {
   });
 
   const [copied, setCopied] = useState(false);
+  const [pointSettings, setPointSettings] = useState({ daily_claim: 100 }); // Default fallback
   const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle'
   const [claimCountdown, setClaimCountdown] = useState('');
   const [claimReady, setClaimReady] = useState(true);
@@ -84,8 +86,21 @@ export default function ProfilePage() {
   useEffect(() => {
     if (address) {
       fetchProfile();
+      fetchPointSettings();
     }
   }, [address]);
+
+  const fetchPointSettings = async () => {
+    try {
+      const response = await fetch('/api/user-bundle?action=get-point-settings');
+      const data = await response.json();
+      if (data.success) {
+        setPointSettings(data.settings);
+      }
+    } catch (err) {
+      console.warn('[ProfilePage] Failed to fetch point settings:', err);
+    }
+  };
 
   const fetchProfile = async () => {
     if (!address) return;
@@ -539,6 +554,11 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* ACTIVITY LOG SECTION */}
+        <div className="px-4">
+          <ActivityLogSection walletAddress={address} />
+        </div>
+
         {/* VERIFICATIONS LIST */}
         {profileData.verifications && profileData.verifications.length > 0 && (
           <div className="mt-6 px-4">
@@ -580,6 +600,8 @@ function CreateTaskModal({ onClose }) {
   const [paymentToken, setPaymentToken] = useState('creator'); // 'creator' or 'eth'
   const { writeContractAsync } = useWriteContract();
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { stats: userData, refetch: refetchStats } = useUserInfo(address);
 
   // Config based on selection
   const isEth = paymentToken === 'eth';
@@ -771,7 +793,7 @@ function CreateTaskModal({ onClose }) {
           <div className="space-y-2 pt-2 border-t border-white/5">
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-indigo-400">
               <span>Platform Fee</span>
-              <span>$2.00 USDC</span>
+              <span>${(ecosystemSettings?.sponsorship_listing_fee_usdc || 2.00).toFixed(2)} USDC</span>
             </div>
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-200">
               <span>Reward Pool</span>
@@ -793,23 +815,44 @@ function CreateTaskModal({ onClose }) {
         <div className="relative z-[9999] pointer-events-auto">
           <Transaction
             calls={buildCalls()}
-            onSuccess={() => {
-              toast.success("Sponsorship Created! Duration: 3 Days.");
-              // BUG-8 fix: sync XP on-chain ke DB setelah payment (Secured)
-              const timestamp = new Date().toISOString();
-              const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
-              signMessageAsync({ message }).then(signature => {
-                fetch('/api/user-bundle', {
+            onSuccess={async (receipt) => {
+              toast.success("Missions Created Successfully! Syncing... 🚀");
+
+              // Sync UGC Mission to DB & Log
+              try {
+                const timestamp = new Date().toISOString();
+                const taskCount = tasksBatch.filter(t => t.title && t.link).length;
+                const firstTask = tasksBatch.find(t => t.title && t.link) || { title: "New Missions", platform: "farcaster" };
+
+                const message = `Log activity for ${address}\nAction: UGC Mission Creation\nTimestamp: ${timestamp}`;
+                const signature = await signMessageAsync({ message });
+
+                await fetch('/api/user-bundle', {
                   method: 'POST',
                   headers: { 'content-type': 'application/json' },
                   body: JSON.stringify({
-                    action: 'xp',
-                    wallet_address: address,
+                    action: 'sync-ugc-mission',
+                    wallet: address,
                     signature,
-                    message
+                    message,
+                    payload: {
+                      title: firstTask.title,
+                      description: `UGC Campaign with ${taskCount} missions on ${firstTask.platform}`,
+                      sponsor_address: address,
+                      platform_code: firstTask.platform,
+                      reward_amount_per_user: "5000000000000000000", // 5.0 in wei-ish (matches buildCalls simplified logic)
+                      max_participants: 100,
+                      txHash: receipt.transactionHash,
+                      tasks: taskCount
+                    }
                   }),
-                }).catch(() => { });
-              }).catch(() => { });
+                });
+                toast.success("Campaign synced to explorer!");
+              } catch (logErr) {
+                console.warn('UGC Sync failed:', logErr);
+              }
+
+              await refetchStats();
               onClose();
             }}
             onError={(err) => {
@@ -839,7 +882,7 @@ function DailyClaimModal({ onClose }) {
   const { signMessageAsync } = useSignMessage();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
-  const { refetch, manualAddPoints } = usePoints();
+  const { refetch, manualAddPoints, ecosystemSettings } = usePoints();
   const [isClaiming, setIsClaiming] = useState(false);
   const [countdown, setCountdown] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
@@ -849,7 +892,7 @@ function DailyClaimModal({ onClose }) {
   const lastDailyClaim = userData?.lastDailyBonusClaim
     ? Number(userData.lastDailyBonusClaim)
     : 0;
-  const nextClaimTime = lastDailyClaim > 0 ? (lastDailyClaim + 86400) * 1000 : 0;
+  const nextClaimTime = lastDailyClaim > 0 ? (lastDailyClaim + (ecosystemSettings?.daily_claim_cooldown_sec || 86400)) * 1000 : 0;
 
   useEffect(() => {
     const tick = () => {
@@ -885,7 +928,8 @@ function DailyClaimModal({ onClose }) {
           functionName: 'claimDailyBonus',
           account: address,
         });
-        gasLimit = BigInt(Math.ceil(Number(estimated) * 1.5));
+        const multiplier = (ecosystemSettings?.gas_multiplier_bps || 1500) / 1000;
+        gasLimit = BigInt(Math.ceil(Number(estimated) * multiplier));
       } catch (estErr) {
         console.warn('[DailyClaim] Gas estimation failed:', estErr.message);
         if (estErr.message?.toLowerCase().includes('user rejected')) {
@@ -927,14 +971,16 @@ function DailyClaimModal({ onClose }) {
 
         if (!response.ok) throw new Error("Sync API failed");
 
-        manualAddPoints(100);
+        const dailyReward = pointSettings?.daily_claim || 100;
+        manualAddPoints(dailyReward);
         await refetchStats();
         await refetch();
       } catch (syncErr) {
         console.warn('[DailyClaim] XP sync failed:', syncErr.message);
       }
 
-      toast.success("+100 XP Claimed! 🎉", { id: tid });
+      const dailyReward = pointSettings?.daily_claim || 100;
+      toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
       onClose();
     } catch (err) {
       console.error('Daily Claim Error:', err);
@@ -957,7 +1003,7 @@ function DailyClaimModal({ onClose }) {
           <p className="text-xs text-slate-400 mt-2">
             {isCooldown
               ? "You've claimed today! Next bonus in:"
-              : "Claim your daily XP boost to climb the leaderboard!"}
+              : `Claim your daily ${pointSettings?.daily_claim || 100} XP boost to climb the leaderboard!`}
           </p>
         </div>
         {isCooldown && countdown && (
@@ -981,7 +1027,7 @@ function DailyClaimModal({ onClose }) {
             ? '⏳ PROCESSING...'
             : isCooldown
               ? `⏰ COMEBACK IN ${countdown}`
-              : '✨ CLAIM DAILY (+100 XP)'}
+              : `✨ CLAIM DAILY (+${ecosystemSettings?.daily_claim || 100} XP)`}
         </button>
         <button
           onClick={onClose}
@@ -995,7 +1041,11 @@ function DailyClaimModal({ onClose }) {
 }
 
 function RenewSponsorshipModal({ onClose }) {
+  const { ecosystemSettings } = usePoints();
   const [reqId, setReqId] = useState('');
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { refetch: refetchStats } = useUserInfo(address);
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1033,8 +1083,40 @@ function RenewSponsorshipModal({ onClose }) {
                   args: [BigInt(reqId || 0)],
                 }),
               }]}
-              onSuccess={() => {
+              onSuccess={async (receipt) => {
                 toast.success("Sponsorship Extended 3 Days!");
+
+                // Log Activity
+                try {
+                  const timestamp = new Date().toISOString();
+                  const logDescription = `Renewed sponsorship for ID ${reqId}`;
+                  const message = `Log activity for ${address}\nAction: Sponsorship Renewal\nTimestamp: ${timestamp}`;
+                  const signature = await signMessageAsync({ message });
+
+                  await fetch('/api/user-bundle', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                      action: 'log-activity',
+                      wallet: address,
+                      signature,
+                      message,
+                      log: {
+                        category: 'PURCHASE',
+                        type: 'Sponsorship Renewal',
+                        description: logDescription,
+                        amount: 2, // $2 USDC
+                        symbol: 'USDC',
+                        txHash: receipt.transactionHash,
+                        metadata: { reqId: reqId }
+                      }
+                    }),
+                  });
+                } catch (logErr) {
+                  console.warn('Logging sponsorship renewal failed:', logErr);
+                }
+
+                await refetchStats();
                 onClose();
               }}
               onError={(err) => {

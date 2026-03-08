@@ -29,6 +29,20 @@ export default async function handler(req, res) {
             return handleFarcasterSync(req, res);
         case 'update-profile': // Logic from api/profile/update.js
             return handleUpdateProfile(req, res);
+        case 'get-activity-logs':
+            return handleGetActivityLogs(req, res);
+        case 'log-activity':
+            return handleFrontendLogActivity(req, res);
+        case 'get-point-settings':
+            return handleGetPointSettings(req, res);
+        case 'sync-ugc-mission':
+            return handleSyncUgcMission(req, res);
+        case 'sync-ugc-raffle':
+            return handleSyncUgcRaffle(req, res);
+        case 'sync-sbt-upgrade':
+            return handleSyncSbtUpgrade(req, res);
+        case 'sync-pool-claim':
+            return handleSyncPoolClaim(req, res);
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -162,7 +176,17 @@ async function handleXpSync(req, res) {
             // Determine Task ID for the claim
             // 288596d8-b5a9-4faf-bde0-0dd28aaba902 is "Daily Bonus Claim (On-Chain)"
             // 885535d2-4c5c-4a80-9af5-36666192c244 is general "DailyApp Contract Sync"
-            const taskId = (xpDelta === 100)
+
+            // 4. Fetch the authoritative daily_claim reward value (Zero-Debt Logic)
+            const { data: dailySetting } = await supabaseAdmin
+                .from('point_settings')
+                .select('points_value')
+                .eq('activity_key', 'daily_claim')
+                .single();
+
+            const standardDailyReward = dailySetting?.points_value || 100;
+
+            const taskId = (xpDelta === standardDailyReward)
                 ? '288596d8-b5a9-4faf-bde0-0dd28aaba902'
                 : '885535d2-4c5c-4a80-9af5-36666192c244';
 
@@ -192,6 +216,16 @@ async function handleXpSync(req, res) {
             if (claimError) {
                 throw claimError;
             }
+
+            // 6. Log to user_activity_logs (New Feature)
+            await logActivity({
+                wallet: cleanAddress,
+                category: 'XP',
+                type: taskId === '288596d8-b5a9-4faf-bde0-0dd28aaba902' ? 'Daily Claim' : 'Contract Sync',
+                description: `Earned ${xpDelta} XP from ${taskId === '288596d8-b5a9-4faf-bde0-0dd28aaba902' ? 'Daily Bonus' : 'On-Chain Activity'}`,
+                amount: xpDelta,
+                symbol: 'XP'
+            });
         } else if (xpDelta < 0) {
             console.warn(`[XP Sync] On-chain XP (${onChainXP}) is lower than DB OnChain record (${dbOnChainXP}) for ${cleanAddress}`);
         }
@@ -280,8 +314,261 @@ async function handleUpdateProfile(req, res) {
                 .update(sanitizedPayload)
                 .eq('wallet_address', wallet.toLowerCase());
             if (error) throw error;
+
+            // Log profile update? (Optional, but let's stick to XP/Purchase/Reward for now as requested)
+
             return res.status(200).json({ success: true });
-        } catch (error) {
-            return res.status(500).json({ error: error.message });
         }
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
     }
+}
+
+/**
+ * handleGetActivityLogs: Fetch categorized logs for a user.
+ */
+async function handleGetActivityLogs(req, res) {
+    const { wallet, category, limit = 20 } = req.query;
+    if (!wallet) return res.status(400).json({ error: 'Missing wallet address' });
+
+    try {
+        let query = supabaseAdmin
+            .from('user_activity_logs')
+            .select('*')
+            .eq('wallet_address', wallet.toLowerCase())
+            .order('created_at', { ascending: false })
+            .limit(parseInt(limit));
+
+        if (category && category !== 'ALL') {
+            query = query.eq('category', category);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        return res.status(200).json({ success: true, logs: data });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+/**
+ * handleFrontendLogActivity: Securely log activities from the frontend.
+ */
+async function handleFrontendLogActivity(req, res) {
+    const { wallet_address, signature, message, category, type, description, amount, symbol, txHash, metadata } = req.body;
+    if (!wallet_address || !signature || !message || !description) return res.status(400).json({ error: 'Missing log data' });
+    try {
+        const valid = await verifyMessage({ address: wallet_address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        await logActivity({
+            wallet: wallet_address,
+            category: category || 'PURCHASE',
+            type: type || 'External Activity',
+            description,
+            amount,
+            symbol: symbol || 'XP',
+            txHash,
+            metadata
+        });
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleGetPointSettings(req, res) {
+    try {
+        // Fetch Reward Points
+        const { data: points, error: pError } = await supabaseAdmin
+            .from('point_settings')
+            .select('activity_key, points_value');
+
+        if (pError) throw pError;
+
+        // Fetch Ecosystem Settings (Fees, Gas, etc)
+        const { data: system, error: sError } = await supabaseAdmin
+            .from('system_settings')
+            .select('key, value');
+
+        if (sError) throw sError;
+
+        // Convert Reward Points to simple object
+        const settings = points.reduce((acc, curr) => {
+            acc[curr.activity_key] = curr.points_value;
+            return acc;
+        }, {});
+
+        // Inject System Settings
+        system.forEach(s => {
+            settings[s.key] = s.value;
+        });
+
+        return res.status(200).json({ success: true, settings });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleSyncUgcMission(req, res) {
+    const { wallet, signature, message, payload } = req.body;
+    if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing sync data' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks } = payload;
+
+        // 1. Mirror to campaigns table
+        const { error: campaignErr } = await supabaseAdmin.from('campaigns').insert([{
+            title,
+            description,
+            sponsor_address: sponsor_address.toLowerCase(),
+            platform_code: platform_code || 'farcaster',
+            reward_amount_per_user: reward_amount_per_user.toString(),
+            max_participants: parseInt(max_participants) || 100,
+            status: 'active',
+            created_at: new Date().toISOString()
+        }]);
+
+        if (campaignErr) throw campaignErr;
+
+        // 2. Rich Activity Logging
+        await logActivity({
+            wallet,
+            category: 'PURCHASE',
+            type: 'UGC Mission Creation',
+            description: `Created sponsorship: ${title} (${tasks} tasks)`,
+            amount: 2.0, // Platform fee in USDC (simplified)
+            symbol: 'USDC',
+            txHash,
+            metadata: { title, tasks, platform: platform_code }
+        });
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('[SyncUgcMission Error]', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleSyncUgcRaffle(req, res) {
+    const { wallet, signature, message, payload } = req.body;
+    if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing sync data' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const { raffle_id, end_time, max_tickets, winnerCount, txHash, depositETH } = payload;
+
+        // 1. Mirror to raffles table
+        const { error: raffleErr } = await supabaseAdmin.from('raffles').upsert({
+            id: raffle_id,
+            creator_address: wallet.toLowerCase(),
+            sponsor_address: wallet.toLowerCase(),
+            end_time,
+            max_tickets: parseInt(max_tickets) || 100,
+            is_active: true,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+        if (raffleErr) throw raffleErr;
+
+        // 2. Rich Activity Logging
+        await logActivity({
+            wallet,
+            category: 'PURCHASE',
+            type: 'UGC Raffle Launch',
+            description: `Launched sponsored raffle #${raffle_id} with ${winnerCount} winner(s)`,
+            amount: parseFloat(depositETH),
+            symbol: 'ETH',
+            txHash,
+            metadata: { raffle_id, winnerCount, max_tickets }
+        });
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('[SyncUgcRaffle Error]', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleSyncSbtUpgrade(req, res) {
+    const { wallet, signature, message, payload } = req.body;
+    if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing sync data' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const { tierName, ethSpent, txHash } = payload;
+
+        await logActivity({
+            wallet,
+            category: 'PURCHASE',
+            type: 'SBT Tier Ascension',
+            description: `Upgraded to ${tierName} Tier`,
+            amount: parseFloat(ethSpent),
+            symbol: 'ETH',
+            txHash,
+            metadata: { tierName, action: 'mint' }
+        });
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('[SyncSbtUpgrade Error]', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleSyncPoolClaim(req, res) {
+    const { wallet, signature, message, payload } = req.body;
+    if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing sync data' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const { amountETH, tier, txHash } = payload;
+
+        await logActivity({
+            wallet,
+            category: 'REWARD',
+            type: 'Pool Sharing Claim',
+            description: `Claimed ${parseFloat(amountETH).toFixed(6)} ETH from community pool`,
+            amount: parseFloat(amountETH),
+            symbol: 'ETH',
+            txHash,
+            metadata: { userTier: tier, source: 'community_pool' }
+        });
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('[SyncPoolClaim Error]', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+/**
+ * logActivity: Internal helper to record events.
+ */
+async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }) {
+    try {
+        await supabaseAdmin.from('user_activity_logs').insert({
+            wallet_address: wallet.toLowerCase(),
+            category,
+            activity_type: type,
+            description,
+            value_amount: amount || 0,
+            value_symbol: symbol || 'XP',
+            tx_hash: txHash,
+            metadata: metadata || {}
+        });
+    } catch (err) {
+        console.error('[logActivity Error]', err.message);
+    }
+}

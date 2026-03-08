@@ -3,10 +3,11 @@ import { Landmark, ArrowUpRight } from 'lucide-react';
 import { parseEther } from 'viem';
 import toast from 'react-hot-toast';
 
+import { SAFE_MULTISIG } from '../../../lib/contracts';
+
 export function TreasuryTab({ onWithdraw }) {
     const [amount, setAmount] = useState('0.1');
     const [isBusy, setIsBusy] = useState(false);
-    const SAFE_MULTISIG = "0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa";
 
     const handleWithdraw = async () => {
         if (!window.confirm(`Withdraw ${amount} ETH to Safe Multisig (${SAFE_MULTISIG})?`)) return;

@@ -6,6 +6,55 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+/**
+ * 🛡️ Lurah Protocol: Centralized Point Lookup
+ * Mandatory dynamic fetching for Zero-Hardcode compliance.
+ */
+async function getPointValue(activityKey) {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('point_settings')
+            .select('points_value')
+            .eq('activity_key', activityKey)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !data) return 0;
+        return data.points_value || 0;
+    } catch (e) {
+        console.error(`[PointLookup Error] Key: ${activityKey}`, e);
+        return 0;
+    }
+}
+
+async function getTaskReward(taskId) {
+    // 1. Check for specific point_settings keys first
+    if (taskId?.startsWith('raffle_buy_')) return await getPointValue('raffle_buy');
+    if (taskId?.startsWith('raffle_win_')) return await getPointValue('raffle_win');
+    if (taskId?.startsWith('raffle_draw_')) return await getPointValue('raffle_ticket'); // Unified key
+
+    // 2. Fetch from daily_tasks table
+    try {
+        const { data: task } = await supabaseAdmin
+            .from('daily_tasks')
+            .select('xp_reward, platform, action_type')
+            .eq('id', taskId)
+            .single();
+
+        if (!task) return 0;
+
+        // 3. 🛡️ Dynamic Priority: Check if point_settings has a dynamic rule for this task type
+        // This allows global management of rewards across all similar tasks
+        const dynamicKey = `${task.platform}_${task.action_type}`.toLowerCase().replace(/\s+/g, '_');
+        const dynamicValue = await getPointValue(dynamicKey);
+
+        // If a dynamic rule exists, it OVERRIDES the static xp_reward in the task record
+        return dynamicValue > 0 ? dynamicValue : (task.xp_reward || 0);
+    } catch (e) {
+        return 0;
+    }
+}
+
 export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
 
@@ -15,7 +64,6 @@ export default async function handler(req, res) {
         case 'verify':
             return handleVerify(req, res);
         case 'social-verify':
-            // Logic from verify-action/route.js (claim_task)
             return handleSocialVerify(req, res);
         default:
             return res.status(400).json({ error: 'Invalid action' });
@@ -28,24 +76,13 @@ async function handleClaim(req, res) {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        let xp = 0;
+        const xp = await getTaskReward(task_id);
         let targetId = null;
 
-        if (task_id && task_id.startsWith('raffle_buy_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
-            xp = setting?.points_value || 500;
-            targetId = task_id.replace('raffle_buy_', '');
-        } else if (task_id && task_id.startsWith('raffle_win_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').single();
-            xp = setting?.points_value || 1000;
-            targetId = task_id.replace('raffle_win_', '');
-        } else if (task_id && task_id.startsWith('raffle_draw_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_draw').single();
-            xp = setting?.points_value || 200;
-            targetId = task_id.replace('raffle_draw_', '');
+        if (task_id && task_id.startsWith('raffle_')) {
+            targetId = task_id.split('_').pop();
         } else {
-            const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward, target_id').eq('id', task_id).single();
-            xp = task?.xp_reward || 0;
+            const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).single();
             targetId = task?.target_id;
         }
 
@@ -67,6 +104,27 @@ async function handleClaim(req, res) {
         });
 
         if (error) throw error;
+
+        // 4. Log Activity
+        let category = 'XP';
+        let type = 'Task Claim';
+        if (task_id.startsWith('raffle_buy_')) {
+            category = 'PURCHASE';
+            type = 'Raffle Ticket Buy';
+        } else if (task_id.startsWith('raffle_win_')) {
+            category = 'REWARD';
+            type = 'NFT Raffle Win';
+        }
+
+        await logActivity({
+            wallet: wallet_address,
+            category,
+            type,
+            description: `Claimed ${xp} XP for ${task_id}`,
+            amount: xp,
+            symbol: 'XP'
+        });
+
         return res.status(200).json({ success: true, xp });
     } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -74,30 +132,18 @@ async function handleClaim(req, res) {
 }
 
 async function handleVerify(req, res) {
-    // Same as claim but with platform/action_type
     const { wallet_address, signature, message, task_id, platform, action_type } = req.body;
     try {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        let xp = 0;
+        const xp = await getTaskReward(task_id);
         let targetId = null;
 
-        if (task_id && task_id.startsWith('raffle_buy_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
-            xp = setting?.points_value || 500;
-            targetId = task_id.replace('raffle_buy_', '');
-        } else if (task_id && task_id.startsWith('raffle_win_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').single();
-            xp = setting?.points_value || 1000;
-            targetId = task_id.replace('raffle_win_', '');
-        } else if (task_id && task_id.startsWith('raffle_draw_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_draw').single();
-            xp = setting?.points_value || 200;
-            targetId = task_id.replace('raffle_draw_', '');
+        if (task_id && task_id.startsWith('raffle_')) {
+            targetId = task_id.split('_').pop();
         } else {
-            const { data: task } = await supabaseAdmin.from('daily_tasks').select('xp_reward, target_id').eq('id', task_id).single();
-            xp = task?.xp_reward || 0;
+            const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).single();
             targetId = task?.target_id;
         }
 
@@ -121,6 +167,27 @@ async function handleVerify(req, res) {
         });
 
         if (error) throw error;
+
+        // Log Activity
+        let category = 'XP';
+        let type = 'Task Verify';
+        if (task_id.startsWith('raffle_buy_')) {
+            category = 'PURCHASE';
+            type = 'Raffle Ticket Buy';
+        } else if (task_id.startsWith('raffle_win_')) {
+            category = 'REWARD';
+            type = 'NFT Raffle Win';
+        }
+
+        await logActivity({
+            wallet: wallet_address,
+            category,
+            type,
+            description: `Verified ${task_id} on ${platform}`,
+            amount: xp,
+            symbol: 'XP'
+        });
+
         return res.status(200).json({ success: true, xp });
     } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -130,37 +197,19 @@ async function handleVerify(req, res) {
 async function handleSocialVerify(req, res) {
     const { wallet_address, signature, message, task_id, platform, action_type } = req.body;
     try {
-        // 1. Verify Signature
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        // 2. Security Check: Fetch authoritative reward from DB
-        let xp = 0;
+        const xp = await getTaskReward(task_id);
         let targetId = null;
 
-        if (task_id && task_id.startsWith('raffle_buy_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_buy').single();
-            xp = setting?.points_value || 500;
-            targetId = task_id.replace('raffle_buy_', '');
-        } else if (task_id && task_id.startsWith('raffle_win_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').single();
-            xp = setting?.points_value || 1000;
-            targetId = task_id.replace('raffle_win_', '');
-        } else if (task_id && task_id.startsWith('raffle_draw_')) {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_draw').single();
-            xp = setting?.points_value || 200;
-            targetId = task_id.replace('raffle_draw_', '');
+        if (task_id && task_id.startsWith('raffle_')) {
+            targetId = task_id.split('_').pop();
         } else {
-            const { data: task } = await supabaseAdmin
-                .from('daily_tasks')
-                .select('xp_reward, target_id')
-                .eq('id', task_id)
-                .single();
-            xp = task?.xp_reward || 0;
+            const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).single();
             targetId = task?.target_id;
         }
 
-        // Anti-Cheat: Check for target duplication
         if (targetId) {
             const { count } = await supabaseAdmin
                 .from('user_task_claims')
@@ -170,7 +219,6 @@ async function handleSocialVerify(req, res) {
             if (count > 0) return res.status(401).json({ error: '[Security] Target account already claimed' });
         }
 
-        // 3. Record Claim (Zero-Trust)
         const { error } = await supabaseAdmin.from('user_task_claims').insert({
             wallet_address: wallet_address.toLowerCase(),
             task_id,
@@ -181,15 +229,38 @@ async function handleSocialVerify(req, res) {
         });
 
         if (error) {
-            if (error.code === '23505') { // Duplicate claim
-                return res.status(200).json({ success: true, message: "Task already recorded." });
-            }
+            if (error.code === '23505') return res.status(200).json({ success: true, message: "Already recorded." });
             throw error;
         }
 
-        return res.status(200).json({ success: true, message: `Task ${task_id} verified successfully.` });
+        await logActivity({
+            wallet: wallet_address,
+            category: 'XP',
+            type: 'Social Verify',
+            description: `Verified ${action_type} on ${platform}`,
+            amount: xp,
+            symbol: 'XP'
+        });
+
+        return res.status(200).json({ success: true, message: `Task verified.` });
     } catch (error) {
-        console.error('[SocialVerify API Error]', error);
         return res.status(500).json({ error: error.message });
+    }
+}
+
+async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }) {
+    try {
+        await supabaseAdmin.from('user_activity_logs').insert({
+            wallet_address: wallet.toLowerCase(),
+            category,
+            activity_type: type,
+            description,
+            value_amount: amount || 0,
+            value_symbol: symbol || 'XP',
+            tx_hash: txHash,
+            metadata: metadata || {}
+        });
+    } catch (err) {
+        console.error('[logActivity Error]', err.message);
     }
 }

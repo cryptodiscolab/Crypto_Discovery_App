@@ -41,6 +41,11 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - **Gated Raffle Access**: Sebelum mengizinkan `buyTickets`, periksa Tier user di `user_profiles`. Jika raffle memiliki metadata `min_tier_id`, berikan feedback UI "Upgrade Tier required".
 - **Dynamic Multiplier**: Sesuaikan tampilan estimasi reward/points di UI berdasarkan multiplier tier user (Bronze=1x, Diamond=2x, dll).
 
+### 5. Activity Logging Standard (UGC History)
+- **Purchase Tracking**: Setiap pemanggilan `buyTickets` **WAJIB** mengirimkan log ke `/api/user-bundle` dengan kategori `PURCHASE`.
+- **Raffle Launch Tracking**: Setiap `createSponsorshipRaffle` yang berhasil **WAJIB** mencatat riwayat di `user_activity_logs`.
+- **Zero-Trust Log**: Log harus menyertakan signature user untuk validasi integritas di sisi server.
+
 ## ⛽ Paymaster Integration (Gasless)
 - Gunakan `usePaymaster.js` untuk mendeteksi kapabilitas gasless (Coinbase Smart Wallet).
 - Tampilkan `<GaslessBadge />` dan ubah label tombol menjadi "⛽ Buy Free" jika tersedia.
@@ -49,6 +54,7 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - [ ] Apakah fungsi `buyTickets` digunakan (bukan `purchaseRaffleTickets`)?
 - [ ] Apakah `drawWinner` digunakan (bukan `requestRaffleWinner`)?
 - [ ] Apakah XP awarding mengikuti pola Zero-Trust Backend?
+- [ ] Apakah `user_activity_logs` sudah terisi setelah pembelian tiket atau pembuatan raffle?
 - [ ] Apakah ABI diimpor via Proxy dari `contracts.js`?
 - [ ] Apakah build lokal berhasil (`npm run build`)?
 - [ ] Apakah chat teknis menggunakan Bahasa Indonesia?

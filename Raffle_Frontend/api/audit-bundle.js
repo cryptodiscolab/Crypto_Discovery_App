@@ -242,27 +242,56 @@ async function handleSyncEvents(req, res) {
         const rows = [];
         for (const log of pointEvents) {
             const [user, points, reason] = log.args;
+            const wallet = user.toLowerCase();
+            const xp = Number(points);
+
             rows.push({
                 id: makeId(`MASTERX_${log.transactionHash}_${log.index}`),
-                wallet_address: user.toLowerCase(),
+                wallet_address: wallet,
                 task_id: "12e123f5-0ded-4ca1-af04-e8b6924823e2",
-                xp_earned: Number(points),
+                xp_earned: xp,
                 claimed_at: new Date().toISOString(),
                 tx_hash: log.transactionHash,
                 source: `MasterX:${reason}`,
+            });
+
+            // Log to Activity (New Feature) - Specifically handle Referral XP
+            const isReferral = reason.toLowerCase().includes('referral');
+            await logActivity(supabase, {
+                wallet: wallet,
+                category: 'XP',
+                type: isReferral ? 'Referral Reward' : 'Staking Reward',
+                description: `Received ${xp} XP ${isReferral ? 'for inviting a user' : `for ${reason}`}`,
+                amount: xp,
+                symbol: 'XP',
+                txHash: log.transactionHash
             });
         }
 
         for (const log of taskEvents) {
             const [user, taskId, reward, timestamp] = log.args;
+            const wallet = user.toLowerCase();
+            const xp = Number(reward);
+
             rows.push({
                 id: makeId(`DAILYAPP_${log.transactionHash}_${log.index}`),
-                wallet_address: user.toLowerCase(),
+                wallet_address: wallet,
                 task_id: "885535d2-4c5c-4a80-9af5-36666192c244",
-                xp_earned: Number(reward),
+                xp_earned: xp,
                 claimed_at: new Date(Number(timestamp) * 1000).toISOString(),
                 tx_hash: log.transactionHash,
                 source: `DailyApp:task_${taskId}`,
+            });
+
+            // Log to Activity (New Feature)
+            await logActivity(supabase, {
+                wallet: wallet,
+                category: 'XP',
+                type: 'On-Chain Task',
+                description: `Completed task #${taskId} on-chain`,
+                amount: xp,
+                symbol: 'XP',
+                txHash: log.transactionHash
             });
         }
 
@@ -272,14 +301,26 @@ async function handleSyncEvents(req, res) {
             const wallet = user.toLowerCase();
 
             // 1. Log the upgrade activity
+            const burn = Number(xpBurned);
             rows.push({
                 id: makeId(`UPGRADE_${log.transactionHash}_${log.index}`),
                 wallet_address: wallet,
                 task_id: "2c1e23f5-0ded-4ca1-af04-e8b6924823e2", // Dedicated Upgrade task ID
-                xp_earned: -Number(xpBurned), // Negative XP to reflect burn in history
+                xp_earned: -burn, // Negative XP to reflect burn in history
                 claimed_at: new Date().toISOString(),
                 tx_hash: log.transactionHash,
                 source: `TierUpgrade:${oldTier}->${newTier}`,
+            });
+
+            // Log to Activity (New Feature)
+            await logActivity(supabase, {
+                wallet: wallet,
+                category: 'PURCHASE', // Upgrades are a purchase/burn of value
+                type: 'Tier Ascension',
+                description: `Upgraded from Tier ${oldTier} to ${newTier}`,
+                amount: -burn,
+                symbol: 'XP',
+                txHash: log.transactionHash
             });
 
             // 2. Immediate DB update for the tier
@@ -387,5 +428,25 @@ async function handleSyncEvents(req, res) {
         });
     } catch (err) {
         return res.status(500).json({ error: err.message });
+    }
+}
+
+/**
+ * logActivity: Internal helper to record events in the bundle.
+ */
+async function logActivity(supabase, { wallet, category, type, description, amount, symbol, txHash, metadata }) {
+    try {
+        await supabase.from('user_activity_logs').insert({
+            wallet_address: wallet.toLowerCase(),
+            category,
+            activity_type: type,
+            description,
+            value_amount: amount || 0,
+            value_symbol: symbol || 'XP',
+            tx_hash: txHash,
+            metadata: metadata || {}
+        });
+    } catch (err) {
+        console.error('[logActivity Error]', err.message);
     }
 }

@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClient } from 'wagmi';
-import { ABIS, CONTRACTS } from '../lib/contracts';
+import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS } from '../lib/contracts';
 import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
-// Multi-instance fix: Import from wagmiConfig to break circular dependency (Note: removed direct import for hook usage)
 
-const CMS_CONTRACT_ADDRESS = import.meta.env.VITE_CMS_CONTRACT_ADDRESS || "0x555D06933CC45038c42a1ba1F74140A5e4E0695d";
-const PRICE_FEED_ADDRESS = "0x4aDC67696bA383F43fD60604633031d935f9584b"; // ETH/USD Base Sepolia
+const CMS_CONTRACT_ADDRESS = CONTRACTS.CMS;
 const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 // Default fallback states
@@ -123,14 +121,11 @@ export function useCMS() {
         }
     });
 
-    // Robust check fallbacks (using ENV for immediate UI response)
-    const envAdmin = import.meta.env.VITE_ADMIN_ADDRESS || '';
-    const envWallets = import.meta.env.VITE_ADMIN_WALLETS || '';
+    // Robust check fallbacks (using Centralized Authority from contracts.js)
     const isEnvAdmin = useMemo(() => {
         if (!address) return false;
-        const adminList = `${envAdmin},${envWallets}`.split(',').map(a => a.trim().toLowerCase()).filter(a => a.startsWith('0x'));
-        return adminList.includes(address.toLowerCase());
-    }, [address, envAdmin, envWallets]);
+        return ADMIN_WALLETS.includes(address.toLowerCase());
+    }, [address]);
 
     // Database Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);

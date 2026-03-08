@@ -48,8 +48,38 @@ export function SBTUpgradeCard() {
 
         const tid = toast.loading(`Ascending to ${nextTier.name}...`);
         try {
-            await upgradeTier(nextTier.mintPrice.toString());
+            const hash = await upgradeTier(nextTier.mintPrice.toString());
             toast.success(`Ascension Success! Welcome to ${nextTier.name} Tier!`, { id: tid });
+
+            // Sync to DB Log
+            try {
+                const timestamp = new Date().toISOString();
+                const message = `Log activity for ${address}\nAction: SBT Tier Ascension\nTimestamp: ${timestamp}`;
+                const { signMessageAsync } = await import('@wagmi/core'); // Fallback if not injected, but usually available in context
+                // Note: upgradeTier in useSBT doesn't return receipt, but we can use the hash.
+
+                await fetch('/api/user-bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'sync-sbt-upgrade',
+                        wallet: address,
+                        signature: await window.ethereum.request({
+                            method: 'personal_sign',
+                            params: [message, address]
+                        }), // Direct sign if hooks are tricky here, or use injecting logic
+                        message,
+                        payload: {
+                            tierName: nextTier.name,
+                            ethSpent: formatEther(nextTier.mintPrice),
+                            txHash: hash
+                        }
+                    })
+                });
+            } catch (syncErr) {
+                console.warn('SBT Sync failed:', syncErr);
+            }
+
             refetchPoints();
             refetchTiers();
             refetchAll();

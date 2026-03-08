@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi';
 import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, Megaphone } from 'lucide-react';
 import { useCMS } from '../hooks/useCMS';
 
-const MASTER_ADMIN = "0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B".toLowerCase();
+import { ADMIN_WALLETS } from '../lib/contracts';
 
 export function BottomNav() {
     const { address, isConnected } = useAccount();
@@ -14,7 +14,7 @@ export function BottomNav() {
     const isAdmin = useMemo(() => {
         if (isCMSAdmin) return true;
         if (!address) return false;
-        return address.toLowerCase() === MASTER_ADMIN;
+        return ADMIN_WALLETS.includes(address.toLowerCase());
     }, [address, isCMSAdmin]);
 
     // Core nav items — max 5 untuk menghindari cramped layout di mobile

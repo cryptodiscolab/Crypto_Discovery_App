@@ -20,6 +20,22 @@ module.exports = async (req, res) => {
     console.log('🤖 [Lurah Ekosistem] Starting daily audit...');
 
     try {
+        // 0. Ambil Audit Settings Dinamis (Centralized Control)
+        const { data: settingsData } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'audit_settings')
+            .single();
+
+        const auditSettings = settingsData?.value || {
+            xp_anomaly_threshold: 5000,
+            sybil_lookback_days: 7,
+            sybil_wallet_threshold: 1,
+            audit_interval_hours: 24,
+            telegram_notifications: true,
+            ai_model: "gemini-2.0-flash"
+        };
+
         // 1. Ambil Peraturan (Knowledge) dari Vault
         const { data: vault } = await supabase
             .from('agent_vault')
@@ -29,25 +45,29 @@ module.exports = async (req, res) => {
         const skills = vault.filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
 
         // 2. Ambil Data Real-time untuk di-audit
-        // A. Cek User baru (24jam)
+        const intervalMs = (auditSettings.audit_interval_hours || 24) * 60 * 60 * 1000;
+        const lookbackDate = new Date(Date.now() - intervalMs).toISOString();
+
+        // A. Cek User baru
         const { data: newUsers } = await supabase
             .from('user_profiles')
             .select('wallet_address, display_name, pfp_url, total_xp, last_seen_at')
-            .gt('last_seen_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+            .gt('last_seen_at', lookbackDate);
 
-        // B. Cek Anomali XP (Contoh: XP > 1jt dalam sehari)
+        // B. Cek Anomali XP 
         const { data: anomalies } = await supabase
             .from('user_task_claims')
             .select('wallet_address, xp_earned, task_id')
-            .gt('claimed_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-            .gt('xp_earned', 5000); // Threshold anomali
+            .gt('claimed_at', lookbackDate)
+            .gt('xp_earned', auditSettings.xp_anomaly_threshold || 5000);
 
-        // C. NEW: Cek Sybil Attacks (Satu akun sosial diklaim banyak wallet)
+        // C. Cek Sybil Attacks (Satu akun sosial diklaim banyak wallet)
+        const sybilLookbackDate = new Date(Date.now() - (auditSettings.sybil_lookback_days || 7) * 24 * 60 * 60 * 1000).toISOString();
         const { data: claimsForSybil } = await supabase
             .from('user_task_claims')
             .select('wallet_address, target_id, platform')
             .not('target_id', 'is', 'null')
-            .gt('claimed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Cek 7 hari ke belakang
+            .gt('claimed_at', sybilLookbackDate);
 
         const targetMap = {};
         claimsForSybil?.forEach(c => {
@@ -56,12 +76,32 @@ module.exports = async (req, res) => {
         });
 
         const sybilSuspects = Object.entries(targetMap)
-            .filter(([_, wallets]) => wallets.size > 1)
+            .filter(([_, wallets]) => wallets.size > (auditSettings.sybil_wallet_threshold || 1))
             .map(([target, wallets]) => ({
                 target_id: target,
                 wallet_count: wallets.size,
                 wallets: Array.from(wallets)
             }));
+
+        // D. Cek Multi-Account (1 Wallet klaim banyak akun sosial di platform yg sama)
+        const walletPlatformMap = {};
+        claimsForSybil?.forEach(c => {
+            const key = `${c.wallet_address}_${c.platform}`;
+            if (!walletPlatformMap[key]) walletPlatformMap[key] = new Set();
+            walletPlatformMap[key].add(c.target_id);
+        });
+
+        const multiAccountSuspects = Object.entries(walletPlatformMap)
+            .filter(([_, targets]) => targets.size > 1)
+            .map(([key, targets]) => {
+                const [wallet, platform] = key.split('_');
+                return {
+                    wallet_address: wallet,
+                    platform: platform,
+                    account_count: targets.size,
+                    target_ids: Array.from(targets)
+                };
+            });
 
         // 3. Gunakan Otak AI untuk Analisa
         const prompt = `
@@ -77,12 +117,15 @@ module.exports = async (req, res) => {
             DATA AUDIT (TEMUAN TERBARU):
             - User Baru (24h): ${JSON.stringify(newUsers || [])}
             - Potensi Anomali XP (24h): ${JSON.stringify(anomalies || [])}
-            - Potensi Sybil Suspects (Target ID diklaim > 1 wallet): ${JSON.stringify(sybilSuspects || [])}
+            - Potensi Sybil Target Mismatched (1 Akun Sosial dipakai banyak Wallet): ${JSON.stringify(sybilSuspects || [])}
+            - Potensi Multi-Account (1 Wallet pakai banyak Akun Sosial): ${JSON.stringify(multiAccountSuspects || [])}
+            
+            ATURAN EMAS (1:1 MAPPING RULE): 1 Wallet HANYA boleh terikat pada 1 Akun Social Media per platform. Pelanggaran terhadap aturan ini adalah MUTLAK FRAUD.
             
             Berikan laporan ringkas (Bahasa Indonesia) dengan format berikut:
             1. Ringkasan kesehatan ekosistem (dalam bentuk Tabel ASCII jika ada data statistik).
-            2. Daftar potensi Sybil Attacks atau anomali (dalam bentuk Tabel ASCII). Sertakan wallet mana saja yang mencurigakan.
-            3. Rekomendasi tindakan mitigasi (misal: blacklist wallet tertentu).
+            2. Daftar potensi Pelanggaran 1:1 Mapping atau anomali (dalam bentuk Tabel ASCII). Sertakan wallet dan target_id yang mencurigakan.
+            3. Rekomendasi tindakan mitigasi cerdas (misal: "Siapkan script blacklist untuk wallet X, Y, Z karena indikasi pelanggaran aturan 1:1 Mapping pada Twitter ID 12345").
             
             Gunakan blok kode (backticks) untuk tabel agar terlihat rapi di Telegram (monospaced).
         `;
@@ -90,8 +133,8 @@ module.exports = async (req, res) => {
         let aiResponse = "AI Analysis not available (Missing API Key).";
         if (geminiApiKey) {
             try {
-                // Update to stable Gemini 2.0 Flash (as per .cursorrules Section 19)
-                const modelId = "gemini-2.0-flash";
+                // Gunakan model dinamis atau fallback stable
+                const modelId = auditSettings.ai_model || "gemini-2.0-flash";
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -112,8 +155,8 @@ module.exports = async (req, res) => {
             }
         }
 
-        // 4. Kirim Notifikasi Telegram
-        if (telegramBotToken && telegramChatId) {
+        // 4. Kirim Notifikasi Telegram (Jika diizinkan)
+        if (auditSettings.telegram_notifications && telegramBotToken && telegramChatId) {
             const message = `🚨 *LAPORAN LURAH EKOSISTEM*\n\n${aiResponse}`;
             try {
                 const tgRes = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {

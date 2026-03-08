@@ -4,9 +4,11 @@ import { useRaffle, useRaffleList, useRaffleInfo } from '../../hooks/useRaffle';
 import { useAccount } from 'wagmi';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { usePoints } from '../../shared/context/PointsContext';
 
 export function RaffleCard() {
     const { isConnected, address } = useAccount();
+    const { ecosystemSettings } = usePoints();
     const { raffleIds } = useRaffleList();
     const latestId = raffleIds.length > 0 ? raffleIds[raffleIds.length - 1] : null;
     const { raffle, isLoading } = useRaffleInfo(latestId || 0);
@@ -179,7 +181,9 @@ export function RaffleCard() {
                     ) : (
                         <>
                             {isGaslessSupported && <span className="text-xs">⛽</span>}
-                            {isGaslessSupported ? "Buy Free Ticket" : "Buy Ticket (0.15 USDC)"}
+                            {isGaslessSupported
+                                ? "Buy Free Ticket"
+                                : `Buy Ticket (${ecosystemSettings?.raffle_ticket_price_usdc || 0.15} USDC)`}
                         </>
                     )}
                 </button>

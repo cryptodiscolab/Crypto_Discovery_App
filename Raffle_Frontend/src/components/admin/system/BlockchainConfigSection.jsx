@@ -4,12 +4,18 @@ import { useReadContract, useWriteContract } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
 
+import { usePoints } from '../../../shared/context/PointsContext';
+
 export function BlockchainConfigSection() {
     const { writeContractAsync } = useWriteContract();
+    const { ecosystemSettings } = usePoints();
     const [isSaving, setIsSaving] = useState(false);
 
-    // Form States
-    const [rewards, setRewards] = useState({ daily: '100', referral: '50' });
+    // Form States (Initialized with Zero-Hardcode canonical defaults)
+    const [rewards, setRewards] = useState({
+        daily: String(ecosystemSettings?.daily_claim || '100'),
+        referral: String(ecosystemSettings?.referral_reward || '50')
+    });
     const [raffleFees, setRaffleFees] = useState({ rake: '2000', surcharge: '500' });
     const [raffleLimits, setRaffleLimits] = useState({ maxUser: '1000', maxParticipants: '10000' });
     const [raffleXp, setRaffleXp] = useState({ create: '500', claim: '200', purchase: '50' });

@@ -61,6 +61,33 @@ export function SBTRewardsDashboard() {
                 </div>,
                 { id: tid, duration: 6000 }
             );
+
+            // Sync to DB Log
+            try {
+                const timestamp = new Date().toISOString();
+                const message = `Log activity for ${address}\nAction: Pool Sharing Claim\nTimestamp: ${timestamp}`;
+
+                await fetch('/api/user-bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'sync-pool-claim',
+                        wallet: address,
+                        signature: await window.ethereum.request({
+                            method: 'personal_sign',
+                            params: [message, address]
+                        }),
+                        message,
+                        payload: {
+                            amountETH: formatEther(claimableAmount),
+                            tier: userTier,
+                            txHash: hash
+                        }
+                    })
+                });
+            } catch (syncErr) {
+                console.warn('Pool Sync failed:', syncErr);
+            }
         } catch (err) {
             console.error(err);
             toast.error(err.shortMessage || "Transaction failed", { id: tid });
