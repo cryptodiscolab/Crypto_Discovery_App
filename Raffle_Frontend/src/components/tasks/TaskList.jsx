@@ -15,6 +15,7 @@ export function TaskList() {
     const [userClaims, setUserClaims] = useState(new Set());
     const [isLoading, setIsLoading] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
+    const [claimingTask, setClaimingTask] = useState(null); // Missing: tracks which task is being claimed
     const { execute: executeClaim } = useVerifiedAction();
     const { refetch } = usePoints();
 

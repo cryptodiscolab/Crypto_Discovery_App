@@ -18,9 +18,6 @@ export function useVerifiedAction() {
     const execute = useCallback(async (action, payload) => {
         if (!address) throw new Error('Wallet not connected');
 
-        const serverUrl = import.meta.env.VITE_VERIFY_SERVER_URL || 'http://localhost:3000';
-        const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET;
-
         // Build a deterministic, human-readable message
         const timestamp = Math.floor(Date.now() / 1000);
         const message = `Crypto Disco App\nAction: ${action}\nWallet: ${address.toLowerCase()}\nTimestamp: ${timestamp}`;
@@ -28,35 +25,27 @@ export function useVerifiedAction() {
         // Sign the message via wagmi
         const signature = await signMessageAsync({ message });
 
-        // Map generic actions to specific verification server endpoints
-        let endpoint = `${serverUrl}/api/verify/${action.replace('_', '/')}`;
-
-        // Special case for legacy 'claim_task' or social tasks
-        if (action === 'claim_task' || payload.platform) {
-            const platform = payload.platform || 'farcaster';
-            const actionType = payload.actionType || 'follow';
-            endpoint = `${serverUrl}/api/verify/${platform}/${actionType}`;
-        }
+        // All task claims go to the Vercel serverless endpoint (never localhost)
+        const endpoint = '/api/tasks-bundle';
+        const bundleAction = (action === 'claim_task') ? 'claim' : action;
 
         const res = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-secret': apiSecret
             },
             body: JSON.stringify({
-                userAddress: address.toLowerCase(),
-                taskId: payload.task_id_contract || payload.task_id, // contract ID
-                dbTaskId: payload.task_id, // database UUID
-                xpEarned: payload.xp_earned,
+                action: bundleAction,
+                wallet_address: address.toLowerCase(),
+                task_id: payload.task_id,
+                signature,
+                message,
+                // Optional social task fields (passed through if present)
                 fid: payload.fid,
                 targetFid: payload.targetFid,
                 castHash: payload.castHash,
-                userId: payload.userId,
                 tweetId: payload.tweetId,
                 targetUserId: payload.targetUserId,
-                signature,
-                message,
             }),
         });
 
