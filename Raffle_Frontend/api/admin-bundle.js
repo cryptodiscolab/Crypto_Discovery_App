@@ -10,12 +10,17 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const AUTHORIZED_ADMINS = [
-    '0x08452b1bdaa6acd11f6ccf5268d16e2ac29c204b',
+const rawAdmins = [
+    '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b', // Primary target
     '0x455df75735d2a18c26f0afdefa93217b60369fe5',
     process.env.VITE_ADMIN_ADDRESS,
-    process.env.ADMIN_ADDRESS
-].filter(Boolean).map(a => a.toLowerCase());
+    process.env.ADMIN_ADDRESS,
+    process.env.VITE_ADMIN_WALLETS
+].join(',').split(',');
+
+const AUTHORIZED_ADMINS = rawAdmins
+    .map(a => a?.trim().toLowerCase())
+    .filter(Boolean);
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
