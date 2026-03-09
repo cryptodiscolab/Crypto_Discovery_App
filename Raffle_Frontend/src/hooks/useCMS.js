@@ -40,7 +40,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
-            staleTime: 0,
+            staleTime: 5 * 60 * 1000, // Cache for 5 mins to prevent RPC spam
         }
     });
 
@@ -76,7 +76,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
-            staleTime: 0,
+            staleTime: 5 * 60 * 1000,
         }
     });
 
@@ -92,7 +92,7 @@ export function useCMS() {
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS),
             placeholderData: (prev) => prev,
-            staleTime: 0,
+            staleTime: 5 * 60 * 1000,
         }
     });
 
@@ -108,6 +108,7 @@ export function useCMS() {
         args: [DEFAULT_ADMIN_ROLE, address || "0x0000000000000000000000000000000000000000"],
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS && address),
+            staleTime: 5 * 60 * 1000,
         }
     });
 
@@ -118,6 +119,7 @@ export function useCMS() {
         args: [address || "0x0000000000000000000000000000000000000000"],
         query: {
             enabled: Boolean(CMS_CONTRACT_ADDRESS && address),
+            staleTime: 5 * 60 * 1000,
         }
     });
 

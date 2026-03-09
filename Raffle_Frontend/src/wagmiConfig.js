@@ -46,5 +46,8 @@ export const config = createConfig({
             http('https://sepolia.base.org'),
         ]),
     },
+    batch: {
+        multicall: true, // Auto-batching multiple useReadContract to a single RPC call
+    },
     ssr: false,
 });
