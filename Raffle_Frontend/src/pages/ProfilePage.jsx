@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle
 } from 'lucide-react';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { useUserInfo } from '../hooks/useContract';
@@ -102,10 +102,21 @@ export default function ProfilePage() {
     }
   };
 
+  const [potentialTier, setPotentialTier] = useState(0);
+
+  const calculatePotentialTier = (xp) => {
+    // Current tier milestones
+    if (xp >= 5000) return 5; // Diamond
+    if (xp >= 2500) return 4; // Platinum
+    if (xp >= 1000) return 3; // Gold
+    if (xp >= 500) return 2;  // Silver
+    if (xp >= 100) return 1;  // Bronze
+    return 0;
+  };
+
   const fetchProfile = async () => {
     if (!address) return;
 
-    // Gunakan address lowercase agar sinkron dengan database
     const walletAddress = address.toLowerCase();
 
     // Ambil data dari view v_user_full_profile
@@ -134,11 +145,18 @@ export default function ProfilePage() {
         powerBadge: data.power_badge || false,
         activeStatus: data.active_status || 'active',
         total_xp: data.total_xp || 0,
-        rankName: data.rank_name || 'Rookie'
+        rankName: data.rank_name || 'Rookie',
+        tier: data.tier || 0
       });
+      setPotentialTier(calculatePotentialTier(data.total_xp || 0));
     } else {
       console.log("No profile found for address:", walletAddress);
     }
+  };
+
+  const getTierName = (t) => {
+    const names = ['Guest', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+    return names[t] || 'Guest';
   };
 
   // --- CORE LOGIC: SECURE SAVE ---
@@ -256,17 +274,18 @@ export default function ProfilePage() {
                   <button
                     onClick={async () => {
                       if (!address) return toast.error("Please connect your wallet!");
-                      const toastId = toast.loading("Syncing...");
+                      const toastId = toast.loading("Syncing Identity...");
                       try {
                         const synced = await syncUser(address, true);
-                        await fetchProfile();
                         if (synced?.fid) {
-                          toast.success("Identity synced!", { id: toastId });
+                          await fetchProfile();
+                          toast.success("Identity synced! 🎉", { id: toastId });
                         } else {
-                          toast.error("Account not found", { id: toastId });
+                          toast.error("Farcaster account not found.", { id: toastId });
                         }
                       } catch (e) {
-                        toast.error("Sync failed", { id: toastId });
+                         console.error(e);
+                         toast.error("Sync failed: " + (e.message || "Unknown error"), { id: toastId });
                       }
                     }}
                     disabled={isFarcasterLoading}
@@ -378,9 +397,32 @@ export default function ProfilePage() {
                   />
                 </div>
               ) : (
-                <span className="text-slate-400">@{profileData.username || 'username'}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">@{profileData.username || 'username'}</span>
+                  <div 
+                    onClick={() => onChainUserData?.currentTier < potentialTier && setActiveModal('upgrade')}
+                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all cursor-pointer
+                      ${onChainUserData?.currentTier < potentialTier 
+                        ? 'bg-indigo-500/20 border-indigo-500/40 animate-pulse' 
+                        : 'bg-zinc-800/50 border-white/10'}`}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                      {profileData.rankName}
+                    </span>
+                    {onChainUserData?.currentTier < potentialTier && <ArrowUpCircle size={10} className="text-indigo-400" />}
+                  </div>
+                  
+                  {/* UNDERDOG BONUS INDICATOR */}
+                  {(onChainUserData?.currentTier === 1 || onChainUserData?.currentTier === 2) && 
+                   onChainUserData?.lastActivity > 0 && 
+                   (Math.floor(Date.now() / 1000) <= onChainUserData.lastActivity + 48 * 3600) && (
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[9px] font-bold text-amber-500 animate-pulse">
+                      <Zap size={8} /> Catch-up active
+                    </div>
+                  )}
+                </div>
               )}
-              {profileData.fid && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] text-slate-500">FID: {profileData.fid}</span>}
+              {profileData.fid && !isEditing && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] text-slate-500">FID: {profileData.fid}</span>}
             </div>
           </div>
 
@@ -425,6 +467,27 @@ export default function ProfilePage() {
 
         {/* DIVIDER */}
         <div className="h-px bg-white/5 w-full my-2" />
+
+        {/* TIER UPGRADE PROMPT (MINIMALIST) */}
+        {onChainUserData?.currentTier < potentialTier && (
+          <div className="mx-4 mb-4 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between gap-3 animate-pulse">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-indigo-400" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+                  Ascension Ready: {getTierName(potentialTier)}
+                </span>
+                <span className="text-[8px] text-slate-500 uppercase">Mint SBT for {getTierName(potentialTier)} Multiplier</span>
+              </div>
+            </div>
+            <button 
+              onClick={() => setActiveModal('upgrade')}
+              className="text-[9px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-lg uppercase tracking-tight hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20"
+            >
+              Mint Status
+            </button>
+          </div>
+        )}
 
         {/* UGC ACTION BUTTONS */}
         <div className="px-4 py-4">

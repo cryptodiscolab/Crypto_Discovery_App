@@ -47,7 +47,8 @@ export const config = createConfig({
         ]),
     },
     batch: {
-        multicall: true, // Auto-batching multiple useReadContract to a single RPC call
+        multicall: false, // Disabled as per user request to avoid batching issues on some RPCs
     },
+    pollingInterval: 12000, 
     ssr: false,
 });

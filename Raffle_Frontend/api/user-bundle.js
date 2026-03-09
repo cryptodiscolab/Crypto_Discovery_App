@@ -109,14 +109,14 @@ async function handleXpSync(req, res) {
 
         const cleanAddress = wallet_address.toLowerCase();
 
-        // 2. Fetch Current On-Chain XP recorded in DB (NOT total_xp, to prevent negative deltas)
-        const { data: claims } = await supabaseAdmin
-            .from('user_task_claims')
-            .select('xp_earned')
+        // 2. Fetch Last Known On-Chain XP from Profile (Robust Baseline)
+        const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('points')
             .eq('wallet_address', cleanAddress)
-            .eq('platform', 'blockchain');
+            .maybeSingle();
 
-        const dbOnChainXP = claims ? claims.reduce((acc, curr) => acc + (curr.xp_earned || 0), 0) : 0;
+        const dbLastPoints = profile?.points || 0;
 
         let onChainXP = 0;
         let xpDelta = 0;
@@ -124,7 +124,6 @@ async function handleXpSync(req, res) {
         const maxAttempts = 3;
 
         // 3. Retry Loop for On-Chain reading (Handling RPC Indexing Lag)
-        // Helps if the block was just mined but the RPC node hasn't indexed it yet.
         while (attempts < maxAttempts) {
             const stats = await rpcClient.readContract({
                 address: DAILY_APP_ADDRESS,
@@ -148,36 +147,32 @@ async function handleXpSync(req, res) {
             });
 
             onChainXP = Number(stats[0] || 0);
-            xpDelta = onChainXP - dbOnChainXP;
+            xpDelta = onChainXP - dbLastPoints;
 
             if (xpDelta > 0) break; // Found gains!
+            if (xpDelta < 0) break; // Found burn! (Still sync balance)
 
             attempts++;
             if (attempts < maxAttempts) {
-                console.log(`[XP Sync] No gains found for ${cleanAddress}. Retrying in 2s... (Attempt ${attempts}/${maxAttempts})`);
+                console.log(`[XP Sync] No change found for ${cleanAddress}. Retrying in 2s... (Attempt ${attempts}/${maxAttempts})`);
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
         }
 
-        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, DB(OnChainOnly)=${dbOnChainXP}, Delta=${xpDelta}`);
+        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, DB_Last=${dbLastPoints}, Delta=${xpDelta}`);
 
-        // 4. Ensure profile exists (Identity Foundation)
-        // We must do this BEFORE inserting the claim so the trigger 'sync_user_xp' 
-        // has a target row to update.
+        // 4. Update Profile (Identity & Points Balance)
         await supabaseAdmin
             .from('user_profiles')
             .upsert({
                 wallet_address: cleanAddress,
+                points: onChainXP, // Sync current balance
                 last_seen_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             }, { onConflict: 'wallet_address' });
 
         if (xpDelta > 0) {
             // Determine Task ID for the claim
-            // 288596d8-b5a9-4faf-bde0-0dd28aaba902 is "Daily Bonus Claim (On-Chain)"
-            // 885535d2-4c5c-4a80-9af5-36666192c244 is general "DailyApp Contract Sync"
-
-            // 4. Fetch the authoritative daily_claim reward value (Zero-Debt Logic)
             const { data: dailySetting } = await supabaseAdmin
                 .from('point_settings')
                 .select('points_value')
@@ -191,33 +186,19 @@ async function handleXpSync(req, res) {
                 : '885535d2-4c5c-4a80-9af5-36666192c244';
 
             // 5. Record Claim to update total_xp via trigger
-            // Using UPSERT: fetch existing first to accumulate XP
-            const { data: existingClaim } = await supabaseAdmin
+            // Note: Since we use UPSERT on points in profile, we still want a log of the claim.
+            await supabaseAdmin
                 .from('user_task_claims')
-                .select('xp_earned')
-                .eq('wallet_address', cleanAddress)
-                .eq('task_id', taskId)
-                .maybeSingle();
-
-            const currentTaskXp = existingClaim ? (existingClaim.xp_earned || 0) : 0;
-            const newTotalTaskXp = currentTaskXp + xpDelta;
-
-            const { error: claimError } = await supabaseAdmin
-                .from('user_task_claims')
-                .upsert({
+                .insert({
                     wallet_address: cleanAddress,
                     task_id: taskId,
-                    xp_earned: newTotalTaskXp,
+                    xp_earned: xpDelta,
                     claimed_at: new Date().toISOString(),
                     platform: 'blockchain',
                     action_type: 'contract_sync'
-                }, { onConflict: 'wallet_address, task_id' });
+                });
 
-            if (claimError) {
-                throw claimError;
-            }
-
-            // 6. Log to user_activity_logs (New Feature)
+            // 6. Log to user_activity_logs
             await logActivity({
                 wallet: cleanAddress,
                 category: 'XP',
@@ -226,15 +207,14 @@ async function handleXpSync(req, res) {
                 amount: xpDelta,
                 symbol: 'XP'
             });
-        } else if (xpDelta < 0) {
-            console.warn(`[XP Sync] On-chain XP (${onChainXP}) is lower than DB OnChain record (${dbOnChainXP}) for ${cleanAddress}`);
         }
 
         return res.status(200).json({
             ok: true,
-            xp: Math.max(onChainXP, dbOnChainXP),
-            synced: xpDelta > 0
+            xp: onChainXP,
+            synced: xpDelta !== 0
         });
+
     } catch (error) {
         console.error('[XP Sync Error]', error);
         return res.status(500).json({ error: error.message });
@@ -506,6 +486,18 @@ async function handleSyncSbtUpgrade(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const { tierName, ethSpent, txHash } = payload;
+        const tierMap = { 'Bronze': 1, 'Silver': 2, 'Gold': 3, 'Platinum': 4, 'Diamond': 5 };
+        const tierIndex = tierMap[tierName] || 0;
+
+        // Update DB tier immediately for faster UI feedback
+        if (tierIndex > 0) {
+            const { error: updateError } = await supabaseAdmin
+                .from('user_profiles')
+                .update({ tier: tierIndex, updated_at: new Date().toISOString() })
+                .eq('wallet_address', wallet.toLowerCase());
+            
+            if (updateError) console.error('[SyncSbtUpgrade] DB Update Error:', updateError);
+        }
 
         await logActivity({
             wallet,

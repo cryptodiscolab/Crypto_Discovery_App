@@ -84,7 +84,7 @@ export const NexusMonitorTab = () => {
             const message = `Agent Nexus Dispatch\nAgent: ${targetAgent}\nTask: ${taskName}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await fetch('/api/admin/agents-nexus', {
+            const response = await fetch('/api/admin/NEXUS_DISPATCH', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

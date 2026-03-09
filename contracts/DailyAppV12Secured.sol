@@ -162,6 +162,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
     event EmergencyWithdraw(address indexed token, uint256 amount);
     event TierURIUpdated(NFTTier indexed tier, string uri);
     event TaskVerified(address indexed user, uint256 indexed taskId, uint256 timestamp);  // NEW
+    mapping(address => uint256) public lastActivityTime; // NEW: Track last activity for Underdog Bonus
     event ConfigUpdated(NFTTier indexed tier, uint256 pointsRequired, uint256 mintPrice, uint256 multiplierBP); // NEW
     event PointsSynced(address indexed user, uint256 points); // NEW
     event PaymentTokenUpdated(address indexed token, bool status); // MULTI-TOKEN
@@ -761,6 +762,16 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
 
         uint256 multiplier = nftConfigs[stats.currentTier].multiplierBP;
         if (multiplier == 0) multiplier = 10000;
+        
+        // --- NEW: UNDERDOG CATCH-UP BONUS (+10% for Bronze & Silver) ---
+        if (stats.currentTier == NFTTier.BRONZE || stats.currentTier == NFTTier.SILVER) {
+            // Check if last activity was within the last 48 hours to reward consistency
+            if (lastActivityTime[msg.sender] > 0 && block.timestamp <= lastActivityTime[msg.sender] + 48 hours) {
+                multiplier = (multiplier * 11000) / 10000; // Boost multiplier by 1.1x
+            }
+        }
+        lastActivityTime[msg.sender] = block.timestamp;
+        
         uint256 reward = (task.baseReward * multiplier) / 10000;
         
         stats.points += reward;

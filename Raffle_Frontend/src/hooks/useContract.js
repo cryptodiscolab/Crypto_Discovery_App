@@ -15,6 +15,14 @@ export function useUserInfo(address) {
         query: { enabled: !!address }
     });
 
+    const { data: lastActivity } = useReadContract({
+        address: V12_ADDRESS,
+        abi: ABIS.DAILY_APP,
+        functionName: 'lastActivityTime',
+        args: [address],
+        query: { enabled: !!address }
+    });
+
     const stats = useMemo(() => {
         if (!userInfo) return null;
         // In Ethers/Wagmi, return value can be array-like or object with keys
@@ -26,8 +34,9 @@ export function useUserInfo(address) {
             tasksForReferralProgress: userInfo.tasksForReferralProgress !== undefined ? Number(userInfo.tasksForReferralProgress) : Number(userInfo[4]),
             lastDailyBonusClaim: userInfo.lastDailyBonusClaim !== undefined ? Number(userInfo.lastDailyBonusClaim) : Number(userInfo[5]),
             isBlacklisted: userInfo.isBlacklisted !== undefined ? userInfo.isBlacklisted : userInfo[6],
+            lastActivity: lastActivity ? Number(lastActivity) : 0
         };
-    }, [userInfo]);
+    }, [userInfo, lastActivity]);
 
     if (!address) return { stats: null, isLoading: false, refetch: () => { } };
 
