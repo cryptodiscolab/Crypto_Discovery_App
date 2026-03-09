@@ -41,43 +41,35 @@ export function useVerification(refetchStats) {
 
             let response;
             if (isSocialTask) {
-                // ── CALL VERIFICATION SERVER (SOCIAL) ──
-                const serverUrl = import.meta.env.VITE_VERIFY_SERVER_URL || '';
-                const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET;
-
-                // Determine social ID (FID for Farcaster, etc.)
-                // In production, this should come from the user session/context
-                const socialId = task.socialId || 0;
-
-                const endpoint = `${serverUrl}/api/verify/${platform}/${task.action_type || 'like'}`;
-
-                response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-secret': apiSecret
-                    },
-                    body: JSON.stringify({
-                        userAddress: address,
-                        taskId: taskId,
-                        fid: platform === 'farcaster' ? (userFid || task.socialId || 0) : undefined,
-                        userId: platform === 'twitter' ? (userFid || task.socialId || 0) : undefined,
-                        signature,
-                        message,
-                        // Add any other specific params needed by the server
-                        targetFid: task.targetFid,
-                        castHash: task.castHash,
-                        tweetId: task.tweetId,
-                        targetUserId: task.targetUserId
-                    })
-                });
-            } else {
-                // ── CALL INTERNAL API (REGULAR) ──
-                // Send to secure API route
-                response = await fetch('/api/tasks/social-verify', {
+                // ── CALL TASKS-BUNDLE (SOCIAL VERIFY) ──
+                // Routes to tasks-bundle.js handleSocialVerify()
+                response = await fetch('/api/tasks-bundle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        action: 'social-verify',
+                        wallet_address: address,
+                        signature,
+                        message,
+                        task_id: taskId,
+                        platform: platform,
+                        action_type: task.action_type || 'like',
+                        fid: platform === 'farcaster' ? (userFid || task.socialId || 0) : undefined,
+                        userId: platform === 'twitter' ? (userFid || task.socialId || 0) : undefined,
+                        targetFid: task.targetFid,
+                        castHash: task.castHash,
+                        tweetId: task.tweetId,
+                        targetUserId: task.targetUserId,
+                        xp_reward: task.reward_points || task.baseReward || 0
+                    })
+                });
+            } else {
+                // ── NON-SOCIAL: TASKS-BUNDLE (SOCIAL-VERIFY INTERNAL) ──
+                response = await fetch('/api/tasks-bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'social-verify',
                         wallet_address: address,
                         signature,
                         message,

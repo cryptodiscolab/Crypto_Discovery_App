@@ -51,7 +51,6 @@ export default function ProfilePage() {
   });
 
   const [copied, setCopied] = useState(false);
-  const [pointSettings, setPointSettings] = useState({ daily_claim: 100 }); // Default fallback
   const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle'
   const [claimCountdown, setClaimCountdown] = useState('');
   const [claimReady, setClaimReady] = useState(true);
@@ -87,33 +86,16 @@ export default function ProfilePage() {
   useEffect(() => {
     if (address) {
       fetchProfile();
-      fetchPointSettings();
     }
   }, [address]);
 
-  const fetchPointSettings = async () => {
-    try {
-      const response = await fetch('/api/user-bundle?action=get-point-settings');
-      const data = await response.json();
-      if (data.success) {
-        setPointSettings(data.settings);
-      }
-    } catch (err) {
-      console.warn('[ProfilePage] Failed to fetch point settings:', err);
-    }
-  };
+
 
   const [potentialTier, setPotentialTier] = useState(0);
 
   const calculatePotentialTier = (xp) => {
     if (!sbtThresholds || sbtThresholds.length === 0) {
-      // Safe fallback if context hasn't loaded
-      if (xp >= 5000) return 5;
-      if (xp >= 2500) return 4;
-      if (xp >= 1000) return 3;
-      if (xp >= 500) return 2;
-      if (xp >= 100) return 1;
-      return 0;
+      return 0; // Dynamic-only mode: no hardcoded fallbacks
     }
     
     // Dynamically match highest tier threshold passed
@@ -553,7 +535,7 @@ export default function ProfilePage() {
         {activeModal === 'claim' && (
           <DailyClaimModal 
             onClose={() => setActiveModal(null)} 
-            pointSettings={pointSettings} 
+            pointSettings={ecosystemSettings} 
             streakCount={profileData.streakCount}
           />
         )}
@@ -1066,7 +1048,7 @@ function DailyClaimModal({ onClose, pointSettings, streakCount }) {
 
         if (!response.ok) throw new Error("Sync API failed");
 
-        const dailyReward = pointSettings?.daily_claim || 100;
+        const dailyReward = pointSettings?.daily_claim || 0;
         manualAddPoints(dailyReward);
         await refetchStats();
         await refetch();
@@ -1099,7 +1081,7 @@ function DailyClaimModal({ onClose, pointSettings, streakCount }) {
           <p className="text-xs text-slate-400 mt-2">
             {isCooldown
               ? "You've claimed today! Next bonus in:"
-              : `Claim your daily ${pointSettings?.daily_claim || 100} XP boost to climb the leaderboard!`}
+              : `Claim your daily ${pointSettings?.daily_claim || 0} XP boost to climb the leaderboard!`}
           </p>
         </div>
         {streakCount > 0 && (
@@ -1131,7 +1113,7 @@ function DailyClaimModal({ onClose, pointSettings, streakCount }) {
             ? '⏳ PROCESSING...'
       : isCooldown
         ? `⏰ COMEBACK IN ${countdown}`
-        : `✨ CLAIM DAILY (+${pointSettings?.daily_claim || 100} XP)`}
+        : `✨ CLAIM DAILY (+${pointSettings?.daily_claim || 0} XP)`}
         </button>
         <button
           onClick={onClose}
@@ -1150,7 +1132,7 @@ function RenewSponsorshipModal({ onClose }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { refetch: refetchStats } = useUserInfo(address);
-  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 2);
+  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 0);
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
