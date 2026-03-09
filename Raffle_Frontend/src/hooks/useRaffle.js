@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls } from 'wagmi';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, formatEther } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
 import { ABIS, CONTRACTS } from '../lib/contracts';
 import { awardTaskXP } from '../dailyAppLogic';

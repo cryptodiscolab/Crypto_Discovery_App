@@ -1,6 +1,7 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { ABIS } from '../lib/contracts';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84";
 

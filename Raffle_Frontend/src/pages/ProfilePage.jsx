@@ -26,7 +26,7 @@ export default function ProfilePage() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
-  const { refetch } = usePoints();
+  const { refetch, sbtThresholds, ecosystemSettings } = usePoints();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
   // State untuk Mode Edit
@@ -106,13 +106,25 @@ export default function ProfilePage() {
   const [potentialTier, setPotentialTier] = useState(0);
 
   const calculatePotentialTier = (xp) => {
-    // Current tier milestones
-    if (xp >= 5000) return 5; // Diamond
-    if (xp >= 2500) return 4; // Platinum
-    if (xp >= 1000) return 3; // Gold
-    if (xp >= 500) return 2;  // Silver
-    if (xp >= 100) return 1;  // Bronze
-    return 0;
+    if (!sbtThresholds || sbtThresholds.length === 0) {
+      // Safe fallback if context hasn't loaded
+      if (xp >= 5000) return 5;
+      if (xp >= 2500) return 4;
+      if (xp >= 1000) return 3;
+      if (xp >= 500) return 2;
+      if (xp >= 100) return 1;
+      return 0;
+    }
+    
+    // Dynamically match highest tier threshold passed
+    let reached = 0;
+    const sorted = [...sbtThresholds].sort((a,b) => a.xp_required - b.xp_required);
+    for (const t of sorted) {
+       if (xp >= t.xp_required) {
+           reached = t.level;
+       }
+    }
+    return reached;
   };
 
   const fetchProfile = async () => {
@@ -679,12 +691,18 @@ function CreateTaskModal({ onClose }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { stats: userData, refetch: refetchStats } = useUserInfo(address);
+  const { ecosystemSettings } = usePoints(); // Zero Hardcode integration
 
   // Config based on selection
   const isEth = paymentToken === 'eth';
   const rewardTokenAddr = isEth ? "0x0000000000000000000000000000000000000000" : CONTRACTS.CREATOR_TOKEN;
-  const rewardAmount = 5n * 10n ** 18n; // 5 tokens (assuming 18 decimals)
-  const platformFee = 2n * 10n ** 6n; // 2 USDC (assuming 6 decimals)
+  
+  // Dynamic fetches
+  const rewardTokens = Number(ecosystemSettings?.sponsorship_reward_amount || 5);
+  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 2);
+  
+  const rewardAmount = BigInt(rewardTokens) * 10n ** 18n; // dynamically defined tokens (assuming 18 decimals)
+  const platformFee = BigInt(feeUsd * 1000000); // dynamically defined USDC (assuming 6 decimals)
 
   const buildCalls = () => {
     const titles = tasksBatch.filter(t => t.title && t.link).map(t => t.title);
@@ -870,11 +888,11 @@ function CreateTaskModal({ onClose }) {
           <div className="space-y-2 pt-2 border-t border-white/5">
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-indigo-400">
               <span>Platform Fee</span>
-              <span>${(ecosystemSettings?.sponsorship_listing_fee_usdc || 2.00).toFixed(2)} USDC</span>
+              <span>${feeUsd.toFixed(2)} USDC</span>
             </div>
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-200">
               <span>Reward Pool</span>
-              <span>5.00 {isEth ? 'ETH' : 'TOKEN'}</span>
+              <span>{rewardTokens.toFixed(2)} {isEth ? 'ETH' : 'TOKEN'}</span>
             </div>
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
               <span>Duration</span>
@@ -917,7 +935,7 @@ function CreateTaskModal({ onClose }) {
                       description: `UGC Campaign with ${taskCount} missions on ${firstTask.platform}`,
                       sponsor_address: address,
                       platform_code: firstTask.platform,
-                      reward_amount_per_user: "5000000000000000000", // 5.0 in wei-ish (matches buildCalls simplified logic)
+                      reward_amount_per_user: rewardAmount.toString(), // dynamically synced
                       max_participants: 100,
                       txHash: receipt.transactionHash,
                       tasks: taskCount
@@ -1132,6 +1150,7 @@ function RenewSponsorshipModal({ onClose }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { refetch: refetchStats } = useUserInfo(address);
+  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 2);
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1142,7 +1161,7 @@ function RenewSponsorshipModal({ onClose }) {
           </div>
           <h2 className="text-xl font-black text-white italic tracking-tighter uppercase">Renew <span className="text-blue-500">Visiblity</span></h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Extend your task visibility for another **3 Days** for **$2 USDC**.
+            Extend your task visibility for another **3 Days** for **${feeUsd} USDC**.
             Title and Link will remain the same.
           </p>
         </div>
@@ -1191,7 +1210,7 @@ function RenewSponsorshipModal({ onClose }) {
                         category: 'PURCHASE',
                         type: 'Sponsorship Renewal',
                         description: logDescription,
-                        amount: 2, // $2 USDC
+                        amount: feeUsd,
                         symbol: 'USDC',
                         txHash: receipt.transactionHash,
                         metadata: { reqId: reqId }
@@ -1211,7 +1230,7 @@ function RenewSponsorshipModal({ onClose }) {
             >
               <TransactionButton
                 className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
-                text="PAY $2 USDC & RENEW"
+                text={`PAY $${feeUsd} USDC & RENEW`}
               />
               <div className="mt-2 text-[10px] text-slate-500 font-mono text-center">
                 <TransactionStatus>
