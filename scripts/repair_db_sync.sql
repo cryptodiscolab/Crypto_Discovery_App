@@ -1,10 +1,9 @@
 -- ============================================
--- SQL REPAIR: DAILY CLAIM TASKS & SCHEMA ALIGNMENT
--- Fixes missing task IDs and ensures column naming consistency.
+-- SQL REPAIR: XP UNIFICATION & SCHEMA ALIGNMENT
+-- Unifies 'xp', 'points', and 'total_xp' into a single source of truth.
 -- ============================================
 
 -- 1. Ensure the Daily Claim Task Anchor exists
--- This UUID is used in user-bundle.js for standard daily rewards.
 INSERT INTO public.daily_tasks (id, description, xp_reward, is_active, task_type)
 VALUES (
     '288596d8-b5a9-4faf-bde0-0dd28aaba902',
@@ -19,7 +18,6 @@ VALUES (
     is_active = true;
 
 -- 2. Ensure the System Sync Task Anchor exists
--- This UUID is used for non-standard delta jumps (Contract Sync).
 INSERT INTO public.daily_tasks (id, description, xp_reward, is_active, task_type)
 VALUES (
     '885535d2-4c5c-4a80-9af5-36666192c244',
@@ -31,28 +29,31 @@ VALUES (
     is_active = true;
 
 -- 3. Point Settings Verification
--- Ensure the daily_claim activity key is present for the API calculation.
 INSERT INTO public.point_settings (activity_key, points_value)
 VALUES ('daily_claim', 100)
 ON CONFLICT (activity_key) DO NOTHING;
 
--- 4. Schema Alignment Check
--- Ensure total_xp column exists in user_profiles. 
--- We prefer 'total_xp' as it matches v_user_full_profile and ProfilePage.jsx.
+-- 4. XP UNIFICATION: Merge legacy columns into total_xp
 DO $$ 
 BEGIN 
-    -- If 'xp' exists but 'total_xp' doesn't, rename it.
-    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='xp') 
-       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='total_xp') THEN
-        ALTER TABLE public.user_profiles RENAME COLUMN xp TO total_xp;
-    END IF;
-
-    -- If neither exist (highly unlikely), create it.
+    -- Ensure total_xp exists
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='total_xp') THEN
         ALTER TABLE public.user_profiles ADD COLUMN total_xp INTEGER DEFAULT 0;
     END IF;
 
-    -- Streaks Implementation
+    -- Merge 'xp' into total_xp if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='xp') THEN
+        UPDATE public.user_profiles SET total_xp = total_xp + COALESCE(xp, 0);
+        ALTER TABLE public.user_profiles DROP COLUMN xp;
+    END IF;
+
+    -- Merge 'points' into total_xp if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='points') THEN
+        UPDATE public.user_profiles SET total_xp = total_xp + COALESCE(points, 0);
+        ALTER TABLE public.user_profiles DROP COLUMN points;
+    END IF;
+
+    -- Streaks Implementation (Ensure these exist)
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='streak_count') THEN
         ALTER TABLE public.user_profiles ADD COLUMN streak_count INTEGER DEFAULT 0;
     END IF;
@@ -62,16 +63,33 @@ BEGIN
     END IF;
 END $$;
 
--- 5. Force a Sync of all current users based on claims
--- This ensures the leaderboard and profile stats are corrected immediately.
-UPDATE public.user_profiles p
-SET total_xp = (
-    SELECT COALESCE(SUM(xp_earned), 0)
-    FROM public.user_task_claims c
-    WHERE LOWER(c.wallet_address) = LOWER(p.wallet_address)
-);
+-- 5. FUNCTION: Improved sync_user_xp (Direct Calculation)
+-- This function recalculates total_xp from claims to ensure consistency.
+CREATE OR REPLACE FUNCTION public.sync_user_xp()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.user_profiles
+    SET 
+        total_xp = (
+            SELECT COALESCE(SUM(xp_earned), 0)
+            FROM public.user_task_claims
+            WHERE LOWER(wallet_address) = LOWER(NEW.wallet_address)
+        ),
+        updated_at = NOW()
+    WHERE LOWER(wallet_address) = LOWER(NEW.wallet_address);
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SET search_path = public;
 
--- 6. RECREATE VIEW: v_user_full_profile (The Source of Truth)
+-- Re-create the trigger to ensure it's pointing to the correct function
+DROP TRIGGER IF EXISTS trg_sync_user_xp_on_claim ON public.user_task_claims;
+CREATE TRIGGER trg_sync_user_xp_on_claim
+    AFTER INSERT OR UPDATE ON public.user_task_claims
+    FOR EACH ROW
+    EXECUTE FUNCTION public.sync_user_xp();
+
+-- 6. RECREATE VIEW: v_user_full_profile (Refined)
 DROP VIEW IF EXISTS public.v_user_full_profile CASCADE;
 
 CREATE OR REPLACE VIEW public.v_user_full_profile AS
@@ -89,23 +107,22 @@ SELECT
     up.active_status,
     up.power_badge,
     up.streak_count,
-    -- Aggregate XP from all possible columns (Farcaster Sync + Wallet Tasks)
-    (COALESCE(up.total_xp, 0) + COALESCE(us.total_xp, 0)) as total_xp,
+    -- Simple total_xp from the profile table
+    COALESCE(up.total_xp, 0) as total_xp,
     (
         SELECT level 
         FROM public.sbt_thresholds st 
-        WHERE st.min_xp <= (COALESCE(up.total_xp, 0) + COALESCE(us.total_xp, 0))
+        WHERE st.min_xp <= COALESCE(up.total_xp, 0)
         ORDER BY st.min_xp DESC 
         LIMIT 1
     ) as current_level,
     (
         SELECT tier_name 
         FROM public.sbt_thresholds st 
-        WHERE st.min_xp <= (COALESCE(up.total_xp, 0) + COALESCE(us.total_xp, 0))
+        WHERE st.min_xp <= COALESCE(up.total_xp, 0)
         ORDER BY st.min_xp DESC 
         LIMIT 1
     ) as rank_name
-FROM public.user_profiles up
-LEFT JOIN public.user_stats us ON up.fid = us.fid;
+FROM public.user_profiles up;
 
--- ✅ Database repair script updated.
+-- ✅ XP Schema Unified and Triggers Repaired.

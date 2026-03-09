@@ -74,7 +74,11 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Dynamic System Governance (Zero-Hardcode)**: System parameters (XP, fees, reward multipliers) MUST be database-driven. Prohibit static infrastructure gating based on hardcoded rewards.
 - **Vercel Hobby Plan Guard**: Strictly < 12 Serverless Functions. Consolidate into `*-bundle.js`.
 
-## 🛡️ Operational Checklist
+### 8. Database Schema Awareness Protocol (NEW)
+- **Schema-First Research**: Sebelum melakukan modifikasi logika yang berinteraksi dengan database, Agent WAJIB melakukan `list_dir` pada direktori `scripts/` untuk mencari file utility pembantu (seperti `check-columns.cjs`) atau melakukan query langsung pada `information_schema.columns` untuk memverifikasi struktur tabel terkini.
+- **Legacy Column Cleanup**: Jika ditemukan kolom redundan (misal: `xp`, `points` vs `total_xp`), Agent harus segera melaporkan dan merencanakan unifikasi melalui SQL migration. JANGAN PERNAH berasumsi struktur tabel di file `.sql` statis sesuai dengan kondisi live di server.
+- **Trigger Alignment**: Pastikan setiap mutasi data yang memiliki trigger database (seperti `sync_user_xp`) divalidasi aliran datanya agar tidak terjadi overwrite yang tidak disengaja.
+
 - [ ] Apakah kontrak yang digunakan adalah versi terbaru (V12 / MasterX V2)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?
 - [ ] Apakah mutasi data mengikuti pola Zero-Trust Backend?
@@ -85,6 +89,7 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] Verify signature checks on all `*-bundle.js` write actions.
 - [ ] Apakah `npm run build` berhasil tanpa error?
 - [ ] Apakah file `.agents` sudah di-sync ke cloud (`sync-cloud.js`)?
+- [ ] **Database Inspection**: Sudahkah Anda memverifikasi kolom tabel secara langsung di DB sebelum modifikasi logika?
 
 ## 🚨 Pantangan
 - Menggunakan kontrak lama (Deprecated versions).

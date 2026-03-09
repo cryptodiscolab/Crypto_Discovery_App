@@ -538,7 +538,13 @@ export default function ProfilePage() {
 
         {/* MODALS */}
         {activeModal === 'task' && <CreateTaskModal onClose={() => setActiveModal(null)} />}
-        {activeModal === 'claim' && <DailyClaimModal onClose={() => setActiveModal(null)} pointSettings={pointSettings} />}
+        {activeModal === 'claim' && (
+          <DailyClaimModal 
+            onClose={() => setActiveModal(null)} 
+            pointSettings={pointSettings} 
+            streakCount={profileData.streakCount}
+          />
+        )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}
         {activeModal === 'raffle' && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -948,7 +954,7 @@ function CreateTaskModal({ onClose }) {
   );
 }
 
-function DailyClaimModal({ onClose, pointSettings }) {
+function DailyClaimModal({ onClose, pointSettings, streakCount }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { writeContractAsync } = useWriteContract();
@@ -1078,11 +1084,11 @@ function DailyClaimModal({ onClose, pointSettings }) {
               : `Claim your daily ${pointSettings?.daily_claim || 100} XP boost to climb the leaderboard!`}
           </p>
         </div>
-        {profileData.streakCount > 0 && (
+        {streakCount > 0 && (
           <div className="flex items-center justify-center gap-2 bg-orange-500/10 border border-orange-500/20 py-2 px-4 rounded-xl w-fit mx-auto animate-bounce">
             <Flame size={16} className="text-orange-500 fill-current" />
             <span className="text-sm font-black text-orange-400 italic">
-              {profileData.streakCount} DAY STREAK 🔥
+              {streakCount} DAY STREAK 🔥
             </span>
           </div>
         )}
@@ -1105,9 +1111,9 @@ function DailyClaimModal({ onClose, pointSettings }) {
         >
           {isClaiming
             ? '⏳ PROCESSING...'
-            : isCooldown
-              ? `⏰ COMEBACK IN ${countdown}`
-              : `✨ CLAIM DAILY (+${ecosystemSettings?.daily_claim || 100} XP)`}
+      : isCooldown
+        ? `⏰ COMEBACK IN ${countdown}`
+        : `✨ CLAIM DAILY (+${pointSettings?.daily_claim || 100} XP)`}
         </button>
         <button
           onClick={onClose}
