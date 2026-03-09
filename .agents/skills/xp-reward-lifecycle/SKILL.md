@@ -33,9 +33,12 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 - **Apples-to-Apples Rule**: Poin on-chain HARUS dibandingkan HANYA dengan poin on-chain yang sudah tercatat di DB (`SUM(xp_earned)` dari platform 'blockchain').
 - ** xpDelta = onChainXP - sumDBBlockchainXP**.
 
-### 3. Daily Claim Lifecycle
-- **Contract Reference**: Selalu gunakan `CONTRACTS.DAILY_APP` (V12).
-- **ABI Reference**: Gunakan `ABIS.DAILY_APP` (Proxy-based).
+### 4. Underdog Catch-Up Bonus
+- **Logic**: Bronze & Silver tiers get +10% XP if `lastActivityTime` is within 48h.
+- **Verification**: Always verify the user's `lastActivity` timestamp from the contract before claiming success in the UI.
+
+### 5. Real-Time SBT Sync
+- **Trigger**: Minting or Upgrading an SBT MUST trigger an immediate database update (via `user-bundle.js`) to set the new tier in `user_profiles`.
 
 ## 📋 Checklist Reward & XP
 - [ ] Apakah operasi tulis DB dilakukan di Server-Side API?

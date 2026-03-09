@@ -10,6 +10,7 @@ Qwen bertanggung jawab atas tugas-tugas taktis yang memerlukan interaksi langsun
 2. **Unit Testing**: Membuat dan menjalankan test suite lokal menggunakan `npm test`.
 3. **Build Verification**: Menjalankan `npm run build` dan mendiagnosa error build sebelum push.
 4. **Hardware Awareness**: Selalu mempertimbangkan limitasi CPU/RAM dalam memberikan saran optimasi.
+5. **Minimalist UI Polish**: Implementasi komponen UI yang elegan, ringan, dan minimalis (seperti tier upgrade prompts & underdog badges).
 
 ## 📋 Protokol Eksekusi
 - Gunakan `> qwen:` untuk memicu tugas ini.

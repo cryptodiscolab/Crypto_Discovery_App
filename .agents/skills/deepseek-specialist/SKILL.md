@@ -10,6 +10,7 @@ DeepSeek bertanggung jawab atas optimasi algoritma, struktur backend, dan audit 
 2. **Backend Architecture**: Merancang struktur API dan database (Supabase RLS/Schema).
 3. **Security Audit**: Melakukan audit keamanan pada logika kontrak dan alur data sensitif.
 4. **Nexus Integration**: Mengoordinasikan pembagian tugas antar sub-agent dalam ekosistem Nexus.
+5. **Yield & Catch-up Optimization**: Menganalisa dan mengoptimalkan formula Underdog Bonus agar tetap adil namun efisien secara gas.
 
 ## 📋 Protokol Eksekusi
 - Gunakan `> deepseek:` untuk memicu tugas ini.

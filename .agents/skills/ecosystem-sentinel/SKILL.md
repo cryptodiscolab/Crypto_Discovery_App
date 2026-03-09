@@ -72,8 +72,8 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 1.0 (2026-03-09)
-- **Status:** Living Document — Selalu diperbarui
+- **Versi Terakhir:** 1.1 (2026-03-09)
+- **Status:** Underdog Bonus & Minimalist UI Sync Implemented (V12)
 
 ---
 
@@ -270,6 +270,8 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Sensitive Guard**: Apakah ada pengambilan data yang memicu popup signature otomatis? (Wajib diubah jadi manual unlock).
 - [ ] **Cloud Sync**: Apakah `sync-cloud.js` sudah dijalankan setelah perubahan `.agents`?
 - [ ] **Vercel Guard**: Apakah jumlah fungsi API tetap <= 12? Apakah fitur baru sudah dibundling ke master API?
+- [ ] **Underdog Audit**: Apakah `lastActivityTime` tersinkronisasi dan bonus +10% terverifikasi on-chain?
+- [ ] **Ascension Sync**: Apakah tier di DB ter-update otomatis sesaat setelah SBT minting?
 
 ## 🚨 Pantangan
 - Melakukan push kode yang belum diaudit secara otomatis.

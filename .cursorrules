@@ -127,6 +127,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
   3. Konfigurasi API platform yang memerlukan intervensi GUI (Twitter Dev Portal, dll).
 - **WORKSPACE HYGIENE**: Jika pengerjaan pada suatu file atau komponen sudah selesai dan terverifikasi sinkron, Agent harus menyatakan secara eksplisit bahwa file tersebut siap "ditutup" dari tab editor untuk menjaga fokus.
 - **SELF-TASKING**: Jika audit menemukan bug atau ketidaksinkronan, Agent dilarang melanjutkan ke fitur baru sebelum membuat task perbaikan dan menyelesaikannya.
+- **CONSISTENCY AUDIT**: Every sync protocol must now verify `lastActivityTime` to ensure the Underdog bonus is correctly calculating on-chain.
 
 ## 18. MULTI-AGENT COLLABORATION & PAIR PROGRAMMING
 - **Lead Orchestrator**: Antigravity is the primary agent. Specialized sub-agents (OpenClaw, Qwen, DeepSeek) are used for offloading specific tasks.
@@ -169,6 +170,17 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **AUDIT TRIGGER**: Any code containing static numbers like `100 XP`, `reward: 500`, or `points_value: 10` (outside of mock tests) is a "Protocol Breach".
 - **VERIFICATION**: Before finalizing any task, you MUST perform a `grep_search` for hardcoded reward strings to ensure the ecosystem remains 100% data-driven.
 - **ADMIN SYNC**: All administrative controls (e.g., `TaskManagerTab`, `SponsorshipConfig`) must use dynamic fetching for defaults to ensure the UI matches the backend reality.
+
+## 24. UNDERDOG CATCH-UP LOGIC (ANTI-WHALE SYSTEM)
+- **MECHANISM**: Users in **Bronze** and **Silver** tiers receive a **+10% XP Bonus** (Catch-up) for performing activities within 48 hours of their last activity.
+- **ENFORCEMENT**: This logic is enforced **ON-CHAIN** via the `lastActivityTime` mapping in the DailyApp contract to ensure fairness.
+- **VISUAL FEEDBACK**: The UI must display a pulsing `Zap` icon with "Catch-up active" when the bonus condition is met.
+
+## 25. MINIMALIST TIER ASCENSION (SBT MINTING UI)
+- **DESIGN**: Avoid intrusive full-screen popups for tier upgrades.
+- **INDICATOR**: Use a subtle pulsing border and `ArrowUpCircle` icon on the rank badge to signal eligibility.
+- **PROMPT**: Display a small, elegant notification bar with a "Mint Status" button only when an on-chain upgrade is available.
+- **SYNC**: When an SBT is minted, the API MUST immediately update the `tier` in `user_profiles` for instant feedback.
 
 ## 23. PRE-FLIGHT CHECK & DEPLOYMENT GUARD (STRICT MANDATE)
 - **THE SYNC BAN**: NEVER push code (`git push`) without first verifying entire ecosystem health.
