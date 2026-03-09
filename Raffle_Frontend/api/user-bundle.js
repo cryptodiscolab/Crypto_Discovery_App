@@ -43,6 +43,8 @@ export default async function handler(req, res) {
             return handleSyncSbtUpgrade(req, res);
         case 'sync-pool-claim':
             return handleSyncPoolClaim(req, res);
+        case 'leaderboard':
+            return handleLeaderboard(req, res);
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -517,7 +519,7 @@ async function handleSyncSbtUpgrade(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const { tierName, ethSpent, txHash } = payload;
-        const tierMap = { 'Bronze': 1, 'Silver': 2, 'Gold': 3, 'Platinum': 4, 'Diamond': 5 };
+        const tierMap = { 'Rookie': 1, 'Bronze': 2, 'Silver': 3, 'Gold': 4, 'Platinum': 5, 'Diamond': 6 };
         const tierIndex = tierMap[tierName] || 0;
 
         // Update DB tier immediately for faster UI feedback
@@ -593,5 +595,32 @@ async function logActivity({ wallet, category, type, description, amount, symbol
         });
     } catch (err) {
         console.error('[logActivity Error]', err.message);
+    }
+}
+
+/**
+ * handleLeaderboard: Fetch top users from the unified profile view.
+ */
+async function handleLeaderboard(req, res) {
+    try {
+        const { limit = 100, tier } = req.query;
+        
+        let query = supabaseAdmin
+            .from('v_user_full_profile')
+            .select('*')
+            .order('total_xp', { ascending: false })
+            .limit(parseInt(limit));
+
+        if (tier && tier !== 'All') {
+            query = query.eq('rank_name', tier);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        return res.status(200).json(data);
+    } catch (error) {
+        console.error('[Leaderboard Error]', error);
+        return res.status(500).json({ error: error.message });
     }
 }

@@ -45,6 +45,10 @@
             "destination": "/api/admin-bundle?action=:action"
         },
         {
+            "source": "/api/leaderboard",
+            "destination": "/api/user-bundle?action=leaderboard"
+        },
+        {
             "source": "/api/raffle/:action",
             "destination": "/api/raffle-bundle?action=:action"
         },

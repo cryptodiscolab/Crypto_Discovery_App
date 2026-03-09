@@ -99,6 +99,7 @@ export function LeaderboardPage() {
     { id: 'Gold', label: 'Gold', icon: Shield, color: 'text-yellow-500' },
     { id: 'Silver', label: 'Silver', icon: Medal, color: 'text-slate-300' },
     { id: 'Bronze', label: 'Bronze', icon: Users, color: 'text-amber-700' },
+    { id: 'Rookie', label: 'Rookie', icon: Trophy, color: 'text-slate-500' },
   ];
 
   useEffect(() => {
@@ -115,13 +116,9 @@ export function LeaderboardPage() {
 
   const fetchLeaderboard = async () => {
     try {
-      const { data, error } = await supabase
-        .from('v_user_full_profile')
-        .select('wallet_address, total_xp, rank_name, display_name, username, pfp_url, streak_count')
-        .order('total_xp', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
+      const response = await fetch(`/api/leaderboard?limit=100`);
+      if (!response.ok) throw new Error("Failed to fetch leaderboard");
+      const data = await response.json();
       setAllUsers(data || []);
       setFilteredUsers(data || []);
     } catch (err) {
