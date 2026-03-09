@@ -139,17 +139,19 @@ export function useCMS() {
     }, [address, contractOwner]);
 
     // Robust check fallbacks removed (Centralized Authority array no longer exists)
-    // Database Admin Check
+    // Database Admin Check + Server-Side ENV Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);
+    const [isEnvAdmin, setIsEnvAdmin] = useState(false);
     useEffect(() => {
         let isMounted = true;
-        const checkDbAdmin = async () => {
+        const checkAdminStatus = async () => {
             const wallet = cleanWallet(address);
             if (!wallet) {
-                if (isMounted) setIsDbAdmin(false);
+                if (isMounted) { setIsDbAdmin(false); setIsEnvAdmin(false); }
                 return;
             }
             try {
+                // DB check (Supabase is_admin flag)
                 const { data, error } = await supabase
                     .from('user_profiles')
                     .select('is_admin')
@@ -163,13 +165,23 @@ export function useCMS() {
                 console.warn('[useCMS] DB Admin check failed:', e.message);
                 if (isMounted) setIsDbAdmin(false);
             }
+            try {
+                // Server-side ENV check — reads ADMIN_ADDRESS from server, never in bundle
+                const res = await fetch(`/api/is-admin?wallet=${encodeURIComponent(wallet)}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (isMounted) setIsEnvAdmin(!!json.isAdmin);
+                }
+            } catch (e) {
+                console.warn('[useCMS] ENV Admin check failed:', e.message);
+            }
         };
-        checkDbAdmin();
+        checkAdminStatus();
         return () => { isMounted = false; };
     }, [address]);
 
-    // Final boolean roles (Memoized for efficiency)
-    const isAdmin = useMemo(() => Boolean(isAdminRaw || isDbAdmin || isContractOwner), [isAdminRaw, isDbAdmin, isContractOwner]);
+    // Final boolean roles (Memoized for efficiency) - 4 sources: CMS role, DB, contract owner, .env server
+    const isAdmin = useMemo(() => Boolean(isAdminRaw || isDbAdmin || isContractOwner || isEnvAdmin), [isAdminRaw, isDbAdmin, isContractOwner, isEnvAdmin]);
     const isOperator = useMemo(() => Boolean(isOperatorRaw), [isOperatorRaw]);
     const canEdit = useMemo(() => isAdmin || isOperator, [isAdmin, isOperator]);
 
