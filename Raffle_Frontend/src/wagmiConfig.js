@@ -1,5 +1,5 @@
 import { createConfig, http, fallback } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
+import { base, baseSepolia } from 'wagmi/chains';
 // IMPORT WAJIB DARI RAINBOWKIT:
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import {
@@ -37,17 +37,21 @@ const connectors = connectorsForWallets(
     }
 );
 
+const activeChainId = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
+const activeChain = activeChainId === 84532 ? baseSepolia : base;
+
 export const config = createConfig({
-    chains: [baseSepolia],
-    connectors, // Pakai connector yang udah dibungkus RainbowKit
+    chains: [base, baseSepolia],
+    connectors,
     transports: {
+        [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org'),
         [baseSepolia.id]: fallback([
-            http(`/api/rpc?chainId=${baseSepolia.id}`),
+            http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
             http('https://sepolia.base.org'),
         ]),
     },
     batch: {
-        multicall: false, // Disabled as per user request to avoid batching issues on some RPCs
+        multicall: false,
     },
     pollingInterval: 12000, 
     ssr: false,

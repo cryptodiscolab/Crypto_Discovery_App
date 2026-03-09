@@ -44,7 +44,7 @@ const createAbiProxy = (name) => {
 const getAddr = (key, envKey) => import.meta.env[envKey] || _get()[key];
 
 export const MASTER_X_ADDRESS = getAddr('MASTER_X_ADDRESS', 'VITE_MASTER_X_ADDRESS');
-export const DAILY_APP_ADDRESS = getAddr('DAILY_APP_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS');
+export const DAILY_APP_ADDRESS = getAddr('DAILY_APP_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS') || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
 export const RAFFLE_ADDRESS = getAddr('RAFFLE_ADDRESS', 'VITE_RAFFLE_ADDRESS');
 export const CMS_CONTRACT_ADDRESS = getAddr('CMS_CONTRACT_ADDRESS', 'VITE_CMS_CONTRACT_ADDRESS');
 export const USDC_ADDRESS = getAddr('USDC_ADDRESS', 'VITE_USDC_ADDRESS');

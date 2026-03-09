@@ -408,6 +408,16 @@ async function handleGetPointSettings(req, res) {
 
         if (sError) throw sError;
 
+        // Fetch Whitelisted Tokens
+        const { data: whitelisted, error: wError } = await supabaseAdmin
+            .from('whitelisted_tokens')
+            .select('*')
+            .eq('is_active', true);
+
+        if (wError) {
+            console.warn('[GetPointSettings] Whitelisted tokens error:', wError);
+        }
+
         // Convert Reward Points to simple object
         const settings = points.reduce((acc, curr) => {
             acc[curr.activity_key] = curr.points_value;
@@ -418,6 +428,9 @@ async function handleGetPointSettings(req, res) {
         system.forEach(s => {
             settings[s.key] = s.value;
         });
+
+        // Inject Whitelisted Tokens (from fallback JSON if table missing)
+        settings.whitelisted_tokens = settings.whitelisted_tokens_json || [];
 
         return res.status(200).json({ success: true, settings });
     } catch (error) {
@@ -433,7 +446,7 @@ async function handleSyncUgcMission(req, res) {
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks } = payload;
+        const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks, reward_symbol, payment_token } = payload;
 
         // 1. Mirror to campaigns table
         const { error: campaignErr } = await supabaseAdmin.from('campaigns').insert([{
@@ -444,7 +457,9 @@ async function handleSyncUgcMission(req, res) {
             reward_amount_per_user: reward_amount_per_user.toString(),
             max_participants: parseInt(max_participants) || 100,
             status: 'active',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            payment_token: payment_token || null,
+            reward_symbol: reward_symbol || 'TOKEN'
         }]);
 
         if (campaignErr) throw campaignErr;

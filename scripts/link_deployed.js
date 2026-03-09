@@ -3,12 +3,12 @@ const { ethers } = require("hardhat");
 async function main() {
     const masterXAddress = "0x78a566a11AcDA14b2A4F776227f61097C7381C84";
     const raffleAddress = "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08";
-    const dailyAppAddress = "0xfc12f4FEFf825860c5145680bde38BF222cC669A";
+    const dailyAppAddress = "0xDe613DE5e6C0fB61012af83343f2b3c5F5461219";
 
     console.log("Checking contracts...");
     const masterX = await ethers.getContractAt("CryptoDiscoMasterX", masterXAddress);
     const raffle = await ethers.getContractAt("CryptoDiscoRaffle", raffleAddress);
-    const dailyApp = await ethers.getContractAt("DailyAppV12Secured", dailyAppAddress);
+    const dailyApp = await ethers.getContractAt("DailyAppV13", dailyAppAddress);
 
     try {
         console.log("1. Linking MasterX -> Raffle...");

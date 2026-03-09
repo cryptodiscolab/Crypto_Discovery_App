@@ -668,23 +668,31 @@ function CreateTaskModal({ onClose }) {
     powerBadge: false,
     requiresVerification: true
   });
-  const [paymentToken, setPaymentToken] = useState('creator'); // 'creator' or 'eth'
+  const [paymentToken, setPaymentToken] = useState(null); // Will be set from whitelist
   const { writeContractAsync } = useWriteContract();
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { stats: userData, refetch: refetchStats } = useUserInfo(address);
   const { ecosystemSettings } = usePoints(); // Zero Hardcode integration
 
-  // Config based on selection
-  const isEth = paymentToken === 'eth';
-  const rewardTokenAddr = isEth ? "0x0000000000000000000000000000000000000000" : CONTRACTS.CREATOR_TOKEN;
+  // Default to first whitelisted token if none selected
+  const whitelist = ecosystemSettings?.whitelisted_tokens || [];
+  const selectedToken = paymentToken 
+    ? whitelist.find(t => t.address === paymentToken) 
+    : whitelist[0];
+
+  const isEth = selectedToken?.symbol === 'ETH';
+  const rewardTokenAddr = selectedToken?.address || "0x0000000000000000000000000000000000000000";
   
   // Dynamic fetches
   const rewardTokens = Number(ecosystemSettings?.sponsorship_reward_amount || 5);
   const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 2);
   
-  const rewardAmount = BigInt(rewardTokens) * 10n ** 18n; // dynamically defined tokens (assuming 18 decimals)
-  const platformFee = BigInt(feeUsd * 1000000); // dynamically defined USDC (assuming 6 decimals)
+  const tokenDecimals = selectedToken?.decimals || 18;
+  const rewardAmount = BigInt(Math.floor(rewardTokens * 10 ** 6)) * 10n ** BigInt(tokenDecimals - 6); 
+  // Handling decimals safely (rewardTokens usually has fewer decimals than 18)
+  
+  const platformFee = BigInt(Math.floor(feeUsd * 1000000)); // USDC 6 decimals
 
   const buildCalls = () => {
     const titles = tasksBatch.filter(t => t.title && t.link).map(t => t.title);
@@ -707,7 +715,7 @@ function CreateTaskModal({ onClose }) {
     // 2. Approve reward token (if not ETH)
     if (!isEth) {
       calls.push({
-        to: CONTRACTS.CREATOR_TOKEN,
+        to: rewardTokenAddr,
         data: encodeFunctionData({
           abi: ERC20_ABI,
           functionName: 'approve',
@@ -852,18 +860,19 @@ function CreateTaskModal({ onClose }) {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Choose Payment Token</label>
             <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setPaymentToken('creator')}
-                className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase transition-all ${paymentToken === 'creator' ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
-              >
-                Creator Token
-              </button>
-              <button
-                onClick={() => setPaymentToken('eth')}
-                className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase transition-all ${paymentToken === 'eth' ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
-              >
-                Native ETH
-              </button>
+              {whitelist.map((token) => (
+                <button
+                  key={token.address}
+                  onClick={() => setPaymentToken(token.address)}
+                  className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                    (paymentToken === token.address || (!paymentToken && token === selectedToken))
+                      ? 'bg-indigo-600 text-white' 
+                      : 'bg-zinc-800 text-zinc-500'
+                  }`}
+                >
+                  {token.symbol}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -874,7 +883,7 @@ function CreateTaskModal({ onClose }) {
             </div>
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-200">
               <span>Reward Pool</span>
-              <span>{rewardTokens.toFixed(2)} {isEth ? 'ETH' : 'TOKEN'}</span>
+              <span>{rewardTokens.toFixed(2)} {selectedToken?.symbol || 'TOKEN'}</span>
             </div>
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
               <span>Duration</span>
@@ -920,7 +929,9 @@ function CreateTaskModal({ onClose }) {
                       reward_amount_per_user: rewardAmount.toString(), // dynamically synced
                       max_participants: 100,
                       txHash: receipt.transactionHash,
-                      tasks: taskCount
+                      tasks: taskCount,
+                      reward_symbol: selectedToken?.symbol || 'TOKEN',
+                      payment_token: rewardTokenAddr
                     }
                   }),
                 });

@@ -41,13 +41,13 @@ const CONTRACTS = [
         ],
     },
     {
-        name: 'DailyAppV12Secured',
-        address: '0xfc12f4FEFf825860c5145680bde38BF222cC669A',
-        contractFile: 'contracts/DailyAppV12Secured.sol',
+        name: 'DailyAppV13',
+        address: '0xDe613DE5e6C0fB61012af83343f2b3c5F5461219',
+        contractFile: 'contracts/DailyAppV13.sol',
         constructorArgs: [
             '0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c', // creatorToken
             '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // usdcToken
-            '0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B', // initialOwner
+            '0x455DF75735d2a18c26f0AfDefa93217B60369fe5', // initialOwner
         ],
     },
 ];

@@ -22,13 +22,13 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **System Labels/UI**: Gunakan **Bahasa Inggris (English)**.
 
 ## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
-| Key | Value |
-|---|---|
-| MasterX V2 (Latest) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
-| Raffle (Main) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| DailyApp V12 (Latest) | `0xfc12f4FEFf825860c5145680bde38BF222cC669A` |
-| CMS V2 | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
-| Alchemy RPC (Sepolia) | `https://base-sepolia.g.alchemy.com/v2/4fUdl1Y2lipSqhXr8JbJY` |
+| Component | Base Mainnet | Base Sepolia (Testnet) |
+|---|---|---|
+| **DailyApp (Tasks)** | `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` | `0xDe613DE5e6C0fB61012af83343f2b3c5F5461219` |
+| **MasterX (Points)** | (Pending) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
+| **Raffle (NFT)** | (Pending) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
+| **CMS (Content)** | (Pending) | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
+| **AirnodeRrpV0** | `0x32A334335EBe9d83dfB33B3EF803328e7529246E` | `0x2ab9f26E18b6103274414940251539D0105e2Add` |
 
 ## 🏛️ Core Competencies
 
@@ -66,6 +66,11 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Professional Sync Protocol**: Memastikan audit data flow dari Contract -> Backend -> Supabase Table berjalan tanpa "data ghosting" (data hilang di tengah jalan).
 
 - **On-Chain Tier Gating**: Verifikasi kepemilikan SBT (Soulbound Token) via `masterX.users(address).tier` sebelum mengizinkan fitur eksklusif di frontend.
+
+### 7. Multi-Network Isolation (/test-env)
+- **Sepolia Sandbox**: Semua fitur baru WAJIB melewati `/test-env` yang menggunakan `CHAIN_ID: 84532` (Base Sepolia).
+- **Zero-Risk Development**: JANGAN menjalankan script mainnet di luar direktori produksi. Gunakan `/test-env` sebagai area sandbox untuk perbaikan bug dan eksperimen fitur baru.
+- **Sync Rule**: Setiap kali melakukan push ke Mainnet, pastikan `/test-env` sudah memberikan hasil sukses (Verified).
 
 ### 7. Activity Logging Privacy & Integrity (NEW)
 - **Log Privacy**: Gunakan tabel `user_activity_logs` dengan RLS yang memastikan user hanya bisa membaca riwayat miliknya sendiri.

@@ -10,11 +10,15 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 ## 2. SMART CONTRACT ARCHITECTURE
 - **Hardhat Config**: Always use `viaIR: true` and `runs: 200` to optimize for size.
 - **Bytecode Limit**: 24KB (Spurious Dragon). If exceeded, propose contract splitting/modularization.
-- **Core Infrastructure (VERIFIED ADDRESSES - DO NOT GUESS):**
-  - MasterX V2 (LATEST): `0x78a566a11AcDA14b2A4F776227f61097C7381C84` (`VITE_MASTER_X_ADDRESS`)
-  - Raffle (Main): `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` (`VITE_RAFFLE_ADDRESS`)
-  - DailyApp V12 (LATEST): `0xfc12f4FEFf825860c5145680bde38BF222cC669A` (`VITE_V12_CONTRACT_ADDRESS`)
-  - CMS V2: `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` (`VITE_CMS_CONTRACT_ADDRESS`)
+- **Core Infrastructure (VERIFIED ADDRESSES):**
+
+| Contract | Base Mainnet (8453) | Base Sepolia (84532) | Env Key | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **DailyApp (Tasks)** | `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` | `0xDe613DE5e6C0fB61012af83343f2b3c5F5461219` | `VITE_V12_CONTRACT_ADDRESS` | ✅ DEPLOYED |
+| **MasterX (XP)** | `[RESERVED]` | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `VITE_MASTER_X_ADDRESS` | ❌ SEPOLIA ONLY |
+| **Raffle** | `[RESERVED]` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `VITE_RAFFLE_ADDRESS` | ❌ SEPOLIA ONLY |
+| **CMS V2** | `[RESERVED]` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `VITE_CMS_CONTRACT_ADDRESS` | ❌ SEPOLIA ONLY |
+
 - **Reward Logic**: Must use `Accumulated Reward Per Share` with `1e18` precision.
 - **Safety**: `emergencyWithdraw` must always protect `totalLockedRewards`. Use `unchecked` blocks for non-overflowing arithmetic.
 
@@ -177,7 +181,12 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **ENFORCEMENT**: This logic is enforced **ON-CHAIN** via the `lastActivityTime` mapping in the DailyApp contract to ensure fairness.
 - **VISUAL FEEDBACK**: The UI must display a pulsing `Zap` icon with "Catch-up active" when the bonus condition is met.
 
-## 25. MINIMALIST TIER ASCENSION (SBT MINTING UI)
+## 25. MULTI-NETWORK WORKFLOW (PROD VS TEST)
+- **STRICT SEPARATION**: All development and bug fixes MUST be tested in the `/test-env` using **Base Sepolia** (`CHAIN_ID: 84532`) before being pushed to Production (Base Mainnet).
+- **ENV TOGGLE**: Use `VITE_CHAIN_ID` in `.env` to switch between production and test environments globally.
+- **SBT MINTING UI**: Avoid intrusive full-screen popups for tier upgrades. Use the subtle indicators defined in Section 26.
+
+## 26. MINIMALIST TIER ASCENSION (SBT MINTING UI)
 - **DESIGN**: Avoid intrusive full-screen popups for tier upgrades.
 - **INDICATOR**: Use a subtle pulsing border and `ArrowUpCircle` icon on the rank badge to signal eligibility.
 - **PROMPT**: Display a small, elegant notification bar with a "Mint Status" button only when an on-chain upgrade is available.
