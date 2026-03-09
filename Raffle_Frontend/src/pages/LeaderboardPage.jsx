@@ -61,8 +61,15 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
           <span className={`font-bold text-[15px] truncate max-w-[120px] sm:max-w-xs ${isCurrentUser ? 'text-white' : 'text-slate-200'}`}>
             {displayName}
           </span>
-          <span className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1">
-            {user.rank_name || 'Rookie'} {isCurrentUser && <span className="text-yellow-500 font-bold">(You)</span>}
+          <span className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            {user.rank_name || 'Rookie'} 
+            {isCurrentUser && <span className="text-yellow-500 font-bold">(You)</span>}
+            {user.streak_count > 0 && (
+              <span className="flex items-center gap-0.5 text-orange-500 font-black italic text-[10px]">
+                <Sparkles size={10} className="fill-current" />
+                {user.streak_count}d
+              </span>
+            )}
           </span>
         </div>
       </div>
@@ -110,7 +117,7 @@ export function LeaderboardPage() {
     try {
       const { data, error } = await supabase
         .from('v_user_full_profile')
-        .select('wallet_address, total_xp, rank_name, display_name, username, pfp_url')
+        .select('wallet_address, total_xp, rank_name, display_name, username, pfp_url, streak_count')
         .order('total_xp', { ascending: false })
         .limit(100);
 
