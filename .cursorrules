@@ -97,6 +97,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **THE VERIFICATION CHAIN**: feature -> Admin Bot -> Dashboard -> Backend -> Database -> Smart Contract -> Final Audit.
 - **ZERO-TRUST RLS**: Every new table MUST have Row Level Security enabled.
 - **SYNC VERIFICATION**: Every task must verify the data flow: Smart Contract Event -> Backend Indexer -> Database Record -> Frontend Display.
+- **THE DATABASE SYNCHRONIZATION MANDATE**: All agents (Antigravity, OpenClaw, Qwen, DeepSeek) MUST run `node scripts/verify-db-sync.cjs` before and after any database or backend code modifications. Do not proceed if errors are found.
 
 ## 15. SOCIAL IDENTITY LOCK & ECOSYSTEM INTEGRITY MANDATE
 - **SOCIAL IDENTITY LOCK**: Every social platform (Twitter, Farcaster, Telegram, TikTok, Instagram) MUST be locked 1-to-1 with a specific wallet address. Sybil attacks are prevented by enforcing this at the Database and API layer.

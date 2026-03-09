@@ -261,6 +261,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 
 ## 📋 Checklist Sentinel (MANDATORY)
 - [ ] **Audit**: Apakah kode baru bebas dari hardcode dan celah keamanan? (Jalankan `sentinel-audit.js`)
+- [ ] **DB Sync**: Apakah `verify-db-sync.cjs` sudah dijalankan dan lulus 100% tanpa fragmentasi legacy?
 - [ ] **Syntax & Lint**: Apakah pengecekan sintaks backend (`node -c`) dan linter frontend (`npm run lint`) bersih tanpa error fatal?
 - [ ] **Sync**: Apakah `.cursorrules` dan `.env` sudah sesuai dengan kontrak terbaru? (Jalankan `sync-check.js`)
 - [ ] **Dev Plan**: Apakah sudah memberikan Development Plan dan mendapat persetujuan sebelum eksekusi?

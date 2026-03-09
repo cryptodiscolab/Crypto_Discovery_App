@@ -76,6 +76,7 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 
 ### 8. Database Schema Awareness Protocol (NEW)
 - **Schema-First Research**: Sebelum melakukan modifikasi logika yang berinteraksi dengan database, Agent WAJIB melakukan `list_dir` pada direktori `scripts/` untuk mencari file utility pembantu (seperti `check-columns.cjs`) atau melakukan query langsung pada `information_schema.columns` untuk memverifikasi struktur tabel terkini.
+- **Sync Verification Mandate (CRITICAL)**: Agent WAJIB mengeksekusi `node scripts/verify-db-sync.cjs` setiap kali memulai atau menyelesaikan task database/backend untuk memastikan struktur tabel dalam kondisi Tersinkronisasi Sempurna 100%. Dilarang melanjutkan jika script ini menghasilkan error.
 - **Legacy Column Cleanup**: Jika ditemukan kolom redundan (misal: `xp`, `points` vs `total_xp`), Agent harus segera melaporkan dan merencanakan unifikasi melalui SQL migration. JANGAN PERNAH berasumsi struktur tabel di file `.sql` statis sesuai dengan kondisi live di server.
 - **Trigger Alignment**: Pastikan setiap mutasi data yang memiliki trigger database (seperti `sync_user_xp`) divalidasi aliran datanya agar tidak terjadi overwrite yang tidak disengaja.
 

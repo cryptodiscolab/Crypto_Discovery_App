@@ -51,6 +51,7 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - Tampilkan `<GaslessBadge />` dan ubah label tombol menjadi "⛽ Buy Free" jika tersedia.
 
 ## 📋 Checklist Raffle Feature
+- [ ] Apakah `verify-db-sync.cjs` sudah dijalankan sebelum integrasi fitur baru?
 - [ ] Apakah fungsi `buyTickets` digunakan (bukan `purchaseRaffleTickets`)?
 - [ ] Apakah `drawWinner` digunakan (bukan `requestRaffleWinner`)?
 - [ ] Apakah XP awarding mengikuti pola Zero-Trust Backend?
