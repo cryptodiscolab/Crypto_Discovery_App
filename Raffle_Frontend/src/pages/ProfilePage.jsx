@@ -46,7 +46,8 @@ export default function ProfilePage() {
     verifications: [],
     powerBadge: false,
     total_xp: 0,
-    rankName: 'Rookie'
+    rankName: 'Rookie',
+    streakCount: 0
   });
 
   const [copied, setCopied] = useState(false);
@@ -146,7 +147,8 @@ export default function ProfilePage() {
         activeStatus: data.active_status || 'active',
         total_xp: data.total_xp || 0,
         rankName: data.rank_name || 'Rookie',
-        tier: data.tier || 0
+        tier: data.tier || 0,
+        streakCount: data.streak_count || 0
       });
       setPotentialTier(calculatePotentialTier(data.total_xp || 0));
     } else {
@@ -452,6 +454,12 @@ export default function ProfilePage() {
               <span className="font-bold text-white">{profileData.followerCount.toLocaleString()}</span>
               <span className="text-slate-500">Followers</span>
             </div>
+            {profileData.streakCount > 0 && (
+              <div className="flex gap-1 items-center bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
+                <Flame size={12} className="text-orange-500 fill-current" />
+                <span className="font-bold text-orange-500 text-[11px]">{profileData.streakCount} Day Streak</span>
+              </div>
+            )}
             <div
               className="flex items-center gap-1 text-slate-500 cursor-pointer hover:text-indigo-400 transition-colors ml-auto"
               onClick={handleCopyAddress}
@@ -1038,13 +1046,14 @@ function DailyClaimModal({ onClose, pointSettings }) {
         manualAddPoints(dailyReward);
         await refetchStats();
         await refetch();
+        
+        toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
+        onClose();
       } catch (syncErr) {
         console.warn('[DailyClaim] XP sync failed:', syncErr.message);
+        toast.error('On-chain success, but XP sync pending. Refresh in 10s.', { id: tid });
+        onClose(); // Still close or let users see? Closing is safer for button reset.
       }
-
-      const dailyReward = pointSettings?.daily_claim || 100;
-      toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
-      onClose();
     } catch (err) {
       console.error('Daily Claim Error:', err);
       toast.error('Claim failed: ' + (err.shortMessage || 'Try again'), { id: tid });
@@ -1069,6 +1078,14 @@ function DailyClaimModal({ onClose, pointSettings }) {
               : `Claim your daily ${pointSettings?.daily_claim || 100} XP boost to climb the leaderboard!`}
           </p>
         </div>
+        {profileData.streakCount > 0 && (
+          <div className="flex items-center justify-center gap-2 bg-orange-500/10 border border-orange-500/20 py-2 px-4 rounded-xl w-fit mx-auto animate-bounce">
+            <Flame size={16} className="text-orange-500 fill-current" />
+            <span className="text-sm font-black text-orange-400 italic">
+              {profileData.streakCount} DAY STREAK 🔥
+            </span>
+          </div>
+        )}
         {isCooldown && countdown && (
           <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl py-4 px-6">
             <p className="text-3xl font-black font-mono text-indigo-400 tracking-widest tabular-nums">

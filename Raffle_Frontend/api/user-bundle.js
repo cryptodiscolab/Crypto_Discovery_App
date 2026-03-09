@@ -112,11 +112,11 @@ async function handleXpSync(req, res) {
         // 2. Fetch Last Known On-Chain XP from Profile (Robust Baseline)
         const { data: profile } = await supabaseAdmin
             .from('user_profiles')
-            .select('points')
+            .select('total_xp, streak_count, last_streak_claim')
             .eq('wallet_address', cleanAddress)
             .maybeSingle();
 
-        const dbLastPoints = profile?.points || 0;
+        const dbLastPoints = profile?.total_xp || 0;
 
         let onChainXP = 0;
         let xpDelta = 0;
@@ -162,28 +162,59 @@ async function handleXpSync(req, res) {
         console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, DB_Last=${dbLastPoints}, Delta=${xpDelta}`);
 
         // 4. Update Profile (Identity & Points Balance)
+        const profileUpdate = {
+            wallet_address: cleanAddress,
+            total_xp: onChainXP, // Sync current balance
+            last_seen_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        // Determine Task ID for the claim early to check for streaks
+        const { data: dailySetting } = await supabaseAdmin
+            .from('point_settings')
+            .select('points_value')
+            .eq('activity_key', 'daily_claim')
+            .single();
+
+        const standardDailyReward = dailySetting?.points_value || 100;
+        const isDailyClaim = xpDelta === standardDailyReward;
+        const taskId = isDailyClaim
+            ? '288596d8-b5a9-4faf-bde0-0dd28aaba902'
+            : '885535d2-4c5c-4a80-9af5-36666192c244';
+
+        // ── STREAK LOGIC ──────────────────────────────────────────
+        if (isDailyClaim) {
+            const now = new Date();
+            const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
+            let currentStreak = profile?.streak_count || 0;
+
+            if (!lastClaimDate) {
+                currentStreak = 1;
+            } else {
+                const diffHours = (now - lastClaimDate) / (1000 * 60 * 60);
+                
+                // If claimed within the 24-48 hour window, increment streak
+                if (diffHours >= 20 && diffHours <= 48) {
+                    currentStreak += 1;
+                } else if (diffHours > 48) {
+                    // Reset if more than 48 hours passed
+                    currentStreak = 1;
+                }
+                // (If diffHours < 20, we don't increment, it might be a double sync, 
+                // but usually the on-chain cooldown handles this)
+            }
+
+            profileUpdate.streak_count = currentStreak;
+            profileUpdate.last_streak_claim = now.toISOString();
+            console.log(`[Streak] ${cleanAddress}: ${currentStreak} days 🔥`);
+        }
+        // ──────────────────────────────────────────────────────────
+
         await supabaseAdmin
             .from('user_profiles')
-            .upsert({
-                wallet_address: cleanAddress,
-                points: onChainXP, // Sync current balance
-                last_seen_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'wallet_address' });
+            .upsert(profileUpdate, { onConflict: 'wallet_address' });
 
         if (xpDelta > 0) {
-            // Determine Task ID for the claim
-            const { data: dailySetting } = await supabaseAdmin
-                .from('point_settings')
-                .select('points_value')
-                .eq('activity_key', 'daily_claim')
-                .single();
-
-            const standardDailyReward = dailySetting?.points_value || 100;
-
-            const taskId = (xpDelta === standardDailyReward)
-                ? '288596d8-b5a9-4faf-bde0-0dd28aaba902'
-                : '885535d2-4c5c-4a80-9af5-36666192c244';
 
             // 5. Record Claim to update total_xp via trigger
             // Note: Since we use UPSERT on points in profile, we still want a log of the claim.
