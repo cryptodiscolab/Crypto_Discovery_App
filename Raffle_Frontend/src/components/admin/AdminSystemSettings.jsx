@@ -87,7 +87,7 @@ export default function AdminSystemSettings() {
                 supabase.from('point_settings').select('*').order('activity_key'),
                 supabase.from('sbt_thresholds').select('*').order('level'),
                 supabase.from('ens_subdomains').select('*').order('created_at', { ascending: false }),
-                supabase.from('user_stats').select('*').gte('total_xp', 100).order('total_xp', { ascending: false }),
+                supabase.from('user_profiles').select('*').gte('total_xp', 100).order('total_xp', { ascending: false }),
                 supabase.from('admin_audit_logs').select('*').order('created_at', { ascending: false }).limit(20)
             ]);
 
