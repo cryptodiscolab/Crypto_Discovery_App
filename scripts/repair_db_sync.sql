@@ -44,6 +44,10 @@ BEGIN
     -- Merge 'xp' into total_xp if it exists
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='xp') THEN
         UPDATE public.user_profiles SET total_xp = total_xp + COALESCE(xp, 0);
+        
+        -- Fix: Drop legacy trigger that depends on 'xp' column
+        DROP TRIGGER IF EXISTS trg_sync_total_xp ON public.user_profiles;
+        
         ALTER TABLE public.user_profiles DROP COLUMN xp;
     END IF;
 
