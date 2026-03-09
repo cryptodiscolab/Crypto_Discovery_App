@@ -49,8 +49,11 @@ export default async function handler(req, res) {
 
         // 3. Routing
         switch (action) {
-            case 'check':
+            case 'check': {
+                // Lightweight auth check — returns admin status, no signature required for this case
+                // (Signature is still validated above if provided; this just returns the result)
                 return res.status(200).json({ isAdmin: true, message: 'Admin access granted' });
+            }
 
             case 'sync-tiers': {
                 const { data, error } = await supabaseAdmin.rpc('fn_compute_leaderboard_tiers');
@@ -62,11 +65,13 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true, total_calculated: data.length, data: filteredData });
             }
 
+            case 'economy-stats':
             case 'GET_ECONOMY': {
                 const { data: auditLogs } = await supabaseAdmin.from('admin_audit_logs').select('action').in('action', ['SPONSOR_APPROVE', 'DEPLOY_BATCH_TASK']);
                 const { data: claims } = await supabaseAdmin.from('user_task_claims').select('xp_earned');
                 const totalXp = claims?.reduce((sum, c) => sum + (c.xp_earned || 0), 0) || 0;
-                return res.status(200).json({ success: true, metrics: { totalRevenueUSDC: (auditLogs?.length || 0).toFixed(2), communityXp: totalXp } });
+                const totalRevenueUSDC = (auditLogs?.length || 0);
+                return res.status(200).json({ success: true, metrics: { totalRevenueUSDC: totalRevenueUSDC.toFixed(2), netProfit: (totalRevenueUSDC * 0.7).toFixed(2), communityXp: totalXp } });
             }
 
             case 'NEXUS_DISPATCH': {

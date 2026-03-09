@@ -190,28 +190,19 @@ export function PointsProvider({ children }) {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    // Admin verification function (Upgraded to Zero-Hardcode Centralization)
+    // Admin verification function — uses lightweight /api/is-admin (no signature required)
     const checkAdminStatus = async (walletAddress) => {
         if (!walletAddress) return;
 
-        // 🛡️ AUTHORITATIVE CHECK (Backend Only)
-
         try {
-            // Perform backend double-verification
-            const response = await fetch('/api/admin/check', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ address: walletAddress }),
-            });
+            // Use the lightweight read-only endpoint (no signature needed)
+            const response = await fetch(`/api/is-admin?wallet=${walletAddress}`);
 
             if (response.ok) {
                 const data = await response.json();
                 setIsAdmin(data.isAdmin || false);
             } else {
-                console.warn('[AdminCheck] Backend verification failed with status:', response.status);
-                // We keep the local state if it was already true as a fallback
+                console.warn('[AdminCheck] is-admin endpoint failed with status:', response.status);
             }
         } catch (error) {
             console.error('[AdminCheck] Error:', error);
