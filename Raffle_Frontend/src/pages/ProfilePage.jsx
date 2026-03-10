@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins
 } from 'lucide-react';
@@ -90,7 +90,7 @@ export default function ProfilePage() {
 
   const [potentialTier, setPotentialTier] = useState(0);
 
-  const calculatePotentialTier = (xp) => {
+  const calculatePotentialTier = useCallback((xp) => {
     if (!sbtThresholds || sbtThresholds.length === 0) {
       return 0; // Dynamic-only mode: no hardcoded fallbacks
     }
@@ -104,7 +104,7 @@ export default function ProfilePage() {
        }
     }
     return reached;
-  };
+  }, [sbtThresholds]);
 
   const fetchProfile = useCallback(async () => {
     if (!address) return;

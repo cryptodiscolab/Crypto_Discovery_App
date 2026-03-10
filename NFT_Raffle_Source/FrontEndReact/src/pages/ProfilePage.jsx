@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
 import { User, Wallet, Shield, History, ExternalLink, LogOut, Copy, Check, Users, Ticket, Gift, DollarSign, Loader2, Plus, Trophy, Settings } from 'lucide-react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useNeynarContext } from "@neynar/react";
@@ -107,9 +107,7 @@ export function ProfilePage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Sidebar / Profile Card */}
           <div className="lg:col-span-1 space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+            <div
               className="glass-card p-6"
             >
               <div className="flex flex-col items-center text-center">
@@ -166,13 +164,10 @@ export function ProfilePage() {
                   <span className="font-medium">Disconnect</span>
                 </button>
               </div>
-            </motion.div>
+            </div>
 
             {isAdmin && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
+              <div
                 className="glass-card p-6 border-blue-500/30"
               >
                 <div className="flex items-center space-x-2 mb-4">
@@ -193,16 +188,14 @@ export function ProfilePage() {
                     <span>Withdraw All Fees</span>
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )}
           </div>
 
           {/* Main Content Areas */}
           <div className="lg:col-span-2 space-y-6">
             {/* Creator Dashboard Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               className="glass-card overflow-hidden"
             >
               <div className="p-6 border-b border-white/5">
@@ -239,13 +232,10 @@ export function ProfilePage() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* Participation Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+            <div
               className="glass-card p-6"
             >
               <div className="flex items-center space-x-3 mb-6">
@@ -259,7 +249,7 @@ export function ProfilePage() {
                 <Ticket className="w-12 h-12 text-white/5 mx-auto mb-3" />
                 <p className="text-slate-500">History feature coming soon</p>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
