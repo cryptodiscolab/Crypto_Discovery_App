@@ -46,6 +46,8 @@ export function useVerifiedAction() {
                 castHash: payload.castHash,
                 tweetId: payload.tweetId,
                 targetUserId: payload.targetUserId,
+                tiktokHandle: payload.tiktokHandle,
+                instagramHandle: payload.instagramHandle,
             }),
         });
 

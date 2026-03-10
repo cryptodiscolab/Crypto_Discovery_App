@@ -37,7 +37,7 @@ export function useVerification(refetchStats) {
             toast.loading("Verifying on server...", { id: tid });
 
             const platform = task.platform?.toLowerCase() || 'farcaster';
-            const isSocialTask = ['farcaster', 'twitter'].includes(platform);
+            const isSocialTask = ['farcaster', 'twitter', 'tiktok', 'instagram'].includes(platform);
 
             let response;
             if (isSocialTask) {
@@ -56,6 +56,8 @@ export function useVerification(refetchStats) {
                         action_type: task.action_type || 'like',
                         fid: platform === 'farcaster' ? (userFid || task.socialId || 0) : undefined,
                         userId: platform === 'twitter' ? (userFid || task.socialId || 0) : undefined,
+                        tiktokHandle: platform === 'tiktok' ? (task.socialId || task.tiktokHandle || '') : undefined,
+                        instagramHandle: platform === 'instagram' ? (task.socialId || task.instagramHandle || '') : undefined,
                         targetFid: task.targetFid,
                         castHash: task.castHash,
                         tweetId: task.tweetId,

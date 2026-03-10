@@ -111,14 +111,15 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 4. **Anti-Inflation Guard (SBT Limits)**: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.
 5. **Anti-Sticker-Shock (Gas Guard)**: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.
 
-## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
-| Key | Value |
-|---|---|
-| MasterX V2 (Latest) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
-| Raffle (Main) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| DailyApp V12 (Latest) | `0xfc12f4FEFf825860c5145680bde38BF222cC669A` |
-| CMS V2 | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
-| Admin FIDs | `1477344` |
+## 🏛️ Verified Infrastructure Reference
+
+| Contract | Base Mainnet (8453) | Base Sepolia (84532) |
+|---|---|---|
+| **DailyApp V12** | `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` | `0xDe613DE5e6C0fB61012af83343f2b3c5F5461219` |
+| **MasterX V2** | `[RESERVED]` | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
+| **Raffle V2** | `[RESERVED]` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
+| **CMS V2** | `[RESERVED]` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
+| **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🛠️ Kompetensi Utama
 

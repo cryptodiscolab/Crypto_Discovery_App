@@ -44,16 +44,31 @@ export function useSBT() {
 
     const userTier = userRawData ? Number(userRawData[1]) : 0;
 
-    // 3. Fetch Claimable Amount for current user tier
-    const { data: claimableAmount, refetch: refetchClaimable } = useReadContract({
+    // 3. Fetch User Reward Debt
+    const { data: userRewardDebt, refetch: refetchDebt } = useReadContract({
         address: CONTRACT_ADDRESS,
         abi: ABIS.MASTER_X,
-        functionName: 'tierClaimablePerHolder',
+        functionName: 'userRewardDebt',
+        args: [address],
+        query: {
+            enabled: !!address && isConnected,
+        }
+    });
+
+    // 4. Fetch Acc Reward Per Share for user tier
+    const { data: accReward, refetch: refetchAcc } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABIS.MASTER_X,
+        functionName: 'accRewardPerShare',
         args: [userTier],
         query: {
             enabled: userTier > 0 && isConnected,
         }
     });
+
+    const claimableAmount = (accReward !== undefined && userRewardDebt !== undefined) 
+        ? ((accReward - userRewardDebt) * 1n) / 1000000000000000000n
+        : 0n;
 
     // 4. Fetch System Settings
     const { data: maxGasPrice, refetch: refetchGas } = useReadContract({
@@ -258,7 +273,8 @@ export function useSBT() {
         refetchPool();
         refetchLocked();
         refetchUser();
-        refetchClaimable();
+        refetchDebt();
+        refetchAcc();
         refetchGas();
         refetchPrice();
         refetchPointsPer();

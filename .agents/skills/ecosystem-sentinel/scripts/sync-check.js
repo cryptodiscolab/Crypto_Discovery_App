@@ -49,25 +49,37 @@ function auditSync() {
     const env = parseEnv(envContent);
 
     const checkList = [
+        // --- BASE MAINNET ---
         {
-            label: 'DailyApp V12',
+            label: 'DailyApp V12 (Mainnet)',
             envKey: 'VITE_V12_CONTRACT_ADDRESS',
-            cursorrulesAddr: '0xfc12f4FEFf825860c5145680bde38BF222cC669A'
+            cursorrulesAddr: '0xEF8ab11E070359B9C0aA367656893B029c1d04d4',
+            required: true
+        },
+        // --- BASE SEPOLIA ---
+        {
+            label: 'DailyApp V12 (Sepolia)',
+            envKey: 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA',
+            cursorrulesAddr: '0xDe613DE5e6C0fB61012af83343f2b3c5F5461219',
+            required: true
         },
         {
-            label: 'Raffle V2',
-            envKey: 'VITE_RAFFLE_ADDRESS',
-            cursorrulesAddr: '0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08'
+            label: 'Raffle V2 (Sepolia)',
+            envKey: 'VITE_RAFFLE_ADDRESS_SEPOLIA',
+            cursorrulesAddr: '0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08',
+            required: true
         },
         {
-            label: 'MasterX V2',
-            envKey: 'VITE_MASTER_X_ADDRESS',
-            cursorrulesAddr: '0x78a566a11AcDA14b2A4F776227f61097C7381C84'
+            label: 'MasterX V2 (Sepolia)',
+            envKey: 'VITE_MASTER_X_ADDRESS_SEPOLIA',
+            cursorrulesAddr: '0x78a566a11AcDA14b2A4F776227f61097C7381C84',
+            required: true
         },
         {
-            label: 'CMS V2',
-            envKey: 'VITE_CMS_CONTRACT_ADDRESS',
-            cursorrulesAddr: '0x555D06933CC45038c42a1ba1F74140A5e4E0695d'
+            label: 'CMS V2 (Sepolia)',
+            envKey: 'VITE_CMS_CONTRACT_ADDRESS_SEPOLIA',
+            cursorrulesAddr: '0x555D06933CC45038c42a1ba1F74140A5e4E0695d',
+            required: true
         }
     ];
 
@@ -75,12 +87,17 @@ function auditSync() {
 
     console.log("\n--- Contract Address Sync ---");
     checkList.forEach(item => {
-        const envAddr = env[item.envKey]?.toLowerCase();
+        const envValue = env[item.envKey];
+        const envAddr = envValue?.toLowerCase();
         const expectedAddr = item.cursorrulesAddr.toLowerCase();
         const inCursorrules = rulesContent.toLowerCase().includes(expectedAddr);
 
         if (!envAddr) {
-            console.warn(`⚠️ Warning: ${item.envKey} missing in .env`);
+            if (item.required) {
+                console.warn(`⚠️ Warning: ${item.envKey} missing in .env`);
+            }
+        } else if (envValue === '[RESERVED]') {
+            console.log(`ℹ️ ${item.label}: [RESERVED]`);
         } else if (!inCursorrules) {
             console.warn(`⚠️ Warning: ${item.label} address not found in .cursorrules`);
         } else if (envAddr !== expectedAddr) {
@@ -97,7 +114,7 @@ function auditSync() {
         console.log("\n🚨 ACTION REQUIRED: Update .cursorrules or .env to match the current deployment.");
         process.exit(1);
     } else {
-        console.log("\n✨ Ecosystem is fully synchronized!");
+        console.log("\n✨ Ecosystem is fully synchronized across networks!");
     }
 }
 

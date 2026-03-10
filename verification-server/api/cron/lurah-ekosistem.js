@@ -121,11 +121,12 @@ module.exports = async (req, res) => {
             - Potensi Multi-Account (1 Wallet pakai banyak Akun Sosial): ${JSON.stringify(multiAccountSuspects || [])}
             
             ATURAN EMAS (1:1 MAPPING RULE): 1 Wallet HANYA boleh terikat pada 1 Akun Social Media per platform. Pelanggaran terhadap aturan ini adalah MUTLAK FRAUD.
+            **PERHATIAN KHUSUS TIKTOK & INSTAGRAM**: Terapkan pengawasan super ketat (strict 1:1) untuk eksploitasi di platform TikTok dan Instagram karena ini adalah platform baru.
             
             Berikan laporan ringkas (Bahasa Indonesia) dengan format berikut:
             1. Ringkasan kesehatan ekosistem (dalam bentuk Tabel ASCII jika ada data statistik).
             2. Daftar potensi Pelanggaran 1:1 Mapping atau anomali (dalam bentuk Tabel ASCII). Sertakan wallet dan target_id yang mencurigakan.
-            3. Rekomendasi tindakan mitigasi cerdas (misal: "Siapkan script blacklist untuk wallet X, Y, Z karena indikasi pelanggaran aturan 1:1 Mapping pada Twitter ID 12345").
+            3. Rekomendasi tindakan mitigasi cerdas (misal: "Siapkan script blacklist untuk wallet X, Y, Z karena indikasi pelanggaran aturan 1:1 Mapping pada TikTok ID 12345").
             
             Gunakan blok kode (backticks) untuk tabel agar terlihat rapi di Telegram (monospaced).
         `;

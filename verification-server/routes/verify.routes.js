@@ -3,454 +3,14 @@ const verificationService = require('../services/verification.service');
 
 const router = express.Router();
 
-/**
- * Verify Farcaster follow task
- * POST /api/verify/farcaster/follow
- * Body: { userAddress, taskId, fid, targetFid }
- */
-router.post('/farcaster/follow', async (req, res) => {
-    try {
-        const { userAddress, taskId, dbTaskId, xpEarned, fid, targetFid, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !fid || !targetFid || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, targetFid, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'farcaster',
-            action: 'follow',
-            userAddress,
-            taskId: isNaN(taskId) ? taskId : parseInt(taskId),
-            dbTaskId,
-            xpEarned: parseInt(xpEarned || 0),
-            socialId: parseInt(fid),
-            actionParams: { targetFid: parseInt(targetFid) },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Farcaster follow verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Farcaster like task
- * POST /api/verify/farcaster/like
- * Body: { userAddress, taskId, fid, castHash }
- */
-router.post('/farcaster/like', async (req, res) => {
-    try {
-        const { userAddress, taskId, dbTaskId, xpEarned, fid, castHash, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'farcaster',
-            action: 'like',
-            userAddress,
-            taskId: isNaN(taskId) ? taskId : parseInt(taskId),
-            dbTaskId,
-            xpEarned: parseInt(xpEarned || 0),
-            socialId: parseInt(fid),
-            actionParams: { castHash },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Farcaster like verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Farcaster recast task
- * POST /api/verify/farcaster/recast
- * Body: { userAddress, taskId, fid, castHash }
- */
-router.post('/farcaster/recast', async (req, res) => {
-    try {
-        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'farcaster',
-            action: 'recast',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: parseInt(fid),
-            actionParams: { castHash },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Farcaster recast verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Farcaster quote task
- * POST /api/verify/farcaster/quote
- * Body: { userAddress, taskId, fid, castHash }
- */
-router.post('/farcaster/quote', async (req, res) => {
-    try {
-        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'farcaster',
-            action: 'quote',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: parseInt(fid),
-            actionParams: { castHash },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Farcaster quote verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Farcaster comment task
- * POST /api/verify/farcaster/comment
- * Body: { userAddress, taskId, fid, castHash }
- */
-router.post('/farcaster/comment', async (req, res) => {
-    try {
-        const { userAddress, taskId, fid, castHash, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !fid || !castHash || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, fid, castHash, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'farcaster',
-            action: 'comment',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: parseInt(fid),
-            actionParams: { castHash },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Farcaster comment verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Twitter follow task
- * POST /api/verify/twitter/follow
- * Body: { userAddress, taskId, userId, targetUserId }
- */
-router.post('/twitter/follow', async (req, res) => {
-    try {
-        const { userAddress, taskId, userId, targetUserId, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !userId || !targetUserId || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, targetUserId, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'twitter',
-            action: 'follow',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: userId,
-            actionParams: { targetUserId },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Twitter follow verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Twitter like task
- * POST /api/verify/twitter/like
- * Body: { userAddress, taskId, userId, tweetId }
- */
-router.post('/twitter/like', async (req, res) => {
-    try {
-        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'twitter',
-            action: 'like',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: userId,
-            actionParams: { tweetId },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Twitter like verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Twitter retweet task
- * POST /api/verify/twitter/retweet
- * Body: { userAddress, taskId, userId, tweetId }
- */
-router.post('/twitter/retweet', async (req, res) => {
-    try {
-        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'twitter',
-            action: 'retweet',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: userId,
-            actionParams: { tweetId },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Twitter retweet verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Twitter quote task
- * POST /api/verify/twitter/quote
- * Body: { userAddress, taskId, userId, tweetId }
- */
-router.post('/twitter/quote', async (req, res) => {
-    try {
-        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'twitter',
-            action: 'quote',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: userId,
-            actionParams: { tweetId },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Twitter quote verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify Twitter comment task
- * POST /api/verify/twitter/comment
- * Body: { userAddress, taskId, userId, tweetId }
- */
-router.post('/twitter/comment', async (req, res) => {
-    try {
-        const { userAddress, taskId, userId, tweetId, signature, message } = req.body;
-
-        if (!userAddress || !taskId || !userId || !tweetId || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, userId, tweetId, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'twitter',
-            action: 'comment',
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: userId,
-            actionParams: { tweetId },
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error('Error in Twitter comment verification:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
-
-/**
- * Verify TikTok tasks
- * POST /api/verify/tiktok/:action
- * Body: { userAddress, taskId, tiktokHandle, ... }
- */
-router.post('/tiktok/:action', async (req, res) => {
-    try {
-        const { action } = req.params;
-        const { userAddress, taskId, tiktokHandle, signature, message, ...actionParams } = req.body;
-
-        if (!userAddress || !taskId || !tiktokHandle || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, tiktokHandle, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'tiktok',
-            action,
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: tiktokHandle,
-            actionParams,
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error(`Error in TikTok ${req.params.action} verification:`, error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-/**
- * Verify Instagram tasks
- * POST /api/verify/instagram/:action
- * Body: { userAddress, taskId, instagramHandle, ... }
- */
-router.post('/instagram/:action', async (req, res) => {
-    try {
-        const { action } = req.params;
-        const { userAddress, taskId, instagramHandle, signature, message, ...actionParams } = req.body;
-
-        if (!userAddress || !taskId || !instagramHandle || !signature || !message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields: userAddress, taskId, instagramHandle, signature, message',
-            });
-        }
-
-        const result = await verificationService.verifyAndMarkTask({
-            platform: 'instagram',
-            action,
-            userAddress,
-            taskId: parseInt(taskId),
-            socialId: instagramHandle,
-            actionParams,
-            signature,
-            message
-        });
-
-        res.json(result);
-    } catch (error) {
-        console.error(`Error in Instagram ${req.params.action} verification:`, error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
+// ══════════════════════════════════════════════════════════
+// SPECIAL ROUTES (non-wildcard, must be defined FIRST)
+// ══════════════════════════════════════════════════════════
 
 /**
  * Link Twitter account to wallet address
  * POST /api/verify/twitter/link
- * Body: { userId, userAddress, verificationCode }
+ * Body: { userId, userAddress, verificationCode, signature, message }
  */
 router.post('/twitter/link', async (req, res) => {
     try {
@@ -519,8 +79,8 @@ router.get('/farcaster/user/:fid', async (req, res) => {
                 pfp: user.pfp_url,
                 followerCount: user.follower_count,
                 followingCount: user.following_count,
-                activeStatus: user.active_status, // Indicator for Neynar Score/Activity
-                powerUser: user.power_user,      // Reputation indicator
+                activeStatus: user.active_status,
+                powerUser: user.power_user,
                 verifiedAddresses: user.verified_addresses,
             }
         });
@@ -543,6 +103,241 @@ router.get('/health', (req, res) => {
         message: 'Verification server is running',
         timestamp: new Date().toISOString(),
     });
+});
+
+// ══════════════════════════════════════════════════════════
+// WILDCARD VERIFICATION ROUTES (Unified Pattern)
+// All social task verification follows the same pipeline:
+//   1. Validate required fields per platform
+//   2. Call verificationService.verifyAndMarkTask()
+//   3. On-chain XP (markTaskAsVerified) + DB record (recordClaim)
+// ══════════════════════════════════════════════════════════
+
+/**
+ * Helper: Extract socialId and actionParams from request body based on platform
+ */
+function extractPlatformParams(platform, action, body) {
+    switch (platform) {
+        case 'farcaster': {
+            const { fid, targetFid, castHash } = body;
+            if (!fid) return { error: 'Missing required field: fid' };
+
+            // Determine required params based on action
+            if (action === 'follow' && !targetFid) return { error: 'Missing required field: targetFid' };
+            if (['like', 'recast', 'quote', 'comment'].includes(action) && !castHash) {
+                return { error: `Missing required field: castHash for action "${action}"` };
+            }
+
+            return {
+                socialId: parseInt(fid),
+                actionParams: {
+                    targetFid: targetFid ? parseInt(targetFid) : undefined,
+                    castHash: castHash || undefined,
+                }
+            };
+        }
+
+        case 'twitter': {
+            const { userId, targetUserId, tweetId } = body;
+            if (!userId) return { error: 'Missing required field: userId' };
+
+            if (action === 'follow' && !targetUserId) return { error: 'Missing required field: targetUserId' };
+            if (['like', 'retweet', 'quote', 'comment'].includes(action) && !tweetId) {
+                return { error: `Missing required field: tweetId for action "${action}"` };
+            }
+
+            return {
+                socialId: userId,
+                actionParams: {
+                    targetUserId: targetUserId || undefined,
+                    tweetId: tweetId || undefined,
+                }
+            };
+        }
+
+        case 'tiktok': {
+            const { tiktokHandle } = body;
+            if (!tiktokHandle) return { error: 'Missing required field: tiktokHandle' };
+            // Spread remaining body fields as actionParams for future extensibility
+            const { userAddress: _u, taskId: _t, signature: _s, message: _m, tiktokHandle: _h, dbTaskId: _d, xpEarned: _x, ...rest } = body;
+            return { socialId: tiktokHandle, actionParams: rest };
+        }
+
+        case 'instagram': {
+            const { instagramHandle } = body;
+            if (!instagramHandle) return { error: 'Missing required field: instagramHandle' };
+            const { userAddress: _u, taskId: _t, signature: _s, message: _m, instagramHandle: _h, dbTaskId: _d, xpEarned: _x, ...rest } = body;
+            return { socialId: instagramHandle, actionParams: rest };
+        }
+
+        default:
+            return { error: `Unsupported platform: ${platform}` };
+    }
+}
+
+/**
+ * Unified Farcaster verification
+ * POST /api/verify/farcaster/:action
+ * Supports: follow, like, recast, quote, comment
+ */
+router.post('/farcaster/:action', async (req, res) => {
+    try {
+        const { action } = req.params;
+        const { userAddress, taskId, dbTaskId, xpEarned, signature, message } = req.body;
+
+        if (!userAddress || !taskId || !signature || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: userAddress, taskId, signature, message',
+            });
+        }
+
+        const params = extractPlatformParams('farcaster', action, req.body);
+        if (params.error) {
+            return res.status(400).json({ success: false, error: params.error });
+        }
+
+        const result = await verificationService.verifyAndMarkTask({
+            platform: 'farcaster',
+            action,
+            userAddress,
+            taskId: isNaN(taskId) ? taskId : parseInt(taskId),
+            dbTaskId,
+            xpEarned: parseInt(xpEarned || 0),
+            socialId: params.socialId,
+            actionParams: params.actionParams,
+            signature,
+            message
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error(`Error in Farcaster ${req.params.action} verification:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Unified Twitter verification
+ * POST /api/verify/twitter/:action
+ * Supports: follow, like, retweet, quote, comment
+ * NOTE: /twitter/link is handled above (specific route takes priority over wildcard)
+ */
+router.post('/twitter/:action', async (req, res) => {
+    try {
+        const { action } = req.params;
+        const { userAddress, taskId, dbTaskId, xpEarned, signature, message } = req.body;
+
+        if (!userAddress || !taskId || !signature || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: userAddress, taskId, signature, message',
+            });
+        }
+
+        const params = extractPlatformParams('twitter', action, req.body);
+        if (params.error) {
+            return res.status(400).json({ success: false, error: params.error });
+        }
+
+        const result = await verificationService.verifyAndMarkTask({
+            platform: 'twitter',
+            action,
+            userAddress,
+            taskId: isNaN(taskId) ? taskId : parseInt(taskId),
+            dbTaskId,
+            xpEarned: parseInt(xpEarned || 0),
+            socialId: params.socialId,
+            actionParams: params.actionParams,
+            signature,
+            message
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error(`Error in Twitter ${req.params.action} verification:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Unified TikTok verification
+ * POST /api/verify/tiktok/:action
+ * Supports: follow, like, comment, repost, share, duet, etc.
+ */
+router.post('/tiktok/:action', async (req, res) => {
+    try {
+        const { action } = req.params;
+        const { userAddress, taskId, signature, message } = req.body;
+
+        if (!userAddress || !taskId || !signature || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: userAddress, taskId, signature, message',
+            });
+        }
+
+        const params = extractPlatformParams('tiktok', action, req.body);
+        if (params.error) {
+            return res.status(400).json({ success: false, error: params.error });
+        }
+
+        const result = await verificationService.verifyAndMarkTask({
+            platform: 'tiktok',
+            action,
+            userAddress,
+            taskId: parseInt(taskId),
+            socialId: params.socialId,
+            actionParams: params.actionParams,
+            signature,
+            message
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error(`Error in TikTok ${req.params.action} verification:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Unified Instagram verification
+ * POST /api/verify/instagram/:action
+ * Supports: follow, like, comment, repost, share, etc.
+ */
+router.post('/instagram/:action', async (req, res) => {
+    try {
+        const { action } = req.params;
+        const { userAddress, taskId, signature, message } = req.body;
+
+        if (!userAddress || !taskId || !signature || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: userAddress, taskId, signature, message',
+            });
+        }
+
+        const params = extractPlatformParams('instagram', action, req.body);
+        if (params.error) {
+            return res.status(400).json({ success: false, error: params.error });
+        }
+
+        const result = await verificationService.verifyAndMarkTask({
+            platform: 'instagram',
+            action,
+            userAddress,
+            taskId: parseInt(taskId),
+            socialId: params.socialId,
+            actionParams: params.actionParams,
+            signature,
+            message
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error(`Error in Instagram ${req.params.action} verification:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 module.exports = router;

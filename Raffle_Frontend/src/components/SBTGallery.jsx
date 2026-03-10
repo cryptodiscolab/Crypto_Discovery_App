@@ -99,9 +99,14 @@ export function SBTGallery({ walletAddress }) {
                         {/* Hover Overlay info */}
                         <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
                             <div className="flex items-center gap-1 text-[8px] text-slate-600 font-black uppercase">
-                                <Zap className="w-2h-2" /> {h.points_at_end?.toLocaleString() || 0} XP
+                                <Zap className="w-2 h-2" /> {h.points_at_end?.toLocaleString() || 0} XP
                             </div>
-                            <div className="w-2 h-2 rounded-full bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                            <div className="flex items-center gap-1">
+                                <span className="text-[8px] font-black text-indigo-400/60 uppercase">
+                                    {[0, 10, 20, 25, 15, 30][h.peak_tier_id]}% Weight
+                                </span>
+                                <div className="w-2 h-2 rounded-full bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                            </div>
                         </div>
                     </div>
                 ))}

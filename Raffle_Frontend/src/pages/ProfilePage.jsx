@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins
 } from 'lucide-react';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { useUserInfo } from '../hooks/useContract';
@@ -9,9 +9,10 @@ import { SBTGallery } from '../components/SBTGallery';
 import { ReferralCard } from '../components/ReferralCard';
 import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../hooks/useFarcaster';
+import { useSBT as useSBTData } from '../hooks/useSBT';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI } from '../lib/contracts';
+import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI, MASTER_X_ADDRESS } from '../lib/contracts';
 import ActivityLogSection from '../components/ActivityLogSection';
 import {
   Transaction,
@@ -26,7 +27,7 @@ export default function ProfilePage() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
-  const { refetch, sbtThresholds, ecosystemSettings } = usePoints();
+  const { sbtThresholds, ecosystemSettings } = usePoints();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
   // State untuk Mode Edit
@@ -51,12 +52,13 @@ export default function ProfilePage() {
   });
 
   const [copied, setCopied] = useState(false);
-  const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle'
+  const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle', 'revenue'
   const [claimCountdown, setClaimCountdown] = useState('');
   const [claimReady, setClaimReady] = useState(true);
 
   // === READ ON-CHAIN: Cek cooldown Daily Claim ===
   const { stats: onChainUserData, refetch: refetchOnChainStats, isLoading: statsLoading } = useUserInfo(address);
+  const { claimableAmount, refetchAll: refetchSBT } = useSBTData();
 
   // onChainUserData.lastDailyBonusClaim = lastDailyBonusClaim (unix timestamp seconds)
   const lastClaimTimestamp = onChainUserData?.lastDailyBonusClaim ? Number(onChainUserData.lastDailyBonusClaim) : 0;
@@ -80,14 +82,9 @@ export default function ProfilePage() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [nextClaimAt]);
+  }, [nextClaimAt, isLoadingOnChain]);
 
-  // Load data awal dari Supabase saat component mount
-  useEffect(() => {
-    if (address) {
-      fetchProfile();
-    }
-  }, [address]);
+
 
 
 
@@ -109,7 +106,7 @@ export default function ProfilePage() {
     return reached;
   };
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!address) return;
 
     const walletAddress = address.toLowerCase();
@@ -146,9 +143,16 @@ export default function ProfilePage() {
       });
       setPotentialTier(calculatePotentialTier(data.total_xp || 0));
     } else {
-      console.log("No profile found for address:", walletAddress);
+      console.log("No profile found for", walletAddress);
     }
-  };
+  }, [address, calculatePotentialTier, setProfileData, setPotentialTier]);
+
+  // Load data awal dari Supabase saat component mount
+  useEffect(() => {
+    if (address) {
+      fetchProfile();
+    }
+  }, [address, fetchProfile]);
 
   const getTierName = (t) => {
     const names = ['Guest', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
@@ -527,6 +531,27 @@ export default function ProfilePage() {
               <RefreshCw size={18} />
               <span className="text-[10px] font-bold uppercase tracking-tight">Renew Job</span>
             </button>
+
+            {onChainUserData?.currentTier > 0 && (
+              <button
+                onClick={() => setActiveModal('revenue')}
+                className={`flex flex-col items-center justify-center gap-1 p-4 rounded-xl transition-all relative overflow-hidden group
+                  ${claimableAmount > 0n 
+                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-lg shadow-indigo-500/10' 
+                    : 'bg-zinc-900 text-zinc-600'}`}
+              >
+                {claimableAmount > 0n && (
+                   <div className="absolute inset-0 bg-indigo-500/10 animate-pulse pointer-events-none" />
+                )}
+                <Coins size={18} className={claimableAmount > 0n ? "animate-bounce" : ""} />
+                <span className="text-[10px] font-bold uppercase tracking-tight">Claim Dividends</span>
+                {claimableAmount > 0n && (
+                  <span className="text-[9px] font-mono text-indigo-300">
+                    {Number(claimableAmount).toFixed(4)} ETH
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -540,6 +565,16 @@ export default function ProfilePage() {
           />
         )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}
+        {activeModal === 'revenue' && (
+          <RevenueClaimModal 
+            onClose={() => setActiveModal(null)} 
+            claimable={claimableAmount}
+            onSuccess={() => {
+              refetchOnChainStats();
+              refetchSBT();
+            }}
+          />
+        )}
         {activeModal === 'raffle' && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="glass-card w-full max-w-sm p-8 text-center space-y-4">
@@ -655,9 +690,9 @@ export default function ProfilePage() {
 
 function CreateTaskModal({ onClose }) {
   const [tasksBatch, setTasksBatch] = useState([
-    { platform: 'farcaster', title: '', link: '' },
-    { platform: 'x', title: '', link: '' },
-    { platform: 'base', title: '', link: '' }
+    { platform: 'farcaster', action_type: 'follow', title: '', link: '' },
+    { platform: 'x', action_type: 'follow', title: '', link: '' },
+    { platform: 'base', action_type: 'follow', title: '', link: '' }
   ]);
   const [email, setEmail] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -669,10 +704,9 @@ function CreateTaskModal({ onClose }) {
     requiresVerification: true
   });
   const [paymentToken, setPaymentToken] = useState(null); // Will be set from whitelist
-  const { writeContractAsync } = useWriteContract();
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { stats: userData, refetch: refetchStats } = useUserInfo(address);
+  const { refetch: refetchStats } = useUserInfo(address);
   const { ecosystemSettings } = usePoints(); // Zero Hardcode integration
 
   // Default to first whitelisted token if none selected
@@ -758,7 +792,11 @@ function CreateTaskModal({ onClose }) {
           {tasksBatch.map((task, idx) => (
             <div key={idx} className="bg-zinc-900 border border-white/5 p-4 rounded-2xl space-y-3 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                {task.platform === 'farcaster' ? <Share2 size={80} /> : task.platform === 'x' ? <Flame size={80} /> : <Globe size={80} />}
+                {task.platform === 'farcaster' ? <Share2 size={80} /> : 
+                 task.platform === 'x' ? <Flame size={80} /> : 
+                 task.platform === 'tiktok' ? <Video size={80} /> :
+                 task.platform === 'instagram' ? <Instagram size={80} /> :
+                 <Globe size={80} />}
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400">{idx + 1}</div>
@@ -774,6 +812,23 @@ function CreateTaskModal({ onClose }) {
                   <option value="farcaster">Farcaster</option>
                   <option value="x">X (Twitter)</option>
                   <option value="base">Base App</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="instagram">Instagram</option>
+                </select>
+                <select
+                  value={task.action_type}
+                  onChange={(e) => {
+                    const newBatch = [...tasksBatch];
+                    newBatch[idx].action_type = e.target.value;
+                    setTasksBatch(newBatch);
+                  }}
+                  className="bg-transparent text-xs font-bold text-indigo-400 outline-none uppercase tracking-widest cursor-pointer"
+                >
+                  <option value="follow">Follow</option>
+                  <option value="like">Like</option>
+                  <option value="repost">Repost</option>
+                  <option value="quote">Quote</option>
+                  <option value="comment">Comment</option>
                 </select>
               </div>
               <input
@@ -929,9 +984,8 @@ function CreateTaskModal({ onClose }) {
                       reward_amount_per_user: rewardAmount.toString(), // dynamically synced
                       max_participants: 100,
                       txHash: receipt.transactionHash,
-                      tasks: taskCount,
-                      reward_symbol: selectedToken?.symbol || 'TOKEN',
-                      payment_token: rewardTokenAddr
+                      payment_token: rewardTokenAddr,
+                      tasks_batch: tasksBatch.filter(t => t.title && t.link)
                     }
                   }),
                 });
@@ -1234,6 +1288,100 @@ function RenewSponsorshipModal({ onClose }) {
           </div>
           <button onClick={onClose} className="w-full text-[10px] text-slate-600 uppercase font-black hover:text-white transition-colors">Cancel</button>
         </div>
+      </div>
+    </div>
+  );
+}
+function RevenueClaimModal({ onClose, claimable, onSuccess }) {
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { claimRewards } = useSBTData();
+  const [isClaiming, setIsClaiming] = useState(false);
+  const publicClient = usePublicClient();
+
+  const handleClaim = async () => {
+    if (claimable === 0n) return toast.error("Nothing to claim!");
+    
+    setIsClaiming(true);
+    const tid = toast.loading("Confirming claim transaction...");
+    try {
+      const hash = await claimRewards();
+      toast.loading("Transferring dividends... 🏦", { id: tid });
+      
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      
+      // Sync to DB
+      try {
+        const timestamp = new Date().toISOString();
+        const message = `Claim Dividends for ${address}\nTimestamp: ${timestamp}`;
+        const signature = await signMessageAsync({ message });
+
+        await fetch('/api/user-bundle', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'sync-pool-claim',
+            wallet: address,
+            signature,
+            message,
+            payload: {
+              amountETH: Number(claimable).toString(),
+              tier: 0, // Backend identifies from wallet anyway
+              txHash: receipt.transactionHash
+            }
+          }),
+        });
+        toast.success("Dividends claimed and synced!", { id: tid });
+      } catch (syncErr) {
+        console.warn('Dividend sync failed:', syncErr);
+        toast.success("On-chain claim success!", { id: tid });
+      }
+
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.shortMessage || "Claim failed", { id: tid });
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="glass-card w-full max-w-sm p-8 space-y-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-indigo-500/20 flex items-center justify-center mx-auto border border-indigo-500/30">
+          <Coins size={40} className="text-indigo-400" />
+        </div>
+        
+        <div>
+          <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">
+            Revenue <span className="text-indigo-500">Share</span>
+          </h2>
+          <p className="text-xs text-slate-400 mt-2">
+            Your SBT status entitles you to a share of the protocol revenue.
+          </p>
+        </div>
+
+        <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-6 px-4">
+          <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest mb-1">Available to Claim</p>
+          <p className="text-4xl font-black text-white font-mono">{Number(claimable).toFixed(6)} <span className="text-sm text-slate-500">ETH</span></p>
+        </div>
+
+        <button
+          onClick={handleClaim}
+          disabled={isClaiming || claimable === 0n}
+          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+        >
+          {isClaiming ? "PROCESSING..." : "CLAIM DIVIDENDS NOW"}
+        </button>
+
+        <button
+          onClick={onClose}
+          className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors"
+        >
+          Maybe later
+        </button>
       </div>
     </div>
   );
