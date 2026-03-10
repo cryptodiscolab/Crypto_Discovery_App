@@ -67,9 +67,16 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **REQUIRED:** Use Cryptographic Signature Verification (SIWE or `viem.verifyMessage`) in the Backend API to prove user identity.
 - **TOOLING:** Use `viem` for backend crypto verifications.
 
-### 8.3 Database Access (Supabase)
+### 8.4 Database Access (Supabase)
 - **CLIENT SIDE:** Use `createClient` with `ANON_KEY` only for READ operations.
 - **SERVER SIDE:** Use `createClient` with `SERVICE_ROLE_KEY` inside API Routes for WRITE operations.
+
+### 8.5 ZERO HARDCODE SECRETS MANDATE (CRITICAL - from gemini.md)
+- **DEFINITION**: "Zero Hardcode Secrets" means NO sensitive keys (Supabase Service Role, API Keys, Private Keys, JWTs) are allowed to be hardcoded in ANY script, frontend file, or documentation.
+- **RESTRICTED PATTERNS**: AI is strictly prohibited from hardcoding strings matching: `eyJ...` (JWT Tokens), `sb_...` (Supabase Keys), `AIzaSy...` (Google API Keys), `0x...` (Literal Private Keys - Check context carefully).
+- **ENFORCEMENT**: Every script MUST use `dotenv` and fetch secrets from `process.env`. Frontend code MUST strictly use `VITE_` prefixed public keys only. DILARANG KERAS menggunakan metode hardcopy key statis untuk testing. Wajib menggunakan Mocking atau `.env.test`.
+- **SCANNING PROTOCOL**: Before every "Finish", "Notify User", or `git push`, AI MUST run `npm run gitleaks-check` to ensure no leaks were introduced.
+- **CLEANUP**: All temporary or archive files containing secrets MUST be scrubbed or deleted immediately upon discovery.
 
 ### 8.4 Dynamic Activity Pattern (System Tasks)
 - **DISTINCTION:** API Handlers MUST distinguish between Static Tasks (stored in `daily_tasks`) and Dynamic System Activities (e.g., `raffle_buy_123` or `raffle_win_456`).
@@ -89,9 +96,11 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
 - **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI aplikasi.
 
-## 12. LATEST CONTRACTS & PRIVACY MANDATE
-- **PRIVATE_KEY SAFETY**: THE `PRIVATE_KEY` MUST NEVER be pushed to repositories or exposed in logs/chat.
-- **Privacy**: ALL sensitive data MUST be added to `.gitignore`.
+## 12. SECRETS & PRIVACY MANDATE (STRICT)
+- **PRIVATE_KEY SAFETY**: THE `PRIVATE_KEY` MUST NEVER be pushed to repositories, exposed in logs, or written as a literal string in any file.
+- **SERVICE_ROLE_KEY SAFETY**: The Supabase `SERVICE_ROLE_KEY` is a master key and MUST NEVER be exposed in frontend scripts or hardcoded in backend scripts.
+- **API_KEYS**: Gemini, Neynar, Alchemy, and other service keys must be managed strictly via `.env`.
+- **Privacy**: ALL sensitive data MUST be added to `.gitignore`. Use `.env.example` as a template for team members.
 
 ## 13. UI/UX DESIGN & FRONTEND STANDARDS (SENIOR STAFF ENGINEER MODE)
 1. **Clean & Rugged:** Modern dark-themed aesthetic. No heavy libraries like Framer-Motion.
@@ -104,6 +113,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **ZERO-TRUST RLS**: Every new table MUST have Row Level Security enabled.
 - **SYNC VERIFICATION**: Every task must verify the data flow: Smart Contract Event -> Backend Indexer -> Database Record -> Frontend Display.
 - **THE DATABASE SYNCHRONIZATION MANDATE**: All agents (Antigravity, OpenClaw, Qwen, DeepSeek) MUST run `node scripts/verify-db-sync.cjs` before and after any database or backend code modifications. Do not proceed if errors are found.
+- **GITLEAKS VERIFICATION MANDATE**: Never consider a task "Done" without ensuring Gitleaks (`npm run gitleaks-check`) is CLEAR.
 
 ## 15. SOCIAL IDENTITY LOCK & ECOSYSTEM INTEGRITY MANDATE
 - **SOCIAL IDENTITY LOCK**: Every social platform (Twitter, Farcaster, Telegram, TikTok, Instagram) MUST be locked 1-to-1 with a specific wallet address. Sybil attacks are prevented by enforcing this at the Database and API layer.
@@ -200,5 +210,25 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
   - Examples: `node -c api/user-bundle.js`, `npm run lint` (Frontend).
 - **MANDATORY VERIFICATION**: If any syntax error, Linter error, or "&& token separator" error occurs in the terminal, YOU MUST FIX IT before proceeding to Git operations. Pushing broken code is a critical violation of the Lurah Protocol.
 
+## 27. CLEAN GIT TREE MANDATE (Source Control Hygiene Protocol)
+- **PRINCIPLE**: The Git repository is the single source of truth for all source code. It MUST be kept strictly clean — only commit code, config, and deployment scripts.
+- **NEVER COMMIT:**
+  - `tmp_*.cjs / .js / .ts` — Scratch and temporary test scripts.
+  - `FlatCryptoDisco*.sol` — Generated flat solidity files (rebuild with `npx hardhat flatten`).
+  - `.env`, `.env.local`, `.env.vercel`, `.env.vercel.prod` — All env files.
+  - `_archive/` — Legacy contract directories.
+  - `scripts/env-comparison-report-*.txt` — CI/Tool output reports.
+  - `test-env/` — Temporary test environment data.
+  - Any file ending in `*.log`, `*.tmp`, or `*.scratch.*`.
+- **ALWAYS TRACK:**
+  - `contracts/` — All active Solidity smart contracts.
+  - `api/` — All Vercel serverless functions.
+  - `src/` — All frontend source code.
+  - `scripts/` — Operational scripts (verify-db-sync, sync-env, etc.).
+  - `.agents/skills/` — Agent skill definitions and protocols.
+  - `.cursorrules`, `.gitleaks.toml`, `.gitignore`, `.husky/`.
+- **GIT STATUS CHECK**: Before EVERY push, the agent MUST run `git status` to visually confirm there are no unintended staged files. If the working tree is dirty with non-source files, immediately add them to `.gitignore` before proceeding.
+- **CLEAN UP ON SIGHT**: When a scratch file (`tmp_*.cjs`, etc.) has served its purpose, delete it. Do not leave dead code or artifacts in the repository.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. Lurah Approved.*

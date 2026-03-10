@@ -39,7 +39,8 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 ### 2. PRIVATE_KEY & Sensitive Data Security
 - **Strict Privacy**: `PRIVATE_KEY` di `.env` adalah rahasia tertinggi.
 - **Zero Exposure**: JANGAN PERNAH upload ke Git atau masukkan ke bundle frontend (`VITE_`).
-- **Git Safety**: Pastikan `.env` dan `.env.local` ada di `.gitignore`.
+- [x] **Git Safety**: Pastikan `.env` dan `.env.local` ada di `.gitignore`.
+- [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env` atau `PRIVATE_KEY`.
 
 ### 3. Zero-Trust Frontend Architecture
 - **No Direct Writes**: DILARANG menulis langsung ke Supabase (`insert`/`upsert`) dari frontend.
@@ -87,6 +88,7 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 
 - [ ] Apakah kontrak yang digunakan adalah versi terbaru (V12 / MasterX V2)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?
+- [ ] Apakah Gitleaks scan (`npm run gitleaks-check`) sudah dijalankan dan Pass?
 - [ ] Apakah mutasi data mengikuti pola Zero-Trust Backend?
 - [ ] Apakah ABI diekspor menggunakan Proxy pattern?
 - [ ] Verify `Point-Sync` integrity between code and `point_settings`.

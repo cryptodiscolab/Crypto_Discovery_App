@@ -1,0 +1,12 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🛡️ Running Gitleaks (via scanner) before push..."
+npm run gitleaks-check
+
+if [ $? -ne 0 ]; then
+  echo "❌ Leak detected or scan failed. Push blocked!"
+  exit 1
+fi
+
+echo "✅ No leaks detected. Proceeding with push."

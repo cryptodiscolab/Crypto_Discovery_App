@@ -140,8 +140,14 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Typography Clarity**: Gunakan `inter` atau sans-serif modern dengan kontras tinggi. Kurangi penggunaan `uppercase letter-spacing` yang berlebihan jika menghambat keterbacaan data.
 
 ### 3. Sensitive Guard Protocol (UX & Security)
-- **No-Auto-Sign**: Dilarang memicu `signMessage` secara otomatis didalam `useEffect` pada saat render awal (mount). Ini mencegah popup MetaMask "spam" yang mengganggu alur navigasi user.
-- **Manual Unlock**: Tampilkan data finansial/sensitif dalam keadaan "Locked" (placeholder) secara default. Berikan button eksplisit "Unlock Data" yang meminta tanda tangan wallet hanya saat user benar-benar membutuhkannya.
+- **No-Auto-Sign**: Dilarang memicu `signMessage` secara otomatis didalam `useEffect` pada saat render awal (mount).
+- **Manual Unlock**: Tampilkan data finansial/sensitif dalam keadaan "Locked" (placeholder) secara default.
+- **Zero-Secret Leak Guard (CRITICAL)**: Agent WAJIB secara aktif memindai (*scan*) file untuk literal strings yang menyerupai JWT (`eyJ...`), API Keys (`AIzaSy...`), atau private keys sebelum `git commit`. WAJIB membentengi workflow dengan mengeksekusi `npm run gitleaks-check` sebelum menyatakan task selesai.
+
+### 4. Zero Hardcode Secrets Mandate (CRITICAL)
+- **MANDATORY**: Seluruh kunci rahasia (Supabase Service Key, API Keys, Private Keys) **DILARANG KERAS** ditulis secara literal (hardcoded) di dalam file apapun.
+- **Dotenv Protocol**: Gunakan `require('dotenv').config()` di awal setiap script backend/utilitas.
+- **Frontend Isolation**: Pastikan `SERVICE_ROLE_KEY` tidak pernah di-import atau digunakan di dalam folder `src/`. Hanya gunakan `ANON_KEY` untuk interaksi frontend.
 
 ### 2. Upgrading & Version Control Automation
 - **Version Sync**: Memastikan versi kontrak di `.env`, `.cursorrules`, dan `contracts.js` selalu sinkron setelah upgrade (misal: V12 ke V13).
@@ -161,7 +167,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Social Action XP Alignment**: Memastikan aksi sosial baru (seperti TikTok Comment/Repost) selalu dipetakan ke `point_settings` di database untuk mencegah inkonsistensi reward.
 - **Dynamic Task Verification (NEW)**: WAJIB memastikan bahwa *system-generated tasks* (seperti `raffle_buy_X`, `raffle_win_X`) membaca reward XP-nya secara dinamis dari tabel `point_settings`, BUKAN dari tabel `daily_tasks`. Pantau fungsi `handleVerify`/`handleClaim` di *backend* agar selalu menerapkan pengecekan `.startsWith()` guna mencegah insiden kebocoran XP (0 XP Bug).
 - **Security & Audit Protocol (STAFF-ONLY)**: Setiap perubahan harus diaudit terhadap:
-    - **Leaked Secrets**: JANGAN PERNAH menyertakan `PRIVATE_KEY` atau `API_KEY` dalam commit.
+    - **Leaked Secrets**: JANGAN PERNAH menyertakan `PRIVATE_KEY`, `API_KEY`, atau `SERVICE_ROLE_KEY` dalam commit. Gunakan perintah `npm run gitleaks-check` sebagai validasi akhir.
     - **Bytecode Limit (24KB)**: Gunakan `npx hardhat size-contracts` jika ragu.
     - **Regression Check**: Pastikan fitur eksis tidak terganggu oleh penambahan fitur baru.
     - **Database RLS Audit**: Verifikasi kebijakan keamanan Supabase untuk setiap tabel baru yang terdampak.
@@ -212,20 +218,23 @@ Agent kini memiliki kemampuan untuk bekerja secara otonom melalui Telegram saat 
 Sebelum melakukan `git push`, Agent WAJIB menjalankan:
 
 ```bash
-# 1. Import Audit — Periksa impor yang tidak valid
+# 1. Gitleaks Scan (CRITICAL) — Prevent secret leaks
+npm run gitleaks-check
+
+# 2. Import Audit — Periksa impor yang tidak valid
 grep -rn "from 'viem'" src/ | grep -E "toUtf8Bytes|toUtf8String|formatBytes32String"
 
-# 2. Syntax & Linter Check (MANDATORY)
+# 3. Syntax & Linter Check (MANDATORY)
 npm run lint
 node -c api/user-bundle.js
 node -c api/admin-bundle.js
 node -c api/cron/lurah-ekosistem.js
 
-# 3. Local Build Test
+# 4. Local Build Test
 npm run build
 
-# 4. Jika terdapat error syntax atau build gagal:
-# - Fix error secara instan. DILARANG KERAS mem-push kode yang rusak ke repository.
+# 5. Jika terdapat error syntax, leak terdeteksi, atau build gagal:
+# - Fix error secara instan. DILARANG KERAS mem-push kode yang rusak atau bocor ke repository.
 ```
 
 ### Build Error Decision Tree
@@ -263,7 +272,9 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Cloud Config Sync**: `node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js`
 
 ## 📋 Checklist Sentinel (MANDATORY)
-- [ ] **Audit**: Apakah kode baru bebas dari hardcode dan celah keamanan? (Jalankan `sentinel-audit.js`)
+- [ ] **Clean Git Tree**: Apakah `git status` bersih dari file sementara (`tmp_*.cjs`, `.env.vercel`, `FlatCryptoDisco*.sol`, `_archive/`)? Jika tidak, tambahkan ke `.gitignore` dan hapus file tersebut.
+- [ ] **Gitleaks Audit**: Apakah eksekusi `npm run gitleaks-check` mengembalikan *exit code 0* (No leaks)?
+- [ ] **Audit**: Apakah kode baru bebas dari hardcode (`eyJ...`, `0x..`, `sb_...`) dan celah keamanan? (Jalankan `sentinel-audit.js`)
 - [ ] **DB Sync**: Apakah `verify-db-sync.cjs` sudah dijalankan dan lulus 100% tanpa fragmentasi legacy?
 - [ ] **Syntax & Lint**: Apakah pengecekan sintaks backend (`node -c`) dan linter frontend (`npm run lint`) bersih tanpa error fatal?
 - [ ] **Sync**: Apakah `.cursorrules` dan `.env` sudah sesuai dengan kontrak terbaru? (Jalankan `sync-check.js`)

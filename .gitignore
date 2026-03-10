@@ -1,45 +1,78 @@
-# Dependencies
+# ============================================
+# .gitignore — Clean Tree Mandate (gemini.md Protocol)
+# RULES: Only tracked if it's: source code, config, or essential deployment scripts.
+# ============================================
+
+# === DEPENDENCIES ===
 node_modules/
 
-# Environment Variables (Sangat Penting: JANGAN DIHAPUS)
+# === ENVIRONMENT VARIABLES (SECRET — NEVER COMMIT) ===
 .env
 .env.local
 .env.*
+.env*.local
+.env.vercel
+.env.vercel.prod
 
-# Build Outputs
+# === BUILD & COMPILE OUTPUTS ===
 dist/
 artifacts/
 cache/
 typechain-types/
 coverage/
 coverage.json
+stats.html
 
-# Hardhat
+# === HARDHAT ===
 hardhat.config.js.backup
 
-# IDE & Agent Config
+# === IDE & EDITOR CONFIGS (Local only) ===
 .vscode/
 .idea/
 .cursorrules
-# Agent config: ignore private/sensitive files tapi TRACK scripts (dibutuhkan GitHub Actions cron)
+.DS_Store
+
+# === AGENT LOCAL/PRIVATE CONFIG (Track scripts, not secrets) ===
 .agents/**/credentials*
 .agents/**/secrets*
 .agents/**/*.key
 .agents/**/.env*
-.DS_Store
 
-# Logs
+# === VERCEL LOCAL STATE ===
+.vercel/
+
+# === LOGS (Never commit logs) ===
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.vercel
-.env*.local
-stats.html
 
-# Vite temp files
+# === VITE TEMP FILES ===
 *.timestamp-*.mjs
 
-# Local scratch files
+# === TEMPORARY & SCRATCH FILES (gemini.md: Clean Tree Mandate) ===
+# Any file prefixed with tmp_ is considered a transient scratch file.
 tmp/
+tmp_*.cjs
+tmp_*.js
+tmp_*.mjs
+tmp_*.ts
+*.tmp
+*.scratch.*
+
+# === LEGACY & ARCHIVE FOLDERS (Source of truth is /contracts, not archives) ===
+# _archive/ folder contains old contract versions - not needed in clean tree
+_archive/
+
+# === LARGE COMPILED FLAT SOLIDITY FILES (Generated — Rebuild via `npx hardhat flatten`) ===
+FlatCryptoDisco.sol
+FlatCryptoDisco_utf8.sol
+
+# === VERIFICATION REPORTS & COMPARISON REPORTS (CI artifacts, not source) ===
+scripts/env-comparison-report-*.txt
+scripts/env-comparison-report.txt
+scripts/env-sync-report-*.txt
+
+# === TEST ENVIRONMENT TEMP DIR ===
+test-env/

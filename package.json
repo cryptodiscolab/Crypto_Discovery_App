@@ -1,7 +1,9 @@
 {
   "type": "module",
   "scripts": {
-    "lurah": "node test-lurah.js"
+    "lurah": "node test-lurah.js",
+    "gitleaks-check": "gitleaks-secret-scanner",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@api3/airnode-admin": "^0.15.0",
@@ -23,9 +25,11 @@
     "chai": "^4.5.0",
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0",
+    "gitleaks-secret-scanner": "^2.1.1",
     "hardhat": "^2.28.4",
     "hardhat-contract-sizer": "^2.10.1",
     "hardhat-gas-reporter": "^1.0.10",
+    "husky": "^9.1.7",
     "solidity-coverage": "^0.8.17",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",

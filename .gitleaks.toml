@@ -1,0 +1,29 @@
+# Gitleaks Configuration
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+    '''node_modules''',
+    '''package-lock.json''',
+    '''artifacts''',
+    '''cache'''
+]
+
+[[rules]]
+    id = "generic-api-key"
+    description = "Generic API Key"
+    regex = '''(?i)(?:key|api|token|secret|client|passwd|password)[=:]\s*(?:['"]?[0-9a-zA-Z]{16,40}['"]?)'''
+    entropy = 3.5
+    keywords = ["key", "api", "token", "secret", "client", "passwd", "password"]
+
+[[rules]]
+    id = "ethereum-private-key"
+    description = "Ethereum Private Key"
+    regex = '''(?:^|[^a-fA-F0-9])[a-fA-F0-9]{64}(?:[^a-fA-F0-9]|$)'''
+    keywords = ["key", "private", "secret"]
+
+[[rules]]
+    id = "env-file-leak"
+    description = "Environment File Leak"
+    regex = '''\.env.*'''
+    path = '''\.env.*'''
