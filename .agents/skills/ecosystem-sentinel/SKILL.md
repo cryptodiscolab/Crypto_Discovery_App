@@ -40,7 +40,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `C:\Users\chiko\.gemini\antigravity\brain\044055c3-c9b8-4a4b-b419-4de1191abaa2\PRD_Crypto_Disco.md`
+**File:** `C:\Users\chiko\.gemini\antigravity\brain\d9ecad0a-f449-4c38-b27b-5c9e6ad4a21e\PRD_Crypto_Disco.md`
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
 

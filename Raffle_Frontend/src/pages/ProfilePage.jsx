@@ -1016,8 +1016,7 @@ function DailyClaimModal({ onClose, pointSettings, streakCount }) {
           functionName: 'claimDailyBonus',
           account: address,
         });
-        const multiplier = (ecosystemSettings?.gas_multiplier_bps || 1500) / 1000;
-        gasLimit = BigInt(Math.ceil(Number(estimated) * multiplier));
+        gasLimit = estimated;
       } catch (estErr) {
         console.warn('[DailyClaim] Gas estimation failed:', estErr.message);
         if (estErr.message?.toLowerCase().includes('user rejected')) {

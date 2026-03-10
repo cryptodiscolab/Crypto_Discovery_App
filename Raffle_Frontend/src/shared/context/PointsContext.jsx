@@ -23,7 +23,6 @@ export function PointsProvider({ children }) {
     const [sbtThresholds, setSbtThresholds] = useState([]);
     const [ecosystemSettings, setEcosystemSettings] = useState({
         daily_claim: 100,
-        gas_multiplier_bps: 1500,
         max_gas_price_gwei: 100,
         raffle_ticket_price_usdc: 0.15,
         sponsorship_listing_fee_usdc: 1.0,

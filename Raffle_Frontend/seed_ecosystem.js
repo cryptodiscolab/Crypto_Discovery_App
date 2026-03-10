@@ -14,7 +14,6 @@ async function seedEcosystem() {
     const settings = [
         { key: 'eth_usd_price_feed', value: '0x4aDC67696bA383F43fD60604633031d935f9584b' },
         { key: 'treasury_multisig', value: '0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa' },
-        { key: 'gas_multiplier_bps', value: 1500 }, // 1.5x
         { key: 'max_gas_price_gwei', value: 100 },
         { key: 'raffle_ticket_price_usdc', value: 0.15 },
         { key: 'sponsorship_listing_fee_usdc', value: 1.0 },
