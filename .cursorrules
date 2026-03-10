@@ -21,6 +21,8 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 
 - **Reward Logic**: Must use `Accumulated Reward Per Share` with `1e18` precision.
 - **Safety**: `emergencyWithdraw` must always protect `totalLockedRewards`. Use `unchecked` blocks for non-overflowing arithmetic.
+- **Gas Policy Strict Enforcement**: DO NOT implement "Safety Gas Multipliers" (e.g., buffering gas limits by 1.5x) in the frontend. Always use raw estimated gas to prevent sticker shock for users.
+- **SBT Tier Limits**: Reward scaling multipliers for NFT Tiers MUST NOT exceed 1.5x (15000 BP) to prevent inflation. The standard progressive scale is: Bronze (1.1x), Silver (1.2x), Gold (1.3x), Platinum (1.4x), Diamond (1.5x).
 
 ## 3. WEB3 FRONTEND INFRASTRUCTURE (WAGMI & RAINBOWKIT)
 - **Provider Stability**: NEVER use Wagmi hooks (e.g., `useAccount`) inside the body of the `Web3Provider` component itself.

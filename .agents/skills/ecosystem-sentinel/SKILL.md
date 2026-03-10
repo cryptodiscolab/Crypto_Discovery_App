@@ -108,6 +108,8 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 1. **Zero-Hardcode Audit**: Perform `grep_search` on every task to detect hardcoded reward strings or pricing.
 2. **Point-Sync Automation**: Verify that every reward event fetches its `points_value` from the canonical `point_settings` table.
 3. **Admin-Dashboard Sync**: Ensure all administrative controls (Web & Bot) display and use dynamic settings.
+4. **Anti-Inflation Guard (SBT Limits)**: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.
+5. **Anti-Sticker-Shock (Gas Guard)**: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.
 
 ## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
 | Key | Value |
