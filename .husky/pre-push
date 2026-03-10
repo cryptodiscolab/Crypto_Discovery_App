@@ -1,11 +1,9 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-echo "🛡️ Running Gitleaks (via scanner) before push..."
+echo "🛡️ [Zero-Leak Mandate] Running Gitleaks security scan before push..."
 npm run gitleaks-check
 
 if [ $? -ne 0 ]; then
-  echo "❌ Leak detected or scan failed. Push blocked!"
+  echo "❌ SECRET LEAK DETECTED! Push blocked by Lurah Protocol."
+  echo "   Run: npm run gitleaks-check — to see which file is leaking."
   exit 1
 fi
 
