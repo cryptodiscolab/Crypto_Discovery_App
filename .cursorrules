@@ -39,6 +39,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **Master Admin Addresses:**
   - Primary: `0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B`
   - Secondary: `0x455DF75735d2a18c26f0AfDefa93217B60369fe5`
+  - Tertiary: `0x52260c30697674a7C837FEB2af21bBf3606795C8`
 - **Admin Tools (Telegram)**:
   - `/audit`: Ecosystem audit.
   - `/user <wallet>`: Full Social Identity Lock audit.
