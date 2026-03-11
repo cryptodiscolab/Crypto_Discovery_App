@@ -24,10 +24,10 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 ## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
 | Component | Base Mainnet | Base Sepolia (Testnet) |
 |---|---|---|
-| **DailyApp (Tasks)** | `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` | `0xDe613DE5e6C0fB61012af83343f2b3c5F5461219` |
-| **MasterX (Points)** | (Pending) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
-| **Raffle (NFT)** | (Pending) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| **CMS (Content)** | (Pending) | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
+| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
+| **MasterX (Points)** | (Pending) | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
+| **Raffle (NFT)** | (Pending) | `0x012FAdd087540e1B51a587f420e77D007fED2a84` |
+| **CMS (Content)** | (Pending) | `0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302` |
 | **AirnodeRrpV0** | `0x32A334335EBe9d83dfB33B3EF803328e7529246E` | `0x2ab9f26E18b6103274414940251539D0105e2Add` |
 
 ## 🏛️ Core Competencies

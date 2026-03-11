@@ -11,7 +11,7 @@ export function EconomyMetrics() {
     const [loading, setLoading] = useState(true);
 
     // Check Verifier Role in Contract
-    const VERIFIER_ADDRESS = "0x455df75735d2a18c26f0afdefa93217b60369fe5"; // Standard Verifier
+    const VERIFIER_ADDRESS = "0x52260c30697674a7C837FEB2af21bBf3606795C8"; // Standard Verifier
     const { data: hasVerifierRole } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,

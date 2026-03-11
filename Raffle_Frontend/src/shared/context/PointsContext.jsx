@@ -14,6 +14,7 @@ export function PointsProvider({ children }) {
     const [pointsToNext, setPointsToNext] = useState(0);
     const [rankName, setRankName] = useState('Rookie');
     const [totalTasksCompleted, setTotalTasksCompleted] = useState(0);
+    const [profileData, setProfileData] = useState(null);
 
     // Loading States
     const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +96,7 @@ export function PointsProvider({ children }) {
                 userPointsRef.current = dbPoints; // Update ref
                 setUserTier(data.tier !== undefined ? Number(data.tier) : 0);
                 setRankName(data.rank_name || "Guest");
+                setProfileData(data); // Full view data (streaks, last claim, etc.)
 
                 // Log the sync with prev context
                 addSyncLog(forced ? 'forced' : 'refetch', dbPoints, dbPoints, prevVisual);
@@ -225,7 +227,8 @@ export function PointsProvider({ children }) {
     const value = {
         userPoints,
         userTier,
-        rankName,
+        rankName: profileData?.rank_name || rankName,
+        profileData,
         totalTasksCompleted,
         unclaimedRewards,
         setUnclaimedRewards, // Exposed for useRaffle to update localized state if needed

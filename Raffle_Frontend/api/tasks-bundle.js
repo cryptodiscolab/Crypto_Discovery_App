@@ -76,7 +76,17 @@ async function handleClaim(req, res) {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const xp = await getTaskReward(task_id);
+        let xp = await getTaskReward(task_id);
+
+        // 🛡️ Dynamic Multiplier for Raffle Tickets
+        if (task_id && task_id.startsWith('raffle_buy_')) {
+            const amountMatch = message.match(/Amount:\s*(\d+)/i);
+            if (amountMatch && amountMatch[1]) {
+                const amount = parseInt(amountMatch[1], 10);
+                if (amount > 0) xp = xp * amount;
+            }
+        }
+
         let targetId = null;
 
         if (task_id && task_id.startsWith('raffle_')) {
@@ -105,7 +115,17 @@ async function handleClaim(req, res) {
 
         if (error) throw error;
 
-        // 4. Log Activity
+        // Increment raffle tickets counter if it's a ticket purchase
+        if (task_id.startsWith('raffle_buy_')) {
+            const ticketAmount = message.match(/Amount:\s*(\d+)/i)?.[1];
+            const ticketCount = ticketAmount ? parseInt(ticketAmount, 10) : 1;
+            await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
+                p_wallet: wallet_address.toLowerCase(),
+                p_amount: ticketCount
+            });
+        }
+
+        // Log Activity
         let category = 'XP';
         let type = 'Task Claim';
         if (task_id.startsWith('raffle_buy_')) {
@@ -131,13 +151,24 @@ async function handleClaim(req, res) {
     }
 }
 
+
 async function handleVerify(req, res) {
     const { wallet_address, signature, message, task_id, platform, action_type } = req.body;
     try {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const xp = await getTaskReward(task_id);
+        let xp = await getTaskReward(task_id);
+
+        // 🛡️ Dynamic Multiplier for Raffle Tickets
+        if (task_id && task_id.startsWith('raffle_buy_')) {
+            const amountMatch = message.match(/Amount:\s*(\d+)/i);
+            if (amountMatch && amountMatch[1]) {
+                const amount = parseInt(amountMatch[1], 10);
+                if (amount > 0) xp = xp * amount;
+            }
+        }
+
         let targetId = null;
 
         if (task_id && task_id.startsWith('raffle_')) {

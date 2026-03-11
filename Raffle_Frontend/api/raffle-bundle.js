@@ -141,12 +141,16 @@ async function handleClaimPrize(req, res) {
 }
 
 async function handleLeaderboard(req, res) {
+    const { limit = 20, sort_by = 'raffle_wins' } = req.query;
     try {
+        const validSortKeys = ['raffle_wins', 'total_xp', 'raffles_created'];
+        const safeSort = validSortKeys.includes(sort_by) ? sort_by : 'raffle_wins';
+
         const { data, error } = await supabaseAdmin
-            .from('user_profiles')
-            .select('wallet_address, total_xp, raffle_wins, tier_id')
-            .order('raffle_wins', { ascending: false })
-            .limit(10);
+            .from('v_user_full_profile')
+            .select('wallet_address, display_name, pfp_url, total_xp, rank_name, raffle_wins, raffles_created, streak_count')
+            .order(safeSort, { ascending: false })
+            .limit(parseInt(limit));
 
         if (error) throw error;
         return res.status(200).json({ success: true, data });

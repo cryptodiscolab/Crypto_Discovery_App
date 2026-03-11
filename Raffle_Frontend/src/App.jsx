@@ -60,6 +60,7 @@ function App() {
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/profile/:userAddress" element={<ProfilePage />} />
                         <Route path="/campaigns" element={<CampaignsPage />} />
+                        <Route path="/create-raffle" element={<CreateRafflePage />} />
                         <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                       </Route>
                     </Routes>

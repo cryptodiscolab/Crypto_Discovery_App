@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { useUserInfo } from '../hooks/useContract';
 import { SBTUpgradeCard } from '../components/SBTUpgradeCard';
@@ -21,13 +22,15 @@ import {
   TransactionStatusLabel,
   TransactionStatusAction,
 } from '@coinbase/onchainkit/transaction';
-import { encodeFunctionData } from 'viem';
+import { usePriceOracle } from '../hooks/usePriceOracle';
+import { encodeFunctionData, formatUnits } from 'viem';
 
 export default function ProfilePage() {
   const { address } = useAccount();
+  const navigate = useNavigate();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
-  const { sbtThresholds, ecosystemSettings } = usePoints();
+  const { sbtThresholds, ecosystemSettings, profileData, refetch: refetchPoints } = usePoints();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
   // Edit Mode State
@@ -139,7 +142,8 @@ export default function ProfilePage() {
         total_xp: data.total_xp || 0,
         rankName: data.rank_name || 'Rookie',
         tier: data.tier || 0,
-        streakCount: data.streak_count || 0
+        streakCount: data.streak_count || 0,
+        lastDailyClaim: data.last_daily_bonus_claim
       });
       setPotentialTier(calculatePotentialTier(data.total_xp || 0));
     } else {
@@ -517,7 +521,7 @@ export default function ProfilePage() {
             </button>
 
             <button
-              onClick={() => setActiveModal('raffle')}
+              onClick={() => navigate('/create-raffle')}
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <Ticket size={18} />
@@ -574,18 +578,6 @@ export default function ProfilePage() {
               refetchSBT();
             }}
           />
-        )}
-        {activeModal === 'raffle' && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="glass-card w-full max-w-sm p-8 text-center space-y-4">
-              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto">
-                <Ticket size={32} className="text-orange-400" />
-              </div>
-              <h2 className="text-xl font-black text-white">RAFFLE V2 COMING SOON</h2>
-              <p className="text-xs text-slate-400">Raffle creation is currently being optimized for better transparency.</p>
-              <button onClick={() => setActiveModal(null)} className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all">CLOSE</button>
-            </div>
-          </div>
         )}
 
         {/* TIER ASCENSION CARD */}
@@ -717,6 +709,10 @@ function CreateTaskModal({ onClose }) {
 
   const isEth = selectedToken?.symbol === 'ETH';
   const rewardTokenAddr = selectedToken?.address || "0x0000000000000000000000000000000000000000";
+  
+  const { prices } = usePriceOracle(whitelist.map(t => t.address));
+  const currentPrice = prices[rewardTokenAddr?.toLowerCase()] || 0;
+  const rewardUsdValue = currentPrice * parseFloat(rewardTokens);
   
   // Dynamic fetches
   const rewardTokens = Number(ecosystemSettings?.sponsorship_reward_amount || 5);
@@ -911,44 +907,68 @@ function CreateTaskModal({ onClose }) {
           />
         </div>
 
-        <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 space-y-4">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Choose Payment Token</label>
-            <div className="grid grid-cols-2 gap-2">
+        <div className="p-5 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 space-y-5 relative overflow-hidden group">
+          {/* Subtle Glow Background */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-[60px] -mr-10 -mt-10" />
+          
+          <div className="space-y-3 relative z-10">
+            <div className="flex items-center justify-between px-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Reward Asset</label>
+              <div className="flex items-center gap-1.5 py-0.5 px-2 rounded-full bg-indigo-500/20 border border-indigo-500/20">
+                <Sparkles size={8} className="text-indigo-400" />
+                <span className="text-[8px] font-black text-indigo-400 uppercase">Creator Choice</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
               {whitelist.map((token) => (
                 <button
                   key={token.address}
                   onClick={() => setPaymentToken(token.address)}
-                  className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                  className={`relative flex items-center gap-2.5 px-4 py-3 rounded-2xl text-[11px] font-bold uppercase transition-all border ${
                     (paymentToken === token.address || (!paymentToken && token === selectedToken))
-                      ? 'bg-indigo-600 text-white' 
-                      : 'bg-zinc-800 text-zinc-500'
+                      ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-600/20 scale-[1.02]' 
+                      : 'bg-zinc-900/50 border-white/5 text-zinc-500 hover:border-white/10 hover:bg-zinc-800'
                   }`}
                 >
-                  {token.symbol}
+                  <div className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center">
+                    {token.symbol === 'ETH' ? '⟠' : token.symbol[0]}
+                  </div>
+                  <span>{token.symbol}</span>
+                  {(paymentToken === token.address || (!paymentToken && token === selectedToken)) && (
+                    <div className="absolute top-2 right-2 w-1 h-1 bg-white rounded-full animate-pulse" />
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-white/5">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-indigo-400">
-              <span>Platform Fee</span>
-              <span>${feeUsd.toFixed(2)} USDC</span>
+          <div className="space-y-3 pt-4 border-t border-white/5 relative z-10">
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+              <span className="text-slate-400">Platform Listing Fee</span>
+              <span className="text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-lg border border-emerald-400/20">${feeUsd.toFixed(2)} USDC</span>
             </div>
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-200">
-              <span>Reward Pool</span>
-              <span>{rewardTokens.toFixed(2)} {selectedToken?.symbol || 'TOKEN'}</span>
-            </div>
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-              <span>Duration</span>
-              <span>3 Days Active</span>
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+              <span className="text-slate-400">Campaign Reward Pool</span>
+              <div className="flex flex-col items-end gap-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-indigo-400 font-mono text-xs">{rewardTokens.toLocaleString()}</span>
+                  <span className="text-indigo-400/60">{selectedToken?.symbol || 'TOKEN'}</span>
+                </div>
+                {rewardUsdValue > 0 && (
+                  <span className="text-[9px] text-slate-500 font-medium">≈ ${rewardUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</span>
+                )}
+              </div>
             </div>
           </div>
-          <p className="text-[9px] text-slate-500 leading-relaxed italic">
-            Sponsorship includes platform fee and reward pool.
-            Native ETH or Creator Tokens can be used as reward.
-          </p>
+          
+          <div className="p-3 rounded-xl bg-black/40 border border-white/5 text-[9px] text-slate-500 leading-relaxed italic relative z-10">
+            <div className="flex items-start gap-2">
+              <Shield size={10} className="mt-0.5" />
+              <span>
+                Standard 3-day activation. Reward pool is distributed to users who complete all {tasksBatch.length} tasks in your batch.
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -985,6 +1005,7 @@ function CreateTaskModal({ onClose }) {
                       max_participants: 100,
                       txHash: receipt.transactionHash,
                       payment_token: rewardTokenAddr,
+                      reward_symbol: selectedToken?.symbol || 'TOKEN',
                       tasks_batch: tasksBatch.filter(t => t.title && t.link)
                     }
                   }),
@@ -1031,9 +1052,9 @@ function DailyClaimModal({ onClose, pointSettings, streakCount }) {
 
   const { stats: userData, refetch: refetchStats } = useUserInfo(address);
 
-  const lastDailyClaim = userData?.lastDailyBonusClaim
-    ? Number(userData.lastDailyBonusClaim)
-    : 0;
+  const lastDailyClaim = profileData?.lastDailyClaim
+    ? Number(new Date(profileData.lastDailyClaim).getTime() / 1000)
+    : (userData?.lastDailyBonusClaim ? Number(userData.lastDailyBonusClaim) : 0);
   const nextClaimTime = lastDailyClaim > 0 ? (lastDailyClaim + (ecosystemSettings?.daily_claim_cooldown_sec || 86400)) * 1000 : 0;
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls } from 'wagmi';
-import { encodeFunctionData, formatEther } from 'viem';
+import { encodeFunctionData, formatEther, decodeEventLog } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
 import { ABIS, CONTRACTS } from '../lib/contracts';
 import { awardTaskXP } from '../dailyAppLogic';
@@ -36,8 +36,8 @@ export function useRaffle() {
                 const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
 
-                // 1. Award XP (Internal Logic)
-                await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}`, 0);
+                // 1. Award XP (Internal Logic) - appended hash to allow multiple purchases
+                await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}_${hash}`, 0);
 
                 // 2. Log Activity (User History)
                 await fetch('/api/user-bundle', {
@@ -96,8 +96,8 @@ export function useRaffle() {
             const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            // 1. Award XP
-            await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}`, 0);
+            // 1. Award XP - appended callId to allow multiple purchases
+            await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}_${callId}`, 0);
 
             // 2. Log Activity
             await fetch('/api/user-bundle', {
@@ -193,7 +193,7 @@ export function useRaffle() {
         }
     };
 
-    const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH }) => {
+    const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH, extraMetadata }) => {
         const totalValue = (BigInt(depositETH) * 105n) / 100n;
 
         const hash = await writeContractAsync({
@@ -216,8 +216,27 @@ export function useRaffle() {
                 const message = `Log activity for ${address}\nAction: UGC Raffle Creation\nTimestamp: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
 
-                // Extract raffle ID from event if possible, or use a placeholder/hash
-                // For now, mirroring as Sync UGC Raffle
+                // Extract raffle ID from event
+                let raffleId = 0;
+                try {
+                    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+                    for (const log of receipt.logs) {
+                        try {
+                            const decoded = decodeEventLog({
+                                abi: ABIS.RAFFLE,
+                                data: log.data,
+                                topics: log.topics,
+                            });
+                            if (decoded.eventName === 'RaffleCreated') {
+                                raffleId = Number(decoded.args.raffleId);
+                                break;
+                            }
+                        } catch (e) { /* skip logs from other events */ }
+                    }
+                } catch (e) {
+                    console.error("Failed to extract raffle ID:", e);
+                }
+
                 await fetch('/api/user-bundle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -227,12 +246,14 @@ export function useRaffle() {
                         signature,
                         message,
                         payload: {
-                            raffle_id: 0, // In V1 we might need to fetch the next ID or rely on hash-based lookup
+                            raffle_id: raffleId || 0,
                             end_time: Math.floor(Date.now() / 1000) + (durationDays * 86400),
                             max_tickets: parseInt(maxTickets),
                             winnerCount: parseInt(winnerCount),
                             txHash: hash,
-                            depositETH: formatEther(totalValue)
+                            depositETH: formatEther(totalValue),
+                            metadata_uri: metadataURI,
+                            extra_metadata: extraMetadata
                         }
                     })
                 });

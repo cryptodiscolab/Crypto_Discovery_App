@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, BarChart, Plus, TrendingUp, Cpu } from 'lucide-react';
 import { useReadContract, useWriteContract } from 'wagmi';
-import { CONTRACTS, DAILY_APP_ABI } from '../../../lib/contracts';
+import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
+import { usePriceOracle } from '../../../hooks/usePriceOracle';
 
 import { usePoints } from '../../../shared/context/PointsContext';
 
@@ -22,6 +23,38 @@ export function BlockchainConfigSection() {
     const [econShares, setEconShares] = useState({ owner: '4000', ops: '2000', treasury: '2000', sbt: '2000' });
     const [tierWeights, setTierWeights] = useState({ diamond: '400', gold: '200', silver: '100', bronze: '50' });
     const [withdrawFee, setWithdrawFee] = useState('500');
+    const [sponsorSettings, setSponsorSettings] = useState({
+        fee: '1000000', // $1 USDC
+        minPool: '5000000000000000000', // 5 ETH/TOKEN
+        reward: '10000000000000000', // 0.01
+        tasks: '3'
+    });
+
+    const { prices } = usePriceOracle(ecosystemSettings?.whitelisted_tokens?.map(t => t.address) || []);
+    
+    // Derived USD values for indicators
+    const getUsdValue = (amount, isUsdc = false) => {
+        if (!amount) return 0;
+        if (isUsdc) return parseFloat(amount) / 1000000;
+        
+        // For reward tokens, we need to know WHICH token it is. 
+        // In Admin panel, it's a bit tricky because the 'minPool' or 'reward' 
+        // could be in ANY whitelisted token. We'll show valuation for ETH as a baseline or Creator Token.
+        const ethPrice = prices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || prices['0x4200000000000000000000000000000000000006'] || 0;
+        const raw = parseFloat(amount) / 1e18;
+        return raw * ethPrice;
+    };
+    const [autoApprove, setAutoApprove] = useState(true);
+
+    // System Architecture States
+    const [pointers, setPointers] = useState({
+        creatorToken: CONTRACTS.CREATOR_TOKEN || '',
+        usdcToken: CONTRACTS.USDC || '',
+        raffleContract: CONTRACTS.RAFFLE || '',
+        dailyApp: CONTRACTS.DAILY_APP || '',
+        masterX: CONTRACTS.MASTER_X || ''
+    });
+    const [newTokenWhitelist, setNewTokenWhitelist] = useState('');
 
     // 1. READ Global Rewards
     const { data: qDaily } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'dailyBonusAmount' });
@@ -47,6 +80,14 @@ export function BlockchainConfigSection() {
     const { data: qSWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'silverWeight' });
     const { data: qBWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'bronzeWeight' });
 
+    // 4. READ Additional DailyApp Economies
+    const { data: qWithdrawFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'withdrawalFeeBP' });
+    const { data: qSponsorFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
+    const { data: qMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
+    const { data: qRewardClaim } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
+    const { data: qTasksGoal } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'tasksForReward' });
+    const { data: qAutoApprove } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'autoApproveSponsorship' });
+
     useEffect(() => {
         if (qDaily) setRewards(prev => ({ ...prev, daily: qDaily.toString() }));
         if (qReferral) setRewards(prev => ({ ...prev, referral: qReferral.toString() }));
@@ -67,7 +108,14 @@ export function BlockchainConfigSection() {
         if (qGWeight) setTierWeights(prev => ({ ...prev, gold: qGWeight.toString() }));
         if (qSWeight) setTierWeights(prev => ({ ...prev, silver: qSWeight.toString() }));
         if (qBWeight) setTierWeights(prev => ({ ...prev, bronze: qBWeight.toString() }));
-    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qGWeight, qSWeight, qBWeight]);
+
+        if (qWithdrawFee) setWithdrawFee(qWithdrawFee.toString());
+        if (qSponsorFee) setSponsorSettings(prev => ({ ...prev, fee: qSponsorFee.toString() }));
+        if (qMinPool) setSponsorSettings(prev => ({ ...prev, minPool: qMinPool.toString() }));
+        if (qRewardClaim) setSponsorSettings(prev => ({ ...prev, reward: qRewardClaim.toString() }));
+        if (qTasksGoal) setSponsorSettings(prev => ({ ...prev, tasks: qTasksGoal.toString() }));
+        if (qAutoApprove !== undefined) setAutoApprove(!!qAutoApprove);
+    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qGWeight, qSWeight, qBWeight, qWithdrawFee, qSponsorFee, qMinPool, qRewardClaim, qTasksGoal, qAutoApprove]);
 
     const handleSaveGeneral = async () => {
         setIsSaving(true);
@@ -158,6 +206,54 @@ export function BlockchainConfigSection() {
                 args: [BigInt(tierWeights.diamond), BigInt(tierWeights.gold), BigInt(tierWeights.silver), BigInt(tierWeights.bronze)],
             });
             toast.success("Tier Weights Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleSaveEconomical = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Syncing Economic Indicators...");
+        try {
+            // 1. Withdrawal Fee
+            await writeContractAsync({
+                address: CONTRACTS.DAILY_APP,
+                abi: DAILY_APP_ABI,
+                functionName: 'setWithdrawalFeeBP',
+                args: [BigInt(withdrawFee)],
+            });
+            
+            // 2. Sponsorship Settings
+            await writeContractAsync({
+                address: CONTRACTS.DAILY_APP,
+                abi: DAILY_APP_ABI,
+                functionName: 'setSettings',
+                args: [BigInt(sponsorSettings.fee), BigInt(sponsorSettings.minPool), BigInt(sponsorSettings.reward), BigInt(sponsorSettings.tasks)],
+            });
+
+            // 3. Auto Approve
+            await writeContractAsync({
+                address: CONTRACTS.DAILY_APP,
+                abi: DAILY_APP_ABI,
+                functionName: 'setAutoApproveSponsorship',
+                args: [autoApprove],
+            });
+
+            toast.success("Economic Indicators Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleUpdatePointer = async (contract, abi, functionName, arg) => {
+        setIsSaving(true);
+        const tid = toast.loading(`Updating ${functionName}...`);
+        try {
+            await writeContractAsync({
+                address: contract,
+                abi: abi,
+                functionName: functionName,
+                args: Array.isArray(arg) ? arg : [arg],
+            });
+            toast.success("Transaction submitted!", { id: tid });
         } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
@@ -272,6 +368,112 @@ export function BlockchainConfigSection() {
                         <button onClick={handleSaveTierWeights} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
                             Update Tier Weights
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* ECONOMIC INDICATORS Card */}
+            <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4 rounded-2xl">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-400" /> ECONOMIC INDICATORS
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Withdrawal Fee BP</label>
+                        <input type="number" value={withdrawFee} onChange={e => setWithdrawFee(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Sponsor Fee (USDC)</label>
+                        <input type="number" value={sponsorSettings.fee} onChange={e => setSponsorSettings({ ...sponsorSettings, fee: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Min Pool Value (ETH Equiv)</label>
+                        <input type="number" value={sponsorSettings.minPool} onChange={e => setSponsorSettings({ ...sponsorSettings, minPool: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
+                        <p className="text-[9px] text-indigo-400/60 font-mono pl-1">≈ ${getUsdValue(sponsorSettings.minPool).toLocaleString(undefined, { maximumFractionDigits: 2 })} USD</p>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Reward Per Claim (ETH Equiv)</label>
+                        <input type="number" value={sponsorSettings.reward} onChange={e => setSponsorSettings({ ...sponsorSettings, reward: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
+                        <p className="text-[9px] text-indigo-400/60 font-mono pl-1">≈ ${getUsdValue(sponsorSettings.reward).toLocaleString(undefined, { maximumFractionDigits: 4 })} USD</p>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Tasks Goal</label>
+                        <input type="number" value={sponsorSettings.tasks} onChange={e => setSponsorSettings({ ...sponsorSettings, tasks: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
+                    </div>
+                    <div className="space-y-1 flex flex-col justify-end">
+                        <label className="text-[10px] font-black text-slate-500 uppercase mb-2">Auto Approve</label>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-[10px] font-black ${!autoApprove ? 'text-white' : 'text-slate-500'}`}>OFF</span>
+                            <button onClick={() => setAutoApprove(!autoApprove)} className={`w-12 h-6 rounded-full p-1 transition-colors ${autoApprove ? 'bg-indigo-600' : 'bg-slate-700'}`}>
+                                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${autoApprove ? 'translate-x-6' : 'translate-x-0'}`} />
+                            </button>
+                            <span className={`text-[10px] font-black ${autoApprove ? 'text-white' : 'text-slate-500'}`}>ON</span>
+                        </div>
+                    </div>
+                </div>
+                <button onClick={handleSaveEconomical} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                    Update Economic Indicators
+                </button>
+            </div>
+
+            {/* SYSTEM ARCHITECTURE POINTERS (CRITICAL) */}
+            <div className="glass-card p-6 bg-red-950/10 border border-red-500/10 space-y-6 rounded-2xl">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-red-400" /> SYSTEM ARCHITECTURE POINTERS
+                </h3>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                    DANGEROUS: Core contract linkages. Only modify if redeploying modules.
+                </p>
+
+                <div className="space-y-4">
+                    {/* DailyApp -> MasterX Link */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div className="md:col-span-2 space-y-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">DailyApp → MasterX Pointer</label>
+                            <input type="text" value={pointers.masterX} onChange={e => setPointers({ ...pointers, masterX: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
+                        </div>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setMasterX', pointers.masterX)} className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-400">Update MasterX Link</button>
+                    </div>
+
+                    {/* MasterX -> Raffle Link */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div className="md:col-span-2 space-y-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">MasterX → Raffle Pointer</label>
+                            <input type="text" value={pointers.raffleContract} onChange={e => setPointers({ ...pointers, raffleContract: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
+                        </div>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.MASTER_X, MASTER_X_ABI, 'setRaffleContract', pointers.raffleContract)} className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-400">Update Raffle Link</button>
+                    </div>
+
+                    {/* DailyApp Tokens */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end border-t border-white/5 pt-4">
+                        <div className="md:col-span-2 space-y-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">USDCToken Address (DailyApp)</label>
+                            <input type="text" value={pointers.usdcToken} onChange={e => setPointers({ ...pointers, usdcToken: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
+                        </div>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setUSDCToken', pointers.usdcToken)} className="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl text-[9px] font-black uppercase text-white">Set USDC Token</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div className="md:col-span-2 space-y-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">CreatorToken Address (DailyApp)</label>
+                            <input type="text" value={pointers.creatorToken} onChange={e => setPointers({ ...pointers, creatorToken: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
+                        </div>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setCreatorToken', pointers.creatorToken)} className="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl text-[9px] font-black uppercase text-white">Set Creator Token</button>
+                    </div>
+
+                    {/* Payment Token Whitelist Management */}
+                    <div className="space-y-3 pt-4 border-t border-white/5">
+                        <label className="text-[9px] font-black text-slate-500 uppercase">Payment Token Whitelist Management</label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div className="md:col-span-2 space-y-1">
+                                <input type="text" value={newTokenWhitelist} onChange={e => setNewTokenWhitelist(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="Token Address (0x...)" />
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist, true])} className="flex-1 bg-green-600/20 hover:bg-green-600/40 border border-green-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-green-400">Whitelist</button>
+                                <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist, false])} className="flex-1 bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-500">Remove</button>
+                            </div>
+                        </div>
+                        <p className="text-[9px] text-slate-600 italic">Native ETH (0x00...0) is whitelisted by default. Use this to allow or block custom ERC20 tokens for sponsorships.</p>
                     </div>
                 </div>
             </div>

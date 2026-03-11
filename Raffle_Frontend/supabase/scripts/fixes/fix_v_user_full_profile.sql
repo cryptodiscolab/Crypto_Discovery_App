@@ -47,6 +47,8 @@ SELECT
     COALESCE(up.total_xp, 0) as total_xp,
     COALESCE(up.tier, 1) as tier,
     up.referred_by,
+    up.last_daily_bonus_claim,
+    up.streak_count,
     -- Dynamic Rank Name based on PERCENT_RANK
     CASE 
         WHEN ru.tier_override IS NOT NULL THEN 

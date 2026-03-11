@@ -115,10 +115,10 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V12** | `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` | `0xDe613DE5e6C0fB61012af83343f2b3c5F5461219` |
-| **MasterX V2** | `[RESERVED]` | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
-| **Raffle V2** | `[RESERVED]` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| **CMS V2** | `[RESERVED]` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
+| **DailyApp V12** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
+| **MasterX V2** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
+| **Raffle V2** | `[RESERVED]` | `0x012FAdd087540e1B51a587f420e77D007fED2a84` |
+| **CMS V2** | `[RESERVED]` | `0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🛠️ Kompetensi Utama

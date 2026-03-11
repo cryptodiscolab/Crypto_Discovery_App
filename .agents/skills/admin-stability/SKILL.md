@@ -19,7 +19,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 |---|---|
 | Admin FIDs | `1477344` (Farcaster) |
 | Master Admin 1 | `0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B` |
-| Master Admin 2 | `0x455DF75735d2a18c26f0AfDefa93217B60369fe5` |
+| Master Admin 2 | `0x52260c30697674a7C837FEB2af21bBf3606795C8` |
 | P&L Metrics | `Total Pool`, `Locked Rewards`, `Net Surplus` |
 | SBT Weights | `Proportional Distribution (100% Total)` |
 

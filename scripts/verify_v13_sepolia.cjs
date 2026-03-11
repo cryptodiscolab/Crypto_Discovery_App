@@ -9,12 +9,12 @@ const BASESCAN_API_URL = 'https://api.etherscan.io/v2/api?chainid=84532';
 
 const contract = {
     name: 'DailyAppV13',
-    address: '0xDe613DE5e6C0fB61012af83343f2b3c5F5461219',
+    address: '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571',
     contractFile: 'contracts/DailyAppV13.sol',
     constructorArgs: [
         '0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c', // creatorToken
         '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // usdcToken
-        '0x455DF75735d2a18c26f0AfDefa93217B60369fe5', // initialOwner
+        '0x52260c30697674a7C837FEB2af21bBf3606795C8', // initialOwner
     ],
 };
 

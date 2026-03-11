@@ -5,7 +5,7 @@ async function main() {
         { name: 'MasterX (Root)', addr: '0xf074b0457d5c092bb67e62734b13c5f4cbc69e89' },
         { name: 'MasterX (Frontend)', addr: '0xd7f6d4589a04f51d22b3a5965860eb40fb219c78' },
         { name: 'CMS (Root)', addr: '0xf55280bba6f34c68b1459afd70b8798a07a8a613' },
-        { name: 'CMS (Frontend)', addr: '0x555d06933cc45038c42a1ba1f74140a5e4e0695d' }
+        { name: 'CMS (Frontend)', addr: '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302' }
     ];
 
     const provider = ethers.provider;

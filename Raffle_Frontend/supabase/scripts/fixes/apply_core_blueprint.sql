@@ -70,13 +70,13 @@ FOR ALL TO public
 USING (
     LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') IN (
         LOWER('0x0845204b4b5e5f8aa7a0cfd2c6c6b5e8d4f3e2d1'), -- Base Mainnet
-        LOWER('0x455DF75735d2a18c26f0AfDefa93217B60369fe5')  -- Base Sepolia
+        LOWER('0x52260c30697674a7C837FEB2af21bBf3606795C8')  -- Base Sepolia
     )
 )
 WITH CHECK (
     LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') IN (
         LOWER('0x0845204b4b5e5f8aa7a0cfd2c6c6b5e8d4f3e2d1'),
-        LOWER('0x455DF75735d2a18c26f0AfDefa93217B60369fe5') 
+        LOWER('0x52260c30697674a7C837FEB2af21bBf3606795C8') 
     )
 );
 

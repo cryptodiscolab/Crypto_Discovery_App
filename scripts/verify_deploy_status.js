@@ -12,10 +12,10 @@ const sepoliaClient = createPublicClient({
 });
 
 const addresses = [
-  { name: 'DailyApp V13.1', addr: '0xEF8ab11E070359B9C0aA367656893B029c1d04d4' },
-  { name: 'MasterX', addr: '0x78a566a11AcDA14b2A4F776227f61097C7381C84' },
-  { name: 'Raffle', addr: '0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08' },
-  { name: 'CMS V2', addr: '0x555D06933CC45038c42a1ba1F74140A5e4E0695d' }
+  { name: 'DailyApp V13.1', addr: '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571' },
+  { name: 'MasterX', addr: '0x1ED8B135F01522505717D1E620c4EF869D7D25e7' },
+  { name: 'Raffle', addr: '0x012FAdd087540e1B51a587f420e77D007fED2a84' },
+  { name: 'CMS V2', addr: '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302' }
 ];
 
 console.log('--- VERIFYING ON BASE MAINNET ---');

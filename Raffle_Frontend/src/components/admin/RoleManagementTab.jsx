@@ -14,7 +14,7 @@ export function RoleManagementTab() {
     const { grantRole, revokeRole } = useDailyAppAdmin();
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
-    const [verifierAddress, setVerifierAddress] = useState('0x455DF75735d2a18c26f0AfDefa93217B60369fe5'); // Default derived from server .env
+    const [verifierAddress, setVerifierAddress] = useState('0x52260c30697674a7C837FEB2af21bBf3606795C8'); // Default derived from server .env
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     // Operators list (fetched from database)

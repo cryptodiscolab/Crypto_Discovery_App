@@ -3,7 +3,7 @@ require('dotenv').config();
 
 async function main() {
     const MASTER_X_ADDR = '0xd7f6d4589a04f51d22b3a5965860eb40fb219c78';
-    const CMS_ADDR = '0x555d06933cc45038c42a1ba1f74140a5e4e0695d';
+    const CMS_ADDR = '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302';
 
     const masterABI = [
         "function totalSBTPoolBalance() view returns (uint256)",

@@ -6,7 +6,7 @@ async function main() {
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const wallet = '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'.toLowerCase();
+    const wallet = '0x52260c30697674a7C837FEB2af21bBf3606795C8'.toLowerCase();
 
     console.log('--- USER PROFILE ---');
     const { data: profile, error: pErr } = await supabase

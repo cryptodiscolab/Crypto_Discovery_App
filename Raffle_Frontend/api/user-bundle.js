@@ -16,7 +16,7 @@ const rpcClient = createPublicClient({
 });
 
 // ZERO-HARDCODE: Source from Env with safe production fallback
-const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
+const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571';
 const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
 
 export default async function handler(req, res) {
@@ -549,31 +549,84 @@ async function handleSyncUgcRaffle(req, res) {
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { raffle_id, end_time, max_tickets, winnerCount, txHash, depositETH } = payload;
+        const { raffle_id, end_time, max_tickets, winnerCount, txHash, depositETH, metadata_uri, extra_metadata } = payload;
+        const prizePool = depositETH ? parseFloat(depositETH) / 1.05 : 0;
 
         // 1. Mirror to raffles table
         const { error: raffleErr } = await supabaseAdmin.from('raffles').upsert({
             id: raffle_id,
             creator_address: wallet.toLowerCase(),
             sponsor_address: wallet.toLowerCase(),
-            end_time,
+            end_time: end_time ? new Date(end_time * 1000).toISOString() : null,
             max_tickets: parseInt(max_tickets) || 100,
+            prize_pool: prizePool,
+            metadata_uri: metadata_uri || null,
             is_active: true,
+            // Rich Metadata mapping
+            title: extra_metadata?.title || null,
+            description: extra_metadata?.description || null,
+            image_url: extra_metadata?.image || null,
+            category: extra_metadata?.category || 'NFT',
+            external_link: extra_metadata?.external_link || null,
+            twitter_link: extra_metadata?.twitter || null,
+            min_sbt_level: extra_metadata?.min_sbt_level || 0,
             updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
 
         if (raffleErr) throw raffleErr;
 
-        // 2. Rich Activity Logging
+        // 2. Award Creator XP for Raffle Launch
+        try {
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_create').single();
+            const creatorXp = setting?.points_value || 500;
+
+            const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
+                wallet_address: wallet.toLowerCase(),
+                task_id: `raffle_create_${raffle_id}`,
+                xp_earned: creatorXp,
+                platform: 'system',
+                action_type: 'raffle_create',
+                target_id: String(raffle_id)
+            });
+
+            if (!claimErr) {
+                await logActivity({
+                    wallet,
+                    category: 'XP',
+                    type: 'Task Verify',
+                    description: `Awarded ${creatorXp} XP for Creating Raffle #${raffle_id}`,
+                    amount: creatorXp,
+                    symbol: 'XP',
+                    txHash
+                });
+            } else if (claimErr.code !== '23505') {
+                console.warn('[SyncUgcRaffle] XP Award Warning:', claimErr);
+            }
+        } catch (xpErr) {
+            console.error('[SyncUgcRaffle] XP Award Error:', xpErr);
+        }
+
+        // 3. Increment raffles_created counter
+        await supabaseAdmin.rpc('fn_increment_raffles_created', { p_wallet: wallet.toLowerCase() });
+
+        // 4. Rich Activity Logging
         await logActivity({
             wallet,
             category: 'PURCHASE',
             type: 'UGC Raffle Launch',
-            description: `Launched sponsored raffle #${raffle_id} with ${winnerCount} winner(s)`,
+            description: `Launched sponsored raffle: ${extra_metadata?.title || raffle_id}`,
             amount: parseFloat(depositETH),
             symbol: 'ETH',
+
+
             txHash,
-            metadata: { raffle_id, winnerCount, max_tickets }
+            metadata: { 
+                raffle_id, 
+                winnerCount, 
+                max_tickets,
+                title: extra_metadata?.title,
+                category: extra_metadata?.category
+            }
         });
 
         return res.status(200).json({ success: true });

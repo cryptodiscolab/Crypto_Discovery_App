@@ -5,7 +5,7 @@ async function main() {
     const addresses = [
         { name: "ENV:MASTER_X", addr: process.env.MASTER_X_ADDRESS },
         { name: "ENV:DAILY_APP", addr: process.env.DAILY_APP_ADDRESS },
-        { name: "RULE:MASTER_X_V2", addr: "0x78a566a11AcDA14b2A4F776227f61097C7381C84" },
+        { name: "RULE:MASTER_X_V2", addr: "0x1ED8B135F01522505717D1E620c4EF869D7D25e7" },
         { name: "RULE:DAILY_APP_V12", addr: "0xfc12f4FEFf825860c5145680bde38BF222cC669A" }
     ];
 

@@ -41,19 +41,23 @@ export function useNFTTiers() {
     })), [bConfig, sConfig, gConfig, pConfig, dConfig, bURI, sURI, gURI, pURI, dURI]);
 
     // Global Economic Variables
-    const { data: tokenPrice } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'tokenPriceUSD' });
-    const { data: packB } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'packagePricesUSD', args: [1] });
-    const { data: packS } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'packagePricesUSD', args: [2] });
-    const { data: packG } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'packagePricesUSD', args: [3] });
+    const { data: withdrawalFee } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'withdrawalFeeBP' });
+    const { data: dailyBonus } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'dailyBonusAmount' });
+    const { data: sponsorFee } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'sponsorshipPlatformFee' });
+    const { data: autoApprove } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'autoApproveSponsorship' });
 
     const economy = useMemo(() => ({
         tokenPriceUSD: tokenPrice ? formatEther(tokenPrice) : "0",
+        withdrawalFeeBP: withdrawalFee ? Number(withdrawalFee) : 0,
+        dailyBonusAmount: dailyBonus ? Number(dailyBonus) : 0,
+        sponsorshipPlatformFee: sponsorFee ? Number(sponsorFee) : 0,
+        autoApproveSponsorship: !!autoApprove,
         packs: {
             bronze: packB ? Number(packB) : 0,
             silver: packS ? Number(packS) : 0,
             gold: packG ? Number(packG) : 0
         }
-    }), [tokenPrice, packB, packS, packG]);
+    }), [tokenPrice, packB, packS, packG, withdrawalFee, dailyBonus, sponsorFee, autoApprove]);
 
     const updateEconomy = async (tokenP, b, s, g) => {
         // This would require two separate transactions usually, or a batch function if exists.
@@ -72,6 +76,78 @@ export function useNFTTiers() {
                 args: [parseEther(tokenP)]
             });
         }
+    };
+
+    const setCreatorToken = async (tokenAddr) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setCreatorToken',
+            args: [tokenAddr]
+        });
+    };
+
+    const setUSDCToken = async (tokenAddr) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setUSDCToken',
+            args: [tokenAddr]
+        });
+    };
+
+    const setMasterX = async (masterAddr) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setMasterX',
+            args: [masterAddr]
+        });
+    };
+
+    const setPaymentTokenStatus = async (tokenAddr, status) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setAllowedToken',
+            args: [tokenAddr, status]
+        });
+    };
+
+    const setWithdrawalFeeBP = async (feeBP) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setWithdrawalFeeBP',
+            args: [BigInt(feeBP)]
+        });
+    };
+
+    const setDailyBonusAmount = async (amount) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setDailyBonusAmount',
+            args: [BigInt(amount)]
+        });
+    };
+
+    const setAutoApproveSponsorship = async (status) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setAutoApproveSponsorship',
+            args: [status]
+        });
+    };
+
+    const setSponsorshipSettings = async (fee, minPool, rewardClaim, tasksGoal) => {
+        return await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setSettings',
+            args: [BigInt(fee), BigInt(minPool), BigInt(rewardClaim), BigInt(tasksGoal)]
+        });
     };
 
     const updateTierConfig = async (id, points, price, multiplier, bonus, maxSupply, isOpen) => {
@@ -122,5 +198,23 @@ export function useNFTTiers() {
 
     const refetch = () => { r1(); r2(); r3(); r4(); r5(); };
 
-    return { tiers, economy, updateTierConfig, updateBatchConfig, updateTierURI, toggleTier, updateEconomy, mintTier, refetch };
+    return { 
+        tiers, 
+        economy, 
+        updateTierConfig, 
+        updateBatchConfig, 
+        updateTierURI, 
+        toggleTier, 
+        updateEconomy, 
+        mintTier, 
+        setCreatorToken,
+        setUSDCToken,
+        setMasterX,
+        setPaymentTokenStatus,
+        setWithdrawalFeeBP,
+        setDailyBonusAmount,
+        setAutoApproveSponsorship,
+        setSponsorshipSettings,
+        refetch 
+    };
 }

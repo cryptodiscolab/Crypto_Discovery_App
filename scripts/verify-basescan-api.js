@@ -23,7 +23,7 @@ const BASESCAN_API_URL = 'https://api.etherscan.io/v2/api?chainid=84532';
 const CONTRACTS = [
     {
         name: 'CryptoDiscoMasterX',
-        address: '0x78a566a11AcDA14b2A4F776227f61097C7381C84',
+        address: '0x1ED8B135F01522505717D1E620c4EF869D7D25e7',
         contractFile: 'contracts/CryptoDiscoMasterX.sol',
         constructorArgs: [
             '0x73F76B2B436E2E50BB6F81A6E33A42875F1CDFF3', // opsWallet
@@ -33,21 +33,21 @@ const CONTRACTS = [
     },
     {
         name: 'CryptoDiscoRaffle',
-        address: '0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08',
+        address: '0x012FAdd087540e1B51a587f420e77D007fED2a84',
         contractFile: 'contracts/CryptoDiscoRaffle.sol',
         constructorArgs: [
-            '0x78a566a11AcDA14b2A4F776227f61097C7381C84', // masterX
+            '0x1ED8B135F01522505717D1E620c4EF869D7D25e7', // masterX
             '0x2ab9f26E18b6103274414940251539D0105e2Add', // airnodeRrp
         ],
     },
     {
         name: 'DailyAppV13',
-        address: '0xDe613DE5e6C0fB61012af83343f2b3c5F5461219',
+        address: '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571',
         contractFile: 'contracts/DailyAppV13.sol',
         constructorArgs: [
             '0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c', // creatorToken
             '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // usdcToken
-            '0x455DF75735d2a18c26f0AfDefa93217B60369fe5', // initialOwner
+            '0x52260c30697674a7C837FEB2af21bBf3606795C8', // initialOwner
         ],
     },
 ];

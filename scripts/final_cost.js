@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-    const deployer = "0x455DF75735d2a18c26f0AfDefa93217B60369fe5";
+    const deployer = "0x52260c30697674a7C837FEB2af21bBf3606795C8";
     const history = await hre.ethers.provider.getHistory ?
         await hre.ethers.provider.getHistory(deployer) :
         []; // getHistory is not always available in hardhat provider

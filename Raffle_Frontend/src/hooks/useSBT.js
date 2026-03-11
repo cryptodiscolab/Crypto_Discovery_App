@@ -3,7 +3,7 @@ import { ABIS } from '../lib/contracts';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84";
+const CONTRACT_ADDRESS = import.meta.env.VITE_MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
 
 export function useSBT() {
     const { address, isConnected } = useAccount();
@@ -178,6 +178,24 @@ export function useSBT() {
         });
     };
 
+    const setRaffleContract = async (raffleAddr) => {
+        return await writeContractAsync({
+            address: CONTRACT_ADDRESS,
+            abi: ABIS.MASTER_X,
+            functionName: 'setRaffleContract',
+            args: [raffleAddr],
+        });
+    };
+
+    const setDailyApp = async (dailyAddr, isSatellite) => {
+        return await writeContractAsync({
+            address: CONTRACT_ADDRESS,
+            abi: ABIS.MASTER_X,
+            functionName: 'setSatelliteStatus',
+            args: [dailyAddr, isSatellite],
+        });
+    };
+
     const setTierWeights = async (d, p, g, s, b) => {
         return await writeContractAsync({
             address: CONTRACT_ADDRESS,
@@ -301,6 +319,8 @@ export function useSBT() {
         updateTier,
         withdrawTreasury,
         setMasterParams,
+        setRaffleContract,
+        setDailyApp,
         setTierWeights,
         syncTiersToContract,
         refetchAll,

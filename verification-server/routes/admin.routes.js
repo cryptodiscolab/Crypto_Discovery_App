@@ -26,7 +26,7 @@ router.post('/sync', async (req, res) => {
         // Verify Admin Privilege
         const admins = [
             '0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B'.toLowerCase(),
-            '0x455DF75735d2a18c26f0AfDefa93217B60369fe5'.toLowerCase()
+            '0x52260c30697674a7C837FEB2af21bBf3606795C8'.toLowerCase()
         ];
         if (!admins.includes(wallet_address.toLowerCase())) {
             return res.status(403).json({ success: false, error: '[Security] Unauthorized: Admin only' });

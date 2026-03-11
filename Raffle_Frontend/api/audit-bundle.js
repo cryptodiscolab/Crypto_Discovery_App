@@ -5,8 +5,8 @@ import { verifyMessage } from "viem";
 // ── CONFIG ─────────────────────────────────────────────────────
 // Fix: Alchemy Free Tier strictly limits eth_getLogs to 10 blocks.
 // We force the use of Base Sepolia Public Node to allow 5000 block ranges.
-const MASTER_X = process.env.VITE_MASTER_X_ADDRESS || process.env.MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84";
-const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || "0xEF8ab11E070359B9C0aA367656893B029c1d04d4";
+const MASTER_X = process.env.VITE_MASTER_X_ADDRESS || process.env.MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
+const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || "0x87a3d1203Bf20E7dF5659A819ED79a67b236F571";
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

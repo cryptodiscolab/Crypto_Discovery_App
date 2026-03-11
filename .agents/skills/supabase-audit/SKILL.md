@@ -25,7 +25,7 @@ Audit skema database, kebijakan RLS, dan fungsi SQL wajib mematuhi aturan keaman
 |---|---|
 | Supabase URL | `https://rbgzwhsdqnhwrwimjjfm.supabase.co` |
 | Master Admin 1 | `0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B` |
-| Master Admin 2 | `0x455DF75735d2a18c26f0AfDefa93217B60369fe5` |
+| Master Admin 2 | `0x52260c30697674a7C837FEB2af21bBf3606795C8` |
 
 ## 🛡️ Kompetensi Inti
 

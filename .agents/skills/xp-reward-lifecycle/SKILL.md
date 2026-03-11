@@ -13,7 +13,7 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 | Key | Value |
 |---|---|
 | DailyApp V12 (Latest) | `0xfc12f4FEFf825860c5145680bde38BF222cC669A` |
-| MasterX V2 (Latest) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
+| MasterX V2 (Latest) | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
 
 ### 3. Bahasa & Komunikasi
 - **Technical/Chat**: **Bahasa Indonesia**.

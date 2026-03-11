@@ -14,10 +14,10 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Env Key | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **DailyApp (Tasks)** | `0xEF8ab11E070359B9C0aA367656893B029c1d04d4` | `0xDe613DE5e6C0fB61012af83343f2b3c5F5461219` | `VITE_V12_CONTRACT_ADDRESS` | ✅ DEPLOYED |
-| **MasterX (XP)** | `[RESERVED]` | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `VITE_MASTER_X_ADDRESS` | ❌ SEPOLIA ONLY |
-| **Raffle** | `[RESERVED]` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `VITE_RAFFLE_ADDRESS` | ❌ SEPOLIA ONLY |
-| **CMS V2** | `[RESERVED]` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `VITE_CMS_CONTRACT_ADDRESS` | ❌ SEPOLIA ONLY |
+| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` | `VITE_V12_CONTRACT_ADDRESS` | ✅ DEPLOYED |
+| **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` | `VITE_MASTER_X_ADDRESS` | ❌ SEPOLIA ONLY |
+| **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` | `VITE_RAFFLE_ADDRESS` | ❌ SEPOLIA ONLY |
+| **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS` | ❌ SEPOLIA ONLY |
 
 - **Reward Logic**: Must use `Accumulated Reward Per Share` with `1e18` precision.
 - **Safety**: `emergencyWithdraw` must always protect `totalLockedRewards`. Use `unchecked` blocks for non-overflowing arithmetic.
@@ -38,7 +38,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 ## 5. AUTHENTICATION, ADMIN, & SECURITY (THE PROTECTOR)
 - **Master Admin Addresses:**
   - Primary: `0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B`
-  - Secondary: `0x455DF75735d2a18c26f0AfDefa93217B60369fe5`
+  - Secondary: `0x52260c30697674a7C837FEB2af21bBf3606795C8`
   - Tertiary: `0x52260c30697674a7C837FEB2af21bBf3606795C8`
 - **Admin Tools (Telegram)**:
   - `/audit`: Ecosystem audit.

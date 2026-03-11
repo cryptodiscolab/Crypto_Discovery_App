@@ -3,7 +3,7 @@
 -- ==============================================================================
 -- Grant INSERT/UPDATE/DELETE permissions to:
 -- 1. Smart Wallet (Old Admin): 0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B
--- 2. Deployer Wallet (New Admin): 0x455DF75735d2a18c26f0AfDefa93217B60369fe5
+-- 2. Deployer Wallet (New Admin): 0x52260c30697674a7C837FEB2af21bBf3606795C8
 -- ==============================================================================
 
 -- 1. Drop the old restrictive policy (if it exists)
@@ -16,13 +16,13 @@ CREATE POLICY "Admin can manage tasks"
     USING (
         LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') IN (
             LOWER('0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B'), -- Smart Wallet
-            LOWER('0x455DF75735d2a18c26f0AfDefa93217B60369fe5')  -- Deployer Wallet (You)
+            LOWER('0x52260c30697674a7C837FEB2af21bBf3606795C8')  -- Deployer Wallet (You)
         )
     )
     WITH CHECK (
         LOWER(current_setting('request.headers', true)::json->>'x-user-wallet') IN (
             LOWER('0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B'), -- Smart Wallet
-            LOWER('0x455DF75735d2a18c26f0AfDefa93217B60369fe5')  -- Deployer Wallet (You)
+            LOWER('0x52260c30697674a7C837FEB2af21bBf3606795C8')  -- Deployer Wallet (You)
         )
     );
 

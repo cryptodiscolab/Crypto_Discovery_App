@@ -17,8 +17,8 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 ### 2. Verified Infrastructure Reference (DO NOT GUESS)
 | Key | Value |
 |---|---|
-| Raffle (Main) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| MasterX V2 (Latest) | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` |
+| Raffle (Main) | `0x012FAdd087540e1B51a587f420e77D007fED2a84` |
+| MasterX V2 (Latest) | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
 
 ### 3. Bahasa & Komunikasi

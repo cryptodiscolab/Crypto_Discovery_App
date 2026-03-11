@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 
 async function main() {
-    const CMS_ADDR = '0x555d06933cc45038c42a1ba1f74140a5e4e0695d';
+    const CMS_ADDR = '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302';
     const cmsABI = [
         "function getFeatureCards() external view returns (string)",
         "function updateFeatureCards(string jsonContent) external"

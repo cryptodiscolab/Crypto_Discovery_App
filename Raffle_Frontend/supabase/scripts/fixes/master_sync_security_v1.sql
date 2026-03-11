@@ -97,7 +97,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
     RETURN LOWER(wallet) IN (
         LOWER('0x08452c1bdAa6aCD11f6cCf5268d16e2AC29c204B'),  -- Primary admin
-        LOWER('0x455DF75735d2a18c26f0AfDefa93217B60369fe5')   -- Secondary admin
+        LOWER('0x52260c30697674a7C837FEB2af21bBf3606795C8')   -- Secondary admin
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

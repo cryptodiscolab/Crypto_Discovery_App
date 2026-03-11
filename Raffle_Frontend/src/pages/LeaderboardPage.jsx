@@ -19,6 +19,8 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
   };
 
   const displayName = getDisplayAddress(user.display_name, user.wallet_address);
+  const streakCount = user.streak_count || 0;
+  const raffleWins = user.raffle_wins || 0;
 
   // Rank Colors
   const getRankColor = (r) => {
@@ -64,10 +66,15 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
           <span className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-2">
             {user.rank_name || 'Rookie'} 
             {isCurrentUser && <span className="text-yellow-500 font-bold">(You)</span>}
-            {user.streak_count > 0 && (
+            {streakCount > 0 && (
               <span className="flex items-center gap-0.5 text-orange-500 font-black italic text-[10px]">
                 <Sparkles size={10} className="fill-current" />
-                {user.streak_count}d
+                {streakCount}d
+              </span>
+            )}
+            {raffleWins > 0 && (
+              <span className="flex items-center gap-0.5 text-purple-400 font-black text-[10px]">
+                🏆 {raffleWins}W
               </span>
             )}
           </span>
@@ -84,6 +91,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
     </div>
   );
 }
+
 
 export function LeaderboardPage() {
   const { address } = useAccount();

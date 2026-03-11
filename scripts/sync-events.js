@@ -17,7 +17,7 @@ const { createClient } = require("@supabase/supabase-js");
 // --- CONFIG ---
 const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
 // ✅ Address baru pasca-redeploy (punya PLATINUM + DIAMOND tier)
-const MASTER_X_ADDR = process.env.MASTER_X_ADDRESS || "0x78a566a11AcDA14b2A4F776227f61097C7381C84";
+const MASTER_X_ADDR = process.env.MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
 const DAILY_APP_ADDR = process.env.DAILY_APP_ADDRESS || "0xfc12f4FEFf825860c5145680bde38BF222cC669A";
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

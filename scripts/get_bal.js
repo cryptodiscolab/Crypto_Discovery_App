@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 async function main() {
-    const b = await hre.ethers.provider.getBalance("0x455DF75735d2a18c26f0AfDefa93217B60369fe5");
+    const b = await hre.ethers.provider.getBalance("0x52260c30697674a7C837FEB2af21bBf3606795C8");
     console.log("BAL:" + hre.ethers.formatEther(b));
 }
 main().catch(console.error);
