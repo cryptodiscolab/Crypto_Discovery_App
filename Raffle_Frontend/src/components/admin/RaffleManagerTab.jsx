@@ -10,7 +10,7 @@ import {
 } from '@coinbase/onchainkit/transaction';
 import { encodeFunctionData } from 'viem';
 import { RAFFLE_ABI, CONTRACTS } from '../../lib/contracts';
-import { useRaffleList, useRaffleInfo } from '../../hooks/useRaffle';
+import { useRaffleList, useRaffleInfo, useRaffle } from '../../hooks/useRaffle';
 import toast from 'react-hot-toast';
 
 const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE || "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08";

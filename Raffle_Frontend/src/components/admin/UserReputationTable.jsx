@@ -220,7 +220,7 @@ export default function UserReputationTable() {
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                         <Calculator className="w-3.5 h-3.5 text-indigo-500" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-tighter">Profit Audit (30%)</span>
+                        <span className="text-[10px] font-black text-white uppercase tracking-tighter">Revenue Share Simulation (30%)</span>
                     </div>
                     <div className="bg-black px-2 py-1 rounded border border-white/10">
                         <input
@@ -236,6 +236,9 @@ export default function UserReputationTable() {
                     <span className="text-slate-600 tracking-widest">Share Pool</span>
                     <span className="text-emerald-500">${payoutPool > 0 ? payoutPool.toLocaleString() : '---'}</span>
                 </div>
+                <p className="text-[7px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2">
+                    * This is a local simulation. Actual rewards are determined by on-chain pool balance.
+                </p>
             </div>
 
             {/* List Container - iOS Native Scrolling */}

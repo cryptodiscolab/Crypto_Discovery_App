@@ -91,7 +91,7 @@ export function SyncLogTab() {
                 </h4>
                 <p className="text-xs text-slate-500 leading-relaxed text-left">
                     <strong>Manual Optimistic</strong> logs represent points added instantly to the UI before database confirmation.
-                    <strong>Refetch</strong> logs indicate when the system has successfully pulled the "Source of Truth" back from Supabase.
+                    &lt;strong&gt;Refetch&lt;/strong&gt; logs indicate when the system has successfully pulled the &quot;Source of Truth&quot; back from Supabase.
                     A healthy cycle shows an <em>Optimistic</em> log followed by a <em>Balanced Refetch</em> within seconds.
                 </p>
             </div>

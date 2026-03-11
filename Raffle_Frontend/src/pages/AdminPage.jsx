@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Shield, Award, Landmark, Settings, Users, Database,
-    CheckCircle, AlertTriangle, ExternalLink, RefreshCw,
-    Edit3, Save, Eye, EyeOff, UserCog, Newspaper,
-    Trophy, Zap, Timer as TimerIcon, LayoutList, ClipboardList, Sliders, Megaphone,
+    Shield, Award, Landmark, Settings, Database,
+    AlertTriangle, ExternalLink, RefreshCw,
+    Edit3, UserCog, Newspaper,
+    Trophy, Zap, LayoutList, ClipboardList, Sliders, Megaphone,
     Menu, X, Activity
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
@@ -45,6 +45,7 @@ export function AdminPage({ initialTab = 'pool' }) {
     const {
         isAdmin: isCMSAdmin,
         isOperator,
+        isContractOwner,
         canEdit: canEditCMS,
         isLoading: loadingCMS,
         poolSettings,
@@ -64,42 +65,22 @@ export function AdminPage({ initialTab = 'pool' }) {
     }, [initialTab]);
 
     useEffect(() => {
-        const checkAccess = async () => {
-            if (!isConnected) {
-                setLoading(false);
-                return;
+        if (!isConnected && !loadingCMS) {
+            setLoading(false);
+            return;
+        }
+
+        if (!loadingCMS) {
+            const finalAccess = isContractOwner || isCMSAdmin || isOperator || canEditCMS;
+            setHasManagerAccess(finalAccess);
+            setLoading(false);
+
+            if (!finalAccess) {
+                toast.error("Unauthorized Access Detected");
+                navigate('/');
             }
-
-            try {
-                const fids = import.meta.env.VITE_ADMIN_FIDS || '';
-                const adminFids = fids.split(',').map(f => f.trim()).filter(f => f !== '').map(f => parseInt(f)).filter(f => !isNaN(f));
-
-                let userFid = null;
-                const currentWallet = cleanWallet(address);
-                const isSBTAccountOwner = contractOwner && currentWallet && currentWallet === cleanWallet(contractOwner);
-                const isFidAdmin = userFid && adminFids.includes(userFid);
-
-                // FINAL ACCESS AUTHORIZATION relies purely on Backend (CMS/DB) and SBT Ownership
-                const finalAccess = isSBTAccountOwner || isCMSAdmin || isOperator || isFidAdmin || canEditCMS;
-
-                if (address) {
-                    setHasManagerAccess(finalAccess);
-                    if (finalAccess || !loadingCMS) {
-                        setLoading(false);
-                        if (!finalAccess && !loadingCMS) {
-                            toast.error("Unauthorized: Redirecting...");
-                            setTimeout(() => navigate('/'), 3000);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('[Security] Error checking auth:', error);
-                setLoading(false);
-            }
-        };
-
-        checkAccess();
-    }, [address, contractOwner, isConnected, isCMSAdmin, isOperator, canEditCMS, navigate, loadingCMS]);
+        }
+    }, [isConnected, loadingCMS, isContractOwner, isCMSAdmin, isOperator, canEditCMS, navigate]);
 
     if (loading) {
         return (
@@ -120,27 +101,49 @@ export function AdminPage({ initialTab = 'pool' }) {
         );
     }
 
-    const tabs = [
-        { id: 'reputation', label: 'Reputation', icon: LayoutList, color: 'indigo' },
-        { id: 'sbt', label: 'SBT Rewards', icon: Award, color: 'indigo' },
-        { id: 'pool', label: 'SBT Master', icon: Database, color: 'indigo' },
-        { id: 'system', label: 'System Settings', icon: Sliders, color: 'blue' },
-        { id: 'masterx', label: 'MasterX Controls', icon: Settings, color: 'blue' },
-        { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
-        { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
-        { id: 'logs', label: 'Activity Logs', icon: ClipboardList, color: 'slate' },
-        { id: 'tiers', label: 'Tier Control', icon: Award, color: 'yellow' },
-        { id: 'treasury', label: 'Treasury Safe', icon: Landmark, color: 'emerald' },
-        { id: 'roles', label: 'Role Management', icon: UserCog, color: 'yellow' },
-        { id: 'whitelist', label: 'Sponsored Access', icon: Shield, color: 'purple' },
-        { id: 'announcement', label: 'Announcement', icon: Edit3, color: 'blue' },
-        { id: 'campaigns', label: 'Campaigns', icon: Megaphone, color: 'indigo' },
-        { id: 'news', label: 'News & Updates', icon: Newspaper, color: 'green' },
-        { id: 'content', label: 'Feature Cards (CMS)', icon: Database, color: 'indigo' },
-        { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
-        { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
-        { id: 'nexus', label: 'Nexus Live', icon: Activity, color: 'indigo' },
+    const groups = [
+        {
+            label: 'Core Protocol',
+            items: [
+                { id: 'pool', label: 'SBT Master', icon: Database, color: 'indigo' },
+                { id: 'sbt', label: 'SBT Rewards', icon: Award, color: 'indigo' },
+                { id: 'reputation', label: 'User Reputation', icon: LayoutList, color: 'indigo' },
+                { id: 'system', label: 'System Settings', icon: Sliders, color: 'blue' },
+                { id: 'masterx', label: 'MasterX Controls', icon: Settings, color: 'blue' },
+            ]
+        },
+        {
+            label: 'Economy & Assets',
+            items: [
+                { id: 'treasury', label: 'Treasury Safe', icon: Landmark, color: 'emerald' },
+                { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
+                { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
+                { id: 'tiers', label: 'Tier Control', icon: Award, color: 'yellow' },
+            ]
+        },
+        {
+            label: 'Dynamic Content',
+            items: [
+                { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
+                { id: 'campaigns', label: 'Campaigns', icon: Megaphone, color: 'indigo' },
+                { id: 'content', label: 'CMS Components', icon: Database, color: 'indigo' },
+                { id: 'announcement', label: 'Announcement', icon: Edit3, color: 'blue' },
+                { id: 'news', label: 'News & Updates', icon: Newspaper, color: 'green' },
+            ]
+        },
+        {
+            label: 'System & Security',
+            items: [
+                { id: 'roles', label: 'Role Management', icon: UserCog, color: 'yellow' },
+                { id: 'whitelist', label: 'Sponsored Access', icon: Shield, color: 'purple' },
+                { id: 'logs', label: 'Activity Logs', icon: ClipboardList, color: 'slate' },
+                { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
+                { id: 'nexus', label: 'Nexus Live', icon: Activity, color: 'indigo' },
+            ]
+        }
     ];
+
+    const allTabs = groups.flatMap(g => g.items);
 
     return (
         <div className="z-[9999] pointer-events-auto relative h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden">
@@ -149,7 +152,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                 <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-indigo-400" />
                     <h2 className="text-sm font-black text-white uppercase tracking-widest truncate max-w-[150px]">
-                        {tabs.find(t => t.id === activeTab)?.label || 'Admin'}
+                        {allTabs.find(t => t.id === activeTab)?.label || 'Admin'}
                     </h2>
                 </div>
                 <button
@@ -177,27 +180,32 @@ export function AdminPage({ initialTab = 'pool' }) {
                         </div>
                     </div>
 
-                    <nav className="flex-1 space-y-0.5 overflow-y-auto no-scrollbar -mx-2 px-2 pt-16 md:pt-0">
-                        {tabs.map((tab) => {
-                            const Icon = tab.icon;
-                            const isActive = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => {
-                                        setActiveTab(tab.id);
-                                        setIsSidebarOpen(false); // Close on selection
-                                    }}
-                                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-bold transition-all group ${isActive
-                                        ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                                        }`}
-                                >
-                                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-indigo-400' : 'group-hover:text-indigo-400'}`} />
-                                    <span className="text-xs md:text-[11px] uppercase tracking-wider">{tab.label}</span>
-                                </button>
-                            );
-                        })}
+                    <nav className="flex-1 space-y-6 overflow-y-auto no-scrollbar -mx-2 px-2 pt-16 md:pt-0 pb-10">
+                        {groups.map((group) => (
+                            <div key={group.label} className="space-y-1">
+                                <h3 className="px-3 text-[9px] font-black text-slate-700 uppercase tracking-[0.2em] mb-2">{group.label}</h3>
+                                {group.items.map((tab) => {
+                                    const Icon = tab.icon;
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => {
+                                                setActiveTab(tab.id);
+                                                setIsSidebarOpen(false); // Close on selection
+                                            }}
+                                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold transition-all group ${isActive
+                                                ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                                }`}
+                                        >
+                                            <Icon className={`w-3.5 h-3.5 transition-colors ${isActive ? 'text-indigo-400' : 'group-hover:text-indigo-400'}`} />
+                                            <span className="text-[10px] uppercase tracking-wider">{tab.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ))}
                     </nav>
 
                     <div className="mt-auto pt-6 border-t border-white/5">
@@ -215,16 +223,35 @@ export function AdminPage({ initialTab = 'pool' }) {
             <main className="flex-1 min-w-0 bg-[#050505] flex flex-col overflow-hidden">
                 <header className="hidden md:flex h-16 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-8 items-center justify-between shrink-0">
                     <div className="flex items-center gap-4">
-                        <h2 className="text-sm font-black text-white uppercase tracking-widest">
-                            {tabs.find(t => t.id === activeTab)?.label || activeTab}
+                        <h2 className="text-[11px] font-black text-white uppercase tracking-[0.3em]">
+                            {allTabs.find(t => t.id === activeTab)?.label || activeTab}
                         </h2>
+                        <div className="h-4 w-px bg-white/10 mx-2" />
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Global Sync Active</span>
+                        </div>
+                        <div className="h-4 w-px bg-white/10 mx-2" />
+                        <div className="flex items-center gap-2 bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
+                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">
+                                Protocol Authority: {isContractOwner ? 'Contract Owner' : isCMSAdmin ? 'CMS Admin' : isOperator ? 'Operator' : 'Delegated'}
+                            </span>
+                        </div>
                     </div>
 
                     <button
-                        onClick={() => { refetchAll(); refetchCMS(); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-indigo-400 transition-all text-[10px] font-black uppercase tracking-widest"
+                        onClick={async () => { 
+                            const id = toast.loading("Performing Global Protocol Sync...");
+                            try {
+                                await Promise.all([refetchAll(), refetchCMS()]); 
+                                toast.success("SBT & CMS Systems Synchronized", { id });
+                            } catch (e) {
+                                toast.error("Global Sync Partial Failure", { id });
+                            }
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-indigo-400 transition-all text-[10px] font-black uppercase tracking-widest active:scale-95"
                     >
-                        <RefreshCw className="w-3 h-3" /> Sync
+                        <RefreshCw className="w-3.5 h-3.5" /> Global Sync
                     </button>
                 </header>
 

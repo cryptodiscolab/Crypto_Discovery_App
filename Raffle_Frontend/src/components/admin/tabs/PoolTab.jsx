@@ -69,10 +69,13 @@ export function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSet
                     <h2 className="text-6xl font-black text-white mb-2">
                         {currentETH.toFixed(4)} <span className="text-2xl text-slate-500">ETH</span>
                     </h2>
-                    <div className="flex items-center justify-center gap-2 mb-8 text-indigo-400 font-mono font-bold">
-                        <TrendingUp className="w-4 h-4" />
-                        ~${currentUSDC.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
-                        <span className="text-[10px] text-slate-600 bg-white/5 px-2 py-0.5 rounded-full ml-2">@ ${ethPrice}/ETH</span>
+                    <div className="flex flex-col items-center justify-center gap-1 mb-8">
+                        <div className="flex items-center gap-2 text-indigo-400 font-mono font-bold">
+                            <TrendingUp className="w-4 h-4" />
+                            ~${currentUSDC.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
+                            <span className="text-[10px] text-slate-600 bg-white/5 px-2 py-0.5 rounded-full ml-2">@ ${ethPrice}/ETH</span>
+                        </div>
+                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Source: Chainlink Oracle (On-Chain)</p>
                     </div>
 
                     <button
@@ -86,7 +89,7 @@ export function PoolTab({ balance, onDistribute, ethPrice, settings, onUpdateSet
                         {isBusy ? "Opening..." : "Open Community Claim"}
                     </button>
                     <p className="text-xs text-slate-500 mt-6 italic max-w-lg mx-auto leading-relaxed">
-                        "Opening the claim will distribute the balance above to Bronze, Silver, and Gold tiers based on the active weights."
+                        &quot;Opening the claim will distribute the balance above to Bronze, Silver, and Gold tiers based on the active weights.&quot;
                     </p>
                 </div>
             </div>

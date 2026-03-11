@@ -76,3 +76,6 @@ scripts/env-sync-report-*.txt
 
 # === TEST ENVIRONMENT TEMP DIR ===
 test-env/
+
+# === SUPABASE TEMP ===
+Raffle_Frontend/supabase/.temp/

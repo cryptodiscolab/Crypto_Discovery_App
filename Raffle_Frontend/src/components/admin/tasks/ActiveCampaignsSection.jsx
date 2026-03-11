@@ -241,7 +241,7 @@ function AuditRequestRow({ id, onApprove, onReject }) {
 function SponsorCardItem({ id }) {
     const { data: request } = useReadContract({
         address: DAILY_APP_ADDRESS,
-        abi: DAILY_APP_ABI,
+        abi: ABIS.DAILY_APP,
         functionName: 'sponsorRequests',
         args: [id]
     });
