@@ -15,6 +15,7 @@ Audit skema database, kebijakan RLS, dan fungsi SQL wajib mematuhi aturan keaman
 - **Tactical & Fast**: Jelaskan dampak perubahan skema dalam maksimal 3 poin bullet.
 - **Development Plan Mandatory**: Setiap migrasi skema atau perubahan RLS WAJIB diawali dengan "Development Plan".
 - **Zero Trust Enforcement**: Semua mutasi data WAJIB melalui API backend dengan verifikasi signature.
+- **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
 ### 3. Bahasa & Komunikasi
 - **Technical/Diskusi**: **Bahasa Indonesia**.
@@ -33,14 +34,14 @@ Audit skema database, kebijakan RLS, dan fungsi SQL wajib mematuhi aturan keaman
 - **Status Wajib**: Setiap tabel di skema `public` WAJIB memiliki RLS aktif.
 - **Zero Client Write**: **DILARANG** melakukan `INSERT/UPDATE/DELETE` langsung dari client. Harus melalui verifikasi signature di Backend API.
 
-### 2. Database Function Isolation
-- **Search Path Isolation**: Setiap fungsi SQL (`CREATE FUNCTION`) WAJIB memiliki deklarasi `SET search_path = public`.
+### 3. Integrated View & Trigger Protocol (v3.2)
+- **Canonical View**: Selalu gunakan `v_user_full_profile` (SECURITY INVOKER) untuk menampilkan data agregat user (XP, Rank, Raffle Stats).
+- **Trigger-Based XP**: Integritas Saldo XP wajib dijaga oleh trigger `trg_sync_xp_on_claim` pada tabel `user_task_claims`.
+- **Atomic Counters**: Gunakan RPC (misal: `fn_increment_raffle_wins`) untuk mengupdate statistik hitungan guna menghindari *race condition*.
 
-### 3. Integritas Data & Web3 Identity
-- **Lower-Case Mandate**: Semua kolom `wallet_address` harus memiliki constraint `CHECK (wallet_address = LOWER(wallet_address))`.
-
-### 4. Zero Trust Enforcement (SIWE & Viem)
+### 4. Zero Trust Enforcement (v3.2)
 - **Backend Verification**: Semua mutasi data WAJIB diverifikasi menggunakan `viem` di sisi server sebelum mengeksekusi query dengan `SERVICE_ROLE_KEY`.
+- **Search Path Isolation**: Setiap fungsi SQL (`CREATE FUNCTION`) WAJIB memiliki deklarasi `SET search_path = public`.
 
 ## 📋 Protokol Operasional Audit
 - [ ] Apakah RLS aktif di seluruh tabel public?

@@ -23,6 +23,7 @@ Setiap kali melakukan perubahan pada `.agents/` atau `.cursorrules`, Agent **WAJ
 `node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js`
 
 ### 2. PnL Defense (Mencegah Kebocoran)
+- **Zero-Hardcode Mandate (CRITICAL)**: DILARANG menggunakan nilai statis untuk Reward (XP), Fees (BP), atau Multiplier di dalam kode. Seluruh parameter sistem WAJIB bersifat dinamis.
 - **Gas Fee Shield**: Evaluasi efisiensi gas di setiap fungsi on-chain.
 - **API Optimization**: Minimalisir call Neynar/RPC dengan caching.
 

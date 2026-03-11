@@ -32,6 +32,7 @@ Git adalah **Single Source of Truth** untuk kode sumber. Polutan berikut ini **D
 | `api/` | Vercel serverless functions |
 | `src/` | Frontend source code |
 | `scripts/` | Operational scripts (verify, sync) |
+| `PRD/*.html` | PRD Documentation (HTML Version) |
 | `.agents/skills/` | Skill definitions & protocols |
 | `.cursorrules` | Sudah ada di .gitignore — TRACKING via agent protocol only |
 | `.gitleaks.toml` | Security scan config |

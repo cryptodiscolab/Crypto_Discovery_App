@@ -21,13 +21,13 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **Technical Discussions**: Gunakan **Bahasa Indonesia**.
 - **System Labels/UI**: Gunakan **Bahasa Inggris (English)**.
 
-## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
+## 🏛️ Verified Infrastructure Reference (v3.2)
 | Component | Base Mainnet | Base Sepolia (Testnet) |
 |---|---|---|
-| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
-| **MasterX (Points)** | (Pending) | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
-| **Raffle (NFT)** | (Pending) | `0x012FAdd087540e1B51a587f420e77D007fED2a84` |
-| **CMS (Content)** | (Pending) | `0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302` |
+| **DailyApp (Tasks)** | `[RESERVED]` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` |
+| **MasterX (Points)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
+| **Raffle (NFT)** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
+| **CMS (Content)** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **AirnodeRrpV0** | `0x32A334335EBe9d83dfB33B3EF803328e7529246E` | `0x2ab9f26E18b6103274414940251539D0105e2Add` |
 
 ## 🏛️ Core Competencies
@@ -54,16 +54,13 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 ### 5. ABI Architecture Standard (Proxy Pattern)
 ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untuk mencegah Rollup AST stack overflow.
 
-### 6. Seasonal & Tier Upgrade Management (NEW)
-- **Lazy Reset Protocol**: Memastikan integrasi frontend mendukung reset tier berbasis `currentSeasonId` secara transparan (Lazy Reset di Contract).
-- **XP-Burn Coordination**: Sinkronisasi mutasi XP di database (`user_task_claims`) secara negatif saat terjadi `TierUpgraded` event untuk mencerminkan burn XP.
-- **Mandatory Security Audit**:
-    - Cek apakah fungsi baru diproteksi oleh `onlyRole(ADMIN_ROLE)`.
-    - Cek apakah ada input user yang tidak divalidasi (`require` statements).
-    - Cek apakah `.env` tetap bersih dari data hardcoded.
+### 6. Seasonal & Administrative Management (v3.2)
+- **Lurah Hub Control**: Pastikan infrastruktur mendukung setter dinamis di `DailyAppV13` (Fees, Bonus, Auto-Approve).
+- **Trigger-Based Integrity**: Gunakan `trg_sync_xp_on_claim` di Supabase sebagai otoritas tunggal perhitungan `total_xp`.
+- **XP-Burn Coordination**: Sinkronisasi mutasi XP di database (`user_task_claims`) secara negatif saat terjadi `TierUpgraded` event.
 - **Supabase Security Mandate**:
     - Dilarang membuat tabel tanpa kebijakan RLS yang ketat.
-    - Gunakan PostgreSQL Function/Trigger untuk data yang butuh integritas tinggi (misal: saldo XP).
+    - Gunakan view `v_user_full_profile` (SECURITY INVOKER) untuk seluruh display data user.
 - **Professional Sync Protocol**: Memastikan audit data flow dari Contract -> Backend -> Supabase Table berjalan tanpa "data ghosting" (data hilang di tengah jalan).
 
 - **On-Chain Tier Gating**: Verifikasi kepemilikan SBT (Soulbound Token) via `masterX.users(address).tier` sebelum mengizinkan fitur eksklusif di frontend.
@@ -77,7 +74,7 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Log Privacy**: Gunakan tabel `user_activity_logs` dengan RLS yang memastikan user hanya bisa membaca riwayat miliknya sendiri.
 - **Atomic Integrity**: Pastikan mutasi database (XP/Claims) dan entri log riwayat terjadi secara atomik atau terverifikasi silang untuk mencegah data "ghosting".
 - **Zero-Trust Activity Logging**: All database mutates must be signature-verified.
-- **Dynamic System Governance (Zero-Hardcode)**: System parameters (XP, fees, reward multipliers) MUST be database-driven. Prohibit static infrastructure gating based on hardcoded rewards.
+- **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 - **Vercel Hobby Plan Guard**: Strictly < 12 Serverless Functions. Consolidate into `*-bundle.js`.
 
 ### 8. Database Schema Awareness Protocol (NEW)

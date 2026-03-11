@@ -14,11 +14,11 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 - **Dev Plan Mandatory**: Sebelum modifikasi hook atau komponen raffle, sajikan "Development Plan" dan tunggu konfirmasi "LANJUT".
 - **Pre-Flight Check**: Pastikan `buyTickets` dan `drawWinner` menggunakan nama fungsi terbaru.
 
-### 2. Verified Infrastructure Reference (DO NOT GUESS)
+### 2. Verified Infrastructure Reference (v3.2)
 | Key | Value |
 |---|---|
-| Raffle (Main) | `0x012FAdd087540e1B51a587f420e77D007fED2a84` |
-| MasterX V2 (Latest) | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
+| Raffle (Latest) | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
+| MasterX (XP) | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
 
 ### 3. Bahasa & Komunikasi
@@ -31,37 +31,39 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 - **Address Canonical**: Selalu gunakan `CONTRACTS.RAFFLE` dari `src/lib/contracts.js` — JANGAN hardcode.
 - **ABI Source**: Gunakan `ABIS.RAFFLE` dari `src/lib/contracts.js` (Proxy-based).
 
-### 2. Core Hook: useRaffle.js
+### 2. Core Hook: useRaffle.js (v3.2)
 Semua interaksi raffle harus melalui hook `useRaffle`:
-- **`buyTickets(raffleId, amount)`**: Beli tiket → tunggu tx receipt → reward XP via backend.
-- **`claimPrize(raffleId)`**: Klaim hadiah jika user adalah pemenang (`claimRafflePrize`).
-- **`drawRaffle(raffleId)`**: Admin draw pemenang (`drawWinner` — admin only).
+- **`buyTickets(raffleId, amount)`**: Beli tiket → lampirkan `txHash` ke `task_id` (format: `raffle_buy_{id}_{txHash}`) untuk mendukung pembelian berulang.
+- **`claimPrize(raffleId)`**: Klaim hadiah → panggil `/api/raffle?action=claim-prize`.
+- **`createSponsorshipRaffle(...)`**: Gunakan `handleSyncUgcRaffle` untuk sinkronisasi Metadata Kaya (Title, Desc, Imagery).
 
-### 4. Tier-Based Entry Gating (NEW)
-- **Gated Raffle Access**: Sebelum mengizinkan `buyTickets`, periksa Tier user di `user_profiles`. Jika raffle memiliki metadata `min_tier_id`, berikan feedback UI "Upgrade Tier required".
-- **Dynamic Multiplier**: Sesuaikan tampilan estimasi reward/points di UI berdasarkan multiplier tier user (Bronze=1x, Diamond=2x, dll).
+### 3. Rich Metadata & XP Logic (v3.2)
+- **Metadata Fields**: `title`, `description`, `image_url`, `category`, `external_link`, `twitter_link`, `min_sbt_level`.
+- **XP Awards**:
+  - `raffle_create`: 500 XP (Fixed).
+  - `raffle_buy`: 100 XP **diperkalikan** dengan jumlah tiket.
+  - `raffle_win`: 1000 XP saat klaim hadiah.
 
-### 5. Activity Logging Standard (UGC History)
-- **Purchase Tracking**: Setiap pemanggilan `buyTickets` **WAJIB** mengirimkan log ke `/api/user-bundle` dengan kategori `PURCHASE`.
-- **Raffle Launch Tracking**: Setiap `createSponsorshipRaffle` yang berhasil **WAJIB** mencatat riwayat di `user_activity_logs`.
-- **Zero-Trust Log**: Log harus menyertakan signature user untuk validasi integritas di sisi server.
+### 4. Tier-Based Entry Gating (v3.2)
+- **Percentile-Based Tiers**: Tampilkan Tier user (Diamond-Bronze) berdasarkan `PERCENT_RANK()` XP global dari `v_user_full_profile`.
+- **Gated Raffle Access**: Validasi `min_sbt_level` sebelum transaksi. Jika tier user < syarat, blokir tombol `Buy Ticket` dengan pesan edukatif.
+
+### 5. Activity Logging Standard (Zero-Trust)
+- **Purchase Tracking**: /api/tasks-bundle?action=social-verify dengan `task_id` unik per transaksi.
+- **Winner Awarding**: Increment `raffle_wins` via backend setelah verifikasi on-chain.
+- **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
 ## ⛽ Paymaster Integration (Gasless)
-- Gunakan `usePaymaster.js` untuk mendeteksi kapabilitas gasless (Coinbase Smart Wallet).
-- Tampilkan `<GaslessBadge />` dan ubah label tombol menjadi "⛽ Buy Free" jika tersedia.
+- Gunakan `usePaymaster.js` untuk deteksi infrastruktur gasless (Coinbase Smart Wallet).
 
-## 📋 Checklist Raffle Feature
-- [ ] Apakah `verify-db-sync.cjs` sudah dijalankan sebelum integrasi fitur baru?
-- [ ] Apakah fungsi `buyTickets` digunakan (bukan `purchaseRaffleTickets`)?
-- [ ] Apakah `drawWinner` digunakan (bukan `requestRaffleWinner`)?
-- [ ] Apakah XP awarding mengikuti pola Zero-Trust Backend?
-- [ ] Apakah `user_activity_logs` sudah terisi setelah pembelian tiket atau pembuatan raffle?
-- [ ] Apakah ABI diimpor via Proxy dari `contracts.js`?
-- [ ] Apakah build lokal berhasil (`npm run build`)?
-- [ ] Apakah chat teknis menggunakan Bahasa Indonesia?
+## 📋 Checklist Raffle Feature (v3.2)
+- [x] Apakah `buyTickets` melampirkan `txHash` ke payload?
+- [x] Apakah XP pembelian tiket dikalikan dengan kuantitas?
+- [x] Apakah metadata lengkap (Title, Image, Category) sudah masuk ke Supabase?
+- [x] Apakah `v_user_full_profile` digunakan untuk menampilkan rank user?
+- [x] Apakah build lokal berhasil (`npm run build`)?
 
 ## 🚨 Pantangan
-- Menulis langsung ke database dari frontend.
-- Menggunakan nama fungsi kontrak lama yang sudah dideprecated.
-- **Mengimpor ABI sebagai konstanta langsung — gunakan Proxy.**
-- Menggunakan Bahasa Indonesia di elemen UI/Label aplikasi.
+- Menggunakan `user_profiles` secara direct — gunakan view `v_user_full_profile`.
+- Hardcode nilai XP — selalu ambil dari `point_settings`.
+- Menggunakan `profiles` table (deprecated) — gunakan `user_profiles`.

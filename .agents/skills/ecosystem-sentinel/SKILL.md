@@ -40,7 +40,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `C:\Users\chiko\.gemini\antigravity\brain\d9ecad0a-f449-4c38-b27b-5c9e6ad4a21e\PRD_Crypto_Disco.md`
+**File:** `E:\Disco Gacha\Disco_DailyApp\DISCO_DAILY_MASTER_PRD.md`
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
 
@@ -57,6 +57,8 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
    - [ ] Apakah alamat contract di PRD masih sinkron dengan `.cursorrules`?
    - [ ] Apakah Roadmap di PRD masih relevan dengan prioritas pengembangan saat ini?
 
+6. **PRD HTML Conversion Mandate**: Setiap kali memperbarui atau membuat dokumen PRD (.md), Agent **WAJIB** segera membuat versi HTML-nya menggunakan `npx marked -i filename.md -o filename.html` di folder yang sama. Hal ini untuk memastikan dokumen desain selalu siap dilihat dalam format web yang bersih.
+
 ### 🔄 Trigger Wajib Update PRD
 
 Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi:
@@ -72,8 +74,8 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 2.0 (Massive Flow & Admin Integration Edition)
-- **Status:** Final Synchronization, SBT Max 1.5x Limits, and Exhaustive Admin Flow Documentation (Master Task & Audit Reference)
+- **Versi Terakhir:** 3.2 (UGC Raffle & XP Sync Expansion Edition)
+- **Status:** Integrated Ecosystem Flow, Leaderboard Stats Sync, and Lurah Admin Hub Documentation (Master Task & Audit Reference)
 
 ---
 
@@ -105,20 +107,20 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 4. **Infinite Precision Audit**: Lakukan "Self-Correction" sebelum memberikan hasil. Jika mendeteksi potensi redundansi atau inefisiensi, hapus dan tulis ulang dengan logika yang lebih elegan (Senior Staff level).
 
 ## 🛡️ CORE RULES: THE PERFECTIONIST PROTOCOL
-1. **Zero-Hardcode Audit**: Perform `grep_search` on every task to detect hardcoded reward strings or pricing.
+1. **Zero-Hardcode Mandate (CRITICAL)**: Perform `grep_search` on every task to detect hardcoded reward strings, pricing, or fees. Prohibit static values; all parameters MUST be fetched from `point_settings` or dynamic configs.
 2. **Point-Sync Automation**: Verify that every reward event fetches its `points_value` from the canonical `point_settings` table.
 3. **Admin-Dashboard Sync**: Ensure all administrative controls (Web & Bot) display and use dynamic settings.
 4. **Anti-Inflation Guard (SBT Limits)**: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.
 5. **Anti-Sticker-Shock (Gas Guard)**: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.
 
-## 🏛️ Verified Infrastructure Reference
+## 🏛️ Verified Infrastructure Reference (v3.2)
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V12** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
-| **MasterX V2** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
-| **Raffle V2** | `[RESERVED]` | `0x012FAdd087540e1B51a587f420e77D007fED2a84` |
-| **CMS V2** | `[RESERVED]` | `0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302` |
+| **DailyApp V13** | `[RESERVED]` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` |
+| **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
+| **Raffle V2** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
+| **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🛠️ Kompetensi Utama

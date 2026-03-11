@@ -231,5 +231,11 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **GIT STATUS CHECK**: Before EVERY push, the agent MUST run `git status` to visually confirm there are no unintended staged files. If the working tree is dirty with non-source files, immediately add them to `.gitignore` before proceeding.
 - **CLEAN UP ON SIGHT**: When a scratch file (`tmp_*.cjs`, etc.) has served its purpose, delete it. Do not leave dead code or artifacts in the repository.
 
+## 28. PRD HTML CONVERSION MANDATE (DOCUMENTATION ACCESSIBILITY)
+- **PRINCIPLE**: All PRD updates MUST be accessible in both Markdown and HTML formats.
+- **ENFORCEMENT**: Every time a PRD document (.md) in the `PRD/` folder is updated or created, the agent MUST immediately generate a corresponding HTML version using the `marked` tool (e.g., `npx marked -i version_update.md -o version_update.html`).
+- **LOCATION**: The HTML version must reside in the same directory as the source Markdown file.
+- **COMMIT POLICY**: Both the .md and .html versions must be committed together to ensure version parity.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Lurah Approved.*

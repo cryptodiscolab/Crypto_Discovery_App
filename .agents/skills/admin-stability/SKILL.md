@@ -33,10 +33,11 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Z-Index Guard**: Selalu gunakan `relative z-[9999] pointer-events-auto` untuk BottomNav/Header admin.
 - **Glass Wall Prevention**: Pastikan tidak ada overlay transparan yang menutupi tombol klik.
 
-### 2. Economics & P&L Guard (NEW)
+### 2. Lurah Hub & P&L Guard (v3.2)
+- **Administrative Setters**: Pastikan UI Admin mendukung konfigurasi dinamis `DailyAppV13` (Withdrawal Fee BP, Daily Bonus, Auto-Approve Sponsorship, Sponsor Duration).
 - **Net Surplus Verification**: Sebelum menyarankan penarikan treasury, pastikan `address(this).balance > totalLockedRewards`.
 - **Proportionality Check**: Setting `SBT Weights` WAJIB berjumlah tepat 100%. User-feedback (error toast) harus jelas jika jumlah tidak sesuai.
-- **Real-time Price Logic**: Selalu gunakan konversi ETH/USD (API3 Oracle on-chain atau backend fetch) untuk visualisasi harga minting agar Admin tidak salah input.
+- **Raffle Metadata Audit**: Admin Hub harus memvalidasi kelengkapan metadata (Title, Image, Category) sebelum me-list raffle secara global.
 
 ### 2. Library & Dependency Integrity (CRITICAL)
 - **KNOWN PITFALL — viem vs ethers.js**:

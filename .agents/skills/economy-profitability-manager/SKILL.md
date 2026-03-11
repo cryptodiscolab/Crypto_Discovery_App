@@ -16,23 +16,24 @@ Skill ini dirancang untuk mengotomatisasi pengawasan ekonomi aplikasi Crypto Dis
 - **Teknis/Strategi**: **Bahasa Indonesia**.
 - **Admin Hub/UI**: **Bahasa Inggris (English)**.
 
-## 🏛️ Verified Infrastructure Reference (DO NOT GUESS)
 | Key | Value |
 |---|---|
 | Ticket Price USD | `$0.15` (150,000 points) |
-| Platform Fee | `5%` |
-| Operations Wallet | `0x73F76B2b436E2E50bB6F81A6e33a42875f1cDff3` |
+| Platform Fee (Tasks) | `5%` |
+| Platform Fee (Raffle) | `20%` (Fixed v3.2) |
+| Revenue Split (UGC) | `80% Creator / 20% Platform` |
 | Treasury Wallet | `0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa` |
 
 ## 💰 Kompetensi Inti
 
-### 1. P&L Control (Profit & Loss)
-- **Operational Cost Coverage**: Pastikan revenue menutupi biaya Gas, API Neynar, dan Hosting.
-- **Dynamic Pricing**: Sesuaikan `ticketPriceUSD` jika harga ETH fluktuasi tajam.
+### 1. P&L Control (Profit & Loss v3.2)
+- **Zero-Hardcode Mandate (CRITICAL)**: DILARANG KERAS menggunakan nilai statis untuk Reward (XP), Fees (BP), atau Multiplier di dalam kode. Seluruh parameter sistem WAJIB bersifat dinamis dan diambil dari tabel `point_settings` atau konfigurasi database terkait.
+- **Net Surplus Mandate**: Pastikan saldo Treasury menutupi seluruh `totalLockedRewards` sebelum menjalankan distribusi dividen.
+- **Raffle Revenue Stream**: Monitor aliran dana 20% fee dari `RaffleV2` ke `MasterX` Revenue Pool.
 
-### 2. Ecosystem Balancing
-- **Transparency**: Tidak ada biaya tersembunyi (Kebaikan Jalan Allah).
-- **Sustainability**: Mengatur `multiplierBP` dan `baseReward` melalui dashboard admin.
+### 2. Ecosystem Balancing (Zero-Hardcode)
+- **Lurah Hub Oversight**: Seluruh parameter ekonomi (Fee BP, Reward Multiplier) WAJIB dikendalikan via Admin Dashboard, bukan hardcode.
+- **Dynamic Pricing**: Gunakan `usePriceOracle` di frontend untuk visualisasi estimasi nilai USD dari reward pool.
 
 ## 📋 Checklist Profitabilitas
 - [ ] Apakah biaya listing sudah menutupi biaya review admin?

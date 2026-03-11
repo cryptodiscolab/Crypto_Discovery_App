@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD Crypto Disco v3.2</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true, theme: 'dark'});</script>
+    <style>
+        :root {
+            --bg: #0B0E14;
+            --surface: #161B22;
+            --primary: #58a6ff;
+            --accent: #f08c35;
+            --text: #c9d1d9;
+            --text-dim: #8b949e;
+            --border: #30363d;
+            --success: #238636;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 { color: var(--primary); }
+        h1 { border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+        .version { background: var(--surface); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 30px; }
+        .version strong { color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: var(--surface); }
+        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; }
+        th { background: #1f242c; color: var(--primary); }
+        code { background: #21262d; border-radius: 6px; padding: 0.2em 0.4em; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace; font-size: 85%; }
+        .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .highlight { color: var(--accent); font-weight: bold; }
+        hr { border: 0; border-top: 1px solid var(--border); margin: 40px 0; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .badge-success { background: var(--success); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Requirements Document (PRD): Crypto Disco Application</h1>
+        <div class="version">
+            <p><strong>Version: 3.2 (UGC Raffle, XP Sync Expansion, & Multi-Layer Economics)</strong></p>
+            <p>Update Terakhir: 2026-03-12 | Status: <span class="badge badge-success">Production Ready</span></p>
+        </div>
+
+        <h2>1. Visi & Ekonomi Ekosistem (Executive Summary)</h2>
+        <p>Crypto Disco adalah platform gamifikasi Web3 di jaringan <strong>Base</strong> yang menghubungkan aktivitas sosial (Farcaster/Twitter) dengan ekonomi on-chain. Versi 3.2 memperkenalkan <strong>UGC Raffle</strong> sebagai pendorong utama revenue platform, di mana 20% biaya platform didistribusikan kembali ke pemegang <strong>SBT (Soulbound Token)</strong> berdasarkan tier (Diamond hingga Bronze).</p>
+
+        <hr>
+
+        <h2>2. Visual Ecosystem Mind Map</h2>
+        <div class="mermaid">
+            mindmap
+              root((Crypto Disco))
+                Social Engagement
+                  Farcaster Sync
+                  Twitter Quests
+                  Daily Bonus Streaks
+                Economy Loop
+                  UGC Raffle
+                    80% Creator/Prizes
+                    20% Platform Fee
+                  Revenue Sharing
+                    30% to SBT Pool
+                    Tiers Bronze to Diamond
+                XP & Reputation
+                  Proof of Action
+                  Dynamic Rankings
+                  Leaderboard Sync
+                Automation
+                  DB Triggers
+                  SQL Views
+                  Gitleaks Sentinel
+        </div>
+
+        <hr>
+
+        <h2>3. Arsitektur & Global Workflow</h2>
+        <h3>3.1 Technical Architecture</h3>
+        <ul>
+            <li><strong>Frontend</strong>: React (Vite) + Lucide + Wagmi (Base Sepolia/Mainnet).</li>
+            <li><strong>API Bundles</strong>: Vercel Serverless (<code>user-bundle</code>, <code>tasks-bundle</code>, <code>raffle-bundle</code>).</li>
+            <li><strong>Database</strong>: Supabase (PostgreSQL) dengan RLS & Trigger otomatis.</li>
+            <li><strong>Contracts</strong>: DailyAppV13, RaffleV2, MasterX Revenue Share.</li>
+        </ul>
+
+        <h3>3.2 Global Integration Flow</h3>
+        <div class="mermaid">
+            sequenceDiagram
+                participant U as 👤 User
+                participant A as 📡 API (Vercel)
+                participant D as 🎲 DB (Supabase)
+                participant S as ⛓️ Smart Contract (Base)
+                
+                U->>A: 1. Launch/Join Raffle
+                A->>D: 2. Store Metadata (raffles table)
+                U->>S: 3. Buy Tickets (TX)
+                S->>S: 4. Split Fee (20% to Pool)
+                S-->>A: 5. Event: TicketBought
+                A->>A: 6. Multiply XP (x Tickets)
+                A->>D: 7. Log Claim & Increment Counters
+                D->>D: 8. Trigger: Sync User XP
+                A-->>U: 9. UI Update: New Rank & Stats
+        </div>
+
+        <hr>
+
+        <h2>4. Fitur Utama & Halaman (Pages v3.2)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Halaman</th>
+                    <th>Fungsi Utama</th>
+                    <th>Logic Connection</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>HomePage</strong></td>
+                    <td>Daily Streak & Mission Center</td>
+                    <td><code>handlerClaim</code> (Tasks)</td>
+                </tr>
+                <tr>
+                    <td><strong>RafflesPage</strong></td>
+                    <td>UGC & Partner Raffle Gallery</td>
+                    <td><code>raffle-bundle</code> (Metadata)</td>
+                </tr>
+                <tr>
+                    <td><strong>CreateRaffle</strong></td>
+                    <td>Metadata Builder & Preview</td>
+                    <td><code>handleSyncUgcRaffle</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Leaderboard</strong></td>
+                    <td>Dynamic Tier Ranking & Stats</td>
+                    <td>`v_user_full_profile` (SQL)</td>
+                </tr>
+                <tr>
+                    <td><strong>Profile</strong></td>
+                    <td>User Inventory & Revenue Share</td>
+                    <td><code>SBT Status</code> & <code>Dividends</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2>5. Database Architecture & Logic</h2>
+        <h3>5.1 Multi-Layer XP Sync</h3>
+        <p>Sistem menggunakan <strong>Database Triggers</strong> (<code>trg_sync_xp_on_claim</code>) untuk memastikan <code>total_xp</code> selalu akurat berdasarkan riwayat klaim di tabel <code>user_task_claims</code>. Hal ini mencegah manipulasi XP manual.</p>
+
+        <h3>5.2 Dynamic Tier Ranking (Percent-Rank)</h3>
+        <p>View <code>v_user_full_profile</code> menggunakan fungsi window <code>PERCENT_RANK()</code> untuk menentukan tier user secara real-time:</p>
+        <ul>
+            <li><strong>Diamond</strong>: Top 1% Global XP</li>
+            <li><strong>Platinum</strong>: Top 5% Global XP</li>
+            <li><strong>Gold</strong>: Top 15% Global XP</li>
+            <li><strong>Silver</strong>: Top 40% Global XP</li>
+            <li><strong>Bronze</strong>: Top 80% Global XP</li>
+        </ul>
+
+        <hr>
+
+        <h2>6. Admin Control Hub (Lurah Dashboard)</h2>
+        <p>Terletak di <code>/admin</code>, pusat kendali ini memungkinkan:</p>
+        <ul>
+            <li><strong>Economy Tuning</strong>: Mengubah biaya platform & multiplier XP secara live.</li>
+            <li><strong>Infrastructure Management</strong>: Mengalihkan alamat kontrak (DailyApp, USDC, Raffle) tanpa redeploy frontend.</li>
+            <li><strong>Role Control</strong>: Mengatur siapa yang bisa menjadi Verifier Task.</li>
+            <li><strong>Raffle Ops</strong>: Memantau partisipasi tiket dan distribusi prize pool.</li>
+        </ul>
+
+        <hr>
+
+        <h2>🛡️ 7. Security & Zero-Leak Protocol</h2>
+        <p>Aplikasi ini tunduk pada <strong>Ecosystem Sentinel Mandate</strong>:</p>
+        <ul>
+            <li><strong>Gitleaks Check</strong>: Pre-push hook wajib untuk mencegah kebocoran secret.</li>
+            <li><strong>Security Invoker</strong>: Seluruh Query DB frontend menggunakan RLS yang ketat.</li>
+            <li><strong>Signature Verification</strong>: Seluruh endpoint API sensitif memerlukan EIP-191 signature.</li>
+        </ul>
+
+        <hr>
+        <p style="text-align: center; color: var(--text-dim); font-size: 14px;">
+            PRD v3.2 | Crypto Disco Ecosystem | Created by AI Sentinel (Antigravity)
+        </p>
+    </div>
+</body>
+</html>
