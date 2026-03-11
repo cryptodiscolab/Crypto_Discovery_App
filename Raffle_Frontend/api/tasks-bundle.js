@@ -27,6 +27,30 @@ async function getPointValue(activityKey) {
     }
 }
 
+async function getUserMultiplier(walletAddress) {
+    try {
+        const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('tier')
+            .eq('wallet_address', walletAddress.toLowerCase())
+            .single();
+
+        const tier = profile?.tier || 0;
+        if (tier === 0) return 10000; // 1x
+
+        const { data: multiplierSetting } = await supabaseAdmin
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'tier_multipliers')
+            .single();
+
+        const multipliers = multiplierSetting?.value || {};
+        return parseInt(multipliers[tier]) || 10000;
+    } catch (e) {
+        return 10000;
+    }
+}
+
 async function getTaskReward(taskId) {
     // 1. Check for specific point_settings keys first
     if (taskId?.startsWith('raffle_buy_')) return await getPointValue('raffle_buy');
@@ -77,6 +101,10 @@ async function handleClaim(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         let xp = await getTaskReward(task_id);
+
+        // 🛡️ Apply Tier Multiplier
+        const multiplier = await getUserMultiplier(wallet_address);
+        xp = Math.floor((xp * multiplier) / 10000);
 
         // 🛡️ Dynamic Multiplier for Raffle Tickets
         if (task_id && task_id.startsWith('raffle_buy_')) {
@@ -160,6 +188,10 @@ async function handleVerify(req, res) {
 
         let xp = await getTaskReward(task_id);
 
+        // 🛡️ Apply Tier Multiplier
+        const multiplier = await getUserMultiplier(wallet_address);
+        xp = Math.floor((xp * multiplier) / 10000);
+
         // 🛡️ Dynamic Multiplier for Raffle Tickets
         if (task_id && task_id.startsWith('raffle_buy_')) {
             const amountMatch = message.match(/Amount:\s*(\d+)/i);
@@ -231,7 +263,12 @@ async function handleSocialVerify(req, res) {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const xp = await getTaskReward(task_id);
+        let xp = await getTaskReward(task_id);
+
+        // 🛡️ Apply Tier Multiplier
+        const multiplier = await getUserMultiplier(wallet_address);
+        xp = Math.floor((xp * multiplier) / 10000);
+
         let targetId = null;
 
         if (task_id && task_id.startsWith('raffle_')) {

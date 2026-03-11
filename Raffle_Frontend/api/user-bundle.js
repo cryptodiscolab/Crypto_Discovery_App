@@ -188,7 +188,8 @@ async function handleXpSync(req, res) {
                 args: [cleanAddress],
             });
 
-            onChainXP = Number(stats[0] || 0);
+            const onChainStats = stats;
+            onChainXP = Number(onChainStats?.[0] || 0);
             xpDelta = onChainXP - dbLastPoints;
 
             if (xpDelta > 0) break; // Found gains!
@@ -201,12 +202,14 @@ async function handleXpSync(req, res) {
             }
         }
 
-        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, DB_Last=${dbLastPoints}, Delta=${xpDelta}`);
+        const currentTier = Number(onChainStats?.[3] || 0);
+        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, Tier=${currentTier}, DB_Last=${dbLastPoints}, Delta=${xpDelta}`);
 
-        // 4. Update Profile (Identity & Points Balance)
+        // 4. Update Profile (Identity, Points Balance & Tier)
         const profileUpdate = {
             wallet_address: cleanAddress,
             total_xp: onChainXP, // Sync current balance
+            tier: currentTier,   // NEW: Sync current on-chain tier
             last_seen_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
@@ -578,7 +581,17 @@ async function handleSyncUgcRaffle(req, res) {
         // 2. Award Creator XP for Raffle Launch
         try {
             const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_create').single();
-            const creatorXp = setting?.points_value || 500;
+            let creatorXp = setting?.points_value || 500;
+
+            // 🛡️ Apply Tier Multiplier
+            const { data: profile } = await supabaseAdmin.from('user_profiles').select('tier').eq('wallet_address', wallet.toLowerCase()).single();
+            const tier = profile?.tier || 0;
+            if (tier > 0) {
+                const { data: multSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'tier_multipliers').single();
+                const multipliers = multSetting?.value || {};
+                const mult = parseInt(multipliers[tier]) || 10000;
+                creatorXp = Math.floor((creatorXp * mult) / 10000);
+            }
 
             const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
                 wallet_address: wallet.toLowerCase(),
@@ -645,7 +658,13 @@ async function handleSyncSbtUpgrade(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const { tierName, ethSpent, txHash } = payload;
-        const tierMap = { 'Rookie': 1, 'Bronze': 2, 'Silver': 3, 'Gold': 4, 'Platinum': 5, 'Diamond': 6 };
+        const tierMap = {
+            'Bronze': 1,
+            'Silver': 2,
+            'Gold': 3,
+            'Platinum': 4,
+            'Diamond': 5
+        };
         const tierIndex = tierMap[tierName] || 0;
 
         // Update DB tier immediately for faster UI feedback

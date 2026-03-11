@@ -55,8 +55,9 @@ sequenceDiagram
 ### 👤 User Profile & Reputation
 - **Wallet-Centric Identity**: No traditional logins; interaction is 100% wallet-based.
 - **Dynamic Tiers (Leaderboard)**: 
-    - **Bronze, Silver, Gold, Platinum, Diamond**.
-    - Ranks are calculated via **Percentiles** (e.g., top 1% are Diamond).
+    - **Rookie (0), Bronze (1), Silver (2), Gold (3), Platinum (4), Diamond (5)**.
+    - Multipliers from **1.00x to 1.50x** (SBT Tier Multiplier).
+    - Status-based ranking prioritized over XP percentiles.
     - Calculated in real-time in the database (`v_user_full_profile`).
 - **Activity Logging**: Every XP-earning event, purchase, or claim is tracked in `user_task_claims`.
 
@@ -75,7 +76,7 @@ Accessible via `/admin`, this dashboard is the central nerve center for the ecos
 ### 💰 Revenue Sharing & Dividends
 - **80/20 Creator Split**: For UGC Raffles, 80% goes to prizes/creator and 20% to the platform.
 - **SBT Dividend Pool**: 30% of platform revenue is piped into the SBT community pool.
-- **Tier-Weighted Distribution**: Gold (50%), Silver (30%), and Bronze (20%) shares of the dividend pool.
+- **Tier-Weighted Distribution**: Diamond (x10), Platinum (x5), Gold (x3), Silver (x2), and Bronze (x1) relative weights. Distribution is dynamic based on total holders per tier.
 
 ---
 

@@ -41,33 +41,17 @@ export function useNFTTiers() {
     })), [bConfig, sConfig, gConfig, pConfig, dConfig, bURI, sURI, gURI, pURI, dURI]);
 
     // Global Economic Variables
+    const { data: tokenPrice } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'tokenPriceUSD' });
     const { data: withdrawalFee } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'withdrawalFeeBP' });
     const { data: dailyBonus } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'dailyBonusAmount' });
-    const { data: sponsorFee } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'sponsorshipPlatformFee' });
-    const { data: autoApprove } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'autoApproveSponsorship' });
 
     const economy = useMemo(() => ({
         tokenPriceUSD: tokenPrice ? formatEther(tokenPrice) : "0",
         withdrawalFeeBP: withdrawalFee ? Number(withdrawalFee) : 0,
-        dailyBonusAmount: dailyBonus ? Number(dailyBonus) : 0,
-        sponsorshipPlatformFee: sponsorFee ? Number(sponsorFee) : 0,
-        autoApproveSponsorship: !!autoApprove,
-        packs: {
-            bronze: packB ? Number(packB) : 0,
-            silver: packS ? Number(packS) : 0,
-            gold: packG ? Number(packG) : 0
-        }
-    }), [tokenPrice, packB, packS, packG, withdrawalFee, dailyBonus, sponsorFee, autoApprove]);
+        dailyBonusAmount: dailyBonus ? Number(dailyBonus) : 0
+    }), [tokenPrice, withdrawalFee, dailyBonus]);
 
-    const updateEconomy = async (tokenP, b, s, g) => {
-        // This would require two separate transactions usually, or a batch function if exists.
-        // We'll just provide individual ones or the most common one.
-        await writeContractAsync({
-            address: V12,
-            abi: ABIS.DAILY_APP,
-            functionName: 'setPackagePricesUSD',
-            args: [BigInt(b), BigInt(s), BigInt(g)]
-        });
+    const updateEconomy = async (tokenP) => {
         if (tokenP) {
             await writeContractAsync({
                 address: V12,

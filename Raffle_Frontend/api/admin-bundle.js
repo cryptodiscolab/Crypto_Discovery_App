@@ -66,6 +66,34 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true, total_calculated: data.length, data: filteredData });
             }
 
+            case 'SYNC_MULTIPLIERS': {
+                // This action expects multipliers in payload: { "1": 10500, "2": 11000, ... }
+                const { error } = await supabaseAdmin
+                    .from('system_settings')
+                    .upsert({ 
+                        key: 'tier_multipliers', 
+                        value: payload, 
+                        updated_at: new Date().toISOString() 
+                    }, { onConflict: 'key' });
+                
+                if (error) throw error;
+                return res.status(200).json({ success: true });
+            }
+
+            case 'SYNC_WEIGHTS': {
+                // This action expects weights in payload: { "diamond": 400, "gold": 200, ... }
+                const { error } = await supabaseAdmin
+                    .from('system_settings')
+                    .upsert({ 
+                        key: 'tier_pool_weights', 
+                        value: payload, 
+                        updated_at: new Date().toISOString() 
+                    }, { onConflict: 'key' });
+                
+                if (error) throw error;
+                return res.status(200).json({ success: true });
+            }
+
             case 'economy-stats':
             case 'GET_ECONOMY': {
                 const { data: auditLogs } = await supabaseAdmin.from('admin_audit_logs').select('action').in('action', ['SPONSOR_APPROVE', 'DEPLOY_BATCH_TASK']);
@@ -159,7 +187,8 @@ export default async function handler(req, res) {
             }
             case 'RESET_SEASON': {
                 await supabaseAdmin.from('user_task_claims').delete().not('id', 'is', 'null');
-                await supabaseAdmin.from('user_profiles').update({ xp: 0, total_xp: 0, tier: 1 }).not('wallet_address', 'is', 'null');
+                // Rookie tier is 0
+                await supabaseAdmin.from('user_profiles').update({ xp: 0, total_xp: 0, tier: 0 }).not('wallet_address', 'is', 'null');
                 return res.status(200).json({ success: true });
             }
             case 'AUDIT_GOVERNANCE': {

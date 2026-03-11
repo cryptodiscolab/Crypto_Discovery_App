@@ -8,14 +8,27 @@ Dokumentasi ini merangkum mekanisme teknis, aturan ekonomi, dan alur integrasi a
 **Contract**: `DailyAppV12Secured.sol` (ERC721 - Soulbound)  
 **Tujuan**: Identitas pemain, sistem leveling, dan pengganda (multiplier) XP.
 
-### 📊 Rincian Tier & Ekonomi
-| Tier | Point (XP) Reqd | Harga (ETH) | Multiplier | Bonus Harian | Max Supply |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Bronze** | 1,000 | 0.001 ETH | 1.1x | 50 XP | 10,000 |
-| **Silver** | 5,000 | 0.005 ETH | 1.2x | 100 XP | 5,000 |
-| **Gold** | 20,000 | 0.02 ETH | 1.5x | 200 XP | 2,000 |
-| **Platinum** | 100,000 | 0.1 ETH | 2.0x | 500 XP | 1,000 |
-| **Diamond** | 500,000 | 0.5 ETH | 3.0x | 1,000 XP | 100 |
+### 📊 Rincian Tier & Ekonomi (Lurah V2)
+| Tier | Index | XP Reqd | Multiplier (BP) | Multiplier (x) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Rookie** | 0 | 0 | 10000 | 1.00x |
+| **Bronze** | 1 | 1,000 | 10500 | 1.05x |
+| **Silver** | 2 | 5,000 | 11000 | 1.10x |
+| **Gold** | 3 | 20,000 | 12000 | 1.20x |
+| **Platinum** | 4 | 100,000 | 13000 | 1.30x |
+| **Diamond** | 5 | 500,000 | 15000 | 1.50x |
+
+### ✅ Task Multiplier Compatibility Matrix
+| Nama Aktivitas | Kategori | Boosted? | Keterangan |
+| :--- | :--- | :--- | :--- |
+| **Social Task Claim** | Off-chain | ✅ YES ⚡ | Melalui `tasks-bundle.js` |
+| **Social Task Verify** | Off-chain | ✅ YES ⚡ | Melalui `tasks-bundle.js` |
+| **Raffle Ticket Buy** | Off-chain | ✅ YES ⚡ | Melalui `tasks-bundle.js` |
+| **Raffle Win Reward** | Off-chain | ✅ YES ⚡ | Melalui `tasks-bundle.js` |
+| **Raffle Creation XP** | Off-chain | ✅ YES ⚡ | Melalui `user-bundle.js` |
+| **Standard On-chain Task**| On-chain | ✅ YES ⚡ | Native di `DailyAppV12Secured` |
+| **Daily Bonus (Check-in)**| On-chain | ❌ NO | Flat Reward (Contract) |
+| **Referral Commission**  | On-chain | ❌ NO | Flat Bounty (Contract) |
 
 ### 🔒 Karakteristik Teknis
 - **Soulbound**: NFT tidak bisa ditransfer atau dijual ke wallet lain (Baris 883-894).
@@ -37,9 +50,11 @@ Semua pendapatan yang masuk ke contract dibagi secara otomatis:
 
 ### 🏆 Distribusi Bobot Tier SBT
 Isi dari kolam 30% tersebut dibagikan kepada user yang memiliki status SBT on-chain dengan proporsi:
-- **Gold SBT**: 50% porsi kolam.
-- **Silver SBT**: 30% porsi kolam.
-- **Bronze SBT**: 20% porsi kolam.
+- **Diamond SBT**: x10 porsi kolam (Weight: 10).
+- **Platinum SBT**: x5 porsi kolam (Weight: 5).
+- **Gold SBT**: x3 porsi kolam (Weight: 3).
+- **Silver SBT**: x2 porsi kolam (Weight: 2).
+- **Bronze SBT**: x1 porsi kolam (Weight: 1).
 
 ---
 
@@ -83,9 +98,11 @@ if (from != address(0) && to != address(0)) revert Unauthorized();
 
 ### Definisi Bobot SBT (CryptoDiscoMaster.sol)
 ```solidity
-uint256 public constant GOLD_WEIGHT = 50;
-uint256 public constant SILVER_WEIGHT = 30;
-uint256 public constant BRONZE_WEIGHT = 20;
+uint256 public constant DIAMOND_WEIGHT = 10;
+uint256 public constant PLATINUM_WEIGHT = 5;
+uint256 public constant GOLD_WEIGHT = 3;
+uint256 public constant SILVER_WEIGHT = 2;
+uint256 public constant BRONZE_WEIGHT = 1;
 ```
 
 ---

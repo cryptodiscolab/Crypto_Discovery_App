@@ -3,6 +3,7 @@ import { Zap, BarChart, Plus, TrendingUp, Cpu } from 'lucide-react';
 import { useReadContract, useWriteContract } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { usePriceOracle } from '../../../hooks/usePriceOracle';
 
 import { usePoints } from '../../../shared/context/PointsContext';
@@ -21,7 +22,7 @@ export function BlockchainConfigSection() {
     const [raffleLimits, setRaffleLimits] = useState({ maxUser: '1000', maxParticipants: '10000' });
     const [raffleXp, setRaffleXp] = useState({ create: '500', claim: '200', purchase: '50' });
     const [econShares, setEconShares] = useState({ owner: '4000', ops: '2000', treasury: '2000', sbt: '2000' });
-    const [tierWeights, setTierWeights] = useState({ diamond: '400', gold: '200', silver: '100', bronze: '50' });
+    const [tierWeights, setTierWeights] = useState({ diamond: '400', platinum: '300', gold: '200', silver: '100', bronze: '50' });
     const [withdrawFee, setWithdrawFee] = useState('500');
     const [sponsorSettings, setSponsorSettings] = useState({
         fee: '1000000', // $1 USDC
@@ -76,6 +77,7 @@ export function BlockchainConfigSection() {
     const { data: qSbtShare } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'sbtPoolShare' });
 
     const { data: qDWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'diamondWeight' });
+    const { data: qPWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'platinumWeight' });
     const { data: qGWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'goldWeight' });
     const { data: qSWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'silverWeight' });
     const { data: qBWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'bronzeWeight' });
@@ -105,6 +107,7 @@ export function BlockchainConfigSection() {
         if (qSbtShare) setEconShares(prev => ({ ...prev, sbt: qSbtShare.toString() }));
 
         if (qDWeight) setTierWeights(prev => ({ ...prev, diamond: qDWeight.toString() }));
+        if (qPWeight) setTierWeights(prev => ({ ...prev, platinum: qPWeight.toString() }));
         if (qGWeight) setTierWeights(prev => ({ ...prev, gold: qGWeight.toString() }));
         if (qSWeight) setTierWeights(prev => ({ ...prev, silver: qSWeight.toString() }));
         if (qBWeight) setTierWeights(prev => ({ ...prev, bronze: qBWeight.toString() }));
@@ -115,7 +118,7 @@ export function BlockchainConfigSection() {
         if (qRewardClaim) setSponsorSettings(prev => ({ ...prev, reward: qRewardClaim.toString() }));
         if (qTasksGoal) setSponsorSettings(prev => ({ ...prev, tasks: qTasksGoal.toString() }));
         if (qAutoApprove !== undefined) setAutoApprove(!!qAutoApprove);
-    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qGWeight, qSWeight, qBWeight, qWithdrawFee, qSponsorFee, qMinPool, qRewardClaim, qTasksGoal, qAutoApprove]);
+    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qPWeight, qGWeight, qSWeight, qBWeight, qWithdrawFee, qSponsorFee, qMinPool, qRewardClaim, qTasksGoal, qAutoApprove]);
 
     const handleSaveGeneral = async () => {
         setIsSaving(true);
@@ -203,9 +206,26 @@ export function BlockchainConfigSection() {
                 address: CONTRACTS.MASTER_X,
                 abi: DAILY_APP_ABI,
                 functionName: 'setTierWeights',
-                args: [BigInt(tierWeights.diamond), BigInt(tierWeights.gold), BigInt(tierWeights.silver), BigInt(tierWeights.bronze)],
+                args: [BigInt(tierWeights.diamond), BigInt(tierWeights.platinum), BigInt(tierWeights.gold), BigInt(tierWeights.silver), BigInt(tierWeights.bronze)],
             });
-            toast.success("Tier Weights Updated!", { id: tid });
+            toast.success("Tier Weights Updated On-Chain!", { id: tid });
+
+            // 🛡️ Sync to DB for UI consistency
+            try {
+                const message = `Action: SYNC_WEIGHTS\nTimestamp: ${Date.now()}`;
+                const { address } = pointers; // Or use useAccount
+                const sig = await window.ethereum.request({ method: 'personal_sign', params: [message, window.ethereum.selectedAddress] });
+                await axios.post('/api/admin-bundle', {
+                    action: 'SYNC_WEIGHTS',
+                    wallet_address: window.ethereum.selectedAddress,
+                    signature: sig,
+                    message: message,
+                    payload: tierWeights
+                });
+                toast.success("Pool Weights Synced to DB!");
+            } catch (syncErr) {
+                console.warn("DB Sync failed, but on-chain update succeeded.");
+            }
         } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
@@ -351,6 +371,10 @@ export function BlockchainConfigSection() {
                             <div className="space-y-1">
                                 <label className="text-[9px] font-black text-cyan-400 uppercase">Diamond</label>
                                 <input type="number" value={tierWeights.diamond} onChange={e => setTierWeights({ ...tierWeights, diamond: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-black text-indigo-300 uppercase">Platinum</label>
+                                <input type="number" value={tierWeights.platinum} onChange={e => setTierWeights({ ...tierWeights, platinum: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[9px] font-black text-amber-400 uppercase">Gold</label>

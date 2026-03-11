@@ -20,7 +20,14 @@ export function NFTConfigTab({ ethPrice }) {
     } = useSBT();
 
     const [localConfigs, setLocalConfigs] = useState([]);
-    const [localEco, setLocalEco] = useState({ tokenP: "0", b: 0, s: 0, g: 0 });
+    const [localEco, setLocalEco] = useState({ 
+        tokenP: "0",
+        p1: "0",
+        p2: "0",
+        p3: "0",
+        p4: "0",
+        p5: "0"
+    });
     const [localWeights, setLocalWeights] = useState({ d: 0, p: 0, g: 0, s: 0, b: 0 });
     const [isSaving, setIsSaving] = useState(null);
 
@@ -32,12 +39,14 @@ export function NFTConfigTab({ ethPrice }) {
                 localURI: t.uri || ''
             })));
         }
-        if (economy) {
+        if (economy && tiers.length >= 5) {
             setLocalEco({
                 tokenP: economy.tokenPriceUSD,
-                b: economy.packs.bronze,
-                s: economy.packs.silver,
-                g: economy.packs.gold
+                p1: getUSD(formatEther(tiers[0].mintPrice)),
+                p2: getUSD(formatEther(tiers[1].mintPrice)),
+                p3: getUSD(formatEther(tiers[2].mintPrice)),
+                p4: getUSD(formatEther(tiers[3].mintPrice)),
+                p5: getUSD(formatEther(tiers[4].mintPrice))
             });
         }
         if (diamondWeight !== undefined) {
@@ -128,11 +137,56 @@ export function NFTConfigTab({ ethPrice }) {
         return (parseFloat(eth) * ethPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
+
     const handleSaveEconomy = async () => {
-        const tid = toast.loading("Updating Global Economics...");
+        const tid = toast.loading("Finalizing Global Economics & Tier Pricing...");
         try {
-            await updateEconomy(localEco.tokenP, localEco.b, localEco.s, localEco.g);
-            toast.success("Global Economics Updated!", { id: tid });
+            // 1. Update Token Price
+            await updateEconomy(localEco.tokenP);
+
+            // 2. Prepare Batch Update for Mint Prices (converting USD -> ETH)
+            if (ethPrice > 0) {
+                const ids = [1, 2, 3, 4, 5];
+                const points = localConfigs.map(t => BigInt(t.pointsRequired));
+                
+                // Inverse calculation: USD / ethPrice = ETH
+                const prices = [
+                    parseEther((parseFloat(localEco.p1.replace(/,/g, '')) / ethPrice).toFixed(6)),
+                    parseEther((parseFloat(localEco.p2.replace(/,/g, '')) / ethPrice).toFixed(6)),
+                    parseEther((parseFloat(localEco.p3.replace(/,/g, '')) / ethPrice).toFixed(6)),
+                    parseEther((parseFloat(localEco.p4.replace(/,/g, '')) / ethPrice).toFixed(6)),
+                    parseEther((parseFloat(localEco.p5.replace(/,/g, '')) / ethPrice).toFixed(6))
+                ];
+                
+                const bonuses = localConfigs.map(t => BigInt(t.dailyBonus));
+                const multipliers = localConfigs.map(t => BigInt(t.multiplierBP));
+                const supplies = localConfigs.map(t => BigInt(t.maxSupply));
+                const opens = localConfigs.map(t => t.isOpen);
+
+                await updateBatchConfig(ids, points, prices, bonuses, multipliers, supplies, opens);
+            }
+
+            // 3. Sync Multipliers to DB for off-chain XP boosting
+            const multiplierMap = {};
+            localConfigs.forEach(t => {
+                multiplierMap[t.id] = Number(t.multiplierBP);
+            });
+
+            const syncMsg = `Action: SYNC_MULTIPLIERS\nTimestamp: ${Date.now()}`;
+            const sig = await window.ethereum.request({
+                method: 'personal_sign',
+                params: [syncMsg, address.toLowerCase()],
+            });
+
+            await axios.post('/api/admin-bundle', {
+                action: 'SYNC_MULTIPLIERS',
+                wallet_address: address,
+                signature: sig,
+                message: syncMsg,
+                payload: multiplierMap
+            });
+
+            toast.success("Global Economics & SBT Multipliers Updated!", { id: tid });
             refetch();
         } catch (e) {
             toast.error(e.shortMessage || "Update failed", { id: tid });
@@ -224,28 +278,56 @@ export function NFTConfigTab({ ethPrice }) {
                         </h4>
                         <p className="text-[10px] text-slate-500 mt-1">Global parameters affecting all tier logic.</p>
                     </div>
-                    <button
-                        onClick={handleSaveBatch}
-                        className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
-                    >
-                        <ShieldCheck className="w-4 h-4" /> BATCH SAVE ALL TIERS
-                    </button>
+                    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                        <button
+                            onClick={async () => {
+                                const tid = toast.loading("Syncing Multipliers...");
+                                try {
+                                    const multiplierMap = {};
+                                    tiers.forEach(t => { multiplierMap[t.id] = Number(t.multiplierBP); });
+                                    const syncMsg = `Action: SYNC_MULTIPLIERS\nTimestamp: ${Date.now()}`;
+                                    const sig = await window.ethereum.request({ method: 'personal_sign', params: [syncMsg, address.toLowerCase()] });
+                                    await axios.post('/api/admin-bundle', { action: 'SYNC_MULTIPLIERS', wallet_address: address, signature: sig, message: syncMsg, payload: multiplierMap });
+                                    toast.success("Multipliers Synced to DB!", { id: tid });
+                                } catch (e) { toast.error("Sync failed", { id: tid }); }
+                            }}
+                            className="bg-slate-800 hover:bg-slate-700 px-4 py-2.5 rounded-xl font-bold text-[10px] text-indigo-400 border border-indigo-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                            <RefreshCw className="w-3 h-3" /> SYNC MULTIPLIERS
+                        </button>
+                        <button
+                            onClick={handleSaveBatch}
+                            className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+                        >
+                            <ShieldCheck className="w-4 h-4" /> BATCH SAVE ALL TIERS
+                        </button>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Token Price ($DISCO)</label>
+                        <input
+                            type="number"
+                            step="0.0001"
+                            value={localEco.tokenP}
+                            onChange={e => setLocalEco({ ...localEco, tokenP: e.target.value })}
+                            className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
+                        />
+                    </div>
                     {[
-                        { label: 'Token Price (USD)', key: 'tokenP', step: '0.0001' },
-                        { label: 'Bronze Sponsor (USD)', key: 'b' },
-                        { label: 'Silver Sponsor (USD)', key: 's' },
-                        { label: 'Gold Sponsor (USD)', key: 'g' }
+                        { label: 'Bronze SBT (USD)', key: 'p1' },
+                        { label: 'Silver SBT (USD)', key: 'p2' },
+                        { label: 'Gold SBT (USD)', key: 'p3' },
+                        { label: 'Platinum SBT (USD)', key: 'p4' },
+                        { label: 'Diamond SBT (USD)', key: 'p5' }
                     ].map((item) => (
                         <div key={item.key} className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</label>
                             <input
-                                type="number"
-                                step={item.step || '1'}
+                                type="text"
                                 value={localEco[item.key]}
-                                onChange={e => setLocalEco({ ...localEco, [item.key]: item.step ? e.target.value : parseInt(e.target.value) })}
+                                onChange={e => setLocalEco({ ...localEco, [item.key]: e.target.value })}
                                 className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
                             />
                         </div>
@@ -257,7 +339,7 @@ export function NFTConfigTab({ ethPrice }) {
                         onClick={handleSaveEconomy}
                         className="w-full md:w-auto bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-10 py-3 rounded-xl font-bold text-xs text-emerald-400 transition-all"
                     >
-                        Save Economics
+                        Save Economics & Prices
                     </button>
                 </div>
             </div>
