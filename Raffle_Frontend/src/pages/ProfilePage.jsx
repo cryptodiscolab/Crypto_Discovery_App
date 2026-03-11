@@ -30,7 +30,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
-  const { sbtThresholds, ecosystemSettings, profileData, refetch: refetchPoints } = usePoints();
+  const { sbtThresholds, ecosystemSettings, profileData: contextProfile, refetch: refetchPoints } = usePoints();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
   // Edit Mode State
