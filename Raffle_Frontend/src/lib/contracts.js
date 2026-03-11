@@ -40,17 +40,25 @@ const createAbiProxy = (name) => {
   });
 };
 
-// ADDRESS GETTERS (Keep these simple)
-const getAddr = (key, envKey) => import.meta.env[envKey] || _get()[key];
+// ADDRESS SELECTION LOGIC
+const chainId = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
+const isSepolia = chainId === 84532;
 
-export const MASTER_X_ADDRESS = getAddr('MASTER_X_ADDRESS', 'VITE_MASTER_X_ADDRESS');
-export const DAILY_APP_ADDRESS = getAddr('DAILY_APP_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS') || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
-export const RAFFLE_ADDRESS = getAddr('RAFFLE_ADDRESS', 'VITE_RAFFLE_ADDRESS');
-export const CMS_CONTRACT_ADDRESS = getAddr('CMS_CONTRACT_ADDRESS', 'VITE_CMS_CONTRACT_ADDRESS');
-export const USDC_ADDRESS = getAddr('USDC_ADDRESS', 'VITE_USDC_ADDRESS');
-export const CREATOR_TOKEN_ADDRESS = getAddr('CREATOR_TOKEN_ADDRESS', 'VITE_CREATOR_TOKEN_ADDRESS');
-export const PRICE_FEED_ADDRESS = getAddr('PRICE_FEED_ADDRESS', 'VITE_PRICE_FEED_ADDRESS') || '0x4aDC67696bA383F43fD60604633031d935f9584b';
-export const SAFE_MULTISIG = getAddr('SAFE_MULTISIG', 'VITE_SAFE_MULTISIG') || '0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa';
+const getAddr = (key, envKey, envKeySepolia) => {
+  if (isSepolia && envKeySepolia) {
+    return import.meta.env[envKeySepolia] || _get().ABIS[key + '_SEPOLIA'] || _get()[key + '_SEPOLIA'];
+  }
+  return import.meta.env[envKey] || _get()[key];
+};
+
+export const MASTER_X_ADDRESS = getAddr('MASTER_X', 'VITE_MASTER_X_ADDRESS', 'VITE_MASTER_X_ADDRESS_SEPOLIA');
+export const DAILY_APP_ADDRESS = getAddr('DAILY_APP', 'VITE_V12_CONTRACT_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA') || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
+export const RAFFLE_ADDRESS = getAddr('RAFFLE', 'VITE_RAFFLE_ADDRESS', 'VITE_RAFFLE_ADDRESS_SEPOLIA');
+export const CMS_CONTRACT_ADDRESS = getAddr('CMS', 'VITE_CMS_CONTRACT_ADDRESS', 'VITE_CMS_CONTRACT_ADDRESS_SEPOLIA');
+export const USDC_ADDRESS = getAddr('USDC', 'VITE_USDC_ADDRESS', 'VITE_USDC_ADDRESS_SEPOLIA');
+export const CREATOR_TOKEN_ADDRESS = getAddr('CREATOR_TOKEN', 'VITE_CREATOR_TOKEN_ADDRESS');
+export const PRICE_FEED_ADDRESS = import.meta.env.VITE_PRICE_FEED_ADDRESS || '0x4aDC67696bA383F43fD60604633031d935f9584b';
+export const SAFE_MULTISIG = import.meta.env.VITE_SAFE_MULTISIG || '0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa';
 
 // Removed purely static Admin constants to prevent them from being bundled in the frontend.
 

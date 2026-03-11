@@ -30,11 +30,11 @@ export default function ProfilePage() {
   const { sbtThresholds, ecosystemSettings } = usePoints();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
 
-  // State untuk Mode Edit
+  // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // State Form Data & Extended Profile Data
+  // Form Data & Extended Profile Data State
   const [profileData, setProfileData] = useState({
     displayName: '',
     bio: '',
@@ -123,7 +123,7 @@ export default function ProfilePage() {
     }
 
     if (data) {
-      // Mapping data dari Supabase ke State
+      // Map data from Supabase to state
       setProfileData({
         displayName: data.display_name || '',
         bio: data.bio || '',
@@ -205,7 +205,7 @@ export default function ProfilePage() {
       toast.success("Profile updated successfully!", { id: toastId });
       setIsEditing(false);
 
-      // Refresh data di UI biar sinkron
+      // Refresh UI to sync data
       fetchProfile();
 
     } catch (error) {
@@ -345,9 +345,9 @@ export default function ProfilePage() {
                 <div className="flex-1">
                   <p className="text-[12px] text-indigo-300 font-black uppercase tracking-wider mb-1">Verify Your Farcaster Account</p>
                   <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                    Belum terdeteksi? Pastikan wallet Anda sudah diverifikasi di: <br />
+                    Not detected? Make sure your wallet is verified at: <br />
                     <span className="text-white">Warpcast &gt; Settings &gt; Verified Addresses</span>. <br />
-                    Setelah itu, klik tombol <b>Sync Farcaster</b> di atas.
+                    Then, click the <b>Sync Farcaster</b> button above.
                   </p>
                 </div>
               </div>
@@ -366,7 +366,7 @@ export default function ProfilePage() {
                   className="w-full bg-transparent border-b border-gray-700 py-1 text-sm text-indigo-400 focus:border-indigo-500 outline-none placeholder-slate-600"
                   placeholder="https://example.com/my-avatar.gif"
                 />
-                <p className="text-[10px] text-slate-500 mt-1">Gunakan link langsung. Hindari file raksasa untuk performa loading yang baik.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Use direct links. Avoid huge files for better loading performance.</p>
               </div>
             )}
 
@@ -1076,7 +1076,7 @@ function DailyClaimModal({ onClose, pointSettings, streakCount }) {
         if (estErr.message?.toLowerCase().includes('user rejected')) {
           toast.dismiss(tid);
         } else {
-          toast.error('Already claimed today! Try again later.', { id: tid });
+          toast.error('Claim failed. You may have already claimed today or your Farcaster is not linked.', { id: tid });
         }
         setIsClaiming(false);
         return;
