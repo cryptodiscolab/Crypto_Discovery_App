@@ -4,8 +4,6 @@ import { useAccount } from 'wagmi';
 import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, Megaphone } from 'lucide-react';
 import { useCMS } from '../hooks/useCMS';
 
-
-
 export function BottomNav() {
     const { address, isConnected } = useAccount();
     const { isAdmin: isCMSAdmin } = useCMS();
@@ -30,13 +28,15 @@ export function BottomNav() {
             className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto md:hidden"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
-            {/* Backdrop: bg opacity + blur — tidak gunakan border atas berat */}
-            <div className="bg-[#0B0E14]/95 backdrop-blur-2xl">
+            {/* Top border separator — subtle */}
+            <div className="h-px w-full bg-white/[0.06]" />
+
+            {/* Backdrop */}
+            <div className="bg-[#0B0E14]/97 backdrop-blur-3xl">
                 <div
-                    className="w-full h-[60px] max-w-screen-sm mx-auto"
+                    className="w-full h-[58px] px-1"
                     style={{ display: 'grid', gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}
                 >
-
                     {/* Core Nav Links */}
                     {navItems.map((item) => {
                         const Icon = item.icon;
@@ -46,23 +46,23 @@ export function BottomNav() {
                                 to={item.path}
                                 end={item.path === '/'}
                                 className={({ isActive }) =>
-                                    `flex flex-col items-center justify-center gap-1 w-full h-full transition-colors duration-150 ${isActive ? 'text-indigo-400' : 'text-zinc-500 active:text-zinc-300'}`
+                                    `flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none
+                                     ${isActive ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'}`
                                 }
-                            // Pastikan hit area tidak pernah lebih kecil dari 44px (h-[60px] sudah cover)
                             >
                                 {({ isActive }) => (
                                     <>
                                         <div className="relative flex items-center justify-center">
                                             <Icon
-                                                className={`w-5 h-5 transition-transform duration-150 ${isActive ? 'scale-110' : ''}`}
+                                                className={`w-[22px] h-[22px] transition-all duration-150 ${isActive ? 'scale-110' : ''}`}
                                                 strokeWidth={isActive ? 2.5 : 1.75}
                                             />
                                             {/* Active indicator dot */}
                                             {isActive && (
-                                                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-400 rounded-full" />
+                                                <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-400 rounded-full" />
                                             )}
                                         </div>
-                                        <span className={`text-[10px] font-medium leading-none ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                                        <span className={`text-[9px] font-semibold leading-none tracking-wide ${isActive ? 'text-indigo-400' : 'text-zinc-600'}`}>
                                             {item.label}
                                         </span>
                                     </>
@@ -76,16 +76,21 @@ export function BottomNav() {
                         <NavLink
                             to="/admin"
                             className={({ isActive }) =>
-                                `flex flex-col items-center justify-center gap-1 w-full h-full transition-colors duration-150 ${isActive ? 'text-amber-400' : 'text-zinc-500 active:text-zinc-300'}`
+                                `flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${isActive ? 'text-amber-400' : 'text-zinc-600 active:text-zinc-300'}`
                             }
                         >
                             {({ isActive }) => (
                                 <>
-                                    <ShieldAlert
-                                        className={`w-5 h-5 transition-transform duration-150 ${isActive ? 'scale-110' : ''}`}
-                                        strokeWidth={isActive ? 2.5 : 1.75}
-                                    />
-                                    <span className={`text-[10px] font-medium leading-none ${isActive ? 'text-amber-400' : 'text-zinc-500'}`}>
+                                    <div className="relative flex items-center justify-center">
+                                        <ShieldAlert
+                                            className={`w-[22px] h-[22px] transition-all duration-150 ${isActive ? 'scale-110' : ''}`}
+                                            strokeWidth={isActive ? 2.5 : 1.75}
+                                        />
+                                        {isActive && (
+                                            <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-amber-400 rounded-full" />
+                                        )}
+                                    </div>
+                                    <span className={`text-[9px] font-semibold leading-none tracking-wide ${isActive ? 'text-amber-400' : 'text-zinc-600'}`}>
                                         Admin
                                     </span>
                                 </>
@@ -98,35 +103,33 @@ export function BottomNav() {
                         {isConnected ? (
                             <Link
                                 to="/profile"
-                                className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-colors duration-150 ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-500 active:text-zinc-300'}`}
+                                className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-600 active:text-zinc-300'}`}
                             >
                                 <div className="relative flex items-center justify-center">
                                     <Wallet
-                                        className={`w-5 h-5 transition-transform duration-150 ${location.pathname.startsWith('/profile') ? 'scale-110' : ''}`}
+                                        className={`w-[22px] h-[22px] transition-all duration-150 ${location.pathname.startsWith('/profile') ? 'scale-110' : ''}`}
                                         strokeWidth={location.pathname.startsWith('/profile') ? 2.5 : 1.75}
                                     />
                                     {/* Green dot = connected indicator */}
-                                    <div className="absolute -top-0.5 -right-1 w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                    <div className="absolute -top-0.5 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#0B0E14]" />
                                     {location.pathname.startsWith('/profile') && (
-                                        <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full" />
+                                        <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full" />
                                     )}
                                 </div>
-                                <span className={`text-[10px] font-medium leading-none ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                <span className={`text-[9px] font-semibold leading-none tracking-wide ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-600'}`}>
                                     Profile
                                 </span>
                             </Link>
                         ) : (
                             <Link
                                 to="/login"
-                                className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-colors duration-150 ${location.pathname === '/login' ? 'text-indigo-400' : 'text-zinc-500 active:text-zinc-300'}`}
+                                className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${location.pathname === '/login' ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'}`}
                             >
-                                {/* Tanpa border box — cukup icon + label */}
-                                <Wallet className="w-5 h-5" strokeWidth={1.75} />
-                                <span className="text-[10px] font-medium leading-none">Login</span>
+                                <Wallet className="w-[22px] h-[22px]" strokeWidth={1.75} />
+                                <span className="text-[9px] font-semibold leading-none tracking-wide">Login</span>
                             </Link>
                         )}
                     </div>
-
                 </div>
             </div>
         </nav>

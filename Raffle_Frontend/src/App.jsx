@@ -42,8 +42,8 @@ function App() {
             {/* Root wrapper: pointer-events-auto required — never set to none here */}
             <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
               <Header />
-              {/* pt-16 = Header height (h-16). pb-20 = BottomNav safe area on mobile. md:pb-0 = no BottomNav on desktop */}
-              <main className="pt-16 pb-20 md:pb-6 min-h-screen">
+              {/* pt-16 = Header height (h-16). pb = BottomNav (58px) + iOS safe area on mobile. md:pb-0 = no BottomNav on desktop */}
+              <main className="pt-16 pb-20 md:pb-6 min-h-screen" style={{ paddingBottom: 'max(80px, calc(58px + env(safe-area-inset-bottom, 0px)))' }}>
                 <ErrorBoundary>
                   <Suspense fallback={
                     <div className="min-h-[60vh] flex items-center justify-center">
