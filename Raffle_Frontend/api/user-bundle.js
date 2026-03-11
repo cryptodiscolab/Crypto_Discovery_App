@@ -15,7 +15,9 @@ const rpcClient = createPublicClient({
     transport: http(process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
 });
 
-const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
+// ZERO-HARDCODE: Source from Env with safe production fallback
+const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || '0xEF8ab11E070359B9C0aA367656893B029c1d04d4';
+const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
 
 export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
@@ -92,6 +94,44 @@ async function handleLoginSync(req, res) {
             .select().single();
 
         if (error) throw error;
+
+        // 5. REFERRAL REWARD: If this is a new user and they were referred, award points to the referrer
+        if (!existing && updateData.referred_by) {
+            try {
+                const { data: refSetting } = await supabaseAdmin
+                    .from('point_settings')
+                    .select('points_value')
+                    .eq('activity_key', 'referral_invite')
+                    .single();
+
+                const refReward = refSetting?.points_value || 50;
+
+                await supabaseAdmin.from('user_task_claims').insert({
+                    wallet_address: updateData.referred_by,
+                    task_id: '77e123f5-0ded-4ca1-af04-e8b6924823e2', // System: Referral Invitation
+                    xp_earned: refReward,
+                    claimed_at: new Date().toISOString(),
+                    platform: 'system',
+                    action_type: 'referral_bonus'
+                });
+
+                // Log activity for the referrer
+                await logActivity({
+                    wallet: updateData.referred_by,
+                    category: 'XP',
+                    type: 'Referral Bonus',
+                    description: `Earned ${refReward} XP for inviting ${cleanAddress}`,
+                    amount: refReward,
+                    symbol: 'XP',
+                    metadata: { invited_user: cleanAddress }
+                });
+
+                console.log(`[Referral] Credited ${updateData.referred_by} with ${refReward} XP for inviting ${cleanAddress}`);
+            } catch (refErr) {
+                console.error('[Referral] Failed to credit referrer:', refErr.message);
+            }
+        }
+
         return res.status(200).json({ success: true, profile: data });
     } catch (error) {
         return res.status(500).json({ error: error.message });

@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 );
 
 const rawAdmins = [
-    '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b', // Primary target
+    '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b',
     '0x455df75735d2a18c26f0afdefa93217b60369fe5',
     '0x52260c30697674a7c837feb2af21bbf3606795c8',
     process.env.VITE_ADMIN_ADDRESS,

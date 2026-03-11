@@ -60,11 +60,8 @@ export default async function handler(req, res) {
 
             if (claimErr) throw claimErr;
 
-            // 4. Increment participants
-            await supabaseAdmin
-                .from('campaigns')
-                .update({ current_participants: (campaign.current_participants || 0) + 1 })
-                .eq('id', campaign_id);
+            // 4. Increment participants (Atomic Fix)
+            await supabaseAdmin.rpc('fn_increment_campaign_participants', { p_campaign_id: campaign_id });
 
             return res.status(200).json({ success: true });
         }
