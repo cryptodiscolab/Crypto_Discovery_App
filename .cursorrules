@@ -50,9 +50,9 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Env Key | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` | `VITE_V12_CONTRACT_ADDRESS` | ✅ DEPLOYED |
-| **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` | `VITE_MASTER_X_ADDRESS` | ❌ SEPOLIA ONLY |
-| **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` | `VITE_RAFFLE_ADDRESS` | ❌ SEPOLIA ONLY |
-| **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS` | ❌ SEPOLIA ONLY |
+| **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` | `VITE_MASTER_X_ADDRESS` | ✅ DEPLOYED |
+| **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` | `VITE_RAFFLE_ADDRESS` | ✅ DEPLOYED |
+| **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS` | ✅ DEPLOYED |
 
 - **Reward Logic**: Must use `Accumulated Reward Per Share` with `1e18` precision.
 - **Safety**: `emergencyWithdraw` must always protect `totalLockedRewards`. Use `unchecked` blocks for non-overflowing arithmetic.
@@ -332,5 +332,11 @@ Setiap hasil re-audit wajib disertakan dalam pesan notifikasi ke user dengan for
 - **EKSEKUSI**: Hanya hapus dan ganti baris atau blok kode yang spesifik menjadi penyebab error (Surgical Fix).
 - **TUJUAN**: Menjaga integritas logika bisnis yang sudah ada dan meminimalkan regresi yang tidak perlu.
 
+## 30. DEFENSIVE ADDRESS CLEANING MANDATE (NEW)
+- **ZERO TOLERANCE FOR MALFORMED ADDRESSES**: Every contract address fetched from environment variables MUST be sanitized to remove accidental quotes (`"`, `'`), spaces, and hidden characters (`\r\n`).
+- **FRONTEND ENFORCEMENT**: `contracts.js` must implement a `cleanAddr` utility and apply it to all `getAddr` calls.
+- **SECURITY IMPACT**: This prevents "Gas Estimation Failed" errors caused by invalid address strings during web3 interactions.
+- **AUDIT CHECK**: Verify that no address used in `publicClient` or `walletClient` contains leading/trailing non-hex characters.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. **Audit-First Mandated. Re-Audit Verified.** Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. **Defensive Cleaning Mandated.** Lurah Approved.*

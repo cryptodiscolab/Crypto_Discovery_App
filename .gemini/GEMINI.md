@@ -17,6 +17,7 @@ Your supreme governing document is [`../.cursorrules`](../.cursorrules). Read it
 5. **ZERO RIBA**: Never suggest or implement interest-bearing (bunga/riba), inflationary staking APY, or deceptive tokenomics.
 6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
 7. **ZERO LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`) to the repository. Ensure `.gitleaks.toml` rules are always active.
+8. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
 
 ---
 
@@ -44,6 +45,7 @@ Notify user format after fix:
 ## 🌐 PROJECT CONTEXT
 
 - **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
+- **DailyApp V13 (Mainnet)**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571`
 - **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 - **Language**: Chat = Bahasa Indonesia | UI/Code = English
 - **Vercel Limit**: Strictly < 12 Serverless Functions → always bundle into `*-bundle.js`

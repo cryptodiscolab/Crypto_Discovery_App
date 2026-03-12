@@ -33,6 +33,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **ZERO LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`).
 8. **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
 9. **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
+10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
 
 ---
 
@@ -60,6 +61,7 @@ Notify user format after fix:
 ## 🌐 PROJECT CONTEXT
 
 - **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
+- **DailyApp V13 (Mainnet)**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571`
 - **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 - **Language**: Chat = Bahasa Indonesia | UI/Code = English
 

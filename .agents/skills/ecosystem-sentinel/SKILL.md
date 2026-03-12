@@ -113,12 +113,13 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 3. **Admin-Dashboard Sync**: Ensure all administrative controls (Web & Bot) display and use dynamic settings.
 4. **Anti-Inflation Guard (SBT Limits)**: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.
 5. **Anti-Sticker-Shock (Gas Guard)**: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.
+6. **Defensive Address Cleaning Mandate**: EVERY contract address fetched from environment variables MUST be cleaned of quotes, spaces, and hidden characters before use.
 
 ## 🏛️ Verified Infrastructure Reference (v3.2)
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V13** | `[RESERVED]` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` |
+| **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
 | **Raffle V2** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
@@ -296,6 +297,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Vercel Guard**: Apakah jumlah fungsi API tetap <= 12? Apakah fitur baru sudah dibundling ke master API?
 - [ ] **Underdog Audit**: Apakah `lastActivityTime` tersinkronisasi dan bonus +10% terverifikasi on-chain?
 - [ ] **Ascension Sync**: Apakah tier di DB ter-update otomatis sesaat setelah SBT minting?
+- [ ] **Defensive Cleaning**: Apakah alamat kontrak sudah dibersihkan dari karakter ilegal (spasi/quotes) sebelum digunakan?
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix)*: `node scripts/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
 
 ## 🚨 Pantangan

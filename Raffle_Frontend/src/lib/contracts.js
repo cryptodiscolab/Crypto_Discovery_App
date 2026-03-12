@@ -44,11 +44,20 @@ const createAbiProxy = (name) => {
 const chainId = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
 const isSepolia = chainId === 84532;
 
+const cleanAddr = (addr) => {
+  if (!addr || typeof addr !== 'string') return addr;
+  // Remove all quotes, whitespace, and hidden characters
+  return addr.replace(/["'\s\r\n\t\0]/g, '').trim();
+};
+
 const getAddr = (key, envKey, envKeySepolia) => {
+  let addr;
   if (isSepolia && envKeySepolia) {
-    return import.meta.env[envKeySepolia] || _get().ABIS[key + '_SEPOLIA'] || _get()[key + '_SEPOLIA'];
+    addr = import.meta.env[envKeySepolia] || _get().ABIS[key + '_SEPOLIA'] || _get()[key + '_SEPOLIA'];
+  } else {
+    addr = import.meta.env[envKey] || _get()[key];
   }
-  return import.meta.env[envKey] || _get()[key];
+  return cleanAddr(addr);
 };
 
 export const MASTER_X_ADDRESS = getAddr('MASTER_X', 'VITE_MASTER_X_ADDRESS', 'VITE_MASTER_X_ADDRESS_SEPOLIA');

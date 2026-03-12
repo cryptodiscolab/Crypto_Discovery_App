@@ -25,7 +25,7 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 ## 🏛️ Verified Infrastructure Reference (v3.2)
 | Component | Base Mainnet | Base Sepolia (Testnet) |
 |---|---|---|
-| **DailyApp (Tasks)** | `[RESERVED]` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` |
+| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` |
 | **MasterX (Points)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
 | **Raffle (NFT)** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
 | **CMS (Content)** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
@@ -43,6 +43,7 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - [x] **Git Safety**: Pastikan `.env` dan `.env.local` ada di `.gitignore`.
 - [x] **No-Screenshot Mandate**: DILARANG KERAS men-staged atau meng-upload file screenshot/media hasil audit ke Git.
 - [x] **Zero-Leak Mandate**: DILARANG KERAS mempublikasikan variabel atau file yang mengandung `role_key`, `service_role_key`, `secret`, atau kredensial mentah lainnya. Gunakan `.env`.
+- [x] **Defensive Address Cleaning**: DILARANG menggunakan alamat kontrak yang masih mengandung tanda kutip, spasi, atau karakter tersembunyi. WAJIB dibersihkan via `cleanAddr`.
 - [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env`, `PRIVATE_KEY`, atau `role_key`.
 
 ### 3. Zero-Trust Frontend Architecture
