@@ -1,5 +1,40 @@
 # 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL
 
+---
+## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
+
+> **This applies to ALL AI models: Gemini, Claude (Sonnet/Opus/Haiku), GPT, DeepSeek, Qwen — no exceptions.**
+
+Before responding to ANY request, you MUST perform these reads IN ORDER:
+
+### STEP 1 — Read Core Skills (WAJIB, URUT)
+```
+1. .agents/skills/ecosystem-sentinel/SKILL.md   ← Audit protocol & fix cycle
+2. .agents/skills/secure-infrastructure-manager/SKILL.md  ← Security & contracts
+3. .agents/skills/git-hygiene/SKILL.md          ← Clean tree mandate
+```
+
+### STEP 2 — Read Situational Skills (baca jika relevan dengan task)
+```
+4. .agents/skills/raffle-integration/SKILL.md   ← Raffle/NFT features
+5. .agents/skills/xp-reward-lifecycle/SKILL.md  ← XP & reward logic
+6. .agents/skills/economy-profitability-manager/SKILL.md  ← PnL & economy
+7. .agents/skills/supabase-audit/SKILL.md       ← DB audit tasks
+8. .agents/skills/admin-stability/SKILL.md      ← Admin dashboard tasks
+```
+
+### STEP 3 — Confirm before proceeding
+After reading, internally confirm:
+- [ ] Zero-Hardcode Mandate understood
+- [ ] Audit-First Fix Cycle (Section 29) understood
+- [ ] Zero-Trust Security rules understood
+- [ ] Vercel 12-function limit understood
+
+> ❗ If you skip this step and start working without reading skills, **you are in Protocol Breach**.
+> The user may say `> re-read skills` to force a reset.
+
+---
+
 You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to the following Protocol strictly.
 
 ## 1. CORE PRINCIPLES & ENVIRONMENT (MANDATORY)
@@ -237,5 +272,66 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **LOCATION**: The HTML version must reside in the same directory as the source Markdown file.
 - **COMMIT POLICY**: Both the .md and .html versions must be committed together to ensure version parity.
 
+## 29. AUDIT-FIRST & RE-AUDIT MANDATE (ERROR FIX PROTOCOL)
+
+> [!IMPORTANT]
+> This section is MANDATORY for EVERY error fix cycle. No exceptions.
+
+### 29.1 Pre-Fix Audit (BEFORE touching any code)
+Before fixing any error, Agent WAJIB menjalankan audit ekosistem terlebih dahulu:
+```bash
+# Step 1: Ecosystem Sync Audit
+node scripts/check_sync_status.cjs
+
+# Step 2: Syntax Check all bundles
+node -c api/user-bundle.js
+node -c api/admin-bundle.js
+node -c api/tasks-bundle.js
+
+# Step 3: Zero-Hardcode Grep Scan
+# grep -rn "|| [0-9]" api/ src/ --include="*.js" --include="*.jsx"
+```
+Jika audit menemukan **kesalahan lebih dari yang dilaporkan user**, Agent WAJIB melaporkan *semua* temuan ke user sebelum melanjutkan fix.
+
+### 29.2 Root Cause Analysis (MANDATORY Before Code Change)
+- **DILARANG KERAS** langsung menulis kode perbaikan sebelum membaca file yang relevan dan memahami root cause.
+- Gunakan `grep_search` dan `view_file` untuk melacak seluruh entry point yang berkaitan dengan bug.
+- Jika bug melibatkan XP/Fee/Reward, **WAJIB** periksa apakah nilai tersebut sudah diambil dari `point_settings` atau `system_settings`.
+
+### 29.3 Post-Fix Re-Audit (AFTER applying any fix)
+Setelah fix diterapkan, Agent WAJIB menjalankan kembali:
+```bash
+# Re-run Ecosystem Sync Audit
+node scripts/check_sync_status.cjs
+
+# Verify no new syntax errors introduced
+node -c api/user-bundle.js
+node -c api/admin-bundle.js
+
+# Gitleaks final scan
+npm run gitleaks-check
+```
+- Jika re-audit **LULUS** (exit code 0, ✅ ALL SYSTEMS SYNCHRONIZED): Task dinyatakan selesai.
+- Jika re-audit **GAGAL**: Agent DILARANG menutup task atau melakukan `git push`. Perbaiki error baru terlebih dahulu dan ulangi siklus ini dari **29.1**.
+
+### 29.4 The Fix Cycle (Lua Loop)
+```
+Error Dilaporkan
+  └─► 29.1: Pre-Fix Audit  ──[Temuan Baru?]──► Report ke User
+        └─► 29.2: Root Cause Analysis
+              └─► Implementasi Fix
+                    └─► 29.3: Re-Audit
+                          ├─[PASS]──► Notify User & git commit
+                          └─[FAIL]──► Kembali ke 29.1
+```
+
+### 29.5 Dokumentasi Hasil Audit
+Setiap hasil re-audit wajib disertakan dalam pesan notifikasi ke user dengan format:
+```
+✅ VERDICT: [status]
+📡 Pipeline: [FUNCTIONAL/DEGRADED]
+🛡️  Security: [X] checks PASSED
+```
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. **Audit-First Mandated. Re-Audit Verified.** Lurah Approved.*

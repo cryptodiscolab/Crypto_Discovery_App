@@ -104,29 +104,31 @@ async function handleLoginSync(req, res) {
                     .eq('activity_key', 'referral_invite')
                     .single();
 
-                const refReward = refSetting?.points_value || 50;
+                if (refSetting?.points_value) {
+                    const refReward = refSetting.points_value;
 
-                await supabaseAdmin.from('user_task_claims').insert({
-                    wallet_address: updateData.referred_by,
-                    task_id: '77e123f5-0ded-4ca1-af04-e8b6924823e2', // System: Referral Invitation
-                    xp_earned: refReward,
-                    claimed_at: new Date().toISOString(),
-                    platform: 'system',
-                    action_type: 'referral_bonus'
-                });
+                    await supabaseAdmin.from('user_task_claims').insert({
+                        wallet_address: updateData.referred_by,
+                        task_id: '77e123f5-0ded-4ca1-af04-e8b6924823e2', // System: Referral Invitation
+                        xp_earned: refReward,
+                        claimed_at: new Date().toISOString(),
+                        platform: 'system',
+                        action_type: 'referral_bonus'
+                    });
 
-                // Log activity for the referrer
-                await logActivity({
-                    wallet: updateData.referred_by,
-                    category: 'XP',
-                    type: 'Referral Bonus',
-                    description: `Earned ${refReward} XP for inviting ${cleanAddress}`,
-                    amount: refReward,
-                    symbol: 'XP',
-                    metadata: { invited_user: cleanAddress }
-                });
+                    // Log activity for the referrer
+                    await logActivity({
+                        wallet: updateData.referred_by,
+                        category: 'XP',
+                        type: 'Referral Bonus',
+                        description: `Earned ${refReward} XP for inviting ${cleanAddress}`,
+                        amount: refReward,
+                        symbol: 'XP',
+                        metadata: { invited_user: cleanAddress }
+                    });
 
-                console.log(`[Referral] Credited ${updateData.referred_by} with ${refReward} XP for inviting ${cleanAddress}`);
+                    console.log(`[Referral] Credited ${updateData.referred_by} with ${refReward} XP for inviting ${cleanAddress}`);
+                }
             } catch (refErr) {
                 console.error('[Referral] Failed to credit referrer:', refErr.message);
             }
@@ -221,8 +223,8 @@ async function handleXpSync(req, res) {
             .eq('activity_key', 'daily_claim')
             .single();
 
-        const standardDailyReward = dailySetting?.points_value || 100;
-        const isDailyClaim = xpDelta === standardDailyReward;
+        const standardDailyReward = dailySetting?.points_value;
+        const isDailyClaim = xpDelta > 0 && xpDelta === standardDailyReward;
         const taskId = isDailyClaim
             ? '288596d8-b5a9-4faf-bde0-0dd28aaba902'
             : '885535d2-4c5c-4a80-9af5-36666192c244';
@@ -491,6 +493,14 @@ async function handleSyncUgcMission(req, res) {
 
         const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks_batch, reward_symbol, payment_token } = payload;
 
+        // Get dynamic platform fee and XP settings
+        const [{ data: sysSetting }, { data: pointSetting }] = await Promise.all([
+            supabaseAdmin.from('system_settings').select('value').eq('key', 'sponsorship_listing_fee_usdc').single(),
+            supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'ugc_task_completion').maybeSingle()
+        ]);
+        const platformFee = sysSetting?.value ? parseFloat(sysSetting.value) : 0;
+        const taskXpReward = pointSetting?.points_value || 0;
+
         // 1. Mirror to campaigns table
         const { data: campaign, error: campaignErr } = await supabaseAdmin.from('campaigns').insert([{
             title,
@@ -498,7 +508,7 @@ async function handleSyncUgcMission(req, res) {
             sponsor_address: sponsor_address.toLowerCase(),
             platform_code: platform_code || 'farcaster',
             reward_amount_per_user: reward_amount_per_user.toString(),
-            max_participants: parseInt(max_participants) || 100,
+            max_participants: parseInt(max_participants),
             status: 'active',
             created_at: new Date().toISOString(),
             payment_token: payment_token || null,
@@ -511,7 +521,7 @@ async function handleSyncUgcMission(req, res) {
         if (tasks_batch && Array.isArray(tasks_batch)) {
             const tasksToInsert = tasks_batch.map(task => ({
                 description: task.title,
-                xp_reward: 100, // Default XP for UGC tasks
+                xp_reward: taskXpReward, // Dynamic XP for UGC tasks
                 platform: task.platform || 'base',
                 action_type: task.action_type || 'follow',
                 link: task.link,
@@ -531,7 +541,7 @@ async function handleSyncUgcMission(req, res) {
             category: 'PURCHASE',
             type: 'UGC Mission Creation',
             description: `Created sponsorship: ${title} (${tasks_batch?.length || 0} tasks)`,
-            amount: 2.0, // Platform fee in USDC (simplified)
+            amount: platformFee, // Dynamic Platform fee in USDC
             symbol: 'USDC',
             txHash,
             metadata: { title, tasks: tasks_batch?.length || 0, platform: platform_code }
@@ -552,8 +562,10 @@ async function handleSyncUgcRaffle(req, res) {
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { raffle_id, end_time, max_tickets, winnerCount, txHash, depositETH, metadata_uri, extra_metadata } = payload;
-        const prizePool = depositETH ? parseFloat(depositETH) / 1.05 : 0;
+        const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
+        const platformFeePercent = sysSetting?.value ? parseFloat(sysSetting.value) : 5; // Fallback only to calculate from passed deposit if setting missing
+        const feeMultiplier = 1 + (platformFeePercent / 100);
+        const prizePool = depositETH ? parseFloat(depositETH) / feeMultiplier : 0;
 
         // 1. Mirror to raffles table
         const { error: raffleErr } = await supabaseAdmin.from('raffles').upsert({
@@ -561,7 +573,7 @@ async function handleSyncUgcRaffle(req, res) {
             creator_address: wallet.toLowerCase(),
             sponsor_address: wallet.toLowerCase(),
             end_time: end_time ? new Date(end_time * 1000).toISOString() : null,
-            max_tickets: parseInt(max_tickets) || 100,
+            max_tickets: parseInt(max_tickets),
             prize_pool: prizePool,
             metadata_uri: metadata_uri || null,
             is_active: true,
@@ -581,39 +593,41 @@ async function handleSyncUgcRaffle(req, res) {
         // 2. Award Creator XP for Raffle Launch
         try {
             const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_create').single();
-            let creatorXp = setting?.points_value || 500;
+            if (setting?.points_value) {
+                let creatorXp = setting.points_value;
 
-            // 🛡️ Apply Tier Multiplier
-            const { data: profile } = await supabaseAdmin.from('user_profiles').select('tier').eq('wallet_address', wallet.toLowerCase()).single();
-            const tier = profile?.tier || 0;
-            if (tier > 0) {
-                const { data: multSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'tier_multipliers').single();
-                const multipliers = multSetting?.value || {};
-                const mult = parseInt(multipliers[tier]) || 10000;
-                creatorXp = Math.floor((creatorXp * mult) / 10000);
-            }
+                // 🛡️ Apply Tier Multiplier
+                const { data: profile } = await supabaseAdmin.from('user_profiles').select('tier').eq('wallet_address', wallet.toLowerCase()).single();
+                const tier = profile?.tier || 0;
+                if (tier > 0) {
+                    const { data: multSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'tier_multipliers').single();
+                    const multipliers = multSetting?.value || {};
+                    const mult = parseInt(multipliers[tier]) || 10000;
+                    creatorXp = Math.floor((creatorXp * mult) / 10000);
+                }
 
-            const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
-                wallet_address: wallet.toLowerCase(),
-                task_id: `raffle_create_${raffle_id}`,
-                xp_earned: creatorXp,
-                platform: 'system',
-                action_type: 'raffle_create',
-                target_id: String(raffle_id)
-            });
-
-            if (!claimErr) {
-                await logActivity({
-                    wallet,
-                    category: 'XP',
-                    type: 'Task Verify',
-                    description: `Awarded ${creatorXp} XP for Creating Raffle #${raffle_id}`,
-                    amount: creatorXp,
-                    symbol: 'XP',
-                    txHash
+                const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
+                    wallet_address: wallet.toLowerCase(),
+                    task_id: `raffle_create_${raffle_id}`,
+                    xp_earned: creatorXp,
+                    platform: 'system',
+                    action_type: 'raffle_create',
+                    target_id: String(raffle_id)
                 });
-            } else if (claimErr.code !== '23505') {
-                console.warn('[SyncUgcRaffle] XP Award Warning:', claimErr);
+
+                if (!claimErr) {
+                    await logActivity({
+                        wallet,
+                        category: 'XP',
+                        type: 'Task Verify',
+                        description: `Awarded ${creatorXp} XP for Creating Raffle #${raffle_id}`,
+                        amount: creatorXp,
+                        symbol: 'XP',
+                        txHash
+                    });
+                } else if (claimErr.code !== '23505') {
+                    console.warn('[SyncUgcRaffle] XP Award Warning:', claimErr);
+                }
             }
         } catch (xpErr) {
             console.error('[SyncUgcRaffle] XP Award Error:', xpErr);

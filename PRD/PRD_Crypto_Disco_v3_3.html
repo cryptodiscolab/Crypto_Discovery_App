@@ -1,0 +1,645 @@
+<h1>🪩 Product Requirements Document: Crypto Disco Application</h1>
+<p><strong>Version: 3.3 — Unified Master Edition</strong>
+<strong>Tanggal</strong>: 2026-03-13
+<strong>Status</strong>: Active — Base Sepolia (Testnet) ✅ | Base Mainnet (Launch Ready)
+<strong>Author</strong>: Antigravity (Ecosystem Sentinel)</p>
+<blockquote>
+<p><strong>Catatan</strong>: Dokumen ini adalah gabungan lengkap dari v3.1, v3.2, DISCO_DAILY_MASTER_PRD.md, dan semua perubahan terbaru (v3.3). Versi lama diarsipkan dan dokumen ini menjadi <strong>satu-satunya sumber kebenaran PRD</strong>.</p>
+</blockquote>
+<hr>
+<h2>📋 Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Versi</th>
+<th>Tanggal</th>
+<th>Ringkasan</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>3.3</strong></td>
+<td>2026-03-13</td>
+<td>Unified master PRD. Menambahkan Audit-First Protocol, Zero-Hardcode Mandate, Multi-Model Agent Architecture (GEMINI.md, CLAUDE.md), Webhook Telegram Protocol, dan ProfilePage ReferenceError fix.</td>
+</tr>
+<tr>
+<td>3.2</td>
+<td>2026-03-12</td>
+<td>UGC Raffle metadata, XP multi-level awarding, DB Security Invoker, Admin Dashboard controls (Lurah Hub).</td>
+</tr>
+<tr>
+<td>3.1</td>
+<td>2026-03-11</td>
+<td>Zero-Leak Security, Pre-Flight Deployment Protocol, Git Hygiene Mandate gitleaks.</td>
+</tr>
+<tr>
+<td>3.0</td>
+<td>2026-03-10</td>
+<td>Dual Network (Base Sepolia + Mainnet), Revenue Sharing (Dividends), UGC Mission Hub.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>1. Visi &amp; Ekonomi Ekosistem</h2>
+<p>Crypto Disco adalah ekosistem gamifikasi Web3 di jaringan <strong>Base</strong> yang dirancang untuk retensi user harian melalui mekanisme Gacha, Misi Sosial, dan Ekonomi Sponsor. Sistem ini mengadopsi model <strong>Revenue-Backing</strong>, di mana pendapatan protokol (dari Raffle &amp; Sponsorship) dibagikan kembali kepada pemegang <strong>Soulbound Token (SBT)</strong>.</p>
+<h3>Core Value Proposition</h3>
+<ul>
+<li><strong>Proof of Action</strong>: Multi-platform social verification (Farcaster, Twitter, TikTok, Instagram).</li>
+<li><strong>Economic Loop</strong>: Platform revenues (fees/sponsorships) are shared back with the community via SBT tiers.</li>
+<li><strong>Identity &amp; Reputation</strong>: Soulbound Token (SBT) NFTs that evolve based on activity (XP) and verified personhood.</li>
+</ul>
+<hr>
+<h2>2. Arsitektur &amp; Technical Stack</h2>
+<h3>2.1 Technical Architecture (Hybrid Decentralized)</h3>
+<ul>
+<li><strong>Frontend</strong>: React + Vite + Wagmi + RainbowKit + Viem (Web3).</li>
+<li><strong>Backend</strong>: Vercel Serverless Functions (Node.js) — <strong>Strict limit: &lt; 12 functions</strong>, bundled ke <code>*-bundle.js</code>.</li>
+<li><strong>Database</strong>: Supabase (PostgreSQL) — Indexer &amp; Social State, dengan RLS (Row Level Security) aktif.</li>
+<li><strong>Smart Contracts</strong>: Base Mainnet &amp; Sepolia (DailyAppV13, CryptoDiscoMaster, RaffleV2).</li>
+<li><strong>Agent AI</strong>: Antigravity (Gemini) sebagai Lead Orchestrator, dengan sub-agents OpenClaw, Qwen, DeepSeek.</li>
+</ul>
+<h3>2.2 Smart Contract Addresses</h3>
+<table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Base Mainnet (8453)</th>
+<th>Base Sepolia (84532)</th>
+<th>Env Key</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>DailyApp V13</strong></td>
+<td><code>0x87a3d1203Bf20E7dF5659A819ED79a67b236F571</code></td>
+<td><code>0x7A85f4150823d79ff51982c39C0b09048EA6cba3</code></td>
+<td><code>VITE_V12_CONTRACT_ADDRESS</code></td>
+</tr>
+<tr>
+<td><strong>MasterX (XP)</strong></td>
+<td><code>[RESERVED]</code></td>
+<td><code>0x474126AD2E111d4286d75C598bCf1B1e1461E71A</code></td>
+<td><code>VITE_MASTER_X_ADDRESS</code></td>
+</tr>
+<tr>
+<td><strong>Raffle V2</strong></td>
+<td><code>[RESERVED]</code></td>
+<td><code>0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0</code></td>
+<td><code>VITE_RAFFLE_ADDRESS</code></td>
+</tr>
+<tr>
+<td><strong>CMS V2</strong></td>
+<td><code>[RESERVED]</code></td>
+<td><code>0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC</code></td>
+<td><code>VITE_CMS_CONTRACT_ADDRESS</code></td>
+</tr>
+</tbody></table>
+<h3>2.3 End-to-End User Workflow</h3>
+<ol>
+<li><strong>Onboarding</strong>: Connect Wallet → Sign SIWE Message → Sync Profile (Backend).</li>
+<li><strong>Earn</strong>: Selesaikan Daily Tasks (Sosial/On-chain) → Dapatkan XP (Synced via Verifier API).</li>
+<li><strong>Ascend</strong>: Capai XP Threshold → Bayar Gas/Fee → Upgrade SBT Tier (Soulbound).</li>
+<li><strong>Yield</strong>: Miliki SBT → Terima Dividen otomatis dari Pool Revenue → Claim ETH (Dividend Claim).</li>
+<li><strong>Participate</strong>: Beli tiket Raffle atau buat misi UGC sendiri sebagai sponsor.</li>
+</ol>
+<hr>
+<h2>3. API Bundles &amp; Routing (Vercel Core)</h2>
+<p>API bertindak sebagai <strong>&quot;Trust Bridge&quot;</strong> antara Blockchain dan UI. Semua endpoint wajib EIP-191 Signature Verification.</p>
+<table>
+<thead>
+<tr>
+<th>Bundle</th>
+<th>Fungsi Utama</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>user-bundle.js</code></strong></td>
+<td>Login sync, XP sync, UGC Mission creation, SBT upgrade, Referral bonus, Pool Claim</td>
+</tr>
+<tr>
+<td><strong><code>tasks-bundle.js</code></strong></td>
+<td>Social task verification (Farcaster/Twitter/TikTok/Instagram), XP granting</td>
+</tr>
+<tr>
+<td><strong><code>admin-bundle.js</code></strong></td>
+<td>Lurah Hub commands, contract config, role management</td>
+</tr>
+<tr>
+<td><strong><code>audit-bundle.js</code></strong></td>
+<td>Ecosystem health checks, event sync, automated cron</td>
+</tr>
+<tr>
+<td><strong><code>raffle-bundle.js</code></strong></td>
+<td>UGC Raffle state, prize claim, winner tracking</td>
+</tr>
+</tbody></table>
+<h3>3.1 Verification Flow (Social Verifier)</h3>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant User
+    participant Backend
+    participant SocialAPI as Neynar/X/TikTok API
+    participant Contract as DailyApp/MasterX
+
+    User-&gt;&gt;Backend: Request Verify Task (EIP-191 Signature)
+    Backend-&gt;&gt;Backend: Recover Signer Address (Viem)
+    Backend-&gt;&gt;SocialAPI: Cek Aksi (Follow/Like/Repost)
+    SocialAPI--&gt;&gt;Backend: Status Valid
+    Backend-&gt;&gt;Contract: markTaskAsVerified(wallet, taskId)
+    Contract--&gt;&gt;User: XP Ready to Claim
+</code></pre>
+<hr>
+<h2>4. Database Configuration &amp; Schema</h2>
+<h3>4.1 Tabel Inti</h3>
+<table>
+<thead>
+<tr>
+<th>Tabel</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>user_profiles</code></strong></td>
+<td>Master data user (XP, Tier, FID, Wallet, Sosial handles)</td>
+</tr>
+<tr>
+<td><strong><code>daily_tasks</code></strong></td>
+<td>List misi sosial (Quick, Batch, UGC). Kolom: <code>is_active</code>, <code>xp_reward</code>, <code>platform</code></td>
+</tr>
+<tr>
+<td><strong><code>user_task_claims</code></strong></td>
+<td>Ledger klaim task — sumber kebenaran XP per-task</td>
+</tr>
+<tr>
+<td><strong><code>user_activity_logs</code></strong></td>
+<td>Transaction history lengkap (XP, Purchase, Reward)</td>
+</tr>
+<tr>
+<td><strong><code>point_settings</code></strong></td>
+<td><strong>Zero-Hardcode source</strong>: semua nilai XP per action-type &amp; platform</td>
+</tr>
+<tr>
+<td><strong><code>system_settings</code></strong></td>
+<td><strong>Zero-Hardcode source</strong>: fee %, threshold, platform parameters</td>
+</tr>
+<tr>
+<td><strong><code>agent_vault</code></strong></td>
+<td>AI knowledge base (protokol, skills, state multi-agent)</td>
+</tr>
+<tr>
+<td><strong><code>raffles</code></strong></td>
+<td>UGC Raffle metadata, status, prize pool</td>
+</tr>
+</tbody></table>
+<h3>4.2 Database Functions &amp; Triggers</h3>
+<ul>
+<li><strong><code>v_user_full_profile</code> (View — SECURITY INVOKER)</strong>: Menghitung ranking dinamis via <code>PERCENT_RANK()</code> untuk tier (Diamond Top 1%, Platinum Top 5%, dst).</li>
+<li><strong><code>trg_sync_xp_on_claim</code> (Trigger)</strong>: Otomatis rekalkukasi <code>total_xp</code> user setiap ada klaim baru.</li>
+<li><strong><code>sync_user_xp</code> (Function)</strong>: Sinkronisasi XP dengan fixed search_path (anti mutable search_path vulnerability).</li>
+<li><strong><code>fn_get_leaderboard</code> (Function)</strong>: Leaderboard dengan fixed search_path.</li>
+</ul>
+<h3>4.3 Integrated Ecosystem Flow</h3>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant User as 👤 User (Frontend)
+    participant API as 📡 Vercel API (JS Bundles)
+    participant DB as 🎲 Supabase (PostgreSQL)
+    participant SC as ⛓️ Smart Contracts (Base)
+    participant Third as ☁️ Neynar/Twitter/TikTok
+
+    User-&gt;&gt;API: 1. Start Task (Follow/Post)
+    API-&gt;&gt;Third: 2. Verify Social Action
+    Third--&gt;&gt;API: 3. Proof of Action
+    API-&gt;&gt;DB: 4. Log Claim (user_task_claims)
+    DB-&gt;&gt;DB: 5. Trigger sync_user_xp
+    DB-&gt;&gt;DB: 6. Update v_user_full_profile (Dynamic Tier)
+    API--&gt;&gt;User: 7. Reward XP &amp; Update UI
+
+    User-&gt;&gt;SC: 8. Mint/Upgrade SBT (if eligible)
+    SC--&gt;&gt;API: 9. Emit Event (Sync to DB)
+
+    User-&gt;&gt;API: 10. Create Raffle (Metadata)
+    API-&gt;&gt;DB: 11. Store Raffle Data (raffles table)
+    User-&gt;&gt;SC: 12. Buy Ticket (80/20 Dev Split)
+    SC-&gt;&gt;SC: 13. Revenue Sharing (SBT Holders)
+</code></pre>
+<hr>
+<h2>5. Frontend Pages &amp; Features</h2>
+<h3>5.1 Halaman Utama</h3>
+<table>
+<thead>
+<tr>
+<th>Halaman</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>🏠 HomePage</strong></td>
+<td>Activity feed, daily bonus hub, quick quest access</td>
+</tr>
+<tr>
+<td><strong>🎯 TasksPage</strong></td>
+<td>Social quests hub (Farcaster/Twitter/TikTok/Instagram) + verification feedback</td>
+</tr>
+<tr>
+<td><strong>🎟️ RafflesPage</strong></td>
+<td>Gallery UGC raffles dengan status filters (Active/Ended)</td>
+</tr>
+<tr>
+<td><strong>➕ CreateRafflePage</strong></td>
+<td>Rich form UGC Raffle dengan live preview &amp; metadata encoding (base64)</td>
+</tr>
+<tr>
+<td><strong>📊 LeaderboardPage</strong></td>
+<td>Global dan Tier-based ranking (XP, Raffle Wins, dynamic Rank Names)</td>
+</tr>
+<tr>
+<td><strong>👤 ProfilePage</strong></td>
+<td>User dashboard: Stats, NFT Tiers, Activity History, Daily Claim, Revenue Share</td>
+</tr>
+<tr>
+<td><strong>📢 CampaignsPage</strong></td>
+<td>Partner quests dan special event discovery</td>
+</tr>
+<tr>
+<td><strong>🔐 LoginPage</strong></td>
+<td>Wallet connection (Wagmi/RainbowKit) + Farcaster FID sync</td>
+</tr>
+</tbody></table>
+<h3>5.2 Profile Page — Komponen Utama</h3>
+<ul>
+<li><strong>DailyClaimModal</strong>: Modal klaim bonus harian. <code>profileData</code> dipass sebagai prop (fix ReferenceError v3.3).</li>
+<li><strong>Revenue Share Dashboard</strong>: Tampilkan balance ETH claimable dari SBT Dividends.</li>
+<li><strong>Activity Log Section</strong>: Riwayat XP/purchase real-time dari <code>user_activity_logs</code>.</li>
+<li><strong>UGC Mission Creator</strong>: Form create sponsorship mission, fee &amp; reward dari <code>system_settings</code> (Zero Hardcode).</li>
+</ul>
+<h3>5.3 Fitur Ekonomi</h3>
+<table>
+<thead>
+<tr>
+<th>Fitur</th>
+<th>Mekanisme</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Daily Claim</strong></td>
+<td>Klaim 100 XP/hari (nilai dari <code>point_settings.daily_claim</code>)</td>
+</tr>
+<tr>
+<td><strong>Referral</strong></td>
+<td>XP reward dari <code>point_settings</code> saat user baru join dengan ref link</td>
+</tr>
+<tr>
+<td><strong>UGC Mission</strong></td>
+<td>Platform fee &amp; task XP dari <code>system_settings</code> / <code>point_settings</code></td>
+</tr>
+<tr>
+<td><strong>UGC Raffle</strong></td>
+<td>Platform fee % &amp; creator XP dari <code>system_settings</code> (Zero Hardcode)</td>
+</tr>
+<tr>
+<td><strong>Revenue Share</strong></td>
+<td>Dividen dari 30% revenue protokol, tier-weighted (Diamond x10 … Bronze x1)</td>
+</tr>
+<tr>
+<td><strong>Underdog Bonus</strong></td>
+<td>+10% XP untuk user Bronze/Silver yang aktif dalam 48 jam</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>6. Admin Control Center (Lurah Hub)</h2>
+<p>Accessible via <code>/admin</code>. 19 modul kontrol ekonomi:</p>
+<table>
+<thead>
+<tr>
+<th>Modul</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PoolTab</strong></td>
+<td>Distribusi manual revenue ke holder SBT</td>
+</tr>
+<tr>
+<td><strong>NFTConfigTab</strong></td>
+<td>Ubah harga minting &amp; XP threshold tanpa redeploy</td>
+</tr>
+<tr>
+<td><strong>SyncLogTab</strong></td>
+<td>Monitoring real-time kegagalan transaksi/sync</td>
+</tr>
+<tr>
+<td><strong>RaffleManagerTab</strong></td>
+<td>Moderasi raffle, adjust fees, monitor prize distribution</td>
+</tr>
+<tr>
+<td><strong>RoleManagementTab</strong></td>
+<td>Grant/Revoke ADMIN_ROLE &amp; VERIFIER_ROLE</td>
+</tr>
+<tr>
+<td><strong>BlockchainConfigTab</strong></td>
+<td>Live update contract addresses &amp; RPC endpoints</td>
+</tr>
+<tr>
+<td><strong>SystemSettingsTab</strong></td>
+<td>Adjust global parameters (tier_percentiles, XP, cooldowns)</td>
+</tr>
+<tr>
+<td><strong>TaskManagerTab</strong></td>
+<td>CRUD task harian, set XP reward dinamis</td>
+</tr>
+<tr>
+<td><strong>RevenueTab</strong></td>
+<td>Real-time ETH/USDC balance monitoring semua contract</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>7. Agent AI Architecture (v3.3 — NEW)</h2>
+<h3>7.1 Multi-Model Protocol</h3>
+<p>Semua model AI yang bekerja di project ini diwajibkan membaca protokol sebelum mulai kerja.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Dibaca Oleh</th>
+<th>Isi</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>.cursorrules</code></td>
+<td><strong>Semua model di Cursor</strong> (GPT, Claude, Gemini, DeepSeek, Qwen)</td>
+<td>Master Architect Protocol + MANDATORY FIRST ACTION (baca 8 skill files sebelum kerja)</td>
+</tr>
+<tr>
+<td><code>.gemini/GEMINI.md</code></td>
+<td><strong>Gemini</strong> native</td>
+<td>Absolute Laws + Fix Cycle ringkas</td>
+</tr>
+<tr>
+<td><code>CLAUDE.md</code></td>
+<td><strong>Claude</strong> (Sonnet/Opus/Haiku) native</td>
+<td>Absolute Laws + Fix Cycle ringkas</td>
+</tr>
+<tr>
+<td><code>.agents/gemini.md</code></td>
+<td><strong>Antigravity</strong> manual detail</td>
+<td>Operational protocol lengkap</td>
+</tr>
+<tr>
+<td><code>agent_vault</code> (Supabase)</td>
+<td><strong>Lurah Telegram Bot</strong></td>
+<td>Cloud backup semua protokol</td>
+</tr>
+</tbody></table>
+<h3>7.2 Agent Skills (WAJIB dibaca urut)</h3>
+<pre><code>CORE (selalu):
+1. .agents/skills/ecosystem-sentinel/SKILL.md
+2. .agents/skills/secure-infrastructure-manager/SKILL.md
+3. .agents/skills/git-hygiene/SKILL.md
+
+SITUATIONAL (jika relevan):
+4. .agents/skills/raffle-integration/SKILL.md
+5. .agents/skills/xp-reward-lifecycle/SKILL.md
+6. .agents/skills/economy-profitability-manager/SKILL.md
+7. .agents/skills/supabase-audit/SKILL.md
+8. .agents/skills/admin-stability/SKILL.md
+</code></pre>
+<h3>7.3 Audit-First Error Fix Protocol (Section 29 .cursorrules)</h3>
+<pre><code>ERROR REPORTED
+  → STEP 1: node scripts/check_sync_status.cjs   ← PRE-FIX AUDIT
+  → STEP 2: grep_search + view_file              ← ROOT CAUSE ANALYSIS
+  → STEP 3: Implement fix (Zero-Hardcode + Zero-Trust)
+  → STEP 4: node scripts/check_sync_status.cjs   ← RE-AUDIT (wajib PASS sebelum notify user)
+</code></pre>
+<hr>
+<h2>8. Webhooks &amp; Integrations</h2>
+<table>
+<thead>
+<tr>
+<th>Integrasi</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Neynar</strong></td>
+<td>Farcaster identity bridge (FID ↔ Wallet), social action proof</td>
+</tr>
+<tr>
+<td><strong>X (Twitter) API</strong></td>
+<td>Follow/Like/Retweet verification</td>
+</tr>
+<tr>
+<td><strong>TikTok / Instagram</strong></td>
+<td>Follow/Like verification (wildcard matching)</td>
+</tr>
+<tr>
+<td><strong>Telegram Bot</strong></td>
+<td><code>verification-server/api/webhook/telegram.js</code> — Admin remote control via Lurah Ekosistem</td>
+</tr>
+<tr>
+<td><strong>DexScreener</strong></td>
+<td>Real-time token price oracle untuk estimasi hadiah dalam USD</td>
+</tr>
+<tr>
+<td><strong>Vercel Cron</strong></td>
+<td>Scheduled sync, daily task reset (07:00 WIB), event indexing</td>
+</tr>
+</tbody></table>
+<h3>8.1 Telegram Bot (Lurah Ekosistem) Commands</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/audit</code></td>
+<td>Trigger ecosystem audit instan</td>
+</tr>
+<tr>
+<td><code>/user &lt;wallet&gt;</code></td>
+<td>Full Social Identity Lock audit</td>
+</tr>
+<tr>
+<td><code>/stats</code></td>
+<td>Statistik user, XP, pertumbuhan</td>
+</tr>
+<tr>
+<td><code>/health</code></td>
+<td>Cek koneksi DB &amp; RPC</td>
+</tr>
+<tr>
+<td><code>/daftar_task</code></td>
+<td>List &amp; hapus task harian</td>
+</tr>
+<tr>
+<td><code>/tambah_task Desc | Link</code></td>
+<td>Buat task baru (XP dari <code>point_settings</code> — Zero Hardcode)</td>
+</tr>
+<tr>
+<td><code>/fix &lt;error&gt;</code></td>
+<td>AI-powered error analysis via Gemini</td>
+</tr>
+<tr>
+<td><code>/model</code></td>
+<td>Ganti model AI Lurah (Flash/Pro)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. Security &amp; Audit Mandates</h2>
+<h3>9.1 Zero-Hardcode Mandate (CRITICAL)</h3>
+<ul>
+<li><strong>DEFINISI</strong>: Semua nilai XP, Fee, Reward, Threshold <strong>DILARANG</strong> hardcode di source code.</li>
+<li><strong>SUMBER</strong>: Semua parameter wajib dari <code>point_settings</code> atau <code>system_settings</code> di Supabase.</li>
+<li><strong>AUDIT</strong>: <code>grep -rn &quot;|| [0-9]&quot; api/ src/</code> sebelum setiap push.</li>
+</ul>
+<h3>9.2 Zero-Trust Security</h3>
+<ul>
+<li><strong>EIP-191 Signature</strong>: Semua API backend yang modify data wajib validasi signature wallet.</li>
+<li><strong>Replay Protection</strong>: Timestamp window validasi maksimal 5 menit.</li>
+<li><strong>Social Identity Lock</strong>: 1 platform (Twitter/Farcaster/TikTok/Instagram) = 1 wallet. Anti-Sybil.</li>
+<li><strong>Service Role Key</strong>: HANYA digunakan di server-side. Dilarang di <code>src/</code> (frontend).</li>
+</ul>
+<h3>9.3 Pre-Push Checklist (WAJIB)</h3>
+<pre><code class="language-bash">node scripts/check_sync_status.cjs   # Ecosystem sync audit
+node -c api/user-bundle.js           # Syntax check
+node -c api/admin-bundle.js
+npm run gitleaks-check               # Secret leak scan
+npm run lint                         # Frontend linter
+npm run build                        # Build test
+git status                           # Clean tree check
+</code></pre>
+<h3>9.4 Git Hygiene (Clean Tree Mandate)</h3>
+<p><strong>NEVER COMMIT</strong>: <code>.env*</code>, <code>tmp_*.cjs</code>, <code>_archive/</code>, <code>*.log</code>, <code>FlatCryptoDisco*.sol</code>, <code>test-env/</code>, <code>.gemini/</code>, <code>.cursorrules</code></p>
+<p><strong>ALWAYS TRACK</strong>: <code>contracts/</code>, <code>api/</code>, <code>src/</code>, <code>scripts/</code>, <code>.agents/skills/</code>, <code>CLAUDE.md</code></p>
+<hr>
+<h2>10. Tiering System</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Level</th>
+<th>XP Threshold</th>
+<th>Multiplier</th>
+<th>Dividen Weight</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Rookie</strong></td>
+<td>0</td>
+<td>0 XP</td>
+<td>1.00x</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Bronze</strong></td>
+<td>1</td>
+<td>500 XP</td>
+<td>1.10x</td>
+<td>×1</td>
+</tr>
+<tr>
+<td><strong>Silver</strong></td>
+<td>2</td>
+<td>2,000 XP</td>
+<td>1.20x</td>
+<td>×2</td>
+</tr>
+<tr>
+<td><strong>Gold</strong></td>
+<td>3</td>
+<td>5,000 XP</td>
+<td>1.30x</td>
+<td>×3</td>
+</tr>
+<tr>
+<td><strong>Platinum</strong></td>
+<td>4</td>
+<td>Top 5%</td>
+<td>1.40x</td>
+<td>×5</td>
+</tr>
+<tr>
+<td><strong>Diamond</strong></td>
+<td>5</td>
+<td>Top 1%</td>
+<td>1.50x</td>
+<td>×10</td>
+</tr>
+</tbody></table>
+<p><strong>Hard cap</strong>: Diamond SBT Multiplier DILARANG melebihi 1.5x (15000 BP) di contract manapun.</p>
+<hr>
+<h2>11. Revenue Flow</h2>
+<pre><code>Platform Revenue (Raffle Fee + Sponsorship Fee)
+    │
+    ├── 70% → Operations &amp; Development
+    └── 30% → SBT Community Dividend Pool
+                │
+                └── Distributed weighted by tier
+                    Diamond (×10) &gt; Platinum (×5) &gt; Gold (×3) &gt; Silver (×2) &gt; Bronze (×1)
+
+UGC Raffle Split:
+    Total Prize Pool
+    ├── 80% → Prize Pool (to winners)
+    └── 20% → Platform (→ 30% back to SBT holders)
+</code></pre>
+<hr>
+<h2>12. Ecosystem Verification Status</h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Status</th>
+<th>Core Logic</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Auth</strong></td>
+<td>🟢 100%</td>
+<td>SIWE + Identity Lock</td>
+</tr>
+<tr>
+<td><strong>XP Logic</strong></td>
+<td>🟢 100%</td>
+<td>Dynamic from <code>point_settings</code>, on-chain sync</td>
+</tr>
+<tr>
+<td><strong>Dividends</strong></td>
+<td>🟢 100%</td>
+<td>Weighted Share (10%–30%), tier-based</td>
+</tr>
+<tr>
+<td><strong>UGC Hub</strong></td>
+<td>🟢 100%</td>
+<td>Auto-sync to Global Tasks</td>
+</tr>
+<tr>
+<td><strong>Raffle</strong></td>
+<td>🟢 100%</td>
+<td>ERC721 + metadata base64, prize tracking</td>
+</tr>
+<tr>
+<td><strong>Admin Bot</strong></td>
+<td>🟢 100%</td>
+<td>Telegram Lurah, AI-powered <code>/fix</code></td>
+</tr>
+<tr>
+<td><strong>Zero Hardcode</strong></td>
+<td>🟢 100%</td>
+<td>All XP/Fee from Supabase settings</td>
+</tr>
+<tr>
+<td><strong>Audit Protocol</strong></td>
+<td>🟢 100%</td>
+<td>Pre-Fix &amp; Post-Fix audit mandatory</td>
+</tr>
+<tr>
+<td><strong>Multi-Model AI</strong></td>
+<td>🟢 100%</td>
+<td>GEMINI.md + CLAUDE.md + .cursorrules</td>
+</tr>
+<tr>
+<td><strong>Social Platforms</strong></td>
+<td>🟢 100%</td>
+<td>Twitter, Farcaster, TikTok, Instagram</td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>PRD Version: 3.3 — Unified Master Edition</em>
+<em>Berdasarkan protokol Full-Stack Sync. Ecosystem Synced. Identity Locked. Zero Hardcode. Audit-First. Lurah Approved.</em></p>

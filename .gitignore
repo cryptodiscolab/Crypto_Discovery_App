@@ -30,6 +30,7 @@ hardhat.config.js.backup
 .vscode/
 .idea/
 .cursorrules
+.gemini/
 .DS_Store
 
 # === AGENT LOCAL/PRIVATE CONFIG (Track scripts, not secrets) ===

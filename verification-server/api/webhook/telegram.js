@@ -293,7 +293,7 @@ module.exports = async (req, res) => {
                 .eq('is_active', true)
                 .maybeSingle();
 
-            const xpReward = pointSetting ? pointSetting.points_value : 50; // Default 50 if not found
+            const xpReward = pointSetting ? pointSetting.points_value : 0; // Dynamic config only
 
             // 3. Calculate Expires At (Next 07:00 WIB / 00:00 UTC)
             const now = new Date();

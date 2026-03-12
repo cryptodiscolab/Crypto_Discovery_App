@@ -566,6 +566,7 @@ export default function ProfilePage() {
             onClose={() => setActiveModal(null)} 
             pointSettings={ecosystemSettings} 
             streakCount={profileData.streakCount}
+            profileData={profileData}
           />
         )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}
@@ -715,8 +716,8 @@ function CreateTaskModal({ onClose }) {
   const rewardUsdValue = currentPrice * parseFloat(rewardTokens);
   
   // Dynamic fetches
-  const rewardTokens = Number(ecosystemSettings?.sponsorship_reward_amount || 5);
-  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 2);
+  const rewardTokens = Number(ecosystemSettings?.sponsorship_reward_amount || 0);
+  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 0);
   
   const tokenDecimals = selectedToken?.decimals || 18;
   const rewardAmount = BigInt(Math.floor(rewardTokens * 10 ** 6)) * 10n ** BigInt(tokenDecimals - 6); 
@@ -1040,7 +1041,7 @@ function CreateTaskModal({ onClose }) {
   );
 }
 
-function DailyClaimModal({ onClose, pointSettings, streakCount }) {
+function DailyClaimModal({ onClose, pointSettings, streakCount, profileData }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { writeContractAsync } = useWriteContract();

@@ -40,7 +40,8 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `E:\Disco Gacha\Disco_DailyApp\DISCO_DAILY_MASTER_PRD.md`
+**File:** `E:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_3.md`
+(Versi lama diarsipkan di `PRD/_archive/`)
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
 
@@ -74,8 +75,8 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.2 (UGC Raffle & XP Sync Expansion Edition)
-- **Status:** Integrated Ecosystem Flow, Leaderboard Stats Sync, and Lurah Admin Hub Documentation (Master Task & Audit Reference)
+- **Versi Terakhir:** 3.3 (Unified Master Edition — Audit-First & Multi-Model AI Update)
+- **Status:** Single source of truth. Versi lama (v3.1, v3.2, DISCO_DAILY_MASTER_PRD) diarsipkan di `PRD/_archive/`
 
 ---
 
@@ -128,6 +129,9 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 ### 1. Automation Code Audit & Fix
 - **Static Analysis**: Secara otomatis melakukan audit pada file yang dimodifikasi untuk mendeteksi *hardcoded values*, kerentanan keamanan (reentrancy), atau inefisiensi gas.
 - **Auto-Fixing**: Jika ditemukan error atau logika yang membingungkan, Agent wajib memberikan solusi perbaikan instan sebelum melakukan commit/push.
+
+> [!IMPORTANT]
+> **AUDIT-FIRST MANDATE**: Agent DILARANG KERAS langsung menulis kode fix tanpa terlebih dahulu menjalankan Pre-Fix Audit (`node scripts/check_sync_status.cjs`). Setelah fix diterapkan, Agent WAJIB menjalankan Re-Audit untuk membuktikan perbaikan valid. Lihat **Section 29 di .cursorrules** untuk prosedur lengkap.
 - **UX/UI Polish (Senior UI/UX Standards)**: Memastikan elemen UI terasa premium (glassmorphism, micro-animations) dan tidak ada "Glass Wall" (elemen tidak bisa diklik). Mengikuti prinsip "Clean & Rugged", "Atomic Layout", dan "Minimalist Modern Standards" (Section 13 of .cursorrules).
 - **UI/UX Audit**: Melakukan audit visual untuk memastikan:
   - Horizontal overflow tidak terjadi di mobile.
@@ -274,6 +278,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Cloud Config Sync**: `node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js`
 
 ## 📋 Checklist Sentinel (MANDATORY)
+- [ ] **🔍 PRE-FIX AUDIT** *(BARU - WAJIB dijalankan SEBELUM fix apapun)*: `node scripts/check_sync_status.cjs` — Pastikan baseline ekosistem terdokumentasi.
 - [ ] **Clean Git Tree**: Apakah `git status` bersih dari file sementara (`tmp_*.cjs`, `.env.vercel`, `FlatCryptoDisco*.sol`, `_archive/`)? Jika tidak, tambahkan ke `.gitignore` dan hapus file tersebut.
 - [ ] **Gitleaks Audit**: Apakah eksekusi `npm run gitleaks-check` mengembalikan *exit code 0* (No leaks)?
 - [ ] **Audit**: Apakah kode baru bebas dari hardcode (`eyJ...`, `0x..`, `sb_...`) dan celah keamanan? (Jalankan `sentinel-audit.js`)
@@ -289,6 +294,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Vercel Guard**: Apakah jumlah fungsi API tetap <= 12? Apakah fitur baru sudah dibundling ke master API?
 - [ ] **Underdog Audit**: Apakah `lastActivityTime` tersinkronisasi dan bonus +10% terverifikasi on-chain?
 - [ ] **Ascension Sync**: Apakah tier di DB ter-update otomatis sesaat setelah SBT minting?
+- [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix)*: `node scripts/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
 
 ## 🚨 Pantangan
 - Melakukan push kode yang belum diaudit secara otomatis.
@@ -296,3 +302,44 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - Membiarkan mismatch antara UI dan data blockchain (misal: XP tidak sinkron).
 - Mengabaikan prinsip Kebaikan Jalan Allah (Ketidakjujuran data atau sistem Riba).
 - **Mengubah file .agents atau .cursorrules tanpa menjalankan sync-cloud.js.**
+- 🚫 **MELAKUKAN FIX TANPA PRE-FIX AUDIT** (`check_sync_status.cjs`). Ini adalah Protocol Breach Level-1.
+- 🚫 **MENUTUP TASK / NOTIFY USER TANPA RE-AUDIT** setelah fix diterapkan. Wajib sertakan output audit di notifikasi.
+- 🚫 **MENGABAIKAN TEMUAN BARU dari audit** yang tidak dilaporkan user. Semua temuan wajib dilaporkan.
+
+---
+## 🔄 AUDIT-FIRST ERROR FIX CYCLE (MANDATORY WORKFLOW)
+
+```
+[ERROR DILAPORKAN]
+    │
+    ▼
+🔍 STEP 1: PRE-FIX AUDIT
+    node scripts/check_sync_status.cjs
+    node -c api/user-bundle.js && node -c api/admin-bundle.js
+    │
+    ├─ Temuan baru? ──► REPORT KE USER sebelum lanjut
+    │
+    ▼
+🧠 STEP 2: ROOT CAUSE ANALYSIS
+    grep_search() + view_file() untuk seluruh entry point
+    Cek XP/Fee/Reward → harus dari point_settings/system_settings
+    │
+    ▼
+🔧 STEP 3: IMPLEMENTASI FIX
+    Tulis kode perbaikan sesuai Zero-Hardcode & Zero-Trust
+    │
+    ▼
+✅ STEP 4: POST-FIX RE-AUDIT
+    node scripts/check_sync_status.cjs
+    npm run gitleaks-check
+    │
+    ├─ PASS (✅ ALL SYSTEMS SYNCHRONIZED) ──► Notify User + git commit
+    └─ FAIL ──────────────────────────────► Kembali ke STEP 1
+```
+
+Output re-audit WAJIB disertakan dalam pesan ke user:
+```
+✅ VERDICT: ALL SYSTEMS SYNCHRONIZED & OPERATIONAL
+📡 Task Claim Pipeline: FULLY FUNCTIONAL
+🛡️  Security Matrix: X checks PASSED
+```
