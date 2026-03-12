@@ -337,6 +337,9 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
     │
     ├─ PASS (✅ ALL SYSTEMS SYNCHRONIZED) ──► Notify User + git commit
     └─ FAIL ──────────────────────────────► Kembali ke STEP 1
+
+> [!CAUTION]
+> **SURGICAL FIX MANDATE**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 ```
 
 Output re-audit WAJIB disertakan dalam pesan ke user:

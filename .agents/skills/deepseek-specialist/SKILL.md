@@ -11,8 +11,10 @@ DeepSeek bertanggung jawab atas optimasi algoritma, struktur backend, dan audit 
 3. **Security Audit**: Melakukan audit keamanan pada logika kontrak dan alur data sensitif.
 4. **Nexus Integration**: Mengoordinasikan pembagian tugas antar sub-agent dalam ekosistem Nexus.
 5. **Yield & Catch-up Optimization**: Menganalisa dan mengoptimalkan formula Underdog Bonus agar tetap adil namun efisien secara gas.
+6. **Surgical Fix Mandate**: Dilarang menghapus seluruh blok kode saat perbaikan. Hanya ganti baris yang error saja.
 
 ## 📋 Protokol Eksekusi
 - Gunakan `> deepseek:` untuk memicu tugas ini.
 - Fokus pada solusi yang elegan dan secara matematis optimal (Zero Riba compliant).
 - Selalu patuhi Master Architect Protocol (.cursorrules).
+- **Wajib Surgical Fix**: Jangan ganti seluruh kode, hanya yang error saja.

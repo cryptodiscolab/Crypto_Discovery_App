@@ -42,6 +42,9 @@ Git adalah **Single Source of Truth** untuk kode sumber. Polutan berikut ini **D
 | `.husky/` | Git hooks |
 | `hardhat.config.cjs`, `package.json` | Build configs |
 
+### 🔍 Surgical Fix Mandate (ANTI-DESTRUCTION)
+- **DILARANG KERAS** menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja (Surgical Fix) untuk menjaga riwayat git tetap bersih dan logis.
+
 ---
 
 ## 2. Pre-Push Git Status Protocol

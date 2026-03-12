@@ -88,6 +88,10 @@ Before responding to ANY request, read these files IN ORDER:
     │
     ├─ ✅ PASS → Notify User dengan output audit + git commit
     └─ ❌ FAIL → Kembali ke STEP 1 (jangan notify user dulu)
+
+### SURGICAL FIX MANDATE (Baru):
+- **DILARANG KERAS** menghapus seluruh kode saat memperbaiki error.
+- **Wajib** melakukan "Surgical Fix": hanya hapus dan ganti baris/blok yang error saja untuk menjaga integritas kode.
 ```
 
 ### Format Wajib Notify User Setelah Fix:

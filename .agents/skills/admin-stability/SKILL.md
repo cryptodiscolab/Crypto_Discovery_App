@@ -8,6 +8,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Health Check Protocol**: Melakukan simulasi pemeriksaan fitur utama (Login, Claim XP, Create Task, Buy Ticket) pada environment staging/live untuk memastikan tidak ada fitur yang pecah setelah update.
 - **Development Plan Mandatory**: Setiap perubahan pada layout admin, logic gate, atau middleware WAJIB diawali dengan "Development Plan".
 - **Pre-Flight Check**: Jalankan `sentinel-audit.js` dan pastikan `npm run build` lokal aman.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 
 ### 4. Zero-Trust Security Standard (MANDATORY)
 - **Signature-First API**: Semua API Backend (Vercel Functions/verification-server) yang melakukan modifikasi data (Internal DB atau On-Chain) WAJIB memvalidasi **EIP-191 Signature** dari wallet user/admin.

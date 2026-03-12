@@ -11,6 +11,7 @@ Setiap usulan fitur baru atau optimasi ekonomi harus diaudit terhadap prinsip Ze
 - **PnL Strategy**: Jelaskan dampak finansial (cost vs revenue) dalam maksimal 3 poin bullet.
 - **Development Plan Mandatory**: Sebelum melakukan optimasi yang menyentuh logika kontrak atau fee, sajikan "Development Plan".
 - **Continuous Learning**: Dokumentasikan kegagalan build atau audit sebagai bekal pembelajaran di `.agents/`.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 
 ### 3. Bahasa & Komunikasi
 - **Technical/Strategy**: **Bahasa Indonesia**.

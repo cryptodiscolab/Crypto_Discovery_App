@@ -11,8 +11,10 @@ Qwen bertanggung jawab atas tugas-tugas taktis yang memerlukan interaksi langsun
 3. **Build Verification**: Menjalankan `npm run build` dan mendiagnosa error build sebelum push.
 4. **Hardware Awareness**: Selalu mempertimbangkan limitasi CPU/RAM dalam memberikan saran optimasi.
 5. **Minimalist UI Polish**: Implementasi komponen UI yang elegan, ringan, dan minimalis (seperti tier upgrade prompts & underdog badges).
+6. **Surgical Fix Mandate**: Dilarang menghapus seluruh blok kode saat perbaikan. Hanya ganti baris yang error saja.
 
 ## 📋 Protokol Eksekusi
 - Gunakan `> qwen:` untuk memicu tugas ini.
 - Hasil eksekusi wajib dilaporkan kembali ke `agents_vault`.
 - Prioritaskan kecepatan dan keringanan (lightweight) dalam setiap solusi.
+- **Surgical Fix**: Hanya ganti kode yang error (surgical), dilarang replace seluruh blok.

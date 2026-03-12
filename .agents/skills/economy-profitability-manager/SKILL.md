@@ -11,6 +11,7 @@ Skill ini dirancang untuk mengotomatisasi pengawasan ekonomi aplikasi Crypto Dis
 - **PnL Logic**: Jelaskan struktur biaya dan margin dalam maksimal 3 poin bullet.
 - **Development Plan Mandatory**: Setiap penyesuaian parameter (Listing Fee, Reward Pool) WAJIB diawali dengan "Development Plan".
 - **Revenue Safety**: Memastikan biaya operasional tertutup sebelum distribusi profit.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 
 ### 3. Bahasa & Komunikasi
 - **Teknis/Strategi**: **Bahasa Indonesia**.

@@ -279,16 +279,6 @@ contract DailyAppV13 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         emit RewardClaimed(msg.sender, _token, userAmount);
     }
 
-    function setSettings(uint256 _fee, uint256 _minPool, uint256 _rewardClaim, uint256 _tasksGoal) external onlyRole(ADMIN_ROLE) {
-        sponsorshipPlatformFee = _fee;
-        minRewardPoolValue = _minPool;
-        rewardPerClaim = _rewardClaim;
-        tasksForReward = _tasksGoal;
-    }
-
-    function setAllowedToken(address _token, bool _status) external onlyRole(ADMIN_ROLE) {
-        allowedPaymentTokens[_token] = _status;
-    }
 
     function supportsInterface(bytes4 interfaceId)
         public

@@ -1580,6 +1580,31 @@
                 "anonymous": false,
                 "inputs": [
                     {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "DailyBonusClaimed",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
                         "indexed": false,
                         "internalType": "address",
                         "name": "account",
@@ -1778,6 +1803,12 @@
                         "internalType": "uint256",
                         "name": "timestamp",
                         "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "referrer",
+                        "type": "address"
                     }
                 ],
                 "name": "TaskCompleted",
@@ -1987,6 +2018,13 @@
                 "type": "function"
             },
             {
+                "inputs": [],
+                "name": "claimDailyBonus",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
                 "inputs": [
                     {
                         "internalType": "address",
@@ -2055,6 +2093,11 @@
                         "internalType": "uint256",
                         "name": "_taskId",
                         "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "_referrer",
+                        "type": "address"
                     }
                 ],
                 "name": "doTask",
@@ -2185,6 +2228,25 @@
                         "internalType": "bool",
                         "name": "",
                         "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "lastActivityTime",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
                     }
                 ],
                 "stateMutability": "view",
@@ -2357,6 +2419,25 @@
             {
                 "inputs": [
                     {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "referralCount",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
                         "internalType": "bytes32",
                         "name": "role",
                         "type": "bytes32"
@@ -2493,8 +2574,164 @@
             {
                 "inputs": [
                     {
+                        "internalType": "bool",
+                        "name": "_status",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setAutoApproveSponsorship",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_token",
+                        "type": "address"
+                    }
+                ],
+                "name": "setCreatorToken",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
                         "internalType": "uint256",
-                        "name": "_fee",
+                        "name": "_amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setDailyBonusAmount",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_daily",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_referral",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setGlobalRewards",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_masterX",
+                        "type": "address"
+                    }
+                ],
+                "name": "setMasterX",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV13.NFTTier",
+                        "name": "_tier",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_pointsRequired",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_mintPrice",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_dailyBonus",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_multiplierBP",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_maxSupply",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_isOpen",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setNFTConfig",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV13.NFTTier[]",
+                        "name": "_tiers",
+                        "type": "uint8[]"
+                    },
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_pointsRequired",
+                        "type": "uint256[]"
+                    },
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_mintPrices",
+                        "type": "uint256[]"
+                    },
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_dailyBonuses",
+                        "type": "uint256[]"
+                    },
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_multipliersBP",
+                        "type": "uint256[]"
+                    },
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_maxSupplies",
+                        "type": "uint256[]"
+                    },
+                    {
+                        "internalType": "bool[]",
+                        "name": "_isOpens",
+                        "type": "bool[]"
+                    }
+                ],
+                "name": "setNFTConfigsBatch",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_feeUSDC",
                         "type": "uint256"
                     },
                     {
@@ -2504,16 +2741,55 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "_rewardClaim",
+                        "name": "_reward",
                         "type": "uint256"
                     },
                     {
                         "internalType": "uint256",
-                        "name": "_tasksGoal",
+                        "name": "_tasks",
                         "type": "uint256"
                     }
                 ],
                 "name": "setSettings",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_duration",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setSponsorDuration",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_token",
+                        "type": "address"
+                    }
+                ],
+                "name": "setUSDCToken",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_feeBP",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setWithdrawalFeeBP",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"

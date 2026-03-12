@@ -327,5 +327,10 @@ Setiap hasil re-audit wajib disertakan dalam pesan notifikasi ke user dengan for
 🛡️  Security: [X] checks PASSED
 ```
 
+### 29.6 SURGICAL FIX MANDATE (ANTI-DESTRUCTION CODE)
+- **PRINSIP**: Jika memperbaiki error, **DILARANG KERAS** menghapus seluruh blok kode atau mengganti seluruh file dengan kode yang baru.
+- **EKSEKUSI**: Hanya hapus dan ganti baris atau blok kode yang spesifik menjadi penyebab error (Surgical Fix).
+- **TUJUAN**: Menjaga integritas logika bisnis yang sudah ada dan meminimalkan regresi yang tidak perlu.
+
 ---
 *Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. **Audit-First Mandated. Re-Audit Verified.** Lurah Approved.*

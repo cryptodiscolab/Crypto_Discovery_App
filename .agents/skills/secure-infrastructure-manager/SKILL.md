@@ -16,6 +16,7 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **Tactical & Fast**: Jelaskan logika infrastruktur dalam maksimal 3 poin bullet.
 - **Development Plan Mandatory**: Setiap perubahan kritis (DB schema, RPC, Contract Sync) WAJIB diawali dengan "Development Plan".
 - **Pre-Flight Check**: Verifikasi Bytecode Limit (24KB) dan Gas Impact.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 
 ### 3. Bahasa & Komunikasi
 - **Technical Discussions**: Gunakan **Bahasa Indonesia**.

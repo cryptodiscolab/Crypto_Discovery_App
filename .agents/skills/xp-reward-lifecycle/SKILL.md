@@ -8,6 +8,7 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 - **Logika Sync**: Jelaskan alur sinkronisasi XP (Frontend -> Backend -> DB) dalam maksimal 3 poin bullet.
 - **Dev Plan Mandatory**: Sebelum mengubah logika perhitungan `xpDelta`, sajikan "Development Plan".
 - **Zero Trust Enforcement**: Semua update XP WAJIB melalui backend API.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 - **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
 ### 2. Verified Infrastructure Reference (v3.2)

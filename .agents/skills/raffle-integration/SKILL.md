@@ -13,6 +13,7 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 - **Logika Cepat**: Jelaskan alur interaksi kontrak dalam maksimal 3 poin bullet.
 - **Dev Plan Mandatory**: Sebelum modifikasi hook atau komponen raffle, sajikan "Development Plan" dan tunggu konfirmasi "LANJUT".
 - **Pre-Flight Check**: Pastikan `buyTickets` dan `drawWinner` menggunakan nama fungsi terbaru.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 
 ### 2. Verified Infrastructure Reference (v3.2)
 | Key | Value |

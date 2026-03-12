@@ -32,6 +32,7 @@ Before responding to ANY request, read these files IN ORDER:
 6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
 7. **ZERO LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`).
 8. **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
+9. **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
 
 ---
 

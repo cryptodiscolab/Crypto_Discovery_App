@@ -15,6 +15,7 @@ Audit skema database, kebijakan RLS, dan fungsi SQL wajib mematuhi aturan keaman
 - **Tactical & Fast**: Jelaskan dampak perubahan skema dalam maksimal 3 poin bullet.
 - **Development Plan Mandatory**: Setiap migrasi skema atau perubahan RLS WAJIB diawali dengan "Development Plan".
 - **Zero Trust Enforcement**: Semua mutasi data WAJIB melalui API backend dengan verifikasi signature.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 - **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
 ### 3. Bahasa & Komunikasi
