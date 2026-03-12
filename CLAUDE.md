@@ -27,9 +27,11 @@ Before responding to ANY request, read these files IN ORDER:
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/check_sync_status.cjs`
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED`
 3. **ZERO HARDCODE**: No literal XP, fee, or reward numbers. All values from `point_settings`/`system_settings` in Supabase
-4. **ZERO SECRETS**: No Private Keys, Service Role Keys, or API Keys as string literals. Always `process.env.*`
+4. **ZERO SECRETS**: No Private Keys (EIP-191), Service Role Keys, or API Keys as string literals. Always `process.env.*`
 5. **ZERO RIBA**: Never implement interest-bearing, inflationary staking APY, or deceptive tokenomics
-6. **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
+6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
+7. **ZERO LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`).
+8. **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
 
 ---
 

@@ -23,6 +23,8 @@ Git adalah **Single Source of Truth** untuk kode sumber. Polutan berikut ini **D
 | `scripts/env-comparison-report-*.txt` | Output laporan otomatis CI |
 | `test-env/` | Data environment test lokal |
 | `*.log`, `*.tmp`, `*.scratch.*` | Log & file sementara |
+| `*.png`, `*.jpg`, `*.webp`, `*.gif`, `*.mp4` | Screenshot & media — DILARANG MUTLAK |
+| `*.pem`, `*.key`, `*.p12`, `*.cert` | Certificates & Private Keys — DILARANG MUTLAK |
 | `node_modules/`, `dist/`, `artifacts/`, `cache/` | Dependencies & build output |
 
 ### ✅ ALWAYS TRACK (Wajib masuk Git)

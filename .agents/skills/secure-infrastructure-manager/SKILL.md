@@ -40,7 +40,9 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **Strict Privacy**: `PRIVATE_KEY` di `.env` adalah rahasia tertinggi.
 - **Zero Exposure**: JANGAN PERNAH upload ke Git atau masukkan ke bundle frontend (`VITE_`).
 - [x] **Git Safety**: Pastikan `.env` dan `.env.local` ada di `.gitignore`.
-- [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env` atau `PRIVATE_KEY`.
+- [x] **No-Screenshot Mandate**: DILARANG KERAS men-staged atau meng-upload file screenshot/media hasil audit ke Git.
+- [x] **Zero-Leak Mandate**: DILARANG KERAS mempublikasikan variabel atau file yang mengandung `role_key`, `service_role_key`, `secret`, atau kredensial mentah lainnya. Gunakan `.env`.
+- [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env`, `PRIVATE_KEY`, atau `role_key`.
 
 ### 3. Zero-Trust Frontend Architecture
 - **No Direct Writes**: DILARANG menulis langsung ke Supabase (`insert`/`upsert`) dari frontend.

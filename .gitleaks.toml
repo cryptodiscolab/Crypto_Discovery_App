@@ -6,7 +6,8 @@ paths = [
     '''node_modules''',
     '''package-lock.json''',
     '''artifacts''',
-    '''cache'''
+    '''cache''',
+    '''\.gitleaks\.toml$'''
 ]
 
 [[rules]]
@@ -27,3 +28,26 @@ paths = [
     description = "Environment File Leak"
     regex = '''\.env.*'''
     path = '''\.env.*'''
+
+[[rules]]
+    id = "forbidden-media-files"
+    description = "Detected forbidden media file (screenshot/recording). Media files are strictly prohibited in this repository per Section 27 of .cursorrules."
+    regex = '''(?i)\.(?:png|jpg|jpeg|webp|gif|mp4|mov|avi)$'''
+    path = '''(?i)\.(?:png|jpg|jpeg|webp|gif|mp4|mov|avi)$'''
+
+[[rules]]
+    id = "supabase-role-key"
+    description = "Detected Supabase Service Role Key or equivalent. High risk of full database compromise."
+    regex = '''(?i)(?:role[_-]key|service[_-]role|service_role_key)[=:]\s*(?:['"]?[0-9a-zA-Z]{50,200}['"]?)'''
+    keywords = ["role_key", "service_role", "role-key"]
+
+[[rules]]
+    id = "generic-secret-leak"
+    description = "Detected generic secret or sensitive credential tag."
+    regex = '''(?i)(?:secret|api_secret|jwt_secret|app_secret|private_key)[=:]\s*(?:['"]?[0-9a-zA-Z]{16,200}['"]?)'''
+    keywords = ["secret", "private_key", "jwt_secret"]
+
+[[rules]]
+    id = "sensitive-file-leak"
+    description = "Detected attempt to commit sensitive file types (.key, .pem, .p12, .txt secrets)."
+    path = '''(?i)\.(?:key|pem|p12|cert|secret\.txt)$'''

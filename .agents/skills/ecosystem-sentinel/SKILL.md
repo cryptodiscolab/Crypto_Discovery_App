@@ -281,6 +281,8 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **🔍 PRE-FIX AUDIT** *(BARU - WAJIB dijalankan SEBELUM fix apapun)*: `node scripts/check_sync_status.cjs` — Pastikan baseline ekosistem terdokumentasi.
 - [ ] **Clean Git Tree**: Apakah `git status` bersih dari file sementara (`tmp_*.cjs`, `.env.vercel`, `FlatCryptoDisco*.sol`, `_archive/`)? Jika tidak, tambahkan ke `.gitignore` dan hapus file tersebut.
 - [ ] **Gitleaks Audit**: Apakah eksekusi `npm run gitleaks-check` mengembalikan *exit code 0* (No leaks)?
+- [ ] **No-Screenshot Audit**: Apakah seluruh file screenshot/media (`.png`, `.webp`, dll) hasil audit sudah dihapus?
+- [ ] **Zero-Leak Audit**: Apakah kode bebas dari `role_key`, `secret`, atau kredensial mentah lainnya? Pastikan `.gitleaks.toml` mendeteksi adanya kebocoran sebelum push.
 - [ ] **Audit**: Apakah kode baru bebas dari hardcode (`eyJ...`, `0x..`, `sb_...`) dan celah keamanan? (Jalankan `sentinel-audit.js`)
 - [ ] **DB Sync**: Apakah `verify-db-sync.cjs` sudah dijalankan dan lulus 100% tanpa fragmentasi legacy?
 - [ ] **Syntax & Lint**: Apakah pengecekan sintaks backend (`node -c`) dan linter frontend (`npm run lint`) bersih tanpa error fatal?

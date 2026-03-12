@@ -248,15 +248,9 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 
 ## 27. CLEAN GIT TREE MANDATE (Source Control Hygiene Protocol)
 - **PRINCIPLE**: The Git repository is the single source of truth for all source code. It MUST be kept strictly clean — only commit code, config, and deployment scripts.
-- **NEVER COMMIT:**
-  - `tmp_*.cjs / .js / .ts` — Scratch and temporary test scripts.
-  - `FlatCryptoDisco*.sol` — Generated flat solidity files (rebuild with `npx hardhat flatten`).
-  - `.env`, `.env.local`, `.env.vercel`, `.env.vercel.prod` — All env files.
-  - `_archive/` — Legacy contract directories.
-  - `scripts/env-comparison-report-*.txt` — CI/Tool output reports.
-  - `test-env/` — Temporary test environment data.
-  - Any file ending in `*.log`, `*.tmp`, or `*.scratch.*`.
-- **ALWAYS TRACK:**
+- **NO-SCREENSHOT MANDATE (CRITICAL)**: DILARANG KERAS mengambil, menyimpan, atau men-staged screenshot/media file (`.png`, `.jpg`, `.webp`, `.gif`, `.mp4`) ke dalam Git repository. Seluruh file pendukung sesi audit WAJIB dihapus sebelum task ditutup.
+- **ZERO-LEAK PROTOCOL (SECURITY)**: DLARANG KERAS melakukan commit atau push terhadap variabel atau file yang mengandung `role_key`, `service_role_key`, `secret`, `api_secret`, `jwt_secret`, atau file sensitif berekstensi `.key`, `.pem`, `.p12`, `.cert`. Segala bentuk kredensial WAJIB melalui `.env` yang ter-ignore.
+- **CLEAN UP ON SIGHT**: When a scratch file (`tmp_*.cjs`, etc.) or screenshot has served its purpose, delete it. Do not leave dead code or artifacts in the repository.
   - `contracts/` — All active Solidity smart contracts.
   - `api/` — All Vercel serverless functions.
   - `src/` — All frontend source code.
