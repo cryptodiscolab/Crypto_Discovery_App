@@ -18,6 +18,8 @@ Your supreme governing document is [`../.cursorrules`](../.cursorrules). Read it
 6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
 7. **ZERO LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`) to the repository. Ensure `.gitleaks.toml` rules are always active.
 8. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
+9. **MULTI-PROJECT SYNC**: Mandatory CLI environment sync across all Vercel projects after contract updates.
+10. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination/fetching in the backend.
 
 ---
 

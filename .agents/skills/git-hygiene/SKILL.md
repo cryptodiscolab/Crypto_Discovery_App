@@ -17,6 +17,7 @@ Git adalah **Single Source of Truth** untuk kode sumber. Polutan berikut ini **D
 | File / Pola | Alasan |
 |---|---|
 | `.env`, `.env.local`, `.env.vercel*` | Secrets — BAHAYA MUTLAK |
+| `vite.config.js.timestamp-*.mjs` | Vite build artifacts — CLEAN ON SIGHT |
 | `tmp_*.cjs`, `tmp_*.js`, `tmp_*.mjs` | Scratch scripts sementara, hapus setelah dipakai |
 | `FlatCryptoDisco*.sol` | Generated files — rebuild via `npx hardhat flatten` |
 | `_archive/` | Kode lama / legacy |

@@ -17,7 +17,12 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><strong>3.3</strong></td>
+<td><strong>3.3.1</strong></td>
+<td>2026-03-13</td>
+<td>X+Google OAuth identity linking (wallet-first 3-step onboarding). Bug Fix: <code>handleUpdateProfile</code> silent data loss (pfp_url gate removed). Bug Fix: <code>handleSyncUgcRaffle</code> ReferenceError (500 error). DB Performance: duplicate index/RLS/initplan fixes. <code>v_user_full_profile</code> view extended dengan OAuth fields. ProfilePage OAuth badge section.</td>
+</tr>
+<tr>
+<td>3.3</td>
 <td>2026-03-13</td>
 <td>Unified master PRD. Menambahkan Audit-First Protocol, Zero-Hardcode Mandate, Multi-Model Agent Architecture (GEMINI.md, CLAUDE.md), Webhook Telegram Protocol, dan ProfilePage ReferenceError fix.</td>
 </tr>
@@ -258,15 +263,20 @@
 </tr>
 <tr>
 <td><strong>🔐 LoginPage</strong></td>
-<td>Wallet connection (Wagmi/RainbowKit) + Farcaster FID sync</td>
+<td>Wallet-First 3-Step Onboarding: Connect Wallet → Sign SIWE → Link Social Identity (optional)</td>
+</tr>
+<tr>
+<td><strong>🔗 OAuthCallbackPage</strong></td>
+<td>Popup bridge: menerima token dari Supabase OAuth redirect, postMessage ke opener</td>
 </tr>
 </tbody></table>
 <h3>5.2 Profile Page — Komponen Utama</h3>
 <ul>
-<li><strong>DailyClaimModal</strong>: Modal klaim bonus harian. <code>profileData</code> dipass sebagai prop (fix ReferenceError v3.3).</li>
+<li><strong>DailyClaimModal</strong>: Modal klaim bonus harian. <code>profileData</code> dipass sebagai prop.</li>
 <li><strong>Revenue Share Dashboard</strong>: Tampilkan balance ETH claimable dari SBT Dividends.</li>
 <li><strong>Activity Log Section</strong>: Riwayat XP/purchase real-time dari <code>user_activity_logs</code>.</li>
 <li><strong>UGC Mission Creator</strong>: Form create sponsorship mission, fee &amp; reward dari <code>system_settings</code> (Zero Hardcode).</li>
+<li><strong>Social Identity Badge Row (v3.3.1)</strong>: Tampilkan status linked Google/X accounts (badge LINKED/UNLINKED).</li>
 </ul>
 <h3>5.3 Fitur Ekonomi</h3>
 <table>
@@ -592,7 +602,7 @@ UGC Raffle Split:
 <tbody><tr>
 <td><strong>Auth</strong></td>
 <td>🟢 100%</td>
-<td>SIWE + Identity Lock</td>
+<td>SIWE + Identity Lock + Wallet-First OAuth linking</td>
 </tr>
 <tr>
 <td><strong>XP Logic</strong></td>
@@ -612,7 +622,7 @@ UGC Raffle Split:
 <tr>
 <td><strong>Raffle</strong></td>
 <td>🟢 100%</td>
-<td>ERC721 + metadata base64, prize tracking</td>
+<td>ERC721 + metadata base64, prize tracking (500 ReferenceError fixed)</td>
 </tr>
 <tr>
 <td><strong>Admin Bot</strong></td>
@@ -639,7 +649,17 @@ UGC Raffle Split:
 <td>🟢 100%</td>
 <td>Twitter, Farcaster, TikTok, Instagram</td>
 </tr>
+<tr>
+<td><strong>OAuth (Google/X)</strong></td>
+<td>🟢 100%</td>
+<td>Wallet-first 3-step: Connect → SIWE → Link OAuth (Sybil Lock)</td>
+</tr>
+<tr>
+<td><strong>DB Performance</strong></td>
+<td>🟢 100%</td>
+<td>Duplicate index/RLS cleaned, FK indexes added, initplan optimized</td>
+</tr>
 </tbody></table>
 <hr>
-<p><em>PRD Version: 3.3 — Unified Master Edition</em>
+<p><em>PRD Version: 3.3.1 — OAuth Integration + Bug Fix Edition</em>
 <em>Berdasarkan protokol Full-Stack Sync. Ecosystem Synced. Identity Locked. Zero Hardcode. Audit-First. Lurah Approved.</em></p>

@@ -17,15 +17,25 @@ class NeynarService {
      */
     async verifyFollow(fid, targetFid) {
         try {
-            // Get user's following list
-            const response = await this.client.fetchUserFollowing(fid, {
-                limit: 100,
-            });
+            let cursor = null;
+            let attempts = 0;
+            const maxPages = 5; // Safety cap: 500 followings checked
 
-            // Check if target is in following list
-            const isFollowing = response.users.some(user => user.fid === targetFid);
+            while (attempts < maxPages) {
+                const response = await this.client.fetchUserFollowing(fid, {
+                    limit: 100,
+                    cursor: cursor || undefined
+                });
 
-            return isFollowing;
+                const isFollowing = response.users.some(user => user.fid === targetFid);
+                if (isFollowing) return true;
+
+                cursor = response.next;
+                if (!cursor) break;
+                attempts++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Farcaster follow:', error);
             throw new Error(`Failed to verify follow: ${error.message}`);
@@ -40,17 +50,27 @@ class NeynarService {
      */
     async verifyLikeCast(fid, castHash) {
         try {
-            // Get cast reactions
-            const response = await this.client.fetchCastReactions(castHash, {
-                limit: 100,
-            });
+            let cursor = null;
+            let attempts = 0;
+            const maxPages = 5; // Safety cap: 500 reactions checked
 
-            // Check if user liked the cast
-            const hasLiked = response.reactions.some(
-                reaction => reaction.user.fid === fid && reaction.reaction_type === 'like'
-            );
+            while (attempts < maxPages) {
+                const response = await this.client.fetchCastReactions(castHash, {
+                    limit: 100,
+                    cursor: cursor || undefined
+                });
 
-            return hasLiked;
+                const hasLiked = response.reactions.some(
+                    reaction => reaction.user.fid === fid && reaction.reaction_type === 'like'
+                );
+                if (hasLiked) return true;
+
+                cursor = response.next;
+                if (!cursor) break;
+                attempts++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Farcaster like:', error);
             throw new Error(`Failed to verify like: ${error.message}`);
@@ -65,17 +85,27 @@ class NeynarService {
      */
     async verifyRecast(fid, castHash) {
         try {
-            // Get cast reactions
-            const response = await this.client.fetchCastReactions(castHash, {
-                limit: 100,
-            });
+            let cursor = null;
+            let attempts = 0;
+            const maxPages = 3; // Safety cap for recasts
 
-            // Check if user recasted
-            const hasRecasted = response.reactions.some(
-                reaction => reaction.user.fid === fid && reaction.reaction_type === 'recast'
-            );
+            while (attempts < maxPages) {
+                const response = await this.client.fetchCastReactions(castHash, {
+                    limit: 100,
+                    cursor: cursor || undefined
+                });
 
-            return hasRecasted;
+                const hasRecasted = response.reactions.some(
+                    reaction => reaction.user.fid === fid && reaction.reaction_type === 'recast'
+                );
+                if (hasRecasted) return true;
+
+                cursor = response.next;
+                if (!cursor) break;
+                attempts++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Farcaster recast:', error);
             throw new Error(`Failed to verify recast: ${error.message}`);

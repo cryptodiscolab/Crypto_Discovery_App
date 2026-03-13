@@ -49,7 +49,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Env Key | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0x7A85f4150823d79ff51982c39C0b09048EA6cba3` | `VITE_V12_CONTRACT_ADDRESS` | ✅ DEPLOYED |
+| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `VITE_V12_CONTRACT_ADDRESS` | ✅ DEPLOYED |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` | `VITE_MASTER_X_ADDRESS` | ✅ DEPLOYED |
 | **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` | `VITE_RAFFLE_ADDRESS` | ✅ DEPLOYED |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS` | ✅ DEPLOYED |
@@ -152,11 +152,11 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **GITLEAKS VERIFICATION MANDATE**: Never consider a task "Done" without ensuring Gitleaks (`npm run gitleaks-check`) is CLEAR.
 
 ## 15. SOCIAL IDENTITY LOCK & ECOSYSTEM INTEGRITY MANDATE
-- **SOCIAL IDENTITY LOCK**: Every social platform (Twitter, Farcaster, Telegram, TikTok, Instagram) MUST be locked 1-to-1 with a specific wallet address. Sybil attacks are prevented by enforcing this at the Database and API layer.
+- **SOCIAL IDENTITY LOCK (v2)**: Every social platform (Twitter/X, Google, Farcaster, Telegram, TikTok, Instagram) MUST be locked 1-to-1 with a specific wallet address. OAuth linking (Google/X) is now the primary Sybil protection alongside Neynar SIWE. Identity Lock status must be viewable on the user profile.
 - **THE SYNC MANDATE**: Every new feature or change MUST be synchronized across the entire ecosystem:
   1. **Smart Contract & ABI**: Verify function existence and update `abis_data.txt`.
   2. **Database**: Ensure schema, RLS, and `point_settings` are updated.
-  3. **Verification Server**: Update logic for identity persistence and rate limiting.
+  3. **Verification Server**: Update logic for identity persistence, rate limiting, and **Iterative Social Verification** (Paginasi).
   4. **Telegram Admin Bot**: Update/add commands (e.g., `/user`, `/audit`) and auto-detection logic.
   5. **Admin Dashboard**: Update UI components (e.g., `TaskManagerTab`) and auto-XP mappings.
 - **USER EXPERIENCE**: Any discrepancy between ini adalah "Protocol Breach". The ecosystem must feel like a single, seamless, and secure entity to the user.
@@ -249,6 +249,7 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 ## 27. CLEAN GIT TREE MANDATE (Source Control Hygiene Protocol)
 - **PRINCIPLE**: The Git repository is the single source of truth for all source code. It MUST be kept strictly clean — only commit code, config, and deployment scripts.
 - **NO-SCREENSHOT MANDATE (CRITICAL)**: DILARANG KERAS mengambil, menyimpan, atau men-staged screenshot/media file (`.png`, `.jpg`, `.webp`, `.gif`, `.mp4`) ke dalam Git repository. Seluruh file pendukung sesi audit WAJIB dihapus sebelum task ditutup.
+- **VITE HYGIENE**: DILARANG KERAS melakukan commit terhadap file temporer Vite (`vite.config.js.timestamp-*.mjs`).
 - **ZERO-LEAK PROTOCOL (SECURITY)**: DLARANG KERAS melakukan commit atau push terhadap variabel atau file yang mengandung `role_key`, `service_role_key`, `secret`, `api_secret`, `jwt_secret`, atau file sensitif berekstensi `.key`, `.pem`, `.p12`, `.cert`. Segala bentuk kredensial WAJIB melalui `.env` yang ter-ignore.
 - **CLEAN UP ON SIGHT**: When a scratch file (`tmp_*.cjs`, etc.) or screenshot has served its purpose, delete it. Do not leave dead code or artifacts in the repository.
   - `contracts/` — All active Solidity smart contracts.
@@ -291,6 +292,7 @@ Jika audit menemukan **kesalahan lebih dari yang dilaporkan user**, Agent WAJIB 
 - **DILARANG KERAS** langsung menulis kode perbaikan sebelum membaca file yang relevan dan memahami root cause.
 - Gunakan `grep_search` dan `view_file` untuk melacak seluruh entry point yang berkaitan dengan bug.
 - Jika bug melibatkan XP/Fee/Reward, **WAJIB** periksa apakah nilai tersebut sudah diambil dari `point_settings` atau `system_settings`.
+- **RELIABILITY SYNC**: Semua verifikasi sosial (Farcaster/Twitter) WAJIB menggunakan **Iterative Pagination** (Iterated Fetching) untuk mendukung user dengan following besar atau casts populer (>100 items).
 
 ### 29.3 Post-Fix Re-Audit (AFTER applying any fix)
 Setelah fix diterapkan, Agent WAJIB menjalankan kembali:
@@ -338,5 +340,11 @@ Setiap hasil re-audit wajib disertakan dalam pesan notifikasi ke user dengan for
 - **SECURITY IMPACT**: This prevents "Gas Estimation Failed" errors caused by invalid address strings during web3 interactions.
 - **AUDIT CHECK**: Verify that no address used in `publicClient` or `walletClient` contains leading/trailing non-hex characters.
 
+### 31. MULTI-PROJECT VERCEL SYNC MANDATE (NEW)
+Contract addresses **MUST** be synchronized across all associated Vercel projects using Vercel CLI.
+- **Scope**: `crypto-discovery-app`, `dailyapp-verification-server`.
+- **Targets**: Production (Mainnet), Preview (Sepolia), Development (Sepolia).
+- **Required Action**: `vercel env rm` -> `vercel env add` for all targets on both projects.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. **Defensive Cleaning Mandated.** Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. **Multi-Project Synced.** Lurah Approved.*

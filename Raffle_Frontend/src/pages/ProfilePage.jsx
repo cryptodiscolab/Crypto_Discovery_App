@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins, Mail, Twitter
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
@@ -51,7 +51,12 @@ export default function ProfilePage() {
     powerBadge: false,
     total_xp: 0,
     rankName: 'Rookie',
-    streakCount: 0
+    streakCount: 0,
+    google_id: null,
+    google_email: '',
+    twitter_id: null,
+    twitter_username: '',
+    oauth_provider: null
   });
 
   const [copied, setCopied] = useState(false);
@@ -143,7 +148,12 @@ export default function ProfilePage() {
         rankName: data.rank_name || 'Rookie',
         tier: data.tier || 0,
         streakCount: data.streak_count || 0,
-        lastDailyClaim: data.last_daily_bonus_claim
+        lastDailyClaim: data.last_daily_bonus_claim,
+        google_id: data.google_id || null,
+        google_email: data.google_email || '',
+        twitter_id: data.twitter_id || null,
+        twitter_username: data.twitter_username || '',
+        oauth_provider: data.oauth_provider || null
       });
       setPotentialTier(calculatePotentialTier(data.total_xp || 0));
     } else {
@@ -651,6 +661,52 @@ export default function ProfilePage() {
               </span>
             </div>
           </div>
+        </div>
+        
+        {/* SOCIAL IDENTITY BADGES (v3.3.1) */}
+        <div className="px-4 mb-6">
+          <div className="flex flex-wrap gap-2">
+            {/* Google Identity */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
+              ${profileData.google_id 
+                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
+                : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
+              <Mail size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {profileData.google_id ? 'Google Linked' : 'Google Unlinked'}
+              </span>
+              {profileData.google_id && <Check size={10} className="text-blue-400" />}
+            </div>
+
+            {/* X (Twitter) Identity */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
+              ${profileData.twitter_id 
+                ? 'bg-white/10 border-white/20 text-white' 
+                : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
+              <Twitter size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {profileData.twitter_id ? 'X Linked' : 'X Unlinked'}
+              </span>
+              {profileData.twitter_id && <Check size={10} className="text-white" />}
+            </div>
+
+            {/* Farcaster Identity (Existing) */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
+              ${profileData.fid && profileData.fid !== 'N/A'
+                ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' 
+                : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
+              <Share2 size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {profileData.fid && profileData.fid !== 'N/A' ? 'Farcaster Linked' : 'Farcaster Unlinked'}
+              </span>
+              {profileData.fid && profileData.fid !== 'N/A' && <Check size={10} className="text-indigo-400" />}
+            </div>
+          </div>
+          {profileData.google_email && (
+            <p className="text-[9px] text-slate-500 mt-2 ml-4 font-mono uppercase">
+              Primary identity: <span className="text-slate-400">{profileData.google_email}</span>
+            </p>
+          )}
         </div>
 
         {/* ACTIVITY LOG SECTION */}

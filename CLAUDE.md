@@ -34,6 +34,8 @@ Before responding to ANY request, read these files IN ORDER:
 8. **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
 9. **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
 10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
+11. **MULTI-PROJECT VERCEL SYNC**: Mandatory CLI environment sync across all projects (DailyApp + Verification Server).
+12. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination/fetching in the backend.
 
 ---
 

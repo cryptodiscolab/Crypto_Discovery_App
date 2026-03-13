@@ -4985,5 +4985,6 @@
                 "type": "function"
             }
         ]
-    }
+    },
+    "DAILY_APP_ADDRESS_SEPOLIA": "0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721"
 }

@@ -12,7 +12,8 @@
 
 | Versi | Tanggal | Ringkasan |
 |---|---|---|
-| **3.3** | 2026-03-13 | Unified master PRD. Menambahkan Audit-First Protocol, Zero-Hardcode Mandate, Multi-Model Agent Architecture (GEMINI.md, CLAUDE.md), Webhook Telegram Protocol, dan ProfilePage ReferenceError fix. |
+| **3.3.1** | 2026-03-13 | X+Google OAuth identity linking (wallet-first 3-step onboarding). Bug Fix: `handleUpdateProfile` silent data loss (pfp_url gate removed). Bug Fix: `handleSyncUgcRaffle` ReferenceError (500 error). DB Performance: duplicate index/RLS/initplan fixes. `v_user_full_profile` view extended dengan OAuth fields. ProfilePage OAuth badge section. |
+| 3.3 | 2026-03-13 | Unified master PRD. Menambahkan Audit-First Protocol, Zero-Hardcode Mandate, Multi-Model Agent Architecture (GEMINI.md, CLAUDE.md), Webhook Telegram Protocol, dan ProfilePage ReferenceError fix. |
 | 3.2 | 2026-03-12 | UGC Raffle metadata, XP multi-level awarding, DB Security Invoker, Admin Dashboard controls (Lurah Hub). |
 | 3.1 | 2026-03-11 | Zero-Leak Security, Pre-Flight Deployment Protocol, Git Hygiene Mandate gitleaks. |
 | 3.0 | 2026-03-10 | Dual Network (Base Sepolia + Mainnet), Revenue Sharing (Dividends), UGC Mission Hub. |
@@ -147,13 +148,15 @@ sequenceDiagram
 | **📊 LeaderboardPage** | Global dan Tier-based ranking (XP, Raffle Wins, dynamic Rank Names) |
 | **👤 ProfilePage** | User dashboard: Stats, NFT Tiers, Activity History, Daily Claim, Revenue Share |
 | **📢 CampaignsPage** | Partner quests dan special event discovery |
-| **🔐 LoginPage** | Wallet connection (Wagmi/RainbowKit) + Farcaster FID sync |
+| **🔐 LoginPage** | Wallet-First 3-Step Onboarding: Connect Wallet → Sign SIWE → Link Social Identity (optional) |
+| **🔗 OAuthCallbackPage** | Popup bridge: menerima token dari Supabase OAuth redirect, postMessage ke opener |
 
 ### 5.2 Profile Page — Komponen Utama
-- **DailyClaimModal**: Modal klaim bonus harian. `profileData` dipass sebagai prop (fix ReferenceError v3.3).
+- **DailyClaimModal**: Modal klaim bonus harian. `profileData` dipass sebagai prop.
 - **Revenue Share Dashboard**: Tampilkan balance ETH claimable dari SBT Dividends.
 - **Activity Log Section**: Riwayat XP/purchase real-time dari `user_activity_logs`.
 - **UGC Mission Creator**: Form create sponsorship mission, fee & reward dari `system_settings` (Zero Hardcode).
+- **Social Identity Badge Row (v3.3.1)**: Tampilkan status linked Google/X accounts (badge LINKED/UNLINKED).
 
 ### 5.3 Fitur Ekonomi
 | Fitur | Mekanisme |
@@ -318,18 +321,20 @@ UGC Raffle Split:
 
 | Module | Status | Core Logic |
 |---|---|---|
-| **Auth** | 🟢 100% | SIWE + Identity Lock |
+| **Auth** | 🟢 100% | SIWE + Identity Lock + Wallet-First OAuth linking |
 | **XP Logic** | 🟢 100% | Dynamic from `point_settings`, on-chain sync |
 | **Dividends** | 🟢 100% | Weighted Share (10%–30%), tier-based |
 | **UGC Hub** | 🟢 100% | Auto-sync to Global Tasks |
-| **Raffle** | 🟢 100% | ERC721 + metadata base64, prize tracking |
+| **Raffle** | 🟢 100% | ERC721 + metadata base64, prize tracking (500 ReferenceError fixed) |
 | **Admin Bot** | 🟢 100% | Telegram Lurah, AI-powered `/fix` |
 | **Zero Hardcode** | 🟢 100% | All XP/Fee from Supabase settings |
 | **Audit Protocol** | 🟢 100% | Pre-Fix & Post-Fix audit mandatory |
 | **Multi-Model AI** | 🟢 100% | GEMINI.md + CLAUDE.md + .cursorrules |
 | **Social Platforms** | 🟢 100% | Twitter, Farcaster, TikTok, Instagram |
+| **OAuth (Google/X)** | 🟢 100% | Wallet-first 3-step: Connect → SIWE → Link OAuth (Sybil Lock) |
+| **DB Performance** | 🟢 100% | Duplicate index/RLS cleaned, FK indexes added, initplan optimized |
 
 ---
 
-*PRD Version: 3.3 — Unified Master Edition*
+*PRD Version: 3.3.1 — OAuth Integration + Bug Fix Edition*
 *Berdasarkan protokol Full-Stack Sync. Ecosystem Synced. Identity Locked. Zero Hardcode. Audit-First. Lurah Approved.*
