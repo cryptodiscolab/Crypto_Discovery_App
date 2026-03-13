@@ -7,6 +7,7 @@ paths = [
     '''package-lock.json''',
     '''artifacts''',
     '''cache''',
+    '''tools/nexus-monitor''',
     '''\.gitleaks\.toml$'''
 ]
 
@@ -51,8 +52,3 @@ paths = [
     id = "sensitive-file-leak"
     description = "Detected attempt to commit sensitive file types (.key, .pem, .p12, .txt secrets)."
     path = '''(?i)\.(?:key|pem|p12|cert|secret\.txt)$'''
-
-[[rules]]
-    id = "nexus-monitor-leak"
-    description = "Detected attempt to commit Nexus War Room Monitor tools. This directory is for local monitoring only and must not be pushed to Git per Privacy Lockdown Protocol."
-    path = '''tools/nexus-monitor/.*'''

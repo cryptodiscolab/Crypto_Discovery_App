@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus War Room | Monitoring Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="dark-mode">
+    <div class="glass-container">
+        <header>
+            <div class="logo-section">
+                <div class="pulse-icon"></div>
+                <h1>NEXUS <span class="accent">WAR ROOM</span></h1>
+            </div>
+            <div class="status-group">
+                <div class="status-badge">
+                    <span class="dot"></span> SYSTEM OPERATIONAL
+                </div>
+                <div class="monitoring-badge active">
+                    <span class="pulse-dot"></span> LIVE MONITORING
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <aside class="sidebar">
+                <h3>AGENTS ONLINE</h3>
+                <ul id="agent-list">
+                    <li class="agent-item active" data-agent="antigravity">
+                        <div class="avatar ag">AG</div>
+                        <div class="info">
+                            <span class="name">@antigravity</span>
+                            <span class="role">Senior Staff Engineer</span>
+                        </div>
+                    </li>
+                    <li class="agent-item" data-agent="lurah">
+                        <div class="avatar lr">LR</div>
+                        <div class="info">
+                            <span class="name">@lurah</span>
+                            <span class="role">Ecosystem Guardian</span>
+                        </div>
+                    </li>
+                    <li class="agent-item" data-agent="qwen">
+                        <div class="avatar qw">QW</div>
+                        <div class="info">
+                            <span class="name">@qwen</span>
+                            <span class="role">Build Master</span>
+                        </div>
+                    </li>
+                    <li class="agent-item" data-agent="deepseek">
+                        <div class="avatar ds">DS</div>
+                        <div class="info">
+                            <span class="name">@deepseek</span>
+                            <span class="role">Backend Strategist</span>
+                        </div>
+                    </li>
+                </ul>
+                
+                <div class="system-metrics">
+                    <div class="metric">
+                        <span>Load</span>
+                        <div class="bar-bg"><div class="bar-fill" style="width: 24%;"></div></div>
+                    </div>
+                    <div class="metric">
+                        <span>Sync</span>
+                        <span class="val">100%</span>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="chat-section">
+                <div class="chat-header">
+                    <h2>Live Intelligence Feed</h2>
+                    <div class="chat-actions">
+                        <button id="clear-log">Reset Feed</button>
+                    </div>
+                </div>
+                <div id="chat-messages" class="chat-messages">
+                    <div class="system-msg">Establishing connection to Nexus Bridge...</div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
