@@ -667,7 +667,8 @@ export default function ProfilePage() {
         
         {/* SOCIAL IDENTITY BADGES (v3.3.1) */}
         <div className="px-4 mb-6">
-          <div className="flex flex-wrap gap-            {/* Google Identity */}
+          <div className="flex flex-wrap gap-3">
+            {/* Google Identity */}
             <button
               onClick={async () => {
                 if (profileData.google_id) return;
@@ -716,7 +717,6 @@ export default function ProfilePage() {
               </span>
               {profileData.fid && profileData.fid !== 'N/A' && <Check size={10} className="text-indigo-400" />}
             </div>
-iv>
           </div>
           {profileData.google_email && (
             <p className="text-[9px] text-slate-500 mt-2 ml-4 font-mono uppercase">
