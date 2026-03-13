@@ -19,6 +19,7 @@ const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.default || m.AdminPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.default || m.LoginPage })));
 const CampaignsPage = lazy(() => import('./pages/CampaignsPage').then(m => ({ default: m.default || m.CampaignsPage })));
+const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: m.default || m.OAuthCallbackPage })));
 
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx').then(m => ({ default: m.default || m.AdminDashboard })));
 const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx').then(m => ({ default: m.default || m.AdminGuard })));
@@ -52,6 +53,7 @@ function App() {
                   }>
                     <Routes>
                       <Route path="/login" element={<LoginPage />} />
+                      <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
                       <Route element={<ProtectedLayout />}>
                         <Route path="/" element={<HomePage />} />
                         <Route path="/tasks" element={<TasksPage />} />

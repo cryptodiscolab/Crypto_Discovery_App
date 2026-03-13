@@ -47,6 +47,8 @@ export default async function handler(req, res) {
             return handleSyncPoolClaim(req, res);
         case 'leaderboard':
             return handleLeaderboard(req, res);
+        case 'sync-oauth':
+            return handleSyncOAuth(req, res);
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -346,8 +348,16 @@ async function handleUpdateProfile(req, res) {
         delete sanitizedPayload.total_xp;
         delete sanitizedPayload.referred_by;
         delete sanitizedPayload.tier; // Tier can ONLY be updated by cron/admin via SBT sync
+        delete sanitizedPayload.google_id; // OAuth identity locked — only sync-oauth can write this
+        delete sanitizedPayload.twitter_id; // OAuth identity locked
 
-        // 3. Size Validation: Validate avatar URL file size (max 1MB)
+        // 3. Force length limits (Rule 8.8) — UNCONDITIONAL, independent of pfp_url
+        if (sanitizedPayload.display_name) sanitizedPayload.display_name = sanitizedPayload.display_name.substring(0, 50);
+        if (sanitizedPayload.username) sanitizedPayload.username = sanitizedPayload.username.substring(0, 30);
+        if (sanitizedPayload.bio) sanitizedPayload.bio = sanitizedPayload.bio.substring(0, 160);
+        if (sanitizedPayload.pfp_url) sanitizedPayload.pfp_url = sanitizedPayload.pfp_url.substring(0, 500);
+
+        // 4. Size Validation: Validate avatar URL file size (max 1MB) — only if pfp_url present
         if (sanitizedPayload.pfp_url) {
             try {
                 const imgRes = await fetch(sanitizedPayload.pfp_url, { method: 'HEAD' });
@@ -361,22 +371,16 @@ async function handleUpdateProfile(req, res) {
                 console.warn(`[Profile Update] Failed to check image size for ${sanitizedPayload.pfp_url}:`, err.message);
                 // Allow passing if HEAD request is blocked, relying on client-side constraints.
             }
-            // 4. Force length limits (Rule 8.8)
-            if (sanitizedPayload.display_name) sanitizedPayload.display_name = sanitizedPayload.display_name.substring(0, 50);
-            if (sanitizedPayload.username) sanitizedPayload.username = sanitizedPayload.username.substring(0, 30);
-            if (sanitizedPayload.bio) sanitizedPayload.bio = sanitizedPayload.bio.substring(0, 160);
-            if (sanitizedPayload.pfp_url) sanitizedPayload.pfp_url = sanitizedPayload.pfp_url.substring(0, 500);
-
-            const { error } = await supabaseAdmin
-                .from('user_profiles')
-                .update(sanitizedPayload)
-                .eq('wallet_address', wallet.toLowerCase());
-            if (error) throw error;
-
-            // Log profile update? (Optional, but let's stick to XP/Purchase/Reward for now as requested)
-
-            return res.status(200).json({ success: true });
         }
+
+        // 5. Persist to DB — UNCONDITIONAL (was previously trapped inside if(pfp_url))
+        const { error } = await supabaseAdmin
+            .from('user_profiles')
+            .update(sanitizedPayload)
+            .eq('wallet_address', wallet.toLowerCase());
+        if (error) throw error;
+
+        return res.status(200).json({ success: true });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
@@ -561,6 +565,9 @@ async function handleSyncUgcRaffle(req, res) {
     try {
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        // Bug Fix: Destructure all payload fields before use (was causing ReferenceError 500)
+        const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount } = payload;
 
         const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
         const platformFeePercent = sysSetting?.value ? parseFloat(sysSetting.value) : 5; // Fallback only to calculate from passed deposit if setting missing
@@ -780,6 +787,104 @@ async function handleLeaderboard(req, res) {
         return res.status(200).json(data);
     } catch (error) {
         console.error('[Leaderboard Error]', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+/**
+ * handleSyncOAuth: Binds a Google or X (Twitter) OAuth identity to a wallet.
+ * Zero-Trust: Requires EIP-191 wallet signature PLUS the OAuth token data.
+ * Enforces 1 Account : 1 Wallet (Sybil Lock).
+ */
+async function handleSyncOAuth(req, res) {
+    const { wallet_address, signature, message, provider, oauth_data } = req.body;
+
+    if (!wallet_address || !signature || !message || !provider || !oauth_data) {
+        return res.status(400).json({ error: 'Missing required OAuth sync fields' });
+    }
+
+    // 1. Zero-Trust Wallet Signature
+    try {
+        const valid = await verifyMessage({ address: wallet_address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid wallet signature' });
+    } catch (err) {
+        return res.status(401).json({ error: 'Signature verification failed' });
+    }
+
+    const normalizedWallet = wallet_address.toLowerCase();
+
+    try {
+        if (provider === 'google') {
+            const { google_id, google_email, name, pfp_url } = oauth_data;
+            if (!google_id || !google_email) return res.status(400).json({ error: 'Missing Google identity fields' });
+
+            // Sybil Check: Ensure this google_id is not linked to another wallet
+            const { data: existing } = await supabaseAdmin
+                .from('user_profiles')
+                .select('wallet_address')
+                .eq('google_id', google_id)
+                .maybeSingle();
+
+            if (existing && existing.wallet_address !== normalizedWallet) {
+                return res.status(409).json({ error: 'This Google account is already linked to another wallet.' });
+            }
+
+            const updateData = {
+                google_id,
+                google_email,
+                oauth_provider: 'google',
+                updated_at: new Date().toISOString()
+            };
+            // Auto-populate profile fields if not yet set
+            if (name) updateData.display_name = name.substring(0, 50);
+            if (pfp_url) updateData.pfp_url = pfp_url.substring(0, 500);
+
+            await supabaseAdmin
+                .from('user_profiles')
+                .update(updateData)
+                .eq('wallet_address', normalizedWallet);
+
+            console.log(`[OAuth] Google account linked: ${google_email} → ${normalizedWallet}`);
+            return res.status(200).json({ success: true, provider: 'google', email: google_email });
+
+        } else if (provider === 'x') {
+            const { twitter_id, twitter_username, name, pfp_url } = oauth_data;
+            if (!twitter_id || !twitter_username) return res.status(400).json({ error: 'Missing X identity fields' });
+
+            // Sybil Check: Ensure this twitter_id is not linked to another wallet
+            const { data: existing } = await supabaseAdmin
+                .from('user_profiles')
+                .select('wallet_address')
+                .eq('twitter_id', twitter_id)
+                .maybeSingle();
+
+            if (existing && existing.wallet_address !== normalizedWallet) {
+                return res.status(409).json({ error: 'This X (Twitter) account is already linked to another wallet.' });
+            }
+
+            const updateData = {
+                twitter_id,
+                twitter_username,
+                oauth_provider: 'x',
+                updated_at: new Date().toISOString()
+            };
+            // Auto-populate profile fields if not yet set
+            if (name) updateData.display_name = name.substring(0, 50);
+            if (pfp_url) updateData.pfp_url = pfp_url.substring(0, 500);
+
+            await supabaseAdmin
+                .from('user_profiles')
+                .update(updateData)
+                .eq('wallet_address', normalizedWallet);
+
+            console.log(`[OAuth] X account linked: @${twitter_username} → ${normalizedWallet}`);
+            return res.status(200).json({ success: true, provider: 'x', username: twitter_username });
+
+        } else {
+            return res.status(400).json({ error: `Unsupported OAuth provider: ${provider}` });
+        }
+    } catch (error) {
+        console.error('[SyncOAuth Error]', error);
         return res.status(500).json({ error: error.message });
     }
 }
