@@ -132,7 +132,14 @@ export function TaskManagerTab() {
                     const response = await fetch('/api/admin/tasks/sync', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ wallet_address: address, signature, message, tx_hash: receipt.transactionHash, tasks: tasksToSync })
+                        body: JSON.stringify({ 
+                            action: 'task-sync',
+                            wallet_address: address, 
+                            signature, 
+                            message, 
+                            tx_hash: receipt.transactionHash, 
+                            tasks: tasksToSync 
+                        })
                     });
 
                     if (!response.ok) throw new Error("Sync failed");
