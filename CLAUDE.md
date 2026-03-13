@@ -30,7 +30,7 @@ Before responding to ANY request, read these files IN ORDER:
 4. **ZERO SECRETS**: No Private Keys (EIP-191), Service Role Keys, or API Keys as string literals. Always `process.env.*`
 5. **ZERO RIBA**: Never implement interest-bearing, inflationary staking APY, or deceptive tokenomics
 6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
-7. **ZERO LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`).
+7. **ZERO-LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`). Files in `tools/nexus-monitor/` must be ignored via `.gitleaks.toml` and `.gitignore`.
 8. **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
 9. **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
 10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
@@ -62,10 +62,10 @@ Notify user format after fix:
 
 ## 🌐 PROJECT CONTEXT
 
-- **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
-- **DailyApp V13 (Mainnet)**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571`
-- **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
-- **Language**: Chat = Bahasa Indonesia | UI/Code = English
+-   **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
+-   **DailyApp V13 (Mainnet)**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571`
+-   **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
+-   **Language**: Chat = Bahasa Indonesia | UI/Code = English
 
 ## 📦 SOURCES OF TRUTH
 
@@ -80,13 +80,13 @@ Notify user format after fix:
 
 ## 🚫 FORBIDDEN
 
-- Fix without Pre-Fix Audit
-- Notify user without Re-Audit output
-- Hardcoded XP / fees / rewards in any file
-- `git push` without `npm run gitleaks-check`
-- New API files outside `*-bundle.js`
-- Starting new feature before fixing all bugs found during audit
+-   Fix without Pre-Fix Audit
+-   Notify user without Re-Audit output
+-   Hardcoded XP / fees / rewards in any file
+-   `git push` without `npm run gitleaks-check`
+-   New API files outside `*-bundle.js`
+-   Starting new feature before fixing all bugs found during audit
 
 ---
 
-*Antigravity: Audit-First. Zero-Hardcode. Zero-Trust. Zero-Riba. Always Re-Audit. Social Reliability (v3.3.3) Verified. Lurah Approved.*
+*Antigravity: Absolute Honesty. Real Impact. No Paper Protocol. Zero-Hardcode. Zero-Trust. Zero-Riba. Always Re-Audit. Nexus War Room Mode: Active.*

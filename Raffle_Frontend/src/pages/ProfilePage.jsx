@@ -1343,18 +1343,16 @@ function RenewSponsorshipModal({ onClose }) {
                     headers: { 'content-type': 'application/json' },
                     body: JSON.stringify({
                       action: 'log-activity',
-                      wallet: address,
+                      wallet_address: address,
                       signature,
                       message,
-                      log: {
-                        category: 'PURCHASE',
-                        type: 'Sponsorship Renewal',
-                        description: logDescription,
-                        amount: feeUsd,
-                        symbol: 'USDC',
-                        txHash: receipt.transactionHash,
-                        metadata: { reqId: reqId }
-                      }
+                      category: 'PURCHASE',
+                      type: 'Sponsorship Renewal',
+                      description: logDescription,
+                      amount: feeUsd,
+                      symbol: 'USDC',
+                      txHash: receipt.transactionHash,
+                      metadata: { reqId: reqId }
                     }),
                   });
                 } catch (logErr) {

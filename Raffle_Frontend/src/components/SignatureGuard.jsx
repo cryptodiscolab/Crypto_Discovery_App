@@ -85,6 +85,46 @@ export const SignatureGuard = ({ children }) => {
     // If connected and approved, show app (Outlet/Children)
     if (isApproved) return children;
 
-    // While checking or redirecting, show nothing to avoid flash of "Login Required" modal
+    // If connected but not approved: Show Sign-In Prompt (Zero-Flash)
+    if (isConnected && !isApproved) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center space-y-6">
+                <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center animate-pulse">
+                    <Lock className="text-indigo-400" size={32} />
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-xl font-bold text-white uppercase tracking-tighter italic">Identity <span className="text-indigo-500">Locked</span></h2>
+                    <p className="text-xs text-slate-500 max-w-[240px] leading-relaxed">
+                        Please sign the verification message to access your profile and rewards.
+                    </p>
+                </div>
+                <button
+                    onClick={handleSignApproval}
+                    disabled={isSigning}
+                    className="flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-indigo-500/20"
+                >
+                    {isSigning ? (
+                        <div className="flex items-center gap-2">
+                            <RefreshCw className="animate-spin w-3 h-3" />
+                            Verifying...
+                        </div>
+                    ) : (
+                        <>
+                            <ShieldCheck size={14} />
+                            Verify Identity
+                        </>
+                    )}
+                </button>
+                <button 
+                    onClick={handleReject}
+                    className="text-[9px] text-slate-600 font-bold uppercase tracking-widest hover:text-red-400 transition-colors"
+                >
+                    Disconnect Wallet
+                </button>
+            </div>
+        );
+    }
+
+    // While checking or redirecting (disconnected), show nothing to avoid flash
     return null;
 };

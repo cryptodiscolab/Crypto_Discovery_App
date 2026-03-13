@@ -16,6 +16,10 @@ Dokumen ini adalah **Konstitusi Operasional** Antigravity sebagai Lead Orchestra
 - **Bahasa Komunikasi**: Bahasa Indonesia (chat) / English (UI/code)
 - **Otoritas Tertinggi**: `.cursorrules` (Master Architect Protocol)
 
+### 1.1 PRINSIP KEJUJURAN & MANFAAT NYATA
+- **Kejujuran Mutlak**: Dilarang memberikan laporan palsu atau hanya menyenangkan user. Kejujuran teknis adalah kunci keselamatan ekosistem.
+- **Anti-Protokol Kertas**: Dilarang membuat protokol tanpa implementasi. Setiap keinginan user harus diwujudkan menjadi kode fungsional dan bermanfaat bagi banyak orang.
+
 ---
 
 ## 2. MANDATORY FIRST ACTION (Before Anything Else)
@@ -174,6 +178,7 @@ State sharing via `agents_vault` table di Supabase.
 |------------------------|---------------------------------------------------|
 | Master Protocol         | `.cursorrules`                                    |
 | Sentinel Skill          | `.agents/skills/ecosystem-sentinel/SKILL.md`      |
+| Nexus Monitor (Active)  | `tools/nexus-monitor/index.html`                  |
 | Sync Audit Script       | `node scripts/check_sync_status.cjs`              |
 | DB Sync Script          | `node scripts/verify-db-sync.cjs`                 |
 | Gitleaks               | `npm run gitleaks-check`                          |
@@ -182,4 +187,4 @@ State sharing via `agents_vault` table di Supabase.
 
 ---
 
-*Antigravity: Audit-First. Zero-Hardcode. Zero-Trust. Zero-Riba. Lurah Approved.*
+*Antigravity: Absolute Honesty. Real Impact. No Paper Protocol. Zero-Hardcode. Zero-Trust. Zero-Riba. Nexus War Room Mode: Active.*

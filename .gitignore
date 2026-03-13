@@ -55,6 +55,7 @@ yarn-error.log*
 # === TEMPORARY & SCRATCH FILES (gemini.md: Clean Tree Mandate) ===
 # Any file prefixed with tmp_ is considered a transient scratch file.
 tmp/
+tools/nexus-monitor/
 tmp_*.cjs
 tmp_*.js
 tmp_*.mjs

@@ -3,7 +3,7 @@
  * Lightweight read-only check: is a given wallet address an admin?
  * Reads ADMIN_ADDRESS from server environment — never exposed in frontend bundle.
  */
-export default function handler(req, res) {
+export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', 'no-store');
 
