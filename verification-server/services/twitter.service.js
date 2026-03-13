@@ -23,15 +23,25 @@ class TwitterService {
      */
     async verifyFollow(userId, targetUserId) {
         try {
-            // Check if user follows target
-            const response = await this.readOnlyClient.v2.following(userId, {
-                max_results: 100,
-            });
+            let nextToken = null;
+            let page = 1;
+            const MAX_PAGES = 5;
 
-            // Check if target is in following list
-            const isFollowing = response.data?.some(user => user.id === targetUserId) || false;
+            while (page <= MAX_PAGES) {
+                const response = await this.readOnlyClient.v2.following(userId, {
+                    max_results: 100,
+                    pagination_token: nextToken || undefined
+                });
 
-            return isFollowing;
+                const isFollowing = response.data?.some(user => user.id === targetUserId);
+                if (isFollowing) return true;
+
+                nextToken = response.meta?.next_token;
+                if (!nextToken) break;
+                page++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Twitter follow:', error);
             throw new Error(`Failed to verify follow: ${error.message}`);
@@ -46,15 +56,25 @@ class TwitterService {
      */
     async verifyLike(userId, tweetId) {
         try {
-            // Get users who liked the tweet
-            const response = await this.readOnlyClient.v2.tweetLikedBy(tweetId, {
-                max_results: 100,
-            });
+            let nextToken = null;
+            let page = 1;
+            const MAX_PAGES = 5;
 
-            // Check if user is in the list
-            const hasLiked = response.data?.some(user => user.id === userId) || false;
+            while (page <= MAX_PAGES) {
+                const response = await this.readOnlyClient.v2.tweetLikedBy(tweetId, {
+                    max_results: 100,
+                    pagination_token: nextToken || undefined
+                });
 
-            return hasLiked;
+                const hasLiked = response.data?.some(user => user.id === userId);
+                if (hasLiked) return true;
+
+                nextToken = response.meta?.next_token;
+                if (!nextToken) break;
+                page++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Twitter like:', error);
             throw new Error(`Failed to verify like: ${error.message}`);
@@ -69,15 +89,25 @@ class TwitterService {
      */
     async verifyRetweet(userId, tweetId) {
         try {
-            // Get users who retweeted
-            const response = await this.readOnlyClient.v2.tweetRetweetedBy(tweetId, {
-                max_results: 100,
-            });
+            let nextToken = null;
+            let page = 1;
+            const MAX_PAGES = 5;
 
-            // Check if user is in the list
-            const hasRetweeted = response.data?.some(user => user.id === userId) || false;
+            while (page <= MAX_PAGES) {
+                const response = await this.readOnlyClient.v2.tweetRetweetedBy(tweetId, {
+                    max_results: 100,
+                    pagination_token: nextToken || undefined
+                });
 
-            return hasRetweeted;
+                const hasRetweeted = response.data?.some(user => user.id === userId);
+                if (hasRetweeted) return true;
+
+                nextToken = response.meta?.next_token;
+                if (!nextToken) break;
+                page++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Twitter retweet:', error);
             throw new Error(`Failed to verify retweet: ${error.message}`);
@@ -92,20 +122,31 @@ class TwitterService {
      */
     async verifyQuote(userId, tweetId) {
         try {
-            // Get user's recent tweets
-            const response = await this.readOnlyClient.v2.userTimeline(userId, {
-                max_results: 50,
-                expansions: ['referenced_tweets.id'],
-            });
+            let nextToken = null;
+            let page = 1;
+            const MAX_PAGES = 2; // Scannya timeline user (sedalam 200 tweet)
 
-            // Check if any tweet is a quote of the target tweet
-            const hasQuoted = response.data?.some(tweet => {
-                return tweet.referenced_tweets?.some(
-                    ref => ref.type === 'quoted' && ref.id === tweetId
-                );
-            }) || false;
+            while (page <= MAX_PAGES) {
+                const response = await this.readOnlyClient.v2.userTimeline(userId, {
+                    max_results: 100,
+                    pagination_token: nextToken || undefined,
+                    expansions: ['referenced_tweets.id'],
+                });
 
-            return hasQuoted;
+                const hasQuoted = response.data?.some(tweet => {
+                    return tweet.referenced_tweets?.some(
+                        ref => ref.type === 'quoted' && ref.id === tweetId
+                    );
+                });
+
+                if (hasQuoted) return true;
+
+                nextToken = response.meta?.next_token;
+                if (!nextToken) break;
+                page++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Twitter quote:', error);
             throw new Error(`Failed to verify quote: ${error.message}`);
@@ -120,20 +161,31 @@ class TwitterService {
      */
     async verifyComment(userId, tweetId) {
         try {
-            // Get user's recent tweets
-            const response = await this.readOnlyClient.v2.userTimeline(userId, {
-                max_results: 50,
-                expansions: ['referenced_tweets.id'],
-            });
+            let nextToken = null;
+            let page = 1;
+            const MAX_PAGES = 2; // Scannya timeline user (sedalam 200 tweet)
 
-            // Check if any tweet is a reply to the target tweet
-            const hasReplied = response.data?.some(tweet => {
-                return tweet.referenced_tweets?.some(
-                    ref => ref.type === 'replied_to' && ref.id === tweetId
-                );
-            }) || false;
+            while (page <= MAX_PAGES) {
+                const response = await this.readOnlyClient.v2.userTimeline(userId, {
+                    max_results: 100,
+                    pagination_token: nextToken || undefined,
+                    expansions: ['referenced_tweets.id'],
+                });
 
-            return hasReplied;
+                const hasReplied = response.data?.some(tweet => {
+                    return tweet.referenced_tweets?.some(
+                        ref => ref.type === 'replied_to' && ref.id === tweetId
+                    );
+                });
+
+                if (hasReplied) return true;
+
+                nextToken = response.meta?.next_token;
+                if (!nextToken) break;
+                page++;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verifying Twitter comment:', error);
             throw new Error(`Failed to verify comment: ${error.message}`);

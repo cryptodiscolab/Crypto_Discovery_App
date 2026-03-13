@@ -35,7 +35,7 @@ Before responding to ANY request, read these files IN ORDER:
 9. **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
 10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
 11. **MULTI-PROJECT VERCEL SYNC**: Mandatory CLI environment sync across all projects (DailyApp + Verification Server).
-12. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination/fetching in the backend.
+12. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination (500 items) and Profile Page linking must be interactive (v3.3.3).
 
 ---
 
@@ -89,4 +89,4 @@ Notify user format after fix:
 
 ---
 
-*Antigravity: Audit-First. Zero-Hardcode. Zero-Trust. Zero-Riba. Always Re-Audit. Lurah Approved.*
+*Antigravity: Audit-First. Zero-Hardcode. Zero-Trust. Zero-Riba. Always Re-Audit. Social Reliability (v3.3.3) Verified. Lurah Approved.*

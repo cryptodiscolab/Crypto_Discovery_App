@@ -149,8 +149,12 @@ class VerificationService {
      */
     async verifyTikTokTask(action, tiktokId, params) {
         try {
-            console.log(`[Verification] TikTok ${action} for ${tiktokId} - Trust-Based Verification`);
-            // TODO: Integrate TikTok API when available
+            /**
+             * [BRIDGE VERIFICATION] TikTok API integration is pending.
+             * Current logic: Trust-based verification (auto-pass) IF the user has linked their TikTok Handle.
+             * Identity Lock is still enforced in verifyAndMarkTask to prevent Sybil/Multi-wallet claiming with one handle.
+             */
+            console.log(`[Verification] TikTok ${action} for ${tiktokId} - Bridge Verification Active`);
             return true;
         } catch (error) {
             console.error('Error verifying TikTok task:', error);
@@ -167,8 +171,12 @@ class VerificationService {
      */
     async verifyInstagramTask(action, instagramId, params) {
         try {
-            console.log(`[Verification] Instagram ${action} for ${instagramId} - Trust-Based Verification`);
-            // TODO: Integrate Instagram Basic Display/Graph API when available
+            /**
+             * [BRIDGE VERIFICATION] Instagram Graph API integration is pending.
+             * Current logic: Trust-based verification (auto-pass) IF the user has linked their Instagram Handle.
+             * Identity Lock is still enforced in verifyAndMarkTask to prevent Sybil/Multi-wallet claiming with one handle.
+             */
+            console.log(`[Verification] Instagram ${action} for ${instagramId} - Bridge Verification Active`);
             return true;
         } catch (error) {
             console.error('Error verifying Instagram task:', error);

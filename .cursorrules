@@ -152,13 +152,14 @@ You are the Lead Blockchain Architect for Crypto Disco App. You must adhere to t
 - **GITLEAKS VERIFICATION MANDATE**: Never consider a task "Done" without ensuring Gitleaks (`npm run gitleaks-check`) is CLEAR.
 
 ## 15. SOCIAL IDENTITY LOCK & ECOSYSTEM INTEGRITY MANDATE
-- **SOCIAL IDENTITY LOCK (v2)**: Every social platform (Twitter/X, Google, Farcaster, Telegram, TikTok, Instagram) MUST be locked 1-to-1 with a specific wallet address. OAuth linking (Google/X) is now the primary Sybil protection alongside Neynar SIWE. Identity Lock status must be viewable on the user profile.
+- **SOCIAL IDENTITY LOCK (v2)**: Every social platform (Twitter/X, Google, Farcaster, Telegram, TikTok, Instagram) MUST be locked 1-to-1 with a specific wallet address. OAuth linking (Google/X) is now the primary Sybil protection alongside Neynar SIWE. Identity Lock status must be viewable and **interactively linkable** on the user profile.
 - **THE SYNC MANDATE**: Every new feature or change MUST be synchronized across the entire ecosystem:
   1. **Smart Contract & ABI**: Verify function existence and update `abis_data.txt`.
   2. **Database**: Ensure schema, RLS, and `point_settings` are updated.
-  3. **Verification Server**: Update logic for identity persistence, rate limiting, and **Iterative Social Verification** (Paginasi).
+  3. **Verification Server**: Update logic for identity persistence, rate limiting, and **Iterative Social Verification** (Paginasi 500 items).
   4. **Telegram Admin Bot**: Update/add commands (e.g., `/user`, `/audit`) and auto-detection logic.
   5. **Admin Dashboard**: Update UI components (e.g., `TaskManagerTab`) and auto-XP mappings.
+  6. **Profile Page UI (v3.3.3)**: Ensure all unlinked socials have interactive "Link" buttons that refetch user data.
 - **USER EXPERIENCE**: Any discrepancy between ini adalah "Protocol Breach". The ecosystem must feel like a single, seamless, and secure entity to the user.
 
 ## 16. THE ETERNAL MEMORY & TRACEABILITY GUARD
@@ -347,4 +348,5 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **Required Action**: `vercel env rm` -> `vercel env add` for all targets on both projects.
 
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. **Multi-Project Synced.** Lurah Approved.*
+---
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. **Social Reliability (v3.3.3) Verified.** Lurah Approved.*

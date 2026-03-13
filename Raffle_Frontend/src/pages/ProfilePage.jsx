@@ -11,6 +11,7 @@ import { ReferralCard } from '../components/ReferralCard';
 import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { useSBT as useSBTData } from '../hooks/useSBT';
+import { useOAuth } from '../hooks/useOAuth';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI, MASTER_X_ADDRESS } from '../lib/contracts';
@@ -32,6 +33,7 @@ export default function ProfilePage() {
   const { disconnect } = useDisconnect();
   const { sbtThresholds, ecosystemSettings, profileData: contextProfile, refetch: refetchPoints } = usePoints();
   const { syncUser, isLoading: isFarcasterLoading } = useFarcaster();
+  const { linkGoogle, linkX, isLinking: isOAuthLinking } = useOAuth();
 
   // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
@@ -665,31 +667,44 @@ export default function ProfilePage() {
         
         {/* SOCIAL IDENTITY BADGES (v3.3.1) */}
         <div className="px-4 mb-6">
-          <div className="flex flex-wrap gap-2">
-            {/* Google Identity */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
-              ${profileData.google_id 
-                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
+          <div className="flex flex-wrap gap-            {/* Google Identity */}
+            <button
+              onClick={async () => {
+                if (profileData.google_id) return;
+                const res = await linkGoogle();
+                if (res?.success) fetchProfile();
+              }}
+              disabled={isOAuthLinking || !!profileData.google_id}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
+                ${profileData.google_id 
+                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 cursor-default' 
+                  : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Mail size={14} />
               <span className="text-[10px] font-black uppercase tracking-widest">
-                {profileData.google_id ? 'Google Linked' : 'Google Unlinked'}
+                {profileData.google_id ? 'Google Linked' : 'Link Google'}
               </span>
               {profileData.google_id && <Check size={10} className="text-blue-400" />}
-            </div>
-
+            </button>
+ 
             {/* X (Twitter) Identity */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
-              ${profileData.twitter_id 
-                ? 'bg-white/10 border-white/20 text-white' 
-                : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
+            <button
+              onClick={async () => {
+                if (profileData.twitter_id) return;
+                const res = await linkX();
+                if (res?.success) fetchProfile();
+              }}
+              disabled={isOAuthLinking || !!profileData.twitter_id}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
+                ${profileData.twitter_id 
+                  ? 'bg-white/10 border-white/20 text-white cursor-default' 
+                  : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Twitter size={14} />
               <span className="text-[10px] font-black uppercase tracking-widest">
-                {profileData.twitter_id ? 'X Linked' : 'X Unlinked'}
+                {profileData.twitter_id ? 'X Linked' : 'Link X (Twitter)'}
               </span>
               {profileData.twitter_id && <Check size={10} className="text-white" />}
-            </div>
-
+            </button>
+ 
             {/* Farcaster Identity (Existing) */}
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all
               ${profileData.fid && profileData.fid !== 'N/A'
@@ -701,6 +716,7 @@ export default function ProfilePage() {
               </span>
               {profileData.fid && profileData.fid !== 'N/A' && <Check size={10} className="text-indigo-400" />}
             </div>
+iv>
           </div>
           {profileData.google_email && (
             <p className="text-[9px] text-slate-500 mt-2 ml-4 font-mono uppercase">

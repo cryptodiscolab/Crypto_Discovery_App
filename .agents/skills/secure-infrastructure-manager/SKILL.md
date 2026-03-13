@@ -80,7 +80,8 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Atomic Integrity**: Pastikan mutasi database (XP/Claims) dan entri log riwayat terjadi secara atomik atau terverifikasi silang untuk mencegah data "ghosting".
 - [x] **Zero-Trust Activity Logging**: All database mutates must be signature-verified.
 - [x] **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
-- [x] **Social Reliability Mandate**: Mandatory iterative fetching for all social verifications to prevent false negatives.
+- [x] **Social Reliability Mandate**: Mandatory iterative fetching (max 500 items) for all social verifications to prevent false negatives.
+- [x] **Profile Social Identity UX**: All social linking actions in Profile Page must be interactive (trigger `linkGoogle`/`linkX`) and refetch user state upon success.
 - **Vercel Hobby Plan Guard**: Strictly < 12 Serverless Functions. Consolidate into `*-bundle.js`.
 
 ### 8. Database Schema Awareness Protocol (NEW)
@@ -100,6 +101,8 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] Verify signature checks on all `*-bundle.js` write actions.
 - [ ] Apakah `npm run build` berhasil tanpa error?
 - [ ] Apakah file `.agents` sudah di-sync ke cloud (`sync-cloud.js`)?
+- [ ] **Social Reliability**: Have we implemented iterative pagination (500 items) for Farcaster/Twitter?
+- [ ] **Profile UX**: Are social linking buttons interactive and state-aware?
 - [ ] **Database Inspection**: Sudahkah Anda memverifikasi kolom tabel secara langsung di DB sebelum modifikasi logika?
 
 ## 🚨 Pantangan

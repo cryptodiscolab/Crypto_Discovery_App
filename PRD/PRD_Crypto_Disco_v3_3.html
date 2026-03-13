@@ -1,5 +1,5 @@
 <h1>🪩 Product Requirements Document: Crypto Disco Application</h1>
-<p><strong>Version: 3.3 — Unified Master Edition</strong>
+<p><strong>Version: 3.3.3 — Social Reliability &amp; UX Edition</strong>
 <strong>Tanggal</strong>: 2026-03-13
 <strong>Status</strong>: Active — Base Sepolia (Testnet) ✅ | Base Mainnet (Launch Ready)
 <strong>Author</strong>: Antigravity (Ecosystem Sentinel)</p>
@@ -17,9 +17,14 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><strong>3.3.1</strong></td>
+<td><strong>3.3.3</strong></td>
 <td>2026-03-13</td>
-<td>X+Google OAuth identity linking (wallet-first 3-step onboarding). Bug Fix: <code>handleUpdateProfile</code> silent data loss (pfp_url gate removed). Bug Fix: <code>handleSyncUgcRaffle</code> ReferenceError (500 error). DB Performance: duplicate index/RLS/initplan fixes. <code>v_user_full_profile</code> view extended dengan OAuth fields. ProfilePage OAuth badge section.</td>
+<td><strong>Social Reliability Upgrade</strong>: Iterative pagination (500 items) for Twitter &amp; Farcaster verification. <strong>UX Fix</strong>: Interactive &quot;Link Google/X&quot; buttons on Profile Page. <strong>Bridge Verification</strong>: Formalized TikTok/Instagram as bridge verifs with Identity Lock.</td>
+</tr>
+<tr>
+<td>3.3.1</td>
+<td>2026-03-13</td>
+<td>X+Google OAuth identity linking (wallet-first 3-step onboarding). Bug Fix: <code>handleUpdateProfile</code> silent data loss. <code>v_user_full_profile</code> view extended.</td>
 </tr>
 <tr>
 <td>3.3</td>
@@ -276,7 +281,7 @@
 <li><strong>Revenue Share Dashboard</strong>: Tampilkan balance ETH claimable dari SBT Dividends.</li>
 <li><strong>Activity Log Section</strong>: Riwayat XP/purchase real-time dari <code>user_activity_logs</code>.</li>
 <li><strong>UGC Mission Creator</strong>: Form create sponsorship mission, fee &amp; reward dari <code>system_settings</code> (Zero Hardcode).</li>
-<li><strong>Social Identity Badge Row (v3.3.1)</strong>: Tampilkan status linked Google/X accounts (badge LINKED/UNLINKED).</li>
+<li><strong>Social Identity Linking (v3.3.3)</strong>: Interactive buttons for Google/X/Farcaster. &quot;Link Google&quot; (Active) -&gt; &quot;Google Linked&quot; (Locked).</li>
 </ul>
 <h3>5.3 Fitur Ekonomi</h3>
 <table>
@@ -647,12 +652,12 @@ UGC Raffle Split:
 <tr>
 <td><strong>Social Platforms</strong></td>
 <td>🟢 100%</td>
-<td>Twitter, Farcaster, TikTok, Instagram</td>
+<td>Twitter &amp; Farcaster (Iterative 500 items), TikTok &amp; Instagram (Bridge)</td>
 </tr>
 <tr>
 <td><strong>OAuth (Google/X)</strong></td>
 <td>🟢 100%</td>
-<td>Wallet-first 3-step: Connect → SIWE → Link OAuth (Sybil Lock)</td>
+<td>Wallet-first 3-step + <strong>Profile Page Interactive Linking (v3.3.3)</strong></td>
 </tr>
 <tr>
 <td><strong>DB Performance</strong></td>
@@ -661,5 +666,5 @@ UGC Raffle Split:
 </tr>
 </tbody></table>
 <hr>
-<p><em>PRD Version: 3.3.1 — OAuth Integration + Bug Fix Edition</em>
+<p><em>PRD Version: 3.3.3 — Social Reliability + Profile UX Edition</em>
 <em>Berdasarkan protokol Full-Stack Sync. Ecosystem Synced. Identity Locked. Zero Hardcode. Audit-First. Lurah Approved.</em></p>

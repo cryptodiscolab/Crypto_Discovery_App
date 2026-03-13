@@ -40,7 +40,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `E:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_3.md`
+**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_3.md`
 (Versi lama diarsipkan di `PRD/_archive/`)
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
@@ -75,7 +75,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.3.1 (OAuth & Bug Fix Edition — Audit-First & Social Lock v2)
+- **Versi Terakhir:** 3.3.3 (Social Reliability & Profile UX Edition — Iterative Pagination & Interactive Social Linking)
 - **Status:** Single source of truth. Versi lama (v3.1, v3.2, DISCO_DAILY_MASTER_PRD) diarsipkan di `PRD/_archive/`
 
 ---
@@ -287,6 +287,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Audit**: Apakah kode baru bebas dari hardcode (`eyJ...`, `0x..`, `sb_...`) dan celah keamanan? (Jalankan `sentinel-audit.js`)
 - [ ] **DB Sync**: Apakah `verify-db-sync.cjs` sudah dijalankan dan lulus 100% tanpa fragmentasi legacy?
 - [ ] **Social Reliability**: Apakah verifikasi sosial (Farcaster/Twitter) sudah menggunakan **Iterative Pagination** (>100 items support)?
+- [ ] **Profile Social Linking**: Apakah tombol "Link Google/X" di Profile Page sudah interaktif dan memicu refetch?
 - [ ] **Syntax & Lint**: Apakah pengecekan sintaks backend (`node -c`) dan linter frontend (`npm run lint`) bersih tanpa error fatal?
 - [ ] **Sync**: Apakah `.cursorrules` dan `.env` sudah sesuai dengan kontrak terbaru? (Jalankan `sync-check.js`)
 - [ ] **Dev Plan**: Apakah sudah memberikan Development Plan dan mendapat persetujuan sebelum eksekusi?

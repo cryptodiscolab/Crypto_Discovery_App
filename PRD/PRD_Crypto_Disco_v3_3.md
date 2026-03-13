@@ -1,5 +1,5 @@
 # 🪩 Product Requirements Document: Crypto Disco Application
-**Version: 3.3 — Unified Master Edition**
+**Version: 3.3.3 — Social Reliability & UX Edition**
 **Tanggal**: 2026-03-13
 **Status**: Active — Base Sepolia (Testnet) ✅ | Base Mainnet (Launch Ready)
 **Author**: Antigravity (Ecosystem Sentinel)
@@ -12,7 +12,8 @@
 
 | Versi | Tanggal | Ringkasan |
 |---|---|---|
-| **3.3.1** | 2026-03-13 | X+Google OAuth identity linking (wallet-first 3-step onboarding). Bug Fix: `handleUpdateProfile` silent data loss (pfp_url gate removed). Bug Fix: `handleSyncUgcRaffle` ReferenceError (500 error). DB Performance: duplicate index/RLS/initplan fixes. `v_user_full_profile` view extended dengan OAuth fields. ProfilePage OAuth badge section. |
+| **3.3.3** | 2026-03-13 | **Social Reliability Upgrade**: Iterative pagination (500 items) for Twitter & Farcaster verification. **UX Fix**: Interactive "Link Google/X" buttons on Profile Page. **Bridge Verification**: Formalized TikTok/Instagram as bridge verifs with Identity Lock. |
+| 3.3.1 | 2026-03-13 | X+Google OAuth identity linking (wallet-first 3-step onboarding). Bug Fix: `handleUpdateProfile` silent data loss. `v_user_full_profile` view extended. |
 | 3.3 | 2026-03-13 | Unified master PRD. Menambahkan Audit-First Protocol, Zero-Hardcode Mandate, Multi-Model Agent Architecture (GEMINI.md, CLAUDE.md), Webhook Telegram Protocol, dan ProfilePage ReferenceError fix. |
 | 3.2 | 2026-03-12 | UGC Raffle metadata, XP multi-level awarding, DB Security Invoker, Admin Dashboard controls (Lurah Hub). |
 | 3.1 | 2026-03-11 | Zero-Leak Security, Pre-Flight Deployment Protocol, Git Hygiene Mandate gitleaks. |
@@ -156,7 +157,7 @@ sequenceDiagram
 - **Revenue Share Dashboard**: Tampilkan balance ETH claimable dari SBT Dividends.
 - **Activity Log Section**: Riwayat XP/purchase real-time dari `user_activity_logs`.
 - **UGC Mission Creator**: Form create sponsorship mission, fee & reward dari `system_settings` (Zero Hardcode).
-- **Social Identity Badge Row (v3.3.1)**: Tampilkan status linked Google/X accounts (badge LINKED/UNLINKED).
+- **Social Identity Linking (v3.3.3)**: Interactive buttons for Google/X/Farcaster. "Link Google" (Active) -> "Google Linked" (Locked).
 
 ### 5.3 Fitur Ekonomi
 | Fitur | Mekanisme |
@@ -330,11 +331,11 @@ UGC Raffle Split:
 | **Zero Hardcode** | 🟢 100% | All XP/Fee from Supabase settings |
 | **Audit Protocol** | 🟢 100% | Pre-Fix & Post-Fix audit mandatory |
 | **Multi-Model AI** | 🟢 100% | GEMINI.md + CLAUDE.md + .cursorrules |
-| **Social Platforms** | 🟢 100% | Twitter, Farcaster, TikTok, Instagram |
-| **OAuth (Google/X)** | 🟢 100% | Wallet-first 3-step: Connect → SIWE → Link OAuth (Sybil Lock) |
+| **Social Platforms** | 🟢 100% | Twitter & Farcaster (Iterative 500 items), TikTok & Instagram (Bridge) |
+| **OAuth (Google/X)** | 🟢 100% | Wallet-first 3-step + **Profile Page Interactive Linking (v3.3.3)** |
 | **DB Performance** | 🟢 100% | Duplicate index/RLS cleaned, FK indexes added, initplan optimized |
 
 ---
 
-*PRD Version: 3.3.1 — OAuth Integration + Bug Fix Edition*
+*PRD Version: 3.3.3 — Social Reliability + Profile UX Edition*
 *Berdasarkan protokol Full-Stack Sync. Ecosystem Synced. Identity Locked. Zero Hardcode. Audit-First. Lurah Approved.*
