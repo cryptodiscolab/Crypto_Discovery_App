@@ -176,6 +176,8 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 Melewati batas ukuran avatar (1MB)
 - 🚫 Menggunakan magic numbers untuk streak window (Min: 20h, Max: 48h)
 - 🚫 **Atomic Hijack**: Dilarang meletakkan script baru langsung di root `scripts/`. Wajib dimasukkan ke sub-folder kategori (`audits`, `deployments`, `sync`, `debug`).
+- 🚫 **Local Resource Leak**: Dilarang membiarkan server lokal (Vite/Express) berjalan di background setelah tugas selesai (**LOCAL_HYGIENE**).
+
 
 ---
 

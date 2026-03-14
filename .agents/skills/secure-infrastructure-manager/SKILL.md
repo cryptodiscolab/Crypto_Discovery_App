@@ -93,6 +93,8 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Profile UX**: Are social linking buttons interactive and state-aware?
 - [ ] **Clean Asset Protocol**: Apakah seluruh file screenshot/media hasil audit sudah dihapus?
 - [ ] **Atomic Script Enforced**: Apakah script operasional sudah berada di folder kategori yang benar di `scripts/`?
+- [ ] **Local Server Resource Hygiene**: Apakah seluruh server lokal (Vite/Express) sudah dimatikan setelah verifikasi selesai?
+
 
 ## 🚨 Pantangan
 - Menggunakan kontrak lama (Deprecated versions).

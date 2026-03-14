@@ -16,6 +16,8 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 2. **Reduced Polling**: Interval polling worker script lokal diset ke **>= 30 detik**. Di VPS/Cloud, interval bisa lebih cepat (5-10 detik).
 3. **Clean Shutdown**: Handler `SIGINT`/`SIGTERM` tetap dipertahankan di semua env karena ini best practice Node.js.
 4. **Build Guards**: Plugin berat otomatis didisable di lokal kecuali dibutuhkan.
+5. **Local Server Resource Hygiene**: SELALU matikan (terminate) server lokal (Express, Vite, etc.) sesaat setelah verifikasi manual selesai. Jangan biarkan proses Node.js menggantung di background untuk menghemat resource CPU/RAM (i5-4210U).
+
 5. **Vercel Hobby Plan Guard (Profit-First Strategy)**:
     - **API Consolidation Mandate**: Seluruh fitur API baru **WAJIB** masuk ke dalam bundle yang sudah ada (`admin-bundle.js`, `user-bundle.js`, `tasks-bundle.js`, `audit-bundle.js`).
     - **Limit 12 Fungsi**: Jumlah Serverless Functions di Vercel **TIDAK BOLEH** melebihi 12 fungsi untuk menghindari biaya sebelum project mencapai PnL positif (Profit). Jika fitur baru membutuhkan endpoint baru, konsolidasi fungsionalitas ke dalam bundle yang relevan.

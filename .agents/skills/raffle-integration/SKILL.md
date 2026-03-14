@@ -57,7 +57,7 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 ## ⛽ Paymaster Integration (Gasless)
 - Gunakan `usePaymaster.js` untuk deteksi infrastruktur gasless (Coinbase Smart Wallet).
 
-## 📋 Checklist Raffle Feature (v3.2)
+## 📋 Checklist Raffle Feature (v3.6.0)
 - [x] Apakah `buyTickets` melampirkan `txHash` ke payload?
 - [x] Apakah XP pembelian tiket dikalikan dengan kuantitas?
 - [x] Apakah metadata lengkap (Title, Image, Category) sudah masuk ke Supabase?

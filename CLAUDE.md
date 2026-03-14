@@ -42,6 +42,8 @@ Before responding to ANY request, read these files IN ORDER:
 16. **ATOMIC SCRIPTS**: NO scripts allowed in root `scripts/`. Must use categorised sub-folders (`audits`, `deployments`, `sync`, `debug`).
 17. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
 18. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
+19. **LOCAL HYGIENE**: ALWAYS terminate local servers (Vite/Express) after verification. Do not consume local CPU/RAM in the background.
+
 
 ---
 
