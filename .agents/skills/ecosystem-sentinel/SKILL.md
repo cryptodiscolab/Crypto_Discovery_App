@@ -120,6 +120,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 4.  **Anti-Inflation Guard (SBT Limits)**: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.
 5.  **Anti-Sticker-Shock (Gas Guard)**: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.
 6.  **Defensive Address Cleaning Mandate**: EVERY contract address fetched from environment variables MUST be cleaned of quotes, spaces, and hidden characters before use.
+7. **ENV-SANITY Mandate (Cloud Integrity)**: PROHIBIT the use of environment variables containing literal double quotes (e.g., `""value""`) or hidden newlines (`\r\n`). EVERY environment variable access in serverless bundles MUST include `.trim()` to prevent "Silent Corruption" causing initialization failures.
 
 ## 🏛️ Verified Infrastructure Reference (v3.2)
 
@@ -309,6 +310,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Multi-Project Sync**: Memastikan seluruh project Vercel (`crypto-discovery-app`, `dailyapp-verification-server`) menggunakan alamat kontrak yang identik untuk semua environment (Mainnet/Sepolia).
 - [ ] **SDK-First Audit**: Apakah fitur Auth/Security menggunakan SDK resmi? (Dilarang manual URL/REST jika SDK tersedia).
 - [ ] **Env-Sanity Check**: Apakah API menggunakan `.trim()` pada alamat kontrak/key dari environment variables untuk mencegah silent corruption?
+- [ ] **Vercel Cloud Purge Audit**: Apakah environment cloud sudah diverifikasi bersih dari literal double quotes (`""value""`) dan hidden newlines (`\r\n`)?
 - [ ] **Nexus Evolution**: Apakah pelajaran dari task ini (jika ada bug pelik) sudah didokumentasikan di protokol atau `agent_vault`?
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix)*: `node scripts/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
 

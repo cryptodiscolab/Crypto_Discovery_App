@@ -37,6 +37,45 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **Always Active**: Selalu periksa alamat kontrak terbaru di `.env` dan `.cursorrules`.
 - **Auto-Sync**: Jika ditemukan kontrak baru, segera update `.env`, `.cursorrules`, dan `CONTRACTS_DOCUMENTATION.md`.
 
+---
+name: Secure Infrastructure & Contract Manager
+description: Manages smart contract lifecycle, environmental synchronization, and absolute privacy for sensitive data. Includes ABI Proxy architecture and build safety protocols.
+---
+
+# Secure Infrastructure & Master Protocol Architect
+
+Skill ini adalah landasan keamanan teknis yang mewajibkan Agent untuk tunduk sepenuhnya pada **.cursorrules (Master Architect Protocol)** sebagai panduan utama.
+
+## 📜 Fondasi Utama: Master Architect Protocol (.cursorrules)
+
+### 1. Kepatuhan Mutlak
+Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manajemen database) harus disinkronkan langsung dengan `.cursorrules`.
+
+### 2. Staff Engineer Mode (Staff-Only)
+- **Tactical & Fast**: Jelaskan logika infrastruktur dalam maksimal 3 poin bullet.
+- **Development Plan Mandatory**: Setiap perubahan kritis (DB schema, RPC, Contract Sync) WAJIB diawali dengan "Development Plan".
+- **Pre-Flight Check**: Verifikasi Bytecode Limit (24KB) dan Gas Impact.
+- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
+
+### 3. Bahasa & Komunikasi
+- **Technical Discussions**: Gunakan **Bahasa Indonesia**.
+- **System Labels/UI**: Gunakan **Bahasa Inggris (English)**.
+
+## 🏛️ Verified Infrastructure Reference (v3.2)
+| Component | Base Mainnet | Base Sepolia (Testnet) |
+|---|---|---|
+| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
+| **MasterX (Points)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
+| **Raffle (NFT)** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
+| **CMS (Content)** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
+| **AirnodeRrpV0** | `0x32A334335EBe9d83dfB33B3EF803328e7529246E` | `0x2ab9f26E18b6103274414940251539D0105e2Add` |
+
+## 🏛️ Core Competencies
+
+### 1. Latest Contract Sync Mandate
+- **Always Active**: Selalu periksa alamat kontrak terbaru di `.env` dan `.cursorrules`.
+- **Auto-Sync**: Jika ditemukan kontrak baru, segera update `.env`, `.cursorrules`, dan `CONTRACTS_DOCUMENTATION.md`.
+
 ### 2. PRIVATE_KEY & Sensitive Data Security
 - **Strict Privacy**: `PRIVATE_KEY` di `.env` adalah rahasia tertinggi.
 - **Zero Exposure**: JANGAN PERNAH upload ke Git atau masukkan ke bundle frontend (`VITE_`).
@@ -44,6 +83,7 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - [x] **No-Screenshot Mandate**: DILARANG KERAS men-staged atau meng-upload file screenshot/media hasil audit ke Git.
 - [x] **Zero-Leak Mandate**: DILARANG KERAS mempublikasikan variabel atau file yang mengandung `role_key`, `service_role_key`, `secret`, atau kredensial mentah lainnya. Gunakan `.env`.
 - [x] **Defensive Address Cleaning**: DILARANG menggunakan alamat kontrak yang masih mengandung tanda kutip, spasi, atau karakter tersembunyi. WAJIB dibersihkan via `cleanAddr` atau `.trim()`.
+- [x] **ENV-SANITY Mandate**: ALL environment variables fetched for serverless initialization (e.g., `SUPABASE_URL`, `SERVICE_KEY`) MUST be cleaned of "Silent Corruption" (literal double quotes and hidden newlines) using `.trim()`.
 - [x] **SDK-First Principle**: Mandatory usage of official SDKs for Auth and Social flows to ensure State/PKCE integrity.
 - [ ] **Multi-Project Vercel Sync**: Wajib melakukan sinkronisasi environment variable (`VITE_V12_CONTRACT_ADDRESS`) secara atomik di seluruh project terkait (`verification-server`) menggunakan Vercel CLI.
 - [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env`, `PRIVATE_KEY`, atau `role_key`.
@@ -112,4 +152,4 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - Update database langsung dari client-side React.
 - **Menggunakan inline ABI atau direct JSON export untuk ABI.**
 - **Manual Security URL**: Menghasilkan URL OAuth atau Social Linking secara manual jika SDK resmi (Supabase) tersedia.
-- **Corrupted Env Usage**: Menggunakan variabel lingkungan (`SUPABASE_URL`, dll) tanpa melakukan `.trim()` atau pembersihan "Silent Corruption".
+- **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan (`SUPABASE_URL`, `SERVICE_KEY`, dll) tanpa melakukan `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines). DILARANG KERAS membiarkan SDK melakukan inisialisasi dengan data mentah dari Vercel tanpa sanitasi.
