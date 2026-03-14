@@ -5,13 +5,13 @@ import { verifyMessage } from "viem";
 // ── CONFIG ─────────────────────────────────────────────────────
 // Fix: Alchemy Free Tier strictly limits eth_getLogs to 10 blocks.
 // We force the use of Base Sepolia Public Node to allow 5000 block ranges.
-const MASTER_X = process.env.VITE_MASTER_X_ADDRESS || process.env.MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
-const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || "0x87a3d1203Bf20E7dF5659A819ED79a67b236F571";
-const CRON_SECRET = process.env.CRON_SECRET;
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const NEYNAR_KEY = process.env.NEYNAR_API_KEY;
-const RPC_URL = process.env.VITE_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
+const MASTER_X = (process.env.VITE_MASTER_X_ADDRESS || process.env.MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7").trim();
+const DAILY_APP = (process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || "0x87a3d1203Bf20E7dF5659A819ED79a67b236F571").trim();
+const CRON_SECRET = (process.env.CRON_SECRET || '').trim();
+const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').trim();
+const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+const NEYNAR_KEY = (process.env.NEYNAR_API_KEY || '').trim();
+const RPC_URL = (process.env.VITE_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org").trim();
 
 const MAX_BLOCK_RANGE = 5000;
 
@@ -81,7 +81,7 @@ async function handleRpcProxy(req, res) {
         return res.status(403).json({ error: `Method ${method} is not allowed via proxy` });
     }
 
-    const ALCHEMY_KEY = process.env.VITE_ALCHEMY_API_KEY || process.env.ALCHEMY_API_KEY;
+    const ALCHEMY_KEY = (process.env.VITE_ALCHEMY_API_KEY || process.env.ALCHEMY_API_KEY || '').trim();
     const CHAIN_ID = req.query.chainId || '84532'; // Default to Base Sepolia
 
     if (!ALCHEMY_KEY) {

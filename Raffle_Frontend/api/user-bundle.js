@@ -3,16 +3,16 @@ import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { createPublicClient, http, verifyMessage } from 'viem';
 import { baseSepolia } from 'viem/chains';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
-const neynarApiKey = process.env.NEYNAR_API_KEY;
+const supabaseUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
+const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || '').trim();
+const neynarApiKey = (process.env.NEYNAR_API_KEY || '').trim();
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 const neynar = new NeynarAPIClient({ apiKey: neynarApiKey || '' });
 
 const rpcClient = createPublicClient({
     chain: baseSepolia,
-    transport: http(process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
+    transport: http((process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org').trim()),
 });
 
 // ZERO-HARDCODE: Source from Env with safe production fallback

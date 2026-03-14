@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyMessage } from 'viem';
 
 const supabaseAdmin = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    (process.env.VITE_SUPABASE_URL || '').trim(),
+    (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 );
 
 /**

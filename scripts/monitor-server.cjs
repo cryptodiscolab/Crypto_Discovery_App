@@ -17,10 +17,13 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-    let filePath = path.join(ROOT, req.url === '/' ? 'index.html' : req.url);
+    // Strip query strings for file lookup
+    const urlPath = req.url.split('?')[0];
+    let filePath = path.join(ROOT, urlPath === '/' ? 'index.html' : urlPath);
     
-    // Safety check: ensure file is within ROOT
-    if (!filePath.startsWith(ROOT)) {
+    // Normalize and safety check
+    filePath = path.normalize(filePath);
+    if (!filePath.startsWith(path.normalize(ROOT))) {
         res.statusCode = 403;
         res.end('Forbidden');
         return;

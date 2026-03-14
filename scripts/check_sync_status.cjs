@@ -10,6 +10,7 @@ if (!SUPABASE_SERVICE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const { logActivity } = require('./nexus-bridge.cjs');
 
 async function fullVerification() {
     console.log("╔══════════════════════════════════════════════════════════╗");
@@ -18,6 +19,7 @@ async function fullVerification() {
 
     // ═══ SECTION 1: DATABASE TABLE INTEGRITY ═══
     console.log("━━━ SECTION 1: DATABASE TABLE INTEGRITY ━━━");
+    logActivity('lurah', 'Starting Database Integrity Audit...', null);
     const tables = [
         { name: 'user_profiles',     api: 'sync / fc-sync / xp / update-profile' },
         { name: 'user_task_claims',   api: 'tasks-bundle (claim / verify / social-verify)' },
@@ -121,8 +123,10 @@ async function fullVerification() {
         console.log("║  ✅ VERDICT: ALL SYSTEMS SYNCHRONIZED & OPERATIONAL     ║");
         console.log("║  📡 Task Claim Pipeline: FULLY FUNCTIONAL               ║");
         console.log("║  🛡️  Security Matrix: ALL 13 CHECKS PASSED              ║");
+        logActivity('antigravity', 'Full Ecosystem Sync SUCCESS. All systems operational.', '✅ VERDICT: ALL SYSTEMS SYNCHRONIZED');
     } else {
         console.log("║  ⚠️  SOME TABLES HAD ERRORS — REVIEW ABOVE              ║");
+        logActivity('lurah', 'Ecosystem Audit found inconsistencies in database tables.', '⚠️ AUDIT FAILED');
     }
     console.log("╚══════════════════════════════════════════════════════════╝");
 }

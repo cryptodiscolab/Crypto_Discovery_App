@@ -6,18 +6,18 @@ import path from 'path';
 
 // Init Supabase Admin
 const supabaseAdmin = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    (process.env.VITE_SUPABASE_URL || '').trim(),
+    (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 );
 
 const rawAdmins = [
     '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b',
     '0x52260c30697674a7C837FEB2af21bBf3606795C8',
     '0x52260c30697674a7c837feb2af21bbf3606795c8',
-    process.env.VITE_ADMIN_ADDRESS,
-    process.env.ADMIN_ADDRESS,
-    process.env.VITE_ADMIN_WALLETS
-].join(',').split(',');
+    (process.env.VITE_ADMIN_ADDRESS || '').trim(),
+    (process.env.ADMIN_ADDRESS || '').trim(),
+    (process.env.VITE_ADMIN_WALLETS || '').trim()
+].join(',').toLowerCase().split(',').filter(Boolean);
 
 const AUTHORIZED_ADMINS = rawAdmins
     .map(a => a?.trim().toLowerCase())

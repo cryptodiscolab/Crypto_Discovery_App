@@ -2,12 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyMessage } from 'viem';
 
 const supabaseAdmin = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    (process.env.VITE_SUPABASE_URL || '').trim(),
+    (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 );
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '').trim();
 
 // ─── Telegram Notification Helper ────────────────────────────────────────────
 async function notifyTelegramWinner(walletAddress, raffleId, xpAwarded) {
