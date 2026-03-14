@@ -91,3 +91,33 @@ supabase_full_dump.json
 full_supabase_dump.sql
 nexus-activity.json
 nexus-bridge.json
+
+# === MEDIA & SCREENSHOTS (MANDATORY — Section 27) ===
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.mp4
+*.mov
+
+# === SECURITY CERTIFICATES & PRIVATE KEYS ===
+*.pem
+*.key
+*.p12
+*.pfx
+*.cert
+*.crt
+
+# === OS & EDITOR GARBAGE ===
+.DS_Store
+Thumbs.db
+desktop.ini
+*.bak
+*.old
+
+# === GENERATED ARTIFACTS & EXTRACTED DATA ===
+abi_extracted.json
+DailyApp.V.12/
+NFT_Raffle_Source/
