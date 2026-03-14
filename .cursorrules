@@ -368,6 +368,9 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **ZERO MAGIC**: These numbers MUST NOT be hardcoded in `user-bundle.js` or elsewhere.
 
 
+## 35. ADMIN SYNC MANDATE (v3.7.0)
+- **ENFORCEMENT**: Every administrative action on-chain (Token Whitelist, SBT Upgrade) MUST be synchronized with the database immediately upon transaction confirmation via a signed secure request to the backend. No state drift between Contract and Database is permitted.
+
 ---
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated v3.7.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*

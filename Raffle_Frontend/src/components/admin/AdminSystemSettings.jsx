@@ -45,7 +45,7 @@ export default function AdminSystemSettings() {
     const [saving, setSaving] = useState(false);
 
     // Advanced Tier States
-    const [tierConfig, setTierConfig] = useState({ diamond: 0.01, gold: 0.10, silver: 0.30, bronze: 0.70 });
+    const [tierConfig, setTierConfig] = useState({ diamond: 0.01, platinum: 0.05, gold: 0.15, silver: 0.40, bronze: 0.80 });
     const [tierDistribution, setTierDistribution] = useState([]);
     const [targetWallet, setTargetWallet] = useState('');
     const [overrideTier, setOverrideTier] = useState(0);

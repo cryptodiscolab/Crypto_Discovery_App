@@ -25,6 +25,7 @@ export function AdvancedTierSection({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                         { key: 'DIAMOND', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+                        { key: 'PLATINUM', color: 'text-indigo-300', bg: 'bg-indigo-400/10' },
                         { key: 'GOLD', color: 'text-amber-400', bg: 'bg-amber-500/10' },
                         { key: 'SILVER', color: 'text-slate-300', bg: 'bg-slate-400/10' },
                         { key: 'BRONZE', color: 'text-amber-700', bg: 'bg-amber-800/10' }
@@ -56,6 +57,16 @@ export function AdvancedTierSection({
                                 value={tierConfig.diamond * 100}
                                 onChange={(e) => onTierConfigChange('diamond', parseFloat(e.target.value) / 100)}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-cyan-500 outline-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Platinum (Top %)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={tierConfig.platinum * 100}
+                                onChange={(e) => onTierConfigChange('platinum', parseFloat(e.target.value) / 100)}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-indigo-500 outline-none"
                             />
                         </div>
                         <div className="space-y-2">
@@ -116,10 +127,11 @@ export function AdvancedTierSection({
                         <div className="flex gap-2">
                             {[
                                 { id: 0, label: 'NONE' },
-                                { id: 1, label: 'BRONZE' },
-                                { id: 2, label: 'SILVER' },
-                                { id: 3, label: 'GOLD' },
-                                { id: 4, label: 'DIAMOND' }
+                                { id: 2, label: 'BRONZE' },
+                                { id: 3, label: 'SILVER' },
+                                { id: 4, label: 'GOLD' },
+                                { id: 5, label: 'PLATINUM' },
+                                { id: 6, label: 'DIAMOND' }
                             ].map(t => (
                                 <button
                                     key={t.id}

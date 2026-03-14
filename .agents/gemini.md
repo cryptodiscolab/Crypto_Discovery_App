@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-03-14*
-*PRD Version: 3.6.0*
+*Last Updated: 2026-03-15*
+*PRD Version: 3.7.0*
 
 ---
 
@@ -177,6 +177,7 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 Menggunakan magic numbers untuk streak window (Min: 20h, Max: 48h)
 - 🚫 **Atomic Hijack**: Dilarang meletakkan script baru langsung di root `scripts/`. Wajib dimasukkan ke sub-folder kategori (`audits`, `deployments`, `sync`, `debug`).
 - 🚫 **Local Resource Leak**: Dilarang membiarkan server lokal (Vite/Express) berjalan di background setelah tugas selesai (**LOCAL_HYGIENE**).
+- 🚫 **Admin State Drift**: Dilarang mengubah state di Smart Contract tanpa sinkronisasi Database (**ADMIN_SYNC_MANDATE**).
 
 
 ---

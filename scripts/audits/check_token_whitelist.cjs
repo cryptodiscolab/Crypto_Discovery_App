@@ -18,13 +18,13 @@ async function checkTiersAndSettings() {
     console.log(tiers);
 
     // Look for any table related to tokens
-    const { data: whitelisted, error: wErr } = await supabase.from('whitelisted_tokens').select('*');
+    const { data: allowed, error: wErr } = await supabase.from('allowed_tokens').select('*');
     if (wErr) {
-        console.error('\n--- WHITELISTED TOKENS (Error) ---');
+        console.error('\n--- ALLOWED TOKENS (Error) ---');
         console.error(wErr.message);
     } else {
-        console.log('\n--- WHITELISTED TOKENS ---');
-        console.log(whitelisted);
+        console.log('\n--- ALLOWED TOKENS ---');
+        console.log(allowed);
     }
 }
 

@@ -1,0 +1,60 @@
+<h1>🪩 Product Requirements Document: Crypto Disco Application</h1>
+<p><strong>Version: 3.7.0 — Admin Token &amp; Tier Hardening (Zero-Hardcode)</strong>
+<strong>Tanggal</strong>: 2026-03-15
+<strong>Status</strong>: Active — Base Sepolia (Testnet) ✅ | Base Mainnet (Launch Ready)
+<strong>Author</strong>: Antigravity (Nexus Orchestrator)</p>
+<blockquote>
+<p><strong>Catatan</strong>: Dokumen ini adalah sumber kebenaran tunggal untuk Crypto Disco Ekosistem. Memperkenalkan <strong>Admin Token Management</strong> dan <strong>Dynamic Tier Segmenting</strong> untuk menghilangkan hardcoded logic pada lapisan identitas dan ekonomi.</p>
+</blockquote>
+<hr>
+<h2>📋 Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Versi</th>
+<th>Tanggal</th>
+<th>Ringkasan</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>3.7.0</strong></td>
+<td>2026-03-15</td>
+<td><strong>Admin Token Management</strong>: DASHBOARD UI untuk whitelist token (Contract + DB Sync). <strong>Tier Hardening</strong>: Dinamis rank (Rookie/Bronze/Gold/Platinum/Diamond) via DB percentiles. <strong>Multi-Chain Whitelist</strong>: Support composite key <code>(chain_id, address)</code>.</td>
+</tr>
+<tr>
+<td>3.6.0</td>
+<td>2026-03-14</td>
+<td><strong>Atomic Script Organization</strong>: Reorganisasi script ke kategori <code>audits/</code>, <code>deployments/</code>, dsb.</td>
+</tr>
+<tr>
+<td>3.5.0</td>
+<td>2026-03-14</td>
+<td><strong>Zero-Hardcode Housecleaning</strong>: Standardisasi environment variables.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>2. Arsitektur &amp; Technical Stack</h2>
+<h3>2.4 Data Integrity &amp; Zero-Hardcode (v3.7.0)</h3>
+<p>Ecosystem mengadopsi prinsip <strong>&quot;Database-Driven Logic&quot;</strong>:</p>
+<ul>
+<li><strong>Allowed Tokens</strong>: Daftar token yang diterima dikelola secara dinamis di tabel <code>allowed_tokens</code>. Tidak ada alamat token yang di-hardcode di backend.</li>
+<li><strong>Dynamic Tiers</strong>: Rank user (Diamond, Platinum, dsb.) dihitung berdasarkan persentil dinamis di <code>system_settings</code> dan mapping level di <code>sbt_thresholds</code>.</li>
+<li><strong>Admin Orchestration</strong>: Setiap perubahan state on-chain via Admin Dashboard wajib disinkronkan langsung ke database untuk menjamin konsistensi UI.</li>
+</ul>
+<hr>
+<h2>4. Fitur &amp; Fungsionalitas</h2>
+<h3>4.5 Admin Dashboard Suite (v3.7.0)</h3>
+<ul>
+<li><strong>Token Whitelist Hub</strong>: UI untuk menambah/menghapus token antar rantai (Multi-Chain).</li>
+<li><strong>Economy Analytics</strong>: Tracking gross revenue dan net profit (rake-adjusted) secara real-time.</li>
+<li><strong>Manual Tier Override</strong>: Kemampuan admin untuk mengubah level user secara manual (Priority Mode).</li>
+</ul>
+<hr>
+<h2>6. Security &amp; Audit Mandates</h2>
+<h3>6.3 Admin Sync Mandate (v3.7.0)</h3>
+<ul>
+<li><strong>LAW</strong>: Setiap aksi admin yang mengubah state aset/konfigurasi (Whitelist Token, SBT Upgrade) WAJIB melakukan signed request ke Backend Bundle untuk sinkronisasi Database SEGERA setelah konfirmasi transaksi on-chain.</li>
+</ul>
+<hr>
+<p><em>PRD Version: 3.7.0 — Admin Token &amp; Tier Hardening (Zero-Hardcode)</em>
+<em>Berdasarkan protokol Zero-Hardcode. Admin Empowered. Tiers Dynamic.</em></p>

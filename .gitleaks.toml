@@ -52,3 +52,13 @@ paths = [
     id = "sensitive-file-leak"
     description = "Detected attempt to commit sensitive file types (.key, .pem, .p12, .txt secrets)."
     path = '''(?i)\.(?:key|pem|p12|cert|secret\.txt)$'''
+
+[[rules]]
+    id = "database-dump-leak"
+    description = "Forbidden Database Dump: Committing database snapshots (JSON/SQL) is strictly prohibited to prevent PII exposure and repo bloating."
+    path = '''(?i)(?:supabase_full_dump\.json|full_supabase_dump\.sql)$'''
+
+[[rules]]
+    id = "ecosystem-log-leak"
+    description = "Forbidden Activity/History Log: Committing large ecosystem activity logs or bridge history metadata is prohibited."
+    path = '''(?i)(?:nexus-activity\.json|nexus-bridge\.json|history_.*\.json)$'''

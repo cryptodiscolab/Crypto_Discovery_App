@@ -192,6 +192,7 @@ async function handleXpSync(req, res) {
         let xpDelta = 0;
         let attempts = 0;
         const maxAttempts = 3;
+        let onChainStats;
 
         // 3. Retry Loop for On-Chain reading (Handling RPC Indexing Lag)
         while (attempts < maxAttempts) {
@@ -216,7 +217,7 @@ async function handleXpSync(req, res) {
                 args: [cleanAddress],
             });
 
-            const onChainStats = stats;
+            onChainStats = stats;
             onChainXP = Number(onChainStats?.[0] || 0);
             xpDelta = onChainXP - dbLastPoints;
 
@@ -296,8 +297,6 @@ async function handleXpSync(req, res) {
                     // Reset if more than 48 hours passed
                     currentStreak = 1;
                 }
-                // (If diffHours < 20, we don't increment, it might be a double sync, 
-                // but usually the on-chain cooldown handles this)
             }
 
             profileUpdate.streak_count = currentStreak;
@@ -311,9 +310,7 @@ async function handleXpSync(req, res) {
             .upsert(profileUpdate, { onConflict: 'wallet_address' });
 
         if (xpDelta > 0) {
-
             // 5. Record Claim to update total_xp via trigger
-            // Note: Since we use UPSERT on points in profile, we still want a log of the claim.
             await supabaseAdmin
                 .from('user_task_claims')
                 .insert({
@@ -325,7 +322,7 @@ async function handleXpSync(req, res) {
                     action_type: 'contract_sync'
                 });
 
-            // 6. Log to user_activity_logs (including bonus notification)
+            // 6. Log to user_activity_logs
             await logActivity({
                 wallet: cleanAddress,
                 category: 'XP',
@@ -353,7 +350,6 @@ async function handleFarcasterSync(req, res) {
     if (!address || !signature || !message) return res.status(400).json({ error: 'Missing sync data' });
 
     try {
-        // Verify Signature
         const valid = await verifyMessage({ address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         const response = await neynar.v2.fetchBulkUsersByEthOrSolAddress({ addresses: [address] });
@@ -384,25 +380,21 @@ async function handleUpdateProfile(req, res) {
     if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing update data' });
 
     try {
-        // 1. Verify Signature (Zero-Trust)
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        // 2. Security: Strip sensitive fields to prevent privilege escalation
         const sanitizedPayload = { ...payload };
         delete sanitizedPayload.is_admin;
         delete sanitizedPayload.wallet_address;
         delete sanitizedPayload.total_xp;
         delete sanitizedPayload.referred_by;
-        delete sanitizedPayload.tier; // Tier can ONLY be updated by cron/admin via SBT sync
+        delete sanitizedPayload.tier;
 
-        // 3. Force length limits — UNCONDITIONAL
         if (sanitizedPayload.display_name) sanitizedPayload.display_name = sanitizedPayload.display_name.substring(0, PROFILE_LIMITS.MAX_NAME_LEN);
         if (sanitizedPayload.username) sanitizedPayload.username = sanitizedPayload.username.substring(0, PROFILE_LIMITS.MAX_USERNAME_LEN);
         if (sanitizedPayload.bio) sanitizedPayload.bio = sanitizedPayload.bio.substring(0, PROFILE_LIMITS.MAX_BIO_LEN);
-        if (sanitizedPayload.pfp_url) sanitizedPayload.pfp_url = sanitizedPayload.pfp_url.substring(0, 500); // URL length limit
+        if (sanitizedPayload.pfp_url) sanitizedPayload.pfp_url = sanitizedPayload.pfp_url.substring(0, 500);
 
-        // 4. Size Validation: Validate avatar URL file size — only if pfp_url present
         if (sanitizedPayload.pfp_url) {
             try {
                 const imgRes = await fetch(sanitizedPayload.pfp_url, { method: 'HEAD' });
@@ -413,12 +405,10 @@ async function handleUpdateProfile(req, res) {
                     }
                 }
             } catch (err) {
-                console.warn(`[Profile Update] Failed to check image size for ${sanitizedPayload.pfp_url}:`, err.message);
-                // Allow passing if HEAD request is blocked, relying on client-side constraints.
+                console.warn(`[Profile Update] Failed to check image size:`, err.message);
             }
         }
 
-        // 5. Persist to DB — UNCONDITIONAL
         const { error } = await supabaseAdmin
             .from('user_profiles')
             .update(sanitizedPayload)
@@ -499,14 +489,14 @@ async function handleGetPointSettings(req, res) {
 
         if (sError) throw sError;
 
-        // Fetch Whitelisted Tokens
-        const { data: whitelisted, error: wError } = await supabaseAdmin
-            .from('whitelisted_tokens')
+        // Fetch Allowed Tokens (Unified name for whitelisted_tokens)
+        const { data: allowedTokens, error: wError } = await supabaseAdmin
+            .from('allowed_tokens')
             .select('*')
             .eq('is_active', true);
 
         if (wError) {
-            console.warn('[GetPointSettings] Whitelisted tokens error:', wError);
+            console.warn('[GetPointSettings] Allowed tokens error:', wError);
         }
 
         // Convert Reward Points to simple object
@@ -520,8 +510,13 @@ async function handleGetPointSettings(req, res) {
             settings[s.key] = s.value;
         });
 
-        // Inject Whitelisted Tokens (from fallback JSON if table missing)
-        settings.whitelisted_tokens = settings.whitelisted_tokens_json || [];
+        // Inject Allowed/Whitelisted Tokens (Unified name for frontend)
+        const tokenList = (allowedTokens && allowedTokens.length > 0)
+            ? allowedTokens
+            : (settings.whitelisted_tokens_json || []);
+            
+        settings.allowed_tokens = tokenList;
+        settings.whitelisted_tokens = tokenList;
 
         return res.status(200).json({ success: true, settings });
     } catch (error) {
@@ -567,13 +562,13 @@ async function handleSyncUgcMission(req, res) {
         if (tasks_batch && Array.isArray(tasks_batch)) {
             const tasksToInsert = tasks_batch.map(task => ({
                 description: task.title,
-                xp_reward: taskXpReward, // Dynamic XP for UGC tasks
+                xp_reward: taskXpReward,
                 platform: task.platform || 'base',
                 action_type: task.action_type || 'follow',
                 link: task.link,
                 is_active: true,
                 task_type: 'ugc',
-                onchain_id: campaign.id, // Link to campaign
+                onchain_id: campaign.id,
                 created_at: new Date().toISOString()
             }));
 
@@ -587,7 +582,7 @@ async function handleSyncUgcMission(req, res) {
             category: 'PURCHASE',
             type: 'UGC Mission Creation',
             description: `Created sponsorship: ${title} (${tasks_batch?.length || 0} tasks)`,
-            amount: platformFee, // Dynamic Platform fee in USDC
+            amount: platformFee,
             symbol: 'USDC',
             txHash,
             metadata: { title, tasks: tasks_batch?.length || 0, platform: platform_code }
@@ -608,15 +603,13 @@ async function handleSyncUgcRaffle(req, res) {
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        // Bug Fix: Destructure all payload fields before use (was causing ReferenceError 500)
-        const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount } = payload;
+        const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount, txHash } = payload;
 
         const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
-        const platformFeePercent = sysSetting?.value ? parseFloat(sysSetting.value) : 5; // Fallback only to calculate from passed deposit if setting missing
+        const platformFeePercent = sysSetting?.value ? parseFloat(sysSetting.value) : 5;
         const feeMultiplier = 1 + (platformFeePercent / 100);
         const prizePool = depositETH ? parseFloat(depositETH) / feeMultiplier : 0;
 
-        // 1. Mirror to raffles table
         const { error: raffleErr } = await supabaseAdmin.from('raffles').upsert({
             id: raffle_id,
             creator_address: wallet.toLowerCase(),
@@ -626,7 +619,6 @@ async function handleSyncUgcRaffle(req, res) {
             prize_pool: prizePool,
             metadata_uri: metadata_uri || null,
             is_active: true,
-            // Rich Metadata mapping
             title: extra_metadata?.title || null,
             description: extra_metadata?.description || null,
             image_url: extra_metadata?.image || null,
@@ -639,13 +631,10 @@ async function handleSyncUgcRaffle(req, res) {
 
         if (raffleErr) throw raffleErr;
 
-        // 2. Award Creator XP for Raffle Launch
         try {
             const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_create').single();
             if (setting?.points_value) {
                 let creatorXp = setting.points_value;
-
-                // 🛡️ Apply Tier Multiplier
                 const { data: profile } = await supabaseAdmin.from('user_profiles').select('tier').eq('wallet_address', wallet.toLowerCase()).single();
                 const tier = profile?.tier || 0;
                 if (tier > 0) {
@@ -674,18 +663,14 @@ async function handleSyncUgcRaffle(req, res) {
                         symbol: 'XP',
                         txHash
                     });
-                } else if (claimErr.code !== '23505') {
-                    console.warn('[SyncUgcRaffle] XP Award Warning:', claimErr);
                 }
             }
         } catch (xpErr) {
             console.error('[SyncUgcRaffle] XP Award Error:', xpErr);
         }
 
-        // 3. Increment raffles_created counter
         await supabaseAdmin.rpc('fn_increment_raffles_created', { p_wallet: wallet.toLowerCase() });
 
-        // 4. Rich Activity Logging
         await logActivity({
             wallet,
             category: 'PURCHASE',
@@ -693,16 +678,8 @@ async function handleSyncUgcRaffle(req, res) {
             description: `Launched sponsored raffle: ${extra_metadata?.title || raffle_id}`,
             amount: parseFloat(depositETH),
             symbol: 'ETH',
-
-
             txHash,
-            metadata: { 
-                raffle_id, 
-                winnerCount, 
-                max_tickets,
-                title: extra_metadata?.title,
-                category: extra_metadata?.category
-            }
+            metadata: { raffle_id, winnerCount, max_tickets }
         });
 
         return res.status(200).json({ success: true });
@@ -721,23 +698,24 @@ async function handleSyncSbtUpgrade(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const { tierName, ethSpent, txHash } = payload;
-        const tierMap = {
-            'Bronze': 1,
-            'Silver': 2,
-            'Gold': 3,
-            'Platinum': 4,
-            'Diamond': 5
-        };
+        
+        // 1. Fetch dynamic tier mapping from sbt_thresholds
+        const { data: thresholds } = await supabaseAdmin
+            .from('sbt_thresholds')
+            .select('level, tier_name');
+            
+        const tierMap = thresholds?.reduce((acc, t) => {
+            if (t.tier_name) acc[t.tier_name] = t.level;
+            return acc;
+        }, {}) || {};
+
         const tierIndex = tierMap[tierName] || 0;
 
-        // Update DB tier immediately for faster UI feedback
         if (tierIndex > 0) {
-            const { error: updateError } = await supabaseAdmin
+            await supabaseAdmin
                 .from('user_profiles')
                 .update({ tier: tierIndex, updated_at: new Date().toISOString() })
                 .eq('wallet_address', wallet.toLowerCase());
-            
-            if (updateError) console.error('[SyncSbtUpgrade] DB Update Error:', updateError);
         }
 
         await logActivity({
@@ -748,12 +726,11 @@ async function handleSyncSbtUpgrade(req, res) {
             amount: parseFloat(ethSpent),
             symbol: 'ETH',
             txHash,
-            metadata: { tierName, action: 'mint' }
+            metadata: { tierName }
         });
 
         return res.status(200).json({ success: true });
     } catch (error) {
-        console.error('[SyncSbtUpgrade Error]', error);
         return res.status(500).json({ error: error.message });
     }
 }
@@ -776,19 +753,15 @@ async function handleSyncPoolClaim(req, res) {
             amount: parseFloat(amountETH),
             symbol: 'ETH',
             txHash,
-            metadata: { userTier: tier, source: 'community_pool' }
+            metadata: { userTier: tier }
         });
 
         return res.status(200).json({ success: true });
     } catch (error) {
-        console.error('[SyncPoolClaim Error]', error);
         return res.status(500).json({ error: error.message });
     }
 }
 
-/**
- * logActivity: Internal helper to record events.
- */
 async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }) {
     try {
         await supabaseAdmin.from('user_activity_logs').insert({
@@ -806,143 +779,56 @@ async function logActivity({ wallet, category, type, description, amount, symbol
     }
 }
 
-/**
- * handleLeaderboard: Fetch top users from the unified profile view.
- */
 async function handleLeaderboard(req, res) {
     try {
         const { limit = 100, tier } = req.query;
-        
         let query = supabaseAdmin
             .from('v_user_full_profile')
             .select('*')
             .order('total_xp', { ascending: false })
             .limit(parseInt(limit));
 
-        if (tier && tier !== 'All') {
-            query = query.eq('rank_name', tier);
-        }
+        if (tier && tier !== 'All') query = query.eq('rank_name', tier);
 
         const { data, error } = await query;
         if (error) throw error;
-
         return res.status(200).json(data);
     } catch (error) {
-        console.error('[Leaderboard Error]', error);
         return res.status(500).json({ error: error.message });
     }
 }
 
-/**
- * handleSyncOAuth: Binds a Google or X (Twitter) OAuth identity to a wallet.
- * Zero-Trust: Requires EIP-191 wallet signature PLUS the OAuth token data.
- * Enforces 1 Account : 1 Wallet (Sybil Lock).
- */
 async function handleSyncOAuth(req, res) {
     const { wallet_address, signature, message, provider, oauth_data } = req.body;
-
     if (!wallet_address || !signature || !message || !provider || !oauth_data) {
-        return res.status(400).json({ error: 'Missing required OAuth sync fields' });
+        return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // 1. Zero-Trust Wallet Signature
     try {
         const valid = await verifyMessage({ address: wallet_address, message, signature });
-        if (!valid) return res.status(401).json({ error: 'Invalid wallet signature' });
-    } catch (err) {
-        return res.status(401).json({ error: 'Signature verification failed' });
-    }
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-    const normalizedWallet = wallet_address.toLowerCase();
+        const normalizedWallet = wallet_address.toLowerCase();
 
-    try {
         if (provider === 'google') {
             const { google_id, google_email, name, pfp_url } = oauth_data;
-            if (!google_id || !google_email) return res.status(400).json({ error: 'Missing Google identity fields' });
+            const { data: existing } = await supabaseAdmin.from('user_profiles').select('wallet_address').eq('google_id', google_id).maybeSingle();
+            if (existing && existing.wallet_address !== normalizedWallet) return res.status(409).json({ error: 'Already linked' });
 
-            // Sybil Check: Ensure this google_id is not linked to another wallet
-            const { data: existing } = await supabaseAdmin
-                .from('user_profiles')
-                .select('wallet_address')
-                .eq('google_id', google_id)
-                .maybeSingle();
-
-            if (existing && existing.wallet_address !== normalizedWallet) {
-                return res.status(409).json({ error: 'This Google account is already linked to another wallet.' });
-            }
-
-            const updateData = {
-                google_id,
-                google_email,
-                oauth_provider: 'google',
-                updated_at: new Date().toISOString()
-            };
-            // Auto-populate profile fields if not yet set
-            if (name) updateData.display_name = name.substring(0, 50);
-            if (pfp_url) updateData.pfp_url = pfp_url.substring(0, 500);
-
-            await supabaseAdmin
-                .from('user_profiles')
-                .update(updateData)
-                .eq('wallet_address', normalizedWallet);
-
-            await logActivity({
-                wallet: normalizedWallet,
-                category: 'SOCIAL',
-                type: 'Identity Link',
-                description: `Linked Google account: ${google_email}`,
-                metadata: { provider: 'google', email: google_email }
-            });
-
-            console.log(`[OAuth] Google account linked: ${google_email} → ${normalizedWallet}`);
-            return res.status(200).json({ success: true, provider: 'google', email: google_email });
-
+            await supabaseAdmin.from('user_profiles').update({ google_id, google_email, oauth_provider: 'google', updated_at: new Date().toISOString() }).eq('wallet_address', normalizedWallet);
+            await logActivity({ wallet: normalizedWallet, category: 'SOCIAL', type: 'Identity Link', description: `Linked Google: ${google_email}` });
+            return res.status(200).json({ success: true });
         } else if (provider === 'x') {
-            const { twitter_id, twitter_username, name, pfp_url } = oauth_data;
-            if (!twitter_id || !twitter_username) return res.status(400).json({ error: 'Missing X identity fields' });
+            const { twitter_id, twitter_username } = oauth_data;
+            const { data: existing } = await supabaseAdmin.from('user_profiles').select('wallet_address').eq('twitter_id', twitter_id).maybeSingle();
+            if (existing && existing.wallet_address !== normalizedWallet) return res.status(409).json({ error: 'Already linked' });
 
-            // Sybil Check: Ensure this twitter_id is not linked to another wallet
-            const { data: existing } = await supabaseAdmin
-                .from('user_profiles')
-                .select('wallet_address')
-                .eq('twitter_id', twitter_id)
-                .maybeSingle();
-
-            if (existing && existing.wallet_address !== normalizedWallet) {
-                return res.status(409).json({ error: 'This X (Twitter) account is already linked to another wallet.' });
-            }
-
-            const updateData = {
-                twitter_id,
-                twitter_username,
-                oauth_provider: 'x',
-                updated_at: new Date().toISOString()
-            };
-            // Auto-populate profile fields if not yet set
-            if (name) updateData.display_name = name.substring(0, 50);
-            if (pfp_url) updateData.pfp_url = pfp_url.substring(0, 500);
-
-            await supabaseAdmin
-                .from('user_profiles')
-                .update(updateData)
-                .eq('wallet_address', normalizedWallet);
-
-            await logActivity({
-                wallet: normalizedWallet,
-                category: 'SOCIAL',
-                type: 'Identity Link',
-                description: `Linked X account: @${twitter_username}`,
-                metadata: { provider: 'x', username: twitter_username }
-            });
-
-            console.log(`[OAuth] X account linked: @${twitter_username} → ${normalizedWallet}`);
-            return res.status(200).json({ success: true, provider: 'x', username: twitter_username });
-
-        } else {
-            return res.status(400).json({ error: `Unsupported OAuth provider: ${provider}` });
+            await supabaseAdmin.from('user_profiles').update({ twitter_id, twitter_username, oauth_provider: 'x', updated_at: new Date().toISOString() }).eq('wallet_address', normalizedWallet);
+            await logActivity({ wallet: normalizedWallet, category: 'SOCIAL', type: 'Identity Link', description: `Linked X: @${twitter_username}` });
+            return res.status(200).json({ success: true });
         }
+        return res.status(400).json({ error: 'Invalid provider' });
     } catch (error) {
-        console.error('[SyncOAuth Error]', error);
         return res.status(500).json({ error: error.message });
     }
 }

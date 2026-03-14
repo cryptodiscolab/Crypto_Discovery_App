@@ -93,13 +93,59 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true });
             }
 
+            case 'WHITELIST_TOKEN_DB': {
+                // Expects payload with token details: { chain_id, address, symbol, decimals }
+                const { error } = await supabaseAdmin
+                    .from('allowed_tokens')
+                    .upsert({
+                        ...payload,
+                        address: payload.address.toLowerCase(),
+                        is_active: true,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'chain_id,address' });
+
+                if (error) throw error;
+                return res.status(200).json({ success: true });
+            }
+
+            case 'REMOVE_TOKEN_DB': {
+                // Expects payload with: { chain_id, address }
+                const { error } = await supabaseAdmin
+                    .from('allowed_tokens')
+                    .update({ is_active: false, updated_at: new Date().toISOString() })
+                    .match({ 
+                        chain_id: payload.chain_id, 
+                        address: payload.address.toLowerCase() 
+                    });
+
+                if (error) throw error;
+                return res.status(200).json({ success: true });
+            }
+
             case 'economy-stats':
             case 'GET_ECONOMY': {
-                const { data: auditLogs } = await supabaseAdmin.from('admin_audit_logs').select('action').in('action', ['SPONSOR_APPROVE', 'DEPLOY_BATCH_TASK']);
-                const { data: claims } = await supabaseAdmin.from('user_task_claims').select('xp_earned');
+                const [
+                    { data: auditLogs },
+                    { data: claims },
+                    { data: revenueData }
+                ] = await Promise.all([
+                    supabaseAdmin.from('admin_audit_logs').select('action').in('action', ['SPONSOR_APPROVE', 'DEPLOY_BATCH_TASK']),
+                    supabaseAdmin.from('user_task_claims').select('xp_earned'),
+                    supabaseAdmin.from('user_activity_logs').select('value_amount').eq('category', 'PURCHASE').eq('value_symbol', 'USDC')
+                ]);
+                
                 const totalXp = claims?.reduce((sum, c) => sum + (c.xp_earned || 0), 0) || 0;
+                const totalRevenueUSDC = revenueData?.reduce((sum, r) => sum + (parseFloat(r.value_amount) || 0), 0) || 0;
                 const netProfit = (totalRevenueUSDC * 0.8).toFixed(2); // 20% Project Rake (1 - 0.20)
-                return res.status(200).json({ success: true, metrics: { totalRevenueUSDC: totalRevenueUSDC.toFixed(2), netProfit, communityXp: totalXp } });
+                
+                return res.status(200).json({ 
+                    success: true, 
+                    metrics: { 
+                        totalRevenueUSDC: totalRevenueUSDC.toFixed(2), 
+                        netProfit, 
+                        communityXp: totalXp 
+                    } 
+                });
             }
 
             case 'NEXUS_DISPATCH': {

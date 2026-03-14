@@ -42,7 +42,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_6_0.md`
+**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_7_0.md`
 (Versi lama diarsipkan di `PRD/_archive/`)
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
@@ -77,7 +77,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.6.0 (Atomic Script Organization & n8n Hybrid Automation — Restrukturisasi total folder scripts untuk modularitas dan kesiapan orkestrasi visual)
+- **Versi Terakhir:** 3.7.0 (Admin Token Management & Tier Hardening - DASHBOARD UI untuk whitelist token (Contract + DB Sync) dan rank dinamis via DB percentiles).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -129,7 +129,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
 | **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
-| **PRD v3.6.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_6_0.md` |
+| **PRD v3.7.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_7_0.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
@@ -164,6 +164,10 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Dotenv Protocol**: Gunakan `require('dotenv').config()` di awal setiap script backend/utilitas.
 - **Frontend Isolation**: Pastikan `SERVICE_ROLE_KEY` tidak pernah di-import atau digunakan di dalam folder `src/`. Hanya gunakan `ANON_KEY` untuk interaksi frontend.
 
+### 12. Data Leak Prevention Mandate (v3.7.0)
+- **PII & Data Dumps**: DILARANG KERAS mem-push database dumps (`.json`, `.sql`) hasil dari `supabase_inspector.cjs` atau manual export ke repository.
+- **Bridge Logs**: File riwayat aktivitas (`nexus-activity.json`) hanya untuk debug lokal dan WAJIB dikecualikan dari `git commit`.
+- **Gitleaks Cleanup**: Sebelum push, pastikan file-file tersebut tidak masuk dalam staging area (`git reset` jika perlu).
 ### 2. Upgrading & Version Control Automation
 - **Version Sync**: Memastikan versi kontrak di `.env`, `.cursorrules`, dan `contracts.js` selalu sinkron setelah upgrade (misal: V12 ke V13).
 - **ABI Auto-Update**: Mengotomatisasi pembaruan ABI di frontend setiap kali ada perubahan pada `.sol` file agar tidak terjadi *mismatch error*.
@@ -313,6 +317,8 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Env-Sanity Check**: Apakah API menggunakan `.trim()` pada alamat kontrak/key dari environment variables untuk mencegah silent corruption?
 - [ ] **Vercel Cloud Purge Audit**: Apakah environment cloud sudah diverifikasi bersih dari literal double quotes (`""value""`) dan hidden newlines (`\r\n`)?
 - [ ] **Nexus Evolution**: Apakah pelajaran dari task ini (jika ada bug pelik) sudah didokumentasikan di protokol atau `agent_vault`?
+- [ ] **Admin Sync Audit**: Apakah setiap aksi admin on-chain sudah sinkron ke database via secure backend request?
+- [ ] **Clean Data Audit**: Apakah file `supabase_full_dump.json` dan logs aktivitas sudah dikecualikan dari staging?
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix)*: `node scripts/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
 
 ## 🚨 Pantangan

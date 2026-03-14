@@ -43,6 +43,7 @@ Before responding to ANY request, read these files IN ORDER:
 17. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
 18. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
 19. **LOCAL HYGIENE**: ALWAYS terminate local servers (Vite/Express) after verification. Do not consume local CPU/RAM in the background.
+20. **ADMIN SYNC**: EVERY admin action changing on-chain state MUST be synchronized with the database immediately upon transaction confirmation. No state drift allowed.
 
 
 ---

@@ -775,7 +775,7 @@ function CreateTaskModal({ onClose }) {
   const { ecosystemSettings } = usePoints(); // Zero Hardcode integration
 
   // Default to first whitelisted token if none selected
-  const whitelist = ecosystemSettings?.whitelisted_tokens || [];
+  const allowedTokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
   const selectedToken = paymentToken 
     ? whitelist.find(t => t.address === paymentToken) 
     : whitelist[0];
