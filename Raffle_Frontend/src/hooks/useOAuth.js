@@ -28,23 +28,37 @@ export function useOAuth() {
     const [linkedX, setLinkedX] = useState(null);
 
     /**
-     * Internal: Call the Supabase OAuth sign-in popup via redirects.
-     * Uses Supabase REST API's implicit grant (no SDK needed — keeps bundle slim).
+     * Internal: Call the Supabase OAuth sign-in popup.
+     * Uses Supabase SDK to handle PKCE/State coordination automatically.
      */
     const openSupabaseOAuth = useCallback(async (provider) => {
-        if (!SUPABASE_URL) throw new Error('Supabase URL not configured');
-
+        const { supabase } = await import('../lib/supabaseClient');
+        
         const redirectTo = `${window.location.origin}/oauth-callback`;
-        const oauthUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(redirectTo)}&response_type=token`;
+        
+        // Use SDK to get the authorization URL. 
+        // skipBrowserRedirect: true prevents it from redirecting the current tab.
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider,
+            options: {
+                redirectTo,
+                skipBrowserRedirect: true,
+            },
+        });
+
+        if (error) throw error;
+        if (!data.url) throw new Error('Failed to generate OAuth URL');
 
         // Open in popup window
-        const popup = window.open(oauthUrl, `${provider}_oauth`, 'width=600,height=700,scrollbars=yes');
+        const popup = window.open(data.url, `${provider}_oauth`, 'width=600,height=700,scrollbars=yes');
 
         return new Promise((resolve, reject) => {
             let resolved = false;
 
             const handleMessage = (event) => {
+                // Security check: Only trust messages from our own origin
                 if (event.origin !== window.location.origin) return;
+                
                 if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.provider === provider) {
                     resolved = true;
                     window.removeEventListener('message', handleMessage);

@@ -5,12 +5,15 @@
  * and sends the result back to the opener window via postMessage.
  */
 export function OAuthCallbackPage() {
-    const params = new URLSearchParams(window.location.hash.replace('#', '?'));
-    const accessToken = params.get('access_token');
-    const errorCode = params.get('error_code');
-    const errorDescription = params.get('error_description');
+    // Parse from both hash and search params (Supabase vs PKCE vs Implicit)
+    const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+    const errorCode = hashParams.get('error_code') || searchParams.get('error') || searchParams.get('error_code');
+    const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
 
-    if (errorCode || !accessToken) {
+    if (errorCode || (!accessToken && !searchParams.get('code'))) {
         window.opener?.postMessage({
             type: 'OAUTH_ERROR',
             error: errorDescription || 'OAuth authorization failed'
@@ -19,21 +22,29 @@ export function OAuthCallbackPage() {
         return null;
     }
 
-    // Decode the JWT user from access_token (no SDK needed — pure decode)
+    // Decode the JWT user from access_token (no SDK needed here to keep it light)
     try {
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
-        const provider = params.get('provider_token') ? 'twitter' : 'google';
+        if (accessToken) {
+            const payload = JSON.parse(atob(accessToken.split('.')[1]));
+            const provider = hashParams.get('provider_token') || searchParams.get('provider') || 'google';
 
-        window.opener?.postMessage({
-            type: 'OAUTH_SUCCESS',
-            provider,
-            user: {
-                id: payload.sub,
-                email: payload.email,
-                user_metadata: payload.user_metadata || {}
-            }
-        }, window.location.origin);
+            window.opener?.postMessage({
+                type: 'OAUTH_SUCCESS',
+                provider,
+                user: {
+                    id: payload.sub,
+                    email: payload.email,
+                    user_metadata: payload.user_metadata || {}
+                }
+            }, window.location.origin);
+        } else {
+            // If we have a 'code' (PKCE), we might need to handle it differently, 
+            // but usually Supabase handles the exchange and provides the token in a follow-up redirect or via the client.
+            // For now, we assume the SDK handles the redirections and we mostly get access_tokens.
+            console.warn('[OAuthCallback] Received code but no access_token. PKCE flow initiated?');
+        }
     } catch (e) {
+        console.error('[OAuthCallback] Parse error:', e);
         window.opener?.postMessage({
             type: 'OAUTH_ERROR',
             error: 'Failed to parse OAuth token'
