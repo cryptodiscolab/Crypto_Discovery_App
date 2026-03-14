@@ -356,7 +356,7 @@ async function handleFarcasterSync(req, res) {
         // Verify Signature
         const valid = await verifyMessage({ address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
-        const response = await neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [address] });
+        const response = await neynar.v2.fetchBulkUsersByEthOrSolAddress({ addresses: [address] });
         const fcUser = response?.[address.toLowerCase()]?.[0];
 
         if (fcUser) {

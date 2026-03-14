@@ -6,7 +6,7 @@ class NeynarService {
         if (!config.neynar.apiKey) {
             throw new Error('NEYNAR_API_KEY is not configured');
         }
-        this.client = new NeynarAPIClient(config.neynar.apiKey);
+        this.client = new NeynarAPIClient({ apiKey: config.neynar.apiKey });
     }
 
     /**
@@ -22,7 +22,7 @@ class NeynarService {
             const maxPages = 5; // Safety cap: 500 followings checked
 
             while (attempts < maxPages) {
-                const response = await this.client.fetchUserFollowing(fid, {
+                const response = await this.client.v2.fetchUserFollowing(fid, {
                     limit: 100,
                     cursor: cursor || undefined
                 });
@@ -55,7 +55,7 @@ class NeynarService {
             const maxPages = 5; // Safety cap: 500 reactions checked
 
             while (attempts < maxPages) {
-                const response = await this.client.fetchCastReactions(castHash, {
+                const response = await this.client.v2.fetchCastReactions(castHash, {
                     limit: 100,
                     cursor: cursor || undefined
                 });
@@ -90,7 +90,7 @@ class NeynarService {
             const maxPages = 3; // Safety cap for recasts
 
             while (attempts < maxPages) {
-                const response = await this.client.fetchCastReactions(castHash, {
+                const response = await this.client.v2.fetchCastReactions(castHash, {
                     limit: 100,
                     cursor: cursor || undefined
                 });
@@ -121,7 +121,7 @@ class NeynarService {
     async verifyQuote(fid, castHash) {
         try {
             // Get user's recent casts
-            const response = await this.client.fetchCastsForUser(fid, {
+            const response = await this.client.v2.fetchCastsForUser(fid, {
                 limit: 50,
             });
 
@@ -146,10 +146,10 @@ class NeynarService {
     async verifyComment(fid, castHash) {
         try {
             // Get cast replies
-            const response = await this.client.fetchAllCastsInThread(castHash);
+            const response = await this.client.v2.fetchConversation(castHash, { type: 'farcaster' });
 
             // Check if user has replied to the cast
-            const hasCommented = response.casts.some(
+            const hasCommented = response.conversation.cast.replies.some(
                 cast => cast.author.fid === fid && cast.parent_hash === castHash
             );
 
@@ -167,7 +167,7 @@ class NeynarService {
      */
     async getUserByFid(fid) {
         try {
-            const response = await this.client.fetchBulkUsers([fid]);
+            const response = await this.client.v2.fetchBulkUsers([fid]);
             return response.users[0] || null;
         } catch (error) {
             console.error('Error fetching Farcaster user:', error);
