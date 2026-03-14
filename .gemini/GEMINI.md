@@ -20,6 +20,8 @@ Your supreme governing document is [`../.cursorrules`](../.cursorrules). Read it
 8. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
 9. **MULTI-PROJECT SYNC**: Mandatory CLI environment sync across all Vercel projects after contract updates.
 10. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination (500 items) and Profile Page linking must be interactive (v3.3.3).
+11. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` to prevent "Silent Corruption" (quotes/newlines).
+12. **NEXUS EVOLUTION (A-D-R-R-E)**: Every environment/data failure must be followed by **A**udit, **D**etermine, **R**esolve, **R**eflect, **E**volve cycle.
 
 ---
 
