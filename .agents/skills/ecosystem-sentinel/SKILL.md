@@ -42,7 +42,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_7_0.md`
+**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_13_0.md`
 (Versi lama diarsipkan di `PRD/_archive/`)
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
@@ -77,7 +77,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.7.0 (Admin Token Management & Tier Hardening - DASHBOARD UI untuk whitelist token (Contract + DB Sync) dan rank dinamis via DB percentiles).
+- **Versi Terakhir:** 3.13.0 (OpenClaw Nexus Evolution — Integrasi penuh OpenClaw v3.13.0 dan pembaruan Master Architect Protocol).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -129,7 +129,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
 | **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
-| **PRD v3.7.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_7_0.md` |
+| **PRD v3.13.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_13_0.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 

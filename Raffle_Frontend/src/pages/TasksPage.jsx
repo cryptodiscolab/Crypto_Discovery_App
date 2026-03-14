@@ -5,7 +5,7 @@ import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/u
 import { useVerification } from '../hooks/useVerification';
 import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../hooks/useFarcaster';
-import { ABIS, CONTRACTS, APP_CONFIG } from '../lib/contracts';
+import { ABIS, CONTRACTS, APP_CONFIG, DAILY_APP_ABI } from '../lib/contracts';
 import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
 
@@ -47,7 +47,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
     // NEW: Check if task is already completed (One-time logic)
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
         address: CONTRACTS.DAILY_APP,
-        abi: ABIS.DAILY_APP,
+        abi: DAILY_APP_ABI,
         functionName: 'hasCompletedTask',
         args: [address, taskId],
         query: { enabled: !!address && !!task && task.sponsorshipId > 0 }

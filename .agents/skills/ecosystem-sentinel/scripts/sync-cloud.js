@@ -59,6 +59,7 @@ const SYNC_TARGETS = [
     { local: '.cursorrules', dest: 'config/.cursorrules', optional: true },
     { local: '.agents/skills', dest: 'agents/skills', optional: false, isDir: true },
     { local: '.agents/workflows', dest: 'agents/workflows', optional: true, isDir: true },
+    { local: 'PRD', dest: 'PRD', optional: true, isDir: true },
 ];
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

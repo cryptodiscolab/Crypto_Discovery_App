@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Sliders, Users, Search, Award } from 'lucide-react';
+import { BarChart3, Sliders, Users, Search, Award, History } from 'lucide-react';
 
 export function AdvancedTierSection({
     tierDistribution,
@@ -48,57 +48,39 @@ export function AdvancedTierSection({
                     <h2 className="text-lg font-bold text-white">Leaderboard Tier Config</h2>
                 </div>
                 <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 space-y-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Diamond (Top %)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={tierConfig.diamond * 100}
-                                onChange={(e) => onTierConfigChange('diamond', parseFloat(e.target.value) / 100)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-cyan-500 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Platinum (Top %)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={tierConfig.platinum * 100}
-                                onChange={(e) => onTierConfigChange('platinum', parseFloat(e.target.value) / 100)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-indigo-500 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Gold (Top %)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={tierConfig.gold * 100}
-                                onChange={(e) => onTierConfigChange('gold', parseFloat(e.target.value) / 100)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-amber-500 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Silver (Top %)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={tierConfig.silver * 100}
-                                onChange={(e) => onTierConfigChange('silver', parseFloat(e.target.value) / 100)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-slate-400 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Bronze (Top %)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={tierConfig.bronze * 100}
-                                onChange={(e) => onTierConfigChange('bronze', parseFloat(e.target.value) / 100)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-amber-700 outline-none"
-                            />
-                        </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                        {[
+                            { key: 'diamond', label: 'Diamond', color: 'text-cyan-400', border: 'focus:border-cyan-500' },
+                            { key: 'platinum', label: 'Platinum', color: 'text-indigo-400', border: 'focus:border-indigo-500' },
+                            { key: 'gold', label: 'Gold', color: 'text-amber-500', border: 'focus:border-amber-500' },
+                            { key: 'silver', label: 'Silver', color: 'text-slate-400', border: 'focus:border-slate-400' },
+                            { key: 'bronze', label: 'Bronze', color: 'text-amber-700', border: 'focus:border-amber-700' }
+                        ].map(t => (
+                            <div key={t.key} className="space-y-3 bg-black/20 p-3 rounded-2xl border border-white/5">
+                                <label className={`text-[10px] font-black ${t.color} uppercase tracking-widest block text-center`}>{t.label}</label>
+                                
+                                <div className="space-y-1">
+                                    <span className="text-[8px] text-slate-500 uppercase font-black tracking-tighter">Top %</span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={((tierConfig.percentiles?.[t.key] || tierConfig[t.key] || 0) * 100).toFixed(2)}
+                                        onChange={(e) => onTierConfigChange('percentiles', t.key, parseFloat(e.target.value) / 100)}
+                                        className={`w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-xs ${t.border} outline-none`}
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <span className="text-[8px] text-slate-500 uppercase font-black tracking-tighter">Min XP Floor</span>
+                                    <input
+                                        type="number"
+                                        value={tierConfig.floors?.[t.key] || 0}
+                                        onChange={(e) => onTierConfigChange('floors', t.key, parseInt(e.target.value) || 0)}
+                                        className={`w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-xs ${t.border} outline-none`}
+                                    />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                     <button onClick={onSaveTierConfig} disabled={saving} className="w-full bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white py-2 rounded-xl text-xs font-black transition-all border border-amber-500/30">
                         Save Tier Percentiles
@@ -174,6 +156,29 @@ export function AdvancedTierSection({
                     </div>
                     <span className="text-[10px] opacity-70 font-mono tracking-widest">BATCH UPDATE CONTRACT TIERS</span>
                 </button>
+            </div>
+
+            {/* DANGER ZONE: SEASON MANAGEMENT */}
+            <div className="space-y-4 border-t border-red-500/20 pt-6">
+                <div className="flex items-center gap-2 mb-2">
+                    <History className="w-5 h-5 text-red-500" />
+                    <h2 className="text-lg font-bold text-white uppercase tracking-tighter">Danger Zone: Season Control</h2>
+                </div>
+                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-white font-black text-sm uppercase">Active Season: {currentSeasonId}</p>
+                            <p className="text-[10px] text-red-400/60 uppercase font-black">Resetting will clear all claimable reward debt</p>
+                        </div>
+                        <button
+                            onClick={onResetSeason}
+                            disabled={saving}
+                            className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-xl text-xs font-black transition-all shadow-lg shadow-red-600/20"
+                        >
+                            Reset Season
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

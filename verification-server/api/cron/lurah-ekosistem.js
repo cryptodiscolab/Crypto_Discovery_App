@@ -16,8 +16,24 @@ const telegramChatId = process.env.TELEGRAM_CHAT_ID;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const { exec } = require('child_process');
+const path = require('path');
+
 module.exports = async (req, res) => {
-    console.log('🤖 [Lurah Ekosistem] Starting daily audit...');
+    console.log('🤖 [Lurah Ekosistem] Starting daily audit & tier recalculation...');
+
+    // 0. Trigger Tier Calculation (Dynamic Tiers v3.7.0)
+    try {
+        console.log('📈 Recalculating Dynamic Tier Percentiles...');
+        // We run it as a separate process to maintain ESM/CJS compatibility in this environment
+        const scriptPath = path.join(process.cwd(), '.agents', 'scripts', 'tier-calculator.js');
+        exec(`node ${scriptPath}`, (error, stdout, stderr) => {
+            if (error) console.error(`❌ Tier Calculation Error: ${error.message}`);
+            if (stdout) console.log(`📊 Tier Calculation Output: ${stdout}`);
+        });
+    } catch (tierErr) {
+        console.error('❌ Failed to trigger tier calculation:', tierErr.message);
+    }
 
     try {
         // 0. Ambil Audit Settings Dinamis (Centralized Control)

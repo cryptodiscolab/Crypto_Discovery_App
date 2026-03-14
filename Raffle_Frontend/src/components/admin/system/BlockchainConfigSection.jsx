@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, BarChart, Plus, TrendingUp, Cpu } from 'lucide-react';
+import { Zap, BarChart, Plus, TrendingUp, Cpu, Database, Coins, Settings, RefreshCw, ArrowUpRight, Landmark, Clock, ShieldCheck } from 'lucide-react';
 import { useReadContract, useWriteContract } from 'wagmi';
-import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI } from '../../../lib/contracts';
+import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI, RAFFLE_ABI, SAFE_MULTISIG } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { usePriceOracle } from '../../../hooks/usePriceOracle';
-
+import { formatUnits, parseUnits, parseEther } from 'viem';
+import { useSBT } from '../../../hooks/useSBT';
+import { useCMS } from '../../../hooks/useCMS';
 import { usePoints } from '../../../shared/context/PointsContext';
 
 export function BlockchainConfigSection() {
     const { writeContractAsync } = useWriteContract();
     const { ecosystemSettings } = usePoints();
     const [isSaving, setIsSaving] = useState(false);
+
+    const { totalPoolBalance, distributeRevenue, withdrawTreasury, refetchAll } = useSBT();
+    const { poolSettings, updatePoolSettings, ethPrice } = useCMS();
 
     // Form States (Initialized with Zero-Hardcode canonical defaults)
     const [rewards, setRewards] = useState({
@@ -30,6 +35,20 @@ export function BlockchainConfigSection() {
         reward: '10000000000000000', // 0.01
         tasks: '3'
     });
+    const [withdrawAmount, setWithdrawAmount] = useState('0.1');
+    const [poolFormData, setPoolFormData] = useState({
+        targetUSDC: 5000,
+        claimTimestamp: 0
+    });
+
+    // MasterX Protocol Parameters (Previously in SystemSettingsTab)
+    const [masterParams, setMasterParams] = useState({
+        tUSDC: '150000',
+        mGas: '100000000000',
+        pPerTicket: '15',
+        desc: ''
+    });
+    const [isDistributing, setIsDistributing] = useState(false);
 
     const { prices } = usePriceOracle((ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens)?.map(t => t.address) || []);
     
@@ -68,25 +87,32 @@ export function BlockchainConfigSection() {
     const { data: qReferral } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'baseReferralReward' });
 
     // 2. READ Raffle Economics
-    const { data: qRake } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'maintenanceFeeBP' });
-    const { data: qSurcharge } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'surchargeBP' });
-    const { data: qMaxUser } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'maxTicketsPerUser' });
-    const { data: qMaxPart } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'maxParticipants' });
-    const { data: qXpCreate } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'rewardXpCreate' });
-    const { data: qXpClaim } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'rewardXpClaim' });
-    const { data: qXpPurchase } = useReadContract({ address: CONTRACTS.RAFFLE, abi: DAILY_APP_ABI, functionName: 'rewardXpPurchase' });
+    const { data: qRake } = useReadContract({ address: CONTRACTS.RAFFLE, abi: RAFFLE_ABI, functionName: 'maintenanceFeeBP' });
+    const { data: qSurcharge } = useReadContract({ address: CONTRACTS.RAFFLE, abi: RAFFLE_ABI, functionName: 'surchargeBP' });
+    const { data: qMaxUser } = useReadContract({ address: CONTRACTS.RAFFLE, abi: RAFFLE_ABI, functionName: 'maxTicketsPerUser' });
+    const { data: qMaxPart } = useReadContract({ address: CONTRACTS.RAFFLE, abi: RAFFLE_ABI, functionName: 'maxParticipants' });
+    const { data: qXpCreate } = useReadContract({ address: CONTRACTS.RAFFLE, abi: RAFFLE_ABI, functionName: 'rewardXpCreate' });
+    const { data: qXpClaim } = useReadContract({ address: CONTRACTS.RAFFLE, abi: RAFFLE_ABI, functionName: 'rewardXpClaim' });
+    const { data: qXpPurchase } = useReadContract({ address: CONTRACTS.RAFFLE, abi: RAFFLE_ABI, functionName: 'rewardXpPurchase' });
 
     // 3. READ MasterX Economics
-    const { data: qOwner } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'ownerShare' });
-    const { data: qOps } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'opsShare' });
-    const { data: qTreasury } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'treasuryShare' });
-    const { data: qSbtShare } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'sbtPoolShare' });
+    const { data: qOwner } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'ownerShare' });
+    const { data: qOps } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'opsShare' });
+    const { data: qTreasury } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'treasuryShare' });
+    const { data: qSbtShare } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'sbtPoolShare' });
 
-    const { data: qDWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'diamondWeight' });
-    const { data: qPWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'platinumWeight' });
-    const { data: qGWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'goldWeight' });
-    const { data: qSWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'silverWeight' });
-    const { data: qBWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: DAILY_APP_ABI, functionName: 'bronzeWeight' });
+    const { data: qDWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'diamondWeight' });
+    const { data: qPWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'platinumWeight' });
+    const { data: qGWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'goldWeight' });
+    const { data: qSWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'silverWeight' });
+    const { data: qBWeight } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'bronzeWeight' });
+
+    // MasterX Technical Params
+    const { data: qTUSDC } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'ticketPriceUSDC' });
+    const { data: qMGas } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'maxGasPrice' });
+    const { data: qPPT } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'pointsPerTicket' });
+    const { data: qDesc } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'ticketDescription' });
+    const { data: qLastDist } = useReadContract({ address: CONTRACTS.MASTER_X, abi: MASTER_X_ABI, functionName: 'lastDistributeTimestamp' });
 
     // 4. READ Additional DailyApp Economies
     const { data: qWithdrawFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'withdrawalFeeBP' });
@@ -118,13 +144,27 @@ export function BlockchainConfigSection() {
         if (qSWeight) setTierWeights(prev => ({ ...prev, silver: qSWeight.toString() }));
         if (qBWeight) setTierWeights(prev => ({ ...prev, bronze: qBWeight.toString() }));
 
+        if (qTUSDC) setMasterParams(prev => ({ ...prev, tUSDC: qTUSDC.toString() }));
+        if (qMGas) setMasterParams(prev => ({ ...prev, mGas: qMGas.toString() }));
+        if (qPPT) setMasterParams(prev => ({ ...prev, pPerTicket: qPPT.toString() }));
+        if (qDesc) setMasterParams(prev => ({ ...prev, desc: qDesc.toString() }));
+
         if (qWithdrawFee) setWithdrawFee(qWithdrawFee.toString());
         if (qSponsorFee) setSponsorSettings(prev => ({ ...prev, fee: qSponsorFee.toString() }));
         if (qMinPool) setSponsorSettings(prev => ({ ...prev, minPool: qMinPool.toString() }));
         if (qRewardClaim) setSponsorSettings(prev => ({ ...prev, reward: qRewardClaim.toString() }));
         if (qTasksGoal) setSponsorSettings(prev => ({ ...prev, tasks: qTasksGoal.toString() }));
         if (qAutoApprove !== undefined) setAutoApprove(!!qAutoApprove);
-    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qPWeight, qGWeight, qSWeight, qBWeight, qWithdrawFee, qSponsorFee, qMinPool, qRewardClaim, qTasksGoal, qAutoApprove]);
+    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qPWeight, qGWeight, qSWeight, qBWeight, qTUSDC, qMGas, qPPT, qDesc, qWithdrawFee, qSponsorFee, qMinPool, qRewardClaim, qTasksGoal, qAutoApprove]);
+
+    useEffect(() => {
+        if (poolSettings) {
+            setPoolFormData({
+                targetUSDC: poolSettings.targetUSDC || 5000,
+                claimTimestamp: poolSettings.claimTimestamp || 0
+            });
+        }
+    }, [poolSettings]);
 
     const handleSaveGeneral = async () => {
         setIsSaving(true);
@@ -150,7 +190,7 @@ export function BlockchainConfigSection() {
         try {
             await writeContractAsync({
                 address: CONTRACTS.RAFFLE,
-                abi: DAILY_APP_ABI,
+                abi: RAFFLE_ABI,
                 functionName: 'setRaffleFees',
                 args: [BigInt(raffleFees.rake), BigInt(raffleFees.surcharge)],
             });
@@ -165,7 +205,7 @@ export function BlockchainConfigSection() {
         try {
             await writeContractAsync({
                 address: CONTRACTS.RAFFLE,
-                abi: DAILY_APP_ABI,
+                abi: RAFFLE_ABI,
                 functionName: 'setRaffleLimits',
                 args: [BigInt(raffleLimits.maxUser), BigInt(raffleLimits.maxParticipants)],
             });
@@ -180,7 +220,7 @@ export function BlockchainConfigSection() {
         try {
             await writeContractAsync({
                 address: CONTRACTS.RAFFLE,
-                abi: DAILY_APP_ABI,
+                abi: RAFFLE_ABI,
                 functionName: 'setRaffleXP',
                 args: [BigInt(raffleXp.create), BigInt(raffleXp.claim), BigInt(raffleXp.purchase)],
             });
@@ -195,7 +235,7 @@ export function BlockchainConfigSection() {
         try {
             await writeContractAsync({
                 address: CONTRACTS.MASTER_X,
-                abi: DAILY_APP_ABI,
+                abi: MASTER_X_ABI,
                 functionName: 'setRevenueShares',
                 args: [BigInt(econShares.owner), BigInt(econShares.ops), BigInt(econShares.treasury), BigInt(econShares.sbt)],
             });
@@ -210,7 +250,7 @@ export function BlockchainConfigSection() {
         try {
             await writeContractAsync({
                 address: CONTRACTS.MASTER_X,
-                abi: DAILY_APP_ABI,
+                abi: MASTER_X_ABI,
                 functionName: 'setTierWeights',
                 args: [BigInt(tierWeights.diamond), BigInt(tierWeights.platinum), BigInt(tierWeights.gold), BigInt(tierWeights.silver), BigInt(tierWeights.bronze)],
             });
@@ -282,6 +322,69 @@ export function BlockchainConfigSection() {
             toast.success("Transaction submitted!", { id: tid });
         } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
+    };
+
+    const handleSaveMasterParams = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Updating MasterX Protocol Parameters...");
+        try {
+            await writeContractAsync({
+                address: CONTRACTS.MASTER_X,
+                abi: MASTER_X_ABI,
+                functionName: 'setParams',
+                args: [
+                    BigInt(masterParams.tUSDC),
+                    BigInt(masterParams.mGas),
+                    BigInt(masterParams.pPerTicket),
+                    masterParams.desc
+                ],
+            });
+            toast.success("MasterX Parameters Updated!", { id: tid });
+        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleDistribute = async () => {
+        if (!window.confirm("Open Community Claim? This will lock current balance for distribution.")) return;
+        setIsSaving(true);
+        const tid = toast.loading("Executing distribution...");
+        try {
+            await distributeRevenue();
+            toast.success("Community Rewards Unlocked!", { id: tid });
+            if (refetchAll) refetchAll();
+        } catch (e) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleWithdrawTreasury = async () => {
+        if (!window.confirm(`Withdraw ${withdrawAmount} ETH to Safe Multisig (${SAFE_MULTISIG})?`)) return;
+        setIsSaving(true);
+        const tid = toast.loading("Processing treasury withdrawal...");
+        try {
+            await withdrawTreasury(parseEther(withdrawAmount));
+            toast.success("Treasury fueled!", { id: tid });
+            if (refetchAll) refetchAll();
+        } catch (e) {
+            toast.error(e.shortMessage || "Withdrawal failed", { id: tid });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSavePoolSettings = async () => {
+        setIsSaving(true);
+        const tid = toast.loading("Updating pool settings...");
+        try {
+            await updatePoolSettings(poolFormData);
+            toast.success("Pool Settings Updated!", { id: tid });
+        } catch (e) {
+            toast.error(e.shortMessage || "Update failed", { id: tid });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSyncTokenToDb = async (action, tokenData) => {
@@ -424,6 +527,120 @@ export function BlockchainConfigSection() {
                 </div>
             </div>
 
+            {/* Economic Controls (Consolidated v3.8.0) */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* Community Pool Management */}
+                <div className="bg-slate-900/40 p-6 rounded-2xl border border-white/5 space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center">
+                            <Database className="w-5 h-5 text-indigo-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Pool Configuration</h3>
+                            <p className="text-[10px] text-slate-500 uppercase font-black">Community Reward Meta-Settings</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target USDC</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
+                                    <input
+                                        type="number"
+                                        value={poolFormData.targetUSDC}
+                                        onChange={(e) => setPoolFormData({ ...poolFormData, targetUSDC: Number(e.target.value) })}
+                                        className="w-full bg-black/40 border border-white/5 p-2 px-6 rounded-xl text-white font-mono text-xs focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Projected ETH Status</label>
+                                <div className="bg-black/40 border border-white/5 p-2 rounded-xl text-indigo-400 font-mono text-xs flex items-center justify-center">
+                                    {formatUnits(totalPoolBalance || 0n, 18).slice(0, 6)} ETH
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Automatic Schedule</label>
+                            <input
+                                type="datetime-local"
+                                value={poolFormData.claimTimestamp ? new Date(poolFormData.claimTimestamp).toISOString().slice(0, 16) : ''}
+                                onChange={(e) => setPoolFormData({ ...poolFormData, claimTimestamp: new Date(e.target.value).getTime() })}
+                                className="w-full bg-black/40 border border-white/5 p-2 rounded-xl text-white font-mono text-xs focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleSavePoolSettings}
+                                disabled={saving}
+                                className="flex-1 bg-indigo-500/20 hover:bg-indigo-500 text-indigo-400 hover:text-white py-2.5 rounded-xl text-[10px] font-black transition-all border border-indigo-500/30 uppercase"
+                            >
+                                Save Configuration
+                            </button>
+                            <button
+                                onClick={handleDistribute}
+                                disabled={saving || totalPoolBalance === 0n}
+                                className="flex-1 bg-emerald-500/20 hover:bg-emerald-600 text-emerald-400 hover:text-white py-2.5 rounded-xl text-[10px] font-black transition-all border border-emerald-500/30 uppercase"
+                            >
+                                Trigger Distribute
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Treasury Management */}
+                <div className="bg-emerald-950/10 p-6 rounded-2xl border border-emerald-500/10 space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                            <Landmark className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Treasury Safebox</h3>
+                            <p className="text-[10px] text-emerald-500 font-black uppercase">Project Reserve (10%) Allocation</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="p-3 bg-black/40 rounded-xl border border-emerald-500/10 mb-4">
+                            <p className="text-[9px] text-slate-500 uppercase font-black leading-tight">
+                                Funds will be transferred to:
+                                <br />
+                                <span className="text-emerald-400 font-mono text-[10px]">{SAFE_MULTISIG}</span>
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Withdrawal Amount (ETH)</label>
+                            <div className="flex gap-3">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={withdrawAmount}
+                                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                                    className="flex-1 bg-black/40 border border-emerald-500/10 p-3 rounded-xl text-white font-mono text-sm focus:border-emerald-500 outline-none"
+                                />
+                                <button
+                                    onClick={handleWithdrawTreasury}
+                                    disabled={saving}
+                                    className="px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-emerald-600/20 active:scale-95 flex items-center gap-2"
+                                >
+                                    <ArrowUpRight className="w-4 h-4" />
+                                    Withdraw
+                                </button>
+                            </div>
+                        </div>
+
+                        <p className="text-[9px] text-slate-500 italic mt-2">
+                            *Treasury balance accumulates automatically. Multisig security required for processing.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* ECONOMIC INDICATORS Card */}
             <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4 rounded-2xl">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -466,6 +683,67 @@ export function BlockchainConfigSection() {
                 <button onClick={handleSaveEconomical} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
                     Update Economic Indicators
                 </button>
+            </div>
+
+            {/* MASTER-X PROTOCOL PARAMETERS */}
+            <div className="glass-card p-6 bg-blue-900/10 border border-blue-500/10 space-y-4 rounded-2xl">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-blue-400" /> MASTERX PROTOCOL PARAMETERS
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Ticket Price (USDC - 6 Dec)</label>
+                        <input type="number" value={masterParams.tUSDC} onChange={e => setMasterParams({ ...masterParams, tUSDC: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-blue-500 outline-none" />
+                        <p className="text-[9px] text-slate-500 italic">150000 = $0.15</p>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Points Per Ticket</label>
+                        <input type="number" value={masterParams.pPerTicket} onChange={e => setMasterParams({ ...masterParams, pPerTicket: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-blue-500 outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Max Gas Price (Wei)</label>
+                        <input type="text" value={masterParams.mGas} onChange={e => setMasterParams({ ...masterParams, mGas: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-blue-500 outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Ticket Description</label>
+                        <input type="text" value={masterParams.desc} onChange={e => setMasterParams({ ...masterParams, desc: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-blue-500 outline-none" />
+                    </div>
+                </div>
+                <button onClick={handleSaveMasterParams} disabled={isSaving} className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
+                    Push Protocol Settings to Contract
+                </button>
+            </div>
+
+            {/* MANUAL REVENUE BATCH DISTRIBUTION */}
+            <div className="glass-card p-6 bg-emerald-900/10 border border-emerald-500/10 space-y-4 rounded-2xl">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-emerald-400" /> REVENUE BATCH MANAGEMENT
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4 p-4 bg-black/20 rounded-xl border border-white/5">
+                    <div>
+                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Last Distribution</p>
+                        <p className="text-sm font-mono text-white">
+                            {qLastDist > 0
+                                ? new Date(Number(qLastDist) * 1000).toLocaleString()
+                                : 'Loading...'}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Cycle Strategy</p>
+                        <p className="text-sm font-mono text-emerald-400">5-Day Cooldown</p>
+                    </div>
+                </div>
+
+                <button 
+                    onClick={handleDistributeRevenue} 
+                    disabled={isDistributing} 
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                    <RefreshCw className={`w-4 h-4 ${isDistributing ? 'animate-spin' : ''}`} />
+                    {isDistributing ? "Processing Batch..." : "Force Batch Distribution (Manual)"}
+                </button>
+                <p className="text-[9px] text-slate-500 italic text-center">* Bypasses cooldown. Updates all user reward pools.</p>
             </div>
 
             {/* SYSTEM ARCHITECTURE POINTERS (CRITICAL) */}

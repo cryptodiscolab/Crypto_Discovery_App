@@ -30,11 +30,8 @@ const AdminCampaignTab = React.lazy(() => import('../components/admin/AdminCampa
 const AnnouncementTab = React.lazy(() => import('../components/admin/tabs/AnnouncementTab').then(m => ({ default: m.AnnouncementTab })));
 const NewsTab = React.lazy(() => import('../components/admin/tabs/NewsTab').then(m => ({ default: m.NewsTab })));
 const PoolTab = React.lazy(() => import('../components/admin/tabs/PoolTab').then(m => ({ default: m.PoolTab })));
-const SystemSettingsTab = React.lazy(() => import('../components/admin/tabs/SystemSettingsTab').then(m => ({ default: m.SystemSettingsTab })));
 const ContentTab = React.lazy(() => import('../components/admin/tabs/ContentTab').then(m => ({ default: m.ContentTab })));
 const SyncLogTab = React.lazy(() => import('../components/admin/tabs/SyncLogTab').then(m => ({ default: m.SyncLogTab })));
-const TierTab = React.lazy(() => import('../components/admin/tabs/TierTab').then(m => ({ default: m.TierTab })));
-const TreasuryTab = React.lazy(() => import('../components/admin/tabs/TreasuryTab').then(m => ({ default: m.TreasuryTab })));
 const NFTConfigTab = React.lazy(() => import('../components/admin/tabs/NFTConfigTab').then(m => ({ default: m.NFTConfigTab })));
 const NexusMonitorTab = React.lazy(() => import('../components/admin/tabs/NexusMonitorTab').then(m => ({ default: m.NexusMonitorTab })));
 
@@ -109,16 +106,13 @@ export function AdminPage({ initialTab = 'pool' }) {
                 { id: 'sbt', label: 'SBT Rewards', icon: Award, color: 'indigo' },
                 { id: 'reputation', label: 'User Reputation', icon: LayoutList, color: 'indigo' },
                 { id: 'system', label: 'System Settings', icon: Sliders, color: 'blue' },
-                { id: 'masterx', label: 'MasterX Controls', icon: Settings, color: 'blue' },
             ]
         },
         {
             label: 'Economy & Assets',
             items: [
-                { id: 'treasury', label: 'Treasury Safe', icon: Landmark, color: 'emerald' },
                 { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
                 { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
-                { id: 'tiers', label: 'Tier Control', icon: Award, color: 'yellow' },
             ]
         },
         {
@@ -136,7 +130,6 @@ export function AdminPage({ initialTab = 'pool' }) {
             items: [
                 { id: 'roles', label: 'Role Management', icon: UserCog, color: 'yellow' },
                 { id: 'whitelist', label: 'Sponsored Access', icon: Shield, color: 'purple' },
-                { id: 'logs', label: 'Activity Logs', icon: ClipboardList, color: 'slate' },
                 { id: 'sync-logs', label: 'Sync Logs (Debug)', icon: ClipboardList, color: 'emerald' },
                 { id: 'nexus', label: 'Nexus Live', icon: Activity, color: 'indigo' },
             ]
@@ -277,7 +270,6 @@ export function AdminPage({ initialTab = 'pool' }) {
                                     />
                                 )}
                                 {activeTab === 'system' && <AdminSystemSettings />}
-                                {activeTab === 'masterx' && <SystemSettingsTab />}
                                 {activeTab === 'raffles' && <RaffleManagerTab />}
                                 {activeTab === 'tasks' && (
                                     <div className="space-y-6">
@@ -294,13 +286,18 @@ export function AdminPage({ initialTab = 'pool' }) {
                                             >
                                                 Quick Task Manager
                                             </button>
+                                            <button
+                                                onClick={() => setTaskSubTab('history')}
+                                                className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'history' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                            >
+                                                Claim History
+                                            </button>
                                         </div>
-                                        {taskSubTab === 'batch' ? <TaskManagerTab /> : <TaskManager />}
+                                        {taskSubTab === 'batch' && <TaskManagerTab />}
+                                        {taskSubTab === 'quick' && <TaskManager />}
+                                        {taskSubTab === 'history' && <TaskClaimLogs />}
                                     </div>
                                 )}
-                                {activeTab === 'logs' && <TaskClaimLogs />}
-                                {activeTab === 'tiers' && <TierTab onUpdate={updateTier} />}
-                                {activeTab === 'treasury' && <TreasuryTab onWithdraw={withdrawTreasury} />}
                                 {activeTab === 'roles' && <RoleManagementTab />}
                                 {activeTab === 'whitelist' && <WhitelistManagerTab />}
                                 {activeTab === 'announcement' && <AnnouncementTab />}

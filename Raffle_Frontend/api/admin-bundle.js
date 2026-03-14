@@ -268,7 +268,7 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true });
             }
             case 'UPDATE_TIER_CONFIG': {
-                await supabaseAdmin.from('system_settings').upsert({ key: 'tier_percentiles', value: payload, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+                await supabaseAdmin.from('system_settings').upsert({ key: 'tier_config', value: payload, updated_at: new Date().toISOString() }, { onConflict: 'key' });
                 return res.status(200).json({ success: true });
             }
             case 'MANUAL_TIER_OVERRIDE': {

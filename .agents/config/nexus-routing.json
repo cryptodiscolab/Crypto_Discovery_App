@@ -19,6 +19,12 @@
                 "model": "deepseek-coder:1.3b",
                 "chat_enabled": true,
                 "endpoint": "http://localhost:11434"
+            },
+            {
+                "provider": "ollama",
+                "model": "OpenClaw:latest",
+                "chat_enabled": true,
+                "endpoint": "http://localhost:11434"
             }
         ],
         "fallback_threshold_ms": 5000,
@@ -37,6 +43,9 @@
         "deepseek": [
             "deepseek-chat",
             "deepseek-coder"
+        ],
+        "openclaw": [
+            "OpenClaw"
         ]
     }
 }

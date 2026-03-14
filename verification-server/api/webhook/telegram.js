@@ -8,9 +8,10 @@ const { createClient } = require('@supabase/supabase-js');
 // Config
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 const telegramChatId = process.env.TELEGRAM_CHAT_ID;
 const geminiApiKey = process.env.GEMINI_API_KEY;
+
+const orchestron = require('../lib/orchestron-core');
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -117,7 +118,26 @@ module.exports = async (req, res) => {
     // 2. Command Router
     try {
         if (text === '/start') {
-            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/user <wallet> - Audit Identitas Lengkap User\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/model - Pilih Otak AI (Model)\n/fix <error> - Perbaiki error via AI");
+            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/orchestron - Menu Kendali Nexus Orchestron\n/whitelist - Whitelist Token Baru\n/list_tokens - Lihat Token Terdaftar\n/user <wallet> - Audit Identitas Lengkap User\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/model - Pilih Otak AI (Model)\n/fix <error> - Perbaiki error via AI");
+        }
+        else if (text === '/orchestron') {
+            const clawStatus = await orchestron.getAgentStatus('openclaw');
+            const menu = `⚔️ **NEXUS ORCHESTRON COMMAND CENTER**
+            
+📡 **AGENT STATUS:**
+• @openclaw: ${clawStatus === 'ONLINE' ? '🟢 ONLINE' : '🔴 OFFLINE'}
+• @lurah: 🟢 ONLINE (Internal)
+
+🛠️ **MULTI-AGENT DISPATCH:**
+Gunakan format \`> [nama_agent]: [tugas]\`
+Contoh:
+\`> claw: audit contract 0xabc...\`
+\`> deepseek: optimize gas for swap function\`
+
+🚀 **SYSTEM WIDE:**
+/audit - Health check ekosistem.
+/health - Status konektivitas.`;
+            await sendTelegram(chatId, menu);
         }
         else if (text === '/model') {
             await sendTelegram(chatId, "🧠 **PILIH OTAK LURAH (AI MODEL - 2026 EDITION)**\n\nKetik perintah di bawah:\n`/model_flash` - Gemini 2.5 Flash (Super Cepat & Akurat)\n`/model_pro` - Gemini 2.5 Pro (Otak Paling Cerdas & Mendalam)\n`/model_3` - Gemini 3.1 Flash (Teknologi Masa Depan)\n\n*Pilihan Anda akan disimpan secara permanen di database.*");
@@ -328,6 +348,52 @@ module.exports = async (req, res) => {
                 await sendTelegram(chatId, `✅ **Task Berhasil Dibuat!**\n\nID: \`${newTask.id}\`\nReward: ${xpReward} XP\nTarget: ${targetId || 'N/A'}\n\nStatus: ⏳ Pending (Aktif pukul 07:15 WIB)\nExpires: ${expiresAt.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB\n\n*Anti-Cheat Aktif: Cegah Klaim Berulang.*`);
             }
         }
+        else if (text.startsWith('/whitelist')) {
+            // Format: /whitelist chain_id address symbol decimals
+            const args = text.replace('/whitelist', '').trim().split(' ');
+            if (args.length < 4) {
+                await sendTelegram(chatId, "⚠️ Format salah! Gunakan:\n`/whitelist <chain_id> <address> <symbol> <decimals>`\n\nContoh:\n`/whitelist 8453 0x... USYC 6` Ready");
+                return res.status(200).json({ ok: true });
+            }
+
+            const [chainId, address, symbol, decimals] = args;
+            const { data, error } = await supabase
+                .from('allowed_tokens')
+                .upsert({
+                    chain_id: parseInt(chainId),
+                    address: address.toLowerCase(),
+                    symbol: symbol.toUpperCase(),
+                    decimals: parseInt(decimals),
+                    is_active: true
+                }, { onConflict: 'chain_id,address' })
+                .select();
+
+            if (error) {
+                await sendTelegram(chatId, `❌ Gagal whitelisting: ${error.message}`);
+            } else {
+                await sendTelegram(chatId, `✅ **Token Berhasil Terdaftar!**\n\nChain: ${chainId}\nSymbol: ${symbol}\nAddress: \`${address}\`\nDecimals: ${decimals}`);
+                await orchestron.logToNexus(`Admin whitelisted token ${symbol} on chain ${chainId}`);
+            }
+        }
+        else if (text === '/list_tokens') {
+            const { data, error } = await supabase
+                .from('allowed_tokens')
+                .select('*')
+                .eq('is_active', true)
+                .order('chain_id', { ascending: true });
+
+            if (error) {
+                await sendTelegram(chatId, `❌ Gagal mengambil token: ${error.message}`);
+            } else if (!data || data.length === 0) {
+                await sendTelegram(chatId, "📭 Belum ada token yang terdaftar.");
+            } else {
+                let msg = "📋 **DAFTAR TOKEN TERDAFTAR**\n\n";
+                data.forEach(t => {
+                    msg += `• **${t.symbol}** (Chain: ${t.chain_id})\n  Addr: \`${t.address}\` | Dec: ${t.decimals}\n\n`;
+                });
+                await sendTelegram(chatId, msg);
+            }
+        }
         else if (text.startsWith('/hapus_task')) {
             const taskId = text.replace('/hapus_task', '').trim();
             // Logic simplified: we'll handle callback queries for true convenience, but this is the text fallback
@@ -458,6 +524,33 @@ module.exports = async (req, res) => {
                 fixResponse = fixResponse.substring(0, 4000) + '\n... (Pesan dipotong karena terlalu panjang)';
             }
             await sendTelegram(chatId, `🛠️ *HASIL ANALISA ERROR LURAH*\n\n${fixResponse}`);
+        }
+        else if (text.startsWith('> ')) {
+            // Agent Dispatcher Pattern: "> agent: task"
+            const match = text.match(/^>\s*(\w+):\s*(.*)/);
+            if (!match) {
+                await sendTelegram(chatId, "⚠️ Format salah! Gunakan `> agent: tugas`. Contoh: `> claw: audit index.js`.");
+                return res.status(200).json({ ok: true });
+            }
+            
+            const agent = match[1].toLowerCase();
+            const taskQuery = match[2];
+            
+            const supportedAgents = ['claw', 'openclaw', 'deepseek', 'qwen', 'lurah'];
+            if (!supportedAgents.includes(agent)) {
+                await sendTelegram(chatId, `❌ Agent @${agent} tidak dikenal atau tidak tersedia.`);
+                return res.status(200).json({ ok: true });
+            }
+
+            const targetAgent = agent === 'claw' ? 'openclaw' : agent;
+            await sendTelegram(chatId, `📡 Mengirim instruksi ke **@${targetAgent}**...\nTugas: _${taskQuery}_`);
+            
+            try {
+                await orchestron.dispatchTask(targetAgent, `Telegram Command: ${taskQuery}`, taskQuery);
+                await sendTelegram(chatId, `✅ Instruksi diterima oleh buffer **@${targetAgent}**. Menunggu eksekusi oleh worker lokal/cloud...`);
+            } catch (dispatchErr) {
+                await sendTelegram(chatId, `❌ Gagal mengirim instruksi: ${dispatchErr.message}`);
+            }
         }
         else {
             // Conversational Mode: Talk like Local Agent (Antigravity/Lurah)

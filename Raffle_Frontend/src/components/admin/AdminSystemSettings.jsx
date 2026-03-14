@@ -32,7 +32,7 @@ import { SponsorshipConfigSection } from './system/SponsorshipConfigSection';
 export default function AdminSystemSettings() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { syncTiersToContract } = useSBT();
+    const { syncTiersToContract, resetSeason, currentSeasonId } = useSBT();
 
     // Core States
     const [pointSettings, setPointSettings] = useState([]);
@@ -45,7 +45,10 @@ export default function AdminSystemSettings() {
     const [saving, setSaving] = useState(false);
 
     // Advanced Tier States
-    const [tierConfig, setTierConfig] = useState({ diamond: 0.01, platinum: 0.05, gold: 0.15, silver: 0.40, bronze: 0.80 });
+    const [tierConfig, setTierConfig] = useState({ 
+        percentiles: { diamond: 0.01, platinum: 0.05, gold: 0.15, silver: 0.40, bronze: 0.80 },
+        floors: { diamond: 5000, platinum: 2500, gold: 1000, silver: 500, bronze: 100 }
+    });
     const [tierDistribution, setTierDistribution] = useState([]);
     const [targetWallet, setTargetWallet] = useState('');
     const [overrideTier, setOverrideTier] = useState(0);
@@ -76,7 +79,7 @@ export default function AdminSystemSettings() {
 
     const fetchTierConfig = async () => {
         try {
-            const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'tier_percentiles').single();
+            const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'tier_config').single();
             if (!error && data) setTierConfig(data.value);
         } catch (error) { console.error('Fetch Tier Config Error:', error); }
     };
@@ -243,6 +246,23 @@ export default function AdminSystemSettings() {
         finally { setSaving(false); }
     };
 
+    const handleResetSeason = async () => {
+        const nextSeason = currentSeasonId + 1;
+        if (!window.confirm(`⚠️ DANGER: RESET SEASON TO ${nextSeason}?\n\nThis will clear all user reward debt and start a fresh distribution cycle. This action is IRREVERSIBLE.`)) return;
+        
+        setSaving(true);
+        const tid = toast.loading(`Resetting Season to ${nextSeason}...`);
+        try {
+            await resetSeason(nextSeason);
+            toast.success(`Season ${nextSeason} Started!`, { id: tid });
+            fetchTierDistribution();
+        } catch (e) {
+            toast.error(e.shortMessage || "Reset failed", { id: tid });
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const issueSubname = async (user, label) => {
         if (!label || label.length < 3) return toast.error('Label too short');
         setSaving(true);
@@ -338,7 +358,7 @@ export default function AdminSystemSettings() {
                     <AdvancedTierSection
                         tierDistribution={tierDistribution}
                         tierConfig={tierConfig}
-                        onTierConfigChange={(key, val) => setTierConfig({ ...tierConfig, [key]: val })}
+                        onTierConfigChange={(category, key, val) => setTierConfig({ ...tierConfig, [category]: { ...tierConfig[category], [key]: val } })}
                         onSaveTierConfig={() => saveTierConfig()}
                         targetWallet={targetWallet}
                         onTargetWalletChange={setTargetWallet}
@@ -346,6 +366,8 @@ export default function AdminSystemSettings() {
                         onOverrideTierChange={setOverrideTier}
                         onApplyOverride={handleManualOverride}
                         onSyncTiers={handleSyncTiers}
+                        onResetSeason={handleResetSeason}
+                        currentSeasonId={currentSeasonId}
                         saving={saving}
                     />
                 </div>

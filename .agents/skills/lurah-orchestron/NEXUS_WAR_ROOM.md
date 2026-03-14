@@ -23,17 +23,22 @@ Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadik
    - Tanggung Jawab: Final code implementation, orchestrating other agents, resolving conflicts, and user communication.
    - Kekuatan: Holistic system view, Surgical Fixes.
 
-2. **@lurah (Ecosystem Guardian)**:
+2. **@openclaw (Security Architect)**:
+   - Peran: Deep Security & Architecture Reviewer.
+   - Tanggung Jawab: Smart contract audit, sensitive data hygiene, penetration testing simulation, and complex security patterns.
+   - Kekuatan: Security-first mindset, vulnerability discovery.
+
+3. **@lurah (Ecosystem Guardian)**:
    - Peran: Security & Compliance Auditor.
-   - Tanggung Jawab: Monitoring database health, fraud detection (Sybil, 1:1 Mapping), and security audits.
+   - Tanggung Jawab: Monitoring database health, fraud detection (Sybil, 1:1 Mapping), and operational security audits.
    - Kekuatan: Direct access to logs and system settings.
 
-3. **@qwen (Build Master)**:
+4. **@qwen (Build Master)**:
    - Peran: Local Environment & Refactoring Specialist.
    - Tanggung Jawab: Local builds, syntax checking, linting, and boilerplate refactoring.
    - Kekuatan: Optimized for local hardware performance.
 
-4. **@deepseek (Backend Strategist)**:
+5. **@deepseek (Backend Strategist)**:
    - Peran: Algorithm & Logic Architect.
    - Tanggung Jawab: Complex backend logic, smart contract gas optimization, and database schema design.
    - Kekuatan: Deep logical reasoning and technical efficiency.
@@ -60,11 +65,11 @@ Dashboard ini tidak lagi sekadar simulasi. Ia harus menjadi pusat data real-time
 2. **Kebaikan Publik**: Setiap fitur harus dirancang untuk memberikan kemudahan dan manfaat nyata bagi pengguna aplikasi.
 
 ## 🛡️ Senior Dev Workflow
-1. **Triage**: @antigravity menerima input user dan membagi tugas ke @lurah/@qwen/@deepseek.
+1. **Triage**: @antigravity menerima input user dan membagi tugas ke @openclaw/@lurah/@qwen/@deepseek.
 2. **Analysis**: Para spesialis berdiskusi internal.
 3. **Execution**: @antigravity melakukan perbaikan berdasarkan analisa mendalam.
 4. **Verification**: @qwen melakukan build test lokal sebelum task dianggap selesai.
-5. **Security Audit**: @lurah memastikan tidak ada secrets yang bocor ke repository.
+5. **Security Audit**: @openclaw & @lurah memastikan tidak ada secrets yang bocor ke repository.
 
 ## 🧬 NEXUS EVOLUTION FORMULA (The Learning Cycle)
 Agar agen tidak mengulang kesalahan, setiap task ditutup dengan siklus **A-D-R-R-E**:
@@ -75,4 +80,4 @@ Agar agen tidak mengulang kesalahan, setiap task ditutup dengan siklus **A-D-R-R
 5.  **E**volve: Update file `.agents` atau `agent_vault` dengan pengetahuan baru.
 
 ---
-*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 1.2.0 | Mode: Nexus Evolution | Lead: @antigravity*
+*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 3.13.0 | Mode: Nexus Evolution | Lead: @antigravity*
