@@ -5,13 +5,19 @@ import { verifyMessage } from "viem";
 // ── CONFIG ─────────────────────────────────────────────────────
 // Fix: Alchemy Free Tier strictly limits eth_getLogs to 10 blocks.
 // We force the use of Base Sepolia Public Node to allow 5000 block ranges.
-const MASTER_X = (process.env.VITE_MASTER_X_ADDRESS || process.env.MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7").trim();
-const DAILY_APP = (process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || "0x87a3d1203Bf20E7dF5659A819ED79a67b236F571").trim();
+const MASTER_X = (process.env.VITE_MASTER_X_ADDRESS || process.env.MASTER_X_ADDRESS || "").trim();
+const DAILY_APP = (process.env.VITE_V12_CONTRACT_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA || process.env.DAILY_APP_ADDRESS || "").trim();
 const CRON_SECRET = (process.env.CRON_SECRET || '').trim();
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').trim();
 const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 const NEYNAR_KEY = (process.env.NEYNAR_API_KEY || '').trim();
 const RPC_URL = (process.env.VITE_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org").trim();
+
+const TASK_IDS = {
+    REFERRAL_XP: (process.env.REFERRAL_TASK_ID || "12e123f5-0ded-4ca1-af04-e8b6924823e2").trim(),
+    ONCHAIN_TASK: (process.env.ONCHAIN_TASK_ID || "885535d2-4c5c-4a80-9af5-36666192c244").trim(),
+    TIER_UPGRADE: (process.env.TIER_UPGRADE_TASK_ID || "2c1e23f5-0ded-4ca1-af04-e8b6924823e2").trim()
+};
 
 const MAX_BLOCK_RANGE = 5000;
 
@@ -248,7 +254,7 @@ async function handleSyncEvents(req, res) {
             rows.push({
                 id: makeId(`MASTERX_${log.transactionHash}_${log.index}`),
                 wallet_address: wallet,
-                task_id: "12e123f5-0ded-4ca1-af04-e8b6924823e2",
+                task_id: TASK_IDS.REFERRAL_XP,
                 xp_earned: xp,
                 claimed_at: new Date().toISOString(),
                 tx_hash: log.transactionHash,
@@ -276,7 +282,7 @@ async function handleSyncEvents(req, res) {
             rows.push({
                 id: makeId(`DAILYAPP_${log.transactionHash}_${log.index}`),
                 wallet_address: wallet,
-                task_id: "885535d2-4c5c-4a80-9af5-36666192c244",
+                task_id: TASK_IDS.ONCHAIN_TASK,
                 xp_earned: xp,
                 claimed_at: new Date(Number(timestamp) * 1000).toISOString(),
                 tx_hash: log.transactionHash,
@@ -305,7 +311,7 @@ async function handleSyncEvents(req, res) {
             rows.push({
                 id: makeId(`UPGRADE_${log.transactionHash}_${log.index}`),
                 wallet_address: wallet,
-                task_id: "2c1e23f5-0ded-4ca1-af04-e8b6924823e2", // Dedicated Upgrade task ID
+                task_id: TASK_IDS.TIER_UPGRADE, // Dedicated Upgrade task ID
                 xp_earned: -burn, // Negative XP to reflect burn in history
                 claimed_at: new Date().toISOString(),
                 tx_hash: log.transactionHash,

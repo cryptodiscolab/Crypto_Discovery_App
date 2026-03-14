@@ -30,10 +30,10 @@ export default async function handler(req, res) {
     // Fallback: Check Database for is_admin flag
     try {
         const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-            process.env.VITE_SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').trim();
+        const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
         const { data: profile } = await supabase
             .from('user_profiles')
             .select('is_admin')

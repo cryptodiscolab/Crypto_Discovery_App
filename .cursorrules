@@ -202,7 +202,8 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 | :--- | :--- | :--- | :--- | :--- |
 | **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `VITE_V12_CONTRACT_ADDRESS` | ✅ DEPLOYED |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` | `VITE_MASTER_X_ADDRESS` | ✅ DEPLOYED |
-| **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` | `VITE_RAFFLE_ADDRESS` | ✅ DEPLOYED |
+| **Raffle V2** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` | `VITE_RAFFLE_ADDRESS` | ✅ DEPLOYED |
+| **PRD v3.5.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_5_0.md` | `DOC_SOT` | ✅ UPDATED |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS` | ✅ DEPLOYED |
 
 - **Reward Logic**: Must use `Accumulated Reward Per Share` with `1e18` precision.
@@ -502,12 +503,17 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **Targets**: Production (Mainnet), Preview (Sepolia), Development (Sepolia).
 - **Required Action**: `vercel env rm` -> `vercel env add` for all targets on both projects.
 
-## 32. ENV-SANITY MANDATE & SILENT CORRUPTION PREVENTION (CRITICAL)
-- **DEFINITION**: "Silent Corruption" occurs when Vercel or cloud providers inject literal double-quotes (`""value""`) or hidden newlines (`\r\n`) into environment variables, breaking SDK initializations (Supabase, Neynar, RPCs).
-- **ENFORCEMENT**: Every environment variable used in a serverless context MUST be accessed through the `.trim()` method.
-- **PROHIBITION**: DILARANG KERAS menggunakan variabel lingkungan mentah (`process.env.VAR`) dalam inisialisasi client tanpa sanitasi `.trim()`.
-- **A-D-R-R-E LEARNING CYCLE**: Agents MUST follow the **A**udit, **D**etermine, **R**esolve, **R**eflect, **E**volve cycle for every environment-related failure to prevent recurrence.
-- **PURGE PROTOCOL**: If corruption is found, Agent MUST perform a TWO-STAGE purge (Stage 1: Newlines, Stage 2: Double Quotes) via Vercel CLI before proceeding.
+## 33. PROFILE & CHARACTER LIMITS MANDATE (v3.5.0)
+- **ENFORCEMENT**: All profile update logic MUST strictly enforce:
+  - `MAX_NAME_LEN`: 50 chars.
+  - `MAX_BIO_LEN`: 160 chars.
+  - `MAX_USERNAME_LEN`: 30 chars.
+  - `MAX_AVATAR_BYTES`: 1,048,576 bytes (1MB).
+- **FALLBACK**: Use `parseInt(process.env.VAR || 'DEFAULT')` for all limit values.
+
+## 34. STREAK & CLAIM WINDOW MANDATE
+- **STREAK WINDOW**: Claims must fall between 20 hours (`STREAK_WINDOW_MIN_HOURS`) and 48 hours (`STREAK_WINDOW_MAX_HOURS`) to increment the streak.
+- **ZERO MAGIC**: These numbers MUST NOT be hardcoded in `user-bundle.js` or elsewhere.
 
 
 ---

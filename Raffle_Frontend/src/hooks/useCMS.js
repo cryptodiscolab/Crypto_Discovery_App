@@ -444,7 +444,7 @@ export function useCMS() {
      */
     const showSuccessToast = (message, txHash) => {
         toast.success(
-            `${message} - View on BaseScan: https://sepolia.basescan.org/tx/${txHash}`,
+            `${message} - View on Explorer: ${APP_CONFIG.EXPLORER_URL}/tx/${txHash}`,
             { duration: 6000 }
         );
     };

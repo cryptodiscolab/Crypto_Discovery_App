@@ -92,7 +92,7 @@ async function handleClaimPrize(req, res) {
             .eq('activity_key', 'raffle_win')
             .single();
 
-        const xpAwarded = setting?.points_value || 1000; // Default 1000 XP for winning
+        const xpAwarded = setting?.points_value || 0; // Default to 0 if not set, enforcing config-driven rewards
 
         // ─── 4. Record Claim & Award XP ──────────────────────────────────────
         const { error: claimError } = await supabaseAdmin

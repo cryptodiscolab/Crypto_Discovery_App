@@ -1,11 +1,11 @@
 import { verifyMessage } from 'viem';
 import { createClient } from '@supabase/supabase-js';
 
-const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
-const supabaseAdmin = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const NEYNAR_API_KEY = (process.env.NEYNAR_API_KEY || '').trim();
+const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').trim();
+const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

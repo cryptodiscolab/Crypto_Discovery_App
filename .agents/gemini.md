@@ -1,6 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-03-13*
+*Last Updated: 2026-03-14*
+*PRD Version: 3.5.0*
 
 ---
 
@@ -171,6 +172,10 @@ State sharing via `agents_vault` table di Supabase.
 171: - 🚫 Memulai task baru sebelum menyelesaikan bug yang ditemukan saat audit
 172: - 🚫 Membuat manual OAuth/Social URLs jika SDK resmi tersedia (**SDK-FIRST**)
 173: - 🚫 Melakukan audit tanpa memeriksa "Silent Corruption" di Vercel Env (**ENV-SANITY**)
+- 🚫 Melewati batas limit karakter profil (Name: 50, Bio: 160, Username: 30)
+- 🚫 Melewati batas ukuran avatar (1MB)
+- 🚫 Menggunakan magic numbers untuk streak window (Min: 20h, Max: 48h)
+
 174: 
 175: ---
 176: 

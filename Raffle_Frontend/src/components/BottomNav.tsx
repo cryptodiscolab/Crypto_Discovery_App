@@ -1,15 +1,19 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, Megaphone } from 'lucide-react';
 import { useCMS } from '../hooks/useCMS';
+import { useFarcaster } from '../shared/context/FarcasterContext';
 
 export function BottomNav() {
     const { address, isConnected } = useAccount();
     const { isAdmin: isCMSAdmin } = useCMS();
     const location = useLocation();
+    const { isFrame, safeAreaInsets, client } = useFarcaster();
 
     const isAdmin = isCMSAdmin;
+    const theme = client?.config?.theme || 'dark';
+    const isLight = theme === 'light';
 
     // Core nav items — max 5 untuk menghindari cramped layout di mobile
     const navItems = [
@@ -26,13 +30,15 @@ export function BottomNav() {
     return (
         <nav
             className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto md:hidden"
-            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            style={{ 
+                paddingBottom: isFrame ? `${safeAreaInsets?.bottom || 0}px` : 'env(safe-area-inset-bottom, 0px)' 
+            }}
         >
             {/* Top border separator — subtle */}
-            <div className="h-px w-full bg-white/[0.06]" />
+            <div className={`h-px w-full ${isLight ? 'bg-black/[0.06]' : 'bg-white/[0.06]'}`} />
 
             {/* Backdrop */}
-            <div className="bg-[#0B0E14]/97 backdrop-blur-3xl">
+            <div className={`${isLight ? 'bg-white/97 text-zinc-900' : 'bg-[#0B0E14]/97 text-slate-100'} backdrop-blur-3xl`}>
                 <div
                     className="w-full h-[58px] px-1"
                     style={{ display: 'grid', gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}

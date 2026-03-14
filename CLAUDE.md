@@ -44,8 +44,9 @@ Before responding to ANY request, read these files IN ORDER:
 11. **MULTI-PROJECT VERCEL SYNC**: Mandatory CLI environment sync across all projects (DailyApp + Verification Server).
 12. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination (500 items) and Profile Page linking must be interactive (v3.3.3).
 13. **SDK-FIRST**: Never construct manual OAuth/Social URLs or raw REST calls for Auth/Payments if an official SDK (Supabase, Viem, etc.) exists.
-14. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` to prevent "Silent Corruption" (quotes/newlines) during audits and coding.
-15. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
+14. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` via `cleanEnv` or inline to prevent "Silent Corruption" (quotes/newlines) during audits and coding.
+15. **LIMIT ENFORCEMENT**: Strictly enforce `PROFILE_LIMITS` (Name: 50, Bio: 160, User: 30, Avatar: 1MB) and `STREAK_WINDOW` (20-48h). No magic numbers allowed.
+16. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
 16. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
 
 ---

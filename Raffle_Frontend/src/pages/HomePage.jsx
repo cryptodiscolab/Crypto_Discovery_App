@@ -30,10 +30,13 @@ const iconMap = {
   TrendingUp,
 };
 
+import { useFarcaster } from '../shared/context/FarcasterContext';
+
 export function HomePage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { userPoints, unclaimedRewards } = usePoints();
   const { totalPoolBalance } = useSBT();
+  const { isFrame, frameUser, client } = useFarcaster();
   const {
     featureCards = [],
     announcement,
@@ -48,9 +51,46 @@ export function HomePage() {
   const targetUSDC = poolSettings?.targetUSDC || 5000;
   const progressPct = Math.min((poolUSD / targetUSDC) * 100, 100).toFixed(1);
 
+  const theme = client?.config?.theme || 'dark';
+  const isLight = theme === 'light';
+
   return (
     // Tidak perlu min-h-screen atau pt di sini — sudah di-handle App.jsx main
-    <div className="w-full bg-[#0B0E14]">
+    <div className={`w-full ${isLight ? 'bg-white text-zinc-900' : 'bg-[#0B0E14] text-slate-100'}`}>
+
+      {/* Farcaster Frame Immersion: Top Status Bar */}
+      {isFrame && (
+        <div className={`sticky top-0 z-50 w-full px-4 py-3 backdrop-blur-md border-b flex items-center justify-between ${
+          isLight ? 'bg-white/80 border-black/5' : 'bg-[#0B0E14]/80 border-white/5'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {frameUser?.pfpUrl ? (
+              <img src={frameUser.pfpUser || frameUser.pfpUrl} alt="" className="w-8 h-8 rounded-full border-2 border-indigo-500/50 shadow-lg" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                <User size={14} className="text-indigo-400" />
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-tighter text-indigo-500 leading-none">
+                {frameUser?.username || 'Nexus Agent'}
+              </p>
+              <p className={`text-xs font-bold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
+                {isConnected ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Guest Mode'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-[10px] font-black uppercase tracking-tighter text-emerald-500 leading-none">Points</p>
+              <p className={`text-xs font-black ${isLight ? 'text-zinc-900' : 'text-white'}`}>{userPoints} XP</p>
+            </div>
+            <div className="w-px h-6 bg-white/10" />
+            <Trophy className="w-4 h-4 text-yellow-500" />
+          </div>
+        </div>
+      )}
 
       {/* HypeFeed — flow normal, tidak perlu sticky (Header sudah fixed) */}
       <div className="w-full">

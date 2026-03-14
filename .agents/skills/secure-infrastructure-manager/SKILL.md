@@ -145,6 +145,8 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Social Reliability**: Have we implemented iterative pagination (500 items) for Farcaster/Twitter?
 - [ ] **Profile UX**: Are social linking buttons interactive and state-aware?
 - [ ] **Database Inspection**: Sudahkah Anda memverifikasi kolom tabel secara langsung di DB sebelum modifikasi logika?
+- [ ] **Profile Limits Enforced**: Are `MAX_NAME_LEN`, `MAX_BIO_LEN`, and `MAX_AVATAR_BYTES` enforced using environment variables?
+- [ ] **Streak Window Enforced**: Is the streak claim window (20-48h) dynamic via environment variables?
 
 ## 🚨 Pantangan
 - Menggunakan kontrak lama (Deprecated versions).

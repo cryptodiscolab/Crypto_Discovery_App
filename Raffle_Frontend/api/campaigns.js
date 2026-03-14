@@ -2,10 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyMessage } from 'viem';
 
 // Init Supabase Admin
-const supabaseAdmin = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').trim();
+const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });

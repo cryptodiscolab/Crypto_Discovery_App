@@ -15,15 +15,25 @@ const rpcClient = createPublicClient({
     transport: http((process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org').trim()),
 });
 
-// ZERO-HARDCODE: Source from Env with safe production fallback
-// Priority: DAILY_APP_ADDRESS_SEPOLIA -> VITE_V12_CONTRACT_ADDRESS_SEPOLIA -> VITE_V12_CONTRACT_ADDRESS (trimmed to prevent \n garbage from Vercel UI)
 const DAILY_APP_ADDRESS = (
     process.env.DAILY_APP_ADDRESS_SEPOLIA ||
     process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA ||
     process.env.VITE_V12_CONTRACT_ADDRESS ||
-    process.env.DAILY_APP_ADDRESS ||
-    '0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721'
-).trim();
+    process.env.DAILY_APP_ADDRESS
+)?.trim() || '';
+
+const TASK_IDS = {
+    REFERRAL_INVITE: (process.env.REFERRAL_INVITE_TASK_ID || '77e123f5-0ded-4ca1-af04-e8b6924823e2').trim(),
+    DAILY_CLAIM_STREAK: (process.env.DAILY_CLAIM_STREAK_TASK_ID || '288596d8-b5a9-4faf-bde0-0dd28aaba902').trim(),
+    DAILY_CLAIM_REWARD: (process.env.DAILY_CLAIM_REWARD_TASK_ID || '885535d2-4c5c-4a80-9af5-36666192c244').trim()
+};
+
+const PROFILE_LIMITS = {
+    MAX_NAME_LEN: parseInt(process.env.MAX_NAME_LEN || '50'),
+    MAX_BIO_LEN: parseInt(process.env.MAX_BIO_LEN || '160'),
+    MAX_USERNAME_LEN: parseInt(process.env.MAX_USERNAME_LEN || '30'),
+    MAX_AVATAR_BYTES: parseInt(process.env.MAX_AVATAR_BYTES || '1048576') // 1MB
+};
 const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
 
 export default async function handler(req, res) {
@@ -118,7 +128,7 @@ async function handleLoginSync(req, res) {
 
                     await supabaseAdmin.from('user_task_claims').insert({
                         wallet_address: updateData.referred_by,
-                        task_id: '77e123f5-0ded-4ca1-af04-e8b6924823e2', // System: Referral Invitation
+                        task_id: TASK_IDS.REFERRAL_INVITE, // System: Referral Invitation
                         xp_earned: refReward,
                         claimed_at: new Date().toISOString(),
                         platform: 'system',
@@ -162,13 +172,20 @@ async function handleXpSync(req, res) {
 
         const cleanAddress = wallet_address.toLowerCase();
 
-        // 2. Fetch Last Known On-Chain XP from Profile (Robust Baseline)
-        const { data: profile } = await supabaseAdmin
-            .from('user_profiles')
-            .select('total_xp, streak_count, last_streak_claim')
-            .eq('wallet_address', cleanAddress)
-            .maybeSingle();
+        // 2. Fetch Profile & Underdog Settings (Zero-Hardcode)
+        const [ { data: profile }, { data: settingsRes } ] = await Promise.all([
+            supabaseAdmin
+                .from('user_profiles')
+                .select('total_xp, manual_xp_bonus, streak_count, last_streak_claim')
+                .eq('wallet_address', cleanAddress)
+                .maybeSingle(),
+            supabaseAdmin
+                .from('system_settings')
+                .select('key, value')
+                .in('key', ['underdog_bonus_multiplier_bp', 'underdog_activity_window_hours', 'underdog_max_tier'])
+        ]);
 
+        const settings = settingsRes?.reduce((acc, s) => { acc[s.key] = s.value; return acc; }, {}) || {};
         const dbLastPoints = profile?.total_xp || 0;
 
         let onChainXP = 0;
@@ -214,13 +231,36 @@ async function handleXpSync(req, res) {
         }
 
         const currentTier = Number(onChainStats?.[3] || 0);
-        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, Tier=${currentTier}, DB_Last=${dbLastPoints}, Delta=${xpDelta}`);
 
-        // 4. Update Profile (Identity, Points Balance & Tier)
+        // --- UNDERDOG BONUS LOGIC (PRD v3.3.3) ---
+        let appliedBonusXP = 0;
+        let isUnderdogEligible = false;
+
+        if (xpDelta > 0) {
+            const maxUnderdogTier = parseInt(settings.underdog_max_tier || process.env.UNDERDOG_MAX_TIER || '2');
+            if (currentTier > 0 && currentTier <= maxUnderdogTier) {
+                const windowHrs = parseInt(settings.underdog_activity_window_hours || process.env.UNDERDOG_WINDOW_HOURS || '48');
+                const lastClaimAt = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
+                
+                // If never claimed, or claimed within window -> Eligible
+                if (!lastClaimAt || (new Date() - lastClaimAt) / (1000 * 60 * 60) <= windowHrs) {
+                    isUnderdogEligible = true;
+                    const multiplierBP = parseInt(settings.underdog_bonus_multiplier_bp || process.env.UNDERDOG_MULTIPLIER_BP || '11000');
+                    appliedBonusXP = Math.floor((xpDelta * (multiplierBP - 10000)) / 10000);
+                    console.log(`[Underdog Bonus] Applying +${appliedBonusXP} XP to ${cleanAddress} (Tier ${currentTier})`);
+                }
+            }
+        }
+        // -----------------------------------------
+
+        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, Tier=${currentTier}, DB_Last=${dbLastPoints}, Delta=${xpDelta}${appliedBonusXP > 0 ? ` + Bonus=${appliedBonusXP}` : ''}`);
+
+        // 4. Update Profile (Identity, Points Balance, Tier & Bonus)
         const profileUpdate = {
             wallet_address: cleanAddress,
-            total_xp: onChainXP, // Sync current balance
-            tier: currentTier,   // NEW: Sync current on-chain tier
+            total_xp: onChainXP, // Raw on-chain balance
+            manual_xp_bonus: (profile?.manual_xp_bonus || 0) + appliedBonusXP, // Increment bonus pool
+            tier: currentTier,
             last_seen_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
@@ -235,8 +275,8 @@ async function handleXpSync(req, res) {
         const standardDailyReward = dailySetting?.points_value;
         const isDailyClaim = xpDelta > 0 && xpDelta === standardDailyReward;
         const taskId = isDailyClaim
-            ? '288596d8-b5a9-4faf-bde0-0dd28aaba902'
-            : '885535d2-4c5c-4a80-9af5-36666192c244';
+            ? TASK_IDS.DAILY_CLAIM_STREAK
+            : TASK_IDS.DAILY_CLAIM_REWARD;
 
         // ── STREAK LOGIC ──────────────────────────────────────────
         if (isDailyClaim) {
@@ -285,13 +325,13 @@ async function handleXpSync(req, res) {
                     action_type: 'contract_sync'
                 });
 
-            // 6. Log to user_activity_logs
+            // 6. Log to user_activity_logs (including bonus notification)
             await logActivity({
                 wallet: cleanAddress,
                 category: 'XP',
-                type: taskId === '288596d8-b5a9-4faf-bde0-0dd28aaba902' ? 'Daily Claim' : 'Contract Sync',
-                description: `Earned ${xpDelta} XP from ${taskId === '288596d8-b5a9-4faf-bde0-0dd28aaba902' ? 'Daily Bonus' : 'On-Chain Activity'}`,
-                amount: xpDelta,
+                type: taskId === TASK_IDS.DAILY_CLAIM_STREAK ? 'Daily Claim' : 'Contract Sync',
+                description: `Earned ${xpDelta} XP from ${taskId === TASK_IDS.DAILY_CLAIM_STREAK ? 'Daily Bonus' : 'On-Chain Activity'}${appliedBonusXP > 0 ? ` + ${appliedBonusXP} Underdog Bonus` : ''}`,
+                amount: xpDelta + appliedBonusXP,
                 symbol: 'XP'
             });
         }
@@ -355,23 +395,21 @@ async function handleUpdateProfile(req, res) {
         delete sanitizedPayload.total_xp;
         delete sanitizedPayload.referred_by;
         delete sanitizedPayload.tier; // Tier can ONLY be updated by cron/admin via SBT sync
-        delete sanitizedPayload.google_id; // OAuth identity locked — only sync-oauth can write this
-        delete sanitizedPayload.twitter_id; // OAuth identity locked
 
-        // 3. Force length limits (Rule 8.8) — UNCONDITIONAL, independent of pfp_url
-        if (sanitizedPayload.display_name) sanitizedPayload.display_name = sanitizedPayload.display_name.substring(0, 50);
-        if (sanitizedPayload.username) sanitizedPayload.username = sanitizedPayload.username.substring(0, 30);
-        if (sanitizedPayload.bio) sanitizedPayload.bio = sanitizedPayload.bio.substring(0, 160);
-        if (sanitizedPayload.pfp_url) sanitizedPayload.pfp_url = sanitizedPayload.pfp_url.substring(0, 500);
+        // 3. Force length limits — UNCONDITIONAL
+        if (sanitizedPayload.display_name) sanitizedPayload.display_name = sanitizedPayload.display_name.substring(0, PROFILE_LIMITS.MAX_NAME_LEN);
+        if (sanitizedPayload.username) sanitizedPayload.username = sanitizedPayload.username.substring(0, PROFILE_LIMITS.MAX_USERNAME_LEN);
+        if (sanitizedPayload.bio) sanitizedPayload.bio = sanitizedPayload.bio.substring(0, PROFILE_LIMITS.MAX_BIO_LEN);
+        if (sanitizedPayload.pfp_url) sanitizedPayload.pfp_url = sanitizedPayload.pfp_url.substring(0, 500); // URL length limit
 
-        // 4. Size Validation: Validate avatar URL file size (max 1MB) — only if pfp_url present
+        // 4. Size Validation: Validate avatar URL file size — only if pfp_url present
         if (sanitizedPayload.pfp_url) {
             try {
                 const imgRes = await fetch(sanitizedPayload.pfp_url, { method: 'HEAD' });
                 if (imgRes.ok) {
                     const contentLength = imgRes.headers.get('content-length');
-                    if (contentLength && parseInt(contentLength, 10) > 1048576) { // 1MB in bytes
-                        return res.status(400).json({ error: 'Avatar image size exceeds the 1MB limit. Please use a smaller image file.' });
+                    if (contentLength && parseInt(contentLength, 10) > PROFILE_LIMITS.MAX_AVATAR_BYTES) {
+                        return res.status(400).json({ error: `Avatar image size exceeds the ${Math.floor(PROFILE_LIMITS.MAX_AVATAR_BYTES / 1024 / 1024)}MB limit.` });
                     }
                 }
             } catch (err) {
@@ -380,7 +418,7 @@ async function handleUpdateProfile(req, res) {
             }
         }
 
-        // 5. Persist to DB — UNCONDITIONAL (was previously trapped inside if(pfp_url))
+        // 5. Persist to DB — UNCONDITIONAL
         const { error } = await supabaseAdmin
             .from('user_profiles')
             .update(sanitizedPayload)
@@ -393,9 +431,6 @@ async function handleUpdateProfile(req, res) {
     }
 }
 
-/**
- * handleGetActivityLogs: Fetch categorized logs for a user.
- */
 async function handleGetActivityLogs(req, res) {
     const { wallet, category, limit = 20 } = req.query;
     if (!wallet) return res.status(400).json({ error: 'Missing wallet address' });
@@ -851,6 +886,14 @@ async function handleSyncOAuth(req, res) {
                 .update(updateData)
                 .eq('wallet_address', normalizedWallet);
 
+            await logActivity({
+                wallet: normalizedWallet,
+                category: 'SOCIAL',
+                type: 'Identity Link',
+                description: `Linked Google account: ${google_email}`,
+                metadata: { provider: 'google', email: google_email }
+            });
+
             console.log(`[OAuth] Google account linked: ${google_email} → ${normalizedWallet}`);
             return res.status(200).json({ success: true, provider: 'google', email: google_email });
 
@@ -883,6 +926,14 @@ async function handleSyncOAuth(req, res) {
                 .from('user_profiles')
                 .update(updateData)
                 .eq('wallet_address', normalizedWallet);
+
+            await logActivity({
+                wallet: normalizedWallet,
+                category: 'SOCIAL',
+                type: 'Identity Link',
+                description: `Linked X account: @${twitter_username}`,
+                metadata: { provider: 'x', username: twitter_username }
+            });
 
             console.log(`[OAuth] X account linked: @${twitter_username} → ${normalizedWallet}`);
             return res.status(200).json({ success: true, provider: 'x', username: twitter_username });

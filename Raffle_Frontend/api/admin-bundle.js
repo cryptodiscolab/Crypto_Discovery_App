@@ -10,18 +10,17 @@ const supabaseAdmin = createClient(
     (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 );
 
-const rawAdmins = [
-    '0x08452c1bdaa6acd11f6ccf5268d16e2ac29c204b',
-    '0x52260c30697674a7C837FEB2af21bBf3606795C8',
-    '0x52260c30697674a7c837feb2af21bbf3606795c8',
+const AUTHORIZED_ADMINS = [
     (process.env.VITE_ADMIN_ADDRESS || '').trim(),
     (process.env.ADMIN_ADDRESS || '').trim(),
     (process.env.VITE_ADMIN_WALLETS || '').trim()
 ].join(',').toLowerCase().split(',').filter(Boolean);
 
-const AUTHORIZED_ADMINS = rawAdmins
-    .map(a => a?.trim().toLowerCase())
-    .filter(Boolean);
+const TASK_IDS = {
+    REFERRAL_XP: "12e123f5-0ded-4ca1-af04-e8b6924823e2",
+    ONCHAIN_TASK: "885535d2-4c5c-4a80-9af5-36666192c244",
+    TIER_UPGRADE: "2c1e23f5-0ded-4ca1-af04-e8b6924823e2"
+};
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -99,8 +98,8 @@ export default async function handler(req, res) {
                 const { data: auditLogs } = await supabaseAdmin.from('admin_audit_logs').select('action').in('action', ['SPONSOR_APPROVE', 'DEPLOY_BATCH_TASK']);
                 const { data: claims } = await supabaseAdmin.from('user_task_claims').select('xp_earned');
                 const totalXp = claims?.reduce((sum, c) => sum + (c.xp_earned || 0), 0) || 0;
-                const totalRevenueUSDC = (auditLogs?.length || 0);
-                return res.status(200).json({ success: true, metrics: { totalRevenueUSDC: totalRevenueUSDC.toFixed(2), netProfit: (totalRevenueUSDC * 0.7).toFixed(2), communityXp: totalXp } });
+                const netProfit = (totalRevenueUSDC * 0.8).toFixed(2); // 20% Project Rake (1 - 0.20)
+                return res.status(200).json({ success: true, metrics: { totalRevenueUSDC: totalRevenueUSDC.toFixed(2), netProfit, communityXp: totalXp } });
             }
 
             case 'NEXUS_DISPATCH': {
@@ -188,7 +187,8 @@ export default async function handler(req, res) {
             case 'RESET_SEASON': {
                 await supabaseAdmin.from('user_task_claims').delete().not('id', 'is', 'null');
                 // Rookie tier is 0
-                await supabaseAdmin.from('user_profiles').update({ xp: 0, total_xp: 0, tier: 0 }).not('wallet_address', 'is', 'null');
+                const ROOKIE_TIER = 0;
+                await supabaseAdmin.from('user_profiles').update({ xp: 0, total_xp: 0, tier: ROOKIE_TIER }).not('wallet_address', 'is', 'null');
                 return res.status(200).json({ success: true });
             }
             case 'AUDIT_GOVERNANCE': {

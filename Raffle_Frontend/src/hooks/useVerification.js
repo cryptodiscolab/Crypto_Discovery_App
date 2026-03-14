@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSignMessage } from 'wagmi';
+import { APP_CONFIG } from '../lib/contracts';
 import toast from 'react-hot-toast';
 
 export function useVerification(refetchStats) {
@@ -11,11 +12,11 @@ export function useVerification(refetchStats) {
         // 0. Anti-Fraud: 30s Delay Check
         const now = Date.now();
         const lastTime = lastActionTime[taskId] || 0;
-        const timeElapsed = (now - lastTime) / 1000;
-        const WAIT_DELAY = 30;
+        const diff = Math.floor((now - lastTime) / 1000);
+        const WAIT_DELAY = APP_CONFIG.SOCIAL_INDEX_DELAY_SEC;
 
-        if (timeElapsed < WAIT_DELAY) {
-            const remaining = Math.ceil(WAIT_DELAY - timeElapsed);
+        if (diff < WAIT_DELAY) {
+            const remaining = Math.ceil(WAIT_DELAY - diff);
             toast.error(`Anti-Fraud: Please wait ${remaining} seconds for social changes to be indexed.`);
             return false;
         }
@@ -92,27 +93,7 @@ export function useVerification(refetchStats) {
             }
 
             if (response.ok && result.success) {
-                // NEW: Record claim in Supabase immediately for Real-Time UX
-                // This ensures XP shows up before the next cron sync
-                if (isSocialTask) {
-                    try {
-                        await fetch('/api/tasks/social-verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                wallet_address: address,
-                                signature,
-                                message,
-                                task_id: taskId,
-                                platform: platform,
-                                action_type: task.action_type || 'social'
-                            })
-                        });
-                    } catch (e) {
-                        console.warn("[Sync] Instant XP update skipped:", e.message);
-                    }
-                }
-
+                // NEW: Verification and recorded in Supabase is now consolidated in /api/tasks-bundle
                 toast.success(result.message || "Verified! Points added successfully.", { id: tid });
                 if (refetchStats) refetchStats();
                 return true;

@@ -5,7 +5,7 @@ import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/u
 import { useVerification } from '../hooks/useVerification';
 import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../hooks/useFarcaster';
-import { DAILY_APP_ABI, CONTRACTS } from '../lib/contracts';
+import { ABIS, CONTRACTS, APP_CONFIG } from '../lib/contracts';
 import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
 
@@ -26,7 +26,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
         const updateTimer = () => {
             const now = Date.now();
             const diff = Math.floor((now - lastTime) / 1000);
-            const remaining = Math.max(0, 30 - diff);
+            const remaining = Math.max(0, APP_CONFIG.SOCIAL_INDEX_DELAY_SEC - diff);
             setTimeLeft(remaining);
             return remaining;
         };
@@ -47,7 +47,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
     // NEW: Check if task is already completed (One-time logic)
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
         address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
+        abi: ABIS.DAILY_APP,
         functionName: 'hasCompletedTask',
         args: [address, taskId],
         query: { enabled: !!address && !!task && task.sponsorshipId > 0 }
@@ -89,13 +89,13 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                         This task requires a Farcaster account. Join now to start earning XP!
                     </p>
                     <a
-                        href="https://farcaster.xyz/~/code/CJ393F"
+                        href={APP_CONFIG.FARCASTER_REFERRAL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[9px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
                         onClick={() => toast.dismiss(t.id)}
                     >
-                        Sign Up with Code CJ393F
+                        Sign Up for Farcaster
                     </a>
                 </div>
             ), { duration: 8000, id: 'fc-referral-nudge' });
@@ -135,13 +135,13 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                         Cannot verify Farcaster tasks without a connected account.
                     </p>
                     <a
-                        href="https://farcaster.xyz/~/code/CJ393F"
+                        href={APP_CONFIG.FARCASTER_REFERRAL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[9px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
                         onClick={() => toast.dismiss(t.id)}
                     >
-                        Sign Up with Code CJ393F
+                        Join Farcaster
                     </a>
                 </div>
             ), { duration: 8000, id: 'fc-verify-blocked' });

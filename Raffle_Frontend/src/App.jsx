@@ -31,59 +31,82 @@ const ProtectedLayout = () => (
   </SignatureGuard>
 );
 
-import { FarcasterProvider } from './shared/context/FarcasterContext';
+import { FarcasterProvider, useFarcaster } from './shared/context/FarcasterContext';
+
+function AppContent() {
+  const { isFrame, safeAreaInsets, client } = useFarcaster();
+
+  // Dynamic padding based on Farcaster Safe Area Insets
+  const safePaddingTop = isFrame ? (safeAreaInsets?.top || 0) : 0;
+  const safePaddingBottom = isFrame ? (safeAreaInsets?.bottom || 0) : 0;
+
+  // Sync theme with Farcaster
+  const theme = client?.config?.theme === 'light' ? 'light' : 'dark';
+
+  return (
+    <BrowserRouter>
+      <ReferralTracker />
+      <div className={`${theme} min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col`}>
+        {!isFrame && <Header />}
+        
+        <main 
+          className={`flex-1 ${!isFrame ? 'pt-16 pb-20 md:pb-6' : ''}`}
+          style={isFrame ? { 
+            paddingTop: `${safePaddingTop}px`,
+            paddingBottom: `calc(58px + ${safePaddingBottom}px)` // Keep BottomNav space
+          } : {
+            paddingBottom: 'max(80px, calc(58px + env(safe-area-inset-bottom, 0px)))'
+          }}
+        >
+          <ErrorBoundary>
+            <Suspense fallback={
+              <div className="min-h-[60vh] flex items-center justify-center">
+                <SkeletonLoader />
+              </div>
+            }>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+                <Route element={<ProtectedLayout />}>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/tasks" element={<TasksPage />} />
+                  <Route path="/raffles" element={<RafflesPage />} />
+                  <Route path="/leaderboard" element={<LeaderboardPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                  <Route path="/campaigns" element={<CampaignsPage />} />
+                  <Route path="/create-raffle" element={<CreateRafflePage />} />
+                  <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+                </Route>
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
+        </main>
+
+        <BottomNav />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: '#161B22',
+              color: '#e2e8f0',
+              borderRadius: '12px',
+              fontSize: '13px',
+              fontWeight: 600,
+            }
+          }}
+        />
+      </div>
+    </BrowserRouter>
+  );
+}
 
 function App() {
   return (
     <Web3Provider>
       <PointsProvider>
         <FarcasterProvider>
-          <BrowserRouter>
-            <ReferralTracker />
-            {/* Root wrapper: pointer-events-auto required — never set to none here */}
-            <div className="dark min-h-screen bg-[#0B0E14] text-slate-100">
-              <Header />
-              {/* pt-16 = Header height (h-16). pb = BottomNav (58px) + iOS safe area on mobile. md:pb-0 = no BottomNav on desktop */}
-              <main className="pt-16 pb-20 md:pb-6 min-h-screen" style={{ paddingBottom: 'max(80px, calc(58px + env(safe-area-inset-bottom, 0px)))' }}>
-                <ErrorBoundary>
-                  <Suspense fallback={
-                    <div className="min-h-[60vh] flex items-center justify-center">
-                      <SkeletonLoader />
-                    </div>
-                  }>
-                    <Routes>
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
-                      <Route element={<ProtectedLayout />}>
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/tasks" element={<TasksPage />} />
-                        <Route path="/raffles" element={<RafflesPage />} />
-                        <Route path="/leaderboard" element={<LeaderboardPage />} />
-                        <Route path="/profile" element={<ProfilePage />} />
-                        <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                        <Route path="/campaigns" element={<CampaignsPage />} />
-                        <Route path="/create-raffle" element={<CreateRafflePage />} />
-                        <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
-                      </Route>
-                    </Routes>
-                  </Suspense>
-                </ErrorBoundary>
-              </main>
-              <BottomNav />
-              <Toaster
-                position="bottom-right"
-                toastOptions={{
-                  style: {
-                    background: '#161B22',
-                    color: '#e2e8f0',
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                  }
-                }}
-              />
-            </div>
-          </BrowserRouter>
+          <AppContent />
         </FarcasterProvider>
       </PointsProvider>
     </Web3Provider>

@@ -34,24 +34,42 @@ export const HypeFeed = () => {
 
     const fetchRecentActivity = async () => {
         try {
-            // Fetch recent task claims
+            // Fetch real activities with user profiles join
             const { data, error } = await supabase
-                .from('v_user_full_profile') // Use view for better data
-                .select('wallet_address, display_name, username, pfp_url, total_xp')
-                .gt('total_xp', 0)
-                .order('total_xp', { ascending: false }) // Just pick some active users for the "vibe"
+                .from('user_activity_logs')
+                .select(`
+                    id,
+                    description,
+                    activity_type,
+                    created_at,
+                    wallet_address,
+                    user_profiles:wallet_address (
+                        display_name,
+                        username,
+                        pfp_url
+                    )
+                `)
+                .order('created_at', { ascending: false })
                 .limit(10);
 
             if (error) throw error;
 
+            if (!data || data.length === 0) {
+                setActivities([]);
+                return;
+            }
+
             // Transform into feed items
-            const feed = (data || []).map(user => ({
-                id: user.wallet_address,
-                name: user.display_name || user.username || `${user.wallet_address.slice(0, 4)}...${user.wallet_address.slice(-4)}`,
-                avatar: user.pfp_url,
-                message: hypeMessages[Math.floor(Math.random() * hypeMessages.length)],
-                type: 'activity'
-            }));
+            const feed = data.map(log => {
+                const user = log.user_profiles;
+                return {
+                    id: log.id,
+                    name: user?.display_name || user?.username || `${log.wallet_address.slice(0, 4)}...${log.wallet_address.slice(-4)}`,
+                    avatar: user?.pfp_url,
+                    message: log.description || "is active in the Nexus",
+                    type: 'activity'
+                };
+            });
 
             setActivities(feed);
         } catch (e) {

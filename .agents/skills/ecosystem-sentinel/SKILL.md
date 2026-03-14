@@ -40,7 +40,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_3.md`
+**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_5_0.md`
 (Versi lama diarsipkan di `PRD/_archive/`)
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
@@ -75,8 +75,8 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.3.3 (Social Reliability & Profile UX Edition — Iterative Pagination & Interactive Social Linking)
-- **Status:** Single source of truth. Versi lama (v3.1, v3.2, DISCO_DAILY_MASTER_PRD) diarsipkan di `PRD/_archive/`
+- **Versi Terakhir:** 3.5.0 (Zero-Hardcode Housecleaning & Universal API Edition — Standardisasi PROFILE_LIMITS dan normalisasi universal API bundles)
+- **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
 
@@ -122,13 +122,12 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 6.  **Defensive Address Cleaning Mandate**: EVERY contract address fetched from environment variables MUST be cleaned of quotes, spaces, and hidden characters before use.
 7. **ENV-SANITY Mandate (Cloud Integrity)**: PROHIBIT the use of environment variables containing literal double quotes (e.g., `""value""`) or hidden newlines (`\r\n`). EVERY environment variable access in serverless bundles MUST include `.trim()` to prevent "Silent Corruption" causing initialization failures.
 
-## 🏛️ Verified Infrastructure Reference (v3.2)
-
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
 | **Raffle V2** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
+| **PRD v3.5.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_5_0.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 

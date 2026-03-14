@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignMessage, usePublicClient } from 'wagmi';
-import { ABIS, CONTRACTS } from '../lib/contracts'; // BUG-7 fix: use canonical ABI
+import { ABIS, CONTRACTS, APP_CONFIG } from '../lib/contracts'; // BUG-7 fix: use canonical ABI
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
 
@@ -119,7 +119,7 @@ export function useDoTask() {
 
     const publicClient = usePublicClient();
 
-    const doTask = async (taskId, referrer = "0x0000000000000000000000000000000000000000") => {
+    const doTask = async (taskId, referrer = APP_CONFIG.ZERO_ADDRESS) => {
         const hash = await writeContractAsync({
             address: V12_ADDRESS,
             abi: ABIS.DAILY_APP,
