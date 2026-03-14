@@ -37,7 +37,7 @@ async function main() {
         }
     ];
 
-    console.log('🚀 Setting whitelisted_tokens in system_settings...');
+    console.log('🚀 Setting allowed_tokens (fallback) in system_settings...');
 
     const { error } = await supabase
         .from('system_settings')

@@ -31,7 +31,7 @@ export function BlockchainConfigSection() {
         tasks: '3'
     });
 
-    const { prices } = usePriceOracle(ecosystemSettings?.whitelisted_tokens?.map(t => t.address) || []);
+    const { prices } = usePriceOracle((ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens)?.map(t => t.address) || []);
     
     // Derived USD values for indicators
     const getUsdValue = (amount, isUsdc = false) => {
@@ -40,7 +40,7 @@ export function BlockchainConfigSection() {
         
         // For reward tokens, we need to know WHICH token it is. 
         // In Admin panel, it's a bit tricky because the 'minPool' or 'reward' 
-        // could be in ANY whitelisted token. We'll show valuation for ETH as a baseline or Creator Token.
+        // could be in ANY allowed/whitelisted token. We'll show valuation for ETH as a baseline or Creator Token.
         const ethPrice = prices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || prices['0x4200000000000000000000000000000000000006'] || 0;
         const raw = parseFloat(amount) / 1e18;
         return raw * ethPrice;
@@ -55,7 +55,13 @@ export function BlockchainConfigSection() {
         dailyApp: CONTRACTS.DAILY_APP || '',
         masterX: CONTRACTS.MASTER_X || ''
     });
-    const [newTokenWhitelist, setNewTokenWhitelist] = useState('');
+    const [newTokenWhitelist, setNewTokenWhitelist] = useState({
+        address: '',
+        symbol: '',
+        decimals: '18',
+        chain_id: '8453' // Default to Base
+    });
+    const tokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
 
     // 1. READ Global Rewards
     const { data: qDaily } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'dailyBonusAmount' });
@@ -278,6 +284,28 @@ export function BlockchainConfigSection() {
         finally { setIsSaving(false); }
     };
 
+    const handleSyncTokenToDb = async (action, tokenData) => {
+        try {
+            const message = `Action: ${action}\nToken: ${tokenData.address}\nTimestamp: ${Date.now()}`;
+            const sig = await window.ethereum.request({ 
+                method: 'personal_sign', 
+                params: [message, window.ethereum.selectedAddress] 
+            });
+            
+            await axios.post('/api/admin-bundle', {
+                action: action,
+                wallet_address: window.ethereum.selectedAddress,
+                signature: sig,
+                message: message,
+                payload: tokenData
+            });
+            toast.success(`Token ${action === 'WHITELIST_TOKEN_DB' ? 'Added to' : 'Removed from'} Database!`);
+        } catch (err) {
+            console.error("DB Sync failed:", err);
+            toast.error("Contract updated, but DB sync failed.");
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Rewards Card */}
@@ -486,18 +514,87 @@ export function BlockchainConfigSection() {
                     </div>
 
                     {/* Payment Token Whitelist Management */}
-                    <div className="space-y-3 pt-4 border-t border-white/5">
-                        <label className="text-[9px] font-black text-slate-500 uppercase">Payment Token Whitelist Management</label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div className="md:col-span-2 space-y-1">
-                                <input type="text" value={newTokenWhitelist} onChange={e => setNewTokenWhitelist(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="Token Address (0x...)" />
-                            </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist, true])} className="flex-1 bg-green-600/20 hover:bg-green-600/40 border border-green-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-green-400">Whitelist</button>
-                                <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist, false])} className="flex-1 bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-500">Remove</button>
-                            </div>
+                    {/* Payment Token Whitelist Management */}
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Payment Token Whitelist Management</label>
+                        
+                        {/* Current Whitelist Display */}
+                        <div className="overflow-hidden rounded-xl border border-white/5 bg-black/20">
+                            <table className="w-full text-left text-[10px]">
+                                <thead className="bg-white/5 text-slate-400 uppercase font-black">
+                                    <tr>
+                                        <th className="px-4 py-2">Symbol</th>
+                                        <th className="px-4 py-2">Chain</th>
+                                        <th className="px-4 py-2">Address</th>
+                                        <th className="px-4 py-2">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5 text-white">
+                                    {tokens.map((token, i) => (
+                                        <tr key={i} className="hover:bg-white/5 transition-colors">
+                                            <td className="px-4 py-2 font-black">{token.symbol}</td>
+                                            <td className="px-4 py-2 text-slate-400">{token.chain_id}</td>
+                                            <td className="px-4 py-2 font-mono text-[9px]">{token.address.slice(0,6)}...{token.address.slice(-4)}</td>
+                                            <td className="px-4 py-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        const p = { address: token.address, chain_id: token.chain_id };
+                                                        handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [p.address, false]);
+                                                        handleSyncTokenToDb('REMOVE_TOKEN_DB', p);
+                                                    }}
+                                                    className="text-red-400 hover:text-red-300 font-bold uppercase"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {tokens.length === 0 && (
+                                        <tr>
+                                            <td colSpan="4" className="px-4 py-4 text-center text-slate-500 italic">No custom tokens whitelisted.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                        <p className="text-[9px] text-slate-600 italic">Native ETH (0x00...0) is whitelisted by default. Use this to allow or block custom ERC20 tokens for sponsorships.</p>
+
+                        {/* Add New Token Form */}
+                        <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/5">
+                            <p className="text-[9px] font-black text-indigo-400 uppercase">Add New Token</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-[8px] text-slate-500 uppercase font-bold">Address</label>
+                                    <input type="text" value={newTokenWhitelist.address} onChange={e => setNewTokenWhitelist({...newTokenWhitelist, address: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-mono text-white" placeholder="0x..." />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] text-slate-500 uppercase font-bold">Symbol</label>
+                                    <input type="text" value={newTokenWhitelist.symbol} onChange={e => setNewTokenWhitelist({...newTokenWhitelist, symbol: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white" placeholder="USDC" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] text-slate-500 uppercase font-bold">Decimals</label>
+                                    <input type="number" value={newTokenWhitelist.decimals} onChange={e => setNewTokenWhitelist({...newTokenWhitelist, decimals: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] text-slate-500 uppercase font-bold">Chain ID</label>
+                                    <input type="number" value={newTokenWhitelist.chain_id} onChange={e => setNewTokenWhitelist({...newTokenWhitelist, chain_id: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white" />
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    if (!newTokenWhitelist.address || !newTokenWhitelist.symbol) return toast.error("Missing fields");
+                                    handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist.address, true]);
+                                    handleSyncTokenToDb('WHITELIST_TOKEN_DB', {
+                                        ...newTokenWhitelist,
+                                        decimals: parseInt(newTokenWhitelist.decimals),
+                                        chain_id: parseInt(newTokenWhitelist.chain_id)
+                                    });
+                                }}
+                                className="w-full bg-green-600/20 hover:bg-green-600/40 border border-green-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-green-400"
+                            >
+                                Whitelist & Sync to Database
+                            </button>
+                        </div>
+                        <p className="text-[9px] text-slate-600 italic">Native ETH is enabled by default in the contract. Whitelisting ERC20s here will enable them for Sponsorships and be indexed by the UI.</p>
                     </div>
                 </div>
             </div>

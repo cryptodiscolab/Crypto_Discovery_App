@@ -84,3 +84,10 @@ Raffle_Frontend/supabase/.temp/
 
 # === OTHER VERCEL PROJECTS ===
 verification_vault/
+
+# === DATA DUMP & LOGS HYGIENE (Mandatory) ===
+supabase_full_dump.json
+*.sql.dump
+full_supabase_dump.sql
+nexus-activity.json
+nexus-bridge.json
