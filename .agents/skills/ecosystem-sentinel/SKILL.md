@@ -83,9 +83,10 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadikan **.cursorrules (Master Architect Protocol)** sebagai otoritas tertinggi.
 
 ### 💎 PRINSIP KEJUJURAN & MANFAAT NYATA (MANDATORY)
-1. **Kejujuran Mutlak (Technical Honesty)**: Agent dilarang memanipulasi laporan atau menyembunyikan kelemahan sistem hanya untuk menyenangkan user. Kejujuran teknis adalah prioritas utama untuk mencegah kegagalan sistem di masa depan.
-2. **Anti-Protokol Kertas**: Dilarang membuat aturan atau alur kerja yang hanya bagus di dokumen Markdown. Setiap keinginan user harus diwujudkan menjadi kode fungsional, script automasi, atau fitur nyata yang memberikan manfaat bagi orang banyak.
-3. **Implementasi Kemanusiaan**: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, bukan sekadar pemenuhan spesifikasi teknis.
+1.  **Kejujuran Mutlak (Technical Honesty)**: Agent dilarang memanipulasi laporan atau menyembunyikan kelemahan sistem hanya untuk menyenangkan user. Kejujuran teknis adalah prioritas utama untuk mencegah kegagalan sistem di masa depan.
+2.  **Anti-Protokol Kertas**: Dilarang membuat aturan atau alur kerja yang hanya bagus di dokumen Markdown. Setiap keinginan user harus diwujudkan menjadi kode fungsional, script automasi, atau fitur nyata yang memberikan manfaat bagi orang banyak.
+3.  **Implementasi Kemanusiaan**: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, serta mengabdi pada misi membantu keluarga, mitra, dan orang-orang baik yang membutuhkan melalui sistem yang jujur dan efisien.
+4.  **Evolusi Nexus (Self-Learning)**: Kegagalan teknis adalah guru terbaik. Agen wajib mendokumentasikan "Lessons Learned" di `agent_vault` untuk mencegah regresi bug yang sama (misal: OAuth State Mismatch).
 
 ## 📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)
 
@@ -107,18 +108,18 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 ## 🧠 THE PERFECTIONIST PROTOCOL (Advanced Intelligence & Precision)
 
 **Mandat Utama untuk Antigravity:**
-1. **Zero-Error Import Guard**: Sebelum melakukan `write`, Agent **WAJIB** melakukan pemindaian seluruh file (`grep` atau simbol) untuk memastikan setiap komponen UI atau ikon yang baru ditambahkan sudah terdaftar dalam `import`. Tidak ada lagi `ReferenceError`.
-2. **Deep Knowledge Discovery**: Jangan hanya melihat satu file. Gunakan `grep_search` secara luas di seluruh direktori untuk menemukan pola arsitektur yang sudah ada, sehingga setiap fitur baru terasa "asli" (native) dan tidak tumpang tindih.
-3. **Eternal Memory Alignment**: Selalu baca `SKILL.md` dan `.cursorrules` secara berkala (setiap sesi baru) untuk menyinkronkan memori dengan spek hardware user (i5-4210U) dan nilai-nilai Kebaikan Jalan Allah (Zero Riba, Kejujuran Data).
-4. **Infinite Precision Audit**: Lakukan "Self-Correction" sebelum memberikan hasil. Jika mendeteksi potensi redundansi atau inefisiensi, hapus dan tulis ulang dengan logika yang lebih elegan (Senior Staff level).
+1.  **Zero-Error Import Guard**: Sebelum melakukan `write`, Agent **WAJIB** melakukan pemindaian seluruh file (`grep` atau simbol) untuk memastikan setiap komponen UI atau ikon yang baru ditambahkan sudah terdaftar dalam `import`. Tidak ada lagi `ReferenceError`.
+2.  **Deep Knowledge Discovery**: Jangan hanya melihat satu file. Gunakan `grep_search` secara luas di seluruh direktori untuk menemukan pola arsitektur yang sudah ada, sehingga setiap fitur baru terasa "asli" (native) dan tidak tumpang tindih.
+3.  **Eternal Memory Alignment**: Selalu baca `SKILL.md` dan `.cursorrules` secara berkala (setiap sesi baru) untuk menyinkronkan memori dengan spek hardware user (i5-4210U) dan nilai-nilai Kebaikan Jalan Allah (Zero Riba, Kejujuran Data).
+4.  **Infinite Precision Audit**: Lakukan "Self-Correction" sebelum memberikan hasil. Jika mendeteksi potensi redundansi atau inefisiensi, hapus dan tulis ulang dengan logika yang lebih elegan (Senior Staff level).
 
 ## 🛡️ CORE RULES: THE PERFECTIONIST PROTOCOL
-1. **Zero-Hardcode Mandate (CRITICAL)**: Perform `grep_search` on every task to detect hardcoded reward strings, pricing, or fees. Prohibit static values; all parameters MUST be fetched from `point_settings` or dynamic configs.
-2. **Point-Sync Automation**: Verify that every reward event fetches its `points_value` from the canonical `point_settings` table.
-3. **Admin-Dashboard Sync**: Ensure all administrative controls (Web & Bot) display and use dynamic settings.
-4. **Anti-Inflation Guard (SBT Limits)**: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.
-5. **Anti-Sticker-Shock (Gas Guard)**: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.
-6. **Defensive Address Cleaning Mandate**: EVERY contract address fetched from environment variables MUST be cleaned of quotes, spaces, and hidden characters before use.
+1.  **Zero-Hardcode Mandate (CRITICAL)**: Perform `grep_search` on every task to detect hardcoded reward strings, pricing, or fees. Prohibit static values; all parameters MUST be fetched from `point_settings` or dynamic configs.
+2.  **Point-Sync Automation**: Verify that every reward event fetches its `points_value` from the canonical `point_settings` table.
+3.  **Admin-Dashboard Sync**: Ensure all administrative controls (Web & Bot) display and use dynamic settings.
+4.  **Anti-Inflation Guard (SBT Limits)**: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.
+5.  **Anti-Sticker-Shock (Gas Guard)**: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.
+6.  **Defensive Address Cleaning Mandate**: EVERY contract address fetched from environment variables MUST be cleaned of quotes, spaces, and hidden characters before use.
 
 ## 🏛️ Verified Infrastructure Reference (v3.2)
 
@@ -208,7 +209,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Dynamic Proportionality**: Pastikan pembagian revenue (SBT Weights) selalu berjumlah tepat 100% dan tercermin dalam UI admin dengan visual validation.
 
 ### 8. Cloud Infrastructure Config Sync (Supabase & Vercel)
-- **Persistent AI Configurations**: Mengekspor file konfigurasi AI (`.agents/*` dan `.cursorrules`) langsung ke Supabase Storage (atau tabel khusus) sebagai _Single Source of Truth_ lintas-environment. 
+- **Persistent AI Configurations**: Mengekspor file konfigurasi AI (`.agents/*` dan `.cursorrules`) langsung ke Supabase Storage (atau tabel khusus) sebagai _Single Source of Truth_ lintas-environment.
 - **Vercel Automation**:
   - Sinkronisasi environment variables otomatis via Vercel CLI jika ada update pada `.env`.
   - Trigger Vercel deployments via Vercel CLI/Webhooks jika tes lokal valid.
@@ -306,6 +307,9 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Ascension Sync**: Apakah tier di DB ter-update otomatis sesaat setelah SBT minting?
 - [ ] **Defensive Cleaning**: Apakah alamat kontrak sudah dibersihkan dari karakter ilegal (spasi/quotes) sebelum digunakan?
 - [ ] **Multi-Project Sync**: Memastikan seluruh project Vercel (`crypto-discovery-app`, `dailyapp-verification-server`) menggunakan alamat kontrak yang identik untuk semua environment (Mainnet/Sepolia).
+- [ ] **SDK-First Audit**: Apakah fitur Auth/Security menggunakan SDK resmi? (Dilarang manual URL/REST jika SDK tersedia).
+- [ ] **Env-Sanity Check**: Apakah API menggunakan `.trim()` pada alamat kontrak/key dari environment variables untuk mencegah silent corruption?
+- [ ] **Nexus Evolution**: Apakah pelajaran dari task ini (jika ada bug pelik) sudah didokumentasikan di protokol atau `agent_vault`?
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix)*: `node scripts/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
 
 ## 🚨 Pantangan

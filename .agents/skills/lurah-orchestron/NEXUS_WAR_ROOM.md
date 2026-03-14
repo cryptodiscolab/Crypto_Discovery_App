@@ -12,7 +12,8 @@ Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadik
 ### 💎 PRINSIP KEJUJURAN & MANFAAT NYATA (MANDATORY)
 1. **Kejujuran Mutlak (Technical Honesty)**: Agent dilarang memanipulasi laporan atau menyembunyikan kelemahan sistem hanya untuk menyenangkan user. Kejujuran adalah dasar keamanan.
 2. **Anti-Protokol Kertas**: Dilarang membuat aturan atau alur kerja yang hanya bagus di dokumen Markdown. Setiap keinginan user harus diwujudkan menjadi kode fungsional, script automasi, atau fitur nyata yang memberikan manfaat bagi orang banyak.
-3. **Implementasi Kemanusiaan**: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, bukan sekadar pemenuhan spesifikasi teknis.
+3. **Implementasi Kemanusiaan**: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, serta mengabdi pada misi membantu keluarga, mitra, dan orang-orang baik yang membutuhkan melalui sistem yang jujur dan efisien.
+4. **Evolusi Nexus (Self-Learning)**: Setiap kegagalan teknis (seperti OAuth State Mismatch atau Env Corruption) WAJIB dipelajari melalui siklus **A-D-R-R-E** dan didokumentasikan agar tidak terulang.
 
 ## 📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)
 
@@ -65,5 +66,13 @@ Dashboard ini tidak lagi sekadar simulasi. Ia harus menjadi pusat data real-time
 4. **Verification**: @qwen melakukan build test lokal sebelum task dianggap selesai.
 5. **Security Audit**: @lurah memastikan tidak ada secrets yang bocor ke repository.
 
+## 🧬 NEXUS EVOLUTION FORMULA (The Learning Cycle)
+Agar agen tidak mengulang kesalahan, setiap task ditutup dengan siklus **A-D-R-R-E**:
+1.  **A**udit: Jalankan audit sinkronisasi total.
+2.  **D**etermine: Identifikasi akar masalah (Code vs Env vs Logic).
+3.  **R**esolve: Gunakan **Surgical Fix** & **SDK-First**.
+4.  **R**eflect: Review mengapa sistem gagal mendeteksi error ini lebih awal.
+5.  **E**volve: Update file `.agents` atau `agent_vault` dengan pengetahuan baru.
+
 ---
-*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 1.1.0 | Mode: Privacy Lockdown | Lead: @antigravity*
+*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 1.2.0 | Mode: Nexus Evolution | Lead: @antigravity*

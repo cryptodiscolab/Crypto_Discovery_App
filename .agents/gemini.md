@@ -168,7 +168,20 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 Push kode TANPA Gitleaks check
 - 🚫 Commit `.env`, Private Key, atau API Key
 - 🚫 Buat API endpoint baru di luar bundle (Vercel limit 12)
-- 🚫 Memulai task baru sebelum menyelesaikan bug yang ditemukan saat audit
+171: - 🚫 Memulai task baru sebelum menyelesaikan bug yang ditemukan saat audit
+172: - 🚫 Membuat manual OAuth/Social URLs jika SDK resmi tersedia (**SDK-FIRST**)
+173: - 🚫 Melakukan audit tanpa memeriksa "Silent Corruption" di Vercel Env (**ENV-SANITY**)
+174: 
+175: ---
+176: 
+177: ## 8. 🧬 NEXUS EVOLUTION FORMULA (Self-Learning)
+178: 
+179: Untuk memastikan kesalahan tidak pernah terulang, gunakan siklus **A-D-R-R-E**:
+180: 1.  **A**udit: Jalankan `check_sync_status.cjs` & `gitleaks-check`.
+181: 2.  **D**etermine: Identifikasi apakah kegagalan adalah Kode, Data, atau Korupsi Environment.
+182: 3.  **R**esolve: Implementasi fix dengan **Surgical Fix** + **SDK-First**.
+183: 4.  **R**eflect: Dokumentasikan *mengapa* gagal (misal: "Manual URL construction bypassed state verifier").
+184: 5.  **E**volve: Update protokol ini dan `agent_vault` dengan pelajaran baru.
 
 ---
 

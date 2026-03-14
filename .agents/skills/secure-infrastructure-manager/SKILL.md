@@ -43,7 +43,8 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - [x] **Git Safety**: Pastikan `.env` dan `.env.local` ada di `.gitignore`.
 - [x] **No-Screenshot Mandate**: DILARANG KERAS men-staged atau meng-upload file screenshot/media hasil audit ke Git.
 - [x] **Zero-Leak Mandate**: DILARANG KERAS mempublikasikan variabel atau file yang mengandung `role_key`, `service_role_key`, `secret`, atau kredensial mentah lainnya. Gunakan `.env`.
-- [x] **Defensive Address Cleaning**: DILARANG menggunakan alamat kontrak yang masih mengandung tanda kutip, spasi, atau karakter tersembunyi. WAJIB dibersihkan via `cleanAddr`.
+- [x] **Defensive Address Cleaning**: DILARANG menggunakan alamat kontrak yang masih mengandung tanda kutip, spasi, atau karakter tersembunyi. WAJIB dibersihkan via `cleanAddr` atau `.trim()`.
+- [x] **SDK-First Principle**: Mandatory usage of official SDKs for Auth and Social flows to ensure State/PKCE integrity.
 - [ ] **Multi-Project Vercel Sync**: Wajib melakukan sinkronisasi environment variable (`VITE_V12_CONTRACT_ADDRESS`) secara atomik di seluruh project terkait (`verification-server`) menggunakan Vercel CLI.
 - [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env`, `PRIVATE_KEY`, atau `role_key`.
 
@@ -110,3 +111,5 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - Memasukkan `PRIVATE_KEY` atau `SERVICE_ROLE_KEY` ke variabel `VITE_`.
 - Update database langsung dari client-side React.
 - **Menggunakan inline ABI atau direct JSON export untuk ABI.**
+- **Manual Security URL**: Menghasilkan URL OAuth atau Social Linking secara manual jika SDK resmi (Supabase) tersedia.
+- **Corrupted Env Usage**: Menggunakan variabel lingkungan (`SUPABASE_URL`, dll) tanpa melakukan `.trim()` atau pembersihan "Silent Corruption".

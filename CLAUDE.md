@@ -33,9 +33,12 @@ Before responding to ANY request, read these files IN ORDER:
 7. **ZERO-LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`). Files in `tools/nexus-monitor/` must be ignored via `.gitleaks.toml` and `.gitignore`.
 8. **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
 9. **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
-10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr`.
+10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr` or `.trim()`.
 11. **MULTI-PROJECT VERCEL SYNC**: Mandatory CLI environment sync across all projects (DailyApp + Verification Server).
 12. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination (500 items) and Profile Page linking must be interactive (v3.3.3).
+13. **SDK-FIRST**: Never construct manual OAuth/Social URLs or raw REST calls for Auth/Payments if an official SDK (Supabase, Viem, etc.) exists.
+14. **ENV-SANITY**: Always verify Vercel environment variables for "Silent Corruption" (literal double-quotes or newlines) during audit.
+15. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
 
 ---
 
@@ -86,6 +89,15 @@ Notify user format after fix:
 -   `git push` without `npm run gitleaks-check`
 -   New API files outside `*-bundle.js`
 -   Starting new feature before fixing all bugs found during audit
+
+## 🧬 NEXUS EVOLUTION FORMULA (Agent Learning)
+
+To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
+1.  **A**udit: Run `check_sync_status.cjs` & `gitleaks-check`.
+2.  **D**etermine: Identify if the failure is Code, Data, or Environment Corruption.
+3.  **R**esolve: Implement fix using **Surgical Fix** + **SDK-First**.
+4.  **R**eflect: Document *why* it failed (e.g., "Manual URL construction bypassed state verifier").
+5.  **E**volve: Update this protocol and the `agent_vault` if a *new* failure type is found.
 
 ---
 
