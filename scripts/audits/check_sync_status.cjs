@@ -10,7 +10,7 @@ if (!SUPABASE_SERVICE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const { logActivity } = require('./nexus-bridge.cjs');
+const { logActivity } = require('../debug/nexus-bridge.cjs');
 
 async function fullVerification() {
     console.log("╔══════════════════════════════════════════════════════════╗");

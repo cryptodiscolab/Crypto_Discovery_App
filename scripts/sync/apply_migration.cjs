@@ -1,7 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../Raffle_Frontend/.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../Raffle_Frontend/.env') });
 
 async function main() {
     const SUPABASE_URL = process.env.VITE_SUPABASE_URL;

@@ -40,7 +40,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > **PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.** Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.
 
 ### 📍 Lokasi Kanonik PRD
-**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_5_0.md`
+**File:** `e:\Disco Gacha\Disco_DailyApp\PRD\PRD_Crypto_Disco_v3_6_0.md`
 (Versi lama diarsipkan di `PRD/_archive/`)
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
@@ -75,7 +75,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.5.0 (Zero-Hardcode Housecleaning & Universal API Edition — Standardisasi PROFILE_LIMITS dan normalisasi universal API bundles)
+- **Versi Terakhir:** 3.6.0 (Atomic Script Organization & n8n Hybrid Automation — Restrukturisasi total folder scripts untuk modularitas dan kesiapan orkestrasi visual)
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -126,8 +126,8 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 |---|---|---|
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
-| **Raffle V2** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
-| **PRD v3.5.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_5_0.md` |
+| **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
+| **PRD v3.6.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_6_0.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
@@ -138,7 +138,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 - **Auto-Fixing**: Jika ditemukan error atau logika yang membingungkan, Agent wajib memberikan solusi perbaikan instan sebelum melakukan commit/push.
 
 > [!IMPORTANT]
-> **AUDIT-FIRST MANDATE**: Agent DILARANG KERAS langsung menulis kode fix tanpa terlebih dahulu menjalankan Pre-Fix Audit (`node scripts/check_sync_status.cjs`). Setelah fix diterapkan, Agent WAJIB menjalankan Re-Audit untuk membuktikan perbaikan valid. Lihat **Section 29 di .cursorrules** untuk prosedur lengkap.
+> **AUDIT-FIRST MANDATE**: Agent DILARANG KERAS langsung menulis kode fix tanpa terlebih dahulu menjalankan Pre-Fix Audit (`node scripts/audits/check_sync_status.cjs`). Setelah fix diterapkan, Agent WAJIB menjalankan Re-Audit untuk membuktikan perbaikan valid. Lihat **Section 29 di .cursorrules** untuk prosedur lengkap.
 - **UX/UI Polish (Senior UI/UX Standards)**: Memastikan elemen UI terasa premium (glassmorphism, micro-animations) dan tidak ada "Glass Wall" (elemen tidak bisa diklik). Mengikuti prinsip "Clean & Rugged", "Atomic Layout", dan "Minimalist Modern Standards" (Section 13 of .cursorrules).
 - **UI/UX Audit**: Melakukan audit visual untuk memastikan:
   - Horizontal overflow tidak terjadi di mobile.
@@ -285,13 +285,13 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Cloud Config Sync**: `node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js`
 
 ## 📋 Checklist Sentinel (MANDATORY)
-- [ ] **🔍 PRE-FIX AUDIT** *(BARU - WAJIB dijalankan SEBELUM fix apapun)*: `node scripts/check_sync_status.cjs` — Pastikan baseline ekosistem terdokumentasi.
+- [ ] **🔍 PRE-FIX AUDIT** *(BARU - WAJIB dijalankan SEBELUM fix apapun)*: `node scripts/audits/check_sync_status.cjs` — Pastikan baseline ekosistem terdokumentasi.
 - [ ] **Clean Git Tree**: Apakah `git status` bersih dari file sementara (`tmp_*.cjs`, `.env.vercel`, `FlatCryptoDisco*.sol`, `_archive/`)? Jika tidak, tambahkan ke `.gitignore` dan hapus file tersebut.
 - [ ] **Gitleaks Audit**: Apakah eksekusi `npm run gitleaks-check` mengembalikan *exit code 0* (No leaks)?
 - [ ] **No-Screenshot Audit**: Apakah seluruh file screenshot/media (`.png`, `.webp`, dll) hasil audit sudah dihapus?
 - [ ] **Zero-Leak Audit**: Apakah kode bebas dari `role_key`, `secret`, atau kredensial mentah lainnya? Pastikan `.gitleaks.toml` mendeteksi adanya kebocoran sebelum push.
 - [ ] **Audit**: Apakah kode baru bebas dari hardcode (`eyJ...`, `0x..`, `sb_...`) dan celah keamanan? (Jalankan `sentinel-audit.js`)
-- [ ] **DB Sync**: Apakah `verify-db-sync.cjs` sudah dijalankan dan lulus 100% tanpa fragmentasi legacy?
+- [ ] **DB Sync**: Apakah `scripts/audits/verify-db-sync.cjs` sudah dijalankan dan lulus 100% tanpa fragmentasi legacy?
 - [ ] **Social Reliability**: Apakah verifikasi sosial (Farcaster/Twitter) sudah menggunakan **Iterative Pagination** (>100 items support)?
 - [ ] **Profile Social Linking**: Apakah tombol "Link Google/X" di Profile Page sudah interaktif dan memicu refetch?
 - [ ] **Syntax & Lint**: Apakah pengecekan sintaks backend (`node -c`) dan linter frontend (`npm run lint`) bersih tanpa error fatal?
@@ -319,7 +319,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - Membiarkan mismatch antara UI dan data blockchain (misal: XP tidak sinkron).
 - Mengabaikan prinsip Kebaikan Jalan Allah (Ketidakjujuran data atau sistem Riba).
 - **Mengubah file .agents atau .cursorrules tanpa menjalankan sync-cloud.js.**
-- 🚫 **MELAKUKAN FIX TANPA PRE-FIX AUDIT** (`check_sync_status.cjs`). Ini adalah Protocol Breach Level-1.
+- 🚫 **MELAKUKAN FIX TANPA PRE-FIX AUDIT** (`scripts/audits/check_sync_status.cjs`). Ini adalah Protocol Breach Level-1.
 - 🚫 **MENUTUP TASK / NOTIFY USER TANPA RE-AUDIT** setelah fix diterapkan. Wajib sertakan output audit di notifikasi.
 - 🚫 **MENGABAIKAN TEMUAN BARU dari audit** yang tidak dilaporkan user. Semua temuan wajib dilaporkan.
 
@@ -331,7 +331,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
     │
     ▼
 🔍 STEP 1: PRE-FIX AUDIT
-    node scripts/check_sync_status.cjs
+    node scripts/audits/check_sync_status.cjs
     node -c api/user-bundle.js && node -c api/admin-bundle.js
     │
     ├─ Temuan baru? ──► REPORT KE USER sebelum lanjut
@@ -347,7 +347,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
     │
     ▼
 ✅ STEP 4: POST-FIX RE-AUDIT
-    node scripts/check_sync_status.cjs
+    node scripts/audits/check_sync_status.cjs
     npm run gitleaks-check
     │
     ├─ PASS (✅ ALL SYSTEMS SYNCHRONIZED) ──► Notify User + git commit

@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-03-14*
-*PRD Version: 3.5.0*
+*PRD Version: 3.6.0*
 
 ---
 
@@ -59,7 +59,7 @@ Before responding to ANY request, read these files IN ORDER:
     ▼
 🔍 STEP 1: PRE-FIX AUDIT (WAJIB PERTAMA)
 ┌─────────────────────────────────────────────┐
-│  node scripts/check_sync_status.cjs         │
+│  node scripts/audits/check_sync_status.cjs  │
 │  node -c api/user-bundle.js                 │
 │  node -c api/admin-bundle.js                │
 │  node -c api/tasks-bundle.js                │
@@ -86,7 +86,7 @@ Before responding to ANY request, read these files IN ORDER:
     ▼
 ✅ STEP 4: POST-FIX RE-AUDIT (WAJIB SEBELUM NOTIFY USER)
 ┌─────────────────────────────────────────────┐
-│  node scripts/check_sync_status.cjs         │
+│  node scripts/audits/check_sync_status.cjs  │
 │  npm run gitleaks-check                     │
 │  node -c api/user-bundle.js                 │
 └─────────────────────────────────────────────┘
@@ -130,7 +130,7 @@ grep -rn "|| [0-9]" api/ src/ --include="*.js" --include="*.jsx"
 
 ```bash
 # 1. Re-Audit Ekosistem
-node scripts/check_sync_status.cjs
+node scripts/audits/check_sync_status.cjs
 
 # 2. Syntax Check
 node -c api/user-bundle.js
@@ -169,24 +169,24 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 Push kode TANPA Gitleaks check
 - 🚫 Commit `.env`, Private Key, atau API Key
 - 🚫 Buat API endpoint baru di luar bundle (Vercel limit 12)
-171: - 🚫 Memulai task baru sebelum menyelesaikan bug yang ditemukan saat audit
-172: - 🚫 Membuat manual OAuth/Social URLs jika SDK resmi tersedia (**SDK-FIRST**)
-173: - 🚫 Melakukan audit tanpa memeriksa "Silent Corruption" di Vercel Env (**ENV-SANITY**)
+- 🚫 Memulai task baru sebelum menyelesaikan bug yang ditemukan saat audit
+- 🚫 Membuat manual OAuth/Social URLs jika SDK resmi tersedia (**SDK-FIRST**)
+- 🚫 Melakukan audit tanpa memeriksa "Silent Corruption" di Vercel Env (**ENV-SANITY**)
 - 🚫 Melewati batas limit karakter profil (Name: 50, Bio: 160, Username: 30)
 - 🚫 Melewati batas ukuran avatar (1MB)
 - 🚫 Menggunakan magic numbers untuk streak window (Min: 20h, Max: 48h)
+- 🚫 **Atomic Hijack**: Dilarang meletakkan script baru langsung di root `scripts/`. Wajib dimasukkan ke sub-folder kategori (`audits`, `deployments`, `sync`, `debug`).
 
-174: 
-175: ---
-176: 
-177: ## 8. 🧬 NEXUS EVOLUTION FORMULA (Self-Learning)
-178: 
-179: Untuk memastikan kesalahan tidak pernah terulang, gunakan siklus **A-D-R-R-E**:
-180: 1.  **A**udit: Jalankan `check_sync_status.cjs` & `gitleaks-check`.
-181: 2.  **D**etermine: Identifikasi apakah kegagalan adalah Kode, Data, atau Korupsi Environment.
-182: 3.  **R**esolve: Implementasi fix dengan **Surgical Fix** + **SDK-First**.
-183: 4.  **R**eflect: Dokumentasikan *mengapa* gagal (misal: "Manual URL construction bypassed state verifier").
-184: 5.  **E**volve: Update protokol ini dan `agent_vault` dengan pelajaran baru.
+---
+
+## 8. 🧬 NEXUS EVOLUTION FORMULA (Self-Learning)
+
+Untuk memastikan kesalahan tidak pernah terulang, gunakan siklus **A-D-R-R-E**:
+1.  **A**udit: Jalankan `check_sync_status.cjs` & `gitleaks-check`.
+2.  **D**etermine: Identifikasi apakah kegagalan adalah Kode, Data, atau Korupsi Environment.
+3.  **R**esolve: Implementasi fix dengan **Surgical Fix** + **SDK-First**.
+4.  **R**eflect: Dokumentasikan *mengapa* gagal (misal: "Manual URL construction bypassed state verifier").
+5.  **E**volve: Update protokol ini dan `agent_vault` dengan pelajaran baru.
 
 ---
 
@@ -197,8 +197,8 @@ State sharing via `agents_vault` table di Supabase.
 | Master Protocol         | `.cursorrules`                                    |
 | Sentinel Skill          | `.agents/skills/ecosystem-sentinel/SKILL.md`      |
 | Nexus Monitor (Active)  | `tools/nexus-monitor/index.html`                  |
-| Sync Audit Script       | `node scripts/check_sync_status.cjs`              |
-| DB Sync Script          | `node scripts/verify-db-sync.cjs`                 |
+| Sync Audit Script       | `node scripts/audits/check_sync_status.cjs`       |
+| DB Sync Script          | `node scripts/audits/verify-db-sync.cjs`          |
 | Gitleaks               | `npm run gitleaks-check`                          |
 | Agent Vault (DB)        | Supabase → `agent_vault` table                   |
 | Telegram Bot            | `verification-server/api/webhook/telegram.js`    |

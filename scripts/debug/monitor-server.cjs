@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 4000;
-const ROOT = path.join(__dirname, '../tools/nexus-monitor');
+const ROOT = path.join(__dirname, '../../tools/nexus-monitor');
 
 const MIME_TYPES = {
     '.html': 'text/html',

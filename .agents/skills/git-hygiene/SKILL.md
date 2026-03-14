@@ -21,7 +21,7 @@ Git adalah **Single Source of Truth** untuk kode sumber. Polutan berikut ini **D
 | `tmp_*.cjs`, `tmp_*.js`, `tmp_*.mjs` | Scratch scripts sementara, hapus setelah dipakai |
 | `FlatCryptoDisco*.sol` | Generated files — rebuild via `npx hardhat flatten` |
 | `_archive/` | Kode lama / legacy |
-| `scripts/env-comparison-report-*.txt` | Output laporan otomatis CI |
+| `scripts/audits/env-comparison-report-*.txt` | Output laporan otomatis CI |
 | `test-env/` | Data environment test lokal |
 | `*.log`, `*.tmp`, `*.scratch.*` | Log & file sementara |
 | `*.png`, `*.jpg`, `*.webp`, `*.gif`, `*.mp4` | Screenshot & media — DILARANG MUTLAK |

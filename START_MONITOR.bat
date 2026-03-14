@@ -4,7 +4,7 @@ cd /d "%~dp0"
 title Nexus Monitor Launcher
 
 echo Launching Nexus Monitor Local Server...
-start /b node scripts/monitor-server.cjs
+start /b node scripts/debug/monitor-server.cjs
 
 timeout /t 2 /nobreak > nul
 echo Opening browser...

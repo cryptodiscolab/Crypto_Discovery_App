@@ -24,20 +24,13 @@ Before responding to ANY request, read these files IN ORDER:
 
 ## 🔴 ABSOLUTE LAWS (Zero Tolerance)
 
-1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/check_sync_status.cjs`
+1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED`
 3. **ZERO HARDCODE**: No literal XP, fee, or reward numbers. All values from `point_settings`/`system_settings` in Supabase
 4. **ZERO SECRETS**: No Private Keys (EIP-191), Service Role Keys, or API Keys as string literals. Always `process.env.*`
 5. **ZERO RIBA**: Never implement interest-bearing, inflationary staking APY, or deceptive tokenomics
 6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
 7. **ZERO-LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`). Files in `tools/nexus-monitor/` must be ignored via `.gitleaks.toml` and `.gitignore`.
-1.  **AUDIT-FIRST**: NEVER write fix code before running `node scripts/check_sync_status.cjs`
-2.  **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED`
-3.  **ZERO HARDCODE**: No literal XP, fee, or reward numbers. All values from `point_settings`/`system_settings` in Supabase
-4.  **ZERO SECRETS**: No Private Keys (EIP-191), Service Role Keys, or API Keys as string literals. Always `process.env.*`
-5.  **ZERO RIBA**: Never implement interest-bearing, inflationary staking APY, or deceptive tokenomics
-6.  **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
-7.  **ZERO-LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`). Files in `tools/nexus-monitor/` must be ignored via `.gitleaks.toml` and `.gitignore`.
 8.  **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
 9.  **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
 10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr` or `.trim()`.
@@ -46,8 +39,9 @@ Before responding to ANY request, read these files IN ORDER:
 13. **SDK-FIRST**: Never construct manual OAuth/Social URLs or raw REST calls for Auth/Payments if an official SDK (Supabase, Viem, etc.) exists.
 14. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` via `cleanEnv` or inline to prevent "Silent Corruption" (quotes/newlines) during audits and coding.
 15. **LIMIT ENFORCEMENT**: Strictly enforce `PROFILE_LIMITS` (Name: 50, Bio: 160, User: 30, Avatar: 1MB) and `STREAK_WINDOW` (20-48h). No magic numbers allowed.
-16. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
-16. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
+16. **ATOMIC SCRIPTS**: NO scripts allowed in root `scripts/`. Must use categorised sub-folders (`audits`, `deployments`, `sync`, `debug`).
+17. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
+18. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
 
 ---
 
@@ -55,10 +49,10 @@ Before responding to ANY request, read these files IN ORDER:
 
 ```
 ERROR REPORTED
-  → STEP 1: node scripts/check_sync_status.cjs  ← PRE-FIX AUDIT
+  → STEP 1: node scripts/audits/check_sync_status.cjs  ← PRE-FIX AUDIT
   → STEP 2: grep_search + view_file             ← ROOT CAUSE ANALYSIS
   → STEP 3: Implement fix (Zero-Hardcode + Zero-Trust)
-  → STEP 4: node scripts/check_sync_status.cjs  ← RE-AUDIT
+  → STEP 4: node scripts/audits/check_sync_status.cjs  ← RE-AUDIT
       ├─ ✅ PASS → Notify user with audit output
       └─ ❌ FAIL → Return to STEP 1
 ```
@@ -102,7 +96,7 @@ Notify user format after fix:
 ## 🧬 NEXUS EVOLUTION FORMULA (Agent Learning)
 
 To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
-1.  **A**udit: Run `check_sync_status.cjs` & `gitleaks-check`.
+1.  **A**udit: Run `node scripts/audits/check_sync_status.cjs` & `gitleaks-check`.
 2.  **D**etermine: Identify if the failure is Code, Data, or Environment Corruption.
 3.  **R**esolve: Implement fix using **Surgical Fix** + **SDK-First**.
 4.  **R**eflect: Document *why* it failed (e.g., "Manual URL construction bypassed state verifier").

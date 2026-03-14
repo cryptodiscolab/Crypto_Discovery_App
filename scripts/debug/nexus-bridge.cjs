@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const LOG_FILE = path.join(__dirname, '../tools/nexus-monitor/nexus-activity.json');
+const LOG_FILE = path.join(__dirname, '../../tools/nexus-monitor/nexus-activity.json');
 
 /**
  * Nexus Bridge - Senior Staff Engineer Implementation
