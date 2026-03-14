@@ -16,7 +16,14 @@ const rpcClient = createPublicClient({
 });
 
 // ZERO-HARDCODE: Source from Env with safe production fallback
-const DAILY_APP_ADDRESS = process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS || '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571';
+// Priority: DAILY_APP_ADDRESS_SEPOLIA -> VITE_V12_CONTRACT_ADDRESS_SEPOLIA -> VITE_V12_CONTRACT_ADDRESS (trimmed to prevent \n garbage from Vercel UI)
+const DAILY_APP_ADDRESS = (
+    process.env.DAILY_APP_ADDRESS_SEPOLIA ||
+    process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA ||
+    process.env.VITE_V12_CONTRACT_ADDRESS ||
+    process.env.DAILY_APP_ADDRESS ||
+    '0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721'
+).trim();
 const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
 
 export default async function handler(req, res) {
