@@ -15,7 +15,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Replay Protection**: Gunakan timestamp dalam pesan signature dengan window validasi maksimal 5 menit.
 - **Normalized Mapping**: Pastikan mapping address (Farcaster/Twitter) menggunakan clean lowercase address untuk menghindari 404 pada API Neynar.
 
-### 2. Verified Infrastructure Reference (DO NOT GUESS)
+### 2. Verified Infrastructure Reference (PRD v3.6.0)
 | Key | Value |
 |---|---|
 | Admin FIDs | `1477344` (Farcaster) |
@@ -34,7 +34,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Z-Index Guard**: Selalu gunakan `relative z-[9999] pointer-events-auto` untuk BottomNav/Header admin.
 - **Glass Wall Prevention**: Pastikan tidak ada overlay transparan yang menutupi tombol klik.
 
-### 2. Lurah Hub & P&L Guard (v3.2)
+### 2. Lurah Hub & P&L Guard (v3.6.0)
 - **Administrative Setters**: Pastikan UI Admin mendukung konfigurasi dinamis `DailyAppV13` (Withdrawal Fee BP, Daily Bonus, Auto-Approve Sponsorship, Sponsor Duration).
 - **Net Surplus Verification**: Sebelum menyarankan penarikan treasury, pastikan `address(this).balance > totalLockedRewards`.
 - **Proportionality Check**: Setting `SBT Weights` WAJIB berjumlah tepat 100%. User-feedback (error toast) harus jelas jika jumlah tidak sesuai.
@@ -59,6 +59,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - [ ] Apakah `npm run build` berhasil tanpa error?
 - [ ] Apakah chat teknis menggunakan Bahasa Indonesia?
 - [ ] Apakah metadata progress (`IMPLEMENTATION_SUMMARY.md`) sudah diupdate?
+- [ ] **Atomic Script Enforced**: Apakah script operasional sudah berada di folder kategori yang benar di `scripts/`?
 
 ## 🚨 Pantangan
 - Push ke Vercel tanpa `npm run build` lokal.

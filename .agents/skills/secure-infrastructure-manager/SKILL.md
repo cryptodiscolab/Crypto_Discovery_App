@@ -1,35 +1,3 @@
----
-name: Secure Infrastructure & Contract Manager
-description: Manages smart contract lifecycle, environmental synchronization, and absolute privacy for sensitive data. Includes ABI Proxy architecture and build safety protocols.
----
-
-# Secure Infrastructure & Master Protocol Architect
-
-Skill ini adalah landasan keamanan teknis yang mewajibkan Agent untuk tunduk sepenuhnya pada **.cursorrules (Master Architect Protocol)** sebagai panduan utama.
-
-## 📜 Fondasi Utama: Master Architect Protocol (.cursorrules)
-
-### 1. Kepatuhan Mutlak
-Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manajemen database) harus disinkronkan langsung dengan `.cursorrules`.
-
-### 2. Staff Engineer Mode (Staff-Only)
-- **Tactical & Fast**: Jelaskan logika infrastruktur dalam maksimal 3 poin bullet.
-- **Development Plan Mandatory**: Setiap perubahan kritis (DB schema, RPC, Contract Sync) WAJIB diawali dengan "Development Plan".
-- **Pre-Flight Check**: Verifikasi Bytecode Limit (24KB) dan Gas Impact.
-- **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
-
-### 3. Bahasa & Komunikasi
-- **Technical Discussions**: Gunakan **Bahasa Indonesia**.
-- **System Labels/UI**: Gunakan **Bahasa Inggris (English)**.
-
-## 🏛️ Verified Infrastructure Reference (v3.2)
-| Component | Base Mainnet | Base Sepolia (Testnet) |
-|---|---|---|
-| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
-| **MasterX (Points)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
-| **Raffle (NFT)** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
-| **CMS (Content)** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
----
 name: Secure Infrastructure & Contract Manager
 description: Manages smart contract lifecycle, environmental synchronization, and absolute privacy for sensitive data. Includes ABI Proxy architecture and build safety protocols.
 ---
@@ -58,7 +26,7 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 |---|---|---|---|
 | **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `VITE_V12_CONTRACT_ADDRESS` |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` | `VITE_MASTER_X_ADDRESS` |
-| **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` | `VITE_RAFFLE_ADDRESS` |
+| **Raffle** | `[RESERVED]` | `0xE8b6333e40D9a5A6b4a1c83dB33f0CE73179292f` | `VITE_RAFFLE_ADDRESS` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS` |
 | **PRD v3.6.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_6_0.md` | `DOC_SOT` |
 
