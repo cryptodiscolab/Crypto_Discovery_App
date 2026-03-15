@@ -55,8 +55,14 @@ graph TD
 
 ---
 
-## 3. General End-to-End Ecosystem Journey (Feature-Based)
+## 3. General End-to-End Ecosystem Journey (Visual & Feature-Based)
 
+### 3.1 Premium Journey Visualization
+Berikut adalah representasi visual high-end dari alur ekosistem Crypto Disco:
+
+![Crypto Disco E2E Journey Infographic](file:///C:/Users/chiko/.gemini/antigravity/brain/8f1bf867-2ade-4491-a58d-8ddb66762aef/crypto_disco_e2e_flow_infographic_1773590586397.png)
+
+### 3.2 Technical Feature Flow
 Diagram ini merangkum seluruh perjalanan user, sponsor, dan sistem secara holistik mencakup onboarding, verifikasi tugas sosial, sistem reward, kenaikan tier, gacha/raffle, program referral, dan manajemen admin.
 
 ```mermaid
