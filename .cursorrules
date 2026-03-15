@@ -38,7 +38,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.13.0**
+**Protocol Version: 3.14.0**
 > The user may say `> re-read skills` to force a reset.
 
 ---
@@ -378,6 +378,10 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 ## 35. ADMIN SYNC MANDATE (v3.7.0)
 - **ENFORCEMENT**: Every administrative action on-chain (Token Whitelist, SBT Upgrade) MUST be synchronized with the database immediately upon transaction confirmation via a signed secure request to the backend. No state drift between Contract and Database is permitted.
 
+## 36. SCHEMA IMMUTABLE PROTECTION MANDATE (v3.14.0)
+- **ANTI-DELETION**: The `last_seen_at` column in the `user_profiles` table is a CRITICAL component for XP Sync API and the Anti-Whale Underdog Catch-up logic.
+- **ENFORCEMENT**: 🚨 NEVER delete, rename, or modify the `last_seen_at` column, nor any other vital schema columns governing rewards without explicit A-D-R-R-E cycles. Deleting this column breaks the ecosystem's leaderboard synchronization process.
+
 ---
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated v3.13.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.14.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*

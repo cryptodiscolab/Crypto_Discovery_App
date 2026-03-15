@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-03-15*
-*PRD Version: 3.7.0*
+*PRD Version: 3.14.0*
 
 ---
 
@@ -178,6 +178,7 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Atomic Hijack**: Dilarang meletakkan script baru langsung di root `scripts/`. Wajib dimasukkan ke sub-folder kategori (`audits`, `deployments`, `sync`, `debug`).
 - 🚫 **Local Resource Leak**: Dilarang membiarkan server lokal (Vite/Express) berjalan di background setelah tugas selesai (**LOCAL_HYGIENE**).
 - 🚫 **Admin State Drift**: Dilarang mengubah state di Smart Contract tanpa sinkronisasi Database (**ADMIN_SYNC_MANDATE**).
+- 🚫 **Schema Deletion**: 🚨 DILARANG KERAS menghapus, mengganti nama, atau memodifikasi kolom `last_seen_at` dari tabel `user_profiles`. Kolom ini adalah tulang punggung XP Sync API dan Leaderboard. Menghapusnya = **Protocol Breach Level-1**.
 
 
 ---

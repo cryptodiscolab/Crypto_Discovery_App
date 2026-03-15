@@ -44,6 +44,7 @@ Before responding to ANY request, read these files IN ORDER:
 18. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
 19. **LOCAL HYGIENE**: ALWAYS terminate local servers (Vite/Express) after verification. Do not consume local CPU/RAM in the background.
 20. **ADMIN SYNC**: EVERY admin action changing on-chain state MUST be synchronized with the database immediately upon transaction confirmation. No state drift allowed.
+21. **SCHEMA IMMUTABLE PROTECTION**: NEVER delete, rename, or drop the `last_seen_at` column in `user_profiles`. It is strictly required for XP Sync and Anti-Whale Underdog logic. Deleting this column breaks the Leaderboard synchronization.
 
 
 ---

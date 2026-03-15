@@ -77,7 +77,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.13.0 (OpenClaw Nexus Evolution — Integrasi penuh OpenClaw v3.13.0 dan pembaruan Master Architect Protocol).
+- **Versi Terakhir:** 3.14.0 (Schema Immutable Protection — Anti-Deletion mandate for core columns like last_seen_at).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -129,7 +129,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
 | **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
-| **PRD v3.13.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_13_0.md` |
+| **PRD v3.14.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_14_0.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
@@ -310,6 +310,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Cloud Sync**: Apakah `sync-cloud.js` sudah dijalankan setelah perubahan `.agents`?
 - [ ] **Vercel Guard**: Apakah jumlah fungsi API tetap <= 12? Apakah fitur baru sudah dibundling ke master API?
 - [ ] **Underdog Audit**: Apakah `lastActivityTime` tersinkronisasi dan bonus +10% terverifikasi on-chain?
+- [ ] **Schema Immutable Guard**: DILARANG KERAS menghapus atau memodifikasi kolom krusial seperti `last_seen_at` dari `user_profiles`. Kolom ini adalah inti dari XP Sync.
 - [ ] **Ascension Sync**: Apakah tier di DB ter-update otomatis sesaat setelah SBT minting?
 - [ ] **Defensive Cleaning**: Apakah alamat kontrak sudah dibersihkan dari karakter ilegal (spasi/quotes) sebelum digunakan?
 - [ ] **Multi-Project Sync**: Memastikan seluruh project Vercel (`crypto-discovery-app`, `dailyapp-verification-server`) menggunakan alamat kontrak yang identik untuk semua environment (Mainnet/Sepolia).

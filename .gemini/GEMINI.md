@@ -22,6 +22,7 @@ Your supreme governing document is [`../.cursorrules`](../.cursorrules). Read it
 10. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination (500 items) and Profile Page linking must be interactive (v3.3.3).
 11. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` to prevent "Silent Corruption" (quotes/newlines).
 12. **NEXUS EVOLUTION (A-D-R-R-E)**: Every environment/data failure must be followed by **A**udit, **D**etermine, **R**esolve, **R**eflect, **E**volve cycle.
+13. **SCHEMA IMMUTABLE PROTECTION**: 🚨 NEVER delete or modify the `last_seen_at` column in `user_profiles`. It is strictly required for XP Sync API and Leaderboard logic. Deletion is a massive protocol breach.
 
 ---
 
