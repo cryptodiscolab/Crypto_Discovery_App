@@ -123,6 +123,16 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - Chain: Base Mainnet (8453), Base Sepolia (84532)
 - Supabase URL: `https://rbgzwhsdqnhwrwimjjfm.supabase.co`
 
+### 📋 Canonical Contract Addresses (Deployer: `0x52260C30697674A7C837feb2Af21BbF3606795C8`)
+| Contract | Base Mainnet (8453) | Base Sepolia (84532) |
+|---|---|---|
+| **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
+| **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
+| **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
+| **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
+| **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
+| **Last Synced** | `2026-03-15` | PRD v3.14.0 |
+
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
 - **Antarmuka (UI)**: Gunakan **Bahasa Inggris (English)** untuk semua elemen UI aplikasi.

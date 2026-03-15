@@ -127,10 +127,10 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
-| **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
-| **Raffle** | `[RESERVED]` | `0x92E8e19f77947E25664Ce42Ec9C4AD0b161Ed8D0` |
+| **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
+| **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
 | **PRD v3.14.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_14_0.md` |
-| **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
+| **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🛠️ Kompetensi Utama
