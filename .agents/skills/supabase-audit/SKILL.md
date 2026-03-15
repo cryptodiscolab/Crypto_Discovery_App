@@ -35,16 +35,16 @@ Audit skema database, kebijakan RLS, dan fungsi SQL wajib mematuhi aturan keaman
 - **Status Wajib**: Setiap tabel di skema `public` WAJIB memiliki RLS aktif.
 - **Zero Client Write**: **DILARANG** melakukan `INSERT/UPDATE/DELETE` langsung dari client. Harus melalui verifikasi signature di Backend API.
 
-### 3. Integrated View & Trigger Protocol (v3.17.0)
+### 3. Integrated View & Trigger Protocol (v3.19.0)
 - **Canonical View**: Selalu gunakan `v_user_full_profile` (SECURITY INVOKER) untuk menampilkan data agregat user (XP, Rank, Raffle Stats).
 - **Trigger-Based XP**: Integritas Saldo XP wajib dijaga oleh trigger `trg_sync_xp_on_claim` pada tabel `user_task_claims`.
 - **Atomic Counters**: Gunakan RPC (misal: `fn_increment_raffle_wins`) untuk mengupdate statistik hitungan guna menghindari *race condition*.
 
-### 4. Zero Trust Enforcement (v3.17.0)
+### 4. Zero Trust Enforcement (v3.19.0)
 - **Backend Verification**: Semua mutasi data WAJIB diverifikasi menggunakan `viem` di sisi server sebelum mengeksekusi query dengan `SERVICE_ROLE_KEY`.
 - **Search Path Isolation**: Setiap fungsi SQL (`CREATE FUNCTION`) WAJIB memiliki deklarasi `SET search_path = public`.
 
-## 📋 Protokol Operasional Audit (v3.17.0)
+## 📋 Protokol Operasional Audit (v3.19.0)
 - [ ] Apakah RLS aktif di seluruh tabel public?
 - [ ] Apakah konstrain lowercase sudah ada di kolom wallet_address?
 - [ ] Apakah `SERVICE_ROLE_KEY` hanya digunakan di sisi server?

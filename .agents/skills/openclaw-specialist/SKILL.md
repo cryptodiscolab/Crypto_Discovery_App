@@ -28,8 +28,8 @@ Setiap audit keamanan harus mengikuti alur:
 - **Zero Tolerance**: Menolak setiap implementasi yang melewati batas keamanan atau menggunakan pola "hardcode secrets".
 
 ---
-### Reinforced Mandates (v3.17.0):
-- **Protocol Adherence**: Absolute compliance with `.cursorrules` (Master Architect Protocol) and PRD v3.17.0.
+### Reinforced Mandates (v3.19.0):
+- **Protocol Adherence**: Absolute compliance with `.cursorrules` (Master Architect Protocol) and PRD v3.19.0.
 - **Skill Awareness**: Operational guidance from this `SKILL.md`.
 - **Secret Lockdown**: Prevents leaks of `.env`, `credentials`, `*.key`, `*.pem`, and database dumps as defined in `.gitignore` and `.gitleaks.toml`.
 - **Zero-Screenshot Mandate**: Strictly forbids processing or committing media files (`.png`, `.jpg`, `.mp4`).

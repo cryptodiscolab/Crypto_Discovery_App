@@ -21,14 +21,14 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **Technical Discussions**: Gunakan **Bahasa Indonesia**.
 - **System Labels/UI**: Gunakan **Bahasa Inggris (English)**.
 
-## 🏛️ Verified Infrastructure Reference (v3.17.0)
+## 🏛️ Verified Infrastructure Reference (v3.19.0)
 | Component | Base Mainnet | Base Sepolia (Testnet) | Env Key |
 |---|---|---|---|
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `VITE_V12_CONTRACT_ADDRESS` |
 | **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
 | **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
 | **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA` |
-| **PRD v3.17.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_17_0.md` | `DOC_SOT` |
+| **PRD v3.19.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3.19.0.md` | `DOC_SOT` |
 
 ## 🏛️ Core Competencies
 
@@ -78,8 +78,8 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Sync Verification Mandate (CRITICAL)**: Agent WAJIB mengeksekusi `node scripts/audits/verify-db-sync.cjs` setiap kali memulai atau menyelesaikan task database/backend.
 - **Legacy Column Cleanup**: Laporkan kolom redundan dan unifikasi melalui SQL migration.
 
-## 📋 Checklist Security & Infra (v3.17.0)
-- [ ] Apakah kontrak yang digunakan adalah versi terbaru (PRD v3.17.0)?
+## 📋 Checklist Security & Infra (v3.19.0)
+- [ ] Apakah kontrak yang digunakan adalah versi terbaru (PRD v3.19.0)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?
 - [ ] Apakah Gitleaks scan (`npm run gitleaks-check`) sudah dijalankan dan Pass?
 - [ ] Apakah mutasi data mengikuti pola Zero-Trust Backend?
@@ -105,4 +105,4 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan tanpa `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines).
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.17.0*
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.19.0*

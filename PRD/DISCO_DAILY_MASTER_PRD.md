@@ -1,0 +1,385 @@
+# 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
+**Version**: 3.19.0 — Deep-Dive Protocols Milestone
+**Last Updated**: 2026-03-15
+**Status**: ACTIVE — SINGLE SOURCE OF TRUTH ✅
+
+---
+
+## 📋 Table of Contents
+1. [Visi & Tujuan](#1-visi--tujuan)
+2. [Ecosystem Core Architecture (High-Level)](#2-ecosystem-core-architecture-high-level)
+3. [User & Reward Lifecycle (End-to-End)](#3-user--reward-lifecycle-end-to-end)
+4. [Admin & Sponsorship Workflow](#4-admin--sponsorship-workflow)
+5. [Historical Analysis & Changelog](#5-historical-analysis--changelog)
+6. [Audit & Security Mandates](#6-audit--security-mandates)
+7. [Current Ecosystem Status (Audit Report)](#7-current-ecosystem-status-audit-report)
+
+---
+
+## 1. Visi & Tujuan
+Crypto Disco (Disco Daily) adalah ekosistem "Gacha Social" berbasis blockchain yang menggabungkan elemen identitas sosial (Farcaster/X) dengan mekanisme reward transparan. Tujuan utamanya adalah menciptakan pipeline distribusi reward yang 100% on-chain namun dapat diakses dengan user experience Web2 yang mulus.
+
+---
+
+## 2. Ecosystem Core Architecture (High-Level)
+
+Ekosistem ini terdiri dari tiga pilar utama yang terhubung secara sinkron:
+
+```mermaid
+graph TD
+    subgraph "Frontend Layer (Vercel)"
+        App["Raffle Frontend (React/Vite)"]
+        Mon["Nexus Monitor (Real-time Audit)"]
+    end
+
+    subgraph "Logic Layer (Serverless/Supabase)"
+        VS["Verification Server (Daily Tasks)"]
+        SA["Supabase API (RLS Enabled)"]
+        CR["Cron Jobs (SBT Sync / XP Update)"]
+    end
+
+    subgraph "Blockchain Layer (Base Sepolia)"
+        MX["MasterX Contract (Reward Logic)"]
+        DA["DailyApp Contract (Task Verification)"]
+        RF["Raffle Contract (On-chain Randomness)"]
+    end
+
+    App <--> SA
+    App <--> MX
+    App <--> VS
+    VS <--> SA
+    CR <-->MX
+    CR <--> SA
+    SA <--> Mon
+```
+
+---
+
+## 3. General End-to-End Ecosystem Journey (Feature-Based)
+
+Diagram ini merangkum seluruh perjalanan user, sponsor, dan sistem secara holistik mencakup onboarding, verifikasi tugas sosial, sistem reward, kenaikan tier, gacha/raffle, program referral, dan manajemen admin.
+
+```mermaid
+flowchart TB
+    %% USER ONBOARDING & IDENTITY %%
+    subgraph "Phase 1: Arrival & Identity"
+        Start([User Start]) --> Connect[Connect Wallet: Metamask/Coinbase/Wagmi]
+        Connect --> GetProfile{Fetch Profile}
+        GetProfile -- New User --> CreateDB[Supabase: Create profile entry]
+        GetProfile -- Returning --> LoadXP[Load Stats: XP, Points, Tickets, Rank]
+        CreateDB --> CheckRef{Referral in URL?}
+        CheckRef -- Yes --> SaveRef[Store Referral in localStorage & DB]
+        CheckRef -- No --> SIWE[Neynar SIWE: Verify Social Ownership]
+        SaveRef --> SIWE
+        SIWE --> LockIdentity[Identity Lock v2: Wallet 1:1 Social ID]
+    end
+
+    %% ACTIVITY & ENGAGEMENT %%
+    subgraph "Phase 2: Engagement (Tasks & Socials)"
+        LockIdentity --> Dashboard[Explore Dashboard: Active Missions]
+        Dashboard --> DailyClaim[Action: Claim Daily Bonus / Streak]
+        Dashboard --> BrowseMissions[Action: Perform Social Missions]
+        
+        BrowseMissions --> TaskType{Task Type?}
+        TaskType -- Farcaster --> FC_Action[Like/Recast/Follow/Comment]
+        TaskType -- Twitter/X --> X_Action[Like/Retweet/Follow/Comment]
+        TaskType -- TikTok/IG --> VI_Action[Follow/Like/Comment]
+        
+        FC_Action & X_Action & VI_Action --> Verification[Request Verification via VS-Backend]
+        Verification --> API_Check{Neynar/Twitter/TikTok APIs}
+        API_Check -- SUCCESS --> JWT[Issue Signed Verification JWT]
+        API_Check -- FAIL --> Retry[Error Feedback: Task Incomplete]
+    end
+
+    %% REWARDS & SYNC %%
+    subgraph "Phase 3: Rewards & Sync (Off-chain to On-chain)"
+        JWT --> ClaimXP[Click: Claim XP / Reward]
+        DailyClaim --> SyncPoints[Update DB: user_points]
+        ClaimXP --> MasterX_Add[Trigger: MasterX TaskCompletion on Base Sepolia]
+        
+        MasterX_Add --> Event[Contract: Emit TaskCompleted Event]
+        Event --> CronSync[Cron: sync-sbt / sync-xp worker]
+        CronSync --> Reconcile[Sync DB user_profiles with On-chain State]
+        Reconcile --> Underdog{Underdog Condition Met?}
+        Underdog -- Yes --> Bonus[Add +10% XP Bonus]
+        Underdog -- No --> UpdateRank[Recalculate Percentile Rank Tier]
+    end
+
+    %% ASCENSION & GACHA %%
+    subgraph "Phase 4: Ascension & Gacha"
+        UpdateRank --> TierCheck{Rank Threshold Met?}
+        TierCheck -- Yes --> Eligible[Mark for SBT Upgrade: Pulse UI]
+        TierCheck -- No --> CheckTickets{Tickets Available?}
+        
+        Eligible --> Mint[User Mints SBT: On-chain Badge]
+        Mint --> NewPerks[Update Tier Multipliers & Pool Shares]
+        
+        CheckTickets -- No --> BuyTicket[Symmetry: Spend Points for Raffle Ticket]
+        CheckTickets -- Yes --> EnterRaffle[Participate in Raffle / UGC Gacha]
+        
+        BuyTicket & EnterRaffle --> RaffleBC[Raffle.sol: On-chain Randomness / Winner Draw]
+        RaffleBC --> Result[Emit Win/Lose Event]
+        Result --> DB_Raffle[Update user_raffle_tickets & Activity Logs]
+    end
+
+    %% SPONSORSHIP & ADMIN %%
+    subgraph "Phase 5: Ecosystem Governance"
+        Admin[Master Admin] --> Governance[Manage Whitelist & System Settings]
+        Sponsor[Sponsor] --> CreateUGC[Create UGC Mission / Raffle]
+        CreateUGC --> PaySponsorship[Pay Fee ↔ Sync to DB daily_tasks]
+        PaySponsorship --> GlobalDisplay[Missions appear for all users]
+        
+        DB_Raffle --> Final[Activity Feed: Global Transparency]
+        NewPerks --> Dashboard
+    end
+
+    Retry --> BrowseMissions
+    Final --> Dashboard
+```
+
+---
+
+## 4. User & Reward Lifecycle (End-to-End)
+
+Bagaimana user berinteraksi dan mendapatkan reward dalam ekosistem:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant VS as Verification Server
+    participant DB as Supabase DB
+    participant BC as Blockchain (MasterX)
+
+    User->>Frontend: Connect Wallet / Social Link
+    Frontend->>DB: Upsert Profile (FID/Wallet)
+    User->>Frontend: Complete Task (e.g. Follow X)
+    Frontend->>VS: Request Verification
+    VS->>User: Check Social API (Neynar/Twitter)
+    VS-->>Frontend: Verification Success (JWT)
+    Frontend->>BC: Claim Reward (Signature Match)
+    BC->>BC: Emit TaskCompleted Event
+    BC->>User: Update Points/Tier
+    BC-->>DB: Synced via Cron (Sync-SBT/XP)
+    DB-->>Frontend: Reflect New Balance/Tier
+```
+
+---
+
+## 4. Admin & Sponsorship Workflow
+
+Alur pembuatan misi oleh sponsor dan moderasi admin:
+
+```mermaid
+graph LR
+    Sponsor["Sponsor (Brand/User)"] --> Create["Create UGC Mission / Raffle"]
+    Create --> Payment["Pay Sponsorship Fee (USDC/ETH)"]
+    Payment --> BC_Sync["On-chain Event Emitted"]
+    BC_Sync --> DB_Populate["Auto-Populate daily_tasks Table"]
+    DB_Populate --> UI_Display["Display in Frontend for Users"]
+    Admin["Nexus Admin"] --> Monitor["Monitor via Admin Dashboard"]
+    Monitor --> Pause["Pause/Resume Systems if Needed"]
+```
+
+---
+
+## 5. Detailed Process Flow Charts
+
+### 5.1 Identity Lock Lifecycle (Security v2)
+Proses penguncian identitas sosial ke wallet address untuk mencegah multi-accounting.
+
+```mermaid
+flowchart TD
+    A[User Connects Wallet] --> B{Profile Exists?}
+    B -- No --> C[Create New Profile Entry]
+    B -- Yes --> D[Load Profile Data]
+    C --> E[User Clicks 'Link X / Farcaster']
+    D --> E
+    E --> F[OAuth Redirect / SIWE Signature]
+    F --> G{Identity Already Linked?}
+    G -- Yes (Different Wallet) --> H[ERROR: Identity Locked to another wallet]
+    G -- No --> I[Verify Signature on Backend]
+    I --> J[Save Social ID to profile_identity_lock]
+    J --> K[SUCCESS: Social Identity Locked 1:1]
+```
+
+### 5.2 Raffle Submission & Gacha Flow
+Alur dari pembelian tiket hingga eksekusi on-chain.
+
+```mermaid
+flowchart TD
+    Start[User Clicks 'Buy Ticket'] --> Check[Check Balance & Tier Eligibility]
+    Check -- Fail --> Error[Show Alert: Insufficient XP/Balance]
+    Check -- Pass --> Sign[Request Signature Verification]
+    Sign --> API[Backend: Validate Signature & Activity]
+    API --> Tx[Frontend: Trigger On-chain Transaction]
+    Tx --> Blockchain{Contract: BuyTicket}
+    Blockchain -- Revert --> TxErr[Show Transaction Error]
+    Blockchain -- Confirm --> Event[Emit TicketBought Event]
+    Event --> Indexer[Off-chain Indexer: Detect Event]
+    Indexer --> DB[Update user_raffle_tickets & activity_logs]
+    DB --> UI[UI: Refresh Ticket Count]
+```
+
+### 5.3 XP Sync & Tier Ascension (SBT)
+Proses otomatisasi kenaikan tier berdasarkan akumulasi XP.
+
+```mermaid
+flowchart TD
+    Task[Task Completed / Reward Claimed] --> XP_Update[DB: Increment User XP]
+    XP_Update --> Rank[Cron: Re-calculate Percentile Rank]
+    Rank --> Threshold{XP >= Next Tier Threshold?}
+    Threshold -- No --> Stay[Maintain Current Tier]
+    Threshold -- Yes --> Eligible[Mark User as 'SBT Upgrade Eligible']
+    Eligible --> UI_Notif[UI: Show Rank Upgrade Pulse]
+    UI_Notif --> Mint[User Clicks: 'Mint New Rank']
+    Mint --> Chain{Contract: MintSBT}
+    Chain --> Success[On-chain Tier Upgraded]
+    Success --> Sync[API: Sync New Tier to user_profiles]
+```
+
+---
+
+---
+
+## 7. Technical Deep-Dive: Data Handling & Feature Flows
+
+### 7.1 Page-Level Data Architecture
+
+#### 7.1.1 Login & Onboarding (Auth Flow)
+- **Data Source**: Metamask/Web3 & Farcaster (SIWE).
+- **Process**: 
+  1. Wallet Signature verify on client.
+  2. POST to `/api/user-bundle` with signature.
+  3. Backend verifies signature via `ethers.verifyMessage`.
+  4. Upsert `user_profiles` with `wallet_address`.
+- **E2E Flow**:
+  `Wallet Connect` → `EIP-191 Sign` → `Supabase Upsert` → `Identity Lock v2`
+
+#### 7.1.2 Dashboard Admin & Governance
+- **Data Source**: `daily_tasks`, `system_settings`, `point_settings`.
+- **Process**:
+  1. Admin verify via `isAdmin` guard (Wallet check).
+  2. Real-time fetch of P&L metrics from `agent_vault`.
+  3. CRUD operations on Task/Point thresholds.
+- **E2E Flow**:
+  `Admin Login` → `Vault Sync` → `Setting Update` → `On-chain Sync (if needed)`
+
+#### 7.1.3 Task & Verification Page
+- **Data Source**: `user_task_claims`, `daily_tasks`.
+- **Process**:
+  1. User selects task.
+  2. Perform action (e.g., Farcaster Like).
+  3. Client POST to `/api/tasks-bundle`.
+  4. Backend verifies via Social API (Neynar).
+- **E2E Flow**:
+  `User Action` → `VS-Backend Verification` → `XP Increment` → `Activity Log Write`
+
+#### 7.1.4 Leaderboard & Ranking
+- **Data Source**: `v_user_full_profile` (SQL View).
+- **Process**:
+  1. Pre-computed rankings in Supabase.
+  2. Tier determination via percentile SQL logic.
+  3. Fetch top N users with associated SBT levels.
+- **E2E Flow**:
+  `Daily XP Sync` → `Percentile Rank Refresh` → `Leaderboard Display`
+
+---
+
+### 7.2 System Protocol Flows
+
+#### 7.2.1 API Flow (Protocol-First)
+Standar komunikasi antara Frontend dan Verification Server.
+
+```mermaid
+sequenceDiagram
+    participant FE as Frontend (UI)
+    participant VS as Verification Server (API)
+    participant SA as Supabase (DB)
+    participant EX as External API (Neynar/X)
+
+    FE->>VS: POST /api/verify (signed payload)
+    VS->>VS: Validate Admin/User Signature
+    VS->>EX: Check Social Action (Like/Follow)
+    EX-->>VS: Action Confirmed (Success)
+    VS->>SA: Update user_points & user_activity_logs
+    SA-->>VS: DB Result
+    VS-->>FE: HTTP 200 { status: 'Claimed' }
+```
+
+#### 7.2.2 ABI Flow (Contract Interface)
+Manajemen interface smart contract untuk sinkronisasi state.
+
+```mermaid
+flowchart LR
+    ABI_File[abis_data.txt] --> Proxy[contracts.js Proxy]
+    Proxy --> Provider[JsonRpcProvider - Base Sepolia]
+    Provider --> ContractInst[Contract Instance]
+    ContractInst --> Call[ReadOnly: accRewardPerShare]
+    ContractInst --> Write[Write: claimReward]
+    Write --> Events[Emit Events: TaskCompleted]
+    Events --> Indexer[Cron: sync-sbt.cjs]
+    Indexer --> Supabase[Update Reward Pool DB]
+```
+
+#### 7.2.3 E2E Verification Logic (Surgical)
+Logika verifikasi mendalam untuk mencegah cheat.
+
+```mermaid
+flowchart TD
+    Request[Verification Request] --> Signature{Verify EIP-191 Sign}
+    Signature -- Invalid --> Reject[403: Forbidden]
+    Signature -- Valid --> Debounce{Rate Limit Check}
+    Debounce -- Hot --> Cool[429: Too Many Requests]
+    Debounce -- Cold --> Identity{Lock Checked?}
+    Identity -- No --> Link[Prompt Social Link]
+    Identity -- Yes --> FetchAPI[Fetch Social Social State]
+    FetchAPI --> Compare{Action Timestamp > Task Create?}
+    Compare -- No --> Fraud[Error: Old Action Used]
+    Compare -- Yes --> Credit[Credit XP & Reward]
+```
+
+---
+
+## 8. Historical Analysis & Changelog
+
+### 5.1 Evolution Summary
+| Milestone | Version | Focus | Legacy Status |
+|---|---|---|---|
+| **Nexus Alignment** | 3.18.0 | Full Ecosystem Visibility & Skill Sync | CURRENT |
+| **Fueling the Indexer** | 3.17.0 | Fixed SBTPool Event & Platinum Tier | RESOLVED |
+| **Identity Lock** | 3.16.2 | Secure Social Linking via VS-Backend | RESOLVED |
+| **SBT Ascension** | 3.15.0 | Multi-Project Sync & Audit-First Mandate | RESOLVED |
+| **Ecosystem Seed** | 3.0.0 | Initial Raffle + XP Logic | LEGACY |
+
+---
+
+## 6. Audit & Security Mandates
+
+### 6.1 The "Audit-First" Mandate (Section 27)
+Dilarang melakukan deployment sebelum `node scripts/audits/check_sync_status.cjs` memberikan skor 10/10.
+
+### 6.2 Zero Hardcode Secret Mandate
+Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables (.env). Mapping global ditangani oleh `global-sync-env.js`.
+
+### 6.3 Cleanup & Resource Hygiene
+Setiap server verifikasi lokal HARUS dimatikan setelah pengujian untuk menjaga performa host host.
+
+---
+
+## 7. Current Ecosystem Status (v3.18.0)
+
+### 7.1 Security Audit Findings
+- **[RESOLVED] url.parse Deprecation**: Upgraded `viem` to `^2.47.4` across ecosystem.
+- **[RESOLVED] SBTPool Event Signature**: Patched v3.17.0 with `platinumAcc` support.
+- **[RESOLVED] Environment Desync**: Verified Clean-Pipe Sync on 3 projects concurrently.
+
+### 7.2 Connection Matrix
+- **Main App**: `crypto-discovery-app.vercel.app`
+- **Verification**: `dailyapp-verification-server.vercel.app`
+- **Database**: Supabase Project (ID: gms...)
+- **Core Contract**: `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` (MasterX v3.17.0)
+
+---
+*Created by Antigravity — Nexus Master Architect*
+*Integrity First. Nexus Synchronized.*
