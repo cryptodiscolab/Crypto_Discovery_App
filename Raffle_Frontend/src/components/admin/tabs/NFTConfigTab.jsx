@@ -4,8 +4,11 @@ import { useNFTTiers } from '../../../hooks/useNFTTiers';
 import { useSBT } from '../../../hooks/useSBT';
 import { formatEther, parseEther } from 'viem';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+import { useAccount } from 'wagmi';
 
 export function NFTConfigTab({ ethPrice }) {
+    const { address } = useAccount();
     const { tiers, economy, updateTierConfig, updateBatchConfig, updateTierURI, toggleTier, updateEconomy, refetch } = useNFTTiers();
     const {
         totalPoolBalance,

@@ -9,6 +9,7 @@ const { createClient } = require('@supabase/supabase-js');
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 const geminiApiKey = process.env.GEMINI_API_KEY;
 
 const orchestron = require('../lib/orchestron-core');
@@ -404,9 +405,41 @@ Contoh:
             // ... existing delete logic ...
         }
         else if (text === '/health') {
-            const { data, error } = await supabase.from('user_profiles').select('count', { count: 'exact', head: true });
-            const dbStatus = error ? "❌ Error" : "✅ Connected";
-            await sendTelegram(chatId, `📶 *System Health*\n\nDatabase: ${dbStatus}\nNetwork: Base Sepolia\nAgent Mode: Interaktif (Gemini 3 Flash)`);
+            const { data: healthData, error: healthError } = await supabase
+                .from('system_health')
+                .select('*')
+                .order('service_key');
+            
+            if (healthError) {
+                await sendTelegram(chatId, `❌ Gagal mengambil status kesehatan: ${healthError.message}`);
+                return res.status(200).json({ ok: true });
+            }
+
+            let healthSummary = "📶 **NEXUS SYSTEM HEALTH REPORT**\n\n";
+            const now = Date.now();
+
+            healthData.forEach(svc => {
+                let emoji = "🟢";
+                let statusText = svc.status.toUpperCase();
+                
+                const lastHb = new Date(svc.last_heartbeat).getTime();
+                const isStale = (now - lastHb) > (2 * 60 * 60 * 1000);
+
+                if (svc.status === 'failed') emoji = "🔴";
+                else if (svc.status === 'recovering') emoji = "🔵";
+                else if (isStale) {
+                    emoji = "🟡";
+                    statusText = "STALE";
+                }
+
+                healthSummary += `${emoji} **${svc.service_key}**: \`${statusText}\`\n`;
+                healthSummary += `   🕒 _${new Date(svc.last_heartbeat).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}_\n`;
+                if (svc.status === 'recovering') healthSummary += `   🩹 _Healing: ${svc.metadata?.consecutive_success || 0}/3_\n`;
+                if (svc.last_error) healthSummary += `   ⚠️ \`${svc.last_error.substring(0, 50)}...\`\n`;
+                healthSummary += "\n";
+            });
+
+            await sendTelegram(chatId, healthSummary + `\n🔗 [Dashboard](${process.env.VITE_VERIFY_SERVER_URL || 'https://crypto-disco-raffle.vercel.app'}/admin)`);
         }
         else if (text === '/stats') {
             const { count: totalUsers } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true });

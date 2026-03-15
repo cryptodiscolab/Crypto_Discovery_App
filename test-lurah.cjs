@@ -42,6 +42,9 @@ const askLurah = () => {
 
         const reqMock = {
             method: 'POST',
+            headers: {
+                'x-telegram-bot-api-secret-token': (process.env.TELEGRAM_BOT_TOKEN || '').replace(/:/g, '_')
+            },
             body: {
                 message: {
                     chat: { id: chatId },

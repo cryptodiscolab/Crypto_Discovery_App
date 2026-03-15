@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClient } from 'wagmi';
-import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS } from '../lib/contracts';
+import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS, APP_CONFIG } from '../lib/contracts';
 import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
@@ -141,7 +141,6 @@ export function useCMS() {
     }, [address, contractOwner]);
 
     // Robust check fallbacks removed (Centralized Authority array no longer exists)
-    // Database Admin Check + Server-Side ENV Admin Check
     const [isDbAdmin, setIsDbAdmin] = useState(false);
     const [isEnvAdmin, setIsEnvAdmin] = useState(false);
     useEffect(() => {
@@ -152,6 +151,14 @@ export function useCMS() {
                 if (isMounted) { setIsDbAdmin(false); setIsEnvAdmin(false); }
                 return;
             }
+
+            // Quick Client-Side ENV Check for local Dev
+            const localAdmins = (import.meta.env.VITE_ADMIN_WALLETS || '').toLowerCase().split(',').map(a => a.trim()).filter(Boolean);
+            if (localAdmins.includes(wallet)) {
+                if (isMounted) setIsEnvAdmin(true);
+                // Can optionally skip DB check to optimize further if already env-admin
+            }
+
             try {
                 // DB check (Supabase is_admin flag)
                 const { data, error } = await supabase
@@ -172,7 +179,7 @@ export function useCMS() {
                 const res = await fetch(`/api/is-admin?wallet=${encodeURIComponent(wallet)}`);
                 if (res.ok) {
                     const json = await res.json();
-                    if (isMounted) setIsEnvAdmin(!!json.isAdmin);
+                    if (isMounted && json.isAdmin) setIsEnvAdmin(true);
                 }
             } catch (e) {
                 console.warn('[useCMS] ENV Admin check failed:', e.message);

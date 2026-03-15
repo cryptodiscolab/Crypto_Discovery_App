@@ -105,11 +105,11 @@ export default function ProfilePage() {
       return 0; // Dynamic-only mode: no hardcoded fallbacks
     }
     
-    // Dynamically match highest tier threshold passed
+    // Dynamically match highest tier threshold passed (uses min_xp correctly now)
     let reached = 0;
-    const sorted = [...sbtThresholds].sort((a,b) => a.xp_required - b.xp_required);
+    const sorted = [...sbtThresholds].sort((a,b) => (a.min_xp || 0) - (b.min_xp || 0));
     for (const t of sorted) {
-       if (xp >= t.xp_required) {
+       if (xp >= (t.min_xp || 0)) {
            reached = t.level;
        }
     }
@@ -777,19 +777,19 @@ function CreateTaskModal({ onClose }) {
   // Default to first whitelisted token if none selected
   const allowedTokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
   const selectedToken = paymentToken 
-    ? whitelist.find(t => t.address === paymentToken) 
-    : whitelist[0];
+    ? allowedTokens.find(t => t.address === paymentToken) 
+    : allowedTokens[0];
 
   const isEth = selectedToken?.symbol === 'ETH';
   const rewardTokenAddr = selectedToken?.address || "0x0000000000000000000000000000000000000000";
   
-  const { prices } = usePriceOracle(whitelist.map(t => t.address));
-  const currentPrice = prices[rewardTokenAddr?.toLowerCase()] || 0;
-  const rewardUsdValue = currentPrice * parseFloat(rewardTokens);
-  
-  // Dynamic fetches
+  // Dynamic fetches MUST be before variable usages
   const rewardTokens = Number(ecosystemSettings?.sponsorship_reward_amount || 0);
   const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 0);
+
+  const { prices } = usePriceOracle(allowedTokens.map(t => t.address));
+  const currentPrice = prices[rewardTokenAddr?.toLowerCase()] || 0;
+  const rewardUsdValue = currentPrice * parseFloat(rewardTokens);
   
   const tokenDecimals = selectedToken?.decimals || 18;
   const rewardAmount = BigInt(Math.floor(rewardTokens * 10 ** 6)) * 10n ** BigInt(tokenDecimals - 6); 
@@ -993,7 +993,7 @@ function CreateTaskModal({ onClose }) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2.5">
-              {whitelist.map((token) => (
+              {allowedTokens.map((token) => (
                 <button
                   key={token.address}
                   onClick={() => setPaymentToken(token.address)}
@@ -1200,13 +1200,14 @@ function DailyClaimModal({ onClose, pointSettings, streakCount, profileData }) {
             action: 'xp',
             wallet_address: address,
             signature,
-            message
+            message,
+            tx_hash: hash // Include hash for backend fallback verification
           }),
         });
 
         if (!response.ok) throw new Error("Sync API failed");
 
-        const dailyReward = pointSettings?.daily_claim || 0;
+        const dailyReward = pointSettings?.daily_claim || 100;
         manualAddPoints(dailyReward);
         await refetchStats();
         await refetch();

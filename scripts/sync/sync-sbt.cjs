@@ -79,49 +79,68 @@ async function main() {
 
         console.log("📊 Data to sync:", stats);
 
-        // 2. Recovery Check (v3.20.0)
-        const { data: lastRecord } = await supabase
-            .from('sbt_pool_stats')
-            .select('last_distribution_at')
-            .eq('id', 1)
+        // 2. Recovery & Auto-Healing Check (v3.22.0)
+        const { data: healthRecord } = await supabase
+            .from('system_health')
+            .select('*')
+            .eq('service_key', 'sync-sbt')
             .maybeSingle();
 
-        const lastSyncedTs = lastRecord?.last_distribution_at ? new Date(lastRecord.last_distribution_at).getTime() / 1000 : 0;
-        const currentContractTs = Number(lastDist);
+        let consecutiveSuccess = healthRecord?.metadata?.consecutive_success || 0;
+        let isRecovering = healthRecord?.status === 'failed' || healthRecord?.status === 'recovering';
 
-        if (currentContractTs > lastSyncedTs) {
-            console.log(`🔄 [Recovery] New distribution detected! (Contract: ${currentContractTs} > Synced: ${lastSyncedTs})`);
+        if (isRecovering) {
+            consecutiveSuccess++;
+            console.log(`🩹 [Auto-Healing] Recovery run ${consecutiveSuccess}/3 in progress...`);
         } else {
-            console.log("💎 [Sync] No new distribution since last run.");
+            consecutiveSuccess = 0; // Reset if already healthy (or first run)
         }
 
-        // 3. Upsert to Supabase
-        const { data, error } = await supabase
+        // 3. Upsert to Supabase sbt_pool_stats
+        const { error: syncErr } = await supabase
             .from('sbt_pool_stats')
             .upsert(stats, { onConflict: 'id' });
 
-        if (error) {
-            console.error("❌ Supabase Sync Error:", error.message);
-            console.log("💡 Suggestion: Run this SQL in your Supabase SQL Editor first:");
-            console.log(`
-CREATE TABLE IF NOT EXISTS sbt_pool_stats (
-    id PRIMARY KEY,
-    total_pool_balance NUMERIC,
-    acc_gold TEXT,
-    acc_silver TEXT,
-    acc_bronze TEXT,
-    total_locked_rewards NUMERIC,
-    gold_holders INTEGER,
-    silver_holders INTEGER,
-    bronze_holders INTEGER,
-    last_distribution_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);`);
-        } else {
-            console.log("✅ Successfully synced to Supabase Table 'sbt_pool_stats'");
+        if (syncErr) throw syncErr;
+
+        console.log("✅ Successfully synced to Supabase Table 'sbt_pool_stats'");
+
+        // 4. Update Health State (Auto-Reset Logic)
+        let finalStatus = 'healthy';
+        let finalError = null;
+
+        if (isRecovering && consecutiveSuccess < 3) {
+            finalStatus = 'recovering';
+            finalError = healthRecord.last_error; // Keep error until fully healed
+        } else if (isRecovering && consecutiveSuccess >= 3) {
+            console.log("🎊 [Auto-Healing] Service fully recovered! Circuit Breaker closing.");
+            finalStatus = 'healthy';
+            finalError = null;
+            consecutiveSuccess = 0;
         }
+
+        await supabase.from('system_health').upsert({
+            service_key: 'sync-sbt',
+            status: finalStatus,
+            last_heartbeat: new Date().toISOString(),
+            last_error: finalError,
+            metadata: { 
+                consecutive_success: consecutiveSuccess,
+                last_recovery_step: isRecovering ? new Date().toISOString() : null
+            },
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'service_key' });
+
     } catch (err) {
-        console.error("❌ Contract Read Error:", err.message);
+        console.error("❌ Sync Error:", err.message);
+        // v3.22.0: Reset healing counter on failure
+        await supabase.from('system_health').upsert({
+            service_key: 'sync-sbt',
+            status: 'failed',
+            last_error: err.message,
+            metadata: { consecutive_success: 0 },
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'service_key' });
     } finally {
         console.log("📡 [Sync Health] Process finished at:", new Date().toISOString());
     }

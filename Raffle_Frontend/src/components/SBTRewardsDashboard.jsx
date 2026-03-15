@@ -3,10 +3,11 @@ import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, Timer as Tim
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import { formatEther, formatUnits } from 'viem';
-import { usePublicClient } from 'wagmi';
+import { usePublicClient, useAccount } from 'wagmi';
 import toast from 'react-hot-toast';
 
 export function SBTRewardsDashboard() {
+    const { address } = useAccount();
     const { totalPoolBalance, userTier, claimableAmount, maxGasPrice, claimRewards, isLoading: loadingSBT } = useSBT();
     const { ethPrice, poolSettings, isLoading: loadingCMS } = useCMS();
     const publicClient = usePublicClient();

@@ -143,7 +143,7 @@ export function RaffleCard() {
                 <div className="flex items-center gap-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl mb-3 animate-pulse">
                     <Trophy className="w-5 h-5 text-yellow-400 flex-shrink-0" />
                     <div>
-                        <p className="text-yellow-300 text-xs font-black">🏆 You're a Winner!</p>
+                        <p className="text-yellow-300 text-xs font-black">🏆 You&apos;re a Winner!</p>
                         <p className="text-yellow-200/70 text-[10px]">Claim your NFT prize below.</p>
                     </div>
                 </div>

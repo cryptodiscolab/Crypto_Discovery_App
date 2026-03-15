@@ -5,7 +5,7 @@ import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { CONTRACTS, MASTER_X_ABI } from '../lib/contracts';
+import { CONTRACTS, MASTER_X_ABI, APP_CONFIG } from '../lib/contracts';
 import { usePriceOracle } from '../hooks/usePriceOracle';
 
 const RafflePreview = ({ data, stats }) => {
@@ -149,7 +149,7 @@ export function CreateRafflePage() {
                 maxTickets: formData.maxTickets,
                 durationDays: formData.durationDays,
                 metadataURI: metadataURI,
-                depositETH: parseEther(formData.prizeDeposit),
+                depositETH: parseEther(formData.prizeDeposit || '0'),
                 // Pass extra metadata for backend sync
                 extraMetadata: fullMetadata
             });

@@ -12,7 +12,9 @@ export function AdvancedTierSection({
     onOverrideTierChange,
     onApplyOverride,
     onSyncTiers,
-    saving
+    saving,
+    currentSeasonId,
+    onResetSeason
 }) {
     return (
         <div className="space-y-8">

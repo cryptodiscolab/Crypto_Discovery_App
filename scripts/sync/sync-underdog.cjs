@@ -42,28 +42,69 @@ async function syncUnderdogThreshold() {
         console.log(`🎯 20th Percentile Index: ${index}`);
         console.log(`🔥 Calculated Underdog Threshold: ${thresholdXp} XP`);
 
+        // v3.22.0: Recovery & Auto-Healing Check
+        const { data: healthRecord } = await supabase
+            .from('system_health')
+            .select('*')
+            .eq('service_key', 'sync-underdog')
+            .maybeSingle();
+
+        let consecutiveSuccess = healthRecord?.metadata?.consecutive_success || 0;
+        let isRecovering = healthRecord?.status === 'failed' || healthRecord?.status === 'recovering';
+
+        if (isRecovering) {
+            consecutiveSuccess++;
+            console.log(`🩹 [Auto-Healing] Recovery run ${consecutiveSuccess}/3 in progress...`);
+        } else {
+            consecutiveSuccess = 0;
+        }
+
         // 3. Update System Settings
-        await updateThreshold(thresholdXp);
+        const { error: syncErr } = await supabase
+            .from('system_settings')
+            .upsert({
+                key: 'underdog_threshold_xp',
+                value: Number(thresholdXp),
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+
+        if (syncErr) throw syncErr;
+
+        console.log("✅ Successfully updated 'underdog_threshold_xp' in Supabase.");
+
+        // 4. Update Health State (Auto-Reset Logic)
+        let finalStatus = 'healthy';
+        let finalError = null;
+
+        if (isRecovering && consecutiveSuccess < 3) {
+            finalStatus = 'recovering';
+            finalError = healthRecord.last_error;
+        } else if (isRecovering && consecutiveSuccess >= 3) {
+            console.log("🎊 [Auto-Healing] Service fully recovered!");
+            finalStatus = 'healthy';
+            finalError = null;
+            consecutiveSuccess = 0;
+        }
+
+        await supabase.from('system_health').upsert({
+            service_key: 'sync-underdog',
+            status: finalStatus,
+            last_heartbeat: new Date().toISOString(),
+            last_error: finalError,
+            metadata: { consecutive_success: consecutiveSuccess },
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'service_key' });
 
     } catch (err) {
         console.error("❌ Underdog Sync Error:", err.message);
-        process.exit(1);
-    }
-}
-
-async function updateThreshold(val) {
-    const { error } = await supabase
-        .from('system_settings')
-        .upsert({
-            key: 'underdog_threshold_xp',
-            value: Number(val), // JSONB stores number
+        await supabase.from('system_health').upsert({
+            service_key: 'sync-underdog',
+            status: 'failed',
+            last_error: err.message,
+            metadata: { consecutive_success: 0 },
             updated_at: new Date().toISOString()
-        }, { onConflict: 'key' });
-
-    if (error) {
-        console.error("❌ Failed to update system_settings:", error.message);
-    } else {
-        console.log("✅ Successfully updated 'underdog_threshold_xp' in Supabase.");
+        }, { onConflict: 'service_key' });
+        process.exit(1);
     }
 }
 

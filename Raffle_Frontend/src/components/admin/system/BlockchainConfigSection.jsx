@@ -576,14 +576,14 @@ export function BlockchainConfigSection() {
                         <div className="flex gap-2">
                             <button
                                 onClick={handleSavePoolSettings}
-                                disabled={saving}
+                                disabled={isSaving}
                                 className="flex-1 bg-indigo-500/20 hover:bg-indigo-500 text-indigo-400 hover:text-white py-2.5 rounded-xl text-[10px] font-black transition-all border border-indigo-500/30 uppercase"
                             >
                                 Save Configuration
                             </button>
                             <button
                                 onClick={handleDistribute}
-                                disabled={saving || totalPoolBalance === 0n}
+                                disabled={isSaving || totalPoolBalance === 0n}
                                 className="flex-1 bg-emerald-500/20 hover:bg-emerald-600 text-emerald-400 hover:text-white py-2.5 rounded-xl text-[10px] font-black transition-all border border-emerald-500/30 uppercase"
                             >
                                 Trigger Distribute
@@ -625,7 +625,7 @@ export function BlockchainConfigSection() {
                                 />
                                 <button
                                     onClick={handleWithdrawTreasury}
-                                    disabled={saving}
+                                    disabled={isSaving}
                                     className="px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-emerald-600/20 active:scale-95 flex items-center gap-2"
                                 >
                                     <ArrowUpRight className="w-4 h-4" />
@@ -736,7 +736,7 @@ export function BlockchainConfigSection() {
                 </div>
 
                 <button 
-                    onClick={handleDistributeRevenue} 
+                    onClick={handleDistribute} 
                     disabled={isDistributing} 
                     className="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all flex items-center justify-center gap-2"
                 >

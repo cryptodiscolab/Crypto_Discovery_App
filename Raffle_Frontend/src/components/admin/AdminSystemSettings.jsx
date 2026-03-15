@@ -11,7 +11,8 @@ import {
     History,
     Award,
     Plus,
-    Globe
+    Globe,
+    Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSBT } from '../../hooks/useSBT';
@@ -24,6 +25,7 @@ import { EnsManagementSection } from './system/EnsManagementSection';
 import { AuditLogsSection } from './system/AuditLogsSection';
 import { BlockchainConfigSection } from './system/BlockchainConfigSection';
 import { SponsorshipConfigSection } from './system/SponsorshipConfigSection';
+import { HealthDashboardSection } from './system/HealthDashboardSection';
 
 /**
  * Admin System Settings Component
@@ -322,6 +324,7 @@ export default function AdminSystemSettings() {
                         { id: 'blockchain', label: 'Blockchain Config', icon: Award },
                         { id: 'sponsorship', label: 'Sponsorship Config', icon: Plus },
                         { id: 'ens', label: 'ENS Management', icon: Globe },
+                        { id: 'health', label: 'Nexus Health', icon: Activity },
                         { id: 'logs', label: 'Audit Logs', icon: History }
                     ].map(tab => (
                         <button
@@ -385,6 +388,7 @@ export default function AdminSystemSettings() {
             {activeTab === 'logs' && <AuditLogsSection logs={auditLogs} />}
             {activeTab === 'blockchain' && <BlockchainConfigSection />}
             {activeTab === 'sponsorship' && <SponsorshipConfigSection />}
+            {activeTab === 'health' && <HealthDashboardSection />}
 
             {/* Footer Policy */}
             <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex items-start gap-3">

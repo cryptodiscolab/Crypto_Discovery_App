@@ -36,15 +36,55 @@ const PROFILE_LIMITS = {
 };
 const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
 
+// Resilience v3.21.0: Circuit Breaker Patterns
+const BREAK_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+
+async function checkBreaker(serviceKey) {
+    const { data } = await supabaseAdmin
+        .from('system_health')
+        .select('*')
+        .eq('service_key', serviceKey)
+        .single();
+    
+    if (data?.status === 'failed') {
+        const lastUpdate = new Date(data.updated_at).getTime();
+        if (Date.now() - lastUpdate < BREAK_COOLDOWN) {
+            console.warn(`[CircuitBreaker] Breaker OPEN for ${serviceKey}.`);
+            return false;
+        }
+    }
+    return true;
+}
+
+async function reportHealth(serviceKey, status, error = null) {
+    try {
+        await supabaseAdmin.from('system_health').upsert({
+            service_key: serviceKey,
+            status,
+            last_heartbeat: new Date().toISOString(),
+            last_error: error,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'service_key' });
+    } catch (e) { console.error(`[Health] Failed to report for ${serviceKey}`, e); }
+}
+
 // Resilience v3.20.0: Circuit Breaker / Retry Helper
-async function fetchWithRetry(fn, retries = 3, delay = 1000) {
+async function fetchWithRetry(fn, serviceKey, retries = 3, delay = 1000) {
+    const isOpen = await checkBreaker(serviceKey);
+    if (!isOpen) throw new Error(`${serviceKey} connection currently suspended (Circuit Breaker)`);
+
     for (let i = 0; i < retries; i++) {
         try {
-            return await fn();
+            const res = await fn();
+            await reportHealth(serviceKey, 'healthy');
+            return res;
         } catch (err) {
-            if (i === retries - 1) throw err;
+            if (i === retries - 1) {
+                await reportHealth(serviceKey, 'failed', err.message);
+                throw err;
+            }
             const backoff = delay * Math.pow(2, i);
-            console.warn(`[Retry] Attempt ${i + 1} failed. Retrying in ${backoff}ms...`, err.message);
+            console.warn(`[Retry] ${serviceKey} attempt ${i + 1} failed. Re-trying in ${backoff}ms...`, err.message);
             await new Promise(resolve => setTimeout(resolve, backoff));
         }
     }
@@ -86,6 +126,10 @@ export default async function handler(req, res) {
             return handleCheckAdmin(req, res);
         case 'pending-missions':
             return handleFetchPendingMissions(req, res);
+        case 'get-health':
+            return handleGetHealth(req, res);
+        case 'reset-health':
+            return handleResetHealth(req, res);
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -251,6 +295,33 @@ async function handleXpSync(req, res) {
             }
         }
 
+        // Bug 2 Fix: Fallback check for missing Daily Claim XP due to persistent RPC lag
+        const { data: dailySetting } = await supabaseAdmin
+            .from('point_settings')
+            .select('points_value')
+            .eq('activity_key', 'daily_claim')
+            .single();
+
+        const standardDailyReward = dailySetting?.points_value || 100;
+
+        if (xpDelta === 0) {
+            // Check if user claimed recently but RPC didn't catch it
+            const txHash = req.body?.tx_hash; 
+            if (txHash) {
+                try {
+                    const receipt = await rpcClient.getTransactionReceipt({ hash: txHash });
+                    if (receipt && receipt.status === 'success') {
+                        // We definitively know the tx succeeded. Force delta.
+                        xpDelta = standardDailyReward;
+                        onChainXP = dbLastPoints + xpDelta;
+                        console.log(`[XP Sync Fallback] Forced ${xpDelta} XP for ${cleanAddress} via txReceipt despite RPC lag.`);
+                    }
+                } catch (receiptErr) {
+                    console.warn(`[XP Sync Fallback] Receipt verify failed:`, receiptErr.message);
+                }
+            }
+        }
+
         const currentTier = Number(onChainStats?.[3] || 0);
 
         // --- UNDERDOG BONUS LOGIC (PRD v3.3.3) ---
@@ -375,9 +446,10 @@ async function handleFarcasterSync(req, res) {
         const valid = await verifyMessage({ address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         
-        // Resilience v3.20.0: Exponential Backoff for Neynar API
-        const response = await fetchWithRetry(() => 
-            neynar.v2.fetchBulkUsersByEthOrSolAddress({ addresses: [address] })
+        // Resilience v3.21.0: Circuit Breaker + Backoff
+        const response = await fetchWithRetry(
+            () => neynar.v2.fetchBulkUsersByEthOrSolAddress({ addresses: [address] }),
+            'neynar-api'
         );
         const fcUser = response?.[address.toLowerCase()]?.[0];
 
@@ -928,5 +1000,45 @@ async function handleFetchPendingMissions(req, res) {
         return res.status(200).json(data);
     } catch (error) {
         return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleGetHealth(req, res) {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('system_health')
+            .select('*')
+            .order('service_key');
+        if (error) throw error;
+        return res.status(200).json({ ok: true, health: data });
+    } catch (e) { return res.status(500).json({ error: e.message }); }
+}
+
+async function handleResetHealth(req, res) {
+    const { service_key } = req.body || {};
+    if (!service_key) return res.status(400).json({ error: 'Missing service_key' });
+
+    try {
+        const { error } = await supabaseAdmin.from('system_health').upsert({
+            service_key,
+            status: 'healthy',
+            last_heartbeat: new Date().toISOString(),
+            last_error: null,
+            metadata: { consecutive_success: 0, manual_reset_at: new Date().toISOString() },
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'service_key' });
+
+        if (error) throw error;
+        
+        // Log to Audit
+        await supabaseAdmin.from('admin_audit_logs').insert({
+            admin_address: 'ADMIN_MANUAL', 
+            action: 'MANUAL_HEALTH_RESET',
+            details: { service_key }
+        });
+
+        return res.status(200).json({ ok: true });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
     }
 }

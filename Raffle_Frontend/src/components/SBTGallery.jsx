@@ -13,11 +13,11 @@ export function SBTGallery({ walletAddress }) {
     const levels = ["None", "Bronze", "Silver", "Gold", "Platinum", "Diamond"];
     const tierIcons = [
         null,
-        <Shield className="w-8 h-8 text-orange-400" />,
-        <Shield className="w-8 h-8 text-slate-300" />,
-        <Star className="w-8 h-8 text-yellow-400" />,
-        <Crown className="w-8 h-8 text-indigo-300" />,
-        <Crown className="w-8 h-8 text-blue-400" />
+        <Shield key="tier-1" className="w-8 h-8 text-orange-400" />,
+        <Shield key="tier-2" className="w-8 h-8 text-slate-300" />,
+        <Star key="tier-3" className="w-8 h-8 text-yellow-400" />,
+        <Crown key="tier-4" className="w-8 h-8 text-indigo-300" />,
+        <Crown key="tier-5" className="w-8 h-8 text-blue-400" />
     ];
 
     useEffect(() => {
