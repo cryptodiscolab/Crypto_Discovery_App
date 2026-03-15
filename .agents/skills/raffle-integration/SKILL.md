@@ -15,11 +15,11 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 - **Pre-Flight Check**: Pastikan `buyTickets` dan `drawWinner` menggunakan nama fungsi terbaru.
 - **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 
-### 2. Verified Infrastructure Reference (v3.6.0)
+### 2. Verified Infrastructure Reference (v3.17.0)
 | Key | Value |
 |---|---|
-| Raffle (Latest) | `0xE8b6333e40D9a5A6b4a1c83dB33f0CE73179292f` |
-| MasterX (XP) | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` |
+| Raffle (Latest) | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
+| MasterX (XP) | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
 
 ### 3. Bahasa & Komunikasi
@@ -32,22 +32,22 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 - **Address Canonical**: Selalu gunakan `CONTRACTS.RAFFLE` dari `src/lib/contracts.js` — JANGAN hardcode.
 - **ABI Source**: Gunakan `ABIS.RAFFLE` dari `src/lib/contracts.js` (Proxy-based).
 
-### 2. Core Hook: useRaffle.js (v3.6.0)
+### 2. Core Hook: useRaffle.js (v3.17.0)
 Semua interaksi raffle harus melalui hook `useRaffle`:
 - **`buyTickets(raffleId, amount)`**: Beli tiket → lampirkan `txHash` ke `task_id` (format: `raffle_buy_{id}_{txHash}`) untuk mendukung pembelian berulang.
 - **`claimPrize(raffleId)`**: Klaim hadiah → panggil `/api/raffle?action=claim-prize`.
 - **`createSponsorshipRaffle(...)`**: Gunakan `handleSyncUgcRaffle` untuk sinkronisasi Metadata Kaya (Title, Desc, Imagery).
 
-### 3. Rich Metadata & XP Logic (v3.6.0)
+### 3. Rich Metadata & XP Logic (v3.17.0)
 - **Metadata Fields**: `title`, `description`, `image_url`, `category`, `external_link`, `twitter_link`, `min_sbt_level`.
 - **XP Awards**:
   - `raffle_create`: 500 XP (Fixed).
   - `raffle_buy`: 100 XP **diperkalikan** dengan jumlah tiket.
   - `raffle_win`: 1000 XP saat klaim hadiah.
 
-### 4. Tier-Based Entry Gating (v3.6.0)
+### 4. Tier-Based Entry Gating (v3.17.0)
 - **Percentile-Based Tiers**: Tampilkan Tier user (Diamond-Bronze) berdasarkan `PERCENT_RANK()` XP global dari `v_user_full_profile`.
-- **Gated Raffle Access**: Validasi `min_sbt_level` sebelum transaksi. Jika tier user < syarat, blokir tombol `Buy Ticket` dengan pesan edukatif.
+- **Gated Raffle Access**: Validasi `min_sbt_level` sebelum transaksi. Jika tier user < syarat, blokir tombol `Buy Ticket` dengan pesan edukatif. v3.17.0 supports full indexing for all 6 tiers including Platinum.
 
 ### 5. Activity Logging Standard (Zero-Trust)
 - **Purchase Tracking**: /api/tasks-bundle?action=social-verify dengan `task_id` unik per transaksi.
@@ -57,7 +57,7 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 ## ⛽ Paymaster Integration (Gasless)
 - Gunakan `usePaymaster.js` untuk deteksi infrastruktur gasless (Coinbase Smart Wallet).
 
-## 📋 Checklist Raffle Feature (v3.6.0)
+## 📋 Checklist Raffle Feature (v3.17.0)
 - [x] Apakah `buyTickets` melampirkan `txHash` ke payload?
 - [x] Apakah XP pembelian tiket dikalikan dengan kuantitas?
 - [x] Apakah metadata lengkap (Title, Image, Category) sudah masuk ke Supabase?

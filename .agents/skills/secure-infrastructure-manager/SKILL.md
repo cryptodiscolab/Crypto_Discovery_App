@@ -21,14 +21,14 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **Technical Discussions**: Gunakan **Bahasa Indonesia**.
 - **System Labels/UI**: Gunakan **Bahasa Inggris (English)**.
 
-## 🏛️ Verified Infrastructure Reference (v3.6.0)
+## 🏛️ Verified Infrastructure Reference (v3.17.0)
 | Component | Base Mainnet | Base Sepolia (Testnet) | Env Key |
 |---|---|---|---|
-| **DailyApp (Tasks)** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `VITE_V12_CONTRACT_ADDRESS` |
-| **MasterX (XP)** | `[RESERVED]` | `0x474126AD2E111d4286d75C598bCf1B1e1461E71A` | `VITE_MASTER_X_ADDRESS` |
-| **Raffle** | `[RESERVED]` | `0xE8b6333e40D9a5A6b4a1c83dB33f0CE73179292f` | `VITE_RAFFLE_ADDRESS` |
-| **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS` |
-| **PRD v3.6.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_6_0.md` | `DOC_SOT` |
+| **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `VITE_V12_CONTRACT_ADDRESS` |
+| **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
+| **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
+| **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA` |
+| **PRD v3.17.0** | `[ACTIVE]` | `PRD/PRD_Crypto_Disco_v3_17_0.md` | `DOC_SOT` |
 
 ## 🏛️ Core Competencies
 
@@ -45,7 +45,7 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - [x] **Defensive Address Cleaning**: DILARANG menggunakan alamat kontrak yang masih mengandung tanda kutip, spasi, atau karakter tersembunyi. WAJIB dibersihkan via `cleanAddr` atau `.trim()`.
 - [x] **ENV-SANITY Mandate**: ALL environment variables fetched for serverless initialization (e.g., `SUPABASE_URL`, `SERVICE_KEY`) MUST be cleaned of "Silent Corruption" (literal double quotes and hidden newlines) using `.trim()`.
 - [x] **SDK-First Principle**: Mandatory usage of official SDKs for Auth and Social flows to ensure State/PKCE integrity.
-- [ ] **Multi-Project Vercel Sync**: Wajib melakukan sinkronisasi environment variable atomik di seluruh project terkait (`verification-server`) menggunakan Vercel CLI.
+- [x] **Multi-Project Vercel Sync**: Wajib melakukan sinkronisasi environment variable atomik di seluruh project terkait (`dailyapp-verification-server`) menggunakan Vercel CLI via Clean-Pipe protocol.
 - [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env`, `PRIVATE_KEY`, atau `role_key`.
 
 ### 3. Zero-Trust Frontend Architecture
@@ -78,8 +78,8 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Sync Verification Mandate (CRITICAL)**: Agent WAJIB mengeksekusi `node scripts/audits/verify-db-sync.cjs` setiap kali memulai atau menyelesaikan task database/backend.
 - **Legacy Column Cleanup**: Laporkan kolom redundan dan unifikasi melalui SQL migration.
 
-## 📋 Checklist Security & Infra (MANDATORY)
-- [ ] Apakah kontrak yang digunakan adalah versi terbaru (PRD v3.6.0)?
+## 📋 Checklist Security & Infra (v3.17.0)
+- [ ] Apakah kontrak yang digunakan adalah versi terbaru (PRD v3.17.0)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?
 - [ ] Apakah Gitleaks scan (`npm run gitleaks-check`) sudah dijalankan dan Pass?
 - [ ] Apakah mutasi data mengikuti pola Zero-Trust Backend?
@@ -105,4 +105,4 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan tanpa `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines).
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.6.0*
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.17.0*

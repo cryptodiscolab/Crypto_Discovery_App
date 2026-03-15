@@ -80,4 +80,5 @@ Agar agen tidak mengulang kesalahan, setiap task ditutup dengan siklus **A-D-R-R
 5.  **E**volve: Update file `.agents` atau `agent_vault` dengan pengetahuan baru.
 
 ---
-*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 3.13.0 | Mode: Nexus Evolution | Lead: @antigravity*
+---
+*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 3.17.0 | Mode: Nexus Evolution | Lead: @antigravity*

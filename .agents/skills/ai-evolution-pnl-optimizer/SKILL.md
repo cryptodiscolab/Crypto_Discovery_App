@@ -48,3 +48,5 @@ Setiap kali melakukan perubahan pada `.agents/` atau `.cursorrules`, Agent **WAJ
 - Mengubah `.agents` tanpa melakukan cloud sync manual.
 - Merancang fitur baru tanpa analisa beban server (Neynar/RPC limits).
 - Membiarkan file `.agents` atau `.cursorrules` ter-commit ke Git publik.
+---
+*Protocol Version: 3.17.0 | Mode: Ecosystem Evolution | Lead: @antigravity*

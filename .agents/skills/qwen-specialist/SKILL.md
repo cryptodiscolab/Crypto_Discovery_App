@@ -18,3 +18,5 @@ Qwen bertanggung jawab atas tugas-tugas taktis yang memerlukan interaksi langsun
 - Hasil eksekusi wajib dilaporkan kembali ke `agents_vault`.
 - Prioritaskan kecepatan dan keringanan (lightweight) dalam setiap solusi.
 - **Surgical Fix**: Hanya ganti kode yang error (surgical), dilarang replace seluruh blok.
+---
+*Qwen Specialist | Protocol Version: 3.17.0 | Local Build & Refactor*
