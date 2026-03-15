@@ -1,8 +1,8 @@
 {
-    "MASTER_X_ADDRESS": "0x1ED8B135F01522505717D1E620c4EF869D7D25e7",
-    "DAILY_APP_ADDRESS": "0x87a3d1203Bf20E7dF5659A819ED79a67b236F571",
-    "RAFFLE_ADDRESS": "0x012FAdd087540e1B51a587f420e77D007fED2a84",
-    "CMS_CONTRACT_ADDRESS": "0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302",
+    "MASTER_X_ADDRESS": "0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3",
+    "DAILY_APP_ADDRESS": "0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721",
+    "RAFFLE_ADDRESS": "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08",
+    "CMS_CONTRACT_ADDRESS": "0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC",
     "USDC_ADDRESS": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
     "CREATOR_TOKEN_ADDRESS": "0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c",
     "ABIS": {
@@ -217,6 +217,12 @@
                         "indexed": false,
                         "internalType": "uint256",
                         "name": "diamondAcc",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "platinumAcc",
                         "type": "uint256"
                     },
                     {

@@ -1,10 +1,10 @@
 import fs from 'fs';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 
 function parseEnv(filePath) {
     if (!fs.existsSync(filePath)) return {};
     const content = fs.readFileSync(filePath, 'utf8');
-    const lines = content.split('\n');
+    const lines = content.replace(/\r/g, '').split('\n');
     const env = {};
     for (const line of lines) {
         const trimmed = line.trim();
@@ -13,6 +13,8 @@ function parseEnv(filePath) {
         if (index === -1) continue;
         const key = trimmed.substring(0, index).trim();
         let value = trimmed.substring(index + 1).trim();
+        
+        // Remove surrounding quotes if they exist
         if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
             value = value.substring(1, value.length - 1);
         }
@@ -41,13 +43,22 @@ for (const key of keysToSync) {
                 // Remove existing key to ensure update
                 try {
                     execSync(`vercel env rm ${key} ${env} -y`, { stdio: 'ignore' });
-                } catch (e) {
-                    // Ignore if doesn't exist
-                }
+                } catch (e) {}
                 
-                const cmd = `echo "${value}" | vercel env add ${key} ${env}`;
-                execSync(cmd, { stdio: 'inherit' });
-                console.log(`  ✅ Synced ${key} to ${env}`);
+                // Use spawnSync with input to avoid shell echo issues (no newlines, no quotes)
+                const result = spawnSync('vercel', ['env', 'add', key, env], {
+                    input: value,
+                    encoding: 'utf-8',
+                    shell: true,
+                    stdio: ['pipe', 'inherit', 'pipe']
+                });
+
+                if (result.status === 0) {
+                    console.log(`  ✅ Synced ${key} to ${env}`);
+                } else {
+                    console.error(`  ❌ Failed to sync ${key} to ${env}`);
+                    if (result.stderr) console.error(`     Error: ${result.stderr}`);
+                }
             } catch (e) {
                 console.error(`  ❌ Failed to sync ${key} to ${env}: ${e.message}`);
             }

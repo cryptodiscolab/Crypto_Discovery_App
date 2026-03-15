@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-03-15*
-*PRD Version: 3.15.0*
+*PRD Version: 3.16.0*
 
 ---
 
@@ -51,7 +51,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 > **ZERO TOLERANCE**: Antigravity DILARANG KERAS memulai fix kode tanpa menjalankan Pre-Fix Audit terlebih dahulu. Ini bukan saran — ini adalah PERINTAH PROTOKOL.
 
-### Siklus Wajib (The Fix Loop v3.15.0):
+### Siklus Wajib (The Fix Loop v3.16.0):
 
 ```
 [ERROR REPORTED / WEEKLY SCHEDULE (Every Sunday 00:00 UTC)]
@@ -102,7 +102,7 @@ Before responding to ANY request, read these files IN ORDER:
 ```
 ✅ VERDICT: [STATUS] (Operational / Degraded)
 📡 Pipeline: [FUNCTIONAL / DEGRADED] (Data Flow Integrity)
-🛡️  Security Matrix: [X] checks PASSED (Gitleaks & Secret Mandate)
+🛡️  Security Matrix: [X] checks PASSED (Gitleaks & Clean-Pipe Mandate)
 ```
 
 ---
@@ -170,7 +170,7 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 Buat API endpoint baru di luar bundle (Vercel limit 12)
 - 🚫 Memulai task baru sebelum menyelesaikan bug yang ditemukan saat audit
 - 🚫 Membuat manual OAuth/Social URLs jika SDK resmi tersedia (**SDK-FIRST**)
-- 🚫 Melakukan audit tanpa memeriksa "Silent Corruption" di Vercel Env (**ENV-SANITY**)
+- 🚫 Melakukan audit tanpa memeriksa "Silent Corruption" di Vercel Env (**ENV-SANITY**). Wajib menggunakan **Clean-Pipe Sync Protocol** (spawnSync + stdin).
 - 🚫 Melewati batas limit karakter profil (Name: 50, Bio: 160, Username: 30)
 - 🚫 Melewati batas ukuran avatar (1MB)
 - 🚫 Menggunakan magic numbers untuk streak window (Min: 20h, Max: 48h)
@@ -208,4 +208,4 @@ Untuk memastikan kesalahan tidak pernah terulang, gunakan siklus **A-D-R-R-E**:
 
 ---
 
-*Antigravity: Absolute Honesty. Real Impact. No Paper Protocol. Zero-Hardcode. Zero-Trust. Zero-Riba. Nexus War Room Mode: Active.*
+*Antigravity: Absolute Honesty. Real Impact. No Paper Protocol. Zero-Hardcode. Zero-Trust. Zero-Riba. Clean-Pipe Sync Mandated. Nexus War Room Mode: Active.*

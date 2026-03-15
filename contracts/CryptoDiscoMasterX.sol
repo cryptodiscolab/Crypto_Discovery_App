@@ -108,7 +108,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     // ============ Events ============
     
     event RevenueReceived(uint256 amount, uint256 timestamp);
-    event SBTPoolDistributed(uint256 amount, uint256 diamondAcc, uint256 goldAcc, uint256 silverAcc, uint256 bronzeAcc, uint256 timestamp);
+    event SBTPoolDistributed(uint256 amount, uint256 diamondAcc, uint256 platinumAcc, uint256 goldAcc, uint256 silverAcc, uint256 bronzeAcc, uint256 timestamp);
     event ClaimProcessed(address indexed user, SBTTier tier, uint256 amount);
     uint256 public constant DISTRIBUTE_INTERVAL_SEC = 5 days; // for reference in testing
     event PointsAwarded(address indexed user, uint256 points, string reason);
@@ -258,6 +258,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         emit SBTPoolDistributed(
             amount,
             accRewardPerShare[SBTTier.DIAMOND],
+            accRewardPerShare[SBTTier.PLATINUM],
             accRewardPerShare[SBTTier.GOLD],
             accRewardPerShare[SBTTier.SILVER],
             accRewardPerShare[SBTTier.BRONZE],

@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.15.0)
+## 🔴 ABSOLUTE LAWS (Nexus v3.16.0)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
@@ -37,7 +37,7 @@ Before responding to ANY request, read these files IN ORDER:
 11. **MULTI-PROJECT VERCEL SYNC**: Mandatory CLI environment sync across all projects (DailyApp + Verification Server).
 12. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination (500 items) and Profile Page linking must be interactive (v3.3.3).
 13. **SDK-FIRST**: Never construct manual OAuth/Social URLs or raw REST calls for Auth/Payments if an official SDK (Supabase, Viem, etc.) exists.
-14. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` via `cleanEnv` or inline to prevent "Silent Corruption" (quotes/newlines) during audits and coding.
+14. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` via `cleanEnv` or inline to prevent "Silent Corruption" (quotes/newlines) during audits and coding. **Clean-Pipe Sync Protocol** is MANDATORY for all sync tools.
 15. **LIMIT ENFORCEMENT**: Strictly enforce `PROFILE_LIMITS` (Name: 50, Bio: 160, User: 30, Avatar: 1MB) and `STREAK_WINDOW` (20-48h). No magic numbers allowed.
 16. **ATOMIC SCRIPTS**: NO scripts allowed in root `scripts/`. Must use categorised sub-folders (`audits`, `deployments`, `sync`, `debug`).
 17. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
@@ -49,7 +49,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## ⚡ THE FIX CYCLE (Mandatory v3.15.0)
+## ⚡ THE FIX CYCLE (Mandatory v3.16.0)
 
 ```
 ERROR REPORTED / WEEKLY SCHEDULE (Sunday 00:00 UTC)
@@ -65,7 +65,7 @@ Notify user format (Standard Reporting v3.15.0):
 ```
 ✅ VERDICT: [STATUS] (Operational / Degraded)
 📡 Pipeline: [FUNCTIONAL / DEGRADED] (Data Flow Integrity)
-🛡️  Security Matrix: [X] checks PASSED (Gitleaks & Secret Mandate)
+🛡️  Security Matrix: [X] checks PASSED (Gitleaks & Clean-Pipe Mandate)
 ```
 
 ---

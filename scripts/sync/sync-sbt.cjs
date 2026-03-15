@@ -29,11 +29,12 @@ async function main() {
         // ✅ DEPLOYED CONTRACT baru: sudah ada diamond, platinum, dan lastDistributeTimestamp
         const [
             totalSBTPoolBalance,
-            diamondAcc,
-            platinumAcc,
-            goldAcc,
-            silverAcc,
-            bronzeAcc,
+            noneAcc, // Index 0
+            bronzeAcc, // Index 1
+            silverAcc, // Index 2
+            goldAcc, // Index 3
+            platinumAcc, // Index 4
+            diamondAcc, // Index 5
             lastDist,
             totalLocked,
             diamondHolders,
@@ -43,11 +44,12 @@ async function main() {
             bronzeHolders
         ] = await Promise.all([
             CryptoDiscoMasterX.totalSBTPoolBalance(),
-            CryptoDiscoMasterX.accRewardPerShare(4), // SBTTier.DIAMOND
-            CryptoDiscoMasterX.accRewardPerShare(3), // SBTTier.PLATINUM
-            CryptoDiscoMasterX.accRewardPerShare(2), // SBTTier.GOLD
-            CryptoDiscoMasterX.accRewardPerShare(1), // SBTTier.SILVER
-            CryptoDiscoMasterX.accRewardPerShare(0), // SBTTier.BRONZE (NONE=0 skip)
+            CryptoDiscoMasterX.accRewardPerShare(0),
+            CryptoDiscoMasterX.accRewardPerShare(1),
+            CryptoDiscoMasterX.accRewardPerShare(2),
+            CryptoDiscoMasterX.accRewardPerShare(3),
+            CryptoDiscoMasterX.accRewardPerShare(4),
+            CryptoDiscoMasterX.accRewardPerShare(5),
             CryptoDiscoMasterX.lastDistributeTimestamp(),
             CryptoDiscoMasterX.totalLockedRewards(),
             CryptoDiscoMasterX.diamondHolders(),
