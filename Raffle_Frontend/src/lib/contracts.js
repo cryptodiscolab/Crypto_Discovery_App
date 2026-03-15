@@ -53,9 +53,16 @@ const cleanAddr = (addr) => {
 const getAddr = (key, envKey, envKeySepolia) => {
   let addr;
   if (isSepolia && envKeySepolia) {
-    addr = import.meta.env[envKeySepolia] || _get().ABIS[key + '_SEPOLIA'] || _get()[key + '_SEPOLIA'];
+    addr = import.meta.env[envKeySepolia] 
+      || _get().ABIS[key + '_SEPOLIA'] 
+      || _get()[key + '_SEPOLIA']
+      || _get()[key + '_ADDRESS_SEPOLIA']
+      || _get()[key + '_CONTRACT_ADDRESS_SEPOLIA'];
   } else {
-    addr = import.meta.env[envKey] || _get()[key];
+    addr = import.meta.env[envKey] 
+      || _get()[key] 
+      || _get()[key + '_ADDRESS'] 
+      || _get()[key + '_CONTRACT_ADDRESS'];
   }
   return cleanAddr(addr);
 };
