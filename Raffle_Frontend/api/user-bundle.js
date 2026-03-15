@@ -36,6 +36,20 @@ const PROFILE_LIMITS = {
 };
 const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
 
+// Resilience v3.20.0: Circuit Breaker / Retry Helper
+async function fetchWithRetry(fn, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (err) {
+            if (i === retries - 1) throw err;
+            const backoff = delay * Math.pow(2, i);
+            console.warn(`[Retry] Attempt ${i + 1} failed. Retrying in ${backoff}ms...`, err.message);
+            await new Promise(resolve => setTimeout(resolve, backoff));
+        }
+    }
+}
+
 export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
 
@@ -68,6 +82,10 @@ export default async function handler(req, res) {
             return handleSyncOAuth(req, res);
         case 'approve-mission': // v3.20.0: Admin Governance
             return handleApproveMission(req, res);
+        case 'check-admin':
+            return handleCheckAdmin(req, res);
+        case 'pending-missions':
+            return handleFetchPendingMissions(req, res);
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -356,7 +374,11 @@ async function handleFarcasterSync(req, res) {
     try {
         const valid = await verifyMessage({ address, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
-        const response = await neynar.v2.fetchBulkUsersByEthOrSolAddress({ addresses: [address] });
+        
+        // Resilience v3.20.0: Exponential Backoff for Neynar API
+        const response = await fetchWithRetry(() => 
+            neynar.v2.fetchBulkUsersByEthOrSolAddress({ addresses: [address] })
+        );
         const fcUser = response?.[address.toLowerCase()]?.[0];
 
         if (fcUser) {
@@ -876,6 +898,34 @@ async function handleApproveMission(req, res) {
         });
 
         return res.status(200).json({ success: true, message: 'Mission approved and activated' });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+async function handleCheckAdmin(req, res) {
+    const { wallet } = req.query;
+    if (!wallet) return res.status(400).json({ isAdmin: false });
+    const isAdmin = MASTER_ADMINS.includes(wallet.toLowerCase());
+    return res.status(200).json({ isAdmin });
+}
+
+async function handleFetchPendingMissions(req, res) {
+    const { wallet, signature, message } = req.query;
+    if (!wallet || !signature || !message) return res.status(401).json({ error: 'Missing auth for admin fetch' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid || !MASTER_ADMINS.includes(wallet.toLowerCase())) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('campaigns')
+            .select('*')
+            .eq('status', 'pending');
+
+        if (error) throw error;
+        return res.status(200).json(data);
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }

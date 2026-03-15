@@ -15,6 +15,8 @@ import { useTaskInfo } from '../hooks/useTaskInfo';
 import { useUserV12Stats } from '../hooks/useContract';
 import { encodeFunctionData } from 'viem';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCMS } from '../hooks/useCMS';
+import { GovernancePanel } from './GovernancePanel';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -23,6 +25,7 @@ export function UnifiedDashboard() {
     const [mounted, setMounted] = useState(false);
     const queryClient = useQueryClient();
     const { refetch: refetchStats } = useUserV12Stats(address);
+    const { isAdmin } = useCMS();
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -103,6 +106,9 @@ export function UnifiedDashboard() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 mb-12">
+            
+            {/* Admin Governance Panel (v3.20.0) */}
+            {isAdmin && <GovernancePanel />}
 
             {/* Social Verification Guard */}
             <div className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${fcUser

@@ -79,7 +79,23 @@ async function main() {
 
         console.log("📊 Data to sync:", stats);
 
-        // Upsert to Supabase
+        // 2. Recovery Check (v3.20.0)
+        const { data: lastRecord } = await supabase
+            .from('sbt_pool_stats')
+            .select('last_distribution_at')
+            .eq('id', 1)
+            .maybeSingle();
+
+        const lastSyncedTs = lastRecord?.last_distribution_at ? new Date(lastRecord.last_distribution_at).getTime() / 1000 : 0;
+        const currentContractTs = Number(lastDist);
+
+        if (currentContractTs > lastSyncedTs) {
+            console.log(`🔄 [Recovery] New distribution detected! (Contract: ${currentContractTs} > Synced: ${lastSyncedTs})`);
+        } else {
+            console.log("💎 [Sync] No new distribution since last run.");
+        }
+
+        // 3. Upsert to Supabase
         const { data, error } = await supabase
             .from('sbt_pool_stats')
             .upsert(stats, { onConflict: 'id' });
