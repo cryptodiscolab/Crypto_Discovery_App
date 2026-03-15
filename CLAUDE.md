@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.17.0)
+## 🔴 ABSOLUTE LAWS (Nexus v3.25.0)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
@@ -49,7 +49,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## ⚡ THE FIX CYCLE (Mandatory v3.17.0)
+## ⚡ THE FIX CYCLE (Mandatory v3.25.0)
 
 ```
 ERROR REPORTED / WEEKLY SCHEDULE (Sunday 00:00 UTC)
@@ -61,7 +61,7 @@ ERROR REPORTED / WEEKLY SCHEDULE (Sunday 00:00 UTC)
       └─ ❌ FAIL → Return to STEP 1
 ```
 
-Notify user format (Standard Reporting v3.15.0):
+Notify user format (Standard Reporting v3.25.0):
 ```
 ✅ VERDICT: [STATUS] (Operational / Degraded)
 📡 Pipeline: [FUNCTIONAL / DEGRADED] (Data Flow Integrity)

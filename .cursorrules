@@ -34,12 +34,12 @@ After reading, internally confirm:
 > ❗ If you skip this step and start working without reading skills, **you are in Protocol Breach**.
 ### Section 20.1: OpenClaw Local Installation
 - **Binary Path**: `C:\Users\chiko\AppData\Roaming\npm\openclaw.ps1`
-- **Ollama Model**: `OpenClaw:3.13.0` (Powered by `qwen2.5-coder`)
+- **Ollama Model**: `OpenClaw:3.24.0` (Powered by `qwen2.5-coder`)
 - **Worker Script**: `node .agents/scripts/openclaw-worker.js`
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.20.0**
+**Protocol Version: 3.25.0**
 > The user may say `> re-read skills` to force a reset.
 
 ---
@@ -132,7 +132,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 | **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
 | **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| **Last Synced** | `2026-03-15` | PRD v3.20.0 |
+| **Last Synced** | `2026-03-16` | PRD v3.25.0 |
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -162,7 +162,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - **THE DATABASE SYNCHRONIZATION MANDATE**: All agents (Antigravity, OpenClaw, Qwen, DeepSeek) MUST run `node scripts/audits/verify-db-sync.cjs` before and after any database or backend code modifications. Do not proceed if errors are found.
 - **GITLEAKS VERIFICATION MANDATE**: Never consider a task "Done" without ensuring Gitleaks (`npm run gitleaks-check`) is CLEAR.
 - **ENV-SANITY AUDIT MANDATE**: Every task involving environment variables MUST verify that cloud variables are free of "Silent Corruption" (literal quotes, newlines). All API initializations MUST use `.trim()`. 
-- **Clean-Pipe Sync Protocol (v3.16.0)**: Use of `spawnSync` with direct `stdin` input is MANDATORY for all environment synchronization scripts to prevent shell-induced corruption on Windows.
+- **Clean-Pipe Sync Protocol (v3.24.0)**: Use of `spawnSync` with direct `stdin` input is MANDATORY for all environment synchronization scripts to prevent shell-induced corruption on Windows.
 
 
 ## 15. SOCIAL IDENTITY LOCK & ECOSYSTEM INTEGRITY MANDATE
@@ -173,7 +173,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
   3. **Verification Server**: Update logic for identity persistence, rate limiting, and **Iterative Social Verification** (Paginasi 500 items).
   4. **Telegram Admin Bot**: Update/add commands (e.g., `/user`, `/audit`) and auto-detection logic.
   5. **Admin Dashboard**: Update UI components (e.g., `TaskManagerTab`) and auto-XP mappings.
-  6. **Profile Page UI (v3.3.3)**: Ensure all unlinked socials have interactive "Link" buttons that refetch user data.
+  6. **Profile Page UI (v3.24.0)**: Ensure all unlinked socials have interactive "Link" buttons that refetch user data.
 - **USER EXPERIENCE**: Any discrepancy between ini adalah "Protocol Breach". The ecosystem must feel like a single, seamless, and secure entity to the user.
 
 ## 16. THE ETERNAL MEMORY & TRACEABILITY GUARD
@@ -343,7 +343,7 @@ Error Dilaporkan / Weekly Schedule (Sunday 00:00 UTC)
                           └─[FAIL]──► Kembali ke 29.1
 ```
 
-### 29.5 Dokumentasi Hasil Audit (REPORTING STANDARD v3.15.0)
+### 29.5 Dokumentasi Hasil Audit (REPORTING STANDARD v3.24.0)
 Setiap hasil re-audit wajib disertakan dalam pesan notifikasi ke user dengan format:
 ```
 ✅ VERDICT: [STATUS] (Operational / Degraded)
@@ -368,13 +368,13 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **Targets**: Production (Mainnet), Preview (Sepolia), Development (Sepolia).
 - **Required Action**: `vercel env rm` -> `vercel env add` for all targets on both projects.
 
-## 32. ATOMIC SCRIPT ORGANIZATION MANDATE (v3.6.0)
+## 32. ATOMIC SCRIPT ORGANIZATION MANDATE (v3.24.0)
 - **PRINCIPLE**: Chaotic root script directories are prohibited.
 - **ENFORCEMENT**: All operational scripts MUST reside in categorized sub-folders within `scripts/`.
 - **CATEGORIES**: `audits/`, `deployments/`, `sync/`, `debug/`, `_archive/`.
 - **PORTABILITY**: Every script MUST use `path.join(__dirname, ...)` for relative asset/bridge resolution to ensure functionality regardless of its location in the hierarchy.
 
-## 33. PROFILE & CHARACTER LIMITS MANDATE (v3.5.0)
+## 33. PROFILE & CHARACTER LIMITS MANDATE (v3.24.0)
 - **ENFORCEMENT**: All profile update logic MUST strictly enforce:
   - `MAX_NAME_LEN`: 50 chars.
   - `MAX_BIO_LEN`: 160 chars.
@@ -387,13 +387,13 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **ZERO MAGIC**: These numbers MUST NOT be hardcoded in `user-bundle.js` or elsewhere.
 
 
-## 35. ADMIN SYNC MANDATE (v3.7.0)
+## 35. ADMIN SYNC MANDATE (v3.24.0)
 - **ENFORCEMENT**: Every administrative action on-chain (Token Whitelist, SBT Upgrade) MUST be synchronized with the database immediately upon transaction confirmation via a signed secure request to the backend. No state drift between Contract and Database is permitted.
 
-## 36. SCHEMA IMMUTABLE PROTECTION MANDATE (v3.14.0)
+## 36. SCHEMA IMMUTABLE PROTECTION MANDATE (v3.24.0)
 - **ANTI-DELETION**: The `last_seen_at` column in the `user_profiles` table is a CRITICAL component for XP Sync API and the Anti-Whale Underdog Catch-up logic.
 - **ENFORCEMENT**: 🚨 NEVER delete, rename, or modify the `last_seen_at` column, nor any other vital schema columns governing rewards without explicit A-D-R-R-E cycles. Deleting this column breaks the ecosystem's leaderboard synchronization process.
 
 ---
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.20.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.25.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*

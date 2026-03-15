@@ -19,4 +19,4 @@ Qwen bertanggung jawab atas tugas-tugas taktis yang memerlukan interaksi langsun
 - Prioritaskan kecepatan dan keringanan (lightweight) dalam setiap solusi.
 - **Surgical Fix**: Hanya ganti kode yang error (surgical), dilarang replace seluruh blok.
 ---
-*Qwen Specialist | Protocol Version: 3.17.0 | Local Build & Refactor*
+*Qwen Specialist | Protocol Version: 3.25.0 | Local Build & Refactor*

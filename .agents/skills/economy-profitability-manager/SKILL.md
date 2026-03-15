@@ -21,25 +21,25 @@ Skill ini dirancang untuk mengotomatisasi pengawasan ekonomi aplikasi Crypto Dis
 |---|---|
 | Ticket Price USD | `$0.15` (150,000 points) |
 | Platform Fee (Tasks) | `5%` |
-| Platform Fee (Raffle) | `20%` (Fixed v3.20.0) |
-| Whitelist Mode | `Multi-Chain Dynamic (v3.20.0)` |
+| Platform Fee (Raffle) | `20%` (Fixed v3.25.0) |
+| Whitelist Mode | `Multi-Chain Dynamic (v3.25.0)` |
 | Revenue Split (UGC) | `80% Creator / 20% Platform` |
 | Treasury Wallet | `0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa` |
 
 ## 💰 Kompetensi Inti
 
-### 1. P&L Control (Profit & Loss v3.20.0)
+### 1. P&L Control (Profit & Loss v3.25.0)
 - **Zero-Hardcode Mandate (CRITICAL)**: DILARANG KERAS menggunakan nilai statis untuk Reward (XP), Fees (BP), atau Multiplier di dalam kode. Seluruh parameter sistem WAJIB bersifat dinamis dan diambil dari tabel `point_settings` atau konfigurasi database terkait.
 - **Revenue Tracking**: Gross Revenue dihitung secara dinamis dari `user_activity_logs` (PURCHASE/USDC) di `admin-bundle.js`.
 - **Net Surplus Mandate**: Pastikan saldo Treasury menutupi seluruh `totalLockedRewards` sebelum menjalankan distribusi dividen.
 - **Raffle Revenue Stream**: Monitor aliran dana 20% fee dari `Raffle` ke `MasterX` Revenue Pool.
-- **6-Tier Distribution**: Support for None through Diamond tiers indexing (v3.20.0).
+- **6-Tier Distribution**: Support for None through Diamond tiers indexing (v3.25.0).
 
 ### 2. Ecosystem Balancing (Zero-Hardcode)
 - **Lurah Hub Oversight**: Seluruh parameter ekonomi (Fee BP, Reward Multiplier) WAJIB dikendalikan via Admin Dashboard, bukan hardcode.
 - **Dynamic Pricing**: Gunakan `usePriceOracle` di frontend untuk visualisasi estimasi nilai USD dari reward pool.
 
-## 📋 Checklist Profitabilitas (v3.20.0)
+## 📋 Checklist Profitabilitas (v3.25.0)
 - [ ] Apakah biaya listing sudah menutupi biaya review admin?
 - [ ] Apakah estimasi profit margin sudah dihitung?
 - [ ] Apakah usulan fitur bebas dari unsur Riba?
