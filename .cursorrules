@@ -295,7 +295,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 ### 29.1 Pre-Fix Audit (BEFORE touching any code)
 Before fixing any error, Agent WAJIB menjalankan audit ekosistem terlebih dahulu:
 ```bash
-# Step 1: Ecosystem Sync Audit
+# Step 1: Ecosystem Sync Audit (Mandatory Weekly: Sunday 00:00 UTC)
 node scripts/audits/check_sync_status.cjs
 
 # Step 2: Syntax Check all bundles
@@ -332,7 +332,7 @@ npm run gitleaks-check
 
 ### 29.4 The Fix Cycle (Lua Loop)
 ```
-Error Dilaporkan
+Error Dilaporkan / Weekly Schedule (Sunday 00:00 UTC)
   └─► 29.1: Pre-Fix Audit  ──[Temuan Baru?]──► Report ke User (node scripts/audits/check_sync_status.cjs)
         └─► 29.2: Root Cause Analysis
               └─► Implementasi Fix
@@ -341,12 +341,12 @@ Error Dilaporkan
                           └─[FAIL]──► Kembali ke 29.1
 ```
 
-### 29.5 Dokumentasi Hasil Audit
+### 29.5 Dokumentasi Hasil Audit (REPORTING STANDARD v3.15.0)
 Setiap hasil re-audit wajib disertakan dalam pesan notifikasi ke user dengan format:
 ```
-✅ VERDICT: [status]
-📡 Pipeline: [FUNCTIONAL/DEGRADED]
-🛡️  Security: [X] checks PASSED
+✅ VERDICT: [STATUS] (Operational / Degraded)
+📡 Pipeline: [FUNCTIONAL / DEGRADED] (Data Flow Integrity)
+🛡️  Security Matrix: [X] checks PASSED (Gitleaks & Secret Mandate)
 ```
 
 ### 29.6 SURGICAL FIX MANDATE (ANTI-DESTRUCTION CODE)

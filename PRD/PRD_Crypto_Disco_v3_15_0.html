@@ -1,0 +1,60 @@
+<h1>🪩 Product Requirements Document: Crypto Disco Application</h1>
+<p><strong>Version: 3.15.0 — Audit-First Sync Mandate</strong>
+<strong>Tanggal</strong>: 2026-03-15
+<strong>Status</strong>: Active — Protocol Hardening ✅
+<strong>Author</strong>: Antigravity (Nexus Orchestrator)</p>
+<blockquote>
+<p><strong>Catatan</strong>: Versi ini meresmikan siklus audit end-to-end sebagai standar operasional tetap. Menetapkan jadwal audit mingguan dan standarisasi pelaporan status ekosistem untuk menjaga integritas data antar platform.</p>
+</blockquote>
+<hr>
+<h2>📋 Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Versi</th>
+<th>Tanggal</th>
+<th>Ringkasan</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>3.15.0</strong></td>
+<td>2026-03-15</td>
+<td><strong>Audit-First Sync Mandate</strong>: Formalisasi siklus audit E2E mingguan. Standardisasi format pelaporan audit (Verdict/Pipeline/Security). Integrasi ENV-SANITY Purge cycle.</td>
+</tr>
+<tr>
+<td>3.14.0</td>
+<td>2026-03-15</td>
+<td><strong>Schema Immutable Protection</strong>: Menambahkan protokol perlindungan Anti-Deletion untuk kolom <code>last_seen_at</code>.</td>
+</tr>
+<tr>
+<td>3.13.0</td>
+<td>2026-03-15</td>
+<td><strong>OpenClaw Nexus Evolution</strong>: Integrasi penuh OpenClaw v3.13.0.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>1. Visi &amp; Tujuan</h2>
+<p>Tetap sebagai ekosistem Web3 paling transparan dan aman melalui audit berkelanjutan dan sinkronisasi identitas sosial 1-ke-1.</p>
+<hr>
+<h2>4. Fitur &amp; Fungsionalitas</h2>
+<h3>4.7 Automated Ecosystem Audit (v3.15.0)</h3>
+<ul>
+<li><strong>Weekly Schedule</strong>: Audit E2E wajib dijalankan setiap <strong>Minggu (00:00 UTC)</strong> atau sebelum rilis fitur besar.</li>
+<li><strong>Reporting Standard</strong>: Setiap audit harus menghasilkan laporan dengan format:<ul>
+<li><code>✅ VERDICT</code>: Status akhir (Operational/Degraded).</li>
+<li><code>📡 Pipeline</code>: Integritas data flow.</li>
+<li><code>🛡️ Security Matrix</code>: Hasil scan Gitleaks &amp; Secret checks.</li>
+</ul>
+</li>
+<li><strong>ENV-SANITY Purge</strong>: Prosedur wajib untuk membersihkan korupsi karakter (<code>\r\n</code>, quotes) pada variabel lingkungan Vercel guna mencegah kegagalan silent pada API.</li>
+</ul>
+<hr>
+<h2>6. Security &amp; Audit Mandates</h2>
+<h3>6.6 The Audit-First Mandate (v3.15.0)</h3>
+<ul>
+<li><strong>PRE-RELEASE</strong>: DILARANG melakukan deployment ke Production tanpa menjalankan <code>node scripts/audits/check_sync_status.cjs</code> dan <code>npm run gitleaks-check</code>.</li>
+<li><strong>CONTINUOUS VERIFICATION</strong>: Integritas ekosistem bukan hanya tentang kode, tapi tentang sinkronisasi Database ↔ Contract ↔ Social Identity.</li>
+</ul>
+<hr>
+<p><em>PRD Version: 3.15.0 — Audit-First Sync Mandate</em>
+<em>Berdasarkan protokol Antigravity v3.15.0. Integrity First. Nexus Synchronized.</em></p>

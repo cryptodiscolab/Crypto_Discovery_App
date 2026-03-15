@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-03-15*
-*PRD Version: 3.14.0*
+*PRD Version: 3.15.0*
 
 ---
 
@@ -51,59 +51,58 @@ Before responding to ANY request, read these files IN ORDER:
 
 > **ZERO TOLERANCE**: Antigravity DILARANG KERAS memulai fix kode tanpa menjalankan Pre-Fix Audit terlebih dahulu. Ini bukan saran — ini adalah PERINTAH PROTOKOL.
 
-### Siklus Wajib (The Fix Loop):
+### Siklus Wajib (The Fix Loop v3.15.0):
 
 ```
-[ERROR DILAPORKAN OLEH USER]
+[ERROR REPORTED / WEEKLY SCHEDULE (Every Sunday 00:00 UTC)]
     │
     ▼
 🔍 STEP 1: PRE-FIX AUDIT (WAJIB PERTAMA)
-┌─────────────────────────────────────────────┐
-│  node scripts/audits/check_sync_status.cjs  │
-│  node -c api/user-bundle.js                 │
-│  node -c api/admin-bundle.js                │
-│  node -c api/tasks-bundle.js                │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  node scripts/audits/check_sync_status.cjs   │
+│  node -c api/user-bundle.js                  │
+│  node -c api/admin-bundle.js                 │
+│  node -c api/tasks-bundle.js                 │
+└──────────────────────────────────────────────┘
     │
     ├─ Ada temuan baru? ──► LAPORKAN KE USER sebelum lanjut
     │
     ▼
 🧠 STEP 2: ROOT CAUSE ANALYSIS
-┌─────────────────────────────────────────────┐
-│  • grep_search() seluruh entry point         │
-│  • view_file() file yang relevan             │
-│  • XP/Fee/Reward? Cek point_settings!       │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  • grep_search() seluruh entry point          │
+│  • view_file() file yang relevan              │
+│  • XP/Fee/Reward? Cek point_settings!        │
+└──────────────────────────────────────────────┘
     │
     ▼
 🔧 STEP 3: IMPLEMENTASI FIX
-┌─────────────────────────────────────────────┐
-│  • Zero-Hardcode: No static XP/Fee/Reward   │
-│  • Zero-Trust: Signature verification       │
-│  • Zero-Secret: No hardcoded keys           │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  • Zero-Hardcode: No static XP/Fee/Reward    │
+│  • Zero-Trust: Signature verification        │
+│  • Zero-Secret: No hardcoded keys            │
+└──────────────────────────────────────────────┘
     │
     ▼
 ✅ STEP 4: POST-FIX RE-AUDIT (WAJIB SEBELUM NOTIFY USER)
-┌─────────────────────────────────────────────┐
-│  node scripts/audits/check_sync_status.cjs  │
-│  npm run gitleaks-check                     │
-│  node -c api/user-bundle.js                 │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  node scripts/audits/check_sync_status.cjs   │
+│  npm run gitleaks-check                      │
+│  node -c api/user-bundle.js                  │
+└──────────────────────────────────────────────┘
     │
-    ├─ ✅ PASS → Notify User dengan output audit + git commit
+    ├─ ✅ PASS → Notify User dengan Standard Reporting
     └─ ❌ FAIL → Kembali ke STEP 1 (jangan notify user dulu)
 
-### SURGICAL FIX MANDATE (Baru):
+### SURGICAL FIX MANDATE:
 - **DILARANG KERAS** menghapus seluruh kode saat memperbaiki error.
-- **Wajib** melakukan "Surgical Fix": hanya hapus dan ganti baris/blok yang error saja untuk menjaga integritas kode.
-```
+- **Wajib** melakukan "Surgical Fix": hanya hapus dan ganti baris/blok yang error saja.
 
-### Format Wajib Notify User Setelah Fix:
+### Standard Reporting Format (Nexus v3.15.0):
 ```
-✅ VERDICT: ALL SYSTEMS SYNCHRONIZED & OPERATIONAL
-📡 Task Claim Pipeline: FULLY FUNCTIONAL
-🛡️  Security Matrix: [N] checks PASSED
+✅ VERDICT: [STATUS] (Operational / Degraded)
+📡 Pipeline: [FUNCTIONAL / DEGRADED] (Data Flow Integrity)
+🛡️  Security Matrix: [X] checks PASSED (Gitleaks & Secret Mandate)
 ```
 
 ---

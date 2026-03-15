@@ -22,10 +22,10 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Zero Tolerance)
+## 🔴 ABSOLUTE LAWS (Nexus v3.15.0)
 
-1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`
-2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED`
+1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
+2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
 3. **ZERO HARDCODE**: No literal XP, fee, or reward numbers. All values from `point_settings`/`system_settings` in Supabase
 4. **ZERO SECRETS**: No Private Keys (EIP-191), Service Role Keys, or API Keys as string literals. Always `process.env.*`
 5. **ZERO RIBA**: Never implement interest-bearing, inflationary staking APY, or deceptive tokenomics
@@ -49,23 +49,23 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## ⚡ THE FIX CYCLE (Mandatory)
+## ⚡ THE FIX CYCLE (Mandatory v3.15.0)
 
 ```
-ERROR REPORTED
+ERROR REPORTED / WEEKLY SCHEDULE (Sunday 00:00 UTC)
   → STEP 1: node scripts/audits/check_sync_status.cjs  ← PRE-FIX AUDIT
   → STEP 2: grep_search + view_file             ← ROOT CAUSE ANALYSIS
   → STEP 3: Implement fix (Zero-Hardcode + Zero-Trust)
   → STEP 4: node scripts/audits/check_sync_status.cjs  ← RE-AUDIT
-      ├─ ✅ PASS → Notify user with audit output
+      ├─ ✅ PASS → Notify user with Standard Reporting Format
       └─ ❌ FAIL → Return to STEP 1
 ```
 
-Notify user format after fix:
+Notify user format (Standard Reporting v3.15.0):
 ```
-✅ VERDICT: ALL SYSTEMS SYNCHRONIZED & OPERATIONAL
-📡 Pipeline: FULLY FUNCTIONAL
-🛡️  Security: [N] checks PASSED
+✅ VERDICT: [STATUS] (Operational / Degraded)
+📡 Pipeline: [FUNCTIONAL / DEGRADED] (Data Flow Integrity)
+🛡️  Security Matrix: [X] checks PASSED (Gitleaks & Secret Mandate)
 ```
 
 ---
