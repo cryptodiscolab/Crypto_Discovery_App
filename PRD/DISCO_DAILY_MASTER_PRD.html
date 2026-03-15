@@ -1,5 +1,5 @@
 <h1>🪩 DISCO DAILY: Master Product Requirements Document (Architect&#39;s Ledger)</h1>
-<p><strong>Version</strong>: 3.19.0 — Deep-Dive Protocols Milestone
+<p><strong>Version</strong>: 3.20.0 — Resilience &amp; Governance Milestone
 <strong>Last Updated</strong>: 2026-03-15
 <strong>Status</strong>: ACTIVE — SINGLE SOURCE OF TRUTH ✅</p>
 <hr>
@@ -307,7 +307,46 @@
     Compare -- Yes --&gt; Credit[Credit XP &amp; Reward]
 </code></pre>
 <hr>
-<h2>8. Historical Analysis &amp; Changelog</h2>
+<hr>
+<h2>9. Resilience &amp; Architecture Hardening (v3.20.0)</h2>
+<p>Berdasarkan audit ekosistem v3.19.0, Section ini mendefinisikan standar pemulihan dan tata kelola untuk mencegah kegagalan sistematis.</p>
+<h3>9.1 Recovery &amp; Fallback Mandates</h3>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Potential Risk</th>
+<th>Mitigation / Fallback Standard</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Cron Sync</strong></td>
+<td>Sync loop failure / Missed events</td>
+<td><strong>Recursive Recovery Loop</strong>: Script wajib mencatat <code>last_synced_id</code> di DB. Jika gagal, coba lagi dari offset terakhir.</td>
+</tr>
+<tr>
+<td><strong>Verification</strong></td>
+<td>Rate Limit / API Bottleneck</td>
+<td><strong>Circuit Breaker</strong>: Implementasi exponential backoff pada request ke Neynar/Twitter.</td>
+</tr>
+<tr>
+<td><strong>Randomness</strong></td>
+<td>Rigged Draw / Blockhash Attack</td>
+<td><strong>QRNG Enforced</strong>: Dilarang menggunakan blockhash. Wajib menggunakan <strong>API3 QRNG (Airnode RRP)</strong>.</td>
+</tr>
+</tbody></table>
+<h3>9.2 Precision Governance</h3>
+<ul>
+<li><strong>Underdog Bonus</strong>: Didefinisikan ulang sebagai <strong>Bottom 20% by World XP Index</strong>. Bonus +10% dihitung saat snapshot harian (daily_ranking_snapshot) untuk akurasi data.</li>
+<li><strong>Task Moderation</strong>: Seluruh UGC Mission/Sponsored Task memiliki status awal <code>PENDING_REVIEW</code>. Misi hanya muncul di Dashboard setelah mendapatkan approval <code>is_active = true</code> dari Master Admin.</li>
+</ul>
+<h3>9.3 Scalability Standard</h3>
+<ul>
+<li><strong>Load Handling</strong>: Verification server didesain stateless. Jika trafik naik, sistem mendukung horizontal scaling via Vercel Functions.</li>
+<li><strong>Data Integrity</strong>: <code>last_seen_at</code> dan <code>identity_lock</code> diproteksi oleh RLS (Row Level Security) untuk mencegah tampering dari level aplikasi.</li>
+</ul>
+<hr>
+<h2>10. Historical Analysis &amp; Changelog</h2>
 <h3>5.1 Evolution Summary</h3>
 <table>
 <thead>

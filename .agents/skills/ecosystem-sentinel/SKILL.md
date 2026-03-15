@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Audit-First Mandate (v3.19.0)**: Mandatory **Weekly E2E Audit** every Sunday (00:00 UTC) or before major feature releases using `node scripts/audits/check_sync_status.cjs`. Standardized reporting: Verdict/Pipeline/Security.
+  - **Audit-First Mandate (v3.20.0)**: Mandatory **Weekly E2E Audit** every Sunday (00:00 UTC) or before major feature releases using `node scripts/audits/check_sync_status.cjs`. Standardized reporting: Verdict/Pipeline/Security.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -133,7 +133,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` |
 | **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| **PRD v3.19.0** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.20.0** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
 | **Admin FIDs** | `1477344` | `1477344` |
 

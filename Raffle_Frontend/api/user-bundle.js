@@ -550,7 +550,7 @@ async function handleSyncUgcMission(req, res) {
             platform_code: platform_code || 'farcaster',
             reward_amount_per_user: reward_amount_per_user.toString(),
             max_participants: parseInt(max_participants),
-            status: 'active',
+            status: 'pending', // v3.20.0: Default to pending for admin moderation
             created_at: new Date().toISOString(),
             payment_token: payment_token || null,
             reward_symbol: reward_symbol || 'TOKEN'
@@ -566,7 +566,7 @@ async function handleSyncUgcMission(req, res) {
                 platform: task.platform || 'base',
                 action_type: task.action_type || 'follow',
                 link: task.link,
-                is_active: true,
+                is_active: false, // v3.20.0: Default to false for admin moderation
                 task_type: 'ugc',
                 onchain_id: campaign.id,
                 created_at: new Date().toISOString()

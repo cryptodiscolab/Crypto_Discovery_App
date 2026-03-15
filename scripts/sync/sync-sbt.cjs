@@ -106,6 +106,8 @@ CREATE TABLE IF NOT EXISTS sbt_pool_stats (
         }
     } catch (err) {
         console.error("❌ Contract Read Error:", err.message);
+    } finally {
+        console.log("📡 [Sync Health] Process finished at:", new Date().toISOString());
     }
 }
 

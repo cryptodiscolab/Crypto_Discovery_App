@@ -15,7 +15,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Replay Protection**: Gunakan timestamp dalam pesan signature dengan window validasi maksimal 5 menit.
 - **Normalized Mapping**: Pastikan mapping address (Farcaster/Twitter) menggunakan clean lowercase address untuk menghindari 404 pada API Neynar.
 
-### 2. Verified Infrastructure Reference (PRD v3.19.0)
+### 2. Verified Infrastructure Reference (PRD v3.20.0)
 | Key | Value |
 |---|---|
 | Admin FIDs | `1477344` (Farcaster) |
@@ -34,7 +34,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Z-Index Guard**: Selalu gunakan `relative z-[9999] pointer-events-auto` untuk BottomNav/Header admin.
 - **Glass Wall Prevention**: Pastikan tidak ada overlay transparan yang menutupi tombol klik.
 
-### 2. Lurah Hub & P&L Guard (v3.19.0)
+### 2. Lurah Hub & P&L Guard (v3.20.0)
 - **Administrative Setters**: Pastikan UI Admin mendukung konfigurasi dinamis `DailyAppV13` (Withdrawal Fee BP, Daily Bonus, Auto-Approve Sponsorship, Sponsor Duration).
 - **Token Whitelist Verification**: Selalu verifikasi bahwa token yang di-whitelist memiliki `decimals` dan `symbol` yang benar sebelum melakukan sinkronisasi database.
 - **Admin Sync Mandate**: Setiap aksi on-chain (Token Whitelist, SBT Upgrade) WAJIB melakukan signed request ke Backend Bundle untuk sinkronisasi Database SEGERA setelah konfirmasi transaksi.
@@ -55,7 +55,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **NODE_OPTIONS**: Selalu gunakan memory allocation tinggi untuk build:
   `cross-env NODE_OPTIONS='--max-old-space-size=8192 --stack-size=8192' vite build`
 
-## 📋 Checklist Stabilitas (v3.19.0)
+## 📋 Checklist Stabilitas (v3.20.0)
 - [ ] Apakah komponen Admin baru sudah memiliki error boundary?
 - [ ] Apakah `z-index` sudah diuji untuk mencegah "Glass Wall"?
 - [ ] Apakah TIDAK ADA impor ethers.js dari package `viem`?

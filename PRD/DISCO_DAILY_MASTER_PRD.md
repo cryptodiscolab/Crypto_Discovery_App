@@ -1,5 +1,5 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.19.0 — Deep-Dive Protocols Milestone
+**Version**: 3.20.0 — Resilience & Governance Milestone
 **Last Updated**: 2026-03-15
 **Status**: ACTIVE — SINGLE SOURCE OF TRUTH ✅
 
@@ -347,7 +347,30 @@ flowchart TD
 
 ---
 
-## 8. Historical Analysis & Changelog
+---
+
+## 9. Resilience & Architecture Hardening (v3.20.0)
+
+Berdasarkan audit ekosistem v3.19.0, Section ini mendefinisikan standar pemulihan dan tata kelola untuk mencegah kegagalan sistematis.
+
+### 9.1 Recovery & Fallback Mandates
+| System | Potential Risk | Mitigation / Fallback Standard |
+|---|---|---|
+| **Cron Sync** | Sync loop failure / Missed events | **Recursive Recovery Loop**: Script wajib mencatat `last_synced_id` di DB. Jika gagal, coba lagi dari offset terakhir. |
+| **Verification** | Rate Limit / API Bottleneck | **Circuit Breaker**: Implementasi exponential backoff pada request ke Neynar/Twitter. |
+| **Randomness** | Rigged Draw / Blockhash Attack | **QRNG Enforced**: Dilarang menggunakan blockhash. Wajib menggunakan **API3 QRNG (Airnode RRP)**. |
+
+### 9.2 Precision Governance
+- **Underdog Bonus**: Didefinisikan ulang sebagai **Bottom 20% by World XP Index**. Bonus +10% dihitung saat snapshot harian (daily_ranking_snapshot) untuk akurasi data.
+- **Task Moderation**: Seluruh UGC Mission/Sponsored Task memiliki status awal `PENDING_REVIEW`. Misi hanya muncul di Dashboard setelah mendapatkan approval `is_active = true` dari Master Admin.
+
+### 9.3 Scalability Standard
+- **Load Handling**: Verification server didesain stateless. Jika trafik naik, sistem mendukung horizontal scaling via Vercel Functions.
+- **Data Integrity**: `last_seen_at` dan `identity_lock` diproteksi oleh RLS (Row Level Security) untuk mencegah tampering dari level aplikasi.
+
+---
+
+## 10. Historical Analysis & Changelog
 
 ### 5.1 Evolution Summary
 | Milestone | Version | Focus | Legacy Status |
