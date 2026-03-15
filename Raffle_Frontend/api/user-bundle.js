@@ -66,6 +66,8 @@ export default async function handler(req, res) {
             return handleLeaderboard(req, res);
         case 'sync-oauth':
             return handleSyncOAuth(req, res);
+        case 'approve-mission': // v3.20.0: Admin Governance
+            return handleApproveMission(req, res);
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -182,7 +184,7 @@ async function handleXpSync(req, res) {
             supabaseAdmin
                 .from('system_settings')
                 .select('key, value')
-                .in('key', ['underdog_bonus_multiplier_bp', 'underdog_activity_window_hours', 'underdog_max_tier'])
+                .in('key', ['underdog_bonus_multiplier_bp', 'underdog_activity_window_hours', 'underdog_threshold_xp'])
         ]);
 
         const settings = settingsRes?.reduce((acc, s) => { acc[s.key] = s.value; return acc; }, {}) || {};
@@ -238,8 +240,10 @@ async function handleXpSync(req, res) {
         let isUnderdogEligible = false;
 
         if (xpDelta > 0) {
-            const maxUnderdogTier = parseInt(settings.underdog_max_tier || process.env.UNDERDOG_MAX_TIER || '2');
-            if (currentTier > 0 && currentTier <= maxUnderdogTier) {
+            // v3.20.0: Percentile-based threshold (World Index)
+            const underdogThreshold = parseInt(settings.underdog_threshold_xp || '0');
+            
+            if (dbLastPoints <= underdogThreshold) {
                 const windowHrs = parseInt(settings.underdog_activity_window_hours || process.env.UNDERDOG_WINDOW_HOURS || '48');
                 const lastClaimAt = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
                 
@@ -248,7 +252,7 @@ async function handleXpSync(req, res) {
                     isUnderdogEligible = true;
                     const multiplierBP = parseInt(settings.underdog_bonus_multiplier_bp || process.env.UNDERDOG_MULTIPLIER_BP || '11000');
                     appliedBonusXP = Math.floor((xpDelta * (multiplierBP - 10000)) / 10000);
-                    console.log(`[Underdog Bonus] Applying +${appliedBonusXP} XP to ${cleanAddress} (Tier ${currentTier})`);
+                    console.log(`[Underdog Bonus] Applying +${appliedBonusXP} XP to ${cleanAddress} (XP: ${dbLastPoints} <= Threshold: ${underdogThreshold})`);
                 }
             }
         }
@@ -828,6 +832,50 @@ async function handleSyncOAuth(req, res) {
             return res.status(200).json({ success: true });
         }
         return res.status(400).json({ error: 'Invalid provider' });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleApproveMission(req, res) {
+    const { wallet, signature, message, campaign_id } = req.body;
+    if (!wallet || !signature || !message || !campaign_id) return res.status(400).json({ error: 'Missing approval data' });
+
+    try {
+        // 1. Verify Admin Signature
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const cleanAddress = wallet.toLowerCase();
+        if (!MASTER_ADMINS.includes(cleanAddress)) {
+            return res.status(403).json({ error: 'Unauthorized: Admin only' });
+        }
+
+        // 2. Activate Campaign & Related Tasks
+        const { error: campErr } = await supabaseAdmin
+            .from('campaigns')
+            .update({ status: 'active', updated_at: new Date().toISOString() })
+            .eq('id', campaign_id);
+
+        if (campErr) throw campErr;
+
+        const { error: taskErr } = await supabaseAdmin
+            .from('daily_tasks')
+            .update({ is_active: true })
+            .eq('onchain_id', campaign_id);
+
+        if (taskErr) console.warn('[ApproveMission] Task activation warning:', taskErr.message);
+
+        // 3. Log Admin Action
+        await logActivity({
+            wallet: cleanAddress,
+            category: 'ADMIN',
+            type: 'UGC Approval',
+            description: `Approved campaign ID: ${campaign_id}`,
+            metadata: { campaign_id }
+        });
+
+        return res.status(200).json({ success: true, message: 'Mission approved and activated' });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
