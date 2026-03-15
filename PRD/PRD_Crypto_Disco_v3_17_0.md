@@ -12,7 +12,7 @@
 
 | Versi | Tanggal | Ringkasan |
 |---|---|---|
-| **3.17.0** | 2026-03-15 | **Full-Indexing Unleashed**: Upgrade `CryptoDiscoMasterX` ke v3.17.0. Perbaikan event `SBTPoolDistributed` untuk mendukung indexing Platinum tier. |
+| **3.17.0** | 2026-03-15 | **Full-Indexing Unleashed**: Upgrade `CryptoDiscoMasterX` ke v3.17.0. Perbaikan event `SBTPoolDistributed` untuk mendukung indexing Platinum tier. Sinkronisasi penuh environment Vercel menggunakan Clean-Pipe Protocol. |
 | 3.16.0 | 2026-03-15 | **Clean-Pipe Sync Mandate**: Institusionalisasi protokol sinkronisasi environment menggunakan `spawnSync`. |
 | 3.15.0 | 2026-03-15 | **Audit-First Sync Mandate**: Formalisasi siklus audit E2E mingguan. |
 
