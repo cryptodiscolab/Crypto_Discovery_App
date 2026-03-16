@@ -359,14 +359,7 @@ async function handleXpSync(req, res) {
             updated_at: new Date().toISOString()
         };
 
-        // Determine Task ID for the claim early to check for streaks
-        const { data: dailySetting } = await supabaseAdmin
-            .from('point_settings')
-            .select('points_value')
-            .eq('activity_key', 'daily_claim')
-            .single();
-
-        const standardDailyReward = dailySetting?.points_value;
+        // Determine Task ID for the claim — reuse standardDailyReward fetched above
         const isDailyClaim = xpDelta > 0 && xpDelta === standardDailyReward;
         const taskId = isDailyClaim
             ? TASK_IDS.DAILY_CLAIM_STREAK
