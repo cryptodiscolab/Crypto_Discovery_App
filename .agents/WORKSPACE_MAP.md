@@ -68,7 +68,7 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 | `user_activity_logs` | Audit Trail (History) | `category`, `activity_type`, `description`, `tx_hash` |
 | `point_settings` | Zero-Hardcode Rewards | `activity_key`, `points_value` |
 | `system_settings` | Global System Params | `key`, `value` |
-| `v_user_full_profile` | Unified Profile View | Joining profiles with Tier names & SBT stats |
+| `v_user_full_profile` | Unified Profile View | Joining profiles with Tier names, SBT stats, and Raffle stats |
 
 ---
 

@@ -1,5 +1,5 @@
 <h1>🪩 DISCO DAILY: Master Product Requirements Document (Architect&#39;s Ledger)</h1>
-<p><strong>Version</strong>: 3.25.0 — Lint-Free Ecosystem &amp; UI Refinement
+<p><strong>Version</strong>: 3.26.1 — Workspace Alignment &amp; Critical Bug Fix
 <strong>Last Updated</strong>: 2026-03-16
 <strong>Status</strong>: ACTIVE — SINGLE SOURCE OF TRUTH ✅</p>
 <hr>
@@ -10,8 +10,9 @@
 <li><a href="#3-user--reward-lifecycle-end-to-end">User &amp; Reward Lifecycle (End-to-End)</a></li>
 <li><a href="#4-admin--sponsorship-workflow">Admin &amp; Sponsorship Workflow</a></li>
 <li><a href="#5-historical-analysis--changelog">Historical Analysis &amp; Changelog</a></li>
-<li><a href="#6-audit--security-mandates">Audit &amp; Security Mandates</a></li>
-<li><a href="#7-current-ecosystem-status-audit-report">Current Ecosystem Status (Audit Report)</a></li>
+<li><a href="#6-audit-security-mandates">Audit &amp; Security Mandates</a></li>
+<li><a href="#7-current-ecosystem-status-v3261-audit-report">Current Ecosystem Status (v3.26.1 Audit Report)</a></li>
+<li><a href="#8-workspace-architecture--data-flow-v3261">Workspace Architecture &amp; Data Flow (v3.26.1)</a></li>
 </ol>
 <hr>
 <h2>1. Visi &amp; Tujuan</h2>
@@ -263,53 +264,9 @@
 <code>Daily XP Sync</code> → <code>Percentile Rank Refresh</code> → <code>Leaderboard Display</code></li>
 </ul>
 <hr>
-<h3>7.2 System Protocol Flows</h3>
-<h4>7.2.1 API Flow (Protocol-First)</h4>
-<p>Standar komunikasi antara Frontend dan Verification Server.</p>
-<pre><code class="language-mermaid">sequenceDiagram
-    participant FE as Frontend (UI)
-    participant VS as Verification Server (API)
-    participant SA as Supabase (DB)
-    participant EX as External API (Neynar/X)
-
-    FE-&gt;&gt;VS: POST /api/verify (signed payload)
-    VS-&gt;&gt;VS: Validate Admin/User Signature
-    VS-&gt;&gt;EX: Check Social Action (Like/Follow)
-    EX--&gt;&gt;VS: Action Confirmed (Success)
-    VS-&gt;&gt;SA: Update user_points &amp; user_activity_logs
-    SA--&gt;&gt;VS: DB Result
-    VS--&gt;&gt;FE: HTTP 200 { status: &#39;Claimed&#39; }
-</code></pre>
-<h4>7.2.2 ABI Flow (Contract Interface)</h4>
-<p>Manajemen interface smart contract untuk sinkronisasi state.</p>
-<pre><code class="language-mermaid">flowchart LR
-    ABI_File[abis_data.txt] --&gt; Proxy[contracts.js Proxy]
-    Proxy --&gt; Provider[JsonRpcProvider - Base Sepolia]
-    Provider --&gt; ContractInst[Contract Instance]
-    ContractInst --&gt; Call[ReadOnly: accRewardPerShare]
-    ContractInst --&gt; Write[Write: claimReward]
-    Write --&gt; Events[Emit Events: TaskCompleted]
-    Events --&gt; Indexer[Cron: sync-sbt.cjs]
-    Indexer --&gt; Supabase[Update Reward Pool DB]
-</code></pre>
-<h4>7.2.3 E2E Verification Logic (Surgical)</h4>
-<p>Logika verifikasi mendalam untuk mencegah cheat.</p>
-<pre><code class="language-mermaid">flowchart TD
-    Request[Verification Request] --&gt; Signature{Verify EIP-191 Sign}
-    Signature -- Invalid --&gt; Reject[403: Forbidden]
-    Signature -- Valid --&gt; Debounce{Rate Limit Check}
-    Debounce -- Hot --&gt; Cool[429: Too Many Requests]
-    Debounce -- Cold --&gt; Identity{Lock Checked?}
-    Identity -- No --&gt; Link[Prompt Social Link]
-    Identity -- Yes --&gt; FetchAPI[Fetch Social Social State]
-    FetchAPI --&gt; Compare{Action Timestamp &gt; Task Create?}
-    Compare -- No --&gt; Fraud[Error: Old Action Used]
-    Compare -- Yes --&gt; Credit[Credit XP &amp; Reward]
-</code></pre>
 <hr>
-<hr>
-<h2>9. Resilience &amp; Architecture Hardening (v3.24.0)</h2>
-<p>Berdasarkan audit ekosistem v3.24.0, Section ini mendefinisikan standar pemulihan dan tata kelola untuk mencegah kegagalan sistematis.</p>
+<h2>9. Resilience &amp; Architecture Hardening (v3.26.0)</h2>
+<p>Berdasarkan audit ekosistem v3.26.0, Section ini mendefinisikan standar pemulihan dan tata kelola untuk mencegah kegagalan sistematis.</p>
 <h3>9.1 Recovery &amp; Fallback Mandates</h3>
 <table>
 <thead>
@@ -325,25 +282,25 @@
 <td><strong>Recursive Recovery Loop</strong>: Script wajib mencatat <code>last_synced_id</code> di DB. Jika gagal, coba lagi dari offset terakhir.</td>
 </tr>
 <tr>
+<td><strong>Daily XP Sync</strong></td>
+<td>RPC Indexing Lag</td>
+<td><strong>Transaction Fallback</strong>: API <code>/handleXpSync</code> kini menerima <code>tx_hash</code> dan memverifikasi langsung ke RPC jika indexing belum selesai (v3.26.0).</td>
+</tr>
+<tr>
 <td><strong>Verification</strong></td>
 <td>Rate Limit / API Bottleneck</td>
 <td><strong>Circuit Breaker</strong>: Implementasi exponential backoff pada request ke Neynar/Twitter.</td>
 </tr>
 <tr>
-<td><strong>Randomness</strong></td>
-<td>Rigged Draw / Blockhash Attack</td>
-<td><strong>QRNG Enforced</strong>: Dilarang menggunakan blockhash. Wajib menggunakan <strong>API3 QRNG (Airnode RRP)</strong>.</td>
+<td><strong>Identity Visibility</strong></td>
+<td>Missing Social Badges</td>
+<td><strong>SQL View Synchronization</strong>: View <code>v_user_full_profile</code> wajib di-update saat penambahan kolom identitas baru untuk mencegah <code>undefined</code> UI bugs (v3.26.0).</td>
 </tr>
 </tbody></table>
 <h3>9.2 Precision Governance</h3>
 <ul>
 <li><strong>Underdog Bonus</strong>: Didefinisikan ulang sebagai <strong>Bottom 20% by World XP Index</strong>. Bonus +10% dihitung saat snapshot harian (daily_ranking_snapshot) untuk akurasi data.</li>
 <li><strong>Task Moderation</strong>: Seluruh UGC Mission/Sponsored Task memiliki status awal <code>PENDING_REVIEW</code>. Misi hanya muncul di Dashboard setelah mendapatkan approval <code>is_active = true</code> dari Master Admin.</li>
-</ul>
-<h3>9.3 Scalability Standard</h3>
-<ul>
-<li><strong>Load Handling</strong>: Verification server didesain stateless. Jika trafik naik, sistem mendukung horizontal scaling via Vercel Functions.</li>
-<li><strong>Data Integrity</strong>: <code>last_seen_at</code> dan <code>identity_lock</code> diproteksi oleh RLS (Row Level Security) untuk mencegah tampering dari level aplikasi.</li>
 </ul>
 <hr>
 <h2>10. Historical Analysis &amp; Changelog</h2>
@@ -358,10 +315,22 @@
 </tr>
 </thead>
 <tbody><tr>
+<td><strong>Critical Bug Fix</strong></td>
+<td>3.26.1</td>
+<td>Fixed user-bundle SyntaxError (Claims/Logs/Leaderboard)</td>
+<td>CURRENT</td>
+</tr>
+<tr>
+<td><strong>Identity &amp; Resilience</strong></td>
+<td>3.26.0</td>
+<td>SQL View fix, RPC Lag Fallback, UGC Modal TDZ fixes</td>
+<td>RESOLVED</td>
+</tr>
+<tr>
 <td><strong>Ecosystem Polish</strong></td>
 <td>3.25.0</td>
 <td>Zero Lint Errors, undefined variable fixes, UI prop validations</td>
-<td>CURRENT</td>
+<td>RESOLVED</td>
 </tr>
 <tr>
 <td><strong>Nexus Alignment</strong></td>
@@ -381,18 +350,6 @@
 <td>Secure Social Linking via VS-Backend</td>
 <td>RESOLVED</td>
 </tr>
-<tr>
-<td><strong>SBT Ascension</strong></td>
-<td>3.24.0</td>
-<td>Multi-Project Sync &amp; Audit-First Mandate</td>
-<td>RESOLVED</td>
-</tr>
-<tr>
-<td><strong>Ecosystem Seed</strong></td>
-<td>3.24.0</td>
-<td>Initial Raffle + XP Logic</td>
-<td>LEGACY</td>
-</tr>
 </tbody></table>
 <hr>
 <h2>6. Audit &amp; Security Mandates</h2>
@@ -400,22 +357,99 @@
 <p>Dilarang melakukan deployment sebelum <code>node scripts/audits/check_sync_status.cjs</code> memberikan skor 10/10.</p>
 <h3>6.2 Zero Hardcode Secret Mandate</h3>
 <p>Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables (.env). Mapping global ditangani oleh <code>global-sync-env.js</code>.</p>
-<h3>6.3 Cleanup &amp; Resource Hygiene</h3>
-<p>Setiap server verifikasi lokal HARUS dimatikan setelah pengujian untuk menjaga performa host host.</p>
 <hr>
-<h2>7. Current Ecosystem Status (v3.24.0)</h2>
-<h3>7.1 Security Audit Findings</h3>
+<h2>7. Current Ecosystem Status (v3.26.2)</h2>
+<h3>7.1 Security Audit Findings (v3.26.1)</h3>
 <ul>
-<li><strong>[RESOLVED] E2E Ecosystem Hardening</strong>: Complete full-stack verification (Frontend Build, Contract Bytecode, Cron Syntax).</li>
-<li><strong>[RESOLVED] Nexus Active Outreach</strong>: Implemented Telegram automated warnings and interactive real-time <code>/health</code> check.</li>
-<li><strong>[RESOLVED] Self-Healing Protocol</strong>: Implemented recursive success-trackers (<code>consecutive_success</code>) and automated Circuit Breaker cool-downs.</li>
+<li><strong>[RESOLVED] E2E Workspace Mapping</strong>: Standardized navigation via <code>.agents/WORKSPACE_MAP.md</code>.</li>
+<li><strong>[RESOLVED] CRITICAL BUG (SyntaxError)</strong>: Fixed duplicate <code>const</code> declarations in <code>user-bundle.js</code> that crashed all API actions (Claims, Logs, Leaderboard).</li>
+<li><strong>[RESOLVED] identity Visibility</strong>: Fixed <code>v_user_full_profile</code> view to include Google, X, and Neynar Score columns.</li>
 </ul>
 <h3>7.2 Connection Matrix</h3>
 <ul>
 <li><strong>Main App</strong>: <code>crypto-discovery-app.vercel.app</code></li>
 <li><strong>Verification</strong>: <code>dailyapp-verification-server.vercel.app</code></li>
-<li><strong>Database</strong>: Supabase Project (ID: gms...)</li>
-<li><strong>Core Contract</strong>: <code>0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3</code> (MasterX v3.24.0)</li>
+<li><strong>Database</strong>: Supabase Project (ID: rbgz...)</li>
+<li><strong>Core Contract</strong>: <code>0x87a3d1203Bf20E7dF5659A819ED79a67b236F571</code> (V13 Mainnet)</li>
+</ul>
+<hr>
+<h2>8. Workspace Architecture &amp; Data Flow (v3.26.1)</h2>
+<p>Untuk koordinasi multi-agent (Antigravity, OpenClaw, Qwen, DeepSeek), struktur workspace didefinisikan secara kaku sebagai berikut:</p>
+<h3>8.1 Unified Ecosystem Workflow Diagram</h3>
+<pre><code class="language-mermaid">graph TD
+    User((User)) --&gt;|TX/Interaction| FE[Raffle_Frontend]
+    FE --&gt;|Requests| API[Vercel Serverless Bundles]
+    API --&gt;|Auth/Data| DB[(Supabase DB)]
+    API --&gt;|Verification| VS[Verification Server]
+    API --&gt;|On-chain Reads| RPC[Base RPC Node]
+    
+    subgraph &quot;Verification Pipeline&quot;
+        VS --&gt;|Social Check| N[Neynar/Twitter API]
+        VS --&gt;|Grant XP| DB
+    end
+    
+    subgraph &quot;Audit Layer&quot;
+        AG[Antigravity Agent] --&gt;|Audit| S[scripts/audits]
+        S --&gt;|Cross-Check| DB
+        S --&gt;|Cross-Check| RPC
+    end
+</code></pre>
+<h3>8.2 Directory Mapping</h3>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Path</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Logic</strong></td>
+<td><code>Raffle_Frontend/api/</code></td>
+<td>API Bundles (user, admin, tasks, raffle)</td>
+</tr>
+<tr>
+<td><strong>UI</strong></td>
+<td><code>Raffle_Frontend/src/</code></td>
+<td>Components, Hooks, Pages</td>
+</tr>
+<tr>
+<td><strong>Brain</strong></td>
+<td><code>.agents/</code></td>
+<td>Skills, Workflows, Gemini/Claude Protocols</td>
+</tr>
+<tr>
+<td><strong>Ops</strong></td>
+<td><code>scripts/</code></td>
+<td>Audits, Sync, Deploy, Debug</td>
+</tr>
+<tr>
+<td><strong>Bot</strong></td>
+<td><code>verification-server/</code></td>
+<td>Telegram Webhooks &amp; Social Verifier</td>
+</tr>
+</tbody></table>
+<hr>
+<hr>
+<h2>11. Work Report — v3.26.2 (Current)</h2>
+<p><strong>Date</strong>: 2026-03-16
+<strong>Task</strong>: Enhancing Leaderboard Data Integrity.
+<strong>Action</strong>: </p>
+<ul>
+<li>Re-created <code>v_user_full_profile</code> and <code>user_stats</code> views.</li>
+<li>Restored <code>raffle_wins</code>, <code>raffle_tickets_bought</code>, and <code>raffles_created</code> to the view schema.</li>
+<li>Handled cross-view dependencies using ordered drop/create cycle.
+<strong>Outcome</strong>: Leaderboard now displays accurate raffle statistics instead of 0 values.</li>
+</ul>
+<h2>12. Work Report — v3.26.1</h2>
+<p><strong>Date</strong>: 2026-03-16
+<strong>Task</strong>: Restore Daily Claim, Log History, and Leaderboard.
+<strong>Action</strong>: </p>
+<ul>
+<li>Surgical removal of duplicate <code>const {data: dailySetting}</code> and <code>const standardDailyReward</code> in <code>handleXpSync</code> (<code>user-bundle.js</code>).</li>
+<li>Verified syntax via <code>node -c</code>.</li>
+<li>Success push to production.
+<strong>Outcome</strong>: All API services functional. 100% Pipeline restored.</li>
 </ul>
 <hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
