@@ -102,4 +102,4 @@ graph TD
 4.  **No local script execution** without checking `scripts/` subfolders first to avoid duplication.
 
 ---
-*Last Updated: 2026-03-16 | Standardizing the Nexus.*
+*Last Updated: 2026-03-16 | Ecosystem Hardened v3.26.3.*
