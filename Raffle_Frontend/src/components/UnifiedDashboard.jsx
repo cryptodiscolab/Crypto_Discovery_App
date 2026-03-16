@@ -74,15 +74,19 @@ export function UnifiedDashboard() {
     const userPoints = userData ? Number(userData[0]) : 0;
     const unsyncedPoints = unsyncedPointsRaw ? Number(unsyncedPointsRaw) : 0;
 
-    const handleTransactionSuccess = useCallback(async () => {
+    const handleTransactionSuccess = useCallback(async (txHash) => {
         // BUG-SYNC fix: Trigger backend XP sync immediately after transaction confirmation
         if (address) {
             try {
+                console.log('[Dashboard Sync] Triggering XP sync for tx:', txHash);
                 // Call /api/user/xp — Vercel routes this to user-bundle?action=xp
                 fetch('/api/user/xp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ wallet_address: address }),
+                    body: JSON.stringify({ 
+                        wallet_address: address,
+                        tx_hash: txHash 
+                    }),
                 }).then(async (res) => {
                     if (!res.ok) {
                         const err = await res.json();
@@ -229,7 +233,7 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
                             {isVerifying ? 'Verifying...' : 'Verify'}
                         </button>
                     ) : (
-                        <Transaction calls={calls} onSuccess={() => { onSuccess(); refetchCompletion(); }}>
+                        <Transaction calls={calls} onSuccess={(tx) => { onSuccess(tx.transactionHash); refetchCompletion(); }}>
                             <TransactionButton
                                 className={`btn-primary py-1.5 px-3 text-[9px] ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 text={isDisabled ? 'Locked' : 'Claim'}
@@ -283,9 +287,9 @@ function SponsorCard({ sponsorId, isDisabled, address, onSuccess }) {
         }]
         : [];
 
-    const handleBatchSuccess = () => {
+    const handleBatchSuccess = (tx) => {
         setSelectedTasks([]);
-        onSuccess();
+        onSuccess(tx.transactionHash);
     };
 
     return (

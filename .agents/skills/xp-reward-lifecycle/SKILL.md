@@ -11,7 +11,7 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 - **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 - **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
-### 2. Verified Infrastructure Reference (v3.26.0)
+### 2. Verified Infrastructure Reference (v3.27.0)
 | Key | Value |
 |---|---|
 | DailyApp (Tasks) | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
@@ -23,17 +23,16 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 
 ## 🏆 Kompetensi Inti
 
-### 1. Zero-Trust XP Syncing (v3.26.0)
-- **RPC Resiliency Fallback (v3.26.0)**: Backend API MUST support accepting `tx_hash` for manual verification if Indexer/Supabase state is lagging.
-- **Mechanism**: XP TIDAK diperbolehkan diupdate langsung dari frontend.
-
-- **Mechanism**: XP TIDAK diperbolehkan diupdate langsung dari frontend.
+### 1. Verification-First XP Sync (v3.27.0) - MANDATORY
+- **Verification-First Mandate**: Website MUST capture `tx_hash` from on-chain transactions and pass it to the backend.
+- **Backend Responsibility**: Backend MUST verify the `tx_hash` via RPC and update `user_profiles.total_xp` EXPLICITLY.
+- **NO Passive Triggers**: Do NOT rely on DB triggers for XP recalculation (deprecated and deleted in v3.27.0).
 - **Workflow**: 
-    1. User transaksi on-chain.
-    2. Frontend panggil `/api/tasks-bundle?action=social-verify` (untuk klaim).
-    3. Backend memverifikasi `txHash` dan data on-chain.
-    4. Backend menginsert record ke `user_task_claims`.
-    5. **DB Trigger (`trg_sync_xp_on_claim`)** secara otomatis menghitung ulang `total_xp` di `user_profiles`.
+    1. User performs an on-chain transaction.
+    2. Frontend sends `tx_hash` to `/api/user/xp` or similar.
+    3. Backend verifies the hash with the blockchain.
+    4. Backend updates `user_profiles.total_xp` and logs the claim.
+    5. User profile reflects change instantly, bypassing indexing lag.
 
 ### 2. The Multiplied Raffle XP (v3.26.0)
 - **Raffle Ticket Logic**: XP untuk `raffle_buy` **HARUS** dikalikan dengan kuantitas tiket di backend sebelum diinsert ke `user_task_claims`.
@@ -52,14 +51,14 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 ### 4. Underdog Catch-Up Bonus
 - **Logic**: Bronze & Silver tiers get +10% XP if `lastActivityTime` is within 48h (Blockchain source).
 
-## 📋 Checklist Reward & XP (v3.26.0)
-- [x] Apakah `user_task_claims` menjadi target utama penulisan (bukan set `total_xp` manual)?
-- [x] Apakah XP pembelian tiket sudah dikalikan dengan jumlah tiket?
+- [x] Apakah `tx_hash` dikirim dari frontend untuk verifikasi instan?
+- [x] Apakah `total_xp` diupdate secara eksplisit oleh backend (bukan trigger)?
 - [x] Apakah `v_user_full_profile` sudah digunakan untuk pengecekan Tier/Rank?
 - [x] Apakah `npm run build` berhasil?
 - [ ] **Atomic Script Enforced**: Apakah script operasional sudah berada di folder kategori yang benar di `scripts/`?
 
 ## 🚨 Pantangan
-- Mengupdate kolom `total_xp` secara manual di kode — biarkan DB Trigger yang menangani.
+- Mengandalkan DB Trigger untuk sinkronisasi XP — WAJIB update eksplisit via backend.
+- Lupa mempassing `tx_hash` dari frontend ke backend saat klaim berhasil.
 - Mengabaikan `raffle_wins` counter — panggil RPC `fn_increment_raffle_wins`.
 - Menggunakan `profiles` table (deprecated).

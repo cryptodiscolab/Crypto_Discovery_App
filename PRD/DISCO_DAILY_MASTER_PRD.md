@@ -1,5 +1,5 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.26.1 — Workspace Alignment & Critical Bug Fix
+**Version**: 3.27.0 — Verification-First Protocol (XP Sync Final Fix)
 **Last Updated**: 2026-03-16
 **Status**: ACTIVE — SINGLE SOURCE OF TRUTH ✅
 
@@ -12,8 +12,8 @@
 4. [Admin & Sponsorship Workflow](#4-admin--sponsorship-workflow)
 5. [Historical Analysis & Changelog](#5-historical-analysis--changelog)
 6. [Audit & Security Mandates](#6-audit-security-mandates)
-7. [Current Ecosystem Status (v3.26.1 Audit Report)](#7-current-ecosystem-status-v3261-audit-report)
-8. [Workspace Architecture & Data Flow (v3.26.1)](#8-workspace-architecture--data-flow-v3261)
+7. [Current Ecosystem Status (v3.27.0 Audit Report)](#7-current-ecosystem-status-v3270-audit-report)
+8. [Workspace Architecture & Data Flow (v3.27.0)](#8-workspace-architecture--data-flow-v3270)
 
 ---
 
@@ -337,7 +337,7 @@ Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables
 
 ---
 
-## 7. Current Ecosystem Status (v3.26.3)
+## 7. Current Ecosystem Status (v3.27.0)
 
 ### 7.1 Security Audit Findings (v3.26.1)
 - **[RESOLVED] E2E Workspace Mapping**: Standardized navigation via `.agents/WORKSPACE_MAP.md`.
@@ -352,7 +352,7 @@ Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables
 
 ---
 
-## 8. Workspace Architecture & Data Flow (v3.26.1)
+## 8. Workspace Architecture & Data Flow (v3.27.0)
 
 Untuk koordinasi multi-agent (Antigravity, OpenClaw, Qwen, DeepSeek), struktur workspace didefinisikan secara kaku sebagai berikut:
 
@@ -360,10 +360,10 @@ Untuk koordinasi multi-agent (Antigravity, OpenClaw, Qwen, DeepSeek), struktur w
 ```mermaid
 graph TD
     User((User)) -->|TX/Interaction| FE[Raffle_Frontend]
-    FE -->|Requests| API[Vercel Serverless Bundles]
+    FE -->|Requests + TxHash| API[Vercel Serverless Bundles]
     API -->|Auth/Data| DB[(Supabase DB)]
     API -->|Verification| VS[Verification Server]
-    API -->|On-chain Reads| RPC[Base RPC Node]
+    API -->|Tx Verification| RPC[Base RPC Node]
     
     subgraph "Verification Pipeline"
         VS -->|Social Check| N[Neynar/Twitter API]
@@ -388,9 +388,20 @@ graph TD
 
 ---
 
+## 11. Work Report — v3.27.0 (Current)
+**Date**: 2026-03-16
+**Task**: Implementation of "Verification-First" XP Sync Protocol.
+**Action**: 
+- Transitioned from "Balance-Polling" to "Transaction-Verification" model for XP sync.
+- **Frontend**: Updated `UnifiedDashboard.jsx` to pass `tx_hash` to backend.
+- **Backend**: Updated `user-bundle.js` to verify transactions via `waitForTransactionReceipt`.
+- **Database**: Dropped dangerous `sync_user_xp` trigger to prevent data corruption/reset.
+- **View**: Updated `v_user_full_profile` to include `manual_xp_bonus` in `total_xp` calculation.
+**Outcome**: Zero-delay XP credit for on-chain actions, bypassing RPC indexing lag. Robust data integrity.
+
 ---
 
-## 11. Work Report — v3.26.3 (Current)
+## 12. Work Report — v3.26.3
 **Date**: 2026-03-16
 **Task**: Ecosystem Hardening & Performance Optimization.
 **Action**: 
@@ -400,7 +411,7 @@ graph TD
 - Hardened `system_health` RLS to restrict non-admin access.
 **Outcome**: Enhanced security posture and improved database scalability.
 
-## 12. Work Report — v3.26.2
+## 13. Work Report — v3.26.2
 **Date**: 2026-03-16
 **Task**: Enhancing Leaderboard Data Integrity.
 **Action**: 
@@ -409,7 +420,7 @@ graph TD
 - Handled cross-view dependencies using ordered drop/create cycle.
 **Outcome**: Leaderboard now displays accurate raffle statistics instead of 0 values.
 
-## 12. Work Report — v3.26.1
+## 14. Work Report — v3.26.1
 **Date**: 2026-03-16
 **Task**: Restore Daily Claim, Log History, and Leaderboard.
 **Action**: 

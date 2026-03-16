@@ -51,7 +51,7 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 
 | Source Route | Bundle Target | Action Key | Purpose |
 |--------------|---------------|------------|---------|
-| `/api/user/*` | `user-bundle.js` | `sync`, `xp`, `update-profile` | User identity & XP sync |
+| `/api/user/*` | `user-bundle.js` | `sync`, `xp`, `update-profile` | User identity & XP sync (**Verification-First v3.27.0**) |
 | `/api/leaderboard` | `user-bundle.js` | `leaderboard` | Global rankings |
 | `/api/tasks/*` | `tasks-bundle.js` | `social-verify`, `claim` | Task verification & rewards |
 | `/api/admin/*` | `admin-bundle.js` | `task-add`, `system-update` | Administrative controls |
@@ -102,4 +102,4 @@ graph TD
 4.  **No local script execution** without checking `scripts/` subfolders first to avoid duplication.
 
 ---
-*Last Updated: 2026-03-16 | Ecosystem Hardened v3.26.3.*
+*Last Updated: 2026-03-16 | Ecosystem Verification-First v3.27.0.*

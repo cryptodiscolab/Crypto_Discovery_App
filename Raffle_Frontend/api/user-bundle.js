@@ -224,19 +224,37 @@ async function handleLoginSync(req, res) {
 }
 
 async function handleXpSync(req, res) {
-    const { wallet_address, signature, message } = req.body;
-    if (!wallet_address || !signature || !message) {
-        return res.status(400).json({ error: 'Missing sync data' });
-    }
+    const { wallet_address, signature, message, tx_hash } = req.body;
+    if (!wallet_address) return res.status(400).json({ error: 'Missing wallet' });
 
     try {
-        // 1. Verify Signature
-        const valid = await verifyMessage({ address: wallet_address, message, signature });
-        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
-
         const cleanAddress = wallet_address.toLowerCase();
+        let skipSignature = false;
 
-        // 2. Fetch Profile & Underdog Settings (Zero-Hardcode)
+        // 1. "Verification-First" Logic: Use tx_hash as primary proof if available
+        if (tx_hash) {
+            try {
+                // Wait for finality (Resilience v3.26+)
+                const receipt = await rpcClient.waitForTransactionReceipt({ hash: tx_hash });
+                if (receipt?.status === 'success' && receipt.from.toLowerCase() === cleanAddress) {
+                    skipSignature = true;
+                    console.log(`[XP Sync] Proof of work verified via txHash: ${tx_hash}`);
+                }
+            } catch (hashErr) {
+                console.warn(`[XP Sync] TxHash verification failed, falling back to signature:`, hashErr.message);
+            }
+        }
+
+        // 2. Signature Fallback
+        if (!skipSignature) {
+            if (!signature || !message) {
+                return res.status(401).json({ error: 'Signature or valid Transaction Hash required' });
+            }
+            const valid = await verifyMessage({ address: wallet_address, message, signature });
+            if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        }
+
+        // 3. Fetch Profile & Settings
         const [ { data: profile }, { data: settingsRes } ] = await Promise.all([
             supabaseAdmin
                 .from('user_profiles')
@@ -254,48 +272,35 @@ async function handleXpSync(req, res) {
 
         let onChainXP = 0;
         let xpDelta = 0;
-        let attempts = 0;
-        const maxAttempts = 3;
         let onChainStats;
 
-        // 3. Retry Loop for On-Chain reading (Handling RPC Indexing Lag)
-        while (attempts < maxAttempts) {
-            const stats = await rpcClient.readContract({
-                address: DAILY_APP_ADDRESS,
-                abi: [{
-                    inputs: [{ name: '', type: 'address' }],
-                    name: 'userStats',
-                    outputs: [
-                        { name: 'points', type: 'uint256' },
-                        { name: 'totalTasksCompleted', type: 'uint256' },
-                        { name: 'referralCount', type: 'uint256' },
-                        { name: 'currentTier', type: 'uint8' },
-                        { name: 'tasksForReferralProgress', type: 'uint256' },
-                        { name: 'lastDailyBonusClaim', type: 'uint256' },
-                        { name: 'isBlacklisted', type: 'bool' },
-                    ],
-                    stateMutability: 'view',
-                    type: 'function',
-                }],
-                functionName: 'userStats',
-                args: [cleanAddress],
-            });
+        // 4. Fetch On-Chain State
+        const stats = await rpcClient.readContract({
+            address: DAILY_APP_ADDRESS,
+            abi: [{
+                inputs: [{ name: '', type: 'address' }],
+                name: 'userStats',
+                outputs: [
+                    { name: 'points', type: 'uint256' },
+                    { name: 'totalTasksCompleted', type: 'uint256' },
+                    { name: 'referralCount', type: 'uint256' },
+                    { name: 'currentTier', type: 'uint8' },
+                    { name: 'tasksForReferralProgress', type: 'uint256' },
+                    { name: 'lastDailyBonusClaim', type: 'uint256' },
+                    { name: 'isBlacklisted', type: 'bool' },
+                ],
+                stateMutability: 'view',
+                type: 'function',
+            }],
+            functionName: 'userStats',
+            args: [cleanAddress],
+        });
 
-            onChainStats = stats;
-            onChainXP = Number(onChainStats?.[0] || 0);
-            xpDelta = onChainXP - dbLastPoints;
+        onChainStats = stats;
+        onChainXP = Number(onChainStats?.[0] || 0);
+        xpDelta = onChainXP - dbLastPoints;
 
-            if (xpDelta > 0) break; // Found gains!
-            if (xpDelta < 0) break; // Found burn! (Still sync balance)
-
-            attempts++;
-            if (attempts < maxAttempts) {
-                console.log(`[XP Sync] No change found for ${cleanAddress}. Retrying in 2s... (Attempt ${attempts}/${maxAttempts})`);
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-        }
-
-        // Bug 2 Fix: Fallback check for missing Daily Claim XP due to persistent RPC lag
+        // 5. Handling RPC Lag via TxHash
         const { data: dailySetting } = await supabaseAdmin
             .from('point_settings')
             .select('points_value')
@@ -304,68 +309,43 @@ async function handleXpSync(req, res) {
 
         const standardDailyReward = dailySetting?.points_value || 100;
 
-        if (xpDelta === 0) {
-            // Check if user claimed recently but RPC didn't catch it
-            const txHash = req.body?.tx_hash; 
-            if (txHash) {
-                try {
-                    const receipt = await rpcClient.getTransactionReceipt({ hash: txHash });
-                    if (receipt && receipt.status === 'success') {
-                        // We definitively know the tx succeeded. Force delta.
-                        xpDelta = standardDailyReward;
-                        onChainXP = dbLastPoints + xpDelta;
-                        console.log(`[XP Sync Fallback] Forced ${xpDelta} XP for ${cleanAddress} via txReceipt despite RPC lag.`);
-                    }
-                } catch (receiptErr) {
-                    console.warn(`[XP Sync Fallback] Receipt verify failed:`, receiptErr.message);
-                }
-            }
+        // If RPC balance hasn't moved but we have a proven tx_hash, force incremental delta
+        if (xpDelta === 0 && tx_hash && skipSignature) {
+            xpDelta = standardDailyReward;
+            onChainXP = dbLastPoints + xpDelta;
+            console.log(`[XP Sync Fallback] Forced +${xpDelta} XP due to RPC lag/TxHash confirmation.`);
         }
 
         const currentTier = Number(onChainStats?.[3] || 0);
 
-        // --- UNDERDOG BONUS LOGIC (PRD v3.3.3) ---
+        // 6. Underdog Bonus Calculation
         let appliedBonusXP = 0;
-        let isUnderdogEligible = false;
-
         if (xpDelta > 0) {
-            // v3.20.0: Percentile-based threshold (World Index)
             const underdogThreshold = parseInt(settings.underdog_threshold_xp || '0');
-            
             if (dbLastPoints <= underdogThreshold) {
-                const windowHrs = parseInt(settings.underdog_activity_window_hours || process.env.UNDERDOG_WINDOW_HOURS || '48');
+                const windowHrs = parseInt(settings.underdog_activity_window_hours || '48');
                 const lastClaimAt = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
                 
-                // If never claimed, or claimed within window -> Eligible
                 if (!lastClaimAt || (new Date() - lastClaimAt) / (1000 * 60 * 60) <= windowHrs) {
-                    isUnderdogEligible = true;
-                    const multiplierBP = parseInt(settings.underdog_bonus_multiplier_bp || process.env.UNDERDOG_MULTIPLIER_BP || '11000');
+                    const multiplierBP = parseInt(settings.underdog_bonus_multiplier_bp || '11000');
                     appliedBonusXP = Math.floor((xpDelta * (multiplierBP - 10000)) / 10000);
-                    console.log(`[Underdog Bonus] Applying +${appliedBonusXP} XP to ${cleanAddress} (XP: ${dbLastPoints} <= Threshold: ${underdogThreshold})`);
                 }
             }
         }
-        // -----------------------------------------
 
-        console.log(`[XP Sync] ${cleanAddress}: OnChain=${onChainXP}, Tier=${currentTier}, DB_Last=${dbLastPoints}, Delta=${xpDelta}${appliedBonusXP > 0 ? ` + Bonus=${appliedBonusXP}` : ''}`);
-
-        // 4. Update Profile (Identity, Points Balance, Tier & Bonus)
+        // 7. Update User Profile explicitly (By-passing flaky triggers)
         const profileUpdate = {
             wallet_address: cleanAddress,
-            total_xp: onChainXP, // Raw on-chain balance
-            manual_xp_bonus: (profile?.manual_xp_bonus || 0) + appliedBonusXP, // Increment bonus pool
+            total_xp: onChainXP,
+            manual_xp_bonus: (profile?.manual_xp_bonus || 0) + appliedBonusXP,
             tier: currentTier,
             last_seen_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
 
-        // Determine Task ID for the claim — reuse standardDailyReward fetched above
         const isDailyClaim = xpDelta > 0 && xpDelta === standardDailyReward;
-        const taskId = isDailyClaim
-            ? TASK_IDS.DAILY_CLAIM_STREAK
-            : TASK_IDS.DAILY_CLAIM_REWARD;
+        const taskId = isDailyClaim ? TASK_IDS.DAILY_CLAIM_STREAK : TASK_IDS.DAILY_CLAIM_REWARD;
 
-        // ── STREAK LOGIC ──────────────────────────────────────────
         if (isDailyClaim) {
             const now = new Date();
             const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
@@ -375,55 +355,44 @@ async function handleXpSync(req, res) {
                 currentStreak = 1;
             } else {
                 const diffHours = (now - lastClaimDate) / (1000 * 60 * 60);
-                
-                // If claimed within the 24-48 hour window, increment streak
                 if (diffHours >= 20 && diffHours <= 48) {
                     currentStreak += 1;
                 } else if (diffHours > 48) {
-                    // Reset if more than 48 hours passed
                     currentStreak = 1;
                 }
             }
-
             profileUpdate.streak_count = currentStreak;
             profileUpdate.last_streak_claim = now.toISOString();
-            console.log(`[Streak] ${cleanAddress}: ${currentStreak} days 🔥`);
         }
-        // ──────────────────────────────────────────────────────────
 
         await supabaseAdmin
             .from('user_profiles')
             .upsert(profileUpdate, { onConflict: 'wallet_address' });
 
+        // 8. Log individual claim for historical record
         if (xpDelta > 0) {
-            // 5. Record Claim to update total_xp via trigger
-            await supabaseAdmin
-                .from('user_task_claims')
-                .insert({
-                    wallet_address: cleanAddress,
-                    task_id: taskId,
-                    xp_earned: xpDelta,
-                    claimed_at: new Date().toISOString(),
-                    platform: 'blockchain',
-                    action_type: 'contract_sync'
-                });
+            await supabaseAdmin.from('user_task_claims').insert({
+                wallet_address: cleanAddress,
+                task_id: taskId,
+                xp_earned: xpDelta,
+                claimed_at: new Date().toISOString(),
+                platform: 'blockchain',
+                action_type: tx_hash ? 'verified_claim' : 'polled_sync',
+                target_id: tx_hash || null
+            });
 
-            // 6. Log to user_activity_logs
             await logActivity({
                 wallet: cleanAddress,
                 category: 'XP',
-                type: taskId === TASK_IDS.DAILY_CLAIM_STREAK ? 'Daily Claim' : 'Contract Sync',
-                description: `Earned ${xpDelta} XP from ${taskId === TASK_IDS.DAILY_CLAIM_STREAK ? 'Daily Bonus' : 'On-Chain Activity'}${appliedBonusXP > 0 ? ` + ${appliedBonusXP} Underdog Bonus` : ''}`,
+                type: isDailyClaim ? 'Daily Claim' : 'Contract Sync',
+                description: `Earned ${xpDelta} XP from ${isDailyClaim ? 'Daily Bonus' : 'On-Chain Activity'}${appliedBonusXP > 0 ? ` + ${appliedBonusXP} Underdog Bonus` : ''}`,
                 amount: xpDelta + appliedBonusXP,
-                symbol: 'XP'
+                symbol: 'XP',
+                txHash: tx_hash || null
             });
         }
 
-        return res.status(200).json({
-            ok: true,
-            xp: onChainXP,
-            synced: xpDelta !== 0
-        });
+        return res.status(200).json({ ok: true, xp: onChainXP, synced: xpDelta > 0 });
 
     } catch (error) {
         console.error('[XP Sync Error]', error);

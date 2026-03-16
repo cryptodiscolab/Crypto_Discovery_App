@@ -17,13 +17,14 @@ Before responding to ANY request, read these files IN ORDER:
 2. **`.agents/skills/secure-infrastructure-manager/SKILL.md`** — Security, contract lifecycle
 3. **`.agents/skills/git-hygiene/SKILL.md`** — Clean tree, commit rules
 4. **`.agents/WORKSPACE_MAP.md`** — Canonical Workspace Map (Mandatory Navigation)
-5. **`.cursorrules`** — Full Master Architect Protocol (all sections)
+5. **`IMPLEMENTATION_SUMMARY.md`** (Top 50 Lines) — Recent history & changelog
+6. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
 > ❗ Skipping this step = **Protocol Breach**. User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.26.0)
+## 🔴 ABSOLUTE LAWS (Nexus v3.27.0)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
@@ -46,6 +47,8 @@ Before responding to ANY request, read these files IN ORDER:
 19. **LOCAL HYGIENE**: ALWAYS terminate local servers (Vite/Express) after verification. Do not consume local CPU/RAM in the background.
 20. **ADMIN SYNC**: EVERY admin action changing on-chain state MUST be synchronized with the database immediately upon transaction confirmation. No state drift allowed.
 21. **SCHEMA IMMUTABLE PROTECTION**: NEVER delete, rename, or drop the `last_seen_at` column in `user_profiles`. It is strictly required for XP Sync and Anti-Whale Underdog logic. Deleting this column breaks the Leaderboard synchronization.
+22. **POST-FIX DOC SYNC (MANDATORY)**: After EVERY code change, bug fix, or work session, MUST update: `PRD/DISCO_DAILY_MASTER_PRD.md`, `CLAUDE.md`, `.agents/WORKSPACE_MAP.md`, `ROADMAP.md`, `IMPLEMENTATION_SUMMARY.md`, `.cursorrules`, and relevant `SKILL.md` files. **FAILURE = PROTOCOL BREACH.**
+23. **VERIFICATION-FIRST XP SYNC (v3.27.0)**: Frontend MUST pass `tx_hash` to backend. Backend MUST verify via `waitForTransactionReceipt`. NEVER rely on passive DB triggers for `total_xp` updates.
 48. **RPC INDEXING FALLBACK**: When syncing XP or Claims, APIs MUST accept `tx_hash` and verify signatures/receipts directly via RPC if the indexer/Supabase state is lagging (v3.26.0).
 49. **VIEW SYNCHRONIZATION**: Any addition of columns to `user_profiles` MUST be immediately followed by an update to `v_user_full_profile` SQL View to prevent frontend data-ghosting (v3.26.0).
 50. **NO-LOST-AGENT**: Prohibit explorative file listing without first checking [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md). This mapping MANDATE is automatically reset and MUST be followed every time `> re-read skills` is triggered.
@@ -108,4 +111,4 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Real Impact. No Paper Protocol. Zero-Hardcode. Zero-Trust. Zero-Riba. Always Re-Audit. Nexus War Room Mode: Active.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active.*

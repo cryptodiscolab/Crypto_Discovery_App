@@ -1,5 +1,21 @@
 # DailyApp Verification System - Complete Implementation
 
+---
+
+## 📝 Changelog
+
+### v3.27.0 — 2026-03-16 (Verification-First Protocol)
+- **Bug Fix**: Resolved recurring XP sync failure after Daily Claim.
+- **Frontend** (`UnifiedDashboard.jsx`): Now captures and sends `tx_hash` to backend after every on-chain transaction.
+- **Backend** (`user-bundle.js`): Switched from passive "Balance-Polling" to active "Verification-First" model using `waitForTransactionReceipt`. XP now credited instantly regardless of RPC indexing lag.
+- **Database**: Dropped dangerous `trg_sync_user_xp_on_claim` trigger and `sync_user_xp()` function. `total_xp` is now updated explicitly by the backend.
+- **View**: Updated `v_user_full_profile` to include `manual_xp_bonus` in `total_xp` calculation.
+- **Protocol**: Added Rule 22 (POST-FIX DOC SYNC) to `.cursorrules` and `CLAUDE.md`. All ecosystem docs synced to v3.27.0.
+- **Audit**: `check_sync_status.cjs` → ✅ ALL SYSTEMS SYNCHRONIZED.
+
+---
+
+
 ## 📦 What Has Been Created
 
 ### 1. Backend Verification Server (`verification-server/`)
