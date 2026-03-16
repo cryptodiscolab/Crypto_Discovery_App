@@ -9,6 +9,22 @@ export function Web3Provider({ children }) {
   // Ensure we only render Web3 providers on the client side
   useEffect(() => {
     setIsMounted(true);
+    
+    // Conflict Sentinel: Detect if window.ethereum is trapped as a getter
+    if (typeof window !== 'undefined') {
+      const descriptor = Object.getOwnPropertyDescriptor(window, 'ethereum');
+      if (descriptor && descriptor.get && !descriptor.set) {
+        console.warn(
+          '%c[WalletConflict] Warning: Multiple wallet extensions detected.',
+          'color: #ff9800; font-weight: bold; font-size: 14px;'
+        );
+        console.log(
+          'One or more extensions have locked "window.ethereum" as read-only. ' +
+          'Crypto Disco has enabled EIP-6963 Discovery to bypass this conflict. ' +
+          'If you cannot connect, please try disabling one of your wallet extensions.'
+        );
+      }
+    }
   }, []);
 
   // During SSR or initial render, show loading state

@@ -22,7 +22,7 @@ const connectors = connectorsForWallets(
                 metaMaskWallet,
                 (opts) => coinbaseWallet({
                     ...opts,
-                    preference: 'all'
+                    preference: 'smartWalletOnly'
                 }),
                 rainbowWallet,
                 walletConnectWallet,
@@ -43,6 +43,7 @@ const activeChain = activeChainId === 84532 ? baseSepolia : base;
 export const config = createConfig({
     chains: [base, baseSepolia],
     connectors,
+    multiInjectedProviderDiscovery: true, // EIP-6963 support
     transports: {
         [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org'),
         [baseSepolia.id]: fallback([

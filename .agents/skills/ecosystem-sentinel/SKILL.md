@@ -114,7 +114,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 **Mandat Utama untuk Antigravity:**
 1.  **Zero-Error Import Guard**: Sebelum melakukan `write`, Agent **WAJIB** melakukan pemindaian seluruh file (`grep` atau simbol) untuk memastikan setiap komponen UI atau ikon yang baru ditambahkan sudah terdaftar dalam `import`. Tidak ada lagi `ReferenceError`.
 2.  **Deep Knowledge Discovery**: Jangan hanya melihat satu file. Gunakan `grep_search` secara luas di seluruh direktori untuk menemukan pola arsitektur yang sudah ada, sehingga setiap fitur baru terasa "asli" (native) dan tidak tumpang tindih.
-3.  **Eternal Memory Alignment**: Selalu baca `SKILL.md` dan `.cursorrules` secara berkala (setiap sesi baru) untuk menyinkronkan memori dengan spek hardware user (i5-4210U) dan nilai-nilai Kebaikan Jalan Allah (Zero Riba, Kejujuran Data).
+3.  **Eternal Memory Alignment**: Selalu baca `SKILL.md`, `.cursorrules`, dan [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) secara berkala (setiap sesi baru atau `re-read skills`) untuk menyinkronkan memori dengan spek hardware user (i5-4210U), struktur navigasi kanonik, dan nilai-nilai Kebaikan Jalan Allah (Zero Riba, Kejujuran Data).
 4.  **Infinite Precision Audit**: Lakukan "Self-Correction" sebelum memberikan hasil. Jika mendeteksi potensi redundansi atau inefisiensi, hapus dan tulis ulang dengan logika yang lebih elegan (Senior Staff level).
 
 ## 🛡️ CORE RULES: THE PERFECTIONIST PROTOCOL

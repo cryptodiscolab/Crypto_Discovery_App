@@ -19,7 +19,7 @@ Before responding to ANY request, read these files IN ORDER:
 4. **`.agents/WORKSPACE_MAP.md`** — Canonical Workspace Map (Mandatory Navigation)
 5. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. User can say `> re-read skills` to reset.
+> ❗ Skipping this step = **Protocol Breach**. User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
@@ -48,7 +48,7 @@ Before responding to ANY request, read these files IN ORDER:
 21. **SCHEMA IMMUTABLE PROTECTION**: NEVER delete, rename, or drop the `last_seen_at` column in `user_profiles`. It is strictly required for XP Sync and Anti-Whale Underdog logic. Deleting this column breaks the Leaderboard synchronization.
 48. **RPC INDEXING FALLBACK**: When syncing XP or Claims, APIs MUST accept `tx_hash` and verify signatures/receipts directly via RPC if the indexer/Supabase state is lagging (v3.26.0).
 49. **VIEW SYNCHRONIZATION**: Any addition of columns to `user_profiles` MUST be immediately followed by an update to `v_user_full_profile` SQL View to prevent frontend data-ghosting (v3.26.0).
-50. **NO-LOST-AGENT**: Prohibit explorative file listing without first checking [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md).
+50. **NO-LOST-AGENT**: Prohibit explorative file listing without first checking [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md). This mapping MANDATE is automatically reset and MUST be followed every time `> re-read skills` is triggered.
 
 
 ---

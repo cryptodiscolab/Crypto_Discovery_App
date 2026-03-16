@@ -41,7 +41,7 @@ After reading, internally confirm:
 
 ---
 **Protocol Version: 3.26.0**
-> The user may say `> re-read skills` to force a reset.
+> The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
 
@@ -396,6 +396,7 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **ENFORCEMENT**: 🚨 NEVER delete, rename, or modify the `last_seen_at` column, nor any other vital schema columns governing rewards without explicit A-D-R-R-E cycles. Deleting this column breaks the ecosystem's leaderboard synchronization process.
 
 ## 37. ECOSYSTEM DOCUMENTATION & SURGICAL CHANGE MANDATE (v3.26.1)
+- **No-Lost-Agent Breach**: Dilarang melakukan pencarian file manual (explorative `list_dir`) tanpa memeriksa [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) terlebih dahulu. Mandat navigasi ini WAJIB dijalankan ulang setiap kali `> re-read skills` diaktifkan.
 - **CONTINUOUS DOC SYNC**: Setiap kali Agent melakukan perubahan pada struktur folder (tambah/pindah file) atau fitur inti, Agent **WAJIB** memperbarui `.agents/WORKSPACE_MAP.md` dan `PRD/DISCO_DAILY_MASTER_PRD.md` secara harian.
 - **SURGICAL DOCUMENTATION**: DILARANG hanya mengganti kode tanpa penjelasan. Setiap implementasi fix atau fitur baru wajib menyertakan:
   1. **Rationale**: Mengapa kode lama diubah (Root Cause).

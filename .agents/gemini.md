@@ -44,7 +44,7 @@ Before responding to ANY request, read these files IN ORDER:
 8. .agents/skills/supabase-audit/SKILL.md
 ```
 
-> ❗ Skip = Protocol Breach. User dapat ketik `> re-read skills` untuk reset.
+> ❗ Skip = Protocol Breach. User dapat ketik `> re-read skills` untuk reset (dan WAJIB baca ulang [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
 
@@ -181,7 +181,7 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Schema Immutable Protection**: 🚨 DILARANG KERAS menghapus, mengganti nama, atau memodifikasi kolom `last_seen_at` dari tabel `user_profiles`. Kolom ini adalah tulang punggung XP Sync API dan Leaderboard. Menghapusnya = **Protocol Breach Level-1**.
 - 🚫 **Identity Ghosting Prevention**: 🚨 Setiap penambahan kolom identitas di `user_profiles` WAJIB diikuti dengan pembaruan pada SQL View `v_user_full_profile` (v3.26.0).
 - 🚫 **RPC Indexing Resilience**: 🚨 Backend API harus mendukung `tx_hash` sebagai fallback verifikasi jika data di Supabase/Indexer sedang tertunda (*lag*) (v3.26.0).
-- 🚫 **No-Lost-Agent Breach**: Dilarang melakukan pencarian file manual (explorative `list_dir`) tanpa memeriksa [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) terlebih dahulu.
+- 🚫 **No-Lost-Agent Breach**: Dilarang melakukan pencarian file manual (explorative `list_dir`) tanpa memeriksa [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) terlebih dahulu. Mandat ini WAJIB dijalankan ulang setiap kali protokol di-reset via `> re-read skills`.
 
 
 ---
