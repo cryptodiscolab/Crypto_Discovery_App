@@ -39,7 +39,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.25.0**
+**Protocol Version: 3.26.0**
 > The user may say `> re-read skills` to force a reset.
 
 ---
@@ -132,7 +132,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 | **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
 | **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| **Last Synced** | `2026-03-16` | PRD v3.25.0 |
+| **Last Synced** | `2026-03-16` | PRD v3.26.0 |
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -396,4 +396,11 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 
 ---
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.25.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
+ 
+ ---
+ 
+- **ADDENDUM (v3.26.0)**:
+- 1. **RPC INDEXING FALLBACK**: APIs MUST accept `tx_hash` to confirm blockchain state if indexers lag.
+- 2. **VIEW SYNC MANDATE**: Re-align `v_user_full_profile` SQL View whenever new columns are added to `user_profiles`.
+- 3. **TIER PRECISION**: Always use `min_xp` (not `xp_required`) for SBT thresholds.

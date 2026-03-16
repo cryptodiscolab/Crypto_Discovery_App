@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-03-16*
-*PRD Version: 3.25.0*
+*PRD Version: 3.26.0*
 
 ---
 
@@ -32,7 +32,8 @@ Before responding to ANY request, read these files IN ORDER:
 1. .agents/skills/ecosystem-sentinel/SKILL.md
 2. .agents/skills/secure-infrastructure-manager/SKILL.md
 3. .agents/skills/git-hygiene/SKILL.md
-4. .cursorrules  (full Master Architect Protocol)
+4. .agents/WORKSPACE_MAP.md  (Canonical Navigation Map)
+5. .cursorrules  (full Master Architect Protocol)
 ```
 
 **STEP 2 — Situational (baca jika relevan):**
@@ -51,7 +52,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 > **ZERO TOLERANCE**: Antigravity DILARANG KERAS memulai fix kode tanpa menjalankan Pre-Fix Audit terlebih dahulu. Ini bukan saran — ini adalah PERINTAH PROTOKOL.
 
-### Siklus Wajib (The Fix Loop v3.25.0):
+### Siklus Wajib (The Fix Loop v3.26.0):
 
 ```
 [ERROR REPORTED / WEEKLY SCHEDULE (Every Sunday 00:00 UTC)]
@@ -177,23 +178,42 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Atomic Hijack**: Dilarang meletakkan script baru langsung di root `scripts/`. Wajib dimasukkan ke sub-folder kategori (`audits`, `deployments`, `sync`, `debug`).
 - 🚫 **Local Resource Leak**: Dilarang membiarkan server lokal (Vite/Express) berjalan di background setelah tugas selesai (**LOCAL_HYGIENE**).
 - 🚫 **Admin State Drift**: Dilarang mengubah state di Smart Contract tanpa sinkronisasi Database (**ADMIN_SYNC_MANDATE**).
-- 🚫 **Schema Deletion**: 🚨 DILARANG KERAS menghapus, mengganti nama, atau memodifikasi kolom `last_seen_at` dari tabel `user_profiles`. Kolom ini adalah tulang punggung XP Sync API dan Leaderboard. Menghapusnya = **Protocol Breach Level-1**.
+- 🚫 **Schema Immutable Protection**: 🚨 DILARANG KERAS menghapus, mengganti nama, atau memodifikasi kolom `last_seen_at` dari tabel `user_profiles`. Kolom ini adalah tulang punggung XP Sync API dan Leaderboard. Menghapusnya = **Protocol Breach Level-1**.
+- 🚫 **Identity Ghosting Prevention**: 🚨 Setiap penambahan kolom identitas di `user_profiles` WAJIB diikuti dengan pembaruan pada SQL View `v_user_full_profile` (v3.26.0).
+- 🚫 **RPC Indexing Resilience**: 🚨 Backend API harus mendukung `tx_hash` sebagai fallback verifikasi jika data di Supabase/Indexer sedang tertunda (*lag*) (v3.26.0).
+- 🚫 **No-Lost-Agent Breach**: Dilarang melakukan pencarian file manual (explorative `list_dir`) tanpa memeriksa [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) terlebih dahulu.
 
 
 ---
 
-## 8. 🧬 NEXUS EVOLUTION FORMULA (Self-Learning)
+## 9. WORKSPACE & DATA ARCHITECTURE (E2E)
 
-Untuk memastikan kesalahan tidak pernah terulang, gunakan siklus **A-D-R-R-E**:
-1.  **A**udit: Jalankan `check_sync_status.cjs` & `gitleaks-check`.
-2.  **D**etermine: Identifikasi apakah kegagalan adalah Kode, Data, atau Korupsi Environment.
-3.  **R**esolve: Implementasi fix dengan **Surgical Fix** + **SDK-First**.
-4.  **R**eflect: Dokumentasikan *mengapa* gagal (misal: "Manual URL construction bypassed state verifier").
-5.  **E**volve: Update protokol ini dan `agent_vault` dengan pelajaran baru.
+### 🗺️ Ecosystem Visual Map
+```mermaid
+graph TD
+    User((User)) -->|Interact| FE[Raffle_Frontend]
+    FE -->|API Request| API[Vercel Serverless Bundles]
+    API -->|Read/Write| DB[(Supabase DB)]
+    API -->|Read| BC[Base Blockchain]
+    
+    subgraph "Audit & Sync"
+        S[scripts/audits] -->|Verify| DB
+        S -->|Verify| BC
+    end
+    
+    subgraph "External Integrations"
+        API -->|Fetch| Neynar[Neynar/Farcaster]
+        API -->|Notify| TG[Telegram Bot]
+    end
+```
+
+### 📍 Core File Registry
+- **Brain:** `.agents/` | **FE/API:** `Raffle_Frontend/` | **Audit:** `scripts/audits/`
+- **Canonical Map:** [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)
 
 ---
 
-## 8. REFERENSI CEPAT
+## 10. REFERENSI CEPAT
 
 | Resource                | Path                                              |
 |------------------------|---------------------------------------------------|

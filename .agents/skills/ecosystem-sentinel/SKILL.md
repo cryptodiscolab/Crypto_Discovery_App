@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Audit-First Mandate (v3.25.0)**: Mandatory **Weekly E2E Audit** every Sunday (00:00 UTC) or before major feature releases using `node scripts/audits/check_sync_status.cjs`. Standardized reporting: Verdict/Pipeline/Security.
+  - **Audit-First Mandate (v3.26.0)**: Mandatory **Weekly E2E Audit** every Sunday (00:00 UTC) or before major feature releases using `node scripts/audits/check_sync_status.cjs`. Standardized reporting: Verdict/Pipeline/Security.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -79,7 +79,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.25.0 (Nexus Alignment — Comprehensive diagrams & historical analysis).
+- **Versi Terakhir:** 3.26.0 (Identity Sync & RPC Resilience Update).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -126,16 +126,37 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 6.  **Defensive Address Cleaning Mandate**: EVERY contract address fetched from environment variables MUST be cleaned of quotes, spaces, and hidden characters before use.
 7. **ENV-SANITY Mandate (Cloud Integrity)**: PROHIBIT the use of environment variables containing literal double quotes (e.g., `""value""`) or hidden newlines (`\r\n`). EVERY environment variable access in serverless bundles MUST include `.trim()`.
 8. **Clean-Pipe Sync Protocol (v3.25.0)**: Use of `spawnSync` with direct `stdin` input is MANDATORY for all synchronization scripts. This eliminates shell-induced data corruption on Windows environments.
-9. **6-Tier Sync Audit Mandate (v3.25.0)**: Audit every tiering script (`sync-sbt.cjs`, `admin-bundle.js`) to ensure full support for the 6-tier enum: `NONE(0), BRONZE(1), SILVER(2), GOLD(3), PLATINUM(4), DIAMOND(5)`. Verify Platinum inclusion in all reward pool calculations.
+130. **RPC INDEXING FALLBACK MANDATE (v3.26.0)**: APIs MUST support `tx_hash` as a final verification fallback for claims and XP sync to bypass indexer lag.
+131. **VIEW SYNC MANDATE (v3.26.0)**: Re-align `v_user_full_profile` SQL View whenever columns are added to `user_profiles`.
+132. **TIER PRECISION (v3.26.0)**: Prohibit the use of `xp_required` in code logic; always use `min_xp` from `sbt_thresholds`.
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` |
 | **Raffle** | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` | `0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08` |
-| **PRD v3.25.0** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.26.0** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **CMS V2** | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` | `0x555D06933CC45038c42a1ba1F74140A5e4E0695d` |
 | **Admin FIDs** | `1477344` | `1477344` |
+
+## 🧭 Workspace Navigation & Data Flow (MANDATORY)
+
+Agent **WAJIB** merujuk pada `WORKSPACE_MAP.md` sebelum melakukan `list_dir` atau `find_by_name` yang bersifat eksploratif.
+
+### 📍 Core Directory Ownership
+- **Frontend/API Core:** `Raffle_Frontend/`
+- **Automation/Audits:** `scripts/audits/`
+- **Intelligence/Brain:** `.agents/`
+- **Smart Contracts:** `DailyApp.V.12/`
+
+### 🔗 E2E Infrastructure Pipeline
+1. **Frontend:** [React] `src/pages` & `src/components`
+2. **Backend:** [Serverless] `api/*-bundle.js` (Consolidated logic)
+3. **Database:** [PostgreSQL] `user_profiles` & `user_activity_logs`
+4. **Smart Contract:** [Base] `v13_DailyApp`
+
+> [!IMPORTANT]
+> **NO-LOST-AGENT POLICY**: Jika agent bingung mencari file, segera baca [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md). Jangan membuat file baru di root jika sub-folder yang relevan sudah tersedia (e.g. `scripts/audits`).
 
 ## 🛠️ Kompetensi Utama
 
@@ -324,7 +345,11 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Nexus Evolution**: Apakah pelajaran dari task ini (jika ada bug pelik) sudah didokumentasikan di protokol atau `agent_vault`?
 - [ ] **Admin Sync Audit**: Apakah setiap aksi admin on-chain sudah sinkron ke database via secure backend request?
 - [ ] **Clean Data Audit**: Apakah file `supabase_full_dump.json` dan logs aktivitas sudah dikecualikan dari staging?
+- [ ] **RPC Indexing Resilience**: Apakah API mendukung verifikasi `tx_hash` jika data Supabase/Indexer tertunda? (v3.26.0)
+- [ ] **View Sync Audit**: Apakah SQL View `v_user_full_profile` sudah diperbarui jika ada kolom identitas baru? (v3.26.0)
+- [ ] **Tier Precision Audit**: Apakah logika SBT menggunakan `min_xp` (bukan `xp_required`)? (v3.26.0)
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix)*: `node scripts/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
+
 
 ## 🚨 Pantangan
 - Melakukan push kode yang belum diaudit secara otomatis.

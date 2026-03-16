@@ -16,13 +16,14 @@ Before responding to ANY request, read these files IN ORDER:
 1. **`.agents/skills/ecosystem-sentinel/SKILL.md`** — Audit protocol, fix cycle, sentinel rules
 2. **`.agents/skills/secure-infrastructure-manager/SKILL.md`** — Security, contract lifecycle
 3. **`.agents/skills/git-hygiene/SKILL.md`** — Clean tree, commit rules
-4. **`.cursorrules`** — Full Master Architect Protocol (all sections)
+4. **`.agents/WORKSPACE_MAP.md`** — Canonical Workspace Map (Mandatory Navigation)
+5. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
 > ❗ Skipping this step = **Protocol Breach**. User can say `> re-read skills` to reset.
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.25.0)
+## 🔴 ABSOLUTE LAWS (Nexus v3.26.0)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
@@ -45,11 +46,14 @@ Before responding to ANY request, read these files IN ORDER:
 19. **LOCAL HYGIENE**: ALWAYS terminate local servers (Vite/Express) after verification. Do not consume local CPU/RAM in the background.
 20. **ADMIN SYNC**: EVERY admin action changing on-chain state MUST be synchronized with the database immediately upon transaction confirmation. No state drift allowed.
 21. **SCHEMA IMMUTABLE PROTECTION**: NEVER delete, rename, or drop the `last_seen_at` column in `user_profiles`. It is strictly required for XP Sync and Anti-Whale Underdog logic. Deleting this column breaks the Leaderboard synchronization.
+48. **RPC INDEXING FALLBACK**: When syncing XP or Claims, APIs MUST accept `tx_hash` and verify signatures/receipts directly via RPC if the indexer/Supabase state is lagging (v3.26.0).
+49. **VIEW SYNCHRONIZATION**: Any addition of columns to `user_profiles` MUST be immediately followed by an update to `v_user_full_profile` SQL View to prevent frontend data-ghosting (v3.26.0).
+50. **NO-LOST-AGENT**: Prohibit explorative file listing without first checking [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md).
 
 
 ---
 
-## ⚡ THE FIX CYCLE (Mandatory v3.25.0)
+## ⚡ THE FIX CYCLE (Mandatory v3.26.0)
 
 ```
 ERROR REPORTED / WEEKLY SCHEDULE (Sunday 00:00 UTC)
@@ -61,7 +65,7 @@ ERROR REPORTED / WEEKLY SCHEDULE (Sunday 00:00 UTC)
       └─ ❌ FAIL → Return to STEP 1
 ```
 
-Notify user format (Standard Reporting v3.25.0):
+Notify user format (Standard Reporting v3.26.0):
 ```
 ✅ VERDICT: [STATUS] (Operational / Degraded)
 📡 Pipeline: [FUNCTIONAL / DEGRADED] (Data Flow Integrity)
@@ -89,13 +93,9 @@ Notify user format (Standard Reporting v3.25.0):
 ---
 
 ## 🚫 FORBIDDEN
-
--   Fix without Pre-Fix Audit
--   Notify user without Re-Audit output
--   Hardcoded XP / fees / rewards in any file
--   `git push` without `npm run gitleaks-check`
--   New API files outside `*-bundle.js`
--   Starting new feature before fixing all bugs found during audit
+...
+98. - Starting new feature before fixing all bugs found during audit
+99. - **PROHIBITED**: Using `xp_required` column instead of `min_xp` in `sbt_thresholds` logic (v3.26.0).
 
 ## 🧬 NEXUS EVOLUTION FORMULA (Agent Learning)
 
