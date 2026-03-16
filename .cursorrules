@@ -12,7 +12,8 @@ Before responding to ANY request, you MUST perform these reads IN ORDER:
 1. .agents/skills/ecosystem-sentinel/SKILL.md   ← Audit protocol & fix cycle
 2. .agents/skills/secure-infrastructure-manager/SKILL.md  ← Security & contracts
 3. .agents/skills/git-hygiene/SKILL.md          ← Clean tree mandate
-4. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
+4. .agents/WORKSPACE_MAP.md                     ← Canonical Nav Map
+5. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
 ```
 
 ### STEP 2 — Read Situational Skills (baca jika relevan dengan task)
@@ -394,13 +395,22 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **ANTI-DELETION**: The `last_seen_at` column in the `user_profiles` table is a CRITICAL component for XP Sync API and the Anti-Whale Underdog Catch-up logic.
 - **ENFORCEMENT**: 🚨 NEVER delete, rename, or modify the `last_seen_at` column, nor any other vital schema columns governing rewards without explicit A-D-R-R-E cycles. Deleting this column breaks the ecosystem's leaderboard synchronization process.
 
+## 37. ECOSYSTEM DOCUMENTATION & SURGICAL CHANGE MANDATE (v3.26.1)
+- **CONTINUOUS DOC SYNC**: Setiap kali Agent melakukan perubahan pada struktur folder (tambah/pindah file) atau fitur inti, Agent **WAJIB** memperbarui `.agents/WORKSPACE_MAP.md` dan `PRD/DISCO_DAILY_MASTER_PRD.md` secara harian.
+- **SURGICAL DOCUMENTATION**: DILARANG hanya mengganti kode tanpa penjelasan. Setiap implementasi fix atau fitur baru wajib menyertakan:
+  1. **Rationale**: Mengapa kode lama diubah (Root Cause).
+  2. **Function**: Apa kegunaan kode baru ini.
+  3. **Audit Verdict**: Hasil audit (`check_sync_status.cjs`) setelah perubahan.
+- **NO DELETION WITHOUT TRACE**: Dilarang menghapus logika lama yang masih berfungsi. Gunakan pendekatan "Surgical Fix" (hanya ubah baris yang error) dan berikan komentar penjelasan di atas blok kode yang diubah jika kompleksitasnya tinggi.
+
 ---
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.0. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
  
  ---
  
-- **ADDENDUM (v3.26.0)**:
+- **ADDENDUM (v3.26.1)**:
 - 1. **RPC INDEXING FALLBACK**: APIs MUST accept `tx_hash` to confirm blockchain state if indexers lag.
 - 2. **VIEW SYNC MANDATE**: Re-align `v_user_full_profile` SQL View whenever new columns are added to `user_profiles`.
 - 3. **TIER PRECISION**: Always use `min_xp` (not `xp_required`) for SBT thresholds.
+- 4. **WORKSPACE CANONICAL**: Use `.agents/WORKSPACE_MAP.md` as the primary navigation source.
