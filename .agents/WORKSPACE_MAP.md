@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v1.0.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.34.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -35,8 +35,8 @@ e:\Disco Gacha\Disco_DailyApp
 │   ├── api/webhook/         # Bot webhooks
 │   └── routes/              # Express-style routes
 │
-├── DailyApp.V.12/           # 📜 Smart Contracts (Hardhat)
-│   └── contracts/           # Solidity source code
+├── DailyApp.V.12/           # 📜 Smart Contracts (Hardhat - Architecture V12/V13)
+│   └── contracts/           # Solidity source code (DailyAppV13, MasterX, Raffle)
 │
 └── PRD/                     # 📄 Product Requirements Documentation
     ├── DISCO_DAILY_MASTER_PRD.md   # Source of Truth

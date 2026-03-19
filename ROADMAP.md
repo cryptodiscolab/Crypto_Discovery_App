@@ -13,7 +13,7 @@
 
 ### Step 2: Verification [x]
 - [x] Verify `MasterX` on BaseScan.
-- [x] Verify `Raffle` on BaseScan.
+- [x] Verify `Raffle` on BaseScan (Manual Proof-of-Work v3.31.0).
 - [x] Verify `DailyApp` on BaseScan.
 - [x] Deploy `Verification Server` to Vercel.
 - [x] Sync `VITE_VERIFY_SERVER_URL` in frontend.
