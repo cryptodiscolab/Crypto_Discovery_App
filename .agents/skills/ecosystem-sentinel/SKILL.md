@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Audit-First Mandate (v3.28.0)**: Mandatory **Weekly E2E Audit** every Sunday (00:00 UTC) or before major feature releases using `node scripts/audits/check_sync_status.cjs`. Standardized reporting: Verdict/Pipeline/Security.
+  - **Audit-First Mandate (v3.35.0)**: Mandatory **Weekly E2E Audit** every Sunday (00:00 UTC) or before major feature releases using `node scripts/audits/check_sync_status.cjs`. Standardized reporting: Verdict/Pipeline/Security.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -79,7 +79,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.28.0 (Ecosystem Address Alignment & Real-time XP Sync).
+- **Versi Terakhir:** 3.35.0 (Final Ecosystem Parity & Legacy Address Purge).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -348,7 +348,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **RPC Indexing Resilience**: Apakah API mendukung verifikasi `tx_hash` jika data Supabase/Indexer tertunda? (v3.26.0)
 - [ ] **View Sync Audit**: Apakah SQL View `v_user_full_profile` sudah diperbarui jika ada kolom identitas baru? (v3.26.0)
 - [ ] **Tier Precision Audit**: Apakah logika SBT menggunakan `min_xp` (bukan `xp_required`)? (v3.26.0)
-- [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix v3.28.0)*: `node scripts/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
+- [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix v3.35.0)*: `node scripts/audits/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
 
 
 ## 🚨 Pantangan
