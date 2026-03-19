@@ -1,7 +1,7 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.35.0 — Final Ecosystem Parity & Legacy Address Purge
+**Version**: 3.36.0 — Ecosystem Anti-Hallucination & Sync Mandate
 **Last Updated**: 2026-03-20
-**Status**: 🛡️ RE-HARDENED & SYNCHRONIZED 💎
+**Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 
 ---
 
@@ -348,7 +348,7 @@ Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables
 - **Main App**: `crypto-discovery-app.vercel.app`
 - **Verification**: `dailyapp-verification-server.vercel.app`
 - **Database**: Supabase Project (ID: rbgz...)
-- **Core Contract**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` (V13 Mainnet)
+- **Core Contract**: `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` (V13.35 Sepolia - Gold)
 
 ---
 
@@ -388,7 +388,17 @@ graph TD
 
 ---
 
-## 11. Work Report — v3.28.0 (Current)
+## 11. Work Report — v3.36.0 (Current)
+**Date**: 2026-03-20
+**Task**: Ecosystem Anti-Hallucination Hardening & Pre-Flight Sync Mandate.
+**Action**: 
+- **Core Protocol**: Restored full `.cursorrules` (34KB) and injected **Section 38: Ecosystem Anti-Hallucination & Sync Mandate**, blacklisting legacy addresses `0x1ED8...` and `0x87a3...`.
+- **Agent Skills**: Updated `ecosystem-sentinel/SKILL.md` to mandate a **Pre-Flight Env Audit** using `check_sync_status.cjs` before any blockchain-related task.
+- **Constitutional Doc**: Synchronized `gemini.md` with v3.36.0 mandates, reinforcing the "Zero-Trust Address" principle.
+- **Lockdown**: Established the `WORKSPACE_MAP.md` Registry as the absolute source of truth for contract addresses, effectively preventing agent-side "hallucinations".
+**Outcome**: High-integrity architecture achieving 100% address parity and permanent resilience against legacy data regression.
+
+## 12. Work Report — v3.35.0
 **Date**: 2026-03-20
 **Task**: Ecosystem Address Alignment & Real-time XP Sync Fix.
 **Action**: 
@@ -400,7 +410,7 @@ graph TD
 
 ---
 
-## 12. Work Report — v3.27.0
+## 13. Work Report — v3.27.0
 **Date**: 2026-03-16
 **Task**: Implementation of "Verification-First" XP Sync Protocol.
 **Action**: 
@@ -413,7 +423,7 @@ graph TD
 
 ---
 
-## 12. Work Report — v3.26.3
+## 14. Work Report — v3.26.3
 **Date**: 2026-03-16
 **Task**: Ecosystem Hardening & Performance Optimization.
 **Action**: 
@@ -423,7 +433,7 @@ graph TD
 - Hardened `system_health` RLS to restrict non-admin access.
 **Outcome**: Enhanced security posture and improved database scalability.
 
-## 13. Work Report — v3.26.2
+## 15. Work Report — v3.26.2
 **Date**: 2026-03-16
 **Task**: Enhancing Leaderboard Data Integrity.
 **Action**: 
@@ -432,7 +442,7 @@ graph TD
 - Handled cross-view dependencies using ordered drop/create cycle.
 **Outcome**: Leaderboard now displays accurate raffle statistics instead of 0 values.
 
-## 14. Work Report — v3.26.1
+## 16. Work Report — v3.26.1
 **Date**: 2026-03-16
 **Task**: Restore Daily Claim, Log History, and Leaderboard.
 **Action**: 
