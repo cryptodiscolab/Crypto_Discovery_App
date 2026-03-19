@@ -1205,12 +1205,17 @@ function DailyClaimModal({ onClose, pointSettings, streakCount, profileData }) {
           }),
         });
 
-        if (!response.ok) throw new Error("Sync API failed");
+        const resData = await response.json();
+        
+        // Optimistic UI was already updated, but we can verify with backend data
+        if (resData.ok && resData.total_xp) {
+            console.log('[DailyClaim] Backend Sync Success. New Total XP:', resData.total_xp);
+        }
 
-        const dailyReward = pointSettings?.daily_claim || 100;
-        manualAddPoints(dailyReward);
-        await refetchStats();
-        await refetch();
+        // RPC & Sync Delay: Wait briefly for contract & DB persistence to settle
+        await refetchOnChainStats(); // useUserInfo refetch
+        await new Promise(r => setTimeout(r, 1500)); 
+        await refetchPoints(); // PointsContext refetch
         
         toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
         onClose();

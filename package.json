@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "lurah": "node test-lurah.js",
+    "lurah": "node test-lurah.cjs",
     "gitleaks-check": "gitleaks-secret-scanner",
     "prepare": "husky",
     "orchestron": "node scripts/orchestrator/nexus_orchestrator.cjs"

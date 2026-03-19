@@ -2,5 +2,5 @@
 echo =========================================
 echo Memulai Lurah Ekosistem Local Interface...
 echo =========================================
-node test-lurah.js
+node test-lurah.cjs
 pause

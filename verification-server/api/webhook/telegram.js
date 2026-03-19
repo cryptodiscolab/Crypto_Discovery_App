@@ -59,7 +59,7 @@ module.exports = async (req, res) => {
         }
 
         // Answer callback query to stop loading state in Telegram
-        await fetch(`https://api.telegram.org/bot${config.telegram.botToken}/answerCallbackQuery`, {
+        await fetch(`https://api.telegram.org/bot${telegramBotToken}/answerCallbackQuery`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ callback_query_id: query.id })

@@ -112,16 +112,24 @@ async function runQwenPhase() {
     console.log("==========================================");
     
     // 1. Backend Syntax Checks
-    const apiFiles = ['user-bundle.js', 'admin-bundle.js', 'tasks-bundle.js', 'cron/lurah-ekosistem.js'];
+    const apiFiles = [
+        'Raffle_Frontend/api/user-bundle.js', 
+        'Raffle_Frontend/api/admin-bundle.js', 
+        'Raffle_Frontend/api/tasks-bundle.js', 
+        'verification-server/api/webhook/telegram.js',
+        'verification-server/api/cron/lurah-ekosistem.js'
+    ];
     for(const file of apiFiles) {
-        const fullPath = path.join(__dirname, '../../api', file);
+        const fullPath = path.join(__dirname, '../../', file);
         if (fs.existsSync(fullPath)) {
-            const res = runCommand('node', ['-c', `api/${file}`]);
+            const res = runCommand('node', ['-c', file]);
             if (!res.success) {
-                await reportToNexus('Qwen', 'SYNTAX', `Syntax Error in ${file}:\n${res.output}`, `api/${file}`);
+                await reportToNexus('Qwen', 'SYNTAX', `Syntax Error in ${file}:\n${res.output}`, file);
             } else {
-                await resolveNexusReports('Qwen', 'SYNTAX', `api/${file}`);
+                await resolveNexusReports('Qwen', 'SYNTAX', file);
             }
+        } else {
+            console.log(`⚠️  File not found for syntax check: ${file}`);
         }
     }
 

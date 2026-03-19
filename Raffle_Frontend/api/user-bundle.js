@@ -392,7 +392,15 @@ async function handleXpSync(req, res) {
             });
         }
 
-        return res.status(200).json({ ok: true, xp: onChainXP, synced: xpDelta > 0 });
+        console.log(`[XP Sync Audit] Address: ${cleanAddress} | Contract: ${DAILY_APP_ADDRESS} | Delta: ${xpDelta} | Underdog: ${appliedBonusXP}`);
+
+        return res.status(200).json({ 
+            ok: true, 
+            xp: onChainXP, 
+            total_xp: profileUpdate.total_xp + (profileUpdate.manual_xp_bonus || 0),
+            streak_count: profileUpdate.streak_count,
+            synced: xpDelta > 0 
+        });
 
     } catch (error) {
         console.error('[XP Sync Error]', error);
