@@ -1,14 +1,7 @@
-**Protocol Version: 3.35.0**oNewline
-**Ollama Model**: `OpenClaw:3.35.0` (Powered by `qwen2.5-coder`)
+-NoNewline
 
-### 8.5 ZERO HARDCODE SECRETS MANDATE (CRITICAL - from gemini.md)
-- **DEFINITION**: "Zero Hardcode Secrets" means NO sensitive keys (Supabase Service Role, API Keys, Private Keys, JWTs) are allowed to be hardcoded in ANY script, frontend file, or documentation.
-- **RESTRICTED PATTERNS**: AI is strictly prohibited from hardcoding strings matching: `eyJ...` (JWT Tokens), `sb_...` (Supabase Keys), `AIzaSy...` (Google API Keys), `0x...` (Literal Private Keys - Check context carefully).
-- **ENFORCEMENT**: Every script MUST use `dotenv` and fetch secrets from `process.env`. Frontend code MUST strictly use `VITE_` prefixed public keys only. DILARANG KERAS menggunakan metode hardcopy key statis untuk testing. Wajib menggunakan Mocking atau `.env.test`.
-- **SCANNING PROTOCOL**: Before every "Finish", "Notify User", or `git push`, AI MUST run `npm run gitleaks-check` to ensure no leaks were introduced.
-- **CLEANUP**: All temporary or archive files containing secrets MUST be scrubbed or deleted immediately upon discovery.
+## 38. ECOSYSTEM ANTI-HALLUCINATION & SYNC MANDATE (v3.36.0)
+- **ANTI-HALLUCINATION LOCKDOWN**: Agents are FORBIDDEN from using any contract address not explicitly documented in the official WORKSPACE_MAP.md registry. If an address is not found, DO NOT invent one; search the repository or ask the user.
+- **PRE-FLIGHT SYNC MANDATE**: Before performing any task related to .env, Smart Contracts, or Deployments, agents MUST run `node scripts/audits/check_sync_status.cjs`. Any verdict other than ALL SYSTEMS SYNCHRONIZED blocks progress.
+- **ZERO-TRUST CONFIG**: Verify environment variable parity (Local vs Vercel) before and after any change. Traceability is mandatory.
 
-### 8.6 Address Parity & Legacy Purge Mandate (v3.35.0)
-- **REQUIRED**: EVERY contract address MUST be verified against the v3.35.0 Registry in WORKSPACE_MAP.md.
-- **FORBIDDEN**: The use of legacy addresses `0x1ED8...` (MasterX legacy) or `0x87a3...` (DailyApp legacy) is strictly prohibited across all env, logic, and scripts.
-- **ENFORCEMENT**: Any configuration mismatch detected during `check_sync_status.cjs` must be resolved instantly before deployment.

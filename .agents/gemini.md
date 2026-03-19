@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-03-20*
-*PRD Version: 3.35.0*
+*PRD Version: 3.36.0*
 
 ---
 
@@ -52,7 +52,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 > **ZERO TOLERANCE**: Antigravity DILARANG KERAS memulai fix kode tanpa menjalankan Pre-Fix Audit terlebih dahulu. Ini bukan saran — ini adalah PERINTAH PROTOKOL.
 
-### Siklus Wajib (The Fix Loop v3.35.0):
+### Siklus Wajib (The Fix Loop v3.36.0):
 
 ```
 [ERROR REPORTED / WEEKLY SCHEDULE (Every Sunday 00:00 UTC)]

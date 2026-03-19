@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Audit-First Mandate (v3.35.0)**: Mandatory **Weekly E2E Audit** every Sunday (00:00 UTC) or before major feature releases using `node scripts/audits/check_sync_status.cjs`. Standardized reporting: Verdict/Pipeline/Security.
+  - **Anti-Hallucination Mandate (v3.36.0)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -14,18 +14,18 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 > [!IMPORTANT]
 > Aturan ini **HANYA** berlaku saat running secara lokal (laptop user). Pengecekan dilakukan via `isLocalDev` (NODE_ENV=development && !VERCEL). Cloud Hosting (Vercel/VPS) akan tetap mendapatkan full performance standar.
 
-1. **Lightweight Vite**: Optimasi `vite.config.js` dengan `ignored` monitoring hanya aktif di lokal.
-2. **Reduced Polling**: Interval polling worker script lokal diset ke **>= 30 detik**. Di VPS/Cloud, interval bisa lebih cepat (5-10 detik).
-3. **Clean Shutdown**: Handler `SIGINT`/`SIGTERM` tetap dipertahankan di semua env karena ini best practice Node.js.
-4. **Build Guards**: Plugin berat otomatis didisable di lokal kecuali dibutuhkan.
-5. **Local Server Resource Hygiene**: SELALU matikan (terminate) server lokal (Express, Vite, etc.) sesaat setelah verifikasi manual selesai. Jangan biarkan proses Node.js menggantung di background untuk menghemat resource CPU/RAM (i5-4210U).
+1.  **Lightweight Vite**: Optimasi `vite.config.js` dengan `ignored` monitoring hanya aktif di lokal.
+2.  **Reduced Polling**: Interval polling worker script lokal diset ke **>= 30 detik**. Di VPS/Cloud, interval bisa lebih cepat (5-10 detik).
+3.  **Clean Shutdown**: Handler `SIGINT`/`SIGTERM` tetap dipertahankan di semua env karena ini best practice Node.js.
+4.  **Build Guards**: Plugin berat otomatis didisable di lokal kecuali dibutuhkan.
+5.  **Local Server Resource Hygiene**: SELALU matikan (terminate) server lokal (Express, Vite, etc.) sesaat setelah verifikasi manual selesai. Jangan biarkan proses Node.js menggantung di background untuk menghemat resource CPU/RAM (i5-4210U).
 
-5. **Vercel Hobby Plan Guard (Profit-First Strategy)**:
+5.  **Vercel Hobby Plan Guard (Profit-First Strategy)**:
     - **API Consolidation Mandate**: Seluruh fitur API baru **WAJIB** masuk ke dalam bundle yang sudah ada (`admin-bundle.js`, `user-bundle.js`, `tasks-bundle.js`, `audit-bundle.js`).
     - **Limit 12 Fungsi**: Jumlah Serverless Functions di Vercel **TIDAK BOLEH** melebihi 12 fungsi untuk menghindari biaya sebelum project mencapai PnL positif (Profit). Jika fitur baru membutuhkan endpoint baru, konsolidasi fungsionalitas ke dalam bundle yang relevan.
     - **Folder API Root-Only**: Hindari pembuatan sub-folder dalam `api/`. Gunakan flat structure dan bundle logic di level root `api/`.
 
-6. **Activity Log & UGC Standard (Profit-First History)**:
+6.  **Activity Log & UGC Standard (Profit-First History)**:
     - **user_activity_logs**: Seluruh riwayat aksi user (XP, Purchase, Reward) **WAJIB** dicatat di tabel `user_activity_logs`.
     - [ ] Verify `user_activity_logs` population for UGC.
     - [ ] Verify `Point-Sync` for all rewards (dynamic fetch vs hardcode).
@@ -49,20 +49,20 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 
 ### ⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)
 
-1. **Baca PRD Sebelum Fitur Baru**: Setiap kali memulai fitur atau modul baru, Agent **WAJIB** membaca seksi PRD yang relevan terlebih dahulu untuk memastikan implementasi sesuai spesifikasi.
+1.  **Baca PRD Sebelum Fitur Baru**: Setiap kali memulai fitur atau modul baru, Agent **WAJIB** membaca seksi PRD yang relevan terlebih dahulu untuk memastikan implementasi sesuai spesifikasi.
 
-2. **Update PRD Setelah Perubahan Fitur**: Setiap perubahan signifikan pada fitur (new page, baru contract, endpoint baru, perubahan ekonomi) **WAJIB** diikuti update pada PRD di seksi yang relevan. Tidak boleh ada fitur yang berjalan di production tetapi tidak terdokumentasi di PRD.
+2.  **Update PRD Setelah Perubahan Fitur**: Setiap perubahan signifikan pada fitur (new page, baru contract, endpoint baru, perubahan ekonomi) **WAJIB** diikuti update pada PRD di seksi yang relevan. Tidak boleh ada fitur yang berjalan di production tetapi tidak terdokumentasi di PRD.
 
-3. **PRD sebagai Source of Truth**: Jika ada konflik antara kode dan PRD, **PRD yang harus diperbarui** (jika kode memang sudah diubah secara sengaja) atau **kode yang harus diperbaiki** (jika kode menyimpang dari spesifikasi tanpa alasan). Agent harus mengklarifikasi ke user sebelum memutuskan.
+3.  **PRD sebagai Source of Truth**: Jika ada konflik antara kode dan PRD, **PRD yang harus diperbarui** (jika kode memang sudah diubah secara sengaja) atau **kode yang harus diperbaiki** (jika kode menyimpang dari spesifikasi tanpa alasan). Agent harus mengklarifikasi ke user sebelum memutuskan.
 
-4. **Sinkronisasi PRD dengan .cursorrules**: Setiap update kontrak, alamat, atau protokol di `.cursorrules` **WAJIB** tercermin juga di seksi "Arsitektur Sistem" dalam PRD.
+4.  **Sinkronisasi PRD dengan .cursorrules**: Setiap update kontrak, alamat, atau protokol di `.cursorrules` **WAJIB** tercermin juga di seksi "Arsitektur Sistem" dalam PRD.
 
-5. **Checklist PRD per Sesi**: Dalam setiap sesi kerja, Agent wajib menjalankan mini-audit PRD:
-   - [ ] Apakah ada fitur yang baru selesai diimplementasikan tetapi belum masuk PRD?
-   - [ ] Apakah alamat contract di PRD masih sinkron dengan `.cursorrules`?
-   - [ ] Apakah Roadmap di PRD masih relevan dengan prioritas pengembangan saat ini?
+5.  **Checklist PRD per Sesi**: Dalam setiap sesi kerja, Agent wajib menjalankan mini-audit PRD:
+    - [ ] Apakah ada fitur yang baru selesai diimplementasikan tetapi belum masuk PRD?
+    - [ ] Apakah alamat contract di PRD masih sinkron dengan `.cursorrules`?
+    - [ ] Apakah Roadmap di PRD masih relevan dengan prioritas pengembangan saat ini?
 
-6. **PRD HTML Conversion Mandate**: Setiap kali memperbarui atau membuat dokumen PRD (.md), Agent **WAJIB** segera membuat versi HTML-nya menggunakan `npx marked -i filename.md -o filename.html` di folder yang sama. Hal ini untuk memastikan dokumen desain selalu siap dilihat dalam format web yang bersih.
+6.  **PRD HTML Conversion Mandate**: Setiap kali memperbarui atau membuat dokumen PRD (.md), Agent **WAJIB** segera membuat versi HTML-nya menggunakan `npx marked -i filename.md -o filename.html` di folder yang sama. Hal ini untuk memastikan dokumen desain selalu siap dilihat dalam format web yang bersih.
 
 ### 🔄 Trigger Wajib Update PRD
 
@@ -79,7 +79,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.35.0 (Final Ecosystem Parity & Legacy Address Purge).
+- **Versi Terakhir:** 3.36.0 (Anti-Hallucination Hardening & Mandatory Pre-Flight Sync).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
