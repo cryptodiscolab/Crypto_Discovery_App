@@ -1,7 +1,7 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.28.0 — Ecosystem Address Alignment (Master Sync)
+**Version**: 3.30.0 — Sepolia-Only Mandate & Emergency Revert
 **Last Updated**: 2026-03-20
-**Status**: ACTIVE — SINGLE SOURCE OF TRUTH ✅
+**Status**: 🛠️ REVERTED / HARDENED ✅
 
 ---
 
