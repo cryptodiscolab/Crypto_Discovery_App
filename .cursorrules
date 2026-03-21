@@ -1,4 +1,4 @@
-﻿# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -35,12 +35,12 @@ After reading, internally confirm:
 > ❗ If you skip this step and start working without reading skills, **you are in Protocol Breach**.
 ### Section 20.1: OpenClaw Local Installation
 - **Binary Path**: `C:\Users\chiko\AppData\Roaming\npm\openclaw.ps1`
-- **Ollama Model**: `OpenClaw:3.37.0` (Powered by `qwen2.5-coder`)
+- **Ollama Model**: `OpenClaw:3.38.0` (Powered by `qwen2.5-coder`)
 - **Worker Script**: `node .agents/scripts/openclaw-worker.js`
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.37.0**
+**Protocol Version: 3.38.0**
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -434,7 +434,7 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - 3. **TIER PRECISION**: Always use `min_xp` (not `xp_required`) for SBT thresholds.
 - 4. **WORKSPACE CANONICAL**: Use `.agents/WORKSPACE_MAP.md` as the primary navigation source.
 
-## 38. ECOSYSTEM ANTI-HALLUCINATION & SYNC MANDATE (v3.37.0)
+## 38. ECOSYSTEM ANTI-HALLUCINATION & SYNC MANDATE (v3.38.0)
 - **ANTI-HALLUCINATION LOCKDOWN**: Agents are FORBIDDEN from using any contract address not explicitly documented in the official WORKSPACE_MAP.md registry. If an address is not found, DO NOT invent one; search the repository or ask the user.
 - **PRE-FLIGHT SYNC MANDATE**: Before performing any task related to .env, Smart Contracts, or Deployments, agents MUST run `node scripts/audits/check_sync_status.cjs`. Any verdict other than ALL SYSTEMS SYNCHRONIZED blocks progress.
 - **ZERO-TRUST CONFIG**: Verify environment variable parity (Local vs Vercel) before and after any change. Traceability is mandatory.
