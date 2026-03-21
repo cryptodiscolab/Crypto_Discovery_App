@@ -25,6 +25,7 @@ const AdminSystemSettings = React.lazy(() => import('../components/admin/AdminSy
 const AdminCMSContent = React.lazy(() => import('../components/admin/AdminCMSContent'));
 const TaskManager = React.lazy(() => import('../components/admin/TaskManager').then(m => ({ default: m.TaskManager })));
 const AdminCampaignTab = React.lazy(() => import('../components/admin/AdminCampaignTab'));
+const ModerationCenterTab = React.lazy(() => import('../components/admin/ModerationCenterTab').then(m => ({ default: m.ModerationCenterTab })));
 
 // Newly Extracted Tabs
 const AnnouncementTab = React.lazy(() => import('../components/admin/tabs/AnnouncementTab').then(m => ({ default: m.AnnouncementTab })));
@@ -119,6 +120,7 @@ export function AdminPage({ initialTab = 'pool' }) {
             label: 'Dynamic Content',
             items: [
                 { id: 'tasks', label: 'Task Master', icon: Zap, color: 'purple' },
+                { id: 'moderation', label: 'UGC Moderation', icon: Shield, color: 'emerald' },
                 { id: 'campaigns', label: 'Campaigns', icon: Megaphone, color: 'indigo' },
                 { id: 'content', label: 'CMS Components', icon: Database, color: 'indigo' },
                 { id: 'announcement', label: 'Announcement', icon: Edit3, color: 'blue' },
@@ -305,6 +307,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                                 {activeTab === 'news' && <NewsTab />}
                                 {activeTab === 'content' && <AdminCMSContent />}
                                 {activeTab === 'sync-logs' && <SyncLogTab />}
+                                { activeTab === 'moderation' && <ModerationCenterTab /> }
                                 {activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
                                 {activeTab === 'nexus' && <NexusMonitorTab />}
                             </div>

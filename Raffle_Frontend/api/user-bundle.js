@@ -34,7 +34,25 @@ const PROFILE_LIMITS = {
     MAX_USERNAME_LEN: parseInt(process.env.MAX_USERNAME_LEN || '30'),
     MAX_AVATAR_BYTES: parseInt(process.env.MAX_AVATAR_BYTES || '1048576') // 1MB
 };
-const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
+const MASTER_ADMINS = (process.env.VITE_ADMIN_WALLETS || process.env.VITE_ADMIN_ADDRESS || process.env.ADMIN_ADDRESS || '').toLowerCase().split(',').filter(Boolean);
+
+async function isAuthorizedAdmin(walletAddress) {
+    if (!walletAddress) return false;
+    const clean = walletAddress.toLowerCase();
+    
+    // 1. Env Bootstrap (High Priority)
+    if (MASTER_ADMINS.includes(clean)) return true;
+    
+    // 2. Database Registry (Centralized Dashboard Control)
+    const { data, error } = await supabaseAdmin
+        .from('user_profiles')
+        .select('is_admin')
+        .eq('wallet_address', clean)
+        .maybeSingle();
+    
+    if (error || !data) return false;
+    return !!data.is_admin;
+}
 
 // Resilience v3.21.0: Circuit Breaker Patterns
 const BREAK_COOLDOWN = 5 * 60 * 1000; // 5 minutes
@@ -122,10 +140,14 @@ export default async function handler(req, res) {
             return handleSyncOAuth(req, res);
         case 'approve-mission': // v3.20.0: Admin Governance
             return handleApproveMission(req, res);
+        case 'approve-raffle': // v3.38.3: UGC Hardening
+            return handleApproveRaffle(req, res);
         case 'check-admin':
             return handleCheckAdmin(req, res);
         case 'pending-missions':
             return handleFetchPendingMissions(req, res);
+        case 'pending-raffles': // v3.38.3: UGC Hardening
+            return handleFetchPendingRaffles(req, res);
         case 'get-health':
             return handleGetHealth(req, res);
         case 'reset-health':
@@ -637,6 +659,7 @@ async function handleSyncUgcMission(req, res) {
                 is_active: false, // v3.20.0: Default to false for admin moderation
                 task_type: 'ugc',
                 onchain_id: campaign.id,
+                creator_address: wallet.toLowerCase(),
                 created_at: new Date().toISOString()
             }));
 
@@ -644,16 +667,53 @@ async function handleSyncUgcMission(req, res) {
             if (tasksErr) console.warn('[SyncUgcMission] Failed to populate daily_tasks:', tasksErr);
         }
 
-        // 3. Rich Activity Logging
+        // 3. Award XP to Sponsor (Creator)
+        try {
+            const { data: sponsorPoints } = await supabaseAdmin
+                .from('point_settings')
+                .select('points_value')
+                .eq('activity_key', 'sponsor_task')
+                .single();
+            
+            if (sponsorPoints?.points_value) {
+                let creatorXp = sponsorPoints.points_value;
+                const multiplier = await getUserMultiplier(wallet);
+                creatorXp = Math.floor((creatorXp * multiplier) / 10000);
+
+                await supabaseAdmin.from('user_task_claims').insert({
+                    wallet_address: wallet.toLowerCase(),
+                    task_id: `ugc_mission_create_${campaign.id}`,
+                    xp_earned: creatorXp,
+                    platform: 'system',
+                    action_type: 'sponsor_task',
+                    target_id: String(campaign.id)
+                });
+
+                await logActivity({
+                    wallet,
+                    category: 'XP',
+                    type: 'UGC Mission Bonus',
+                    description: `Earned ${creatorXp} XP for creating mission: ${title}`,
+                    amount: creatorXp,
+                    symbol: 'XP',
+                    txHash,
+                    metadata: { campaign_id: campaign.id }
+                });
+            }
+        } catch (xpErr) {
+            console.warn('[SyncUgcMission] Failed to award sponsor XP:', xpErr.message);
+        }
+
+        // 4. Record Listing Fee Payment Activity
         await logActivity({
             wallet,
             category: 'PURCHASE',
             type: 'UGC Mission Creation',
-            description: `Created sponsorship: ${title} (${tasks_batch?.length || 0} tasks)`,
+            description: `Paid fees for sponsorship: ${title} (${tasks_batch?.length || 0} tasks)`,
             amount: platformFee,
             symbol: 'USDC',
             txHash,
-            metadata: { title, tasks: tasks_batch?.length || 0, platform: platform_code }
+            metadata: { title, tasks: tasks_batch?.length || 0, platform: platform_code, campaign_id: campaign.id }
         });
 
         return res.status(200).json({ success: true });
@@ -686,7 +746,7 @@ async function handleSyncUgcRaffle(req, res) {
             max_tickets: parseInt(max_tickets),
             prize_pool: prizePool,
             metadata_uri: metadata_uri || null,
-            is_active: true,
+            is_active: false, // MODERATION: Default to inactive for admin review
             title: extra_metadata?.title || null,
             description: extra_metadata?.description || null,
             image_url: extra_metadata?.image || null,
@@ -902,41 +962,40 @@ async function handleSyncOAuth(req, res) {
 }
 
 async function handleApproveMission(req, res) {
-    const { wallet, signature, message, campaign_id } = req.body;
-    if (!wallet || !signature || !message || !campaign_id) return res.status(400).json({ error: 'Missing approval data' });
+    const { wallet, signature, message, mission_id } = req.body;
+    if (!wallet || !signature || !message || !mission_id) return res.status(400).json({ error: 'Missing mission approval data' });
 
     try {
-        // 1. Verify Admin Signature
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const cleanAddress = wallet.toLowerCase();
-        if (!MASTER_ADMINS.includes(cleanAddress)) {
+        const isAdmin = await isAuthorizedAdmin(cleanAddress);
+        if (!isAdmin) {
             return res.status(403).json({ error: 'Unauthorized: Admin only' });
         }
 
-        // 2. Activate Campaign & Related Tasks
-        const { error: campErr } = await supabaseAdmin
-            .from('campaigns')
-            .update({ status: 'active', updated_at: new Date().toISOString() })
-            .eq('id', campaign_id);
-
-        if (campErr) throw campErr;
-
+        // 1. Update daily_tasks
         const { error: taskErr } = await supabaseAdmin
             .from('daily_tasks')
             .update({ is_active: true })
-            .eq('onchain_id', campaign_id);
+            .eq('id', mission_id);
 
-        if (taskErr) console.warn('[ApproveMission] Task activation warning:', taskErr.message);
+        if (taskErr) throw taskErr;
 
-        // 3. Log Admin Action
+        // 2. Log Admin Action
+        await supabaseAdmin.from('admin_audit_logs').insert({
+            admin_address: cleanAddress,
+            action: 'UGC_APPROVE_MISSION',
+            details: { mission_id, approved_at: new Date().toISOString() }
+        });
+
         await logActivity({
             wallet: cleanAddress,
             category: 'ADMIN',
             type: 'UGC Approval',
-            description: `Approved campaign ID: ${campaign_id}`,
-            metadata: { campaign_id }
+            description: `Approved UGC mission ID: ${mission_id}`,
+            metadata: { mission_id }
         });
 
         return res.status(200).json({ success: true, message: 'Mission approved and activated' });
@@ -944,30 +1003,79 @@ async function handleApproveMission(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+async function handleApproveRaffle(req, res) {
+    const { wallet, signature, message, raffle_id } = req.body;
+    if (!wallet || !signature || !message || !raffle_id) return res.status(400).json({ error: 'Missing raffle approval data' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const cleanAddress = wallet.toLowerCase();
+        const isAdmin = await isAuthorizedAdmin(cleanAddress);
+        if (!isAdmin) {
+            return res.status(403).json({ error: 'Unauthorized: Admin only' });
+        }
+
+        const { error } = await supabaseAdmin
+            .from('raffles')
+            .update({ is_active: true, updated_at: new Date().toISOString() })
+            .eq('id', raffle_id);
+
+        if (error) throw error;
+
+        // Log Admin Action
+        await supabaseAdmin.from('admin_audit_logs').insert({
+            admin_address: cleanAddress,
+            action: 'UGC_APPROVE_RAFFLE',
+            details: { raffle_id, approved_at: new Date().toISOString() }
+        });
+
+        await logActivity({
+            wallet: cleanAddress,
+            category: 'ADMIN',
+            type: 'Raffle Approval',
+            description: `Approved raffle ID: ${raffle_id}`,
+            metadata: { raffle_id }
+        });
+
+        return res.status(200).json({ success: true, message: 'Raffle approved and activated' });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
 async function handleCheckAdmin(req, res) {
     const { wallet } = req.query;
     if (!wallet) return res.status(400).json({ isAdmin: false });
-    const isAdmin = MASTER_ADMINS.includes(wallet.toLowerCase());
+    const isAdmin = await isAuthorizedAdmin(wallet);
     return res.status(200).json({ isAdmin });
 }
 
 async function handleFetchPendingMissions(req, res) {
-    const { wallet, signature, message } = req.query;
-    if (!wallet || !signature || !message) return res.status(401).json({ error: 'Missing auth for admin fetch' });
+    const { wallet, signature, message } = req.query; // Actually req.body in POST, but my ModerationCenter uses POST. 
+    // Wait, my handler uses req.body?.action || req.query?.action.
+    const body = req.method === 'POST' ? req.body : req.query;
+    const { wallet: w, signature: s, message: m } = body;
+
+    if (!w || !s || !m) return res.status(401).json({ error: 'Missing auth for admin fetch' });
 
     try {
-        const valid = await verifyMessage({ address: wallet, message, signature });
-        if (!valid || !MASTER_ADMINS.includes(wallet.toLowerCase())) {
+        const valid = await verifyMessage({ address: w, message: m, signature: s });
+        const isAdmin = await isAuthorizedAdmin(w);
+        if (!valid || !isAdmin) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
+        // Fetch pending missions from daily_tasks (UGC)
         const { data, error } = await supabaseAdmin
-            .from('campaigns')
+            .from('daily_tasks')
             .select('*')
-            .eq('status', 'pending');
+            .eq('is_active', false)
+            .not('creator_address', 'is', null);
 
         if (error) throw error;
-        return res.status(200).json(data);
+        return res.status(200).json({ success: true, data });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
@@ -1002,13 +1110,36 @@ async function handleResetHealth(req, res) {
         
         // Log to Audit
         await supabaseAdmin.from('admin_audit_logs').insert({
-            admin_address: 'ADMIN_MANUAL', 
+            admin_address: 'ADMIN_MANUAL', // Ideally replace with current admin wallet if authenticated
             action: 'MANUAL_HEALTH_RESET',
-            details: { service_key }
+            details: { service_key, reset_at: new Date().toISOString() }
         });
 
         return res.status(200).json({ ok: true });
     } catch (e) {
         return res.status(500).json({ error: e.message });
+    }
+}
+
+async function handleFetchPendingRaffles(req, res) {
+    const { wallet, signature, message } = req.query;
+    if (!wallet || !signature || !message) return res.status(401).json({ error: 'Missing auth for admin fetch' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        const isAdmin = await isAuthorizedAdmin(wallet);
+        if (!valid || !isAdmin) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('raffles')
+            .select('*')
+            .eq('is_active', false);
+
+        if (error) throw error;
+        return res.status(200).json(data);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
     }
 }

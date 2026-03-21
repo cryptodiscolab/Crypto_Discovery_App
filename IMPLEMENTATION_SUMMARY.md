@@ -4,6 +4,13 @@
 
 ## 📝 Changelog
 
+### v3.38.4 — 2026-03-22 (UGC ETH Reward Sync & Live Price Oracle)
+- **UGC ETH Restriction**: Enforced native ETH rewards for all UGC missions in `ProfilePage.jsx`.
+- **Live Price Oracle**: Integrated real-time ETH/USDC price feeds into the sponsorship creation UI.
+- **E2E Sync Verification**: Confirmed full reward lifecycle parity from creation to claim and XP sync.
+- **Admin Centralization**: Synchronized all fees with Supabase `system_settings` and smart contract states.
+- **Protocol Update**: Ecosystem version bumped to v3.38.4 across all documentation.
+
 ### v3.27.0 — 2026-03-16 (Verification-First Protocol)
 - **Bug Fix**: Resolved recurring XP sync failure after Daily Claim.
 - **Frontend** (`UnifiedDashboard.jsx`): Now captures and sends `tx_hash` to backend after every on-chain transaction.

@@ -766,6 +766,16 @@ function CreateTaskModal({ onClose }) {
   ]);
   const [email, setEmail] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { refetch: refetchStats } = useUserInfo(address);
+  const { ecosystemSettings } = usePoints(); // Zero Hardcode integration
+
+  // RESTRICTION: ETH ONLY for Reward Pool
+  const allowedTokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
+  const ethToken = allowedTokens.find(t => t.symbol === 'ETH') || allowedTokens[0];
+  
+  const [ethReward, setEthReward] = useState(ecosystemSettings?.sponsorship_reward_amount || '0.01');
   const [sybilFilters, setSybilFilters] = useState({
     minNeynarScore: 0,
     minFollowers: 0,
@@ -773,32 +783,16 @@ function CreateTaskModal({ onClose }) {
     powerBadge: false,
     requiresVerification: true
   });
-  const [paymentToken, setPaymentToken] = useState(null); // Will be set from whitelist
-  const { address } = useAccount();
-  const { signMessageAsync } = useSignMessage();
-  const { refetch: refetchStats } = useUserInfo(address);
-  const { ecosystemSettings } = usePoints(); // Zero Hardcode integration
-
-  // Default to first whitelisted token if none selected
-  const allowedTokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
-  const selectedToken = paymentToken 
-    ? allowedTokens.find(t => t.address === paymentToken) 
-    : allowedTokens[0];
-
-  const isEth = selectedToken?.symbol === 'ETH';
-  const rewardTokenAddr = selectedToken?.address || "0x0000000000000000000000000000000000000000";
   
-  // Dynamic fetches MUST be before variable usages
-  const rewardTokens = Number(ecosystemSettings?.sponsorship_reward_amount || 0);
+  const rewardTokenAddr = ethToken?.address || "0x0000000000000000000000000000000000000000";
   const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 0);
 
   const { prices } = usePriceOracle(allowedTokens.map(t => t.address));
   const currentPrice = prices[rewardTokenAddr?.toLowerCase()] || 0;
-  const rewardUsdValue = currentPrice * parseFloat(rewardTokens);
+  const rewardUsdValue = currentPrice * parseFloat(ethReward || 0);
   
-  const tokenDecimals = selectedToken?.decimals || 18;
-  const rewardAmount = BigInt(Math.floor(rewardTokens * 10 ** 6)) * 10n ** BigInt(tokenDecimals - 6); 
-  // Handling decimals safely (rewardTokens usually has fewer decimals than 18)
+  const tokenDecimals = ethToken?.decimals || 18;
+  const rewardAmount = BigInt(Math.floor(parseFloat(ethReward || 0) * 1e9)) * 10n ** BigInt(tokenDecimals - 9); 
   
   const platformFee = BigInt(Math.floor(feeUsd * 1000000)); // USDC 6 decimals
 
@@ -820,19 +814,7 @@ function CreateTaskModal({ onClose }) {
       }
     ];
 
-    // 2. Approve reward token (if not ETH)
-    if (!isEth) {
-      calls.push({
-        to: rewardTokenAddr,
-        data: encodeFunctionData({
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [CONTRACTS.DAILY_APP, rewardAmount],
-        }),
-      });
-    }
-
-    // 3. The main call
+    // 2. The main call
     calls.push({
       to: CONTRACTS.DAILY_APP,
       data: encodeFunctionData({
@@ -843,11 +825,11 @@ function CreateTaskModal({ onClose }) {
           titles,
           links,
           email,
-          isEth ? 0n : rewardAmount,
+          0n, // ETH uses value: field, rewardAmount arg is for ERC20
           rewardTokenAddr
         ],
       }),
-      value: isEth ? rewardAmount : 0n,
+      value: rewardAmount, // Using native ETH for rewards
     });
 
     return calls;
@@ -991,50 +973,47 @@ function CreateTaskModal({ onClose }) {
           
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between px-1">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Reward Asset</label>
-              <div className="flex items-center gap-1.5 py-0.5 px-2 rounded-full bg-indigo-500/20 border border-indigo-500/20">
-                <Sparkles size={8} className="text-indigo-400" />
-                <span className="text-[8px] font-black text-indigo-400 uppercase">Creator Choice</span>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sponsorship Asset</label>
+              <div className="flex items-center gap-1.5 py-0.5 px-2 rounded-full bg-emerald-500/20 border border-emerald-500/20">
+                <Shield size={8} className="text-emerald-400" />
+                <span className="text-[8px] font-black text-emerald-400 uppercase">ETH Restricted</span>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              {allowedTokens.map((token) => (
-                <button
-                  key={token.address}
-                  onClick={() => setPaymentToken(token.address)}
-                  className={`relative flex items-center gap-2.5 px-4 py-3 rounded-2xl text-[11px] font-bold uppercase transition-all border ${
-                    (paymentToken === token.address || (!paymentToken && token === selectedToken))
-                      ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-600/20 scale-[1.02]' 
-                      : 'bg-zinc-900/50 border-white/5 text-zinc-500 hover:border-white/10 hover:bg-zinc-800'
-                  }`}
-                >
-                  <div className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center">
-                    {token.symbol === 'ETH' ? '⟠' : token.symbol[0]}
-                  </div>
-                  <span>{token.symbol}</span>
-                  {(paymentToken === token.address || (!paymentToken && token === selectedToken)) && (
-                    <div className="absolute top-2 right-2 w-1 h-1 bg-white rounded-full animate-pulse" />
-                  )}
-                </button>
-              ))}
+            <div className="flex items-center gap-3 p-4 bg-zinc-900/50 border border-indigo-500/30 rounded-2xl">
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-xl">⟠</div>
+              <div>
+                <p className="text-[11px] font-bold text-white uppercase tracking-wider">Ethereum (Native)</p>
+                <p className="text-[9px] text-slate-500">Fastest settlement & non-custodial payouts</p>
+              </div>
+              <Check size={16} className="ml-auto text-indigo-400" />
             </div>
           </div>
 
-          <div className="space-y-3 pt-4 border-t border-white/5 relative z-10">
+          <div className="space-y-4 pt-4 border-t border-white/5 relative z-10">
             <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
               <span className="text-slate-400">Platform Listing Fee</span>
               <span className="text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-lg border border-emerald-400/20">${feeUsd.toFixed(2)} USDC</span>
             </div>
-            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-              <span className="text-slate-400">Campaign Reward Pool</span>
-              <div className="flex flex-col items-end gap-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-indigo-400 font-mono text-xs">{rewardTokens.toLocaleString()}</span>
-                  <span className="text-indigo-400/60">{selectedToken?.symbol || 'TOKEN'}</span>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Determine Reward Pool (ETH)</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.001"
+                  value={ethReward}
+                  onChange={(e) => setEthReward(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-4 text-lg font-mono text-indigo-400 outline-none focus:border-indigo-500 transition-all"
+                  placeholder="0.01"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
+                  <span className="text-[10px] font-black text-white px-2 py-0.5 bg-indigo-500 rounded-md mb-1">ETH</span>
+                  {rewardUsdValue > 0 && (
+                    <span className="text-[10px] font-bold text-slate-500 animate-in fade-in slide-in-from-right-1 duration-300">
+                      ≈ ${rewardUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
+                    </span>
+                  )}
                 </div>
-                {rewardUsdValue > 0 && (
-                  <span className="text-[9px] text-slate-500 font-medium">≈ ${rewardUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</span>
-                )}
               </div>
             </div>
           </div>
@@ -1079,11 +1058,11 @@ function CreateTaskModal({ onClose }) {
                       description: `UGC Campaign with ${taskCount} missions on ${firstTask.platform}`,
                       sponsor_address: address,
                       platform_code: firstTask.platform,
-                      reward_amount_per_user: rewardAmount.toString(), // dynamically synced
+                      reward_amount_per_user: ethReward.toString(), 
                       max_participants: 100,
                       txHash: receipt.transactionHash,
                       payment_token: rewardTokenAddr,
-                      reward_symbol: selectedToken?.symbol || 'TOKEN',
+                      reward_symbol: 'ETH',
                       tasks_batch: tasksBatch.filter(t => t.title && t.link)
                     }
                   }),

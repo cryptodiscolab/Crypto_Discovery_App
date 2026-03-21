@@ -64,6 +64,18 @@ export function CreateRafflePage() {
         functionName: 'getTicketPriceInETH',
     });
 
+    const { data: maintenanceFeeBP } = useReadContract({
+        address: CONTRACTS.RAFFLE,
+        abi: RAFFLE_ABI,
+        functionName: 'maintenanceFeeBP',
+    });
+
+    const { data: surchargeBP } = useReadContract({
+        address: CONTRACTS.RAFFLE,
+        abi: RAFFLE_ABI,
+        functionName: 'surchargeBP',
+    });
+
     const { prices } = usePriceOracle(['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee']);
     const ethPrice = prices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || prices['0x4200000000000000000000000000000000000006'] || 0;
 
@@ -95,11 +107,14 @@ export function CreateRafflePage() {
         const price = globalTicketPrice ? parseFloat(formatEther(globalTicketPrice)) : (parseFloat(formData.ticketPrice) || 0);
         const tickets = parseInt(formData.maxTickets) || 0;
 
-        const surcharge = deposit * (APP_CONFIG.FEES.SURCHARGE_BP / 10000);
+        const sBP = surchargeBP ? Number(surchargeBP) : 500;
+        const rBP = maintenanceFeeBP ? Number(maintenanceFeeBP) : 2000;
+
+        const surcharge = deposit * (sBP / 10000);
         const totalPayment = deposit + surcharge;
         const totalRevenue = price * tickets;
-        const projectRake = totalRevenue * (APP_CONFIG.FEES.RAKE_BP / 10000);
-        const sponsorPayback = totalRevenue * (1 - (APP_CONFIG.FEES.RAKE_BP / 10000));
+        const projectRake = totalRevenue * (rBP / 10000);
+        const sponsorPayback = totalRevenue * (1 - (rBP / 10000));
 
         return {
             price: price, // actual price being used
@@ -462,9 +477,9 @@ export function CreateRafflePage() {
                             <ul className="space-y-3">
                                 {[
                                     "English-speaking global audience support",
-                                    `Project Rake (${APP_CONFIG.FEES.RAKE_BP / 100}%) applied`,
+                                    `Project Rake (${(maintenanceFeeBP ? Number(maintenanceFeeBP) : 2000) / 100}%) applied`,
                                     "Funds remain in contract until draw",
-                                    `${APP_CONFIG.FEES.SURCHARGE_BP / 100}% Transaction Fee applied at creation`
+                                    `${(surchargeBP ? Number(surchargeBP) : 500) / 100}% Transaction Fee applied at creation`
                                 ].map((term, i) => (
                                     <li key={i} className="flex items-start gap-2 text-[11px] text-slate-400">
                                         <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />

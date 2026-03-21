@@ -1,6 +1,6 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.38.3 — Ecosystem Sync & Supabase Integration Hardening
-**Last Updated**: 2026-03-21
+**Version**: 3.38.4 — UGC ETH Reward Sync & Live Price Oracle
+**Last Updated**: 2026-03-22
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 
 ---
@@ -309,7 +309,7 @@ Berdasarkan audit ekosistem v3.26.0, Section ini mendefinisikan standar pemuliha
 
 ### 9.2 Precision Governance
 - **Underdog Bonus**: Didefinisikan ulang sebagai **Bottom 20% by World XP Index**. Bonus +10% dihitung saat snapshot harian (daily_ranking_snapshot) untuk akurasi data.
-- **Task Moderation**: Seluruh UGC Mission/Sponsored Task memiliki status awal `PENDING_REVIEW`. Misi hanya muncul di Dashboard setelah mendapatkan approval `is_active = true` dari Master Admin.
+- **Task & Raffle Moderation**: Seluruh UGC Mission / Sponsored Task DAN UGC Raffle memiliki status awal `is_active = false` (PENDING_REVIEW). Konten hanya muncul secara publik setelah mendapatkan approval dari Master Admin (v3.38.3).
 
 ---
 
@@ -337,12 +337,13 @@ Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables
 
 ---
 
-## 7. Current Ecosystem Status (v3.27.0)
+## 7. Current Ecosystem Status (v3.38.3)
 
-### 7.1 Security Audit Findings (v3.26.1)
-- **[RESOLVED] E2E Workspace Mapping**: Standardized navigation via `.agents/WORKSPACE_MAP.md`.
-- **[RESOLVED] CRITICAL BUG (SyntaxError)**: Fixed duplicate `const` declarations in `user-bundle.js` that crashed all API actions (Claims, Logs, Leaderboard).
-- **[RESOLVED] identity Visibility**: Fixed `v_user_full_profile` view to include Google, X, and Neynar Score columns.
+### 7.1 Security Audit Findings (v3.38.3)
+- **[RESOLVED] UGC Raffle Moderation**: Fixed bypass where raffles were auto-active; now requires admin approval (v3.38.3).
+- **[RESOLVED] RLS Header Spoofing**: Hardened `get_auth_wallet()` to ignore vulnerable client-side headers for public users.
+- **[RESOLVED] Unified Admin Auditing**: All administrative actions now log to `admin_audit_logs` (v3.38.3).
+- **[RESOLVED] CRITICAL BUG (SyntaxError)**: Fixed duplicate `const` declarations in `user-bundle.js`.
 
 ### 7.2 Connection Matrix
 - **Main App**: `crypto-discovery-app.vercel.app`
@@ -388,7 +389,17 @@ graph TD
 
 ---
 
-## 11. Work Report — v3.38.3 (Current)
+## 11. Work Report — v3.38.4 (Current)
+**Date**: 2026-03-22
+**Task**: UGC ETH Reward Sync, Live Price Oracle & Admin Centralization.
+**Action**:
+- **UGC Reward Restriction**: Enforced ETH-only rewards for UGC Missions in `ProfilePage.jsx` (`CreateTaskModal`), simplifying payout logic and utilizing native ETH transactions.
+- **Dynamic Pricing**: Integrated `usePriceOracle` to fetch real-time ETH/USDC prices, providing sponsors with a live conversion display during mission creation.
+- **E2E Synchronization**: Verified the entire reward lifecycle: Creation (`ProfilePage`) → Moderation (`admin-bundle`) → Task Completion (`tasks-bundle`) → Reward Claim (`TasksPage`) → XP Sync (`user-bundle`).
+- **Zero-Hardcode Audit**: Audited and confirmed that all sponsorship fees (Listing Fee, Reward Amount) are centrally managed via `system_settings` or derived from smart contract state, eliminating legacy static percentages.
+**Outcome**: Robust ETH-native mission economy with real-time price awareness and 100% E2E synchronization across Frontend, Backend, and Contract layers.
+
+## 12. Work Report — v3.38.3
 **Date**: 2026-03-21
 **Task**: Ecosystem Sync & Supabase Integration Hardening.
 **Action**:

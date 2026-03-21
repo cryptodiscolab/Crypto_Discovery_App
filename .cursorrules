@@ -40,7 +40,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.38.3**
+**Protocol Version: 3.38.4**
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -100,6 +100,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 
 ### 8.2 Authentication & Verification
 - **REQUIRED:** Use Cryptographic Signature Verification (SIWE or `viem.verifyMessage`) in the Backend API to prove user identity.
+- **RLS PROTECTION:** `get_auth_wallet()` MUST be hardened to ignore `x-user-wallet` headers for `anon` roles to prevent RLS spoofing (v3.38.3).
 - **TOOLING:** Use `viem` for backend crypto verifications.
 
 ### 8.4 Database Access (Supabase)
@@ -121,6 +122,8 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 ### 8.4 Dynamic Activity Pattern (System Tasks)
 - **DISTINCTION:** API Handlers MUST distinguish between Static Tasks (stored in `daily_tasks`) and Dynamic System Activities (e.g., `raffle_buy_123` or `raffle_win_456`).
 - **RESOLUTION:** Dynamic activities MUST fetch their canonical `points_value` directly from the `point_settings` table using their base `activity_key` (e.g., `raffle_buy`), NEVER from `daily_tasks`.
+- **UGC MODERATION:** All User Generated Content (Missions, Raffles, Profile Updates) MUST default to `is_active: false` or `status: 'pending'` and require explicit Admin Approval (v3.38.3).
+- **ADMIN AUDIT:** ALL administrative write operations MUST record a trace in `admin_audit_logs` using the `logAdminAction` helper (v3.38.3).
 - **PREVENTION:** Failure to bifurcate this validation logic leads to Zero-Trust failures (`0 XP` bugs). Always implement string prefix checks (`.startsWith()`) in verification endpoints.
 
 ## 9. STRICT CODING GUIDELINES (ANTI-GUESSING PROTOCOL)

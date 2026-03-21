@@ -27,8 +27,10 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 
 6.  **Activity Log & UGC Standard (Profit-First History)**:
     - **user_activity_logs**: Seluruh riwayat aksi user (XP, Purchase, Reward) **WAJIB** dicatat di tabel `user_activity_logs`.
-    - [ ] Verify `user_activity_logs` population for UGC.
-    - [ ] Verify `Point-Sync` for all rewards (dynamic fetch vs hardcode).
+- [ ] Verify `user_activity_logs` population for UGC.
+- [ ] Verify UGC Moderation Parity (`is_active: false` for Raffles/Missions by default) (v3.38.3).
+- [ ] Verify Hardened `get_auth_wallet()` pattern to prevent RLS spoofing (v3.38.3).
+- [ ] Verify `Point-Sync` for all rewards (dynamic fetch vs hardcode).
     - [ ] Verify `Zero-Hardcode` compliance across the entire feature set.
     - [ ] Check Vercel Function Count (Stay < 12).
     - **UGC Tracking**: Aksi User Generated Content (Mission Creation, Raffle Launch, Sponsorship Renewal) **WAJIB** memicu log dengan kategori `PURCHASE` dan menyertakan `tx_hash` serta metadata lengkap.

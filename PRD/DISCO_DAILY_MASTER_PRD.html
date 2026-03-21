@@ -300,7 +300,7 @@
 <h3>9.2 Precision Governance</h3>
 <ul>
 <li><strong>Underdog Bonus</strong>: Didefinisikan ulang sebagai <strong>Bottom 20% by World XP Index</strong>. Bonus +10% dihitung saat snapshot harian (daily_ranking_snapshot) untuk akurasi data.</li>
-<li><strong>Task Moderation</strong>: Seluruh UGC Mission/Sponsored Task memiliki status awal <code>PENDING_REVIEW</code>. Misi hanya muncul di Dashboard setelah mendapatkan approval <code>is_active = true</code> dari Master Admin.</li>
+<li><strong>Task &amp; Raffle Moderation</strong>: Seluruh UGC Mission / Sponsored Task DAN UGC Raffle memiliki status awal <code>is_active = false</code> (PENDING_REVIEW). Konten hanya muncul secara publik setelah mendapatkan approval dari Master Admin (v3.38.3).</li>
 </ul>
 <hr>
 <h2>10. Historical Analysis &amp; Changelog</h2>
@@ -358,12 +358,13 @@
 <h3>6.2 Zero Hardcode Secret Mandate</h3>
 <p>Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables (.env). Mapping global ditangani oleh <code>global-sync-env.js</code>.</p>
 <hr>
-<h2>7. Current Ecosystem Status (v3.27.0)</h2>
-<h3>7.1 Security Audit Findings (v3.26.1)</h3>
+<h2>7. Current Ecosystem Status (v3.38.3)</h2>
+<h3>7.1 Security Audit Findings (v3.38.3)</h3>
 <ul>
-<li><strong>[RESOLVED] E2E Workspace Mapping</strong>: Standardized navigation via <code>.agents/WORKSPACE_MAP.md</code>.</li>
-<li><strong>[RESOLVED] CRITICAL BUG (SyntaxError)</strong>: Fixed duplicate <code>const</code> declarations in <code>user-bundle.js</code> that crashed all API actions (Claims, Logs, Leaderboard).</li>
-<li><strong>[RESOLVED] identity Visibility</strong>: Fixed <code>v_user_full_profile</code> view to include Google, X, and Neynar Score columns.</li>
+<li><strong>[RESOLVED] UGC Raffle Moderation</strong>: Fixed bypass where raffles were auto-active; now requires admin approval (v3.38.3).</li>
+<li><strong>[RESOLVED] RLS Header Spoofing</strong>: Hardened <code>get_auth_wallet()</code> to ignore vulnerable client-side headers for public users.</li>
+<li><strong>[RESOLVED] Unified Admin Auditing</strong>: All administrative actions now log to <code>admin_audit_logs</code> (v3.38.3).</li>
+<li><strong>[RESOLVED] CRITICAL BUG (SyntaxError)</strong>: Fixed duplicate <code>const</code> declarations in <code>user-bundle.js</code>.</li>
 </ul>
 <h3>7.2 Connection Matrix</h3>
 <ul>

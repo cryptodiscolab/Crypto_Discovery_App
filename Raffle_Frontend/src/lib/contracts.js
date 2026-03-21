@@ -116,18 +116,19 @@ export const APP_CONFIG = {
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
   EXPLORER_URL: import.meta.env.VITE_EXPLORER_URL || 'https://sepolia.basescan.org',
   FEES: {
+    // [LEGACY] These are fallback values. Use RAFFLE contract's maintenanceFeeBP and surchargeBP instead.
     SURCHARGE_BP: 500, // 5%
     RAKE_BP: 2000     // 20%
   },
   PROFILE: {
-    MAX_NAME_LEN: 50,
-    MAX_BIO_LEN: 160,
-    MAX_USERNAME_LEN: 30,
-    MAX_AVATAR_BYTES: 1048576 // 1MB
+    MAX_NAME_LEN: Number(import.meta.env.VITE_MAX_NAME_LEN || 50),
+    MAX_BIO_LEN: Number(import.meta.env.VITE_MAX_BIO_LEN || 160),
+    MAX_USERNAME_LEN: Number(import.meta.env.VITE_MAX_USERNAME_LEN || 30),
+    MAX_AVATAR_BYTES: Number(import.meta.env.VITE_MAX_AVATAR_BYTES || 1048576) // 1MB
   },
   STREAK: {
-    WINDOW_MIN_HOURS: 20,
-    WINDOW_MAX_HOURS: 48
+    WINDOW_MIN_HOURS: Number(import.meta.env.VITE_STREAK_WINDOW_MIN || 20),
+    WINDOW_MAX_HOURS: Number(import.meta.env.VITE_STREAK_WINDOW_MAX || 48)
   }
 };
 

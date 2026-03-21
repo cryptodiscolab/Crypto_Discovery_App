@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.38.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.38.4)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -51,7 +51,7 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 
 | Source Route | Bundle Target | Action Key | Purpose |
 |--------------|---------------|------------|---------|
-| `/api/user/*` | `user-bundle.js` | `sync`, `xp`, `update-profile` | User identity & XP sync (**Verification-First v3.27.0**) |
+| `/api/user/*` | `user-bundle.js` | `sync`, `xp`, `update-profile` | User identity, XP sync & **UGC Reward Sync (v3.38.4)** |
 | `/api/leaderboard` | `user-bundle.js` | `leaderboard` | Global rankings |
 | `/api/tasks/*` | `tasks-bundle.js` | `social-verify`, `claim` | Task verification & rewards |
 | `/api/admin/*` | `admin-bundle.js` | `task-add`, `system-update` | Administrative controls |
@@ -103,7 +103,7 @@ graph TD
 
 ---
 
-## 6. Contract & Governance Registry (v3.37.0)
+## 6. Contract & Governance Registry (v3.38.4)
 
 | Contract | Purpose | Base Sepolia Address | Governance |
 |----------|---------|----------------------|------------|
@@ -115,4 +115,4 @@ graph TD
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-03-21 | Ecosystem Anti-Hallucination & Sync Mandate v3.37.0.*
+*Last Updated: 2026-03-22 | UGC ETH Reward Sync & Live Price Oracle v3.38.4.*
