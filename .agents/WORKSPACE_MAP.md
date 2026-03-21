@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.38.4)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.38.6)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 

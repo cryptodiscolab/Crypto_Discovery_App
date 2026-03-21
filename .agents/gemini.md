@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-03-22*
-*PRD Version: 3.38.4*
+*PRD Version: 3.38.6*
 
 ---
 

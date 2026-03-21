@@ -1,5 +1,5 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.38.4 — UGC ETH Reward Sync & Live Price Oracle
+**Version**: 3.38.6 — Function Search Path Hardening & Protocol Sync
 **Last Updated**: 2026-03-22
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 
@@ -398,6 +398,26 @@ graph TD
 - **E2E Synchronization**: Verified the entire reward lifecycle: Creation (`ProfilePage`) → Moderation (`admin-bundle`) → Task Completion (`tasks-bundle`) → Reward Claim (`TasksPage`) → XP Sync (`user-bundle`).
 - **Zero-Hardcode Audit**: Audited and confirmed that all sponsorship fees (Listing Fee, Reward Amount) are centrally managed via `system_settings` or derived from smart contract state, eliminating legacy static percentages.
 **Outcome**: Robust ETH-native mission economy with real-time price awareness and 100% E2E synchronization across Frontend, Backend, and Contract layers.
+
+## 12. Work Report — v3.38.6
+**Date**: 2026-03-22
+**Task**: Function Search Path Hardening (Defense-in-Depth).
+**Action**:
+- **Security Hardening**: Remedied "Function Search Path Mutable" warnings identified by Supabase Linter.
+- **Migration**: Applied `SET search_path` to 15 functions, including `get_auth_wallet` and all `SECURITY DEFINER` functions in the `public` schema.
+- **Verification**: Confirmed `proconfig` property in `pg_proc` and verified 13/13 security checks pass in `check_sync_status.cjs`.
+- **Protocol Sync**: Incremented ecosystem version to v3.38.6 across all master documentation.
+**Outcome**: Neutralized search path hijacking risks and achieved 100% linter compliance for function security.
+
+## 12. Work Report — v3.38.5
+**Date**: 2026-03-22
+**Task**: View Security Remediation (SECURITY INVOKER Transition).
+**Action**:
+- **Security Hardening**: Remedied "Security Definer View" errors identified by Supabase Linter.
+- **View Redefinition**: Transitioned `v_user_full_profile`, `user_stats`, and `v_leaderboard` to `WITH (security_invoker = true)` while preserving all identity sync columns (Google/Twitter/Farcaster).
+- **Integrity Audit**: Verified 100% RLS compliance and confirmed 13/13 security checks pass in `check_sync_status.cjs`.
+- **Protocol Sync**: Incremented ecosystem version to v3.38.5 across PRD, .cursorrules, gemini.md, CLAUDE.md, and WORKSPACE_MAP.
+**Outcome**: 100% Security Linter compliance with zero data drift. Baseline systems operational and re-locked.
 
 ## 12. Work Report — v3.38.3
 **Date**: 2026-03-21

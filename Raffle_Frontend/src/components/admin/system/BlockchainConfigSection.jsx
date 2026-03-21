@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, BarChart, Plus, TrendingUp, Cpu, Database, Coins, Settings, RefreshCw, ArrowUpRight, Landmark, Clock, ShieldCheck } from 'lucide-react';
-import { useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI, RAFFLE_ABI, SAFE_MULTISIG } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
 import axios from 'axios';

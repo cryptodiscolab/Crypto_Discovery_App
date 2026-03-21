@@ -4,6 +4,17 @@
 
 ## 📝 Changelog
 
+### v3.38.6 — 2026-03-22 (Function Search Path Hardening)
+- **Security Hardening**: Applied `SET search_path = public, auth` to `get_auth_wallet` and 14 other `SECURITY DEFINER` functions.
+- **Linter Compliance**: Resolved Supabase Linter warnings regarding mutable search paths.
+- **Protocol Sync**: Updated ecosystem version to v3.38.6 across all core scripts and documentation.
+
+### v3.38.5 — 2026-03-22 (View Security Remediation)
+- **Security Hardening**: Transitioned `v_user_full_profile`, `user_stats`, and `v_leaderboard` views from `SECURITY DEFINER` to `SECURITY INVOKER`.
+- **Linter Compliance**: Resolved Supabase Linter warnings regarding potential RLS bypass in views.
+- **Protocol Documentation**: Incremented ecosystem version to v3.38.5 across all master protocols and agent skills.
+- **Audit Verification**: Confirmed 13/13 security checks pass and 100% database integrity.
+
 ### v3.38.4 — 2026-03-22 (UGC ETH Reward Sync & Live Price Oracle)
 - **UGC ETH Restriction**: Enforced native ETH rewards for all UGC missions in `ProfilePage.jsx`.
 - **Live Price Oracle**: Integrated real-time ETH/USDC price feeds into the sponsorship creation UI.
