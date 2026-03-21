@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.35.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.37.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -103,7 +103,7 @@ graph TD
 
 ---
 
-## 6. Contract & Governance Registry (v3.35.0)
+## 6. Contract & Governance Registry (v3.37.0)
 
 | Contract | Purpose | Base Sepolia Address | Governance |
 |----------|---------|----------------------|------------|
@@ -115,4 +115,4 @@ graph TD
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-03-20 | Ecosystem Final Parity & Address Purge v3.35.0.*
+*Last Updated: 2026-03-21 | Ecosystem Anti-Hallucination & Sync Mandate v3.37.0.*
