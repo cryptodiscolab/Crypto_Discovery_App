@@ -40,7 +40,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.38.0**
+**Protocol Version: 3.38.3**
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -152,11 +152,6 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - **API_KEYS**: Gemini, Neynar, Alchemy, and other service keys must be managed strictly via `.env`.
 - **Privacy**: ALL sensitive data MUST be added to `.gitignore`. Use `.env.example` as a template for team members.
 
-## 13. UI/UX DESIGN & FRONTEND STANDARDS (SENIOR STAFF ENGINEER MODE)
-1. **Clean & Rugged:** Modern dark-themed aesthetic. No heavy libraries like Framer-Motion.
-2. **Atomic Layout:** 100% responsiveness. Mobile uses bottom-sheets/drawers.
-3. **Z-Index Management:** ALL fixed UI components MUST use `z-[9999] pointer-events-auto`.
-4. **Minimalist Modern Standards**: Visual breathing room, subtle elevation, typography first.
 ## 13. UI/UX DESIGN & FRONTEND STANDARDS (SENIOR STAFF ENGINEER MODE)
 1. **Clean & Rugged:** Modern dark-themed aesthetic. No heavy libraries like Framer-Motion.
 2. **Atomic Layout:** 100% responsiveness. Mobile uses bottom-sheets/drawers.
@@ -434,7 +429,11 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - 3. **TIER PRECISION**: Always use `min_xp` (not `xp_required`) for SBT thresholds.
 - 4. **WORKSPACE CANONICAL**: Use `.agents/WORKSPACE_MAP.md` as the primary navigation source.
 
-## 38. ECOSYSTEM ANTI-HALLUCINATION & SYNC MANDATE (v3.38.0)
-- **ANTI-HALLUCINATION LOCKDOWN**: Agents are FORBIDDEN from using any contract address not explicitly documented in the official WORKSPACE_MAP.md registry. If an address is not found, DO NOT invent one; search the repository or ask the user.
-- **PRE-FLIGHT SYNC MANDATE**: Before performing any task related to .env, Smart Contracts, or Deployments, agents MUST run `node scripts/audits/check_sync_status.cjs`. Any verdict other than ALL SYSTEMS SYNCHRONIZED blocks progress.
-- **ZERO-TRUST CONFIG**: Verify environment variable parity (Local vs Vercel) before and after any change. Traceability is mandatory.
+## 39. PROTOCOL INTEGRITY & POST-EDIT AUDIT MANDATE (v3.38.2)
+- **PRINCIPLE**: The protocol files (`.cursorrules`, `CLAUDE.md`, `.agents/gemini.md`) are the agent's core identity. Their integrity is non-negotiable.
+- **ANTI-DELETION LOCK**: Using `multi_replace_file_content` to replace or remove entire numbered sections of these files is STRICTLY PROHIBITED unless explicitly requested for a refactor.
+- **MANDATORY VISUAL AUDIT**: After ANY automated edit to a protocol file, the agent MUST perform a `view_file` call on the affected lines (including 10 lines of surrounding context) to verify that no sections were accidentally wiped out.
+- **NO SILENT REMOVAL**: If a section is intended for removal (e.g., duplicates), the agent MUST explicitly state this in the tool description and verify the deletion is successful without affecting other sections.
+
+*Final Protocol Version: 3.38.3*
+*Antigravity: Integrity Restored. Visual Audit Mandated. No Silent Deletions.*

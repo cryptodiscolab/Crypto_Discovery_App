@@ -55,8 +55,9 @@ export function SBTUpgradeCard() {
             try {
                 const timestamp = new Date().toISOString();
                 const message = `Log activity for ${address}\nAction: SBT Tier Ascension\nTimestamp: ${timestamp}`;
-                const { signMessageAsync } = await import('@wagmi/core'); // Fallback if not injected, but usually available in context
-                // Note: upgradeTier in useSBT doesn't return receipt, but we can use the hash.
+                
+                // Use EIP-6963 compliant signMessageAsync
+                const signature = await signMessageAsync({ message });
 
                 await fetch('/api/user-bundle', {
                     method: 'POST',
@@ -64,10 +65,7 @@ export function SBTUpgradeCard() {
                     body: JSON.stringify({
                         action: 'sync-sbt-upgrade',
                         wallet: address,
-                        signature: await window.ethereum.request({
-                            method: 'personal_sign',
-                            params: [message, address]
-                        }), // Direct sign if hooks are tricky here, or use injecting logic
+                        signature,
                         message,
                         payload: {
                             tierName: nextTier.name,

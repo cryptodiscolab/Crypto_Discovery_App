@@ -5,10 +5,11 @@ import { useSBT } from '../../../hooks/useSBT';
 import { formatEther, parseEther } from 'viem';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 
 export function NFTConfigTab({ ethPrice }) {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { tiers, economy, updateTierConfig, updateBatchConfig, updateTierURI, toggleTier, updateEconomy, refetch } = useNFTTiers();
     const {
         totalPoolBalance,
@@ -176,10 +177,7 @@ export function NFTConfigTab({ ethPrice }) {
             });
 
             const syncMsg = `Action: SYNC_MULTIPLIERS\nTimestamp: ${Date.now()}`;
-            const sig = await window.ethereum.request({
-                method: 'personal_sign',
-                params: [syncMsg, address.toLowerCase()],
-            });
+            const sig = await signMessageAsync({ message: syncMsg });
 
             await axios.post('/api/admin-bundle', {
                 action: 'SYNC_MULTIPLIERS',
@@ -289,7 +287,7 @@ export function NFTConfigTab({ ethPrice }) {
                                     const multiplierMap = {};
                                     tiers.forEach(t => { multiplierMap[t.id] = Number(t.multiplierBP); });
                                     const syncMsg = `Action: SYNC_MULTIPLIERS\nTimestamp: ${Date.now()}`;
-                                    const sig = await window.ethereum.request({ method: 'personal_sign', params: [syncMsg, address.toLowerCase()] });
+                                    const sig = await signMessageAsync({ message: syncMsg });
                                     await axios.post('/api/admin-bundle', { action: 'SYNC_MULTIPLIERS', wallet_address: address, signature: sig, message: syncMsg, payload: multiplierMap });
                                     toast.success("Multipliers Synced to DB!", { id: tid });
                                 } catch (e) { toast.error("Sync failed", { id: tid }); }

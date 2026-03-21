@@ -68,16 +68,16 @@ export function SBTRewardsDashboard() {
                 const timestamp = new Date().toISOString();
                 const message = `Log activity for ${address}\nAction: Pool Sharing Claim\nTimestamp: ${timestamp}`;
 
+                // Use EIP-6963 compliant signMessageAsync
+                const signature = await signMessageAsync({ message });
+
                 await fetch('/api/user-bundle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'sync-pool-claim',
                         wallet: address,
-                        signature: await window.ethereum.request({
-                            method: 'personal_sign',
-                            params: [message, address]
-                        }),
+                        signature,
                         message,
                         payload: {
                             amountETH: formatEther(claimableAmount),

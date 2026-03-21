@@ -11,6 +11,8 @@ import { useCMS } from '../../../hooks/useCMS';
 import { usePoints } from '../../../shared/context/PointsContext';
 
 export function BlockchainConfigSection() {
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { writeContractAsync } = useWriteContract();
     const { ecosystemSettings } = usePoints();
     const [isSaving, setIsSaving] = useState(false);
@@ -259,11 +261,10 @@ export function BlockchainConfigSection() {
             // 🛡️ Sync to DB for UI consistency
             try {
                 const message = `Action: SYNC_WEIGHTS\nTimestamp: ${Date.now()}`;
-                const { address } = pointers; // Or use useAccount
-                const sig = await window.ethereum.request({ method: 'personal_sign', params: [message, window.ethereum.selectedAddress] });
+                const sig = await signMessageAsync({ message });
                 await axios.post('/api/admin-bundle', {
                     action: 'SYNC_WEIGHTS',
-                    wallet_address: window.ethereum.selectedAddress,
+                    wallet_address: address,
                     signature: sig,
                     message: message,
                     payload: tierWeights
@@ -390,14 +391,11 @@ export function BlockchainConfigSection() {
     const handleSyncTokenToDb = async (action, tokenData) => {
         try {
             const message = `Action: ${action}\nToken: ${tokenData.address}\nTimestamp: ${Date.now()}`;
-            const sig = await window.ethereum.request({ 
-                method: 'personal_sign', 
-                params: [message, window.ethereum.selectedAddress] 
-            });
+            const sig = await signMessageAsync({ message });
             
             await axios.post('/api/admin-bundle', {
                 action: action,
-                wallet_address: window.ethereum.selectedAddress,
+                wallet_address: address,
                 signature: sig,
                 message: message,
                 payload: tokenData
