@@ -575,7 +575,12 @@ export default function ProfilePage() {
         {activeModal === 'task' && <CreateTaskModal onClose={() => setActiveModal(null)} />}
         {activeModal === 'claim' && (
           <DailyClaimModal 
-            onClose={() => setActiveModal(null)} 
+            onClose={() => setActiveModal(null)}
+            onSuccess={() => {
+              // BUG-FIX 3: Refetch profile data setelah daily claim berhasil agar XP realtime update
+              fetchProfile();
+              refetchPoints();
+            }}
             pointSettings={ecosystemSettings} 
             streakCount={profileData.streakCount}
             profileData={profileData}
@@ -1113,17 +1118,20 @@ function CreateTaskModal({ onClose }) {
   );
 }
 
-function DailyClaimModal({ onClose, pointSettings, streakCount, profileData }) {
+function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profileData }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
-  const { refetch, manualAddPoints, ecosystemSettings } = usePoints();
+  const { refetch: refetchPoints, ecosystemSettings } = usePoints();
   const [isClaiming, setIsClaiming] = useState(false);
   const [countdown, setCountdown] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
 
-  const { stats: userData, refetch: refetchStats } = useUserInfo(address);
+  // BUG-FIX 1: Tambah refetchOnChainStats dari useUserInfo di scope DailyClaimModal
+  const { stats: userData, refetch: refetchOnChainStats } = useUserInfo(address);
+  // BUG-FIX 2: Hitung dailyReward dari pointSettings (hindari variabel undefined)
+  const dailyReward = pointSettings?.daily_claim || ecosystemSettings?.daily_claim || 0;
 
   const lastDailyClaim = profileData?.lastDailyClaim
     ? Number(new Date(profileData.lastDailyClaim).getTime() / 1000)
@@ -1213,16 +1221,19 @@ function DailyClaimModal({ onClose, pointSettings, streakCount, profileData }) {
         }
 
         // RPC & Sync Delay: Wait briefly for contract & DB persistence to settle
-        await refetchOnChainStats(); // useUserInfo refetch
+        await refetchOnChainStats(); // BUG-FIX 1: refetchOnChainStats sekarang terdefinisi
         await new Promise(r => setTimeout(r, 1500)); 
         await refetchPoints(); // PointsContext refetch
         
-        toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
+        toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid }); // BUG-FIX 2: dailyReward sekarang terdefinisi
+        // BUG-FIX 3: Trigger onSuccess agar ProfilePage refetch data XP realtime
+        if (onSuccess) onSuccess();
         onClose();
       } catch (syncErr) {
         console.warn('[DailyClaim] XP sync failed:', syncErr.message);
         toast.error('On-chain success, but XP sync pending. Refresh in 10s.', { id: tid });
-        onClose(); // Still close or let users see? Closing is safer for button reset.
+        if (onSuccess) onSuccess();
+        onClose();
       }
     } catch (err) {
       console.error('Daily Claim Error:', err);
