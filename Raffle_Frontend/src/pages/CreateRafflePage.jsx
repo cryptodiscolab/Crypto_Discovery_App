@@ -5,7 +5,7 @@ import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { CONTRACTS, MASTER_X_ABI, APP_CONFIG } from '../lib/contracts';
+import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI, APP_CONFIG } from '../lib/contracts';
 import { usePriceOracle } from '../hooks/usePriceOracle';
 
 const RafflePreview = ({ data, stats }) => {
