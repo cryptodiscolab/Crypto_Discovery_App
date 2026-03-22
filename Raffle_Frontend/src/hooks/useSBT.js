@@ -1,6 +1,6 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { ABIS } from '../lib/contracts';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
@@ -48,7 +48,11 @@ export function useSBT() {
         functionName: 'owner',
     });
 
-    const userTier = userRawData ? Number(userRawData[1]) : 0;
+    const userTier = useMemo(() => {
+        if (!userRawData) return 0;
+        // Supports both named and index-based access (tier is index 3 in latest ABI)
+        return userRawData.tier !== undefined ? Number(userRawData.tier) : (userRawData[3] !== undefined ? Number(userRawData[3]) : Number(userRawData[1] || 0));
+    }, [userRawData]);
 
     // 3. Fetch User Reward Debt
     const { data: userRewardDebt, refetch: refetchDebt } = useReadContract({
