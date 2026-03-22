@@ -22,11 +22,25 @@ export function useRaffle() {
     const { sendCallsAsync } = useSendCalls();
 
     const buyTickets = async (raffleId, amount) => {
+        const price = await publicClient.readContract({
+            address: CONTRACTS.MASTER_X,
+            abi: ABIS.MASTER_X,
+            functionName: 'getTicketPriceInETH'
+        });
+        const surcharge = await publicClient.readContract({
+            address: RAFFLE_ADDRESS,
+            abi: ABIS.RAFFLE,
+            functionName: 'surchargeBP'
+        });
+        const baseETH = price * BigInt(amount);
+        const requiredETH = (baseETH * (10000n + BigInt(surcharge))) / 10000n;
+
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: ABIS.RAFFLE,
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount)],
+            value: requiredETH
         });
 
         if (hash) {
@@ -83,8 +97,21 @@ export function useRaffle() {
             args: [BigInt(raffleId), BigInt(amount)],
         });
 
+        const price = await publicClient.readContract({
+            address: CONTRACTS.MASTER_X,
+            abi: ABIS.MASTER_X,
+            functionName: 'getTicketPriceInETH'
+        });
+        const surcharge = await publicClient.readContract({
+            address: RAFFLE_ADDRESS,
+            abi: ABIS.RAFFLE,
+            functionName: 'surchargeBP'
+        });
+        const baseETH = price * BigInt(amount);
+        const requiredETH = (baseETH * (10000n + BigInt(surcharge))) / 10000n;
+
         const callId = await sendCallsAsync({
-            calls: [{ to: RAFFLE_ADDRESS, data: callData }],
+            calls: [{ to: RAFFLE_ADDRESS, data: callData, value: requiredETH }],
             capabilities: paymasterCapabilities,
         });
 

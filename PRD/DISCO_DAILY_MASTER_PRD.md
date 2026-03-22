@@ -401,12 +401,13 @@ graph TD
 
 ## 11. Work Report — v3.38.7
 **Date**: 2026-03-22
-**Task**: Admin Dashboard Race Condition Fix.
+**Task**: Admin Dashboard Race Condition Fix & Raffle Ticket Purchase Hotfix.
 **Action**:
 - **Race Condition Resolution**: Addressed an asynchronous role verification bug that prematurely kicked admins out of the dashboard layer.
 - **State Management**: Introduced `isCheckingRoles` state in `useCMS.js` to accurately track the background fetch and sync it with `AdminGuard.jsx`.
+- **Raffle Ticket Hotfix**: Fixed execution reverted error during `buyTickets` and `buyTicketsGasless` by correctly fetching `ticketPriceInETH` and `surchargeBP` to calculate and pass the required `msg.value`.
 - **Ecosystem Sync**: Documented the root cause and implemented the fix securely without bypassing existing RLS or JWT protections.
-**Outcome**: Consistent dashboard access for verified admins while maintaining strict Zero-Trust gating.
+**Outcome**: Consistent dashboard access for verified admins and successful on-chain ticket purchases for users.
 
 ## 12. Work Report — v3.38.6
 **Date**: 2026-03-22
