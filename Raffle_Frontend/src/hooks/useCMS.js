@@ -143,6 +143,8 @@ export function useCMS() {
     // Robust check fallbacks removed (Centralized Authority array no longer exists)
     const [isDbAdmin, setIsDbAdmin] = useState(false);
     const [isEnvAdmin, setIsEnvAdmin] = useState(false);
+    const [isCheckingRoles, setIsCheckingRoles] = useState(true);
+
     useEffect(() => {
         let isMounted = true;
         const checkAdminStatus = async () => {
@@ -183,6 +185,8 @@ export function useCMS() {
                 }
             } catch (e) {
                 console.warn('[useCMS] ENV Admin check failed:', e.message);
+            } finally {
+                if (isMounted) setIsCheckingRoles(false);
             }
         };
         checkAdminStatus();
@@ -475,7 +479,8 @@ export function useCMS() {
         canEdit,
 
         // Loading states
-        isLoading: loadingAnnouncement || loadingNews || loadingCards,
+        isLoading: loadingAnnouncement || loadingNews || loadingCards || isCheckingRoles,
+        isLoadingRoles: isCheckingRoles,
         isLoadingCards: loadingCards,
         isLoadingAnnouncement: loadingAnnouncement,
         isLoadingNews: loadingNews,

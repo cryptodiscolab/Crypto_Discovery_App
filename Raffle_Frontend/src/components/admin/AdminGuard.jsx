@@ -10,7 +10,7 @@ import { useCMS } from '../../hooks/useCMS';
  */
 const AdminGuard = ({ children }) => {
     const { address, isConnected } = useAccount();
-    const { isAdmin, isLoading } = useCMS();
+    const { isAdmin, isLoading, isLoadingRoles } = useCMS();
     const navigate = useNavigate();
     const [isAuthorized, setIsAuthorized] = useState(null);
 
@@ -20,7 +20,7 @@ const AdminGuard = ({ children }) => {
             return;
         }
 
-        if (isLoading) return; // Wait for CMS to load roles
+        if (isLoading || isLoadingRoles) return; // Wait for CMS to load roles
 
         // 1. Check Centralized Roles (Blockchain + DB)
         if (isAdmin) {
@@ -28,7 +28,7 @@ const AdminGuard = ({ children }) => {
         } else {
             setIsAuthorized(false);
         }
-    }, [address, isConnected, isAdmin, isLoading]);
+    }, [address, isConnected, isAdmin, isLoading, isLoadingRoles]);
 
     if (isAuthorized === null) {
         return (
