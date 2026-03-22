@@ -28,7 +28,7 @@ const MASTER_X_ABI = [
     "function users(address) view returns (uint256 points, uint64 lastClaimTimestamp, uint32 referralCount, uint8 tier, bool isVerified, address referrer, uint32 lastUpdateSeasonId)"
 ];
 const DAILY_APP_ABI = [
-    "event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp, address referrer)",
+    "event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp)",
 ];
 
 function makeId(seed) {

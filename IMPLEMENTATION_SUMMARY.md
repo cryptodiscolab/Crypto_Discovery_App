@@ -4,6 +4,10 @@
 
 ## 📝 Changelog
 
+### v3.38.10 — 2026-03-22 (AbiFunctionNotFoundError Fix)
+- **ABI Synchronization**: Added missing `renewSponsorship` function to `abis_data.txt`.
+- **Verification**: Confirmed JSON integrity and ecosystem sync parity.
+- **Protocol Update**: Incremented ecosystem version across all master documentation.
 ### v3.38.6 — 2026-03-22 (Function Search Path Hardening)
 - **Security Hardening**: Applied `SET search_path = public, auth` to `get_auth_wallet` and 14 other `SECURITY DEFINER` functions.
 - **Linter Compliance**: Resolved Supabase Linter warnings regarding mutable search paths.

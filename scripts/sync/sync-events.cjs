@@ -36,6 +36,9 @@ const MASTER_X_ABI = [
 
 const DAILY_APP_ABI = [
     "event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp)",
+    "event NFTMinted(address indexed user, uint8 tier, uint256 tokenId)",
+    "event NFTUpgraded(address indexed user, uint8 oldTier, uint8 newTier)",
+    "function nftConfigs(uint256 tier) view returns (uint256, uint256, uint256, uint256, uint256, uint256, bool)",
 ];
 
 // --- UUID Helper (deterministik dari tx hash + log index) ---
@@ -125,6 +128,40 @@ async function main() {
             source: `DailyApp:task_${taskId}`,
         });
     });
+
+    // ── Listener 3: NFT Tier Events (DailyApp) ────────────────────────────────
+    const handleNFTEvent = async (user, tier, event) => {
+        const wallet = user.toLowerCase();
+        const tierNum = Number(tier);
+        const txHash = event.log.transactionHash;
+        const claimId = generateUUID(`BURN_${txHash}_${event.log.index}`);
+        const claimedAt = new Date().toISOString();
+
+        console.log(`\n🔥 [NFTEvent] Detected tier action for Tier #${tierNum} for ${wallet}`);
+        
+        try {
+            const config = await dailyAppContract.nftConfigs(tierNum);
+            const xpToBeBurned = Number(config[0]);
+
+            if (xpToBeBurned > 0) {
+                console.log(`   Action: Recording burn of ${xpToBeBurned} XP`);
+                await upsertClaim({
+                    id: claimId,
+                    wallet_address: wallet,
+                    task_id: "2c1e23f5-0ded-4ca1-af04-e8b6924823e2", // System: Tier Ascension
+                    xp_earned: -xpToBeBurned,
+                    claimed_at: claimedAt,
+                    tx_hash: txHash,
+                    source: `DailyApp:nft_burn_${tierNum}`,
+                });
+            }
+        } catch (err) {
+            console.error(`❌ Gagal memproses burn untuk ${wallet}:`, err.message);
+        }
+    };
+
+    dailyAppContract.on("NFTMinted", (user, tier, tokenId, event) => handleNFTEvent(user, tier, event));
+    dailyAppContract.on("NFTUpgraded", (user, oldTier, newTier, event) => handleNFTEvent(user, newTier, event));
 
     // ── Reconnect on disconnect ───────────────────────────────────────────────
     provider.websocket.on("close", () => {

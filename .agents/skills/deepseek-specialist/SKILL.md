@@ -19,4 +19,4 @@ DeepSeek bertanggung jawab atas optimasi algoritma, struktur backend, dan audit 
 - Selalu patuhi Master Architect Protocol (.cursorrules).
 - **Wajib Surgical Fix**: Jangan ganti seluruh kode, hanya yang error saja.
 ---
-*DeepSeek Specialist | Protocol Version: 3.25.0 | Architecture & Security*
+*DeepSeek Specialist | Protocol Version: 3.38.25 | Architecture & Security*

@@ -107,4 +107,4 @@ Skill ini WAJIB dipahami dan diterapkan oleh **semua agents**:
 
 ---
 
-*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.25.0.*
+*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.38.25.*

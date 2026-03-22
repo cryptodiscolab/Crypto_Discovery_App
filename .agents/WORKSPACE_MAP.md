@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.38.9)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.38.25)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -103,16 +103,16 @@ graph TD
 
 ---
 
-## 6. Contract & Governance Registry (v3.38.4)
+## 6. Contract & Governance Registry (v3.38.25)
 
-| Contract | Purpose | Base Sepolia Address | Governance |
-|----------|---------|----------------------|------------|
-| **MasterX** | Revenue & XP Hub | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` | `Ownable` ✅ |
-| **Raffle** | NFT Gacha System | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` ✅ |
-| **DailyApp** | Tasks & Claims | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `AccessControl` ✅ |
-| **CMS** | Content Mgmt | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
+| Contract | Base Mainnet (8453) | Base Sepolia (84532) | Governance |
+|----------|---------------------|----------------------|------------|
+| **MasterX** | `[RESERVED]` | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` | `Ownable` ✅ |
+| **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` ✅ |
+| **DailyApp** | `[RESERVED]` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` | `AccessControl` ✅ |
+| **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-03-22 | Wallet Signature Timeout Fix & Resilient XP Sync v3.38.9.*
+*Last Updated: 2026-03-22 | Absolute Strategic Harmony & Final Lock v3.38.25.*

@@ -26,7 +26,22 @@
 - [x] Base Paymaster Integration (Gasless transactions).
 - [x] **Admin Hub Command Center**: Integrated Real-time P&L, Economy Metrics, and Sentinel Audits.
 - [x] **UGC ETH Reward Sync & Live Pricing (v3.38.4)**: Native ETH payouts with real-time USDC conversion oracle.
-- [x] **ABI Consistency Audit & Sync (v3.38.8)**: Full stack ABI parity and contract drift remediation.
+- [x] **ABI Consistency Audit & Sync (v3.38.8)**: Full stack ABI parity.
+- [x] **UGC & Price Oracle Restoration (v3.38.10)**: `renewSponsorship` fix and drift identification.
+
+## Identified ABI Drift (DAILY_APP)
+The following functions exist in `DailyAppV12Secured.sol` but are missing or mismatched in the `DAILY_APP` ABI:
+
+| Function Name (Contract) | Status in ABI | Requirement |
+|-------------------------|---------------|-------------|
+| `renewSponsorship` | ✅ FIXED | Core sponsorship renewal |
+| `syncMasterXPoints` | ❌ MISSING | XP synchronization with MasterX |
+| `markTaskAsVerified` | ⚠️ MISMATCHED | ABI uses `verifyTask` |
+| `mintNFT` | ❌ MISSING | NFT onboarding |
+| `upgradeNFT` | ❌ MISSING | NFT progression |
+| `getTask` | ❌ MISSING | Task data retrieval |
+| `canDoTask` | ❌ MISSING | User eligibility checks |
+| `setSponsorshipParams` | ⚠️ MISMATCHED | ABI uses `setSettings` |
 
 ## Phase 3: Ecosystem Growth & Advanced Governance [ ]
 - [ ] Tiered NFT Staking (Non-Riba based Utility).
