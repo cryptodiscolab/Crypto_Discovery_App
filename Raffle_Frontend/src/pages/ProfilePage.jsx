@@ -24,7 +24,7 @@ import {
   TransactionStatusAction,
 } from '@coinbase/onchainkit/transaction';
 import { usePriceOracle } from '../hooks/usePriceOracle';
-import { encodeFunctionData, formatUnits } from 'viem';
+import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 
 export default function ProfilePage() {
   const { address } = useAccount();
@@ -792,7 +792,8 @@ function CreateTaskModal({ onClose }) {
   const rewardUsdValue = currentPrice * parseFloat(ethReward || 0);
   
   const tokenDecimals = ethToken?.decimals || 18;
-  const rewardAmount = BigInt(Math.floor(parseFloat(ethReward || 0) * 1e9)) * 10n ** BigInt(tokenDecimals - 9); 
+  // Fix: Use viem parseUnits to handle decimals properly and avoid BigInt exponent errors
+  const rewardAmount = parseUnits(ethReward || '0', tokenDecimals);
   
   const platformFee = BigInt(Math.floor(feeUsd * 1000000)); // USDC 6 decimals
 
