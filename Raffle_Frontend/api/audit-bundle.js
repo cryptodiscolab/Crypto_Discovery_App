@@ -25,10 +25,10 @@ const MASTER_X_ABI = [
     "event PointsAwarded(address indexed user, uint256 points, string reason)",
     "event TierUpgraded(address indexed user, uint8 oldTier, uint8 newTier, uint256 xpBurned, uint256 feePaid)",
     "event SeasonReset(uint256 indexed oldSeasonId, uint256 indexed newSeasonId)",
-    "function users(address) view returns (uint256 points, uint8 tier, uint256 lastClaimTimestamp, uint256 referralCount, bool isVerified, address referrer)"
+    "function users(address) view returns (uint256 points, uint64 lastClaimTimestamp, uint32 referralCount, uint8 tier, bool isVerified, address referrer, uint32 lastUpdateSeasonId)"
 ];
 const DAILY_APP_ABI = [
-    "event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp)",
+    "event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp, address referrer)",
 ];
 
 function makeId(seed) {
