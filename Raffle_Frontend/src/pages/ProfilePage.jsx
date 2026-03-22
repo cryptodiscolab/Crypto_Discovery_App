@@ -1138,10 +1138,28 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
     return () => clearInterval(interval);
   }, [nextClaimTime]);
 
+  // Helper: wrap signMessageAsync with a timeout to prevent silent hang
+  // when wallet extensions conflict and lock window.ethereum as read-only.
+  const signWithTimeout = useCallback(async (params, timeoutMs = 15000) => {
+    return Promise.race([
+      signMessageAsync(params),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Wallet signature timeout – wallet extension conflict detected')), timeoutMs)
+      ),
+    ]);
+  }, [signMessageAsync]);
+
   const handleClaim = async () => {
     if (isCooldown) return toast.error("Cooldown active! Come back later.");
     setIsClaiming(true);
     const tid = toast.loading("Preparing claim...");
+
+    // Safety net: force-reset isClaiming after 60s regardless
+    const safetyTimer = setTimeout(() => {
+      setIsClaiming(false);
+      console.warn('[DailyClaim] Safety timeout: force-reset isClaiming');
+    }, 60000);
+
     try {
       let gasLimit;
       try {
@@ -1159,6 +1177,7 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
         } else {
           toast.error('Claim failed. You may have already claimed today or your Farcaster is not linked.', { id: tid });
         }
+        clearTimeout(safetyTimer);
         setIsClaiming(false);
         return;
       }
@@ -1173,12 +1192,15 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
       toast.loading('Mining transaction... 🔨', { id: tid });
       await publicClient.waitForTransactionReceipt({ hash });
 
-      // Secured Sync XP
+      // On-chain claim confirmed — XP sync is best-effort only.
+      // Use signWithTimeout to avoid infinite hang from wallet extension conflict.
       toast.loading('Syncing XP...', { id: tid });
       try {
         const timestamp = new Date().toISOString();
         const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
-        const signature = await signMessageAsync({ message });
+
+        // 15s timeout: if wallet is locked (EIP-6963 conflict), we don't block the user
+        const signature = await signWithTimeout({ message }, 15000);
 
         const response = await fetch('/api/user-bundle', {
           method: 'POST',
@@ -1188,36 +1210,35 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
             wallet_address: address,
             signature,
             message,
-            tx_hash: hash // Include hash for backend fallback verification
+            tx_hash: hash,
           }),
         });
 
         const resData = await response.json();
-        
-        // Optimistic UI was already updated, but we can verify with backend data
         if (resData.ok && resData.total_xp) {
-            console.log('[DailyClaim] Backend Sync Success. New Total XP:', resData.total_xp);
+          console.log('[DailyClaim] Backend Sync OK. New XP:', resData.total_xp);
         }
 
-        // RPC & Sync Delay: Wait briefly for contract & DB persistence to settle
-        await refetchOnChainStats(); // BUG-FIX 1: refetchOnChainStats sekarang terdefinisi
-        await new Promise(r => setTimeout(r, 1500)); 
-        await refetchPoints(); // PointsContext refetch
-        
-        toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid }); // BUG-FIX 2: dailyReward sekarang terdefinisi
-        // BUG-FIX 3: Trigger onSuccess agar ProfilePage refetch data XP realtime
+        await refetchOnChainStats();
+        await new Promise(r => setTimeout(r, 1500));
+        await refetchPoints();
+
+        toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
         if (onSuccess) onSuccess();
         onClose();
       } catch (syncErr) {
-        console.warn('[DailyClaim] XP sync failed:', syncErr.message);
-        toast.error('On-chain success, but XP sync pending. Refresh in 10s.', { id: tid });
+        // Claim is already on-chain. XP sync failed (timeout or wallet conflict).
+        // Log & still close cleanly — XP will be reconciled by backend polling.
+        console.warn('[DailyClaim] XP sync failed or timed out:', syncErr.message);
+        toast.success('Daily Claim confirmed on-chain! XP syncing in background...', { id: tid });
         if (onSuccess) onSuccess();
         onClose();
       }
     } catch (err) {
       console.error('Daily Claim Error:', err);
-      toast.error('Claim failed: ' + (err.shortMessage || 'Try again'), { id: tid });
+      toast.error('Claim failed: ' + (err.shortMessage || err.message || 'Try again'), { id: tid });
     } finally {
+      clearTimeout(safetyTimer);
       setIsClaiming(false);
     }
   };
