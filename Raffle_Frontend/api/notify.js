@@ -8,27 +8,26 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
-    }
-
-    if (!NEYNAR_API_KEY) {
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-
-    const { fid, message, type = 'mention', signature, signedMessage, wallet } = req.body || {};
-
-    if (!fid || !message || !signature || !signedMessage || !wallet) {
-        return res.status(400).json({ error: 'Missing required security fields' });
-    }
-
     try {
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method Not Allowed' });
+        }
+
+        if (!NEYNAR_API_KEY) {
+            return res.status(500).json({ error: 'Internal server error: missing API key' });
+        }
+
+        const { fid, message, type = 'mention', signature, signedMessage, wallet } = req.body || {};
+
+        if (!fid || !message || !signature || !signedMessage || !wallet) {
+            return res.status(400).json({ error: 'Missing required security fields' });
+        }
+
         // 1. Verify Signature
         const validSignature = await verifyMessage({ address: wallet, message: signedMessage, signature });
         if (!validSignature) return res.status(401).json({ error: 'Invalid signature' });
 
         // 2. Security Check: Does this wallet own this FID?
-        // This prevents users from mentioning others via our API.
         const { data: profile } = await supabaseAdmin
             .from('user_profiles')
             .select('fid')
@@ -64,6 +63,6 @@ export default async function handler(req, res) {
 
     } catch (err) {
         console.error('[Notify] Fatal error:', err.message);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: err.message || 'Internal server error' });
     }
 }

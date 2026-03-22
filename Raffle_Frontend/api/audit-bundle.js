@@ -41,15 +41,20 @@ function makeId(seed) {
 export default async function handler(req, res) {
     const { action } = req.query;
 
-    // ── ROUTING ────────────────────────────────────────────────
-    if (action === 'check') {
-        return handleFarcasterCheck(req, res);
-    } else if (action === 'sync') {
-        return handleSyncEvents(req, res);
-    } else if (action === 'rpc') {
-        return handleRpcProxy(req, res);
-    } else {
-        return res.status(400).json({ error: "Invalid action. Use ?action=check, ?action=sync, or ?action=rpc" });
+    try {
+        // ── ROUTING ────────────────────────────────────────────────
+        if (action === 'check') {
+            await handleFarcasterCheck(req, res);
+        } else if (action === 'sync') {
+            await handleSyncEvents(req, res);
+        } else if (action === 'rpc') {
+            await handleRpcProxy(req, res);
+        } else {
+            return res.status(400).json({ error: "Invalid action. Use ?action=check, ?action=sync, or ?action=rpc" });
+        }
+    } catch (error) {
+        console.error(`[API Handler Error] Action: ${action}`, error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 }
 
