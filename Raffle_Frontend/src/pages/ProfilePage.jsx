@@ -1141,7 +1141,7 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
 
   // Helper: wrap signMessageAsync with a timeout to prevent silent hang
   // when wallet extensions conflict and lock window.ethereum as read-only.
-  const signWithTimeout = useCallback(async (params, timeoutMs = 15000) => {
+  const signWithTimeout = useCallback(async (params, timeoutMs = 10000) => {
     return Promise.race([
       signMessageAsync(params),
       new Promise((_, reject) =>
@@ -1200,8 +1200,13 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
         const timestamp = new Date().toISOString();
         const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
 
-        // 15s timeout: if wallet is locked (EIP-6963 conflict), we don't block the user
-        const signature = await signWithTimeout({ message }, 15000);
+        let signature = null;
+        try {
+          // 10s timeout: if wallet is locked (EIP-6963 conflict), we'll try to sync via txHash proof alone
+          signature = await signWithTimeout({ message }, 10000);
+        } catch (signErr) {
+          console.warn('[DailyClaim] Signature skipped/timed out, attempting sync via txHash only:', signErr.message);
+        }
 
         const response = await fetch('/api/user-bundle', {
           method: 'POST',
@@ -1209,8 +1214,8 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
           body: JSON.stringify({
             action: 'xp',
             wallet_address: address,
-            signature,
-            message,
+            signature, // Can be null if skipped, backend handleXpSync will verify via tx_hash
+            message: signature ? message : null,
             tx_hash: hash,
           }),
         });

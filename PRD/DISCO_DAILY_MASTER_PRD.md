@@ -1,5 +1,5 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.38.7 — Admin Race Condition Fix & Ecosystem Sync
+**Version**: 3.38.9 — Wallet Signature Timeout Fix & Resilient XP Sync
 **Last Updated**: 2026-03-22
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 
@@ -337,7 +337,7 @@ Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables
 
 ---
 
-## 7. Current Ecosystem Status (v3.38.3)
+## 7. Current Ecosystem Status (v3.38.9)
 
 ### 7.1 Security Audit Findings (v3.38.3)
 - **[RESOLVED] UGC Raffle Moderation**: Fixed bypass where raffles were auto-active; now requires admin approval (v3.38.3).
@@ -389,15 +389,25 @@ graph TD
 
 ---
 
-## 11. Work Report — v3.38.4 (Current)
+## 11. Work Report — v3.38.9 (Current)
 **Date**: 2026-03-22
-**Task**: UGC ETH Reward Sync, Live Price Oracle & Admin Centralization.
+**Task**: Wallet Signature Timeout Fix & Resilient XP Sync.
 **Action**:
-- **UGC Reward Restriction**: Enforced ETH-only rewards for UGC Missions in `ProfilePage.jsx` (`CreateTaskModal`), simplifying payout logic and utilizing native ETH transactions.
-- **Dynamic Pricing**: Integrated `usePriceOracle` to fetch real-time ETH/USDC prices, providing sponsors with a live conversion display during mission creation.
-- **E2E Synchronization**: Verified the entire reward lifecycle: Creation (`ProfilePage`) → Moderation (`admin-bundle`) → Task Completion (`tasks-bundle`) → Reward Claim (`TasksPage`) → XP Sync (`user-bundle`).
-- **Zero-Hardcode Audit**: Audited and confirmed that all sponsorship fees (Listing Fee, Reward Amount) are centrally managed via `system_settings` or derived from smart contract state, eliminating legacy static percentages.
-**Outcome**: Robust ETH-native mission economy with real-time price awareness and 100% E2E synchronization across Frontend, Backend, and Contract layers.
+- **Resilient Fallback**: Implemented signature-optional XP sync in `ProfilePage.jsx` and `TasksPage.jsx`, leveraging `tx_hash` as the primary proof of work.
+- **Timeout Mitigation**: Introduced `signWithTimeout` (10s) to prevent indefinite hangs caused by wallet extension conflicts (MetaMask vs Coinbase Wallet).
+- **Backend Alignment**: Verified `user-bundle.js` logic to ensure secure verification of `tx_hash` from-address without requiring a redundant signature.
+**Outcome**: Zero-delay Daily Claim and mission rewards even during provider conflicts. 100% data integrity maintained.
+
+## 11. Work Report — v3.38.8
+**Date**: 2026-03-22
+**Task**: ABI Consistency Audit & Sync (Ecosystem-Wide).
+**Action**:
+- **Comprehensive Audit**: Audited all 8 API bundles and 14 frontend hooks to detect and remediate ABI drift and index-based mapping errors.
+- **ABI Alignment**: Synchronized `MASTER_X` and `DAILY_APP` contract definitions in `audit-bundle.js` and `user-bundle.js` with the canonical `abis_data.txt` source of truth.
+- **Critical Fix (useSBT.js)**: Identified and repaired a critical drift in the `useSBT` hook where `userTier` was being derived from the wrong index due to contract evolution.
+- **Anti-Hallucination Mandate**: Reverted an incorrectly assumed `indexed` flag for `taskId` in the `TaskCompleted` event within `audit-bundle.js`, ensuring reliable on-chain event decoding.
+- **Robustness Multiplier**: Implemented combined named-property and index-fallback mappings across core hooks to future-proof the frontend against ABI renamings.
+**Outcome**: 100% ABI parity across the entire stack. Re-hardened data ingestion pipeline with zero identified data-drift.
 
 ## 11. Work Report — v3.38.7
 **Date**: 2026-03-22

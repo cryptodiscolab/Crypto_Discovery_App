@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift } from 'lucide-react';
 import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/useContract';
@@ -366,6 +366,16 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
     });
 
     const isGlobalCompleted = Number(progress || 0) >= tasks.length;
+    
+    // Safety: signWithTimeout helper
+    const signWithTimeout = useCallback(async (params, timeoutMs = 10000) => {
+        return Promise.race([
+            signMessageAsync(params),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Wallet signature timeout – wallet extension conflict detected')), timeoutMs)
+            ),
+        ]);
+    }, [signMessageAsync]);
 
     const handleVerifyCard = async () => {
         setVerifyingStatus(null);
@@ -440,38 +450,46 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                             const tid = toast.loading("Claiming Mission Reward...");
                             setIsClaiming(true);
                             try {
-                                await writeContractAsync({
+                                 const hash = await writeContractAsync({
                                     address: CONTRACTS.DAILY_APP,
                                     abi: DAILY_APP_ABI,
                                     functionName: 'claimRewards',
                                 });
                                 toast.success("Mission Reward Claimed!", { id: tid });
                                 // BUG-4 fix: sync XP on-chain ke DB (Secured)
-                                const timestamp = new Date().toISOString();
-                                const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
-                                const signature = await signMessageAsync({ message });
+                                 const timestamp = new Date().toISOString();
+                                 const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
+                                 
+                                 let signature = null;
+                                 try {
+                                     // 10s timeout: if wallet is locked (EIP-6963 conflict), we'll try to sync via txHash proof alone
+                                     signature = await signWithTimeout({ message }, 10000);
+                                 } catch (signErr) {
+                                     console.warn('[TasksPage] Signature skipped/timed out, attempting sync via txHash only:', signErr.message);
+                                 }
 
-                                fetch('/api/user-bundle', {
-                                    method: 'POST',
-                                    headers: { 'content-type': 'application/json' },
-                                    body: JSON.stringify({
-                                        action: 'xp',
-                                        wallet_address: address,
-                                        signature,
-                                        message
-                                    }),
-                                })
-                                    .then(async (res) => {
-                                        if (!res.ok) {
-                                            const errorData = await res.json();
-                                            console.error('[Sync Error]', errorData.error || 'Unknown error');
-                                        } else {
-                                            console.log('[Sync Success] XP synchronized');
-                                        }
-                                    })
-                                    .catch((err) => {
-                                        console.error('[Sync Fetch Error]', err);
-                                    });
+                                 fetch('/api/user-bundle', {
+                                     method: 'POST',
+                                     headers: { 'content-type': 'application/json' },
+                                     body: JSON.stringify({
+                                         action: 'xp',
+                                         wallet_address: address,
+                                         signature,
+                                         message: signature ? message : null,
+                                         tx_hash: hash, // Added for backend verification fallback
+                                     }),
+                                 })
+                                     .then(async (res) => {
+                                         if (!res.ok) {
+                                             const errorData = await res.json();
+                                             console.error('[Sync Error]', errorData.error || 'Unknown error');
+                                         } else {
+                                             console.log('[Sync Success] XP synchronized');
+                                         }
+                                     })
+                                     .catch((err) => {
+                                         console.error('[Sync Fetch Error]', err);
+                                     });
                                 setVerifyingStatus(null);
                                 refetchRewards();
                                 refetchStats();
