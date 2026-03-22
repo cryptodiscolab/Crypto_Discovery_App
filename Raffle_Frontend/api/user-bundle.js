@@ -112,46 +112,26 @@ export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
 
     switch (action) {
-        case 'sync': // Logic from api/user/sync.js (Login Sync)
-            return handleLoginSync(req, res);
-        case 'xp': // Logic from api/user/sync.js (XP Sync)
-            return handleXpSync(req, res);
-        case 'fc-sync': // Logic from api/farcaster/sync.js
-            return handleFarcasterSync(req, res);
-        case 'update-profile': // Logic from api/profile/update.js
-            return handleUpdateProfile(req, res);
-        case 'get-activity-logs':
-            return handleGetActivityLogs(req, res);
-        case 'log-activity':
-            return handleFrontendLogActivity(req, res);
-        case 'get-point-settings':
-            return handleGetPointSettings(req, res);
-        case 'sync-ugc-mission':
-            return handleSyncUgcMission(req, res);
-        case 'sync-ugc-raffle':
-            return handleSyncUgcRaffle(req, res);
-        case 'sync-sbt-upgrade':
-            return handleSyncSbtUpgrade(req, res);
-        case 'sync-pool-claim':
-            return handleSyncPoolClaim(req, res);
-        case 'leaderboard':
-            return handleLeaderboard(req, res);
-        case 'sync-oauth':
-            return handleSyncOAuth(req, res);
-        case 'approve-mission': // v3.20.0: Admin Governance
-            return handleApproveMission(req, res);
-        case 'approve-raffle': // v3.38.3: UGC Hardening
-            return handleApproveRaffle(req, res);
-        case 'check-admin':
-            return handleCheckAdmin(req, res);
-        case 'pending-missions':
-            return handleFetchPendingMissions(req, res);
-        case 'pending-raffles': // v3.38.3: UGC Hardening
-            return handleFetchPendingRaffles(req, res);
-        case 'get-health':
-            return handleGetHealth(req, res);
-        case 'reset-health':
-            return handleResetHealth(req, res);
+        case 'sync': await handleLoginSync(req, res); break;
+        case 'xp': await handleXpSync(req, res); break;
+        case 'fc-sync': await handleFarcasterSync(req, res); break;
+        case 'update-profile': await handleUpdateProfile(req, res); break;
+        case 'get-activity-logs': await handleGetActivityLogs(req, res); break;
+        case 'log-activity': await handleFrontendLogActivity(req, res); break;
+        case 'get-point-settings': await handleGetPointSettings(req, res); break;
+        case 'sync-ugc-mission': await handleSyncUgcMission(req, res); break;
+        case 'sync-ugc-raffle': await handleSyncUgcRaffle(req, res); break;
+        case 'sync-sbt-upgrade': await handleSyncSbtUpgrade(req, res); break;
+        case 'sync-pool-claim': await handleSyncPoolClaim(req, res); break;
+        case 'leaderboard': await handleLeaderboard(req, res); break;
+        case 'sync-oauth': await handleSyncOAuth(req, res); break;
+        case 'approve-mission': await handleApproveMission(req, res); break;
+        case 'approve-raffle': await handleApproveRaffle(req, res); break;
+        case 'check-admin': await handleCheckAdmin(req, res); break;
+        case 'pending-missions': await handleFetchPendingMissions(req, res); break;
+        case 'pending-raffles': await handleFetchPendingRaffles(req, res); break;
+        case 'get-health': await handleGetHealth(req, res); break;
+        case 'reset-health': await handleResetHealth(req, res); break;
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }

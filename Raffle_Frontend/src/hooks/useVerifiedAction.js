@@ -51,7 +51,13 @@ export function useVerifiedAction() {
             }),
         });
 
-        const data = await res.json();
+        let data;
+        const text = await res.text();
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            throw new Error(`Server returned non-JSON response: ${text.slice(0, 100)}...`);
+        }
 
         if (!res.ok) {
             throw new Error(data.error || `Request failed: ${res.status}`);

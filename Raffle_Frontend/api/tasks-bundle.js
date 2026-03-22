@@ -121,10 +121,10 @@ export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
     try {
         switch (action) {
-            case 'claim': return handleClaim(req, res);
-            case 'verify': return handleVerify(req, res);
-            case 'social-verify': return handleSocialVerify(req, res);
-            default: return res.status(400).json({ error: 'Invalid action' });
+            case 'claim': await handleClaim(req, res); break;
+            case 'verify': await handleVerify(req, res); break;
+            case 'social-verify': await handleSocialVerify(req, res); break;
+            default: res.status(400).json({ error: 'Invalid action' }); break;
         }
     } catch (error) {
         console.error(`[API Handler Error] Action: ${action}`, error);
@@ -144,7 +144,7 @@ async function handleClaim(req, res) {
     });
     if (error) throw error;
 
-    if (task_id.startsWith('raffle_buy_')) {
+    if (task_id && task_id.startsWith('raffle_buy_')) {
         const ticketAmount = message.match(/Amount:\s*(\d+)/i)?.[1];
         const ticketCount = ticketAmount ? parseInt(ticketAmount, 10) : 1;
         await supabaseAdmin.rpc('fn_increment_raffle_tickets', {

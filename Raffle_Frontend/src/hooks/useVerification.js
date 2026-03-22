@@ -84,12 +84,13 @@ export function useVerification(refetchStats) {
                 });
             }
 
+            const text = await response.text();
             let result;
             try {
-                result = await response.json();
+                result = JSON.parse(text);
             } catch (jsonErr) {
                 // If the response is not JSON, the server likely crashed or returned the Vercel error page
-                throw new Error(`Server returned an invalid response (${response.status}). The Verifier API might be down.`);
+                throw new Error(`Server returned an invalid response (${response.status}): ${text.slice(0, 100)}...`);
             }
 
             if (response.ok && result.success) {

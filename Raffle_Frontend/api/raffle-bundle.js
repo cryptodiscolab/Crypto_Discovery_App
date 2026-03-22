@@ -39,9 +39,11 @@ export default async function handler(req, res) {
 
     switch (action) {
         case 'claim-prize':
-            return handleClaimPrize(req, res);
+            await handleClaimPrize(req, res);
+            break;
         case 'leaderboard':
-            return handleLeaderboard(req, res);
+            await handleLeaderboard(req, res);
+            break;
         default:
             return res.status(400).json({ error: `Invalid raffle action: ${action}` });
     }
