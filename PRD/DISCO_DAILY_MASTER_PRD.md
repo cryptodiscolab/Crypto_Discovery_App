@@ -1,5 +1,5 @@
 # 🪩 DISCO DAILY: Master Product Requirements Document (Architect's Ledger)
-**Version**: 3.38.6 — Function Search Path Hardening & Protocol Sync
+**Version**: 3.38.7 — Admin Race Condition Fix & Ecosystem Sync
 **Last Updated**: 2026-03-22
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 
@@ -398,6 +398,15 @@ graph TD
 - **E2E Synchronization**: Verified the entire reward lifecycle: Creation (`ProfilePage`) → Moderation (`admin-bundle`) → Task Completion (`tasks-bundle`) → Reward Claim (`TasksPage`) → XP Sync (`user-bundle`).
 - **Zero-Hardcode Audit**: Audited and confirmed that all sponsorship fees (Listing Fee, Reward Amount) are centrally managed via `system_settings` or derived from smart contract state, eliminating legacy static percentages.
 **Outcome**: Robust ETH-native mission economy with real-time price awareness and 100% E2E synchronization across Frontend, Backend, and Contract layers.
+
+## 11. Work Report — v3.38.7
+**Date**: 2026-03-22
+**Task**: Admin Dashboard Race Condition Fix.
+**Action**:
+- **Race Condition Resolution**: Addressed an asynchronous role verification bug that prematurely kicked admins out of the dashboard layer.
+- **State Management**: Introduced `isCheckingRoles` state in `useCMS.js` to accurately track the background fetch and sync it with `AdminGuard.jsx`.
+- **Ecosystem Sync**: Documented the root cause and implemented the fix securely without bypassing existing RLS or JWT protections.
+**Outcome**: Consistent dashboard access for verified admins while maintaining strict Zero-Trust gating.
 
 ## 12. Work Report — v3.38.6
 **Date**: 2026-03-22

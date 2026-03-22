@@ -1,6 +1,6 @@
 <h1>🪩 DISCO DAILY: Master Product Requirements Document (Architect&#39;s Ledger)</h1>
-<p><strong>Version</strong>: 3.38.3 — Ecosystem Sync &amp; Supabase Integration Hardening
-<strong>Last Updated</strong>: 2026-03-21
+<p><strong>Version</strong>: 3.38.7 — Admin Race Condition Fix &amp; Ecosystem Sync
+<strong>Last Updated</strong>: 2026-03-22
 <strong>Status</strong>: 🛡️ RE-HARDENED, SYNCHRONIZED &amp; LOCKED 💎</p>
 <hr>
 <h2>📋 Table of Contents</h2>
@@ -431,7 +431,50 @@
 </tr>
 </tbody></table>
 <hr>
-<h2>11. Work Report — v3.38.3 (Current)</h2>
+<h2>11. Work Report — v3.38.4 (Current)</h2>
+<p><strong>Date</strong>: 2026-03-22
+<strong>Task</strong>: UGC ETH Reward Sync, Live Price Oracle &amp; Admin Centralization.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>UGC Reward Restriction</strong>: Enforced ETH-only rewards for UGC Missions in <code>ProfilePage.jsx</code> (<code>CreateTaskModal</code>), simplifying payout logic and utilizing native ETH transactions.</li>
+<li><strong>Dynamic Pricing</strong>: Integrated <code>usePriceOracle</code> to fetch real-time ETH/USDC prices, providing sponsors with a live conversion display during mission creation.</li>
+<li><strong>E2E Synchronization</strong>: Verified the entire reward lifecycle: Creation (<code>ProfilePage</code>) → Moderation (<code>admin-bundle</code>) → Task Completion (<code>tasks-bundle</code>) → Reward Claim (<code>TasksPage</code>) → XP Sync (<code>user-bundle</code>).</li>
+<li><strong>Zero-Hardcode Audit</strong>: Audited and confirmed that all sponsorship fees (Listing Fee, Reward Amount) are centrally managed via <code>system_settings</code> or derived from smart contract state, eliminating legacy static percentages.
+<strong>Outcome</strong>: Robust ETH-native mission economy with real-time price awareness and 100% E2E synchronization across Frontend, Backend, and Contract layers.</li>
+</ul>
+<h2>11. Work Report — v3.38.7</h2>
+<p><strong>Date</strong>: 2026-03-22
+<strong>Task</strong>: Admin Dashboard Race Condition Fix.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Race Condition Resolution</strong>: Addressed an asynchronous role verification bug that prematurely kicked admins out of the dashboard layer.</li>
+<li><strong>State Management</strong>: Introduced <code>isCheckingRoles</code> state in <code>useCMS.js</code> to accurately track the background fetch and sync it with <code>AdminGuard.jsx</code>.</li>
+<li><strong>Ecosystem Sync</strong>: Documented the root cause and implemented the fix securely without bypassing existing RLS or JWT protections.
+<strong>Outcome</strong>: Consistent dashboard access for verified admins while maintaining strict Zero-Trust gating.</li>
+</ul>
+<h2>12. Work Report — v3.38.6</h2>
+<p><strong>Date</strong>: 2026-03-22
+<strong>Task</strong>: Function Search Path Hardening (Defense-in-Depth).
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Security Hardening</strong>: Remedied &quot;Function Search Path Mutable&quot; warnings identified by Supabase Linter.</li>
+<li><strong>Migration</strong>: Applied <code>SET search_path</code> to 15 functions, including <code>get_auth_wallet</code> and all <code>SECURITY DEFINER</code> functions in the <code>public</code> schema.</li>
+<li><strong>Verification</strong>: Confirmed <code>proconfig</code> property in <code>pg_proc</code> and verified 13/13 security checks pass in <code>check_sync_status.cjs</code>.</li>
+<li><strong>Protocol Sync</strong>: Incremented ecosystem version to v3.38.6 across all master documentation.
+<strong>Outcome</strong>: Neutralized search path hijacking risks and achieved 100% linter compliance for function security.</li>
+</ul>
+<h2>12. Work Report — v3.38.5</h2>
+<p><strong>Date</strong>: 2026-03-22
+<strong>Task</strong>: View Security Remediation (SECURITY INVOKER Transition).
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Security Hardening</strong>: Remedied &quot;Security Definer View&quot; errors identified by Supabase Linter.</li>
+<li><strong>View Redefinition</strong>: Transitioned <code>v_user_full_profile</code>, <code>user_stats</code>, and <code>v_leaderboard</code> to <code>WITH (security_invoker = true)</code> while preserving all identity sync columns (Google/Twitter/Farcaster).</li>
+<li><strong>Integrity Audit</strong>: Verified 100% RLS compliance and confirmed 13/13 security checks pass in <code>check_sync_status.cjs</code>.</li>
+<li><strong>Protocol Sync</strong>: Incremented ecosystem version to v3.38.5 across PRD, .cursorrules, gemini.md, CLAUDE.md, and WORKSPACE_MAP.
+<strong>Outcome</strong>: 100% Security Linter compliance with zero data drift. Baseline systems operational and re-locked.</li>
+</ul>
+<h2>12. Work Report — v3.38.3</h2>
 <p><strong>Date</strong>: 2026-03-21
 <strong>Task</strong>: Ecosystem Sync &amp; Supabase Integration Hardening.
 <strong>Action</strong>:</p>

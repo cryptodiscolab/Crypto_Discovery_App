@@ -81,7 +81,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.36.0 (Anti-Hallucination Hardening & Mandatory Pre-Flight Sync).
+- **Versi Terakhir:** 3.38.7 (Admin Dashboard Race Condition Fix).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
