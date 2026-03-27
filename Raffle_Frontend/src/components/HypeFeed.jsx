@@ -10,14 +10,6 @@ export const HypeFeed = () => {
     const [activities, setActivities] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    const hypeMessages = [
-        "is hunting for XP! 🔥",
-        "just claimed a Daily Bonus! 💎",
-        "is climbing the Leaderboard! 📈",
-        "just verified a Task! ✅",
-        "is eyeing the Diamond Tier! 👑"
-    ];
-
     useEffect(() => {
         fetchRecentActivity();
         const fetchInterval = setInterval(fetchRecentActivity, 30000); // 30s
@@ -34,34 +26,38 @@ export const HypeFeed = () => {
 
     const fetchRecentActivity = async () => {
         try {
-            // Fetch real activities with user profiles join
-            const { data, error } = await supabase
+            // 1. Fetch real activities
+            const { data: logs, error: logError } = await supabase
                 .from('user_activity_logs')
-                .select(`
-                    id,
-                    description,
-                    activity_type,
-                    created_at,
-                    wallet_address,
-                    user_profiles:wallet_address (
-                        display_name,
-                        username,
-                        pfp_url
-                    )
-                `)
+                .select('id, description, activity_type, created_at, wallet_address')
                 .order('created_at', { ascending: false })
                 .limit(10);
 
-            if (error) throw error;
-
-            if (!data || data.length === 0) {
+            if (logError) throw logError;
+            if (!logs || logs.length === 0) {
                 setActivities([]);
                 return;
             }
 
-            // Transform into feed items
-            const feed = data.map(log => {
-                const user = log.user_profiles;
+            // 2. Fetch identities from the Master View (Mandate Alignment)
+            const wallets = [...new Set(logs.map(l => l.wallet_address.toLowerCase()))];
+            const { data: profiles, error: profileError } = await supabase
+                .from('v_user_full_profile')
+                .select('wallet_address, display_name, username, pfp_url')
+                .in('wallet_address', wallets);
+
+            if (profileError) {
+                console.warn('[HypeFeed] View fetch failed, using fallback:', profileError);
+            }
+
+            // 3. Transform into feed items with joined data
+            const profileMap = (profiles || []).reduce((acc, p) => {
+                acc[p.wallet_address.toLowerCase()] = p;
+                return acc;
+            }, {});
+
+            const feed = logs.map(log => {
+                const user = profileMap[log.wallet_address.toLowerCase()];
                 return {
                     id: log.id,
                     name: user?.display_name || user?.username || `${log.wallet_address.slice(0, 4)}...${log.wallet_address.slice(-4)}`,
@@ -76,6 +72,7 @@ export const HypeFeed = () => {
             console.error('[HypeFeed] Error:', e);
         }
     };
+
 
     if (activities.length === 0) return null;
 

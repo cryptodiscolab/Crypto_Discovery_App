@@ -8,6 +8,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useSIWE } from '../hooks/useSIWE';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 import { useOAuth } from '../hooks/useOAuth';
+import { HypeFeed } from '../components/HypeFeed';
 
 /**
  * LoginPage — Wallet-First 3-Step Registration.
@@ -57,7 +58,9 @@ export function LoginPage() {
     const step = !isConnected ? 1 : !siweSession ? 2 : 3;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 bg-[#0B0E14]">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] bg-[#0B0E14]">
+            <HypeFeed />
+            <div className="p-4 flex flex-col items-center justify-center w-full">
             <div className="relative z-50 pointer-events-auto w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2rem] p-8 shadow-2xl overflow-hidden">
                 {/* Background accent */}
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />

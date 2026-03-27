@@ -1320,7 +1320,7 @@
                 "inputs": [
                     {
                         "internalType": "address",
-                        "name": "_creatorToken",
+                        "name": "_tokenAddress",
                         "type": "address"
                     },
                     {
@@ -1330,7 +1330,7 @@
                     },
                     {
                         "internalType": "address",
-                        "name": "_initialOwner",
+                        "name": "initialOwner",
                         "type": "address"
                     }
                 ],
@@ -1356,11 +1356,6 @@
                     }
                 ],
                 "name": "AccessControlUnauthorizedAccount",
-                "type": "error"
-            },
-            {
-                "inputs": [],
-                "name": "AlreadyCompleted",
                 "type": "error"
             },
             {
@@ -1587,12 +1582,6 @@
                 "inputs": [
                     {
                         "indexed": true,
-                        "internalType": "address",
-                        "name": "user",
-                        "type": "address"
-                    },
-                    {
-                        "indexed": false,
                         "internalType": "enum DailyAppV12Secured.NFTTier",
                         "name": "tier",
                         "type": "uint8"
@@ -1667,31 +1656,6 @@
                         "type": "address"
                     },
                     {
-                        "indexed": true,
-                        "internalType": "address",
-                        "name": "referrer",
-                        "type": "address"
-                    },
-                    {
-                        "indexed": false,
-                        "internalType": "uint256",
-                        "name": "timestamp",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "NewMemberJoined",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": true,
-                        "internalType": "address",
-                        "name": "user",
-                        "type": "address"
-                    },
-                    {
                         "indexed": false,
                         "internalType": "enum DailyAppV12Secured.NFTTier",
                         "name": "tier",
@@ -1730,6 +1694,31 @@
                     }
                 ],
                 "name": "NFTUpgraded",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "referrer",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "NewMemberJoined",
                 "type": "event"
             },
             {
@@ -2162,6 +2151,71 @@
             },
             {
                 "inputs": [],
+                "name": "MAX_DISCOUNT_PERCENT",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "MAX_MULTIPLIER_BP",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "MAX_TASK_REWARD",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "MAX_USERS",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "REFERRAL_ACTIVATION_TASK_COUNT",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
                 "name": "VERIFIER_ROLE",
                 "outputs": [
                     {
@@ -2171,6 +2225,146 @@
                     }
                 ],
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_user",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "addClaimableReward",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_baseReward",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_cooldown",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier",
+                        "name": "_minTier",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_title",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_link",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_requiresVerification",
+                        "type": "bool"
+                    }
+                ],
+                "name": "addTask",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_baseRewards",
+                        "type": "uint256[]"
+                    },
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_cooldowns",
+                        "type": "uint256[]"
+                    },
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier[]",
+                        "name": "_minTiers",
+                        "type": "uint8[]"
+                    },
+                    {
+                        "internalType": "string[]",
+                        "name": "_titles",
+                        "type": "string[]"
+                    },
+                    {
+                        "internalType": "string[]",
+                        "name": "_links",
+                        "type": "string[]"
+                    },
+                    {
+                        "internalType": "bool[]",
+                        "name": "_requiresVerifications",
+                        "type": "bool[]"
+                    }
+                ],
+                "name": "addTaskBatch",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV12Secured.SponsorLevel",
+                        "name": "_level",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "string[]",
+                        "name": "_titles",
+                        "type": "string[]"
+                    },
+                    {
+                        "internalType": "string[]",
+                        "name": "_links",
+                        "type": "string[]"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_email",
+                        "type": "string"
+                    }
+                ],
+                "name": "adminCreateSponsorship",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_taskId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_active",
+                        "type": "bool"
+                    }
+                ],
+                "name": "adminSetTaskActive",
+                "outputs": [],
+                "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
@@ -2211,6 +2405,19 @@
                 "type": "function"
             },
             {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_reqId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "approveSponsorship",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
                 "inputs": [],
                 "name": "autoApproveSponsorship",
                 "outputs": [
@@ -2240,6 +2447,37 @@
                     }
                 ],
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "baseReferralReward",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_user",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "burnPoints",
+                "outputs": [],
+                "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
@@ -2281,6 +2519,35 @@
                 "type": "function"
             },
             {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_user",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_taskId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "canDoTask",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "reason",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
                 "inputs": [],
                 "name": "claimDailyBonus",
                 "outputs": [],
@@ -2288,13 +2555,7 @@
                 "type": "function"
             },
             {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "_token",
-                        "type": "address"
-                    }
-                ],
+                "inputs": [],
                 "name": "claimRewards",
                 "outputs": [],
                 "stateMutability": "nonpayable",
@@ -2302,11 +2563,6 @@
             },
             {
                 "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    },
                     {
                         "internalType": "address",
                         "name": "",
@@ -2339,6 +2595,19 @@
             },
             {
                 "inputs": [],
+                "name": "currentDiscountPercent",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
                 "name": "dailyBonusAmount",
                 "outputs": [
                     {
@@ -2348,6 +2617,19 @@
                     }
                 ],
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256[]",
+                        "name": "_taskIds",
+                        "type": "uint256[]"
+                    }
+                ],
+                "name": "doBatchTasks",
+                "outputs": [],
+                "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
@@ -2364,6 +2646,24 @@
                     }
                 ],
                 "name": "doTask",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_token",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "emergencyWithdraw",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
@@ -2390,6 +2690,25 @@
             {
                 "inputs": [
                     {
+                        "internalType": "enum DailyAppV12Secured.SponsorLevel",
+                        "name": "_level",
+                        "type": "uint8"
+                    }
+                ],
+                "name": "getCostInTokens",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
                         "internalType": "bytes32",
                         "name": "role",
                         "type": "bytes32"
@@ -2401,6 +2720,72 @@
                         "internalType": "bytes32",
                         "name": "",
                         "type": "bytes32"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_taskId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getTask",
+                "outputs": [
+                    {
+                        "components": [
+                            {
+                                "internalType": "uint256",
+                                "name": "baseReward",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "bool",
+                                "name": "isActive",
+                                "type": "bool"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "cooldown",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "enum DailyAppV12Secured.NFTTier",
+                                "name": "minTier",
+                                "type": "uint8"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "title",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "link",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "createdAt",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "bool",
+                                "name": "requiresVerification",
+                                "type": "bool"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "sponsorshipId",
+                                "type": "uint256"
+                            }
+                        ],
+                        "internalType": "struct DailyAppV12Secured.Task",
+                        "name": "",
+                        "type": "tuple"
                     }
                 ],
                 "stateMutability": "view",
@@ -2500,6 +2885,49 @@
                 "inputs": [
                     {
                         "internalType": "address",
+                        "name": "_user",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_taskId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "isTaskVerified",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "isValidReferrer",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
                         "name": "",
                         "type": "address"
                     }
@@ -2540,6 +2968,24 @@
                 "type": "function"
             },
             {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_user",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_taskId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "markTaskAsVerified",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
                 "inputs": [],
                 "name": "masterXContract",
                 "outputs": [
@@ -2563,6 +3009,19 @@
                     }
                 ],
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier",
+                        "name": "_tier",
+                        "type": "uint8"
+                    }
+                ],
+                "name": "mintNFT",
+                "outputs": [],
+                "stateMutability": "payable",
                 "type": "function"
             },
             {
@@ -2660,6 +3119,25 @@
                 "type": "function"
             },
             {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "packagePricesUSD",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
                 "inputs": [],
                 "name": "pause",
                 "outputs": [],
@@ -2687,15 +3165,46 @@
                         "type": "address"
                     }
                 ],
-                "name": "referralCount",
+                "name": "referrerOf",
                 "outputs": [
                     {
-                        "internalType": "uint256",
+                        "internalType": "address",
                         "name": "",
-                        "type": "uint256"
+                        "type": "address"
                     }
                 ],
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_reqId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_reason",
+                        "type": "string"
+                    }
+                ],
+                "name": "rejectSponsorship",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_reqId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "renewSponsorship",
+                "outputs": [],
+                "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
@@ -2864,11 +3373,11 @@
                 "inputs": [
                     {
                         "internalType": "uint256",
-                        "name": "_amount",
+                        "name": "_percent",
                         "type": "uint256"
                     }
                 ],
-                "name": "setDailyBonusAmount",
+                "name": "setDiscount",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
@@ -2907,49 +3416,6 @@
             {
                 "inputs": [
                     {
-                        "internalType": "enum DailyAppV12Secured.NFTTier",
-                        "name": "_tier",
-                        "type": "uint8"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_pointsRequired",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_mintPrice",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_dailyBonus",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_multiplierBP",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_maxSupply",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "_isOpen",
-                        "type": "bool"
-                    }
-                ],
-                "name": "setNFTConfig",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
                         "internalType": "enum DailyAppV12Secured.NFTTier[]",
                         "name": "_tiers",
                         "type": "uint8[]"
@@ -2971,7 +3437,7 @@
                     },
                     {
                         "internalType": "uint256[]",
-                        "name": "_multipliersBP",
+                        "name": "_multiplierBPs",
                         "type": "uint256[]"
                     },
                     {
@@ -2981,11 +3447,60 @@
                     },
                     {
                         "internalType": "bool[]",
-                        "name": "_isOpens",
+                        "name": "_isOpen",
                         "type": "bool[]"
                     }
                 ],
                 "name": "setNFTConfigsBatch",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_bronze",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_silver",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_gold",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setPackagePricesUSD",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256[3]",
+                        "name": "_prices",
+                        "type": "uint256[3]"
+                    }
+                ],
+                "name": "setPackagePricesUSD",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_duration",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setSponsorDuration",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
@@ -3022,11 +3537,78 @@
                 "inputs": [
                     {
                         "internalType": "uint256",
-                        "name": "_duration",
+                        "name": "_fee",
                         "type": "uint256"
                     }
                 ],
-                "name": "setSponsorDuration",
+                "name": "setSponsorshipPlatformFee",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_taskId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_isActive",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setTaskActive",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier",
+                        "name": "_tier",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_status",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setTierStatus",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier",
+                        "name": "_tier",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_uri",
+                        "type": "string"
+                    }
+                ],
+                "name": "setTierURI",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_price",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setTokenPriceUSD",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
@@ -3040,6 +3622,42 @@
                     }
                 ],
                 "name": "setUSDCToken",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_user",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_status",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setUserBlacklist",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_referrer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_status",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setValidReferrer",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
@@ -3109,11 +3727,6 @@
                         "internalType": "uint256",
                         "name": "timestamp",
                         "type": "uint256"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "rewardToken",
-                        "type": "address"
                     }
                 ],
                 "stateMutability": "view",
@@ -3162,6 +3775,13 @@
                     }
                 ],
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "syncMasterXPoints",
+                "outputs": [],
+                "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
@@ -3280,6 +3900,19 @@
                 "type": "function"
             },
             {
+                "inputs": [],
+                "name": "tokenPriceUSD",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
                 "inputs": [
                     {
                         "internalType": "uint256",
@@ -3361,6 +3994,74 @@
                 "type": "function"
             },
             {
+                "inputs": [
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier",
+                        "name": "_tier",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_pointsRequired",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_mintPrice",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_multiplierBP",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_dailyBonus",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_maxSupply",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_isOpen",
+                        "type": "bool"
+                    }
+                ],
+                "name": "updateNFTConfig",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_user",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "enum DailyAppV12Secured.NFTTier",
+                        "name": "_tier",
+                        "type": "uint8"
+                    }
+                ],
+                "name": "updateUserTier",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "upgradeNFT",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
                 "inputs": [],
                 "name": "usdcToken",
                 "outputs": [
@@ -3368,6 +4069,19 @@
                         "internalType": "contract IERC20",
                         "name": "",
                         "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "userCount",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
                     }
                 ],
                 "stateMutability": "view",
@@ -3447,24 +4161,6 @@
                 "type": "function"
             },
             {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "_user",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_taskId",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "markTaskAsVerified",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
                 "inputs": [],
                 "name": "withdrawalFeeBP",
                 "outputs": [
@@ -3475,457 +4171,6 @@
                     }
                 ],
                 "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "_reqId",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "renewSponsorship",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "syncMasterXPoints",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "enum DailyAppV12Secured.NFTTier",
-                        "name": "_tier",
-                        "type": "uint8"
-                    }
-                ],
-                "name": "mintNFT",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "upgradeNFT",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "_taskId",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "getTask",
-                "outputs": [
-                    {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "baseReward",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "bool",
-                                "name": "isActive",
-                                "type": "bool"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "cooldown",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "enum DailyAppV12Secured.NFTTier",
-                                "name": "minTier",
-                                "type": "uint8"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "title",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "link",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "createdAt",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "bool",
-                                "name": "requiresVerification",
-                                "type": "bool"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "sponsorshipId",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct DailyAppV12Secured.Task",
-                        "name": "",
-                        "type": "tuple"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "_user",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_taskId",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "canDoTask",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "reason",
-                        "type": "string"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "_user",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_taskId",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "isTaskVerified",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "_baseReward",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_cooldown",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "enum DailyAppV12Secured.NFTTier",
-                        "name": "_minTier",
-                        "type": "uint8"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "_title",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "_link",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "_requiresVerification",
-                        "type": "bool"
-                    }
-                ],
-                "name": "addTask",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256[]",
-                        "name": "_baseRewards",
-                        "type": "uint256[]"
-                    },
-                    {
-                        "internalType": "uint256[]",
-                        "name": "_cooldowns",
-                        "type": "uint256[]"
-                    },
-                    {
-                        "internalType": "enum DailyAppV12Secured.NFTTier[]",
-                        "name": "_minTiers",
-                        "type": "uint8[]"
-                    },
-                    {
-                        "internalType": "string[]",
-                        "name": "_titles",
-                        "type": "string[]"
-                    },
-                    {
-                        "internalType": "string[]",
-                        "name": "_links",
-                        "type": "string[]"
-                    },
-                    {
-                        "internalType": "bool[]",
-                        "name": "_requiresVerifications",
-                        "type": "bool[]"
-                    }
-                ],
-                "name": "addTaskBatch",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "_taskId",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "_isActive",
-                        "type": "bool"
-                    }
-                ],
-                "name": "setTaskActive",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "enum DailyAppV12Secured.NFTTier",
-                        "name": "_tier",
-                        "type": "uint8"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_pointsRequired",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_mintPrice",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_multiplierBP",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_dailyBonus",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_maxSupply",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "_isOpen",
-                        "type": "bool"
-                    }
-                ],
-                "name": "updateNFTConfig",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "role",
-                        "type": "bytes32"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "account",
-                        "type": "address"
-                    }
-                ],
-                "name": "hasRole",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "role",
-                        "type": "bytes32"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "account",
-                        "type": "address"
-                    }
-                ],
-                "name": "grantRole",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "role",
-                        "type": "bytes32"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "account",
-                        "type": "address"
-                    }
-                ],
-                "name": "revokeRole",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "_token",
-                        "type": "address"
-                    }
-                ],
-                "name": "emergencyWithdraw",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "enum DailyAppV12Secured.SponsorLevel",
-                        "name": "_level",
-                        "type": "uint8"
-                    },
-                    {
-                        "internalType": "string[]",
-                        "name": "_titles",
-                        "type": "string[]"
-                    },
-                    {
-                        "internalType": "string[]",
-                        "name": "_links",
-                        "type": "string[]"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "_email",
-                        "type": "string"
-                    }
-                ],
-                "name": "adminCreateSponsorship",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "_taskId",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "_active",
-                        "type": "bool"
-                    }
-                ],
-                "name": "adminSetTaskActive",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "_bronze",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_silver",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_gold",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "setPackagePricesUSD",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256[3]",
-                        "name": "_prices",
-                        "type": "uint256[3]"
-                    }
-                ],
-                "name": "setPackagePricesUSD",
-                "outputs": [],
-                "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
