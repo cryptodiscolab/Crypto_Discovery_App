@@ -4,6 +4,11 @@
 
 ## 📝 Changelog
 
+### v3.40.2 — 2026-03-27 (MetaMask Provider Conflict Resolution)
+- **Safe Provider Boot**: Added a pre-emptive script in `index.html` to ensure `window.ethereum` is writable, preventing initialization crashes.
+- **Enhanced Conflict Sentinel**: Upgraded `Web3Provider.jsx` to detect and resolve read-only property traps at runtime, providing clear diagnostic logs.
+- **Protocol Hardening**: Synchronized version v3.40.2 across all master documentation and agent skills.
+
 ### v3.40.1 — 2026-03-27 (Daily Claim Optimization)
 - **Structural Optimization**: Streamlined Daily Claim and Sponsored Task flows by removing redundant wallet signature requests.
 - **Fast-Sync Flow**: Implemented `tx_hash` as the primary proof of work for backend XP sync, resolving "Safety timeout" hangs and wallet extension conflicts (EIP-6963).

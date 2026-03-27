@@ -28,6 +28,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
+  
+  <!-- Safe Provider Boot: Prevent window.ethereum from being trapped as a read-only getter by greedy extensions -->
+  <script>
+    (function() {
+      try {
+        // Only define if it's not already set, or if it's a "trapped" getter
+        var descriptor = Object.getOwnPropertyDescriptor(window, 'ethereum');
+        if (!descriptor || (descriptor.get && !descriptor.set && descriptor.configurable !== false)) {
+          Object.defineProperty(window, 'ethereum', {
+            value: undefined,
+            writable: true,
+            configurable: true,
+            enumerable: true
+          });
+          console.log('%c[SafeBoot] Provider slot initialized as writable.', 'color: #4ade80; font-weight: bold;');
+        }
+      } catch (e) {
+        console.error('[SafeBoot] Error:', e);
+      }
+    })();
+  </script>
 </head>
 
 <body>
