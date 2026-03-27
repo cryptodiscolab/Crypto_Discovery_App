@@ -4,6 +4,12 @@
 
 ## 📝 Changelog
 
+### v3.40.1 — 2026-03-27 (Daily Claim Optimization)
+- **Structural Optimization**: Streamlined Daily Claim and Sponsored Task flows by removing redundant wallet signature requests.
+- **Fast-Sync Flow**: Implemented `tx_hash` as the primary proof of work for backend XP sync, resolving "Safety timeout" hangs and wallet extension conflicts (EIP-6963).
+- **Safety Buffers**: Increased claim timeouts to 120s and added gas buffers for higher reliability on Base network.
+- **Protocol Sync**: Incremented ecosystem version to v3.40.1 across all master documentation and agent skills.
+
 ### v3.39.4 — 2026-03-27 (ReferenceError Fix)
 - **Bug Fix**: Resolved `ReferenceError: hasEnoughXP is not defined` in `SBTUpgradeCard.jsx` causing Profile page crashes.
 - **UI State Parity**: Synchronized "Ready" badge and card highlighting with the correct `isReady` composite state.

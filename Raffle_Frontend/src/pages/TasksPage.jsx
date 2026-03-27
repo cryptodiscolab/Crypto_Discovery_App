@@ -412,15 +412,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
     
     if (isGlobalCompleted) return null;
 
-    // Safety: signWithTimeout helper
-    const signWithTimeout = useCallback(async (params, timeoutMs = 10000) => {
-        return Promise.race([
-            signMessageAsync(params),
-            new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Wallet signature timeout – wallet extension conflict detected')), timeoutMs)
-            ),
-        ]);
-    }, [signMessageAsync]);
+
 
     const handleVerifyCard = async () => {
         setVerifyingStatus(null);
@@ -500,44 +492,34 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                                     abi: DAILY_APP_ABI,
                                     functionName: 'claimRewards',
                                 });
-                                toast.success("Mission Reward Claimed!", { id: tid });
-                                // BUG-4 fix: sync XP on-chain ke DB (Secured)
-                                 const timestamp = new Date().toISOString();
-                                 const message = `Sync XP for ${address}\nTimestamp: ${timestamp}`;
-                                 
-                                 let signature = null;
-                                 try {
-                                     // 10s timeout: if wallet is locked (EIP-6963 conflict), we'll try to sync via txHash proof alone
-                                     signature = await signWithTimeout({ message }, 10000);
-                                 } catch (signErr) {
-                                     console.warn('[TasksPage] Signature skipped/timed out, attempting sync via txHash only:', signErr.message);
-                                 }
 
-                                 fetch('/api/user-bundle', {
-                                     method: 'POST',
-                                     headers: { 'content-type': 'application/json' },
-                                     body: JSON.stringify({
-                                         action: 'xp',
-                                         wallet_address: address,
-                                         signature,
-                                         message: signature ? message : null,
-                                         tx_hash: hash, // Added for backend verification fallback
-                                     }),
-                                 })
-                                     .then(async (res) => {
-                                         if (!res.ok) {
-                                             const errorData = await res.json();
-                                             console.error('[Sync Error]', errorData.error || 'Unknown error');
-                                         } else {
-                                             console.log('[Sync Success] XP synchronized');
-                                         }
-                                     })
-                                     .catch((err) => {
-                                         console.error('[Sync Fetch Error]', err);
-                                     });
+                                // v3.40+: Fast Sync via TxHash (No second signature required)
+                                toast.loading("Mining & Syncing XP...", { id: tid });
+                                
+                                fetch('/api/user-bundle', {
+                                    method: 'POST',
+                                    headers: { 'content-type': 'application/json' },
+                                    body: JSON.stringify({
+                                        action: 'xp',
+                                        wallet_address: address,
+                                        signature: null, 
+                                        message: null,
+                                        tx_hash: hash, 
+                                    }),
+                                })
+                                .then(async (res) => {
+                                    if (res.ok) {
+                                        console.log('[TasksPage] XP synchronized via txHash');
+                                        await Promise.all([
+                                            refetchRewards(),
+                                            refetchStats()
+                                        ]);
+                                    }
+                                })
+                                .catch((err) => console.error('[Sync Fetch Error]', err));
+
+                                toast.success("Mission Reward Claimed! 🎉", { id: tid });
                                 setVerifyingStatus(null);
-                                refetchRewards();
-                                refetchStats();
                             } catch (err) {
                                 toast.error(err.shortMessage || "Claim failed", { id: tid });
                             } finally {

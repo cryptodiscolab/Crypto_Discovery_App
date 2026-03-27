@@ -40,7 +40,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.39.4**
+**Protocol Version: 3.40.1**
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -438,5 +438,5 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **MANDATORY VISUAL AUDIT**: After ANY automated edit to a protocol file, the agent MUST perform a `view_file` call on the affected lines (including 10 lines of surrounding context) to verify that no sections were accidentally wiped out.
 - **NO SILENT REMOVAL**: If a section is intended for removal (e.g., duplicates), the agent MUST explicitly state this in the tool description and verify the deletion is successful without affecting other sections.
 
-- **Current Protocol Version**: v3.39.4 (ReferenceError Fix)
+- **Current Protocol Version**: v3.40.1 (Daily Claim Structural Optimization)
 *Antigravity: Integrity Restored. Visual Audit Mandated. No Silent Deletions.*

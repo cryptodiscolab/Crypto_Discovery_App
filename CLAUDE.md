@@ -24,7 +24,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.39.4)
+## 🔴 ABSOLUTE LAWS (Nexus v3.40.1)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.

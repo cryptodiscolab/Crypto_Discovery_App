@@ -46,8 +46,16 @@ const isSepolia = chainId === 84532;
 
 const cleanAddr = (addr) => {
   if (!addr || typeof addr !== 'string') return addr;
-  // Remove all quotes, whitespace, and hidden characters
-  return addr.replace(/["'\s\r\n\t\0]/g, '').trim();
+  
+  let cleaned = addr.replace(/["'\s\r\n\t\0]/g, '').trim();
+  
+  // 🛡️ Anti-Parsing Drift: Strip any "KEY=" prefix if it accidentally leaked from .env
+  if (cleaned.includes('=')) {
+    const parts = cleaned.split('=');
+    cleaned = parts[parts.length - 1];
+  }
+  
+  return cleaned;
 };
 
 const getAddr = (key, envKey, envKeySepolia) => {
@@ -73,8 +81,8 @@ export const RAFFLE_ADDRESS = getAddr('RAFFLE', 'VITE_RAFFLE_ADDRESS', 'VITE_RAF
 export const CMS_CONTRACT_ADDRESS = getAddr('CMS', 'VITE_CMS_CONTRACT_ADDRESS', 'VITE_CMS_CONTRACT_ADDRESS_SEPOLIA');
 export const USDC_ADDRESS = getAddr('USDC', 'VITE_USDC_ADDRESS', 'VITE_USDC_ADDRESS_SEPOLIA');
 export const CREATOR_TOKEN_ADDRESS = getAddr('CREATOR_TOKEN', 'VITE_CREATOR_TOKEN_ADDRESS');
-export const PRICE_FEED_ADDRESS = import.meta.env.VITE_PRICE_FEED_ADDRESS;
-export const SAFE_MULTISIG = import.meta.env.VITE_SAFE_MULTISIG;
+export const PRICE_FEED_ADDRESS = cleanAddr(import.meta.env.VITE_PRICE_FEED_ADDRESS);
+export const SAFE_MULTISIG = cleanAddr(import.meta.env.VITE_SAFE_MULTISIG);
 
 // Removed purely static Admin constants to prevent them from being bundled in the frontend.
 
