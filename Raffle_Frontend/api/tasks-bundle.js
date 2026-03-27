@@ -90,7 +90,6 @@ async function validateAndCalculateXP(wallet_address, signature, message, task_i
         const { count } = await supabaseAdmin
             .from('user_task_claims')
             .select('id', { count: 'exact', head: true })
-            .eq('wallet_address', wallet_address.toLowerCase())
             .eq('target_id', targetId);
         if (count > 0) throw new Error('[Security] Target account already claimed');
     }

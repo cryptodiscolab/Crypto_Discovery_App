@@ -8,6 +8,7 @@ import { useFarcaster } from '../hooks/useFarcaster';
 import { ABIS, CONTRACTS, APP_CONFIG, DAILY_APP_ABI } from '../lib/contracts';
 import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
+import { OffersList } from '../components/tasks/OffersList';
 
 function TaskRow({ taskId, userStats, refetchStats }) {
     const { task, isLoading } = useTaskInfo(taskId);
@@ -50,10 +51,10 @@ function TaskRow({ taskId, userStats, refetchStats }) {
         abi: DAILY_APP_ABI,
         functionName: 'hasCompletedTask',
         args: [address, taskId],
-        query: { enabled: !!address && !!task && task.sponsorshipId > 0 }
+        query: { enabled: !!address && !!task }
     });
 
-    if (isLoading || !task || !task.isActive) return null;
+    if (isLoading || !task || !task.isActive || isCompleted) return null;
 
     const isTierLocked = Number(userTier) < Number(task.minTier);
     const canDo = !isTierLocked && !isCompleted;
@@ -233,6 +234,7 @@ export function TasksPage() {
     const totalTasks = tasksCount || 0;
     const { userPoints, userTier, rankName } = usePoints();
     const { refetch } = useUserV12Stats(address);
+    const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'offers'
 
     // Fetch all task data in one batch
     const { data: allTasksRaw, isLoading: isTasksLoading } = useReadContract({
@@ -273,64 +275,105 @@ export function TasksPage() {
     }, [allTasksRaw]);
 
     return (
-        <div className="w-full bg-[#0B0E14]">
-            <div className="max-w-screen-lg mx-auto">
+        <div className="w-full bg-[#0B0E14] min-h-screen">
+            <div className="max-w-screen-lg mx-auto pb-12">
                 {/* Header (Flat) */}
-                <div className="px-4 py-6 border-b-subtle">
-                    <h1 className="text-2xl font-black text-white mb-1">Daily Tasks</h1>
-                    <p className="text-slate-500 text-sm">Earn XP and level up your tier.</p>
-
-                    {/* Stats Row (Inline) */}
-                    {isConnected && (
-                        <div className="flex items-center gap-6 mt-4">
-                            <div>
-                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Your XP</p>
-                                <p className="text-xl font-mono font-bold text-white">{String(userPoints)}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Rank</p>
-                                <p className="text-xl font-bold text-indigo-400">{rankName || `LVL ${userTier}`}</p>
-                            </div>
+                <div className="px-4 py-8 border-b-subtle">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
+                            <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">Earn Rewards</h1>
+                            <p className="text-slate-500 text-sm font-medium">Complete missions and level up your status.</p>
                         </div>
-                    )}
+
+                        {/* Stats Row (Inline) */}
+                        {isConnected && (
+                            <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl">
+                                <div>
+                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Your XP</p>
+                                    <p className="text-xl font-mono font-black text-white">{String(userPoints)}</p>
+                                </div>
+                                <div className="w-px h-8 bg-white/10" />
+                                <div>
+                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Current Rank</p>
+                                    <div className="flex items-center gap-1.5">
+                                        <Award className="w-4 h-4 text-indigo-400" />
+                                        <p className="text-xl font-black text-indigo-400 uppercase tracking-tighter">{rankName || `LVL ${userTier}`}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Tab Switcher */}
+                    <div className="flex gap-2 mt-8 p-1.5 bg-zinc-900 border border-white/5 rounded-2xl w-full max-w-md mx-auto md:mx-0">
+                        <button
+                            onClick={() => setActiveTab('tasks')}
+                            className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            <Zap className={activeTab === 'tasks' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
+                            Daily Tasks
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('offers')}
+                            className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            <Megaphone className={activeTab === 'offers' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
+                            Partner Offers
+                        </button>
+                    </div>
                 </div>
 
-                {/* Task List Container */}
-                <div className="md:px-4 space-y-4">
-                    {/* Supabase Tasks Injection Point */}
-                    <TaskList />
+                {/* Task Content */}
+                {activeTab === 'tasks' ? (
+                    <div className="px-4 mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+                        {/* Supabase Tasks Injection Point */}
+                        <TaskList />
 
-                    {/* Regular On-Chain Tasks */}
-                    {taskGroups.regulars.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {taskGroups.regulars.map(task => (
-                                <TaskRow
-                                    key={task.id}
-                                    taskId={task.id}
-                                    userStats={null}
-                                    refetchStats={refetch}
-                                />
-                            ))}
-                        </div>
-                    )}
+                        {/* Regular On-Chain Tasks */}
+                        {taskGroups.regulars.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {taskGroups.regulars.map(task => (
+                                    <TaskRow
+                                        key={task.id}
+                                        taskId={task.id}
+                                        userStats={null}
+                                        refetchStats={refetch}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
-                    {/* Sponsored Cards */}
-                    {Object.entries(taskGroups.sponsored).map(([sId, tasks]) => (
-                        <SponsoredTaskCard
-                            key={sId}
-                            sponsorshipId={sId}
-                            tasks={tasks}
-                            refetchStats={refetch}
-                        />
-                    ))}
+                        {/* Sponsored Cards */}
+                        {Object.entries(taskGroups.sponsored).map(([sId, tasks]) => (
+                            <SponsoredTaskCard
+                                key={sId}
+                                sponsorshipId={sId}
+                                tasks={tasks}
+                                refetchStats={refetch}
+                            />
+                        ))}
 
-                    {isTasksLoading && (
-                        <div className="py-12 text-center col-span-full">
-                            <Loader2 className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
-                            <p className="text-sm text-slate-500">Loading Rewards...</p>
-                        </div>
-                    )}
-                </div>
+                        {isTasksLoading && (
+                            <div className="py-24 text-center">
+                                <Loader2 className="w-10 h-10 text-indigo-500 mx-auto animate-spin mb-4" />
+                                <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Checking Rewards...</p>
+                            </div>
+                        )}
+
+                        {!isTasksLoading && taskGroups.regulars.length === 0 && Object.keys(taskGroups.sponsored).length === 0 && (
+                            <div className="py-24 text-center glass-card border-dashed bg-indigo-500/5">
+                                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4 opacity-50" />
+                                <h3 className="text-white font-bold text-lg">All Tasks Completed!</h3>
+                                <p className="text-slate-500 text-sm mt-1">You've finished all available daily missions. Check back tomorrow!</p>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* Offers Content */
+                    <div className="px-4 mt-6">
+                        <OffersList />
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -367,6 +410,8 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
 
     const isGlobalCompleted = Number(progress || 0) >= tasks.length;
     
+    if (isGlobalCompleted) return null;
+
     // Safety: signWithTimeout helper
     const signWithTimeout = useCallback(async (params, timeoutMs = 10000) => {
         return Promise.race([

@@ -134,7 +134,7 @@ export function CreateRafflePage() {
             profit: sponsorPayback.toFixed(4),
             profitUsd: (sponsorPayback * ethPrice).toFixed(2)
         };
-    }, [formData, globalTicketPrice]);
+    }, [formData, globalTicketPrice, ethPrice, maintenanceFeeBP, surchargeBP]);
 
     const handleCreate = async (e) => {
         e.preventDefault();

@@ -124,6 +124,8 @@ export function TaskList() {
     };
 
 
+    const activeTasks = tasks.filter(t => !userClaims.has(t.id));
+
     if (isLoading && tasks.length === 0) {
         return (
             <div className="flex justify-center py-8">
@@ -132,8 +134,8 @@ export function TaskList() {
         );
     }
 
-    if (tasks.length === 0) {
-        return null; // Don't show anything if no DB tasks active
+    if (activeTasks.length === 0) {
+        return null; // Don't show anything if no unclaimed tasks
     }
 
     return (
@@ -144,8 +146,10 @@ export function TaskList() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {tasks.map(task => {
+                {activeTasks.map(task => {
                     const isClaimed = userClaims.has(task.id);
+                    // if (isClaimed) return null; // No longer needed as we're using activeTasks
+
                     const isClaiming = claimingTask === task.id;
 
                     // Anti-Sybil Check

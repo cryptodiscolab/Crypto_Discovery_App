@@ -11,7 +11,7 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 - **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 - **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
-### 2. Verified Infrastructure Reference (v3.38.25)
+### 2. Verified Infrastructure Reference (v3.39.1)
 | Key | Value |
 |---|---|
 | DailyApp (Tasks) | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
@@ -23,10 +23,10 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 
 ## 🏆 Kompetensi Inti
 
-### 1. Verification-First XP Sync (v3.38.25) - MANDATORY
+### 1. Verification-First XP Sync (v3.39.1) - MANDATORY
 - **Verification-First Mandate**: Website MUST capture `tx_hash` from on-chain transactions and pass it to the backend.
 - **Backend Responsibility**: Backend MUST verify the `tx_hash` via RPC and update `user_profiles.total_xp` EXPLICITLY.
-- **NO Passive Triggers**: Do NOT rely on DB triggers for XP recalculation (deprecated and deleted in v3.38.25).
+- **NO Passive Triggers**: Do NOT rely on DB triggers for XP recalculation (deprecated and deleted in v3.39.1).
 - **Workflow**: 
     1. User performs an on-chain transaction.
     2. Frontend sends `tx_hash` to `/api/user/xp` or similar.

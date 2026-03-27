@@ -15,7 +15,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Replay Protection**: Gunakan timestamp dalam pesan signature dengan window validasi maksimal 5 menit.
 - **Normalized Mapping**: Pastikan mapping address (Farcaster/Twitter) menggunakan clean lowercase address untuk menghindari 404 pada API Neynar.
 
-### 2. Verified Infrastructure Reference (PRD v3.38.25)
+### 2. Verified Infrastructure Reference (PRD v3.39.1)
 | Key | Value |
 |---|---|
 | Admin FIDs | `1477344` (Farcaster) |
@@ -34,10 +34,10 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Z-Index Guard**: Selalu gunakan `relative z-[9999] pointer-events-auto` untuk BottomNav/Header admin.
 - **Glass Wall Prevention**: Pastikan tidak ada overlay transparan yang menutupi tombol klik.
 
-### 2. Lurah Hub & P&L Guard (v3.38.25)
-- **RPC Resiliency Fallback (v3.38.25)**: Ensure Admin actions (e.g. banning, boosting) support manual `tx_hash` entry to force-sync state if blockchain indexers are lagging.
-- **View Mirror Sync (v3.38.25)**: Prohibit admin dashboard deployment if `v_user_full_profile` SQL View is not synchronized with the latest `user_profiles` schema.
-- **Tier Precision**: Enforce `min_xp` logic; deprecate `xp_required` from all calculations (v3.38.25).
+### 2. Lurah Hub & P&L Guard (v3.39.1)
+- **RPC Resiliency Fallback (v3.39.1)**: Ensure Admin actions (e.g. banning, boosting) support manual `tx_hash` entry to force-sync state if blockchain indexers are lagging.
+- **View Mirror Sync (v3.39.1)**: Prohibit admin dashboard deployment if `v_user_full_profile` SQL View is not synchronized with the latest `user_profiles` schema.
+- **Tier Precision**: Enforce `min_xp` logic; deprecate `xp_required` from all calculations (v3.39.1).
 
 - **Administrative Setters**: Pastikan UI Admin mendukung konfigurasi dinamis `DailyAppV13` (Withdrawal Fee BP, Daily Bonus, Auto-Approve Sponsorship, Sponsor Duration).
 - **Token Whitelist Verification**: Selalu verifikasi bahwa token yang di-whitelist memiliki `decimals` dan `symbol` yang benar sebelum melakukan sinkronisasi database.

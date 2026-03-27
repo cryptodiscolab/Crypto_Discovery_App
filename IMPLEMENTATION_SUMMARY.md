@@ -4,6 +4,12 @@
 
 ## 📝 Changelog
 
+### v3.39.3 — 2026-03-27 (UI Consolidation & Rewards Hub)
+- **Feature Consolidation**: Merged standalone "Offers" feature into the "Tasks" page via a tabbed interface and new `OffersList.jsx` component.
+- **Auto-Hide UX**: Implemented filtering logic to automatically hide completed/claimed missions from the UI.
+- **Navigation Cleanup**: Deprecated `/campaigns` route and removed redundant mobile navigation items.
+- **Ecosystem Sync**: Unified protocol version v3.39.3 across all master documents.
+
 ### v3.38.26 — 2026-03-27 (DAILY_APP ABI Drift Repair)
 - **ABI Synchronization**: Repaired `DAILY_APP` ABI in `abis_data.txt`, restoring 15+ missing/mismatched functions (`syncMasterXPoints`, `mintNFT`, `markTaskAsVerified`, etc.).
 - **Ecosystem Audit**: Verified 100% sync parity (13/13 Checks) via `check_sync_status.cjs`.

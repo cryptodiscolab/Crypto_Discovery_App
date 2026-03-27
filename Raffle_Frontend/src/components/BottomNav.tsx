@@ -19,7 +19,6 @@ export function BottomNav() {
     const navItems = [
         { path: '/', label: 'Home', icon: Home },
         { path: '/tasks', label: 'Tasks', icon: Zap },
-        { path: '/campaigns', label: 'Offers', icon: Megaphone },
         { path: '/raffles', label: 'Raffles', icon: Ticket },
         { path: '/leaderboard', label: 'Rank', icon: Trophy },
     ];

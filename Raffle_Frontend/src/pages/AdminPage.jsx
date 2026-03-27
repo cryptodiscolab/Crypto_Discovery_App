@@ -38,7 +38,7 @@ const NexusMonitorTab = React.lazy(() => import('../components/admin/tabs/NexusM
 
 export function AdminPage({ initialTab = 'pool' }) {
     const navigate = useNavigate();
-    const { address, isConnected } = useAccount();
+    const { isConnected } = useAccount();
     const { totalPoolBalance, contractOwner, distributeRevenue, updateTier, withdrawTreasury, refetchAll } = useSBT();
     const {
         isAdmin: isCMSAdmin,

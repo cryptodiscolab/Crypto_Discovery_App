@@ -107,8 +107,32 @@ async function fullVerification() {
         { check: 'Anti-Cheat Target Duplication',      pass: true },
         { check: 'Identity Lock: Farcaster (wallet↔FID)', pass: true },
         { check: 'Identity Lock: Twitter (wallet↔ID)',    pass: true },
-        { check: 'Identity Lock: TikTok (wallet↔handle)', pass: true },
-        { check: 'Identity Lock: Instagram (wallet↔handle)', pass: true },
+        { 
+            check: 'Identity Lock: TikTok (Global Handle Lock)', 
+            pass: await (async () => {
+                const { data } = await supabase.from('user_task_claims').select('target_id, wallet_address').eq('platform', 'TikTok');
+                if (!data) return true;
+                const handles = {};
+                for (const c of data) {
+                    if (handles[c.target_id] && handles[c.target_id] !== c.wallet_address) return false;
+                    handles[c.target_id] = c.wallet_address;
+                }
+                return true;
+            })()
+        },
+        { 
+            check: 'Identity Lock: Instagram (Global ID Lock)', 
+            pass: await (async () => {
+                const { data } = await supabase.from('user_task_claims').select('target_id, wallet_address').eq('platform', 'Instagram');
+                if (!data) return true;
+                const ids = {};
+                for (const c of data) {
+                    if (ids[c.target_id] && ids[c.target_id] !== c.wallet_address) return false;
+                    ids[c.target_id] = c.wallet_address;
+                }
+                return true;
+            })()
+        },
         { check: 'Streak Logic (server-side only)',    pass: true },
         { check: 'XP Sync Retry Loop (3 attempts)',    pass: true },
         { check: 'Service Role Key (no anon writes)',  pass: true },

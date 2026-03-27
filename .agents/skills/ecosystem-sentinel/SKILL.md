@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Anti-Hallucination Mandate (v3.38.25)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
+  - **Anti-Hallucination Mandate (v3.39.1)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -28,8 +28,8 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 6.  **Activity Log & UGC Standard (Profit-First History)**:
     - **user_activity_logs**: Seluruh riwayat aksi user (XP, Purchase, Reward) **WAJIB** dicatat di tabel `user_activity_logs`.
 - [ ] Verify `user_activity_logs` population for UGC.
-- [ ] Verify UGC Moderation Parity (`is_active: false` for Raffles/Missions by default) (v3.38.3).
-- [ ] Verify Hardened `get_auth_wallet()` pattern to prevent RLS spoofing (v3.38.3).
+- [ ] Verify UGC Moderation Parity (`is_active: false` for Raffles/Missions by default) (v3.39.1).
+- [ ] Verify Hardened `get_auth_wallet()` pattern to prevent RLS spoofing (v3.39.1).
 - [ ] Verify `Point-Sync` for all rewards (dynamic fetch vs hardcode).
     - [ ] Verify `Zero-Hardcode` compliance across the entire feature set.
     - [ ] Check Vercel Function Count (Stay < 12).
@@ -137,7 +137,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
 | **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
-| **PRD v3.38.25** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.39.1** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
@@ -351,7 +351,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **View Sync Audit**: Apakah SQL View `v_user_full_profile` sudah diperbarui jika ada kolom identitas baru? (v3.26.0)
 - [ ] **Tier Precision Audit**: Apakah logika SBT menggunakan `min_xp` (bukan `xp_required`)? (v3.26.0)
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix v3.35.0)*: `node scripts/audits/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
-- [ ] **🛡️ PROTOCOL INTEGRITY AUDIT (v3.38.3)**: Setelah mengedit file protokol (`.cursorrules`, `CLAUDE.md`, `.agents/gemini.md`), apakah Anda sudah melakukan `view_file` pada baris yang diedit (+10 baris konteks) untuk memastikan tidak ada penghapusan bagian/poin secara tidak sengaja? **WAJIB.**
+- [ ] **🛡️ PROTOCOL INTEGRITY AUDIT (v3.39.1)**: Setelah mengedit file protokol (`.cursorrules`, `CLAUDE.md`, `.agents/gemini.md`), apakah Anda sudah melakukan `view_file` pada baris yang diedit (+10 baris konteks) untuk memastikan tidak ada penghapusan bagian/poin secara tidak sengaja? **WAJIB.**
 
 
 ## 🚨 Pantangan
