@@ -1,5 +1,4 @@
-import React, { useMemo } from 'react';
-import { useAccount, useBalance } from 'wagmi';
+import { useAccount, useBalance, useSignMessage } from 'wagmi';
 import { useNFTTiers } from '../hooks/useNFTTiers';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
@@ -9,9 +8,10 @@ import toast from 'react-hot-toast';
 
 export function SBTUpgradeCard() {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { userPoints, userTier, rankName, refetch: refetchPoints } = usePoints();
     const { tiers, refetch: refetchTiers } = useNFTTiers();
-    const { upgradeTier, currentSeasonId, refetchAll } = useSBT();
+    const { upgradeTier, userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { data: balanceData } = useBalance({ address });
 
     // Find current and next tier
@@ -37,13 +37,26 @@ export function SBTUpgradeCard() {
 
     if (!nextTier) return null;
 
-    const hasEnoughXP = Number(userPoints) >= nextTier.pointsRequired;
+    const hasTotalXP = Number(userPoints) >= nextTier.pointsRequired;
+    const hasOnChainXP = Number(userOnChainXP || 0) >= nextTier.pointsRequired;
+    const isSoldOut = nextTier.maxSupply > 0 && nextTier.currentSupply >= nextTier.maxSupply;
     const hasEnoughETH = balanceData?.value >= nextTier.mintPrice;
+    
     const xpShortfall = nextTier.pointsRequired - Number(userPoints);
+    const syncShortfall = nextTier.pointsRequired - Number(userOnChainXP || 0);
+
+    const isReady = hasTotalXP && hasOnChainXP && !isSoldOut && hasEnoughETH;
 
     const handleUpgrade = async () => {
-        if (!hasEnoughXP) {
+        if (!hasOnChainXP) {
+            if (hasTotalXP) {
+                return toast.error("Points detected in DB but not yet synced to contract. Please wait for the periodic sync or perform a task to trigger it.");
+            }
             return toast.error(`You need ${xpShortfall.toLocaleString()} more XP to upgrade!`);
+        }
+
+        if (isSoldOut) {
+            return toast.error("This tier is currently sold out!");
         }
 
         const tid = toast.loading(`Ascending to ${nextTier.name}...`);
@@ -110,7 +123,7 @@ export function SBTUpgradeCard() {
                         </h3>
                     </div>
                     <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                        <ArrowUpCircle className={hasEnoughXP ? "text-indigo-400 animate-bounce" : "text-slate-500"} size={24} />
+                        <ArrowUpCircle className={isReady ? "text-indigo-400 animate-bounce" : "text-slate-500"} size={24} />
                     </div>
                 </div>
 
@@ -120,64 +133,92 @@ export function SBTUpgradeCard() {
                     <div className="space-y-2">
                         <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
                             <span className="text-slate-500">XP Requirement</span>
-                            <span className={hasEnoughXP ? "text-green-400" : "text-yellow-400"}>
+                            <span className={hasTotalXP ? "text-green-400" : "text-yellow-400"}>
                                 {Number(userPoints).toLocaleString()} / {nextTier.pointsRequired.toLocaleString()}
                             </span>
                         </div>
                         <div className="h-2 bg-black/40 rounded-full border border-white/5 overflow-hidden">
                             <div
-                                className={`h-full transition-all duration-1000 ${hasEnoughXP ? 'bg-green-500' : 'bg-indigo-600'}`}
+                                className={`h-full transition-all duration-1000 ${hasTotalXP ? 'bg-green-500' : 'bg-indigo-600'}`}
                                 style={{ width: `${Math.min((Number(userPoints) / nextTier.pointsRequired) * 100, 100)}%` }}
                             />
                         </div>
                     </div>
 
-                    {/* Cost Indicator */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
-                        <div className="flex items-center gap-2">
-                            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
-                                <AlertCircle size={14} />
+                    {/* Cost & Supply Indicator */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-bold text-slate-500 uppercase">Fee</span>
+                                <span className="text-xs font-mono font-bold text-white">
+                                    {formatEther(nextTier.mintPrice)} ETH
+                                </span>
                             </div>
-                            <span className="text-[11px] font-bold text-slate-400 uppercase">Minting Fee</span>
                         </div>
-                        <span className="text-xs font-mono font-bold text-white">
-                            {formatEther(nextTier.mintPrice)} ETH
-                        </span>
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-bold text-slate-500 uppercase">Supply</span>
+                                <span className={`text-xs font-mono font-bold ${isSoldOut ? 'text-red-400' : 'text-white'}`}>
+                                    {nextTier.currentSupply} / {nextTier.maxSupply || '∞'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Requirements Summary */}
-                <div className="grid grid-cols-2 gap-2 mb-6">
-                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${hasEnoughXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
-                        {hasEnoughXP ? <CheckCircle2 size={12} /> : <Lock size={12} />}
-                        Points OK
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${hasTotalXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                        {hasTotalXP ? <CheckCircle2 size={12} /> : <Lock size={12} />}
+                        Total XP
                     </div>
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${hasOnChainXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
+                        {hasOnChainXP ? <CheckCircle2 size={12} /> : <Loader2 size={12} className="animate-spin" />}
+                        On-Chain Sync
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-6">
                     <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${hasEnoughETH ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
                         {hasEnoughETH ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                         Funds OK
+                    </div>
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${!isSoldOut ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                        {!isSoldOut ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                        Available
                     </div>
                 </div>
 
                 <button
                     onClick={handleUpgrade}
-                    disabled={!hasEnoughXP}
+                    disabled={!hasOnChainXP || isSoldOut}
                     className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-2
-                        ${hasEnoughXP
+                        ${isReady
                             ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/30'
                             : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                         }`}
                 >
-                    {hasEnoughXP ? (
+                    {isSoldOut ? (
+                        'TIER SOLD OUT'
+                    ) : !hasOnChainXP ? (
+                        hasTotalXP ? 'AWAITING ON-CHAIN SYNC' : `NEED ${xpShortfall.toLocaleString()} MORE XP`
+                    ) : (
                         <>
                             <Sparkles size={14} />
                             MINT {nextTier.name.toUpperCase()} NOW
                         </>
-                    ) : (
-                        `NEED ${xpShortfall.toLocaleString()} MORE XP`
                     )}
                 </button>
 
-                {hasEnoughXP && !hasEnoughETH && (
+                {hasTotalXP && !hasOnChainXP && (
+                    <div className="mt-4 p-3 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
+                        <p className="text-[10px] text-yellow-400 font-bold uppercase leading-tight text-center">
+                            ⚠️ Points Synced to DB but not Contract.
+                            <br/>Sync will happen on next daily claim.
+                        </p>
+                    </div>
+                )}
+
+                {hasTotalXP && !hasEnoughETH && (
                     <p className="text-[10px] text-red-400 text-center mt-3 font-bold uppercase animate-pulse">
                         ⚠️ Insufficient ETH for Minting Fee
                     </p>

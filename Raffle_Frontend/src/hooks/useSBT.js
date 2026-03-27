@@ -54,6 +54,12 @@ export function useSBT() {
         return userRawData.tier !== undefined ? Number(userRawData.tier) : (userRawData[3] !== undefined ? Number(userRawData[3]) : Number(userRawData[1] || 0));
     }, [userRawData]);
 
+    const userOnChainXP = useMemo(() => {
+        if (!userRawData) return 0n;
+        // totalXP is index 0 in latest ABI
+        return userRawData.totalXP !== undefined ? userRawData.totalXP : (userRawData[0] || 0n);
+    }, [userRawData]);
+
     // 3. Fetch User Reward Debt
     const { data: userRewardDebt, refetch: refetchDebt } = useReadContract({
         address: CONTRACT_ADDRESS,
@@ -315,6 +321,7 @@ export function useSBT() {
         totalPoolBalance: totalPoolBalance || 0n,
         totalLockedRewards: totalLockedRewards || 0n,
         userTier,
+        userOnChainXP,
         claimableAmount: claimableAmount || 0n,
         maxGasPrice: maxGasPrice || 0n,
         contractOwner,
