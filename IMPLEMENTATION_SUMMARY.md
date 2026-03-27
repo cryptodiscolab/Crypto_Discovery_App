@@ -4,6 +4,11 @@
 
 ## 📝 Changelog
 
+### v3.39.4 — 2026-03-27 (ReferenceError Fix)
+- **Bug Fix**: Resolved `ReferenceError: hasEnoughXP is not defined` in `SBTUpgradeCard.jsx` causing Profile page crashes.
+- **UI State Parity**: Synchronized "Ready" badge and card highlighting with the correct `isReady` composite state.
+- **Ecosystem Sync**: Unified protocol version v3.39.4 across all master documents.
+
 ### v3.39.3 — 2026-03-27 (UI Consolidation & Rewards Hub)
 - **Feature Consolidation**: Merged standalone "Offers" feature into the "Tasks" page via a tabbed interface and new `OffersList.jsx` component.
 - **Auto-Hide UX**: Implemented filtering logic to automatically hide completed/claimed missions from the UI.

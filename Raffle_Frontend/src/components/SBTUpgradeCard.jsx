@@ -101,9 +101,9 @@ export function SBTUpgradeCard() {
     };
 
     return (
-        <div className={`glass-card relative overflow-hidden transition-all duration-500 border ${hasEnoughXP ? 'border-indigo-500/40 bg-indigo-500/5 shadow-lg shadow-indigo-500/10' : 'border-white/10 bg-slate-900/40'}`}>
+        <div className={`glass-card relative overflow-hidden transition-all duration-500 border ${isReady ? 'border-indigo-500/40 bg-indigo-500/5 shadow-lg shadow-indigo-500/10' : 'border-white/10 bg-slate-900/40'}`}>
             {/* Background Glow for Ready State */}
-            {hasEnoughXP && (
+            {isReady && (
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/20 blur-[50px] animate-pulse" />
             )}
 
@@ -112,7 +112,7 @@ export function SBTUpgradeCard() {
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Next Ascension</span>
-                            {hasEnoughXP && (
+                            {isReady && (
                                 <span className="flex items-center gap-1 text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30 font-black uppercase">
                                     Ready
                                 </span>
