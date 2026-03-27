@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift } from 'lucide-react';
+import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift, Megaphone } from 'lucide-react';
 import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/useContract';
 import { useVerification } from '../hooks/useVerification';
