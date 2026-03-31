@@ -141,7 +141,13 @@ async function handleClaim(req, res) {
         xp_earned: xp,
         target_id: targetId
     });
-    if (error) throw error;
+
+    if (error) {
+        if (error.code === '23505') {
+            return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
+        }
+        throw error;
+    }
 
     if (task_id && task_id.startsWith('raffle_buy_')) {
         const ticketAmount = message.match(/Amount:\s*(\d+)/i)?.[1];

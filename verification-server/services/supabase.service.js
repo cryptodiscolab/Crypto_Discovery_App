@@ -129,7 +129,13 @@ class SupabaseService {
                 .select()
                 .single(); // Changed to single to match the new implementation's return type
 
-            if (error) throw error;
+            if (error) {
+                if (error.code === '23505') {
+                    console.log(`[Supabase] Graceful handled duplicate claim for wallet ${walletAddress} on task ${taskId}`);
+                    return { success: true, message: 'Task already claimed' };
+                }
+                throw error;
+            }
             return { success: true, data };
         } catch (error) {
             console.error('[SupabaseService] Error recording claim:', error.message);
@@ -153,9 +159,14 @@ class SupabaseService {
         if (profileError && profileError.code !== 'PGRST116') throw profileError;
 
         if (!profile) {
-            await this.client
-                .from('user_profiles')
-                .insert({ wallet_address: walletAddress, total_xp: 0, tier: 1 });
+            try {
+                await this.client
+                    .from('user_profiles')
+                    .insert({ wallet_address: walletAddress, total_xp: 0, tier: 1 });
+            } catch (err) {
+                // Ignore 23505 (Profile created by another concurrent request)
+                if (err.code !== '23505') throw err;
+            }
         }
     }
 

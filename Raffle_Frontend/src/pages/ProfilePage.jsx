@@ -1113,10 +1113,15 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
   // BUG-FIX 2: Hitung dailyReward dari pointSettings (hindari variabel undefined)
   const dailyReward = pointSettings?.daily_claim || ecosystemSettings?.daily_claim || 0;
 
-  const lastDailyClaim = profileData?.lastDailyClaim
-    ? Number(new Date(profileData.lastDailyClaim).getTime() / 1000)
-    : (userData?.lastDailyBonusClaim ? Number(userData.lastDailyBonusClaim) : 0);
-  const nextClaimTime = lastDailyClaim > 0 ? (lastDailyClaim + (ecosystemSettings?.daily_claim_cooldown_sec || 86400)) * 1000 : 0;
+  // FIX v3.40.3: Single Source of Truth for cooldown — use on-chain data ONLY.
+  // DB (profileData.lastDailyClaim) can be stale right after a claim, causing countdown de-sync.
+  // On-chain lastDailyBonusClaim is the authoritative source for cooldown status.
+  const lastDailyClaim = userData?.lastDailyBonusClaim
+    ? Number(userData.lastDailyBonusClaim)
+    : 0;
+  const nextClaimTime = lastDailyClaim > 0
+    ? (lastDailyClaim + (ecosystemSettings?.daily_claim_cooldown_sec || 86400)) * 1000
+    : 0;
 
   useEffect(() => {
     const tick = () => {
@@ -1203,23 +1208,28 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
 
         const resData = await response.json();
         if (resData.ok) {
-          console.log('[DailyClaim] Backend Sync Successful. Total XP:', resData.total_xp);
+          console.log('[DailyClaim] Backend Sync OK. Total XP:', resData.total_xp, '| Tier:', resData.tier, '| RPC OK:', resData.rpc_ok);
+        } else {
+          console.warn('[DailyClaim] Backend returned non-ok:', resData);
         }
 
-        // Parallel refetch for UI speed
+        // FIX v3.40.3: Wait 1.5s for Supabase view (v_user_full_profile) to settle,
+        // then do a full parallel refetch to ensure leaderboard + tier + XP are all fresh.
+        await new Promise(r => setTimeout(r, 1500));
         await Promise.all([
           refetchOnChainStats(),
           refetchPoints(),
-          new Promise(r => setTimeout(r, 1000))
         ]);
 
         toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(); // triggers fetchProfile() in parent for immediate UI update
         onClose();
       } catch (syncErr) {
-        // Log & still close cleanly — XP will be reconciled by backend polling if fetch fails.
-        console.warn('[DailyClaim] XP sync fetch failed:', syncErr.message);
+        // Log & still close cleanly — XP was confirmed on-chain, backend will catch up.
+        console.warn('[DailyClaim] XP sync fetch failed (on-chain OK):', syncErr.message);
         toast.success('Daily Claim confirmed on-chain! XP syncing in background...', { id: tid });
+        // Still refetch on-chain so cooldown updates correctly in UI
+        await refetchOnChainStats();
         if (onSuccess) onSuccess();
         onClose();
       }

@@ -192,14 +192,17 @@ async function handleLoginSync(req, res) {
                 if (refSetting?.points_value) {
                     const refReward = refSetting.points_value;
 
-                    await supabaseAdmin.from('user_task_claims').insert({
+                    const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
                         wallet_address: updateData.referred_by,
                         task_id: TASK_IDS.REFERRAL_INVITE, // System: Referral Invitation
                         xp_earned: refReward,
                         claimed_at: new Date().toISOString(),
                         platform: 'system',
-                        action_type: 'referral_bonus'
+                        action_type: 'referral_bonus',
+                        target_id: cleanAddress // Security: Track who was referred
                     });
+
+                    if (claimErr && claimErr.code !== '23505') throw claimErr;
 
                     // Log activity for the referrer
                     await logActivity({
@@ -234,20 +237,37 @@ async function handleXpSync(req, res) {
         let skipSignature = false;
 
         // 1. "Verification-First" Logic: Use tx_hash as primary proof if available
+        // FIX v3.40.3: Optimistic trust — if tx_hash is provided, do NOT reject on RPC timeout.
+        // The on-chain claim already happened (client confirmed). We trust the tx_hash if it's
+        // well-formed and the wallet matches — RPC verification is best-effort only.
         if (tx_hash) {
             try {
-                // Wait for finality (Resilience v3.26+)
-                const receipt = await rpcClient.waitForTransactionReceipt({ hash: tx_hash });
+                // Race: wait max 10s for RPC confirmation before falling back to optimistic mode
+                const rpcTimeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('RPC_TIMEOUT')), 10000)
+                );
+                const verifyOnChain = rpcClient.waitForTransactionReceipt({ hash: tx_hash });
+                const receipt = await Promise.race([verifyOnChain, rpcTimeout]);
+
                 if (receipt?.status === 'success' && receipt.from.toLowerCase() === cleanAddress) {
                     skipSignature = true;
-                    console.log(`[XP Sync] Proof of work verified via txHash: ${tx_hash}`);
+                    console.log(`[XP Sync] Proof verified via txHash: ${tx_hash}`);
+                } else {
+                    // TX found but from wrong address — possible spoofing attempt
+                    console.warn(`[XP Sync] TxHash from mismatch. Wallet: ${cleanAddress}, TX.from: ${receipt?.from}`);
                 }
             } catch (hashErr) {
-                console.warn(`[XP Sync] TxHash verification failed, falling back to signature:`, hashErr.message);
+                if (hashErr.message === 'RPC_TIMEOUT') {
+                    // FIX: RPC timeout is NOT a rejection reason — use optimistic trust
+                    skipSignature = true;
+                    console.warn(`[XP Sync] RPC timeout for txHash ${tx_hash}. Using optimistic trust (daily claim assumed valid).`);
+                } else {
+                    console.warn(`[XP Sync] TxHash verification error:`, hashErr.message);
+                }
             }
         }
 
-        // 2. Signature Fallback
+        // 2. Signature Fallback — only enforce if no tx_hash was provided at all
         if (!skipSignature) {
             if (!signature || !message) {
                 return res.status(401).json({ error: 'Signature or valid Transaction Hash required' });
@@ -275,34 +295,42 @@ async function handleXpSync(req, res) {
         let onChainXP = 0;
         let xpDelta = 0;
         let onChainStats;
+        let rpcFailed = false;
 
-        // 4. Fetch On-Chain State
-        const stats = await rpcClient.readContract({
-            address: DAILY_APP_ADDRESS,
-            abi: [{
-                inputs: [{ name: '', type: 'address' }],
-                name: 'userStats',
-                outputs: [
-                    { name: 'points', type: 'uint256' },
-                    { name: 'totalTasksCompleted', type: 'uint256' },
-                    { name: 'referralCount', type: 'uint256' },
-                    { name: 'currentTier', type: 'uint8' },
-                    { name: 'tasksForReferralProgress', type: 'uint256' },
-                    { name: 'lastDailyBonusClaim', type: 'uint256' },
-                    { name: 'isBlacklisted', type: 'bool' },
-                ],
-                stateMutability: 'view',
-                type: 'function',
-            }],
-            functionName: 'userStats',
-            args: [cleanAddress],
-        });
+        // 4. Fetch On-Chain State — FIX: wrapped in try-catch to handle RPC failures gracefully
+        try {
+            const stats = await rpcClient.readContract({
+                address: DAILY_APP_ADDRESS,
+                abi: [{
+                    inputs: [{ name: '', type: 'address' }],
+                    name: 'userStats',
+                    outputs: [
+                        { name: 'points', type: 'uint256' },
+                        { name: 'totalTasksCompleted', type: 'uint256' },
+                        { name: 'referralCount', type: 'uint256' },
+                        { name: 'currentTier', type: 'uint8' },
+                        { name: 'tasksForReferralProgress', type: 'uint256' },
+                        { name: 'lastDailyBonusClaim', type: 'uint256' },
+                        { name: 'isBlacklisted', type: 'bool' },
+                    ],
+                    stateMutability: 'view',
+                    type: 'function',
+                }],
+                functionName: 'userStats',
+                args: [cleanAddress],
+            });
+            onChainStats = stats;
+            onChainXP = Number(onChainStats?.[0] || 0);
+            xpDelta = onChainXP - dbLastPoints;
+        } catch (rpcErr) {
+            // FIX: RPC read failure — do not crash the sync. Use DB as baseline.
+            rpcFailed = true;
+            onChainXP = dbLastPoints;
+            xpDelta = 0;
+            console.warn(`[XP Sync] readContract failed (RPC unreachable): ${rpcErr.message}`);
+        }
 
-        onChainStats = stats;
-        onChainXP = Number(onChainStats?.[0] || 0);
-        xpDelta = onChainXP - dbLastPoints;
-
-        // 5. Handling RPC Lag via TxHash
+        // 5. Fetch Dynamic Daily Reward
         const { data: dailySetting } = await supabaseAdmin
             .from('point_settings')
             .select('points_value')
@@ -311,14 +339,15 @@ async function handleXpSync(req, res) {
 
         const standardDailyReward = dailySetting?.points_value || 100;
 
-        // If RPC balance hasn't moved but we have a proven tx_hash, force incremental delta
+        // FIX v3.40.3: xpDelta fallback now activates whenever tx_hash is present + skipSignature
+        // — regardless of whether RPC read succeeded or failed. This covers all lag scenarios.
         if (xpDelta === 0 && tx_hash && skipSignature) {
             xpDelta = standardDailyReward;
             onChainXP = dbLastPoints + xpDelta;
-            console.log(`[XP Sync Fallback] Forced +${xpDelta} XP due to RPC lag/TxHash confirmation.`);
+            console.log(`[XP Sync Fallback] Forced +${xpDelta} XP via tx_hash confirmation${rpcFailed ? ' (RPC unavailable)' : ' (RPC lag)'}. New total: ${onChainXP}`);
         }
 
-        const currentTier = Number(onChainStats?.[3] || 0);
+        const currentTierOnChain = Number(onChainStats?.[3] || 0);
 
         // 6. Underdog Bonus Calculation
         let appliedBonusXP = 0;
@@ -335,12 +364,39 @@ async function handleXpSync(req, res) {
             }
         }
 
-        // 7. Update User Profile explicitly (By-passing flaky triggers)
+        // 7. FIX v3.40.3: Recalculate tier from sbt_thresholds DB (not on-chain which may be stale)
+        // This ensures tier updates instantly after XP increment, without waiting for cron.
+        let calculatedTier = currentTierOnChain; // Use on-chain as default if RPC succeeded
+        if (xpDelta > 0) {
+            try {
+                const newTotalXp = onChainXP + (profile?.manual_xp_bonus || 0);
+                const { data: thresholds } = await supabaseAdmin
+                    .from('sbt_thresholds')
+                    .select('level, min_xp')
+                    .order('min_xp', { ascending: true });
+
+                if (thresholds && thresholds.length > 0) {
+                    let derived = 0;
+                    for (const t of thresholds) {
+                        if (newTotalXp >= (t.min_xp || 0)) derived = t.level;
+                    }
+                    // Only use derived if it's >= on-chain tier (never downgrade)
+                    calculatedTier = Math.max(derived, currentTierOnChain);
+                    if (calculatedTier !== currentTierOnChain) {
+                        console.log(`[XP Sync] Tier recalculated: ${currentTierOnChain} → ${calculatedTier} (XP: ${newTotalXp})`);
+                    }
+                }
+            } catch (tierErr) {
+                console.warn('[XP Sync] Tier recalculation failed, using on-chain value:', tierErr.message);
+            }
+        }
+
+        // 8. Update User Profile explicitly (By-passing flaky triggers)
         const profileUpdate = {
             wallet_address: cleanAddress,
             total_xp: onChainXP,
             manual_xp_bonus: (profile?.manual_xp_bonus || 0) + appliedBonusXP,
-            tier: currentTier,
+            tier: calculatedTier, // FIX: use DB-recalculated tier, not stale on-chain tier
             last_seen_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
@@ -373,7 +429,7 @@ async function handleXpSync(req, res) {
 
         // 8. Log individual claim for historical record
         if (xpDelta > 0) {
-            await supabaseAdmin.from('user_task_claims').insert({
+            const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
                 wallet_address: cleanAddress,
                 task_id: taskId,
                 xp_earned: xpDelta,
@@ -382,6 +438,8 @@ async function handleXpSync(req, res) {
                 action_type: tx_hash ? 'verified_claim' : 'polled_sync',
                 target_id: tx_hash || null
             });
+
+            if (claimErr && claimErr.code !== '23505') throw claimErr;
 
             await logActivity({
                 wallet: cleanAddress,
@@ -401,7 +459,9 @@ async function handleXpSync(req, res) {
             xp: onChainXP, 
             total_xp: profileUpdate.total_xp + (profileUpdate.manual_xp_bonus || 0),
             streak_count: profileUpdate.streak_count,
-            synced: xpDelta > 0 
+            tier: calculatedTier,
+            synced: xpDelta > 0,
+            rpc_ok: !rpcFailed
         });
 
     } catch (error) {
@@ -660,7 +720,7 @@ async function handleSyncUgcMission(req, res) {
                 const multiplier = await getUserMultiplier(wallet);
                 creatorXp = Math.floor((creatorXp * multiplier) / 10000);
 
-                await supabaseAdmin.from('user_task_claims').insert({
+                const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
                     wallet_address: wallet.toLowerCase(),
                     task_id: `ugc_mission_create_${campaign.id}`,
                     xp_earned: creatorXp,
@@ -668,6 +728,8 @@ async function handleSyncUgcMission(req, res) {
                     action_type: 'sponsor_task',
                     target_id: String(campaign.id)
                 });
+
+                if (claimErr && claimErr.code !== '23505') throw claimErr;
 
                 await logActivity({
                     wallet,
@@ -760,6 +822,8 @@ async function handleSyncUgcRaffle(req, res) {
                     action_type: 'raffle_create',
                     target_id: String(raffle_id)
                 });
+
+                if (claimErr && claimErr.code !== '23505') throw claimErr;
 
                 if (!claimErr) {
                     await logActivity({

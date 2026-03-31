@@ -12,7 +12,7 @@ export function TaskList() {
     const { signMessageAsync } = useSignMessage();
     const [tasks, setTasks] = useState([]);
     const [userScore, setUserScore] = useState(0);
-    const [userClaims, setUserClaims] = useState(new Set());
+    const [userClaims, setUserClaims] = useState([]); // Array of {task_id, claimed_at}
     const [isLoading, setIsLoading] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
     const [claimingTask, setClaimingTask] = useState(null); // Missing: tracks which task is being claimed
@@ -34,19 +34,15 @@ export function TaskList() {
 
             if (tasksError) throw tasksError;
 
-            // 2. Fetch User Claims & Score (if connected)
-            let claimsSet = new Set();
-            if (address) {
-                const today = new Date().toISOString().split('T')[0];
+            setTasks(tasksData || []); // Set tasks immediately after fetching
 
-                // Parallel Fetch for Performance
+            // 2. Fetch User Claims & Score (if connected)
+            if (address) {
                 const [claimsResult, profileResult] = await Promise.all([
                     supabase
                         .from('user_task_claims')
-                        .select('task_id')
-                        .eq('wallet_address', address.toLowerCase())
-                        .gte('claimed_at', `${today}T00:00:00.000Z`)
-                        .lte('claimed_at', `${today}T23:59:59.999Z`),
+                        .select('task_id, claimed_at')
+                        .eq('wallet_address', address.toLowerCase()),
 
                     supabase
                         .from('user_profiles')
@@ -56,19 +52,25 @@ export function TaskList() {
                 ]);
 
                 if (claimsResult.data) {
-                    claimsResult.data.forEach(claim => claimsSet.add(claim.task_id));
+                    setUserClaims(claimsResult.data); // Store full objects with claimed_at
+                } else {
+                    setUserClaims([]); // Clear claims if no data
                 }
 
                 if (profileResult.data) {
                     setUserScore(profileResult.data.neynar_score || 0);
                     setHasProfile(true);
                 } else {
+                    setUserScore(0); // Reset score if no profile
                     setHasProfile(false);
                 }
+            } else {
+                // If not connected, clear user-specific states
+                setUserClaims([]);
+                setUserScore(0);
+                setHasProfile(false);
             }
 
-            setTasks(tasksData || []);
-            setUserClaims(claimsSet);
         } catch (error) {
             console.group("TaskList Fetch Error");
             console.error('Error fetching tasks:', error.message);
@@ -107,7 +109,7 @@ export function TaskList() {
             });
 
             toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
-            setUserClaims(prev => new Set(prev).add(task.id));
+            setUserClaims(prev => [...prev, { task_id: task.id, claimed_at: new Date().toISOString() }]);
             if (refetch) refetch();
 
         } catch (err) {
@@ -124,7 +126,35 @@ export function TaskList() {
     };
 
 
-    const activeTasks = tasks.filter(t => !userClaims.has(t.id));
+    const activeTasks = tasks.filter(task => {
+        const history = userClaims.filter(c => c.task_id === task.id);
+        const hasAnyClaim = history.length > 0;
+
+        // One-time tasks: hide if ever claimed
+        if (task.task_type === 'onetime' && hasAnyClaim) return false;
+
+        // Daily tasks: hide if claimed today
+        if (task.task_type === 'daily') {
+            const today = new Date().toISOString().split('T')[0];
+            const claimedToday = history.some(c => c.claimed_at.startsWith(today));
+            if (claimedToday) return false;
+        }
+
+        // System tasks are handled separately, but we exclude them here too
+        if (task.task_type === 'system') return false;
+
+        return true;
+    });
+
+    const isTaskCompletedForInterval = (task) => {
+        const history = userClaims.filter(c => c.task_id === task.id);
+        if (task.task_type === 'onetime') return history.length > 0;
+        if (task.task_type === 'daily') {
+            const today = new Date().toISOString().split('T')[0];
+            return history.some(c => c.claimed_at.startsWith(today));
+        }
+        return false;
+    };
 
     if (isLoading && tasks.length === 0) {
         return (
@@ -147,8 +177,7 @@ export function TaskList() {
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {activeTasks.map(task => {
-                    const isClaimed = userClaims.has(task.id);
-                    // if (isClaimed) return null; // No longer needed as we're using activeTasks
+                    const isClaimed = isTaskCompletedForInterval(task);
 
                     const isClaiming = claimingTask === task.id;
 
