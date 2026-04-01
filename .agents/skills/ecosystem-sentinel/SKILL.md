@@ -134,10 +134,10 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V13** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
-| **MasterX (XP)** | `0x78a566a11AcDA14b2A4F776227f61097C7381C84` | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` |
+| **DailyApp V13** | `[RESERVED]` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
+| **MasterX (XP)** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
-| **PRD v3.39.1** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.40.4** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
