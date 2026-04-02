@@ -15,7 +15,7 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 | Key | Value |
 |---|---|
 | DailyApp (Tasks) | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` |
-| MasterX (XP) | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
+| MasterX (XP) | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
 | PRD Status | `v3.40.7 (Sync)` |
 
 ### 3. Bahasa & Komunikasi

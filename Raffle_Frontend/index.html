@@ -33,19 +33,27 @@
   <script>
     (function() {
       try {
-        // Only define if it's not already set, or if it's a "trapped" getter
-        var descriptor = Object.getOwnPropertyDescriptor(window, 'ethereum');
-        if (!descriptor || (descriptor.get && !descriptor.set && descriptor.configurable !== false)) {
-          Object.defineProperty(window, 'ethereum', {
-            value: undefined,
-            writable: true,
-            configurable: true,
-            enumerable: true
-          });
-          console.log('%c[SafeBoot] Provider slot initialized as writable.', 'color: #4ade80; font-weight: bold;');
-        }
+        let currentProvider = window.ethereum;
+        // Attempt to "unlock" the property if it's currently a non-writable getter
+        Object.defineProperty(window, 'ethereum', {
+          get: function() { return currentProvider; },
+          set: function(val) { 
+            // Only update if the new value is actually truthy (don't let extensions null it out easily)
+            if (val) currentProvider = val;
+          },
+          configurable: true,
+          enumerable: true
+        });
+        console.log('%c[SafeBoot] Provider proxy active. Slot is now writable.', 'color: #4ade80; font-weight: bold;');
       } catch (e) {
-        console.error('[SafeBoot] Error:', e);
+        console.warn('[SafeBoot] Primary unlock failed, attempting fallback...', e.message);
+        // Fallback: If defineProperty fails, try to at least ensure it's not a read-only trap
+        try {
+          delete window.ethereum;
+          window.ethereum = undefined;
+        } catch (inner) {
+          console.error('[SafeBoot] Critical failure: window.ethereum is locked by another extension.');
+        }
       }
     })();
   </script>

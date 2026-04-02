@@ -120,7 +120,7 @@ graph TD
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Governance |
 |----------|---------------------|----------------------|------------|
-| **MasterX** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` | `Ownable` ✅ |
+| **MasterX** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` | `Ownable` ✅ |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` ✅ |
 | **DailyApp** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | `AccessControl` ✅ |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |

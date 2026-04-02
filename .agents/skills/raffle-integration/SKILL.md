@@ -19,7 +19,7 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 | Key | Value |
 |---|---|
 | Raffle (Latest) | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
-| MasterX (XP) | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
+| MasterX (XP) | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
 
 ### 3. Bahasa & Komunikasi
