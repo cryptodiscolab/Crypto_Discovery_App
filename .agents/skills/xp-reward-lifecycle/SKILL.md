@@ -14,8 +14,9 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 ### 2. Verified Infrastructure Reference (v3.39.1)
 | Key | Value |
 |---|---|
-| DailyApp (Tasks) | `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` |
-| MasterX (XP) | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` |
+| DailyApp (Tasks) | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` |
+| MasterX (XP) | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
+| PRD Status | `v3.40.7 (Sync)` |
 
 ### 3. Bahasa & Komunikasi
 - **Technical/Chat**: **Bahasa Indonesia**.
@@ -56,6 +57,8 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 - [x] Apakah `v_user_full_profile` sudah digunakan untuk pengecekan Tier/Rank?
 - [x] Apakah `npm run build` berhasil?
 - [ ] **Atomic Script Enforced**: Apakah script operasional sudah berada di folder kategori yang benar di `scripts/`?
+- [ ] **🌐 NETWORK ISOLATION AUDIT (v3.40.7)**: Verifikasi bahwa TIDAK ADA alamat Sepolia (`0xaC43...`) yang tertulis di konfigurasi/label Mainnet. Pastikan Mainnet tetap `[RESERVED]` jika belum deploy. **WAJIB.**
+- [ ] **🧪 RPC TRUTHINESS & EVIDENCE AUDIT (v3.40.9)**: Apakah skrip verifikasi menggunakan `code && code !== '0x'`? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? **WAJIB.**
 
 ## 🚨 Pantangan
 - Mengandalkan DB Trigger untuk sinkronisasi XP — WAJIB update eksplisit via backend.

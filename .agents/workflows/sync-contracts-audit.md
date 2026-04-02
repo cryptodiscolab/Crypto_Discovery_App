@@ -19,6 +19,8 @@ Use `grep_search` to find and surgically eliminate ANY hardcoded legacy addresse
 - [ ] Target Legacy App: `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721`
 - [ ] Target Legacy MasterX: `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3`
 - [ ] Purge and replace occurrences in `Raffle_Frontend/src/lib/abis_data.txt`, `scripts/deployments/`, and `scripts/debug/`.
+- [ ] **Specialized Env Audit (v3.40.11)**: Manually audit/purge legacy addresses from:
+  - `.env.example`, `.env.local`, `.env.vercel`, `.env.vercel.preview`, `.env.vercel.production`, `.env.verification.vercel`.
 - [ ] Ensure AI protocol docs (`CLAUDE.md`, `gemini.md`, `PRD`) are fully updated with the canonical addresses.
 
 ### 3. Agent Mandate Refresh

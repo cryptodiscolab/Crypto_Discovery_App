@@ -122,10 +122,10 @@ graph TD
 |----------|---------------------|----------------------|------------|
 | **MasterX** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` | `Ownable` ✅ |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` ✅ |
-| **DailyApp** | `[RESERVED]` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `AccessControl` ✅ |
+| **DailyApp** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | `AccessControl` ✅ |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-04-02T15:24+07:00 | Off-Chain XP Sync Fix (fn_increment_xp), Social Banner Update, point_settings keys added. Ecosystem v3.40.6.*
+*Last Updated: 2026-04-02T17:30+07:00 | DailyApp V13.2 Fixed Mapping Revert (0xaC43...), Social Banner Update, point_settings keys added. Ecosystem v3.40.6.*

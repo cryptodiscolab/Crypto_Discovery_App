@@ -41,7 +41,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.40.6**
+**Protocol Version: 3.40.11**
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -110,7 +110,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 
 ### 8.5 ZERO HARDCODE SECRETS MANDATE (CRITICAL - from gemini.md)
 ### 8.6 Anti-Hallucination & Parity Lockdown (v3.38.25)
-- **BLACKLISTED ADDRESSES**: Agents are STRICTLY PROHIBITED from using `0x1ED8B135...` (Legacy MasterX) or `0x87a3d120...` (Legacy DailyApp). Use of these handles triggers a Protocol Breach Level-1.
+- **BLACKLISTED ADDRESSES**: Agents are STRICTLY PROHIBITED from using `0x1ED8B135...` (Legacy MasterX) or `0x87a3d120...` (Legacy/Broken DailyApp V13.1). Use of these handles triggers a Protocol Breach Level-1.
 - **PARITY MANDATE**: Every address MUST be cross-referenced with `.agents/WORKSPACE_MAP.md` Registry before use. If an address is missing from the Registry, logic implementation MUST pause.
 - **SYNC MANDATE**: `node scripts/audits/check_sync_status.cjs` MUST be executed before any code implementation that involves contract logic or environment variables.
 
@@ -141,12 +141,12 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 ### 📋 Canonical Contract Addresses (Deployer: `0x52260C30697674A7C837feb2Af21BbF3606795C8`)
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyAppV12Secured** | `[RESERVED]` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
+| **DailyApp V13.2** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` |
 | **MasterX (XP)** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| **Last Synced** | `2026-04-02T11:14:23+07:00` | PRD v3.40.5 |
+| **Last Synced** | `2026-04-02T17:30:00+07:00` | PRD v3.40.6 (V13.2 Fix) |
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -441,5 +441,18 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **MANDATORY VISUAL AUDIT**: After ANY automated edit to a protocol file, the agent MUST perform a `view_file` call on the affected lines (including 10 lines of surrounding context) to verify that no sections were accidentally wiped out.
 - **NO SILENT REMOVAL**: If a section is intended for removal (e.g., duplicates), the agent MUST explicitly state this in the tool description and verify the deletion is successful without affecting other sections.
 
-- **Current Protocol Version**: v3.40.6 (Mainnet Phased Rollout Infrastructure)
+40. NETWORK-ADDRESS ISOLATION & PURGE MANDATE (v3.40.7)
+- **ANTI-BLIND-PURGE**: PERFORMING GLOBAL SEARCH-AND-REPLACE ON CONTRACT ADDRESSES IS STRICTLY PROHIBITED. Every address shift (e.g., V13.1 -> V13.2) MUST be performed file-by-file with explicit context verification (Mainnet vs Sepolia vs Test).
+- **MAINNET PLACEHOLDER INTEGRITY**: Mainnet addresses (e.g., `VITE_V12_CONTRACT_ADDRESS`) MUST remain `[RESERVED]` or their verified legacy value (V12) until a literal deployment to Mainnet is confirmed via transaction hash. NEVER assume Sepolia addresses (`0xaC43...`) apply to Mainnet endpoints.
+- **LOGICAL NETWORK BOUNDARY**: Verification scripts (e.g., `check-logs.js`, `verify_deploy_status.cjs`) MUST maintain separate arrays or clear labels for Mainnet and Sepolia. PROHIBIT "blind" population of Mainnet-labeled arrays with testnet data.
+- **CROSS-REFERENCE ENFORCEMENT**: Before updating any address in documentation, SKILL, or script, and Agent MUST verify the value against BOTH `.env` and `.agents/WORKSPACE_MAP.md`.
+- **40.5 RPC TRUTHINESS MANDATE (v3.40.9)**: DILARANG KERAS menggunakan perbandingan naif `code !== '0x'` atau `code != '0x'`. Akibat sifat JavaScript, `undefined` atau `null` akan lolos sebagai "True" (False Positive). WAJIB menggunakan: `code && code !== '0x' && code !== '0x0'`.
+- **40.6 DIRECT EVIDENCE MANDATE**: Laporan status "DEPLOYED" tidak sah tanpa bukti literal. Setiap skrip verifikasi atau laporan chat WAJIB menyertakan **10 karakter pertama bytecode** (contoh: `0x608060...`) untuk membuktikan eksistensi kontrak secara fisik, bukan hanya tanda centang (✅).
+- **40.7 ZERO-ASSUMPTION SHIFT**: Jika skrip verifikasi memberikan hasil yang tidak terduga (misal Sepolia addr muncul di Mainnet), Agent DILARANG melanjutkan narasi. Agent WAJIB segera melakukan **Raw Debug Dump** (seperti `debug-getcode.js`) dan cross-check via block explorer sebelum memberikan interpretasi kepada User.
+
+- **40.8 SPECIALIZED ENV AUDIT MANDATE (v3.40.11)**: THE `sync` COMMAND (and `/sync-contracts-audit` workflow) MUST explicitly audit and synchronize the following 6 specialized environment files:
+  - `.env.example`, `.env.local`, `.env.vercel`, `.env.vercel.preview`, `.env.vercel.production`, `.env.verification.vercel`.
+  - **MANDATE**: Every sync execution MUST verify that legacy addresses (0xfA75, 0xDe61, 0x87a3) are purged and replaced with the canonical v3.40.11 verified SOT addresses (`0xaC43...`).
+
+- **Current Protocol Version**: v3.40.11 (Specialized Env Audit Mandate)
 *Antigravity: Integrity Restored. Visual Audit Mandated. No Silent Deletions.*

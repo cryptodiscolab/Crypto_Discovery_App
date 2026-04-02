@@ -19,7 +19,7 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 | Key | Value |
 |---|---|
 | Raffle (Latest) | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
-| MasterX (XP) | `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3` |
+| MasterX (XP) | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
 
 ### 3. Bahasa & Komunikasi
@@ -63,6 +63,8 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - [x] Apakah metadata lengkap (Title, Image, Category) sudah masuk ke Supabase?
 - [x] Apakah `v_user_full_profile` digunakan untuk menampilkan rank user?
 - [x] Apakah build lokal berhasil (`npm run build`)?
+- [ ] **🌐 NETWORK ISOLATION AUDIT (v3.40.7)**: Verifikasi bahwa TIDAK ADA alamat Sepolia (`0xaC43...`) yang tertulis di konfigurasi/label Mainnet. Pastikan Mainnet tetap `[RESERVED]` jika belum deploy. **WAJIB.**
+- [ ] **🧪 RPC TRUTHINESS & EVIDENCE AUDIT (v3.40.9)**: Apakah skrip verifikasi menggunakan `code && code !== '0x'`? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? **WAJIB.**
 
 ## 🚨 Pantangan
 - Menggunakan `user_profiles` secara direct — gunakan view `v_user_full_profile`.

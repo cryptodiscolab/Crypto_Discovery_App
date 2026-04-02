@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 async function main() {
     const masterXAddress = "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
     const raffleAddress = "0x012FAdd087540e1B51a587f420e77D007fED2a84";
-    const dailyAppAddress = "0x87a3d1203Bf20E7dF5659A819ED79a67b236F571";
+    const dailyAppAddress = "0xaC430adE9217e2280b852EA29b91d14b12b3E151";
 
     console.log("Checking contracts...");
     const masterX = await ethers.getContractAt("CryptoDiscoMasterX", masterXAddress);

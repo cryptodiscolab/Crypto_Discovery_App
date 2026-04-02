@@ -20,7 +20,7 @@ Before responding to ANY request, read these files IN ORDER:
 5. **`IMPLEMENTATION_SUMMARY.md`** (Top 50 Lines) — Recent history & changelog
 6. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.40.9)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
@@ -81,7 +81,7 @@ Notify user format (Standard Reporting v3.26.0):
 
 -   **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
 -   **DailyAppV12Secured (Mainnet)**: `[RESERVED]`
--   **DailyAppV12Secured (Sepolia)**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571`
+-   **DailyAppV13.2 (Sepolia)**: `0xaC430adE9217e2280b852EA29b91d14b12b3E151`
 -   **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 -   **Language**: Chat = Bahasa Indonesia | UI/Code = English
 

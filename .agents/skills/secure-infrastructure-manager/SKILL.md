@@ -21,11 +21,13 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - **Technical Discussions**: Gunakan **Bahasa Indonesia**.
 - **System Labels/UI**: Gunakan **Bahasa Inggris (English)**.
 
-| **DailyAppV12Secured** | `[RESERVED]` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
+| Contract | Base Mainnet (8453) | Base Sepolia (84532) | ENV Key |
+|---|---|---|---|
+| **DailyApp V12 (Mainnet)** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
 | **MasterX (XP)** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA` |
-| **PRD v3.40.6** | `[ACTIVE]` | `2026-04-02T13:30:00+07:00` | `DOC_SOT` |
+| **PRD v3.40.9** | `[ACTIVE]` | `2026-04-02T17:55:00+07:00` | `DOC_SOT` |
 
 ## 🏛️ Core Competencies
 
@@ -90,7 +92,7 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Profile UX**: Are social linking buttons interactive and state-aware?
 - [ ] **Clean Asset Protocol**: Apakah seluruh file screenshot/media hasil audit sudah dihapus?
 - [ ] **Atomic Script Enforced**: Apakah script operasional sudah berada di folder kategori yang benar di `scripts/`?
-- [ ] **Local Server Resource Hygiene**: Apakah seluruh server lokal (Vite/Express) sudah dimatikan setelah verifikasi selesai?
+- [ ] **🧪 RPC TRUTHINESS & EVIDENCE AUDIT (v3.40.9)**: Apakah skrip verifikasi menggunakan `code && code !== '0x'`? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? **WAJIB.**
 
 
 ## 🚨 Pantangan
@@ -102,4 +104,4 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan tanpa `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines).
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.39.1*
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.40.9*

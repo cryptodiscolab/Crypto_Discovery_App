@@ -1107,7 +1107,7 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
   const [isCooldown, setIsCooldown] = useState(false);
 
   // BUG-FIX 1: Tambah refetchOnChainStats dari useUserInfo di scope DailyClaimModal
-  const { stats: userData, refetch: refetchOnChainStats } = useUserInfo(address);
+  const { stats: userData, refetch: refetchOnChainStats, isLoading: isStatsLoading } = useUserInfo(address);
   // BUG-FIX 2: Hitung dailyReward dari pointSettings (hindari variabel undefined)
   const dailyReward = pointSettings?.daily_claim || ecosystemSettings?.daily_claim || 0;
 
@@ -1170,7 +1170,7 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
         if (estErr.message?.toLowerCase().includes('user rejected')) {
           toast.dismiss(tid);
         } else {
-          toast.error('Claim failed. You may have already claimed today or your Farcaster is not linked.', { id: tid });
+          toast.error('Claim reverted by contract. You may have already claimed today or there is a temporary contract issue.', { id: tid });
         }
         clearTimeout(safetyTimer);
         setIsClaiming(false);
@@ -1274,18 +1274,20 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
         )}
         <button
           onClick={handleClaim}
-          disabled={isClaiming || isCooldown}
+          disabled={isClaiming || isCooldown || isStatsLoading}
           className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-60
-            ${isCooldown
+            ${isCooldown || isStatsLoading
               ? 'bg-slate-800 border border-slate-700 cursor-not-allowed text-slate-500'
               : 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20'
             }`}
         >
           {isClaiming
             ? '⏳ PROCESSING...'
-      : isCooldown
-        ? `⏰ COMEBACK IN ${countdown}`
-        : `✨ CLAIM DAILY (+${pointSettings?.daily_claim || 0} XP)`}
+            : isStatsLoading
+            ? '⌛ LOADING STATS...'
+            : isCooldown
+            ? `⏰ COMEBACK IN ${countdown}`
+            : `✨ CLAIM DAILY (+${pointSettings?.daily_claim || 0} XP)`}
         </button>
         <button
           onClick={onClose}

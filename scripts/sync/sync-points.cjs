@@ -19,7 +19,7 @@ async function main() {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     const masterContract = await ethers.getContractAt("CryptoDiscoMasterX", MASTER_X_ADDRESS);
-    const dailyAppContract = await ethers.getContractAt("DailyAppV12Secured", DAILY_APP_ADDRESS);
+    const dailyAppContract = await ethers.getContractAt("DailyAppV13", DAILY_APP_ADDRESS);
 
     const CHUNK_SIZE = 10000;
     const TOTAL_RANGE = 40000000;
@@ -41,23 +41,21 @@ async function main() {
     };
 
     const fetchDailyAppLogs = async () => {
-        let allLogs = [];
-        const topic0 = '0x146b4b2e55f6b6a4a8ac8239494150cd5f96b163e2d019440f369714f4a31eb8';
+        let allEvents = [];
         for (let i = 0; i < TOTAL_RANGE; i += CHUNK_SIZE) {
             const fromBlock = Math.max(0, latestBlock - i - CHUNK_SIZE);
             const toBlock = Math.max(0, latestBlock - i);
             if (toBlock === 0) break;
-            console.log(`📡 Fetching DailyApp logs from block ${fromBlock} to ${toBlock}...`);
-            const logs = await ethers.provider.getLogs({
-                address: DAILY_APP_ADDRESS,
-                fromBlock,
-                toBlock,
-                topics: [topic0]
-            });
-            allLogs = allLogs.concat(logs);
+            console.log(`📡 Fetching TaskCompleted events from block ${fromBlock} to ${toBlock}...`);
+            try {
+                const events = await dailyAppContract.queryFilter(dailyAppContract.filters.TaskCompleted(), fromBlock, toBlock);
+                allEvents = allEvents.concat(events);
+            } catch (e) {
+                console.error(`❌ Error fetching block range: ${e.message}`);
+            }
             if (fromBlock === 0) break;
         }
-        return allLogs;
+        return allEvents;
     };
 
     const DAILY_TASK_UUID = '885535d2-4c5c-4a80-9af5-36666192c244';
@@ -184,50 +182,46 @@ async function main() {
         }
     }
 
-    console.log("\n📡 Syncing DailyApp logs (Manual Decode) from:", DAILY_APP_ADDRESS);
-    const dailyLogs = await fetchDailyAppLogs();
-    console.log(`🔍 Found ${dailyLogs.length} DailyApp logs.`);
+    console.log("\n📡 Syncing DailyApp TaskCompleted events from:", DAILY_APP_ADDRESS);
+    const dailyEvents = await fetchDailyAppLogs();
+    console.log(`🔍 Found ${dailyEvents.length} TaskCompleted events.`);
 
-    for (const log of dailyLogs) {
+    for (const event of dailyEvents) {
         try {
-            const tx = await ethers.provider.getTransaction(log.transactionHash);
-            const user = tx.from.toLowerCase();
-            const taskId = parseInt(log.topics[1], 16);
+            const [user, taskIdBig, reward, timestamp] = event.args;
+            const taskId = Number(taskIdBig);
+            const xp = Number(reward);
+            const cleanAddress = user.toLowerCase();
 
-            const dataBytes = ethers.getBytes?.(log.data) || ethers.utils.arrayify(log.data);
-            const rewardRaw = dataBytes.slice(32, 64);
-            const xp = Number(ethers.toBigInt?.(rewardRaw) || BigInt('0x' + Buffer.from(rewardRaw).toString('hex')));
-
-            const eventId = `DAILYAPP_${log.transactionHash}_${log.index}`;
+            const eventId = `DAILYAPP_${event.transactionHash}_${event.index}`;
             const claimId = generateUUID(eventId);
 
-            console.log(`✨ Syncing Daily Task #${taskId}: ${xp} XP for ${user}`);
+            console.log(`✨ Syncing Task #${taskId}: ${xp} XP for ${cleanAddress}`);
 
             const { error } = await supabase.from('user_task_claims').upsert({
                 id: claimId,
-                wallet_address: user,
+                wallet_address: cleanAddress,
                 task_id: DAILY_TASK_UUID,
                 xp_earned: xp,
-                claimed_at: new Date().toISOString()
+                claimed_at: new Date(Number(timestamp) * 1000).toISOString()
             }, { onConflict: 'id' });
 
             if (error) {
-                console.error(`❌ DailyApp sync failed for ${user}:`, error.message);
+                console.error(`❌ DailyApp sync failed for ${cleanAddress}:`, error.message);
             } else {
-                // New: Log Activity for HypeFeed
                 await logActivity({
-                    wallet: user,
+                    wallet: cleanAddress,
                     category: 'XP',
                     type: 'On-Chain Task',
                     description: `Completed task #${taskId} on-chain`,
                     amount: xp,
                     symbol: 'XP',
-                    txHash: log.transactionHash,
-                    eventIndex: log.index
+                    txHash: event.transactionHash,
+                    eventIndex: event.index
                 });
             }
         } catch (e) {
-            console.error(`❌ Failed to decode log in TX ${log.transactionHash}:`, e.message);
+            console.error(`❌ Failed to process event in TX ${event.transactionHash}:`, e.message);
         }
     }
 

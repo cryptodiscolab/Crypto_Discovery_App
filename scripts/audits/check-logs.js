@@ -3,8 +3,6 @@ const { ethers } = require('hardhat');
 async function main() {
     const addresses = [
         '0xf074b0457d5c092bb67e62734B13C5f4cBC69e89',
-        '0x5d7338Cd98029a73283F959fe24935a5099771b7',
-        '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571'
     ];
     for (const addr of addresses) {
         try {

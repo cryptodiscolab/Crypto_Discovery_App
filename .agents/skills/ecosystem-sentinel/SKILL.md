@@ -134,11 +134,11 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyAppV12Secured** | `[RESERVED]` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
+| **DailyApp V12 (Mainnet)** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` |
 | **MasterX (XP)** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
-| **PRD v3.40.6** | `2026-04-02T13:30:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.40.11** | `2026-04-02T18:45:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🧭 Workspace Navigation & Data Flow (MANDATORY)
@@ -343,7 +343,8 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Multi-Project Sync**: Memastikan seluruh project Vercel (`crypto-discovery-app`, `dailyapp-verification-server`) menggunakan alamat kontrak yang identik untuk semua environment (Mainnet/Sepolia).
 - [ ] **SDK-First Audit**: Apakah fitur Auth/Security menggunakan SDK resmi? (Dilarang manual URL/REST jika SDK tersedia).
 - [ ] **Env-Sanity Check**: Apakah API menggunakan `.trim()` pada alamat kontrak/key dari environment variables untuk mencegah silent corruption?
-- [ ] **Vercel Cloud Purge Audit**: Apakah environment cloud sudah diverifikasi bersih dari literal double quotes (`""value""`) dan hidden newlines (`\r\n`)?
+- [ ] **🌐 SPECIALIZED ENV AUDIT (v3.40.11)**: Verify that `.env.example`, `.env.local`, `.env.vercel`, `.env.vercel.preview`, `.env.vercel.production`, and `.env.verification.vercel` are all purged of legacy strings (`0xfA75`, `0x87a3`, `0xDe61`) and synced to v13.2 verified truth. **WAJIB.**
+- [ ] **Vercel Cloud Purge Audit**: Apakah environment cloud sudah diverifikasi bersih dari literal double quotes (`""value""`) and hidden newlines (`\r\n`)?
 - [ ] **Nexus Evolution**: Apakah pelajaran dari task ini (jika ada bug pelik) sudah didokumentasikan di protokol atau `agent_vault`?
 - [ ] **Admin Sync Audit**: Apakah setiap aksi admin on-chain sudah sinkron ke database via secure backend request?
 - [ ] **Clean Data Audit**: Apakah file `supabase_full_dump.json` dan logs aktivitas sudah dikecualikan dari staging?
@@ -352,6 +353,8 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **Tier Precision Audit**: Apakah logika SBT menggunakan `min_xp` (bukan `xp_required`)? (v3.26.0)
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix v3.35.0)*: `node scripts/audits/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
 - [ ] **🛡️ PROTOCOL INTEGRITY AUDIT (v3.39.1)**: Setelah mengedit file protokol (`.cursorrules`, `CLAUDE.md`, `.agents/gemini.md`), apakah Anda sudah melakukan `view_file` pada baris yang diedit (+10 baris konteks) untuk memastikan tidak ada penghapusan bagian/poin secara tidak sengaja? **WAJIB.**
+- [ ] **🌐 NETWORK ISOLATION AUDIT (v3.40.7)**: Verifikasi bahwa TIDAK ADA alamat Sepolia (`0xaC43...`) yang tertulis di konfigurasi/label Mainnet. Pastikan Mainnet tetap `[RESERVED]` jika belum deploy. **WAJIB.**
+- [ ] **🧪 RPC TRUTHINESS & EVIDENCE AUDIT (v3.40.9)**: Apakah skrip verifikasi menggunakan `code && code !== '0x'`? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? **WAJIB.**
 
 
 ## 🚨 Pantangan

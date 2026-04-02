@@ -1,6 +1,8 @@
-# CRYPTO DISCO MASTER PRD (v3.40.6)
-**Last Updated**: 2026-04-02
+# CRYPTO DISCO MASTER PRD (v3.40.10)
+**Version**: `v3.40.10` (Evidence-Based E2E Sync)
+**Last Updated**: `02 April 2026 17:58`
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
+**Audit Status**: `✅ 100% OPERATIONAL (13/13 Sync + Physical Hex Proof)`
 
 ---
 
@@ -353,7 +355,7 @@ Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables
 - **Main App**: `crypto-discovery-app.vercel.app`
 - **Verification**: `dailyapp-verification-server.vercel.app`
 - **Database**: Supabase Project (ID: rbgz...)
-- **Core Contract**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` (V12 Secured)
+- **Core Contract**: `0xaC430adE9217e2280b852EA29b91d14b12b3E151` (V13.2 Fixed)
 
 ---
 

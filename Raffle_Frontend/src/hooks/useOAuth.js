@@ -73,16 +73,35 @@ export function useOAuth() {
             };
 
             window.addEventListener('message', handleMessage);
-
-            // Poll for popup close (user cancelled)
-            const pollClose = setInterval(() => {
-                if (popup?.closed && !resolved) {
+            
+            // COOP Compatibility Fix: 
+            // Do not poll popup.closed as it may throw or return true prematurely due to isolation.
+            // Instead, set a 5-minute timeout as a fallback for user cancellation/timeout.
+            const timeout = setTimeout(() => {
+                if (!resolved) {
                     resolved = true;
-                    clearInterval(pollClose);
                     window.removeEventListener('message', handleMessage);
-                    reject(new Error('OAuth popup closed by user'));
+                    reject(new Error('OAuth timeout: No response received from popup after 5 minutes. Please try again.'));
+                    try { popup?.close(); } catch (e) { /* ignore isolation errors */ }
                 }
-            }, 500);
+            }, 300000); // 5 minutes
+
+            // Still attempt a safe poll for close, but wrapped in try-catch
+            const pollClose = setInterval(() => {
+                try {
+                    if (popup?.closed && !resolved) {
+                        resolved = true;
+                        clearInterval(pollClose);
+                        clearTimeout(timeout);
+                        window.removeEventListener('message', handleMessage);
+                        reject(new Error('OAuth popup closed by user'));
+                    }
+                } catch (e) {
+                    // If we hit a COOP/domain error, we stop polling and rely on the timeout fallback
+                    clearInterval(pollClose);
+                    console.warn('[useOAuth] Popup polling restricted by COOP, relying on timeout fallback.');
+                }
+            }, 1000);
         });
     }, []);
 

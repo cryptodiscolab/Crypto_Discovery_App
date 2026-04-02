@@ -11,21 +11,34 @@ const sepoliaClient = createPublicClient({
   transport: http('https://sepolia.base.org') 
 });
 
-const addresses = [
-  { name: 'DailyApp V13.1', addr: '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571' },
-  { name: 'MasterX', addr: '0x1ED8B135F01522505717D1E620c4EF869D7D25e7' },
-  { name: 'Raffle', addr: '0x012FAdd087540e1B51a587f420e77D007fED2a84' },
-  { name: 'CMS V2', addr: '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302' }
+const mainnetAddresses = [
+  { name: 'DailyApp V12 (Mainnet)', addr: '[RESERVED]' },
+  { name: 'MasterX', addr: '0x1ED8B135F01522505717D1E620C4Ef869D7D25e7' },
+];
+
+const sepoliaAddresses = [
+  { name: 'DailyApp V13.2', addr: '0xaC430adE9217e2280b852EA29b91d14b12b3E151' },
+  { name: 'MasterX', addr: '0x1ED8B135F01522505717D1E620C4Ef869D7D25e7' },
+  { name: 'Raffle', addr: '0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB' },
+  { name: 'CMS V2', addr: '0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC' }
 ];
 
 console.log('--- VERIFYING ON BASE MAINNET ---');
-for (const item of addresses) {
+for (const item of mainnetAddresses) {
+  if (item.addr === '[RESERVED]') {
+    console.log(`${item.name}: SKIP (RESERVED)`);
+    continue;
+  }
   const code = await mainnetClient.getCode({ address: item.addr });
-  console.log(`${item.name} (${item.addr}): ${code !== '0x' ? '✅ DEPLOYED' : '❌ NOT FOUND'}`);
+  const isDeployed = code && code !== '0x' && code !== '0x0';
+  const hexProof = isDeployed ? ` (Proof: ${code.substring(0, 10)}...)` : '';
+  console.log(`${item.name} (${item.addr}): ${isDeployed ? '✅ DEPLOYED' : '❌ NOT FOUND'}${hexProof}`);
 }
 
 console.log('\n--- VERIFYING ON BASE SEPOLIA ---');
-for (const item of addresses) {
+for (const item of sepoliaAddresses) {
   const code = await sepoliaClient.getCode({ address: item.addr });
-  console.log(`${item.name} (${item.addr}): ${code !== '0x' ? '✅ DEPLOYED' : '❌ NOT FOUND'}`);
+  const isDeployed = code && code !== '0x' && code !== '0x0';
+  const hexProof = isDeployed ? ` (Proof: ${code.substring(0, 10)}...)` : '';
+  console.log(`${item.name} (${item.addr}): ${isDeployed ? '✅ DEPLOYED' : '❌ NOT FOUND'}${hexProof}`);
 }

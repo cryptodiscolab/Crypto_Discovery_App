@@ -12,7 +12,7 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 | Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
 | :--- | :--- | :--- | :--- |
 | **New MasterX** | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
-| **DailyApp V13.1** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | 11/31 Maret 2026 | Satellite Tugas (Social Verify, Tasks). V13 di-refactor ringan (68 ABI). |
+| **DailyApp V13.2** | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
 | **Raffle Manager** | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | Maret 2026 | Tiket Gacha, Undian Sponsor, Prizing distribution. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
 
@@ -50,7 +50,7 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 ### 2.1 The Claim Execution
 - **Triggers**: User klik "Claim" pada `DailyClaimModal`.
 - **Pre-Check (Frontend)**: `ProfilePage.jsx` membaca **HANYA** dari `userData.lastDailyBonusClaim` (on-chain) untuk menghitung sisa waktu cooldown (Single Source of Truth).
-- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.1** (`0x87a3d1203Bf20E7dF5659A819ED79a67b236F571`).
+- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0xaC430adE9217e2280b852EA29b91d14b12b3E151`).
 - **Success**: MetaMask/Wallet mengembalikan `tx_hash`.
 
 ### 2.2 The Backend Synchronization

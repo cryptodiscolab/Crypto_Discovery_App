@@ -53,14 +53,14 @@ function auditSync() {
         {
             label: 'DailyApp V12 (Mainnet)',
             envKey: 'VITE_V12_CONTRACT_ADDRESS',
-            cursorrulesAddr: '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571',
+            cursorrulesAddr: '[RESERVED]',
             required: true
         },
         // --- BASE SEPOLIA ---
         {
             label: 'DailyApp V12 (Sepolia)',
             envKey: 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA',
-            cursorrulesAddr: '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571',
+            cursorrulesAddr: '0xaC430adE9217e2280b852EA29b91d14b12b3E151',
             required: true
         },
         {

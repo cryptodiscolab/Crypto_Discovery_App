@@ -42,7 +42,7 @@ const CONTRACTS = [
     },
     {
         name: 'DailyAppV13',
-        address: '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571',
+        address: '0xaC430adE9217e2280b852EA29b91d14b12b3E151',
         contractFile: 'contracts/DailyAppV13.sol',
         constructorArgs: [
             '0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c', // creatorToken
