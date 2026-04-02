@@ -41,7 +41,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.40.4**
+**Protocol Version: 3.40.6**
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -130,6 +130,8 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 ## 9. STRICT CODING GUIDELINES (ANTI-GUESSING PROTOCOL)
 - **MANDATORY**: Before implementing ANY external library method, you MUST read the actual module source code or official documentation.
 - **NO GUESSING**: Never assume a method name. Verify deeply.
+- **🚨 STRICT TABLE HEADER MANDATE (Anti-Hallucination)**: You are STRICTLY FORBIDDEN from performing `multi_replace_file_content` or any blind edits on Markdown tables without first using `view_file` to read the **Column Headers**. NEVER assume column order (e.g., assuming column 2 is Mainnet and column 3 is Sepolia).
+- **🚨 CROSS-VALIDATION MANDATE**: Before altering any contract address in any documentation or SKILL, you MUST verify the canonical role of that address against `.env` or Section 10 of this file.
 
 ## 10. VERIFIED INFRASTRUCTURE REFERENCE (SYNCED FROM .ENV)
 > Always reference this section.
@@ -144,7 +146,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| **Last Synced** | `2026-03-22` | PRD v3.38.25 |
+| **Last Synced** | `2026-04-02T11:14:23+07:00` | PRD v3.40.5 |
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -439,5 +441,5 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **MANDATORY VISUAL AUDIT**: After ANY automated edit to a protocol file, the agent MUST perform a `view_file` call on the affected lines (including 10 lines of surrounding context) to verify that no sections were accidentally wiped out.
 - **NO SILENT REMOVAL**: If a section is intended for removal (e.g., duplicates), the agent MUST explicitly state this in the tool description and verify the deletion is successful without affecting other sections.
 
-- **Current Protocol Version**: v3.40.4 (Feature Workflow SOT Established)
+- **Current Protocol Version**: v3.40.6 (Mainnet Phased Rollout Infrastructure)
 *Antigravity: Integrity Restored. Visual Audit Mandated. No Silent Deletions.*

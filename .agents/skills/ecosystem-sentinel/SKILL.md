@@ -81,7 +81,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.40.4 (Feature Workflow SOT Established).
+- **Versi Terakhir:** 3.40.5 (Total Ecosystem Contract Synchronization).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -134,11 +134,11 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V13** | `[RESERVED]` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
+| **DailyAppV12Secured** | `[RESERVED]` | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` |
 | **MasterX (XP)** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
-| **PRD v3.40.4** | `[ACTIVE]` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
+| **PRD v3.40.6** | `2026-04-02T13:30:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🧭 Workspace Navigation & Data Flow (MANDATORY)

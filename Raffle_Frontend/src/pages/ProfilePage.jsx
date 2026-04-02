@@ -352,18 +352,16 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {!profileData.fid && !isEditing && (
+          {!profileData.fid && !profileData.google_id && !profileData.twitter_id && !isEditing && (
             <div className="px-4 mb-6">
-              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-start gap-3 shadow-sm">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                  <ShieldCheck size={18} className="text-indigo-400" />
+              <div className="p-4 bg-zinc-500/10 border border-zinc-500/20 rounded-2xl flex items-start gap-3 shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-zinc-500/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck size={18} className="text-zinc-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[12px] text-indigo-300 font-black uppercase tracking-wider mb-1">Verify Your Farcaster Account</p>
+                  <p className="text-[12px] text-zinc-300 font-black uppercase tracking-wider mb-1">Link a Social Account</p>
                   <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                    Not detected? Make sure your wallet is verified at: <br />
-                    <span className="text-white">Warpcast &gt; Settings &gt; Verified Addresses</span>. <br />
-                    Then, click the <b>Sync Farcaster</b> button above.
+                    Link your <b>Farcaster</b>, <b>Google</b>, or <b>X (Twitter)</b> account below to enhance your profile and unlock social task verification.
                   </p>
                 </div>
               </div>

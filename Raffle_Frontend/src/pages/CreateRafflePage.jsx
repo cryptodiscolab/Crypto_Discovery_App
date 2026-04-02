@@ -3,6 +3,7 @@ import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loa
 import { useAccount, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
+import { usePoints } from '../shared/context/PointsContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI, APP_CONFIG } from '../lib/contracts';
@@ -56,7 +57,12 @@ export function CreateRafflePage() {
     const { isConnected } = useAccount();
     const navigate = useNavigate();
     const { createSponsorshipRaffle } = useRaffle();
+    const { ecosystemSettings } = usePoints();
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Feature Flags Check
+    const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
+    const isUgcFeatureEnabled = !isMainnet || ecosystemSettings?.active_features?.ugc_payment === true;
 
     const { data: globalTicketPrice } = useReadContract({
         address: CONTRACTS.MASTER_X,
@@ -198,9 +204,15 @@ export function CreateRafflePage() {
                         <div className="mb-8">
                             <h1 className="text-3xl font-black text-white mb-2">Sponsor an Event</h1>
                             <p className="text-slate-400">Host your own NFT raffle and reach the community.</p>
+                            {!isUgcFeatureEnabled && (
+                                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold uppercase text-sm flex items-center gap-2">
+                                    <Shield className="w-5 h-5" />
+                                    Feature currently disabled for Mainnet Phased Rollout (Phase 4).
+                                </div>
+                            )}
                         </div>
 
-                        <form onSubmit={handleCreate} className="space-y-4">
+                        <form onSubmit={handleCreate} className={`space-y-4 ${!isUgcFeatureEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
                             <div className="grid grid-cols-1 gap-4">
                                 <div className="glass-card p-4 space-y-4 border-white/5">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -396,10 +408,12 @@ export function CreateRafflePage() {
 
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !isUgcFeatureEnabled}
                                 className="w-full btn-primary py-4 text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-blue-600/20"
                             >
-                                {isSubmitting ? (
+                                {!isUgcFeatureEnabled ? (
+                                    <>Feature Locked: Phase 4 <Lock className="w-5 h-5" /></>
+                                ) : isSubmitting ? (
                                     <Loader2 className="w-6 h-6 animate-spin" />
                                 ) : (
                                     <>Sponsor Event Now <ArrowRight className="w-5 h-5" /></>

@@ -70,6 +70,18 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 | `point_settings` | Zero-Hardcode Rewards | `activity_key`, `points_value` |
 | `system_settings` | Global System Params | `key`, `value` |
 | `v_user_full_profile` | Unified Profile View | Joining profiles with Tier names, SBT stats, and Raffle stats |
+| `daily_tasks` | Off-Chain Tasks (Supabase) | `platform`, `action_type`, `xp_reward`, `task_type` |
+
+**Key `point_settings` Keys** (pattern: `{platform}_{action_type}`):
+`daily_claim`, `farcaster_follow`, `x_follow`, `x_repost`, `x_like`, `base_transaction`, `raffle_buy`, `sponsor_task`
+
+**DB Functions (WAJIB digunakan, jangan bypass):**
+
+| Function | Signature | Tujuan |
+|----------|-----------|--------|
+| `fn_increment_xp` | `(p_wallet TEXT, p_amount INT)` | Atomically increment `user_profiles.total_xp` — dipakai `tasks-bundle.js` setelah off-chain task claim |
+| `fn_increment_raffle_tickets` | `(p_wallet TEXT, p_amount INT)` | Increment tiket raffle user |
+| `fn_award_referral_bonus` | trigger `trg_referral_bonus` | Auto-award XP ke referrer saat user baru bergabung |
 
 ---
 
@@ -116,4 +128,4 @@ graph TD
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-04-02 | Daily Claim Structural Optimization & Ecosystem Sync v3.40.4.*
+*Last Updated: 2026-04-02T15:24+07:00 | Off-Chain XP Sync Fix (fn_increment_xp), Social Banner Update, point_settings keys added. Ecosystem v3.40.6.*

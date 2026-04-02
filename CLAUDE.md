@@ -24,7 +24,7 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.40.2)
+## 🔴 ABSOLUTE LAWS (Nexus v3.40.6)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
@@ -81,7 +81,7 @@ Notify user format (Standard Reporting v3.26.0):
 
 -   **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
 -   **DailyAppV12Secured (Mainnet)**: `[RESERVED]`
--   **DailyAppV12Secured (Sepolia)**: `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721`
+-   **DailyAppV12Secured (Sepolia)**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571`
 -   **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 -   **Language**: Chat = Bahasa Indonesia | UI/Code = English
 

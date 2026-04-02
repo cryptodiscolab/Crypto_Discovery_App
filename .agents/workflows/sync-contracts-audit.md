@@ -1,37 +1,41 @@
 ---
-description: Sync latest contracts across .env, .cursorrules, and check privacy (gitignore/private_key).
+description: Sync latest contracts across .env, .cursorrules, Vercel, and eradicate legacy addresses.
+aliases: ["/sync", "/sync-ecosystem"]
 ---
 
-# Sync Contracts & Privacy Audit Workflow
+# End-to-End Ecosystem Synchronization Workflow
 
-This workflow ensures absolute synchronization of the latest smart contracts and absolute protection of sensitive data (`PRIVATE_KEY` and `.env`).
+This workflow executes an ironclad *"Ecosystem Exorcism & Sync"* to ensure 100% parity across Local Environments, Agent Protocols, JS Caching, and Vercel Cloud without "Silent Corruption".
 
 ## 📋 Steps to Execute
 
-### 1. Contract Address Verification
-Identify the source of truth for the latest contracts.
-- [ ] Check `.env` in the Root and Frontend directories.
-- [ ] Check recent deployment logs or `ROADMAP.md`.
-- [ ] Verify addresses match between `.env` and `.cursorrules`.
+### 1. Pre-Flight Contract Integrity Cross-Check
+- [ ] Read `.cursorrules` (Section 10) and `.env` (Local) to determine the absolute canonical SOT.
+- [ ] Validate that **Mainnet** addresses are safely set to `[RESERVED]` unless physically launched.
+- [ ] Run `node scripts/audits/check_sync_status.cjs` for a baseline health check.
 
-### 2. Synchronization of Reference Data
-Update all architecture files to match the latest addresses.
-- [ ] Edit `E:\Disco Gacha\Disco_DailyApp\.cursorrules` (Section 10: Verified Infrastructure Reference).
-- [ ] Edit `E:\Disco Gacha\Disco_DailyApp\CONTRACTS_DOCUMENTATION.md` (if exists).
+### 2. Hardcore Clean-Up (Exorcism)
+Use `grep_search` to find and surgically eliminate ANY hardcoded legacy addresses from frontend assets and debug scripts.
+- [ ] Target Legacy App: `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721`
+- [ ] Target Legacy MasterX: `0xa4E3091B717DfB8532219C93A0C170f8f2D7aec3`
+- [ ] Purge and replace occurrences in `Raffle_Frontend/src/lib/abis_data.txt`, `scripts/deployments/`, and `scripts/debug/`.
+- [ ] Ensure AI protocol docs (`CLAUDE.md`, `gemini.md`, `PRD`) are fully updated with the canonical addresses.
 
-### 3. Absolute Privacy Audit (Zero-Exposure)
-Audit the environment variables for leaks.
-- [ ] Verify `PRIVATE_KEY` is not used in ANY frontend code (must use `.env.local` or `.env` and NOT be prefixed with `VITE_` or `NEXT_PUBLIC_`).
-- [ ] Verify `.gitignore` contains all `.env`, `.env.local`, and sensitive build artifacts.
-- [ ] Confirm no secrets are present in `.js`, `.jsx`, `.ts`, or `.tsx` files.
+### 3. Agent Mandate Refresh
+Update the AI behavior files to prevent regression.
+- [ ] Update `secure-infrastructure-manager/SKILL.md` table to strictly reflect `.cursorrules`. **Verify Column Headers before replacing!**
+- [ ] Update `ecosystem-sentinel/SKILL.md` table.
+- [ ] Stempel waktu: Tambahkan stempel `<Date>T<Time>+07:00` pada entri kontrak (Contoh: `Last Synced`).
 
-### 4. Zero-Trust Access Check
-Ensure all sensitive mutations follow the backend-only policy.
-- [ ] Audit frontend components for `supabase.from('...').insert(...)`.
-- [ ] Ensure any sensitive action requires a signature and a call to a Backend API route.
+### 4. Vercel Atomic Clean-Pipe Sync
+Force Vercel production to follow the Local SOT without GUI copy-pasting (which introduces `\r\n` corruption).
+- [ ] Execute `node scripts/sync/global-sync-env.js` (Run in background terminal up to 5-10 mins).
+- [ ] Ensure both `crypto-discovery-app` and `dailyapp-verification-server` report "Synced to production".
 
-### 5. Deployment Update
-- [ ] Update Vercel/Production environment variables if local addresses changed.
+### 5. Final Ecosystem Health & Absolute Privacy Audit
+- [ ] Run `npm run gitleaks-check` to execute Zero-Exposure scan for leaking `PRIVATE_KEY` or `SERVICE_ROLE_KEY`.
+- [ ] Re-run `node scripts/audits/check_sync_status.cjs` and verify 13/13 Security Matrix checks pass.
+- [ ] Execute markdown compilation: `npx marked -i PRD/DISCO_DAILY_MASTER_PRD.md -o PRD/DISCO_DAILY_MASTER_PRD.html`.
 
 ---
 // turbo-all

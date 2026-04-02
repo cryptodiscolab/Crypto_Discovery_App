@@ -9,6 +9,11 @@ const supabaseAdmin = createClient(
 const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
 const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '').trim();
 
+// 1. DYNAMIC NETWORK SWITCHER (MAINNET SECURE)
+const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
+const isMainnet = CHAIN_ID === '8453';
+
+
 // ─── Telegram Notification Helper ────────────────────────────────────────────
 async function notifyTelegramWinner(walletAddress, raffleId, xpAwarded) {
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
@@ -34,8 +39,42 @@ async function notifyTelegramWinner(walletAddress, raffleId, xpAwarded) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// FEATURE FLAGS & PHASED ROLLOUT (MAINNET SAFEGUARD)
+// -----------------------------------------------------------------------------
+
+async function checkFeatureGuard(featureKey, res) {
+    if (!isMainnet) return true; // Bypass restriction if still on Sepolia Testnet
+    
+    try {
+        const { data } = await supabaseAdmin
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'active_features')
+            .single();
+        
+        const activeFeatures = data?.value || {};
+        if (activeFeatures[featureKey] !== true) {
+            console.warn(`[Feature Guard] BLOCKED: Attempt to access disabled feature '${featureKey}' on Mainnet.`);
+            res.status(403).json({ error: `Feature [${featureKey}] is currently disabled for Phased Rollout. Please wait for the next phase.` });
+            return false;
+        }
+        return true; 
+    } catch (e) {
+        console.error(`[Feature Guard] Failed to verify ${featureKey}`, e.message);
+        res.status(500).json({ error: "Feature Guard verification failed" });
+        return false;
+    }
+}
+
 export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
+
+    // Guard UGC/Raffle actions
+    if (['claim-prize'].includes(action)) {
+        const allowed = await checkFeatureGuard('ugc_payment', res);
+        if (!allowed) return;
+    }
 
     switch (action) {
         case 'claim-prize':

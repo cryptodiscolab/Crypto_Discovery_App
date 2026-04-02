@@ -1,6 +1,6 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.40.4)
-**Last Updated**: 2026-04-02
-**Status**: 🛡️ LOCKED & HARDENED
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.40.6)
+**Last Updated**: 2026-04-02T15:24+07:00 — Off-Chain Task XP Sync Fix & Social Banner Update
+**Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
 
@@ -83,6 +83,21 @@ Leaderboard bergantung pada kueri database yang efisien, bukan RPC blockchain ag
   3. Data yang di-return adalah hasil agregasi `user_profiles` (untuk Avatar, Bio, XP) yang sudah langsung terupdate setelah Daily Claim selesai.
 - **Rules**: Dilarang me-loop panggil `MasterX` untuk mengambil ranking user, semuanya harus via database `user_profiles.total_xp` yang tersinkron.
 
+### 3.2 Dua Jalur XP Sync (PENTING — Jangan Regress!)
+
+Ada **dua jalur berbeda** yang mengupdate `user_profiles.total_xp`. Agen HARUS memahami perbedaannya:
+
+| Jalur | Sumber XP | Trigger Backend | Cara Update DB |
+|-------|-----------|-----------------|----------------|
+| **On-Chain** | `claimDailyBonus()` di DailyApp contract | `/api/user-bundle?action=xp` | Baca `readContract(userStats)` → upsert `total_xp` |
+| **Off-Chain** | Task dari tabel `daily_tasks` (Supabase) | `/api/tasks-bundle?action=claim` | `fn_increment_xp(wallet, xp)` RPC langsung |
+
+> [!IMPORTANT]
+> **`tasks-bundle.js` (`handleClaim`, `handleSocialVerify`)** WAJIB memanggil `supabaseAdmin.rpc('fn_increment_xp', ...)` setelah setiap successful insert ke `user_task_claims`. Tanpa ini, XP tidak akan pernah muncul di leaderboard untuk off-chain tasks.
+
+> [!WARNING]
+> Database **tidak memiliki trigger otomatis** yang mengagregasi `user_task_claims → user_profiles.total_xp`. Hanya ada `trg_referral_bonus`. Jangan berharap XP tersinkron secara pasif.
+
 ---
 
 ## 🏅 4. Tier Rank Recalculation (Database Driven)
@@ -121,6 +136,7 @@ Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi selu
 3. [ ] **Single Source Cooldown**: `DailyClaimModal` menggunakan `userData[3]` (on-chain lastClaim), bukan database, untuk memverifikasi waktu tunggu.
 4. [ ] **Optimistic Sync**: XP dapat dikreditkan asalkan ada bukti `tx_hash` transaksi komplit, meskipun RPC provider (seperti Alchemy/Infura) belum up-to-date.
 5. [ ] **No Secrets Leak**: Proses git push lolos audit `gitleaks`.
+6. [ ] **Off-Chain XP Sync**: `tasks-bundle.js` memanggil `fn_increment_xp` setelah setiap off-chain task claim agar `total_xp` di `user_profiles` sinkron dengan leaderboard.
 
 ---
 
@@ -137,6 +153,22 @@ Jika Agen mendiagnosis kesalahan logika atau melakukan pembaruan kontrak/fitur, 
      `node scripts/audits/sync-env.mjs`
 4. **Git Zero-Leak Boundary**:
    - Semua perubahan harus di-commit bebas cache dan bebas credential API menggunakan `gitleaks`. 
+
+---
+
+## 🚦 8. Mainnet Phased Rollout & Global Kill Switch
+
+Transisi ekosistem berjalan menuju Mainnet dilindungi oleh sistem "Phased Rollout" (Feature Flags) untuk mencegah eksploitasi smart contract yang belum matang dan untuk memastikan adopsi bertahap. Fitur ini bersifat "Mute-by-Default" di Mainnet hingga dinyalakan via **Admin Dashboard** (`active_features` di tabel `system_settings`).
+
+### 8.1 Active Feature Check Logic
+1. **Frontend Read**: UI komponen seperti `SBTUpgradeCard` dan `CreateRafflePage` mengekstrak `ugc_payment` dan `sbt_minting` boolean langsung dari `PointsContext.jsx`.
+2. **UI Locking**: Jika boolean `false` (dan `import.meta.env.VITE_CHAIN_ID === '8453'`), semua tombol submit, form, dan mint function diblokir secara visual dan mekanik (`pointer-events-none`).
+3. **Backend Middleware Check**: `checkFeatureGuard(featureKey, chainId)` berjalan di setiap route serverless API (mis. `user-bundle.js`, `raffle-bundle.js`).
+    - Jika VITE_CHAIN_ID == 8453 dan flag `false`, otomatis mengembalikan `HTTP 403 Feature Disabled`.
+    - Mekanisme ini memastikan peretas *bypassing* UI React tidak akan bisa mengakses logika write di backend.
+
+### 8.2 Kill Switch Execution
+Semua status flag dikontrol melalui: **Admin UI -> System Settings -> Features Flags**. Setiap pembaruan yang dibroadcast WAJIB memerlukan *cryptographic signature verification* dari Dompet Administrator.
 
 ---
 *End of Source of Truth Document - DO NOT IGNORE.*

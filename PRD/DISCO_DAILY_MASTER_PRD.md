@@ -1,5 +1,5 @@
-# CRYPTO DISCO MASTER PRD (v3.40.4)
-**Last Updated**: 2026-03-31
+# CRYPTO DISCO MASTER PRD (v3.40.6)
+**Last Updated**: 2026-04-02
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 
 ---
@@ -353,7 +353,7 @@ Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables
 - **Main App**: `crypto-discovery-app.vercel.app`
 - **Verification**: `dailyapp-verification-server.vercel.app`
 - **Database**: Supabase Project (ID: rbgz...)
-- **Core Contract**: `0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721` (V13.35 Sepolia - Gold)
+- **Core Contract**: `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` (V12 Secured)
 
 ---
 
@@ -779,6 +779,28 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
 - **Real-time Tier Sync**: Added instantaneous tier recalculation via `sbt_thresholds` DB query during XP sync (bypassing stale on-chain tier reads).
 - **View Parity**: Implemented 1.5s settled-state delay before refetching, ensuring `v_user_full_profile` leaderboard data is 100% fresh.
 - **Ecosystem Sync**: Incremented version to v3.40.4 across all protocol documents and verified via 13/13 Audit PASS.
+
+---
+## 36. Work Report v3.40.5 — Total Ecosystem Contract Synchronization
+**Status**: COMPLETED
+**Date**: 2026-04-02
+**Focus**: Updating active contract tables with explicit timestamps to prevent Source of Truth regression.
+
+### ✅ Key Results:
+- **Timestamped SOT**: Injected exact timestamps (`Last Synced: 2026-04-02T11:14:23+07:00`) into `.cursorrules` and active AI protocols.
+- **Protocol Parity**: Synchronized skill mandates to ensure absolute adherence to Base Sepolia/Mainnet states, ensuring agents always know the newest values.
+
+---
+## 37. Work Report v3.40.6 — Mainnet Phased Rollout Infrastructure
+**Status**: COMPLETED
+**Date**: 2026-04-02
+**Focus**: Safely transitioning the ecosystem to Base Mainnet without smart contract deployments using dynamic Feature Flags.
+
+### ✅ Key Results:
+- **Database Kill Switch**: Introduced `active_features` JSONB into `system_settings` to control Rollout Phases (`login_and_social`, `daily_claim`, `sbt_minting`, `ugc_payment`).
+- **Network-Aware Backends**: Severless APIs dynamically parse `VITE_CHAIN_ID` to block execution on Mainnet if the corresponding feature flag is `false`.
+- **UI Locking Mechanism**: Protected `CreateRafflePage` and `SBTUpgradeCard` with real-time React UI Locks that gray-out and prevent interaction based on points context flag status.
+- **Admin Command Center**: Built an integrated UI in `Admin Dashboard -> System Settings` allowing Admin users to toggle all Feature Flags directly via signature validation.
 
 ---
 *Created by Antigravity — Nexus Master Architect*

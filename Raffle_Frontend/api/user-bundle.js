@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { createPublicClient, http, verifyMessage } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base, baseSepolia } from 'viem/chains';
 
 const supabaseUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
 const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || '').trim();
@@ -10,17 +10,25 @@ const neynarApiKey = (process.env.NEYNAR_API_KEY || '').trim();
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 const neynar = new NeynarAPIClient({ apiKey: neynarApiKey || '' });
 
+// 1. DYNAMIC NETWORK SWITCHER (MAINNET SECURE)
+const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
+const isMainnet = CHAIN_ID === '8453';
+
+const activeChain = isMainnet ? base : baseSepolia;
+const activeRpcUrl = isMainnet 
+    ? (process.env.VITE_BASE_MAINNET_RPC_URL || 'https://mainnet.base.org').trim()
+    : (process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org').trim();
+
 const rpcClient = createPublicClient({
-    chain: baseSepolia,
-    transport: http((process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org').trim()),
+    chain: activeChain,
+    transport: http(activeRpcUrl),
 });
 
-const DAILY_APP_ADDRESS = (
-    process.env.DAILY_APP_ADDRESS_SEPOLIA ||
-    process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA ||
-    process.env.VITE_V12_CONTRACT_ADDRESS ||
-    process.env.DAILY_APP_ADDRESS
-)?.trim() || '';
+// 2. DYNAMIC CONTRACT MAPPING
+const DAILY_APP_ADDRESS = isMainnet
+    ? (process.env.DAILY_APP_ADDRESS_MAINNET || process.env.DAILY_APP_ADDRESS)?.trim() || ''
+    : (process.env.DAILY_APP_ADDRESS_SEPOLIA || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA || process.env.DAILY_APP_ADDRESS)?.trim() || '';
+
 
 const TASK_IDS = {
     REFERRAL_INVITE: (process.env.REFERRAL_INVITE_TASK_ID || '77e123f5-0ded-4ca1-af04-e8b6924823e2').trim(),
@@ -108,8 +116,59 @@ async function fetchWithRetry(fn, serviceKey, retries = 3, delay = 1000) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// FEATURE FLAGS & PHASED ROLLOUT (MAINNET SAFEGUARD)
+// -----------------------------------------------------------------------------
+
+// Checks if a specific feature is enabled in system_settings
+async function checkFeatureGuard(featureKey, res) {
+    if (!isMainnet) return true; // Bypass restriction if still on Sepolia Testnet
+    
+    try {
+        const { data } = await supabaseAdmin
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'active_features')
+            .single();
+        
+        const activeFeatures = data?.value || {};
+        if (activeFeatures[featureKey] !== true) {
+            console.warn(`[Feature Guard] BLOCKED: Attempt to access disabled feature '${featureKey}' on Mainnet.`);
+            res.status(403).json({ error: `Feature [${featureKey}] is currently disabled for Phased Rollout. Please wait for the next phase.` });
+            return false;
+        }
+        return true; // Feature enabled
+    } catch (e) {
+        console.error(`[Feature Guard] Failed to verify ${featureKey}`, e.message);
+        res.status(500).json({ error: "Feature Guard verification failed" });
+        return false;
+    }
+}
+
 export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
+
+    // Apply Feature Guards on Mainnet 
+    if (['xp', 'sync-pool-claim'].includes(action)) {
+        const allowed = await checkFeatureGuard('daily_claim', res);
+        if (!allowed) return;
+    }
+    
+    if (['sync-sbt-upgrade'].includes(action)) {
+        const allowed = await checkFeatureGuard('sbt_minting', res);
+        if (!allowed) return;
+    }
+
+    if (['sync-ugc-mission', 'sync-ugc-raffle'].includes(action)) {
+        const allowed = await checkFeatureGuard('ugc_payment', res);
+        if (!allowed) return;
+    }
+
+    // `sync` and `update-profile` belong to `login_and_social`
+    if (['sync', 'update-profile', 'fc-sync'].includes(action)) {
+        const allowed = await checkFeatureGuard('login_and_social', res);
+        if (!allowed) return;
+    }
 
     switch (action) {
         case 'sync': await handleLoginSync(req, res); break;
@@ -136,6 +195,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid action' });
     }
 }
+
 
 async function handleLoginSync(req, res) {
     const { wallet_address, signature, message, fid, metadata, referred_by } = req.body;

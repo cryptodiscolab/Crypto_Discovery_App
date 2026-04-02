@@ -26,6 +26,7 @@ import { AuditLogsSection } from './system/AuditLogsSection';
 import { BlockchainConfigSection } from './system/BlockchainConfigSection';
 import { SponsorshipConfigSection } from './system/SponsorshipConfigSection';
 import { HealthDashboardSection } from './system/HealthDashboardSection';
+import { AdminFeatureFlagsSection } from './system/AdminFeatureFlagsSection';
 
 /**
  * Admin System Settings Component
@@ -341,15 +342,18 @@ export default function AdminSystemSettings() {
 
             {/* Tab Contents */}
             {activeTab === 'settings' && (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    <PointSettingsSection
-                        pointSettings={pointSettings}
-                        onAddActivity={addPointActivity}
-                        onRemoveActivity={(id) => setPointSettings(prev => prev.filter(i => i.id !== id))}
-                        onChange={handlePointChange}
-                        onSave={savePoints}
-                        saving={saving}
-                    />
+                <div className="space-y-6">
+                    <AdminFeatureFlagsSection address={address} signMessageAsync={signMessageAsync} />
+                    
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <PointSettingsSection
+                            pointSettings={pointSettings}
+                            onAddActivity={addPointActivity}
+                            onRemoveActivity={(id) => setPointSettings(prev => prev.filter(i => i.id !== id))}
+                            onChange={handlePointChange}
+                            onSave={savePoints}
+                            saving={saving}
+                        />
                     <SbtThresholdsSection
                         thresholds={sbtThresholds}
                         onAddLevel={addSbtLevel}
@@ -373,6 +377,7 @@ export default function AdminSystemSettings() {
                         currentSeasonId={currentSeasonId}
                         saving={saving}
                     />
+                </div>
                 </div>
             )}
 

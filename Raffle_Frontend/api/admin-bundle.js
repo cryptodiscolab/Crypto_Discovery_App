@@ -311,6 +311,11 @@ export default async function handler(req, res) {
                 await logAdminAction(targetAddress, 'MANUAL_TIER_OVERRIDE', payload);
                 return res.status(200).json({ success: true });
             }
+            case 'UPDATE_FEATURE_FLAGS': {
+                await supabaseAdmin.from('system_settings').upsert({ key: 'active_features', value: payload, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+                await logAdminAction(targetAddress, 'UPDATE_FEATURE_FLAGS', payload);
+                return res.status(200).json({ success: true });
+            }
             default:
                 return res.status(400).json({ error: 'Invalid admin action: ' + action });
         }

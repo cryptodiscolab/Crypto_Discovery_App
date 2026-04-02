@@ -8,7 +8,7 @@ const v13Artifact = JSON.parse(fs.readFileSync(abiPath, 'utf8'));
 const abisData = JSON.parse(fs.readFileSync(abisDataPath, 'utf8'));
 
 abisData.ABIS.DAILY_APP = v13Artifact.abi;
-abisData.DAILY_APP_ADDRESS_SEPOLIA = '0xfA75627c1A5516e2Bc7d1c75FA31fF05Cc2f8721';
+abisData.DAILY_APP_ADDRESS_SEPOLIA = '0x87a3d1203Bf20E7dF5659A819ED79a67b236F571';
 
 fs.writeFileSync(abisDataPath, JSON.stringify(abisData, null, 4), 'utf8');
 console.log('✅ abis_data.txt updated with V13.1 ABI');

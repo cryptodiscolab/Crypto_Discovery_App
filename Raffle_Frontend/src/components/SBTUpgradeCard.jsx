@@ -9,10 +9,15 @@ import toast from 'react-hot-toast';
 export function SBTUpgradeCard() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { userPoints, userTier, rankName, refetch: refetchPoints } = usePoints();
+    const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings } = usePoints();
     const { tiers, refetch: refetchTiers } = useNFTTiers();
     const { upgradeTier, userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { data: balanceData } = useBalance({ address });
+
+    // Feature Flags Check
+    const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
+    const isSbtFeatureEnabled = !isMainnet || ecosystemSettings?.active_features?.sbt_minting === true;
+
 
     // Find current and next tier
     const currentTierIndex = parseInt(userTier);
@@ -45,9 +50,10 @@ export function SBTUpgradeCard() {
     const xpShortfall = nextTier.pointsRequired - Number(userPoints);
     const syncShortfall = nextTier.pointsRequired - Number(userOnChainXP || 0);
 
-    const isReady = hasTotalXP && hasOnChainXP && !isSoldOut && hasEnoughETH;
+    const isReady = isSbtFeatureEnabled && hasTotalXP && hasOnChainXP && !isSoldOut && hasEnoughETH;
 
     const handleUpgrade = async () => {
+        if (!isSbtFeatureEnabled) return toast.error("SBT Minting is currently disabled for this phase.");
         if (!hasOnChainXP) {
             if (hasTotalXP) {
                 return toast.error("Points detected in DB but not yet synced to contract. Please wait for the periodic sync or perform a task to trigger it.");
@@ -190,14 +196,16 @@ export function SBTUpgradeCard() {
 
                 <button
                     onClick={handleUpgrade}
-                    disabled={!hasOnChainXP || isSoldOut}
+                    disabled={!hasOnChainXP || isSoldOut || !isSbtFeatureEnabled}
                     className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-2
                         ${isReady
                             ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/30'
                             : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                         }`}
                 >
-                    {isSoldOut ? (
+                    {!isSbtFeatureEnabled ? (
+                        'LOCKED: PHASE 3 FEATURE'
+                    ) : isSoldOut ? (
                         'TIER SOLD OUT'
                     ) : !hasOnChainXP ? (
                         hasTotalXP ? 'AWAITING ON-CHAIN SYNC' : `NEED ${xpShortfall.toLocaleString()} MORE XP`

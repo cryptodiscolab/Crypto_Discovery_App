@@ -6,6 +6,11 @@ const supabaseAdmin = createClient(
     (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 );
 
+// 1. DYNAMIC NETWORK SWITCHER (MAINNET SECURE)
+const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
+const isMainnet = CHAIN_ID === '8453';
+
+
 // 🛡️ REFACTORED HELPERS 🛡️
 
 async function getPointValue(activityKey) {
@@ -114,10 +119,50 @@ async function logActivity({ wallet, category, type, description, amount, symbol
     }
 }
 
+// -----------------------------------------------------------------------------
+// FEATURE FLAGS & PHASED ROLLOUT (MAINNET SAFEGUARD)
+// -----------------------------------------------------------------------------
+
+async function checkFeatureGuard(featureKey, res) {
+    if (!isMainnet) return true; // Bypass restriction if still on Sepolia Testnet
+    
+    try {
+        const { data } = await supabaseAdmin
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'active_features')
+            .single();
+        
+        const activeFeatures = data?.value || {};
+        if (activeFeatures[featureKey] !== true) {
+            console.warn(`[Feature Guard] BLOCKED: Attempt to access disabled feature '${featureKey}' on Mainnet.`);
+            res.status(403).json({ error: `Feature [${featureKey}] is currently disabled for Phased Rollout. Please wait for the next phase.` });
+            return false;
+        }
+        return true; 
+    } catch (e) {
+        console.error(`[Feature Guard] Failed to verify ${featureKey}`, e.message);
+        res.status(500).json({ error: "Feature Guard verification failed" });
+        return false;
+    }
+}
+
 // ── HANDLERS ──
 
 export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
+    
+    // Feature guards for Task Actions
+    if (['claim', 'verify'].includes(action)) {
+        const allowed = await checkFeatureGuard('daily_claim', res);
+        if (!allowed) return;
+    }
+    
+    if (action === 'social-verify') {
+        const allowed = await checkFeatureGuard('login_and_social', res);
+        if (!allowed) return;
+    }
+
     try {
         switch (action) {
             case 'claim': await handleClaim(req, res); break;
@@ -147,6 +192,19 @@ async function handleClaim(req, res) {
             return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
         }
         throw error;
+    }
+
+    // FIX v3.40.6: Atomically update total_xp in user_profiles for off-chain tasks
+    // (On-chain tasks use the 'xp' action in user-bundle which reads contract state)
+    if (xp > 0) {
+        try {
+            await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: wallet_address.toLowerCase(),
+                p_amount: xp
+            });
+        } catch (xpErr) {
+            console.error('[handleClaim] fn_increment_xp failed:', xpErr.message);
+        }
     }
 
     if (task_id && task_id.startsWith('raffle_buy_')) {
@@ -223,6 +281,18 @@ async function handleSocialVerify(req, res) {
         throw error;
     }
 
+    // FIX v3.40.6: Atomically update total_xp in user_profiles for off-chain tasks
+    if (xp > 0) {
+        try {
+            await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: wallet_address.toLowerCase(),
+                p_amount: xp
+            });
+        } catch (xpErr) {
+            console.error('[handleSocialVerify] fn_increment_xp failed:', xpErr.message);
+        }
+    }
+
     await logActivity({
         wallet: wallet_address,
         category: 'XP',
@@ -232,5 +302,5 @@ async function handleSocialVerify(req, res) {
         symbol: 'XP'
     });
 
-    return res.status(200).json({ success: true, message: `Task verified.` });
+    return res.status(200).json({ success: true, xp, message: `Task verified.` });
 }

@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-03-27*
-*PRD Version: v3.40.1 (Daily Claim Structural Optimization)*
+*Last Updated: 2026-04-02*
+*PRD Version: v3.40.6 (Mainnet Phased Rollout Infrastructure)*
 
 ---
 
@@ -182,6 +182,7 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Identity Ghosting Prevention**: 🚨 Setiap penambahan kolom identitas di `user_profiles` WAJIB diikuti dengan pembaruan pada SQL View `v_user_full_profile` (v3.26.0).
 - 🚫 **RPC Indexing Resilience**: 🚨 Backend API harus mendukung `tx_hash` sebagai fallback verifikasi jika data di Supabase/Indexer sedang tertunda (*lag*) (v3.26.0).
 - 🚫 **No-Lost-Agent Breach**: Dilarang melakukan pencarian file manual (explorative `list_dir`) tanpa memeriksa [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) terlebih dahulu. Mandat ini WAJIB dijalankan ulang setiap kali protokol di-reset via `> re-read skills`.
+- 🚫 **Blind-Replacement Execution (Table Hallucination)**: 🚨 DILARANG KERAS mengeksekusi `multi_replace_file_content` pada baris tabel Markdown manapun tanpa melakukan `view_file` pada Header Tabel (-15 baris ke atas) untuk memastikan hirarki kolom. Dilarang berasumsi kolom 2 = Mainnet.
 
 
 ---
