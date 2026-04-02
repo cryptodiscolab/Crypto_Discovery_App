@@ -2,7 +2,22 @@
 **Last Updated**: 2026-04-02
 **Status**: 🛡️ LOCKED & HARDENED
 
-Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen harus mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API.
+Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
+
+---
+
+## 🏛️ 0. Active Contract Index & Network Registry (DO NOT DEVIATE)
+Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegang ekosistem berjalan:
+
+| Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
+| :--- | :--- | :--- | :--- |
+| **New MasterX** | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
+| **DailyApp V13.1** | `0x87a3d1203Bf20E7dF5659A819ED79a67b236F571` | 11/31 Maret 2026 | Satellite Tugas (Social Verify, Tasks). V13 di-refactor ringan (68 ABI). |
+| **Raffle Manager** | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | Maret 2026 | Tiket Gacha, Undian Sponsor, Prizing distribution. |
+| **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
+
+> [!WARNING]
+> Mismatched Contract Alert: Jika API atau interaksi on-chain `revert`, hal pertama yang harus dicek oleh Sentinel Agent adalah apakah `.env` (`VITE_MASTER_X_ADDRESS_SEPOLIA`, dll) sudah persis menunjuk ke alamat tabel di atas.
 
 ---
 
@@ -108,4 +123,20 @@ Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi selu
 5. [ ] **No Secrets Leak**: Proses git push lolos audit `gitleaks`.
 
 ---
-*End of Source of Truth Document*
+
+## 🔁 7. End-to-End Synchronization Audit Workflow
+Jika Agen mendiagnosis kesalahan logika atau melakukan pembaruan kontrak/fitur, Agen WAJIB menjalankan alur audisi E2E berikut:
+
+1. **Contract Registry Check**:
+   - Cocokkan ABI dan Alamat di tabel pendaftaran atas dengan `.env`.
+   - Update `.cursorrules`, `WORKSPACE_MAP.md`, dan seluruh file definisi `SKILL` dengan Address terbaru tersebut.
+2. **Database Propagation**:
+   - Pastikan logic database-read bergantung pada Tables reguler (`user_profiles`) dan Views (`v_user_full_profile`). Jangan bergantung pada RPC state (lag-prone).
+3. **Environment Push**:
+   - Jika nilai variabel di `.env` berubah, eksekusi secara otomatis ke Production & Preview via skrip Node:
+     `node scripts/audits/sync-env.mjs`
+4. **Git Zero-Leak Boundary**:
+   - Semua perubahan harus di-commit bebas cache dan bebas credential API menggunakan `gitleaks`. 
+
+---
+*End of Source of Truth Document - DO NOT IGNORE.*
