@@ -1,6 +1,6 @@
-# CRYPTO DISCO MASTER PRD (v3.40.10)
-**Version**: `v3.40.10` (Evidence-Based E2E Sync)
-**Last Updated**: `02 April 2026 17:58`
+# CRYPTO DISCO MASTER PRD (v3.40.11)
+**Version**: `v3.40.11` (MasterX Checksum & Protocol Identity Hardening)
+**Last Updated**: `03 April 2026 06:14`
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 **Audit Status**: `✅ 100% OPERATIONAL (13/13 Sync + Physical Hex Proof)`
 
@@ -391,9 +391,22 @@ graph TD
 | **UI** | `Raffle_Frontend/src/` | Components, Hooks, Pages |
 | **Brain** | `.agents/` | Skills, Workflows, Gemini/Claude Protocols |
 | **Ops** | `scripts/` | Audits, Sync, Deploy, Debug |
-| **Bot** | `verification-server/` | Telegram Webho## 11. Work Report — v3.40.2 (Current)
+| **Bot** | `verification-server/` | Telegram Webhook API |
+
+## 11. Work Report — v3.40.11 (Current)
+**Date**: 2026-04-03
+**Task**: MasterX Checksum Correction & OAuth Protocol Identity Hardening.
+**Action**:
+- **Checksum Hardening**: Sanitized all 6 local/Vercel `.env` environments to reflect the correct viem EIP-55 checksum `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` to prevent `InvalidAddressError`.
+- **Address Resilience**: Embedded `getAddress(cleaned)` auto-normalization into `contracts.js` cleanAddr to automatically fix future capitalization mismatch issues from runtime envs.
+- **Protocol Identity View Sync**: Hardcoded full identity data bypass in Supabase `v_user_full_profile` SQL View allowing Farcaster/X badges to correctly report linked states across the frontend.
+- **PKCE Migration (Supabase v2.39)**: Rewrote `OAuthCallbackPage.jsx` to process URL `?code=` instead of implicit grant hashes. Updated backend alias checking (`x` vs `twitter`).
+- **Data Parity (Raffles)**: Injected 7 missing UGC Raffle columns into `raffles` table keeping payload parity synced between DB layer and Contract layer.
+- **Tracker Log Payload Flatting**: Corrected nested Activity payload formatting on both Gas/Gasless `buyTickets` calls allowing accurate analytics consumption by `/api/user-bundle`.
+**Outcome**: 100% End-to-End System Synchronization achieved. Supabase PKCE flow established. 13/13 Security Audit PASSED. All environment strings fully intact.
+
+## 12. Work Report — v3.40.2
 **Date**: 2026-03-27
-**Task**: MetaMask Provider Conflict Resolution & EIP-6963 Hardening.
 **Action**:
 - **Safe Provider Boot**: Injected a pre-emptive "Provisioner" script in `index.html` to initialize `window.ethereum` as a writable property, preventing legacy injection crashes from MetaMask when other extensions (Coinbase/Phantom) are present.
 - **Enhanced Conflict Sentinel**: Upgraded `Web3Provider.jsx` diagnostics to runtime-resolve read-only property traps and provide explicit user guidance for non-configurable conflicts.

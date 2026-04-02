@@ -59,17 +59,15 @@ export function useRaffle() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'log-activity',
-                        wallet: address,
+                        wallet_address: address,
                         signature,
                         message,
-                        log: {
-                            category: 'PURCHASE',
-                            type: 'Raffle Ticket Buy',
-                            description: `Purchased ${amount} ticket(s) for Raffle #${raffleId}`,
-                            amount: Number(amount),
-                            symbol: 'TICKET',
-                            txHash: hash
-                        }
+                        category: 'PURCHASE',
+                        type: 'Raffle Ticket Buy',
+                        description: `Purchased ${amount} ticket(s) for Raffle #${raffleId}`,
+                        amount: Number(amount),
+                        symbol: 'TICKET',
+                        txHash: hash
                     })
                 });
 
@@ -132,17 +130,15 @@ export function useRaffle() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'log-activity',
-                    wallet: address,
+                    wallet_address: address,
                     signature,
                     message,
-                    log: {
-                        category: 'PURCHASE',
-                        type: 'Raffle Ticket Buy (Gasless)',
-                        description: `Purchased ${amount} ticket(s) for Raffle #${raffleId}`,
-                        amount: Number(amount),
-                        symbol: 'TICKET',
-                        txHash: callId // Call ID acts as identity for gasless
-                    }
+                    category: 'PURCHASE',
+                    type: 'Raffle Ticket Buy (Gasless)',
+                    description: `Purchased ${amount} ticket(s) for Raffle #${raffleId}`,
+                    amount: Number(amount),
+                    symbol: 'TICKET',
+                    txHash: callId // Call ID acts as identity for gasless
                 })
             });
 

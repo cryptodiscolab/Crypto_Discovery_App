@@ -7,6 +7,7 @@
 
 // @ts-ignore
 import abisDataRaw from './abis_data.txt?raw';
+import { getAddress } from 'viem';
 
 let _cache = null;
 const _get = () => {
@@ -45,7 +46,7 @@ const chainId = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
 const isSepolia = chainId === 84532;
 
 const cleanAddr = (addr) => {
-  if (!addr || typeof addr !== 'string') return addr;
+  if (!addr || typeof addr !== 'string') return undefined;
   
   let cleaned = addr.replace(/["'\s\r\n\t\0]/g, '').trim();
   
@@ -54,8 +55,19 @@ const cleanAddr = (addr) => {
     const parts = cleaned.split('=');
     cleaned = parts[parts.length - 1];
   }
-  
-  return cleaned;
+
+  // 🛡️ Reject placeholder/reserved values — fall through to Sepolia fallback
+  if (!cleaned || cleaned === '[RESERVED]' || cleaned === 'undefined' || cleaned === 'null' || cleaned.length < 42) {
+    return undefined;
+  }
+
+  // 🛡️ Auto-normalize EIP-55 checksum (fixes mixed-case addresses from .env)
+  try {
+    return getAddress(cleaned);
+  } catch {
+    console.warn(`[contracts] Invalid address format: ${cleaned}`);
+    return undefined;
+  }
 };
 
 const getAddr = (key, envKey, envKeySepolia) => {
@@ -72,7 +84,20 @@ const getAddr = (key, envKey, envKeySepolia) => {
       || _get()[key + '_ADDRESS'] 
       || _get()[key + '_CONTRACT_ADDRESS'];
   }
-  return cleanAddr(addr);
+  
+  const resolved = cleanAddr(addr);
+  
+  // 🛡️ Mainnet Fallback: If Mainnet address is [RESERVED]/missing, fall back to Sepolia for dev/preview
+  if (!resolved && !isSepolia && envKeySepolia) {
+    const sepoliaAddr = import.meta.env[envKeySepolia];
+    const sepoliaResolved = cleanAddr(sepoliaAddr);
+    if (sepoliaResolved) {
+      console.warn(`[contracts] Mainnet address for ${key} is RESERVED. Using Sepolia fallback for non-production preview.`);
+      return sepoliaResolved;
+    }
+  }
+  
+  return resolved;
 };
 
 export const MASTER_X_ADDRESS = getAddr('MASTER_X', 'VITE_MASTER_X_ADDRESS', 'VITE_MASTER_X_ADDRESS_SEPOLIA');

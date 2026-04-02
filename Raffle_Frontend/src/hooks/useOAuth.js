@@ -58,8 +58,16 @@ export function useOAuth() {
             const handleMessage = (event) => {
                 // Security check: Only trust messages from our own origin
                 if (event.origin !== window.location.origin) return;
+
+                // Provider alias matching: Supabase uses 'twitter', we normalize to 'x'
+                const msgProvider = event.data?.provider;
+                const providerMatch = msgProvider === provider 
+                    || (provider === 'twitter' && (msgProvider === 'x' || msgProvider === 'twitter'))
+                    || (provider === 'google' && msgProvider === 'google')
+                    // Accept any provider if we got OAUTH_SUCCESS but provider unknown
+                    || (event.data?.type === 'OAUTH_SUCCESS' && !msgProvider);
                 
-                if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.provider === provider) {
+                if (event.data?.type === 'OAUTH_SUCCESS' && providerMatch) {
                     resolved = true;
                     window.removeEventListener('message', handleMessage);
                     clearInterval(pollClose);
