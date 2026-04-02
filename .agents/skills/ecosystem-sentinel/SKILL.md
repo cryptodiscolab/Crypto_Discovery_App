@@ -81,7 +81,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.38.25 (Absolute Strategic Harmony).
+- **Versi Terakhir:** 3.40.4 (Feature Workflow SOT Established).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -319,7 +319,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 
 ## 📋 Checklist Sentinel (MANDATORY)
 - [ ] **🔍 PRE-FIX AUDIT** *(BARU - WAJIB dijalankan SEBELUM fix apapun)*: `node scripts/audits/check_sync_status.cjs` — Pastikan baseline ekosistem terdokumentasi.
-- [ ] **Clean Git Tree**: Apakah `git status` bersih dari file sementara (`tmp_*.cjs`, `.env.vercel`, `FlatCryptoDisco*.sol`, `_archive/`)? Jika tidak, tambahkan ke `.gitignore` dan hapus file tersebut.
+- [ ] **Feature Workflow Source of Truth**: Evaluasi alur yang diubah (Login, Claim, Db-Sync) terhadap `PRD/FEATURE_WORKFLOW_SOT.md`. Jangan berhalusinasi data-flow antara on-chain, Vercel, dan Supabase.
 - [ ] **Gitleaks Audit**: Apakah eksekusi `npm run gitleaks-check` mengembalikan *exit code 0* (No leaks)?
 - [ ] **No-Screenshot Audit**: Apakah seluruh file screenshot/media (`.png`, `.webp`, dll) hasil audit sudah dihapus?
 - [ ] **Zero-Leak Audit**: Apakah kode bebas dari `role_key`, `secret`, atau kredensial mentah lainnya? Pastikan `.gitleaks.toml` mendeteksi adanya kebocoran sebelum push.

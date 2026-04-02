@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.40.1)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.40.4)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -40,6 +40,7 @@ e:\Disco Gacha\Disco_DailyApp
 │
 └── PRD/                     # 📄 Product Requirements Documentation
     ├── DISCO_DAILY_MASTER_PRD.md   # Source of Truth
+    ├── FEATURE_WORKFLOW_SOT.md     # Feature Workflow & Sync SOT
     └── DISCO_DAILY_MASTER_PRD.html # Viewable Design Doc
 ```
 
@@ -115,4 +116,4 @@ graph TD
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-03-27 | Daily Claim Structural Optimization & Ecosystem Sync v3.40.1.*
+*Last Updated: 2026-04-02 | Daily Claim Structural Optimization & Ecosystem Sync v3.40.4.*
