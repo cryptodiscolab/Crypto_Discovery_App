@@ -296,7 +296,7 @@ export default function AdminSystemSettings() {
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
             <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin" />
-            <p className="text-slate-400 font-mono animate-pulse uppercase tracking-widest text-xs font-black">Decrypting System Matrix...</p>
+            <p className="text-slate-400 font-mono animate-pulse uppercase tracking-widest text-[11px] font-black">Decrypting System Matrix...</p>
         </div>
     );
 
@@ -311,7 +311,7 @@ export default function AdminSystemSettings() {
                         </div>
                         <div>
                             <h1 className="text-2xl font-black text-white uppercase tracking-tight">System <span className="text-indigo-500">Settings</span></h1>
-                            <p className="text-slate-400 text-xs font-mono">Dynamic Point Control & Audit Logging Enabled</p>
+                            <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest font-mono">Dynamic Point Control & Audit Logging Enabled</p>
                         </div>
                     </div>
                     <button onClick={fetchPointSettings} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400 hover:text-white">
@@ -332,7 +332,7 @@ export default function AdminSystemSettings() {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${activeTab === tab.id ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                         >
                             <tab.icon className="w-3.5 h-3.5" />
                             {tab.label}
@@ -404,7 +404,7 @@ export default function AdminSystemSettings() {
             {/* Footer Policy */}
             <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex items-start gap-3">
                 <Info className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
-                <p className="text-[10px] text-slate-400 leading-relaxed uppercase tracking-wide font-black">
+                <p className="text-[11px] text-slate-400 leading-relaxed uppercase tracking-widest font-black">
                     Security Policy: double check verification active. All changes are logged to <code className="text-white">admin_audit_logs</code>.
                     All on-chain actions require multisig-authorized account or owner signature.
                 </p>

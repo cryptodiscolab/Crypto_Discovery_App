@@ -50,7 +50,7 @@ export function Web3Provider({ children }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-50">
         <div className="w-12 h-12 border-t-2 border-indigo-500 rounded-full animate-spin mb-4"></div>
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Initializing Wallet Core...</p>
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Initializing Wallet Core...</p>
       </div>
     );
   }

@@ -128,9 +128,9 @@ export function HomePage() {
                   <span className="text-4xl md:text-5xl font-black text-white tabular-nums">
                     ${poolUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </span>
-                  <span className="text-zinc-500 font-semibold text-base">USDC</span>
+                  <span className="text-zinc-500 text-[11px] font-black uppercase tracking-widest">USDC</span>
                 </div>
-                <p className="text-zinc-600 text-[11px] mt-1 font-mono">≈ {poolETH} ETH</p>
+                <p className="text-zinc-600 text-[11px] mt-1 font-mono font-black uppercase tracking-widest">≈ {poolETH} ETH</p>
               </div>
 
               {poolSettings?.claimTimestamp > Date.now() && (
@@ -201,8 +201,8 @@ export function HomePage() {
                       </p>
 
                       {card.linkText && (
-                        <div className={`flex items-center mt-3 text-sm font-semibold text-${card.color || 'indigo'}-400 group-hover:underline`}>
-                          {String(card.linkText)} →
+                        <div className={`flex items-center mt-3 text-[11px] font-black uppercase tracking-widest text-${card.color || 'indigo'}-400 group-hover:underline`}>
+                          {String(card.linkText).toUpperCase()} →
                         </div>
                       )}
 

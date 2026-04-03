@@ -19,17 +19,17 @@ export function HeroSection() {
                         <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">POWERED BY API3 QRNG ON BASE</span>
                     </div>
 
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
-                        Crypto Disco
+                    <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-6 uppercase italic">
+                        CRYPTO DISCO
                         <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                            Daily Tasks & Quantum Raffle
+                            DAILY TASKS & QUANTUM RAFFLE
                         </span>
                     </h1>
 
-                    <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-                        The fairest raffle platform on Base. Complete social tasks to earn free tickets,
-                        or boost your chances with premium entries. Truly random, fully transparent.
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+                        THE FAIREST RAFFLE PLATFORM ON BASE. COMPLETE SOCIAL TASKS TO EARN FREE TICKETS,
+                        OR BOOST YOUR CHANCES WITH PREMIUM ENTRIES. TRULY RANDOM, FULLY TRANSPARENT.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

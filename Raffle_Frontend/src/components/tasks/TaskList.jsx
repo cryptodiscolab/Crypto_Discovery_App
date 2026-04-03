@@ -98,7 +98,7 @@ export function TaskList() {
         }
 
         setClaimingTask(task.id);
-        const toastId = toast.loading("Processing claim...");
+        const toastId = toast.loading("PROCESSING CLAIM...");
 
         try {
             // ── SECURE CLAIM FLOW ──
@@ -208,7 +208,7 @@ export function TaskList() {
                             </div>
 
                             <h4 className={`text-[11px] font-black uppercase tracking-widest leading-relaxed mb-4 ${isClaimed ? 'text-slate-500 line-through' : 'text-white'}`}>
-                                {task.description}
+                                {task.description.toUpperCase()}
                             </h4>
 
                             <div className="relative group/btn">

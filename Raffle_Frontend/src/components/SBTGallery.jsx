@@ -62,7 +62,7 @@ export function SBTGallery({ walletAddress }) {
         if (!val) return "---";
         // If BP, convert to % if appropriate, or just show raw weight
         // Contract usually uses raw weights for distribution
-        return `${val} weight`;
+        return `${val} WEIGHT`;
     };
 
     if (isLoading) {
@@ -81,16 +81,16 @@ export function SBTGallery({ walletAddress }) {
                 <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Clock className="text-slate-500 w-6 h-6" />
                 </div>
-                <h4 className="text-sm font-bold text-slate-400">No Season History</h4>
-                <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-widest font-black">Your journey begins this season.</p>
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">NO SEASON HISTORY</h4>
+                <p className="text-[11px] text-slate-600 mt-1 uppercase tracking-widest font-black opacity-50">YOUR JOURNEY BEGINS THIS SEASON.</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-4">
-            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] px-1 flex items-center gap-2">
-                <Award className="w-3 h-3" /> Soulbound Achievement Gallery
+            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-2">
+                <Award className="w-3 h-3" /> SOULBOUND ACHIEVEMENT GALLERY
             </h3>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -98,7 +98,7 @@ export function SBTGallery({ walletAddress }) {
                     <div key={h.id} className="glass-card group relative p-5 bg-gradient-to-br from-slate-900 to-black border border-white/5 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all duration-500">
                         {/* Status Label */}
                         <div className="absolute top-3 right-3">
-                            <span className="text-[8px] font-black uppercase tracking-widest text-slate-600 group-hover:text-indigo-400 transition-colors">
+                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-600 group-hover:text-indigo-400 transition-colors">
                                 S{h.season_id}
                             </span>
                         </div>
@@ -112,21 +112,21 @@ export function SBTGallery({ walletAddress }) {
                         </div>
 
                         {/* Text */}
-                        <h4 className="text-xs font-black text-white uppercase tracking-wider mb-1">
-                            {levels[h.final_tier]} Peak
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-1">
+                            {levels[h.final_tier].toUpperCase()} PEAK
                         </h4>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase truncate">
-                            {h.seasons?.name || `Season ${h.season_id}`}
+                        <p className="text-[11px] text-zinc-500 font-black uppercase tracking-widest truncate leading-none">
+                            {h.seasons?.name?.toUpperCase() || `SEASON ${h.season_id}`}
                         </p>
 
                         {/* Hover Overlay info */}
                         <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-1 text-[8px] text-slate-600 font-black uppercase">
+                            <div className="flex items-center gap-1 text-[11px] text-zinc-600 font-black uppercase tracking-widest">
                                 <Zap className="w-2 h-2" /> {h.xp_at_reset?.toLocaleString() || 0} XP
                             </div>
                             <div className="flex items-center gap-1">
-                                <span className="text-[8px] font-black text-indigo-400/60 uppercase">
-                                    {getTierWeightLabel(h.final_tier)}
+                                <span className="text-[11px] font-black text-indigo-400/60 uppercase tracking-widest">
+                                    {getTierWeightLabel(h.final_tier).toUpperCase()}
                                 </span>
                                 <div className="w-2 h-2 rounded-full bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
                             </div>

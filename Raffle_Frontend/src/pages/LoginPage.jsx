@@ -124,7 +124,7 @@ export function LoginPage() {
                                                     type="button"
                                                     className="px-6 py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all"
                                                 >
-                                                    Switch to Base
+                                                    SWITCH TO BASE
                                                 </button>
                                             ) : (
                                                 <button
@@ -164,7 +164,7 @@ export function LoginPage() {
                                 </button>
                             ) : (
                                 <div className="w-full px-4 py-3 bg-green-500/10 border border-green-500/20 rounded-2xl text-green-400 text-[11px] font-black uppercase tracking-widest text-center">
-                                    ✓ Wallet Verified — Profile Created
+                                    ✓ WALLET VERIFIED — PROFILE CREATED
                                 </div>
                             )}
                         </div>
@@ -178,8 +178,8 @@ export function LoginPage() {
                                 STEP 3 — LINK SOCIAL IDENTITY (OPTIONAL)
                             </p>
                             <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest mb-3 leading-relaxed">
-                                Link Google or X to enable pfp sync & Sybil protection.
-                                Your wallet remains the primary identity — this step is optional.
+                                LINK GOOGLE OR X TO ENABLE PFP SYNC & SYBIL PROTECTION.
+                                YOUR WALLET REMAINS THE PRIMARY IDENTITY — THIS STEP IS OPTIONAL.
                             </p>
 
                             {/* Google Link */}
@@ -194,7 +194,7 @@ export function LoginPage() {
                             >
                                 <div className="flex items-center gap-2">
                                     <Mail className="w-3.5 h-3.5" />
-                                    {linkedGoogle ? `Google: ${linkedGoogle.email}` : 'Link Google Account'}
+                                    {linkedGoogle ? `GOOGLE: ${linkedGoogle.email.toUpperCase()}` : 'LINK GOOGLE ACCOUNT'}
                                 </div>
                                 {linkedGoogle && (
                                     <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
@@ -213,15 +213,15 @@ export function LoginPage() {
                             >
                                 <div className="flex items-center gap-2">
                                     <Twitter className="w-3.5 h-3.5" />
-                                    {linkedX ? `X: @${linkedX.username}` : 'Link X (Twitter) Account'}
+                                    {linkedX ? `X: @${linkedX.username.toUpperCase()}` : 'LINK X (TWITTER) ACCOUNT'}
                                 </div>
                                 {linkedX && (
                                     <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
                                 )}
                             </button>
 
-                            <p className="text-[11px] text-slate-600 text-center mt-3 font-black uppercase tracking-widest animate-pulse">
-                                Redirecting to app in a moment...
+                             <p className="text-[11px] text-indigo-400 text-center mt-3 font-black uppercase tracking-widest animate-pulse">
+                                REDIRECTING TO APP IN A MOMENT...
                             </p>
                         </div>
                     )}
@@ -244,7 +244,7 @@ export function LoginPage() {
                 </div>
 
                 <div className="mt-6 text-center text-[11px] text-slate-600 font-black uppercase tracking-widest leading-relaxed relative z-10">
-                    Wallet is your primary identity. No Riba. Honest Data Only.
+                    WALLET IS YOUR PRIMARY IDENTITY. NO RIBA. HONEST DATA ONLY.
                 </div>
             </div>
         </div>

@@ -34,7 +34,7 @@ const AdminGuard = ({ children }) => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <Lock className="w-12 h-12 text-indigo-500 animate-pulse" />
-                <p className="text-slate-400 font-mono text-xs uppercase tracking-widest">Validating Crypto Disco Admin Identity...</p>
+                <p className="text-slate-400 font-mono text-[11px] font-black uppercase tracking-widest">Validating Crypto Disco Admin Identity...</p>
             </div>
         );
     }
@@ -46,12 +46,12 @@ const AdminGuard = ({ children }) => {
                     <ShieldAlert className="w-16 h-16 text-red-500" />
                 </div>
                 <h1 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter">Identity <span className="text-red-500">Rejected</span></h1>
-                <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed font-medium">
+                <p className="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed font-black uppercase tracking-widest">
                     Critical Security Failure: Your connected wallet identity does not match the Lead Architect authority.
                 </p>
                 <button
                     onClick={() => navigate('/')}
-                    className="mt-8 flex items-center gap-2 bg-indigo-600 px-8 py-3 rounded-2xl text-white font-bold hover:bg-indigo-500 transition-all shadow-xl active:scale-95"
+                    className="mt-8 flex items-center gap-2 bg-indigo-600 px-8 py-3 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl active:scale-95"
                 >
                     <ArrowLeft className="w-4 h-4" /> Back to Home
                 </button>

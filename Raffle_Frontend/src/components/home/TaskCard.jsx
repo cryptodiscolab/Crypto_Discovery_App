@@ -13,30 +13,30 @@ export function TaskCard() {
                 <div className="p-3 bg-blue-500/20 rounded-2xl">
                     <span className="text-2xl">⚡</span>
                 </div>
-                <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/20">
+                <span className="px-3 py-1 bg-green-500/20 text-green-400 text-[11px] font-black uppercase tracking-widest rounded-full border border-green-500/20">
                     DAILY RESET
                 </span>
             </div>
 
-            <h3 className="text-2xl font-bold text-white mb-2">Daily Power-Up</h3>
-            <p className="text-slate-400 text-sm mb-6">Complete simple social tasks to earn raw points for raffle tickets.</p>
+            <h3 className="text-lg font-black uppercase tracking-tighter italic text-white mb-2">DAILY POWER-UP</h3>
+            <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-6 opacity-70">COMPLETE SIMPLE SOCIAL TASKS TO EARN RAW POINTS FOR RAFFLE TICKETS.</p>
 
             <div className="space-y-3 mb-6 flex-grow">
                 {tasks.map((task, i) => (
                     <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                         <div className="flex items-center gap-3">
                             <span className="text-xl">{task.icon}</span>
-                            <span className={`text-sm font-medium ${task.active ? 'text-white' : 'text-slate-500'}`}>
-                                {task.title}
+                            <span className={`text-[11px] font-black uppercase tracking-widest ${task.active ? 'text-white' : 'text-slate-500'}`}>
+                                {task.title.toUpperCase()}
                             </span>
                         </div>
-                        <span className="text-xs font-bold text-blue-400">{task.reward}</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-blue-400">{task.reward}</span>
                     </div>
                 ))}
             </div>
 
-            <button className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 group">
-                Go to Tasks
+            <button className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 group">
+                VIEW ALL TASKS
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
         </GridCard>

@@ -91,8 +91,10 @@ function AppContent() {
               background: '#161B22',
               color: '#e2e8f0',
               borderRadius: '12px',
-              fontSize: '13px',
-              fontWeight: 600,
+              fontSize: '11px',
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
             }
           }}
         />

@@ -44,7 +44,7 @@ function CampaignCard({ campaign, onClaim, userAddress }) {
                 <div className="flex items-start justify-between gap-2">
                     <h3 className="text-white font-black text-[11px] uppercase tracking-widest leading-tight line-clamp-2">{campaign.title}</h3>
                     <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ${STATUS_COLORS[status]}`}>
-                        {status}
+                        {status.toUpperCase()}
                     </span>
                 </div>
 
@@ -128,7 +128,7 @@ export function OffersList() {
     async function handleClaim(campaign) {
         if (!address) return;
         setJoiningId(campaign.id);
-        const tid = toast.loading(`Joining ${campaign.title}...`);
+        const tid = toast.loading(`JOINING ${campaign.title.toUpperCase()}...`);
         try {
             const timestamp = new Date().toISOString();
             const message = `Join Campaign: ${campaign.title}\nWallet: ${address}\nTimestamp: ${timestamp}`;
@@ -198,7 +198,7 @@ export function OffersList() {
                     <Megaphone className="w-12 h-12 opacity-10" />
                     <div className="text-center">
                         <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">NO ACTIVE OFFERS</p>
-                        <p className="text-[11px] text-slate-500 mt-1 uppercase tracking-widest">Check back later for rewards.</p>
+                        <p className="text-[11px] text-slate-500 mt-1 uppercase tracking-widest">CHECK BACK LATER FOR REWARDS.</p>
                     </div>
                 </div>
             ) : (

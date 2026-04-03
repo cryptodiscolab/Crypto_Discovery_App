@@ -81,40 +81,40 @@ export const ReferralCard = () => {
                             <Users className="w-4 h-4" />
                         </div>
                         <div className="text-xl font-black text-white">{isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : stats.total}</div>
-                        <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total Invites</div>
+                        <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">Total Invites</div>
                     </div>
                     <div className="flex-1 md:flex-none p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-3xl text-center min-w-[100px]">
                         <div className="flex justify-center mb-1 text-emerald-400">
                             <Zap className="w-4 h-4" />
                         </div>
                         <div className="text-xl font-black text-emerald-400">{isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : stats.active}</div>
-                        <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Active Members</div>
+                        <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">Active Members</div>
                     </div>
                 </div>
 
                 {/* Info & Action Section */}
                 <div className="flex-1 text-center md:text-left">
-                    <h4 className="text-sm font-black text-white italic uppercase tracking-tighter mb-1">
-                        Grow the <span className="text-indigo-400">Ecosystem</span>
+                    <h4 className="text-lg font-black text-white italic uppercase tracking-tighter mb-1">
+                        GROW THE <span className="text-indigo-400">ECOSYSTEM</span>
                     </h4>
-                    <p className="text-[10px] font-bold text-slate-500 mb-4 leading-relaxed max-w-[280px]">
-                        Invite friends. Earn <span className="text-indigo-400 font-extrabold">{BONUS}% XP bonus</span> from their activities forever!
+                    <p className="text-[11px] font-black text-slate-500 mb-4 leading-relaxed max-w-[280px] uppercase tracking-widest">
+                        INVITE FRIENDS. EARN <span className="text-indigo-400 font-extrabold">{BONUS}% XP BONUS</span> FROM THEIR ACTIVITIES FOREVER!
                     </p>
 
                     <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                         <button
                             onClick={handleCopy}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${copied ? 'bg-emerald-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${copied ? 'bg-emerald-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
                         >
                             {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                            {copied ? 'Copied!' : 'Copy Link'}
+                            {copied ? 'COPIED!' : 'COPY LINK'}
                         </button>
 
                         <button
                             onClick={shareFarcaster}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#472a91] hover:bg-[#5c37bd] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-900/20"
+                            className="flex items-center gap-2 px-4 py-2 bg-[#472a91] hover:bg-[#5c37bd] text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-900/20"
                         >
-                            <Share2 className="w-3 h-3" /> Warpcast
+                            <Share2 className="w-3 h-3" /> WARPCAST
                         </button>
                     </div>
                 </div>
@@ -122,12 +122,12 @@ export const ReferralCard = () => {
 
             {/* Footnote */}
             <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
-                <div className="flex items-center gap-2 text-[8px] font-bold text-slate-600 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[11px] font-black text-slate-600 uppercase tracking-widest">
                     <Trophy className="w-3 h-3 text-yellow-500/50" />
-                    Active member = XP {'>'} {THRESHOLD}
+                    ACTIVE MEMBER = XP {'>'} {THRESHOLD}
                 </div>
-                <div className="text-[8px] font-black text-indigo-400/50 uppercase tracking-widest flex items-center gap-1 cursor-help hover:text-indigo-400 transition-colors">
-                    T&C Applied <ExternalLink className="w-2 h-2" />
+                <div className="text-[11px] font-black text-indigo-400/50 uppercase tracking-widest flex items-center gap-1 cursor-help hover:text-indigo-400 transition-colors">
+                    T&C APPLIED <ExternalLink className="w-2 h-2" />
                 </div>
             </div>
         </div>

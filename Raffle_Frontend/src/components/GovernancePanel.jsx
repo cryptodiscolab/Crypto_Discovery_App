@@ -68,9 +68,9 @@ export function GovernancePanel() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-indigo-400">
                     <ShieldCheck className="w-5 h-5" />
-                    <h3 className="font-black uppercase tracking-tighter text-sm">Governance Moderation</h3>
+                    <h3 className="font-black uppercase tracking-widest text-[11px]">Governance Moderation</h3>
                 </div>
-                <span className="text-[10px] font-bold bg-indigo-500/20 px-2 py-0.5 rounded-full text-indigo-400">
+                <span className="text-[11px] font-black uppercase tracking-widest bg-indigo-500/20 px-2.5 py-1 rounded-full text-indigo-400">
                     {pendingMissions.length} Pending
                 </span>
             </div>
@@ -83,16 +83,16 @@ export function GovernancePanel() {
                                 <Clock className="w-5 h-5 text-amber-500" />
                             </div>
                             <div>
-                                <p className="text-xs font-black text-white uppercase">{mission.title || 'Untitled Mission'}</p>
-                                <p className="text-[10px] text-zinc-500">ID: {mission.id} • Reward: {mission.reward_amount} XP</p>
+                                <p className="text-[11px] font-black text-white uppercase tracking-widest">{mission.title?.toUpperCase() || 'UNTITLED MISSION'}</p>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500 mt-0.5">ID: {mission.id} • Reward: {mission.reward_amount} XP</p>
                             </div>
                         </div>
                         <button
                             onClick={() => approveMission(mission.id)}
                             disabled={actionLoading === mission.id}
-                            className="btn-primary py-2 px-4 text-[10px] bg-emerald-600 hover:bg-emerald-500 min-w-[100px]"
+                            className="btn-primary py-2 px-4 text-[11px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 min-w-[100px] transition-all"
                         >
-                            {actionLoading === mission.id ? <RefreshCw className="w-3 h-3 animate-spin mx-auto" /> : 'Approve'}
+                            {actionLoading === mission.id ? <RefreshCw className="w-3 h-3 animate-spin mx-auto" /> : 'APPROVE'}
                         </button>
                     </div>
                 ))}

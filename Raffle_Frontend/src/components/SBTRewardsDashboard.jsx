@@ -106,29 +106,29 @@ export function SBTRewardsDashboard() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <div className="flex items-center gap-2 mb-2">
-                                <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em]">Pool Reward Collected</p>
-                                <span className="bg-indigo-500/20 text-indigo-400 text-[8px] px-1.5 py-0.5 rounded font-black tracking-tighter">SYNC v2</span>
+                                <p className="text-indigo-400 text-[11px] font-black uppercase tracking-widest">Pool Reward Collected</p>
+                                <span className="bg-indigo-500/20 text-indigo-400 text-[11px] px-2 py-0.5 rounded font-black uppercase tracking-widest">SYNC v2</span>
                             </div>
                             <div className="flex items-baseline gap-2">
-                                <h2 className="text-4xl font-black text-white tracking-tight">
+                                <h2 className="text-4xl font-black text-white tracking-tight uppercase italic">
                                     ${((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </h2>
-                                <span className="text-slate-500 font-bold text-sm uppercase italic">USDC</span>
+                                <span className="text-slate-500 font-black text-[11px] uppercase italic tracking-widest">USDC</span>
                             </div>
-                            <p className="text-slate-500 text-xs mt-1 flex items-center gap-1 font-mono">
+                            <p className="text-slate-500 text-[11px] mt-1 flex items-center gap-1 font-black uppercase tracking-widest">
                                 ≈ {parseFloat(formatEther(totalPoolBalance || 0n)).toFixed(6)} ETH
                             </p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-2 text-[10px] text-green-400 font-bold uppercase tracking-widest bg-green-400/5 px-3 py-1.5 rounded-full border border-green-400/10">
+                            <div className="flex items-center gap-2 text-[11px] text-green-400 font-black uppercase tracking-widest bg-green-400/5 px-3 py-1.5 rounded-full border border-green-400/10">
                                 <CheckCircle className="w-3 h-3" />
                                 On-Chain Verified
                             </div>
-                            <p className="text-[10px] text-slate-500 italic">* Rate: 1 ETH = ${ethPrice.toLocaleString()}</p>
+                            <p className="text-[11px] text-slate-500 italic uppercase font-black tracking-widest">* Rate: 1 ETH = ${ethPrice.toLocaleString()}</p>
                         </div>
                     </div>
                     <div className="mt-6 space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        <div className="flex justify-between items-center text-[11px] font-black text-slate-500 uppercase tracking-widest">
                             <span>Reward Progress</span>
                             <span className="text-indigo-400">
                                 {Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}%
@@ -151,35 +151,35 @@ export function SBTRewardsDashboard() {
                         <Award className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-slate-400 text-xs uppercase font-bold tracking-widest">Your Soulbound Status</p>
-                        <p className={`text-xl font-black ${tierColors[userTier]}`}>{tierNames[userTier]} Tier</p>
+                        <p className="text-slate-400 text-[11px] uppercase font-black tracking-widest">YOUR SOULBOUND STATUS</p>
+                        <p className={`text-xl font-black italic uppercase tracking-tighter ${tierColors[userTier]}`}>{tierNames[userTier]} Tier</p>
                     </div>
                 </div>
                 <div className="glass-card p-5 flex flex-col justify-between bg-slate-900/50">
                     <div className="flex items-center gap-2 mb-2">
-                        <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                        <p className="text-indigo-400 text-[11px] font-black uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
                             COMMUNITY POOL
                         </p>
                     </div>
                     <div className="mb-4 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
-                        <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider flex items-center gap-2">
+                        <p className="text-[11px] text-indigo-300 font-black uppercase tracking-widest flex items-center gap-2">
                             <TimerIcon className="w-3 h-3" />
-                            Data updates every 24h at 07:00 UTC
+                            DATA UPDATES EVERY 24H AT 07:00 UTC
                         </p>
                     </div>
                     <div className="flex items-end justify-between">
-                        <h3 className="text-2xl font-bold text-white">
-                            {parseFloat(formatEther(claimableAmount)).toFixed(6)} <span className="text-sm text-slate-500">ETH</span>
+                        <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">
+                            {parseFloat(formatEther(claimableAmount)).toFixed(6)} <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest italic">ETH</span>
                         </h3>
                         <button
                             onClick={handleClaim}
                             disabled={isClaiming || claimableAmount === 0n || userTier === 0}
-                            className={`px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg border border-white/10 ${claimableAmount > 0n
+                            className={`px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg border border-white/10 ${claimableAmount > 0n
                                 ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white hover:scale-105 active:scale-95 shadow-indigo-500/30'
                                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                                 }`}
                         >
-                            {isClaiming ? "Processing..." : "Claim Investment"}
+                            {isClaiming ? "PROCESSING..." : "CLAIM REWARDS"}
                             {!isClaiming && claimableAmount > 0n && <DollarSign className="w-4 h-4" />}
                         </button>
                     </div>
@@ -193,15 +193,15 @@ export function SBTRewardsDashboard() {
             {Number(currentGasPrice) / 1e9 > 150 && (
                 <div className="flex items-center justify-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-500">
                     <ShieldAlert className="w-4 h-4 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-tighter">
-                        Network Congestion: {(Number(currentGasPrice) / 1e9).toFixed(0)} Gwei. Recommend waiting.
+                    <span className="text-[11px] font-black uppercase tracking-widest">
+                        NETWORK CONGESTION: {(Number(currentGasPrice) / 1e9).toFixed(0)} GWEI. RECOMMEND WAITING.
                     </span>
                 </div>
             )}
 
             <div className="text-center">
-                <p className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em]">
-                    Powered by Anti-Gravity Revenue Distribution Logic (No-Riba Guaranteed)
+                <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest">
+                    POWERED BY ANTI-GRAVITY REVENUE DISTRIBUTION LOGIC (NO-RIBA GUARANTEED)
                 </p>
             </div>
         </div>
@@ -252,12 +252,12 @@ function SBTTierBreakdown() {
         <div className="glass-card p-5 bg-slate-900/40 border-white/5">
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Community Tier Breakdown</p>
-                    <p className="text-slate-600 text-[10px] mt-0.5">Last distribution: {lastDist}</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">COMMUNITY TIER BREAKDOWN</p>
+                    <p className="text-slate-600 text-[11px] mt-0.5 font-black uppercase tracking-widest">LAST DISTRIBUTION: {lastDist}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-white font-black text-lg">{loading ? '—' : totalHolders}</p>
-                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Total Holders</p>
+                    <p className="text-white font-black text-lg italic tracking-tighter">{loading ? '—' : totalHolders}</p>
+                    <p className="text-slate-500 text-[11px] uppercase font-black tracking-widest">TOTAL HOLDERS</p>
                 </div>
             </div>
 
@@ -274,8 +274,8 @@ function SBTTierBreakdown() {
                             <div key={t.key} className={`flex flex-col items-center justify-center gap-1 p-3 rounded-xl border ${t.bg} ${t.border}`}>
                                 <span className="text-lg">{t.emoji}</span>
                                 <p className={`text-base font-black ${t.color}`}>{count}</p>
-                                <p className={`text-[9px] font-bold uppercase tracking-wider ${t.color} opacity-80`}>{t.label}</p>
-                                <p className="text-[9px] text-slate-600 font-mono">{pct}%</p>
+                                <p className={`text-[11px] font-black uppercase tracking-widest ${t.color} opacity-80`}>{t.label}</p>
+                                <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest">{pct}%</p>
                             </div>
                         );
                     })}

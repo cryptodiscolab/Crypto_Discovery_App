@@ -385,19 +385,19 @@ export default function ProfilePage() {
                 <p className="text-[11px] text-slate-500 mt-1">Use direct links. Avoid huge files for better loading performance.</p>
               </div>
             ) : (
-              <h2 className="text-xl font-bold text-white leading-tight">{profileData.displayName || 'No Name'}</h2>
+              <h2 className="text-lg font-black text-white uppercase tracking-tighter italic leading-none">{profileData.displayName || 'ANONYMOUS DISCO'}</h2>
             )}
 
-            <div className="flex items-center gap-2 text-slate-500 text-sm">
+            <div className="flex items-center gap-2 text-slate-500 text-[11px] font-black uppercase tracking-widest">
               {isEditing ? (
                 <div className="flex items-center gap-1">
                   <div className="flex items-center gap-1">
                     <span className="text-[11px] font-black text-white uppercase tracking-widest">{profileData.total_following || 0}</span>
-                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Following</span>
+                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">FOLLOWING</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-[11px] font-black text-white uppercase tracking-widest">{profileData.total_followers || 0}</span>
-                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Followers</span>
+                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">FOLLOWERS</span>
                   </div>
                   <span className="text-slate-500">@</span>
                   <input
@@ -405,8 +405,8 @@ export default function ProfilePage() {
                     maxLength={30}
                     value={profileData.username || ''}
                     onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                    className="bg-transparent border-b border-gray-700 py-0.5 text-sm text-slate-400 focus:border-indigo-500 outline-none w-32"
-                    placeholder="username"
+                    className="bg-transparent border-b border-gray-700 py-0.5 text-[11px] font-black text-slate-400 focus:border-indigo-500 outline-none w-32 uppercase tracking-widest"
+                    placeholder="USERNAME"
                   />
                 </div>
               ) : (
@@ -464,16 +464,16 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4 mt-3 text-[11px]">
             <div className="flex gap-1">
               <span className="font-black text-white uppercase tracking-widest">{profileData.followingCount.toLocaleString()}</span>
-              <span className="text-slate-500 font-black uppercase tracking-widest">Following</span>
+              <span className="text-slate-500 font-black uppercase tracking-widest">FOLLOWING</span>
             </div>
             <div className="flex gap-1">
               <span className="font-black text-white uppercase tracking-widest">{profileData.followerCount.toLocaleString()}</span>
-              <span className="text-slate-500 font-black uppercase tracking-widest">Followers</span>
+              <span className="text-slate-500 font-black uppercase tracking-widest">FOLLOWERS</span>
             </div>
             {profileData.streakCount > 0 && (
               <div className="flex gap-1 items-center bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
                 <Flame size={12} className="text-orange-500 fill-current" />
-                <span className="font-black text-orange-500 text-[11px] uppercase tracking-widest">{profileData.streakCount} Day Streak</span>
+                <span className="font-black text-orange-500 text-[11px] uppercase tracking-widest">{profileData.streakCount} DAY STREAK</span>
               </div>
             )}
             <div
@@ -522,7 +522,7 @@ export default function ProfilePage() {
                 ${claimReady ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-900 text-zinc-600 opacity-50'}`}
             >
               <Calendar size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-tight">Daily Bonus</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">DAILY BONUS</span>
               {claimCountdown && <span className="text-[11px] font-mono font-black">{claimCountdown}</span>}
             </button>
 
@@ -531,7 +531,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <Plus size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-tight">Create Task</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">CREATE MISSION</span>
             </button>
 
             <button
@@ -539,7 +539,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <Ticket size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-tight">Launch Raffle</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">LAUNCH RAFFLE</span>
             </button>
 
             <button
@@ -547,7 +547,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <RefreshCw size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-tight">Renew Job</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">RENEW JOB</span>
             </button>
 
             {onChainUserData?.currentTier > 0 && (
@@ -562,7 +562,7 @@ export default function ProfilePage() {
                    <div className="absolute inset-0 bg-indigo-500/10 animate-pulse pointer-events-none" />
                 )}
                 <Coins size={18} className={claimableAmount > 0n ? "animate-bounce" : ""} />
-                <span className="text-[11px] font-bold uppercase tracking-tight">Claim Dividends</span>
+                <span className="text-[11px] font-black uppercase tracking-widest">CLAIM DIVIDENDS</span>
                 {claimableAmount > 0n && (
                   <span className="text-[11px] font-mono font-black text-indigo-300">
                     {Number(claimableAmount).toFixed(4)} ETH
@@ -624,8 +624,8 @@ export default function ProfilePage() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Neynar Score</h3>
-                <p className="text-[11px] text-slate-500 uppercase tracking-widest">Reputation Health</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">NEYNER SCORE</h3>
+                <p className="text-[11px] text-slate-500 uppercase tracking-widest">REPUTATION HEALTH</p>
               </div>
             </div>
             <div className="text-right">
@@ -642,8 +642,8 @@ export default function ProfilePage() {
                 <Award size={20} />
               </div>
               <div>
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Total XP</h3>
-                <p className="text-[11px] text-slate-500 uppercase tracking-widest">Season Progress</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">TOTAL XP</h3>
+                <p className="text-[11px] text-slate-500 uppercase tracking-widest">SEASON PROGRESS</p>
               </div>
             </div>
             <div className="text-right">
@@ -660,8 +660,8 @@ export default function ProfilePage() {
                 <Crown size={20} />
               </div>
               <div>
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Current Rank</h3>
-                <p className="text-[11px] text-slate-500 uppercase tracking-widest">Leaderboard Tier</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">CURRENT RANK</h3>
+                <p className="text-[11px] text-slate-500 uppercase tracking-widest">LEADERBOARD TIER</p>
               </div>
             </div>
             <div className="text-right">
@@ -689,7 +689,7 @@ export default function ProfilePage() {
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Mail size={14} />
               <span className="text-[11px] font-black uppercase tracking-widest">
-                {profileData.google_id ? 'Google Linked' : 'Link Google'}
+                {profileData.google_id ? 'GOOGLE LINKED' : 'LINK GOOGLE'}
               </span>
               {profileData.google_id && <Check size={10} className="text-blue-400" />}
             </button>
@@ -708,7 +708,7 @@ export default function ProfilePage() {
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Twitter size={14} />
               <span className="text-[11px] font-black uppercase tracking-widest">
-                {profileData.twitter_id ? 'X Linked' : 'Link X (Twitter)'}
+                {profileData.twitter_id ? 'X LINKED' : 'LINK X (TWITTER)'}
               </span>
               {profileData.twitter_id && <Check size={10} className="text-white" />}
             </button>
@@ -720,14 +720,14 @@ export default function ProfilePage() {
                 : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
               <Share2 size={14} />
               <span className="text-[11px] font-black uppercase tracking-widest">
-                {profileData.fid && profileData.fid !== 'N/A' ? 'Farcaster Linked' : 'Farcaster Unlinked'}
+                {profileData.fid && profileData.fid !== 'N/A' ? 'FARCASTER LINKED' : 'FARCASTER UNLINKED'}
               </span>
               {profileData.fid && profileData.fid !== 'N/A' && <Check size={10} className="text-indigo-400" />}
             </div>
           </div>
           {profileData.google_email && (
             <p className="text-[11px] text-slate-500 mt-2 ml-4 font-mono font-black uppercase tracking-widest">
-              Primary identity: <span className="text-slate-400">{profileData.google_email}</span>
+              PRIMARY IDENTITY: <span className="text-slate-400">{profileData.google_email.toUpperCase()}</span>
             </p>
           )}
         </div>
@@ -1263,7 +1263,7 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
         {streakCount > 0 && (
           <div className="flex items-center justify-center gap-2 bg-orange-500/10 border border-orange-500/20 py-2 px-4 rounded-xl w-fit mx-auto animate-bounce">
             <Flame size={16} className="text-orange-500 fill-current" />
-            <span className="text-sm font-black text-orange-400 italic">
+            <span className="text-[11px] font-black text-orange-400 uppercase tracking-widest italic">
               {streakCount} DAY STREAK 🔥
             </span>
           </div>
@@ -1477,7 +1477,9 @@ function RevenueClaimModal({ onClose, claimable, onSuccess }) {
 
         <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-6 px-4">
           <p className="text-[11px] text-indigo-300 font-black uppercase tracking-widest mb-1">Available to Claim</p>
-          <p className="text-4xl font-black text-white font-mono">{Number(claimable).toFixed(6)} <span className="text-sm text-slate-500">ETH</span></p>
+          <p className="text-4xl font-black text-white font-mono uppercase tracking-tighter italic">
+            {Number(claimable).toFixed(6)} <span className="text-[11px] text-slate-500 uppercase tracking-widest leading-none">ETH</span>
+          </p>
         </div>
 
         <button

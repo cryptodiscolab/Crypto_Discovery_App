@@ -67,13 +67,13 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
             {user.rank_name || 'ROOKIE'} 
             {isCurrentUser && <span className="text-yellow-500 font-black">(YOU)</span>}
             {streakCount > 0 && (
-              <span className="flex items-center gap-0.5 text-orange-500 font-black italic text-[10px]">
+              <span className="flex items-center gap-0.5 text-orange-500 font-black italic text-[11px] uppercase tracking-widest">
                 <Sparkles size={10} className="fill-current" />
-                {streakCount}d
+                {streakCount}D
               </span>
             )}
             {raffleWins > 0 && (
-              <span className="flex items-center gap-0.5 text-purple-400 font-black text-[10px]">
+              <span className="flex items-center gap-0.5 text-purple-400 font-black text-[11px] uppercase tracking-widest">
                 🏆 {raffleWins}W
               </span>
             )}
@@ -163,7 +163,7 @@ export function LeaderboardPage() {
                 <tab.icon size={12} className={activeTab === tab.id ? tab.color : ''} />
                 {tab.label}
                 {activeTab === tab.id && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/10 text-[8px]">
+                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/10 text-[11px] font-black">
                     {filteredUsers.length}
                   </span>
                 )}

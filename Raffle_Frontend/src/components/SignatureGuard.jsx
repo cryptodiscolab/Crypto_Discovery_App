@@ -93,33 +93,33 @@ export const SignatureGuard = ({ children }) => {
                     <Lock className="text-indigo-400" size={32} />
                 </div>
                 <div className="space-y-2">
-                    <h2 className="text-xl font-bold text-white uppercase tracking-tighter italic">Identity <span className="text-indigo-500">Locked</span></h2>
-                    <p className="text-xs text-slate-500 max-w-[240px] leading-relaxed">
-                        Please sign the verification message to access your profile and rewards.
+                    <h2 className="text-lg font-black text-white italic tracking-tighter uppercase">IDENTITY <span className="text-indigo-500">LOCKED</span></h2>
+                    <p className="text-[11px] text-slate-500 max-w-[240px] leading-relaxed font-black uppercase tracking-widest">
+                        PLEASE SIGN THE VERIFICATION MESSAGE TO ACCESS YOUR PROFILE AND REWARDS.
                     </p>
                 </div>
                 <button
                     onClick={handleSignApproval}
                     disabled={isSigning}
-                    className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-indigo-500/20"
+                    className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-indigo-500/20"
                 >
                     {isSigning ? (
                         <div className="flex items-center gap-2">
                             <RefreshCw className="animate-spin w-4 h-4" />
-                            Verifying...
+                            VERIFYING...
                         </div>
                     ) : (
                         <>
                             <ShieldCheck size={16} />
-                            Verify Identity
+                            VERIFY IDENTITY
                         </>
                     )}
                 </button>
                 <button 
                     onClick={handleReject}
-                    className="text-[11px] text-slate-500 font-bold uppercase tracking-widest hover:text-red-400 transition-colors pt-2"
+                    className="text-[11px] text-slate-500 font-black uppercase tracking-widest hover:text-red-400 transition-colors pt-2"
                 >
-                    Disconnect Wallet
+                    DISCONNECT WALLET
                 </button>
             </div>
         );

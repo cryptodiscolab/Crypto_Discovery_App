@@ -71,11 +71,11 @@ export function AnnouncementBanner({ announcement }) {
 
                     {/* Content */}
                     <div className="flex-1">
-                        <h3 className={`text-lg font-bold ${config.text} mb-1`}>
-                            {String(announcement.title || '')}
+                        <h3 className={`text-lg font-black italic uppercase tracking-tighter ${config.text} mb-1`}>
+                            {String(announcement.title || '').toUpperCase()}
                         </h3>
-                        <p className="text-slate-300 text-sm">
-                            {String(announcement.message || '')}
+                        <p className="text-slate-300 text-[11px] font-black uppercase tracking-widest leading-relaxed">
+                            {String(announcement.message || '').toUpperCase()}
                         </p>
                     </div>
 

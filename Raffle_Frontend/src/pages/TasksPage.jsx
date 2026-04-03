@@ -87,14 +87,14 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                         <Sparkles className="w-3 h-3 text-indigo-400" />
                         Farcaster Required
                     </span>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight leading-relaxed">
+                    <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
                         This task requires a Farcaster account. Join now to start earning XP!
                     </p>
                     <a
                         href={APP_CONFIG.FARCASTER_REFERRAL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[9px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[11px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
                         onClick={() => toast.dismiss(t.id)}
                     >
                         Sign Up for Farcaster
@@ -133,14 +133,14 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                         <Sparkles className="w-3 h-3 text-indigo-400" />
                         Verification Blocked
                     </span>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight leading-relaxed">
+                    <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
                         Cannot verify Farcaster tasks without a connected account.
                     </p>
                     <a
                         href={APP_CONFIG.FARCASTER_REFERRAL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[9px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[11px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
                         onClick={() => toast.dismiss(t.id)}
                     >
                         Join Farcaster
@@ -469,7 +469,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white italic">Sponsored Mission</span>
                 </div>
                 {isGlobalCompleted && (
-                    <span className="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30 font-black uppercase tracking-tighter">Mission Accomplished</span>
+                    <span className="text-[11px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30 font-black uppercase tracking-widest">Mission Accomplished</span>
                 )}
             </div>
 
@@ -487,8 +487,8 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
             <div className="p-4 bg-black/20 border-t border-white/5 space-y-4">
                 {verifyingStatus === 'success' && timer > 0 && (
                     <div className="bg-green-500/10 text-green-400 p-3 rounded-xl border border-green-500/20 text-center animate-pulse">
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1">Status: Verified</p>
-                        <p className="text-[11px] font-bold">Claim rewarding in {timer}s...</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest mb-1">Status: Verified</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest">Claim rewarding in {timer}s...</p>
                     </div>
                 )}
 
@@ -547,8 +547,8 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
 
                 {verifyingStatus === 'fail' && (
                     <div className="bg-red-500/10 text-red-400 p-3 rounded-xl border border-red-500/20 text-center">
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1">Verification Failed</p>
-                        <p className="text-[11px] font-bold">Please ensure all tasks are completed</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest mb-1">Verification Failed</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest">Please ensure all tasks are completed</p>
                     </div>
                 )}
 
@@ -556,7 +556,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                     <button
                         onClick={handleVerifyCard}
                         disabled={isVerifying}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.3em] transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-indigo-900/20"
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-[0.3em] transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-indigo-900/20"
                     >
                         {isVerifying ? "SYSTEM CHECKING..." : "VERIFY MISSION"}
                     </button>
@@ -582,8 +582,8 @@ function IndividualTaskRow({ task, address, onAction }) {
                     {isVerified ? <CheckCircle size={18} /> : <Zap size={18} />}
                 </div>
                 <div>
-                    <h4 className={`text-[14px] font-bold tracking-tight ${isVerified ? 'text-slate-500 line-through' : 'text-white'}`}>{task.title}</h4>
-                    <p className="text-[10px] text-slate-500 font-mono uppercase opacity-60">Task ID #{task.id}</p>
+                    <h4 className={`text-[11px] font-black uppercase tracking-widest ${isVerified ? 'text-slate-500 line-through' : 'text-white'}`}>{task.title}</h4>
+                    <p className="text-[11px] text-slate-500 font-mono font-black uppercase tracking-widest opacity-60">Task ID #{task.id}</p>
                 </div>
             </div>
 

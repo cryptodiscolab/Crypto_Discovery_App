@@ -32,8 +32,8 @@ export function SBTUpgradeCard() {
                         <Sparkles className="text-yellow-400" size={24} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-black text-white uppercase italic">Max Level Reached</h3>
-                        <p className="text-sm text-slate-400">You are a Diamond member. Maximum rewards active.</p>
+                        <h3 className="text-lg font-black text-white uppercase italic tracking-tighter">MAX LEVEL REACHED</h3>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">YOU ARE A DIAMOND MEMBER. MAXIMUM REWARDS ACTIVE.</p>
                     </div>
                 </div>
             </div>
@@ -117,15 +117,15 @@ export function SBTUpgradeCard() {
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Next Ascension</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-indigo-400">Next Ascension</span>
                             {isReady && (
-                                <span className="flex items-center gap-1 text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30 font-black uppercase">
+                                <span className="flex items-center gap-1 text-[11px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30 font-black uppercase tracking-widest">
                                     Ready
                                 </span>
                             )}
                         </div>
                         <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">
-                            Tier {nextTier.name}
+                            TIER {nextTier.name.toUpperCase()}
                         </h3>
                     </div>
                     <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
@@ -137,7 +137,7 @@ export function SBTUpgradeCard() {
                 <div className="space-y-4 mb-6">
                     {/* XP Progress */}
                     <div className="space-y-2">
-                        <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                        <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
                             <span className="text-slate-500">XP Requirement</span>
                             <span className={hasTotalXP ? "text-green-400" : "text-yellow-400"}>
                                 {Number(userPoints).toLocaleString()} / {nextTier.pointsRequired.toLocaleString()}
@@ -155,16 +155,16 @@ export function SBTUpgradeCard() {
                     <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-slate-500 uppercase">Fee</span>
-                                <span className="text-xs font-mono font-bold text-white">
+                                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Fee</span>
+                                <span className="text-[11px] font-black text-white uppercase tracking-widest">
                                     {formatEther(nextTier.mintPrice)} ETH
                                 </span>
                             </div>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-slate-500 uppercase">Supply</span>
-                                <span className={`text-xs font-mono font-bold ${isSoldOut ? 'text-red-400' : 'text-white'}`}>
+                                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Supply</span>
+                                <span className={`text-[11px] font-black uppercase tracking-widest ${isSoldOut ? 'text-red-400' : 'text-white'}`}>
                                     {nextTier.currentSupply} / {nextTier.maxSupply || '∞'}
                                 </span>
                             </div>
@@ -174,21 +174,21 @@ export function SBTUpgradeCard() {
 
                 {/* Requirements Summary */}
                 <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${hasTotalXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-black uppercase tracking-widest ${hasTotalXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
                         {hasTotalXP ? <CheckCircle2 size={12} /> : <Lock size={12} />}
                         Total XP
                     </div>
-                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${hasOnChainXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-black uppercase tracking-widest ${hasOnChainXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
                         {hasOnChainXP ? <CheckCircle2 size={12} /> : <Loader2 size={12} className="animate-spin" />}
                         On-Chain Sync
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-6">
-                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${hasEnoughETH ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-black uppercase tracking-widest ${hasEnoughETH ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
                         {hasEnoughETH ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                         Funds OK
                     </div>
-                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold uppercase ${!isSoldOut ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-black uppercase tracking-widest ${!isSoldOut ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
                         {!isSoldOut ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                         Available
                     </div>
@@ -219,7 +219,7 @@ export function SBTUpgradeCard() {
 
                 {hasTotalXP && !hasOnChainXP && (
                     <div className="mt-4 p-3 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
-                        <p className="text-[10px] text-yellow-400 font-bold uppercase leading-tight text-center">
+                        <p className="text-[11px] text-yellow-400 font-black uppercase leading-tight text-center tracking-widest">
                             ⚠️ Points Synced to DB but not Contract.
                             <br/>Sync will happen on next daily claim.
                         </p>
@@ -227,7 +227,7 @@ export function SBTUpgradeCard() {
                 )}
 
                 {hasTotalXP && !hasEnoughETH && (
-                    <p className="text-[10px] text-red-400 text-center mt-3 font-bold uppercase animate-pulse">
+                    <p className="text-[11px] text-red-400 text-center mt-3 font-black uppercase animate-pulse tracking-widest">
                         ⚠️ Insufficient ETH for Minting Fee
                     </p>
                 )}

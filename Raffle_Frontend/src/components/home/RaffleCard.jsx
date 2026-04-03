@@ -95,14 +95,14 @@ export function RaffleCard() {
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/50 rounded-full border border-white/10">
                     <Shield className="w-3 h-3 text-yellow-400" />
-                    <span className="text-xs font-bold text-slate-300">API3 VERIFIED</span>
+                    <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">API3 VERIFIED</span>
                 </div>
             </div>
 
-            <h3 className="text-2xl font-bold text-white mb-2">
-                {displayedRaffle.id ? `Exclusive Raffle #${displayedRaffle.id}` : "Upcoming Raffle"}
+            <h3 className="text-lg font-black text-white mb-1 uppercase tracking-tighter italic leading-none">
+                {displayedRaffle.id ? `EXCLUSIVE RAFFLE #${displayedRaffle.id}` : "UPCOMING RAFFLE"}
             </h3>
-            <p className="text-slate-400 text-sm mb-6">Win blue-chip NFTs. Fair randomness powered by Quantum RNG.</p>
+            <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-6 opacity-70">WIN BLUE-CHIP NFTS. FAIR RANDOMNESS POWERED BY QUANTUM RNG.</p>
 
             {/* Live Raffle Details */}
             <div className="bg-slate-950/50 rounded-2xl p-4 border border-white/5 mb-6">
@@ -111,18 +111,18 @@ export function RaffleCard() {
                         <Ticket className="text-white w-6 h-6" />
                     </div>
                     <div>
-                        <h4 className="text-white font-bold text-sm">Reward: NFT Prize</h4>
-                        <p className="text-slate-500 text-xs">Pool: {(Number(displayedRaffle.prizePool || 0) / 1e18).toFixed(4)} ETH</p>
+                        <h4 className="text-white font-black text-[11px] uppercase tracking-widest leading-none">REWARD: NFT PRIZE</h4>
+                        <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest mt-1">POOL: {(Number(displayedRaffle.prizePool || 0) / 1e18).toFixed(4)} ETH</p>
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
                         <span className="text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {timeLeft > 0 ? "Ends in" : "Status"}
+                            <Clock className="w-3 h-3" /> {timeLeft > 0 ? "ENDS IN" : "STATUS"}
                         </span>
-                        <span className={`font-mono font-bold ${timeLeft > 0 ? 'text-white' : 'text-red-400'}`}>
-                            {timeLeft > 0 ? formatTime(timeLeft) : (displayedRaffle.isActive ? "Ending Soon" : "Ended")}
+                        <span className={`italic tracking-tighter ${timeLeft > 0 ? 'text-white' : 'text-red-400'}`}>
+                            {timeLeft > 0 ? formatTime(timeLeft) : (displayedRaffle.isActive ? "ENDING SOON" : "ENDED")}
                         </span>
                     </div>
                     <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -131,9 +131,9 @@ export function RaffleCard() {
                             style={{ width: `${Math.min(100, progress)}%` }}
                         />
                     </div>
-                    <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                        <span>{displayedRaffle.totalTickets} tickets sold</span>
-                        <span>{displayedRaffle.maxTickets} max</span>
+                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                        <span>{displayedRaffle.totalTickets} TICKETS SOLD</span>
+                        <span>{displayedRaffle.maxTickets} MAX</span>
                     </div>
                 </div>
             </div>
@@ -143,8 +143,8 @@ export function RaffleCard() {
                 <div className="flex items-center gap-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl mb-3 animate-pulse">
                     <Trophy className="w-5 h-5 text-yellow-400 flex-shrink-0" />
                     <div>
-                        <p className="text-yellow-300 text-xs font-black">🏆 You&apos;re a Winner!</p>
-                        <p className="text-yellow-200/70 text-[10px]">Claim your NFT prize below.</p>
+                        <p className="text-yellow-300 text-[11px] font-black uppercase tracking-widest">🏆 YOU&apos;RE A WINNER!</p>
+                        <p className="text-yellow-200/70 text-[11px] font-black uppercase tracking-widest mt-0.5">CLAIM YOUR NFT PRIZE BELOW.</p>
                     </div>
                 </div>
             )}
@@ -154,36 +154,36 @@ export function RaffleCard() {
                 <button
                     onClick={handleClaim}
                     disabled={isClaiming}
-                    className={`w-full py-3 rounded-xl font-bold transition-all border flex items-center justify-center gap-2 mt-auto
+                    className={`w-full py-4 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
                         ${isClaiming
                             ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
-                            : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400'
+                            : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400 shadow-yellow-500/20'
                         }`}
                 >
                     {isClaiming ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Claiming...</>
+                        <><Loader2 className="w-4 h-4 animate-spin" /> CLAIMING...</>
                     ) : (
-                        <><Trophy className="w-4 h-4" /> Claim Your Prize</>
+                        <><Trophy className="w-4 h-4" /> CLAIM YOUR PRIZE</>
                     )}
                 </button>
             ) : (
                 <button
                     onClick={handleBuy}
                     disabled={isBuying || !displayedRaffle.isActive || timeLeft <= 0}
-                    className={`w-full py-3 rounded-xl font-bold transition-all border flex items-center justify-center gap-2 mt-auto
+                    className={`w-full py-4 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
                         ${isBuying
                             ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
                             : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
                         }`}
                 >
                     {isBuying ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                        <><Loader2 className="w-4 h-4 animate-spin" /> PROCESSING...</>
                     ) : (
                         <>
                             {isGaslessSupported && <span className="text-xs">⛽</span>}
                             {isGaslessSupported
-                                ? "Buy Free Ticket"
-                                : `Buy Ticket (${ecosystemSettings?.raffle_ticket_price_usdc || 0.15} USDC)`}
+                                ? "BUY FREE TICKET"
+                                : `BUY TICKET (${ecosystemSettings?.raffle_ticket_price_usdc || 0.15} USDC)`}
                         </>
                     )}
                 </button>
