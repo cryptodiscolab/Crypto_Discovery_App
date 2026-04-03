@@ -22,8 +22,9 @@ function CampaignCard({ campaign, onClaim, userAddress }) {
             : 'ended';
 
     const rewardFormatted = campaign.reward_amount_per_user
-        ? (Number(campaign.reward_amount_per_user) / 1e18).toFixed(4)
+        ? Number(campaign.reward_amount_per_user).toFixed(2)
         : '—';
+    const rewardSymbol = campaign.reward_symbol || 'USDC';
 
     const daysLeft = endAt !== Infinity
         ? Math.max(0, Math.ceil((endAt - now) / 86400000))
@@ -54,7 +55,7 @@ function CampaignCard({ campaign, onClaim, userAddress }) {
                 <div className="grid grid-cols-2 gap-2 text-[10px]">
                     <div className="flex items-center gap-1.5 text-slate-400">
                         <Gift className="w-3 h-3 text-indigo-400" />
-                        <span>{rewardFormatted} ETH / user</span>
+                        <span>{rewardFormatted} {rewardSymbol} / user</span>
                     </div>
                     {daysLeft !== null && (
                         <div className="flex items-center gap-1.5 text-slate-400">

@@ -41,7 +41,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.40.11**
+**Protocol Version: 3.40.18**
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -135,18 +135,15 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 
 ## 10. VERIFIED INFRASTRUCTURE REFERENCE (SYNCED FROM .ENV)
 > Always reference this section.
-- Chain: Base Mainnet (8453), Base Sepolia (84532)
-- Supabase URL: `https://rbgzwhsdqnhwrwimjjfm.supabase.co`
 
-### 📋 Canonical Contract Addresses (Deployer: `0x52260C30697674A7C837feb2Af21BbF3606795C8`)
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
 | **DailyApp V13.2** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` |
-| **MasterX (XP)** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7` |
+| **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| **Last Synced** | `2026-04-02T17:30:00+07:00` | PRD v3.40.6 (V13.2 Fix) |
+| **Last Synced** | `2026-04-03T23:00:00+07:00` | PRD v3.40.18 (UI Hardening) |
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -158,11 +155,14 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - **API_KEYS**: Gemini, Neynar, Alchemy, and other service keys must be managed strictly via `.env`.
 - **Privacy**: ALL sensitive data MUST be added to `.gitignore`. Use `.env.example` as a template for team members.
 
-## 13. UI/UX DESIGN & FRONTEND STANDARDS (SENIOR STAFF ENGINEER MODE)
-1. **Clean & Rugged:** Modern dark-themed aesthetic. No heavy libraries like Framer-Motion.
-2. **Atomic Layout:** 100% responsiveness. Mobile uses bottom-sheets/drawers.
-3. **Z-Index Management:** ALL fixed UI components MUST use `z-[9999] pointer-events-auto`.
-4. **Minimalist Modern Standards**: Visual breathing room, subtle elevation, typography first.
+## 13. UI/UX DESIGN & FRONTEND STANDARDS (NATIVE+ v3.40.18)
+1. **Native+ Aesthetic:** Standardized high-density mobile interface. No heavy libraries.
+2. **Typography Mandate:** ALL micro-text, labels, and metadata MUST use **11px (Bold/Uppercase/Tracking-Wide)**.
+3. **Safe Area Insets:** ALL fixed layouts MUST implement `.pb-safe` and `.pt-safe` recursive padding to ensure notch/home-indicator compliance.
+4. **Component Parity:** Use `.btn-native`, `.input-native`, and `.select-native` for all interactive states.
+5. **Atomic Layout:** 100% responsiveness. Mobile uses bottom-sheets/drawers.
+6. **Z-Index Management:** ALL fixed UI components MUST use `z-[9999] pointer-events-auto`.
+7. **Minimalist Modern Standards:** Visual breathing room, 3xl glassmorphism, typography first.
 
 ## 14. FULL-STACK SYNCHRONIZATION PROTOCOL (THE INTEGRITY GUARD)
 - **THE VERIFICATION CHAIN**: feature -> Admin Bot -> Dashboard -> Backend -> Database -> Smart Contract -> Final Audit.
@@ -454,6 +454,9 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
   - `.env.example`, `.env.local`, `.env.vercel`, `.env.vercel.preview`, `.env.vercel.production`, `.env.verification.vercel`.
   - **MANDATE**: Every sync execution MUST verify that legacy addresses (0xfA75, 0xDe61, 0x87a3) are purged and replaced with the canonical v3.40.11 verified SOT addresses (`0xaC43...`).
 
-- **Current Protocol Version**: v3.40.11 (Specialized Env Audit Mandate)
-*Antigravity: Integrity Restored. Visual Audit Mandated. No Silent Deletions.*
+- **41.0 GLOBAL MOBILE UI HARDENING (v3.40.18)**: Every UI update MUST adhere to "Native+" standards.
+  - **MANDATE**: Enforce 11px micro-typography and notch-proof safe areas across all mobile viewports.
+  - **VERIFICATION**: UI audits MUST be performed via browser sub-agent on multiple device emulations (iPhone SE, Pro Max).
 
+- **Current Protocol Version**: v3.40.18 (Global Mobile UI Hardening)
+*Antigravity: Integrity Restored. Visual Audit Mandated. Native+ UI Hardened.*

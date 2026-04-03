@@ -4,7 +4,7 @@ async function main() {
   const addresses = [
     { name: 'DailyApp V12 (Mainnet - Reserved)', addr: '[RESERVED]' },
     { name: 'DailyApp V13.2 (Sepolia)', addr: '0xaC430adE9217e2280b852EA29b91d14b12b3E151' },
-    { name: 'MasterX', addr: '0x1ED8B135F01522505717D1E620c4EF869D7D25e7' },
+    { name: 'MasterX', addr: '0x980770dAcE8f13E10632D3EC1410FAA4c707076c' },
     { name: 'Raffle', addr: '0x012FAdd087540e1B51a587f420e77D007fED2a84' },
     { name: 'CMS V2', addr: '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302' },
     { name: 'AirnodeRrpV0 (Sepolia?)', addr: '0x2ab9f26E18b6103274414940251539D0105e2Add' },

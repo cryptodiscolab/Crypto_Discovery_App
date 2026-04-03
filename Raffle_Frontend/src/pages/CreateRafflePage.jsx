@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign, Image as ImageIcon, Link as LinkIcon, Twitter, Tag, Shield, Clock } from 'lucide-react';
+import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign, Image as ImageIcon, Link as LinkIcon, Twitter, Tag, Shield, Clock, ChevronDown } from 'lucide-react';
 import { useAccount, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
@@ -196,7 +196,7 @@ export function CreateRafflePage() {
     }
 
     return (
-        <div className="min-h-screen pt-24 pb-20 px-4 bg-slate-950">
+        <div className="min-h-screen pt-24 pb-safe px-4 bg-slate-950">
             <div className="container mx-auto max-w-5xl">
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Form Section */}
@@ -217,24 +217,24 @@ export function CreateRafflePage() {
                                 <div className="glass-card p-4 space-y-4 border-white/5">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Event Title</label>
+                                            <label className="admin-label">Event Title</label>
                                             <input
                                                 type="text"
                                                 required
                                                 placeholder="e.g. Legendary CyberPunk Giveaway"
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-all font-medium"
+                                                className="input-native"
                                                 value={formData.title}
                                                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Image URL</label>
+                                            <label className="admin-label">Image URL</label>
                                             <div className="relative">
-                                                <ImageIcon className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                                                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                                 <input
                                                     type="url"
                                                     placeholder="https://example.com/image.png"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-all font-medium"
+                                                    className="input-native pl-10"
                                                     value={formData.imageUrl}
                                                     onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
                                                 />
@@ -243,10 +243,10 @@ export function CreateRafflePage() {
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Description</label>
+                                        <label className="admin-label">Description</label>
                                         <textarea
                                             placeholder="Tell the community about this prize and any requirements..."
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-all font-medium min-h-[100px] resize-none"
+                                            className="input-native min-h-[100px] resize-none"
                                             value={formData.description}
                                             onChange={e => setFormData({ ...formData, description: e.target.value })}
                                         />
@@ -254,7 +254,7 @@ export function CreateRafflePage() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-indigo-400/60 tracking-widest mb-1.5 block">Prize Reward (ETH)</label>
+                                            <label className="admin-label text-indigo-400/60">Prize Reward (ETH)</label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <DollarSign className="w-4 h-4 text-indigo-500/50 group-focus-within:text-indigo-400 transition-colors" />
@@ -262,7 +262,7 @@ export function CreateRafflePage() {
                                                 <input
                                                     type="number"
                                                     step="0.001"
-                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-10 pr-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-mono text-lg"
+                                                    className="input-native pl-10 font-mono text-lg"
                                                     value={formData.prizeDeposit}
                                                     onChange={e => setFormData({ ...formData, prizeDeposit: e.target.value })}
                                                 />
@@ -274,11 +274,11 @@ export function CreateRafflePage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Duration</label>
-                                            <div className="relative">
-                                                <Calendar className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                                            <label className="admin-label">Duration</label>
+                                            <div className="select-wrapper">
+                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                                                 <select
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-all appearance-none"
+                                                    className="select-native pl-10"
                                                     value={formData.durationDays}
                                                     onChange={e => setFormData({ ...formData, durationDays: e.target.value })}
                                                 >
@@ -288,6 +288,7 @@ export function CreateRafflePage() {
                                                     <option value="14">14 Days</option>
                                                     <option value="25">25 Days (Max)</option>
                                                 </select>
+                                                <ChevronDown className="select-chevron w-4 h-4" />
                                             </div>
                                         </div>
                                     </div>
@@ -320,7 +321,7 @@ export function CreateRafflePage() {
                                             <div className="relative">
                                                 <input
                                                     type="number"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-all font-mono"
+                                                    className="input-native font-mono"
                                                     value={formData.maxTickets}
                                                     onChange={e => setFormData({ ...formData, maxTickets: e.target.value })}
                                                 />
@@ -341,11 +342,11 @@ export function CreateRafflePage() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Category</label>
-                                            <div className="relative">
-                                                <Tag className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                                            <label className="admin-label">Category</label>
+                                            <div className="select-wrapper">
+                                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                                                 <select
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-all appearance-none"
+                                                    className="select-native pl-10"
                                                     value={formData.category}
                                                     onChange={e => setFormData({ ...formData, category: e.target.value })}
                                                 >
@@ -355,14 +356,15 @@ export function CreateRafflePage() {
                                                     <option value="Social">Social</option>
                                                     <option value="Event">Event</option>
                                                 </select>
+                                                <ChevronDown className="select-chevron w-4 h-4" />
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Min SBT Level</label>
-                                            <div className="relative">
-                                                <Shield className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                                            <label className="admin-label">Min SBT Level</label>
+                                            <div className="select-wrapper">
+                                                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                                                 <select
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-all appearance-none"
+                                                    className="select-native pl-10"
                                                     value={formData.minSbtLevel}
                                                     onChange={e => setFormData({ ...formData, minSbtLevel: e.target.value })}
                                                 >
@@ -371,32 +373,33 @@ export function CreateRafflePage() {
                                                     <option value="2">Level 2+</option>
                                                     <option value="3">Level 3+</option>
                                                 </select>
+                                                <ChevronDown className="select-chevron w-4 h-4" />
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Twitter Link</label>
+                                            <label className="admin-label">Twitter Link</label>
                                             <div className="relative">
-                                                <Twitter className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                                                <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                                 <input
                                                     type="url"
                                                     placeholder="https://x.com/yourproject"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-all font-medium"
+                                                    className="input-native pl-10"
                                                     value={formData.twitterLink}
                                                     onChange={e => setFormData({ ...formData, twitterLink: e.target.value })}
                                                 />
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">External Link</label>
+                                            <label className="admin-label">External Link</label>
                                             <div className="relative">
-                                                <LinkIcon className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                                 <input
                                                     type="url"
                                                     placeholder="https://yourproject.com"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-all font-medium"
+                                                    className="input-native pl-10"
                                                     value={formData.externalLink}
                                                     onChange={e => setFormData({ ...formData, externalLink: e.target.value })}
                                                 />
@@ -409,7 +412,7 @@ export function CreateRafflePage() {
                             <button
                                 type="submit"
                                 disabled={isSubmitting || !isUgcFeatureEnabled}
-                                className="w-full btn-primary py-4 text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-blue-600/20"
+                                className="btn-native btn-primary w-full"
                             >
                                 {!isUgcFeatureEnabled ? (
                                     <>Feature Locked: Phase 4 <Lock className="w-5 h-5" /></>

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { verifyMessage } from 'viem';
+import { createPublicClient, http, verifyMessage, decodeEventLog } from 'viem';
+import { base, baseSepolia } from 'viem/chains';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
@@ -9,6 +10,36 @@ const supabaseAdmin = createClient(
     (process.env.VITE_SUPABASE_URL || '').trim(),
     (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 );
+
+// 1. DYNAMIC NETWORK SWITCHER (MAINNET SECURE)
+const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
+const isMainnet = CHAIN_ID === '8453';
+const activeChain = isMainnet ? base : baseSepolia;
+const activeRpcUrl = isMainnet 
+    ? (process.env.VITE_BASE_MAINNET_RPC_URL || 'https://mainnet.base.org').trim()
+    : (process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org').trim();
+
+const rpcClient = createPublicClient({
+    chain: activeChain,
+    transport: http(activeRpcUrl),
+});
+
+const USDC_ADDRESS = isMainnet 
+    ? '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' 
+    : '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+
+const ERC20_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'from', type: 'address' },
+            { indexed: true, name: 'to', type: 'address' },
+            { indexed: false, name: 'value', type: 'uint256' }
+        ],
+        name: 'Transfer',
+        type: 'event'
+    }
+];
 
 const AUTHORIZED_ADMINS = [
     (process.env.VITE_ADMIN_ADDRESS || '').trim(),
@@ -29,11 +60,14 @@ async function logAdminAction(admin_address, action, details) {
     }
 }
 
-const TASK_IDS = {
-    REFERRAL_XP: "12e123f5-0ded-4ca1-af04-e8b6924823e2",
-    ONCHAIN_TASK: "885535d2-4c5c-4a80-9af5-36666192c244",
-    TIER_UPGRADE: "2c1e23f5-0ded-4ca1-af04-e8b6924823e2"
-};
+async function isAuthorizedAdmin(address) {
+    let isAuthorized = AUTHORIZED_ADMINS.includes(address.toLowerCase());
+    if (!isAuthorized) {
+        const { data: profile } = await supabaseAdmin.from('user_profiles').select('is_admin').eq('wallet_address', address.toLowerCase()).single();
+        if (profile?.is_admin) isAuthorized = true;
+    }
+    return isAuthorized;
+}
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -53,18 +87,12 @@ export default async function handler(req, res) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         // 2. Authorization Check
-        let isAuthorized = AUTHORIZED_ADMINS.includes(targetAddress);
-        if (!isAuthorized) {
-            const { data: profile } = await supabaseAdmin.from('user_profiles').select('is_admin').eq('wallet_address', targetAddress).single();
-            if (profile?.is_admin) isAuthorized = true;
-        }
+        const isAuthorized = await isAuthorizedAdmin(targetAddress);
         if (!isAuthorized) return res.status(403).json({ error: 'Unauthorized: Admin only' });
 
         // 3. Routing
         switch (action) {
             case 'check': {
-                // Lightweight auth check — returns admin status, no signature required for this case
-                // (Signature is still validated above if provided; this just returns the result)
                 return res.status(200).json({ isAdmin: true, message: 'Admin access granted' });
             }
 
@@ -79,7 +107,6 @@ export default async function handler(req, res) {
             }
 
             case 'SYNC_MULTIPLIERS': {
-                // This action expects multipliers in payload: { "1": 10500, "2": 11000, ... }
                 const { error } = await supabaseAdmin
                     .from('system_settings')
                     .upsert({ 
@@ -94,7 +121,6 @@ export default async function handler(req, res) {
             }
 
             case 'SYNC_WEIGHTS': {
-                // This action expects weights in payload: { "diamond": 400, "gold": 200, ... }
                 const { error } = await supabaseAdmin
                     .from('system_settings')
                     .upsert({ 
@@ -109,7 +135,6 @@ export default async function handler(req, res) {
             }
 
             case 'WHITELIST_TOKEN_DB': {
-                // Expects payload with token details: { chain_id, address, symbol, decimals }
                 const { error } = await supabaseAdmin
                     .from('allowed_tokens')
                     .upsert({
@@ -125,7 +150,6 @@ export default async function handler(req, res) {
             }
 
             case 'REMOVE_TOKEN_DB': {
-                // Expects payload with: { chain_id, address }
                 const { error } = await supabaseAdmin
                     .from('allowed_tokens')
                     .update({ is_active: false, updated_at: new Date().toISOString() })
@@ -153,7 +177,7 @@ export default async function handler(req, res) {
                 
                 const totalXp = claims?.reduce((sum, c) => sum + (c.xp_earned || 0), 0) || 0;
                 const totalRevenueUSDC = revenueData?.reduce((sum, r) => sum + (parseFloat(r.value_amount) || 0), 0) || 0;
-                const netProfit = (totalRevenueUSDC * 0.8).toFixed(2); // 20% Project Rake (1 - 0.20)
+                const netProfit = (totalRevenueUSDC * 0.8).toFixed(2);
                 
                 return res.status(200).json({ 
                     success: true, 
@@ -262,7 +286,6 @@ export default async function handler(req, res) {
             }
             case 'RESET_SEASON': {
                 await supabaseAdmin.from('user_task_claims').delete().not('id', 'is', 'null');
-                // Rookie tier is 0
                 const ROOKIE_TIER = 0;
                 await supabaseAdmin.from('user_profiles').update({ xp: 0, total_xp: 0, tier: ROOKIE_TIER }).not('wallet_address', 'is', 'null');
                 await logAdminAction(targetAddress, 'RESET_SEASON', { season_id: payload.new_season_id });
@@ -272,7 +295,7 @@ export default async function handler(req, res) {
                 await supabaseAdmin.from('admin_audit_logs').insert([{ admin_address: targetAddress, action: req.body.governor_action, details: { tx_hash, ...req.body.details } }]);
                 return res.status(200).json({ success: true });
             }
-            case 'task-sync': { // Legacy batch sync
+            case 'task-sync': {
                 for (const task of tasks) {
                     await supabaseAdmin.from('daily_tasks').insert([{
                         description: task.title,
@@ -316,6 +339,79 @@ export default async function handler(req, res) {
                 await logAdminAction(targetAddress, 'UPDATE_FEATURE_FLAGS', payload);
                 return res.status(200).json({ success: true });
             }
+            case 'UPDATE_UGC_CONFIG': {
+                await supabaseAdmin.from('system_settings').upsert({ key: 'ugc_config', value: payload, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+                await logAdminAction(targetAddress, 'UPDATE_UGC_CONFIG', payload);
+                return res.status(200).json({ success: true });
+            }
+            case 'CREATE_UGC_MISSION': {
+                const missionData = {
+                    ...payload,
+                    is_active: false,
+                    is_verified_payment: false,
+                    created_at: new Date().toISOString()
+                };
+                try {
+                    // 1. Create Campaign
+                    const { data: campaign, error: cErr } = await supabaseAdmin
+                        .from('campaigns')
+                        .insert([missionData])
+                        .select()
+                        .single();
+                    
+                    if (cErr) throw cErr;
+
+                    // 2. Create matching Daily Task (Inactive until verified)
+                    const { error: tErr } = await supabaseAdmin
+                        .from('daily_tasks')
+                        .insert([{
+                            description: missionData.title,
+                            xp_reward: 0, // UGC tasks use dynamic point_settings 'ugc_task_completion'
+                            platform: missionData.platform_code || 'farcaster',
+                            action_type: payload.action_type || 'follow',
+                            link: missionData.link,
+                            is_active: false,
+                            task_type: 'ugc',
+                            onchain_id: campaign.id,
+                            creator_address: missionData.sponsor_address
+                        }]);
+
+                    if (tErr) throw tErr;
+
+                    await logAdminAction(targetAddress, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, ...missionData });
+                    return res.status(200).json({ success: true, data: campaign });
+                } catch (e) {
+                    return res.status(500).json({ error: e.message });
+                }
+            }
+            case 'VERIFY_UGC_PAYMENT_ONCHAIN':
+                await handleVerifyUgcPaymentOnchain(req, res);
+                break;
+            case 'MARK_REVENUE_ALLOCATED': {
+                const { mission_id } = payload;
+                await supabaseAdmin.from('campaigns').update({ is_revenue_allocated: true }).eq('id', mission_id);
+                await logAdminAction(targetAddress, 'MARK_REVENUE_ALLOCATED', payload);
+                return res.status(200).json({ success: true });
+            }
+            case 'GET_UGC_REVENUE': {
+                const { data, error } = await supabaseAdmin
+                    .from('campaigns')
+                    .select('id, title, listing_fee_usdc, sbt_share_amount, is_revenue_allocated, created_at')
+                    .filter('is_verified_payment', 'eq', true)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                return res.status(200).json({ success: true, data });
+            }
+            case 'VERIFY_UGC_PAYMENT': {
+                await supabaseAdmin.from('campaigns').update({ 
+                    is_verified_payment: true,
+                    payment_tx_hash: payload.tx_hash
+                }).eq('id', payload.campaign_id);
+                
+                await logAdminAction(targetAddress, 'VERIFY_UGC_PAYMENT', payload);
+                return res.status(200).json({ success: true });
+            }
             default:
                 return res.status(400).json({ error: 'Invalid admin action: ' + action });
         }
@@ -348,5 +444,104 @@ async function processCloudAgent(task, systemMemory) {
         await supabaseAdmin.from('agents_vault').update({ status: 'completed', output_data: output }).eq('id', task.id);
     } catch (e) {
         await supabaseAdmin.from('agents_vault').update({ status: 'failed', output_data: { error: e.message } }).eq('id', task.id);
+    }
+}
+
+async function handleVerifyUgcPaymentOnchain(req, res) {
+    const { wallet_address, signature, message, mission_id } = req.body;
+    
+    // Auth Check
+    const isAuth = await isAuthorizedAdmin(wallet_address);
+    if (!isAuth) return res.status(403).json({ error: 'Unauthorized: Admin only' });
+
+    const valid = await verifyMessage({ address: wallet_address, message, signature });
+    if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+    try {
+        // 1. Fetch Mission from DB
+        const { data: mission, error: mErr } = await supabaseAdmin
+            .from('campaigns')
+            .select('*')
+            .eq('id', mission_id)
+            .single();
+        
+        if (mErr || !mission) throw new Error("Mission not found");
+        if (!mission.payment_tx_hash) throw new Error("No transaction hash associated with this mission");
+
+        // 2. Fetch Transaction Receipt
+        const receipt = await rpcClient.getTransactionReceipt({ hash: mission.payment_tx_hash });
+        if (receipt.status !== 'success') throw new Error("Transaction failed on-chain");
+
+        // 3. Verify Transfer Events
+        const { data: ugcConfigRes } = await supabaseAdmin
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'ugc_config')
+            .single();
+        
+        const ugcConfig = ugcConfigRes?.value || {};
+        const treasury = ugcConfig.treasury_address || process.env.VITE_SAFE_MULTISIG || "";
+        if (!treasury) throw new Error("Treasury address not configured");
+
+        let totalUsdcTransferred = BigInt(0);
+        
+        for (const log of receipt.logs) {
+            if (log.address.toLowerCase() === USDC_ADDRESS.toLowerCase()) {
+                try {
+                    const decoded = decodeEventLog({
+                        abi: ERC20_ABI,
+                        eventName: 'Transfer',
+                        data: log.data,
+                        topics: log.topics,
+                    });
+                    
+                    if (decoded.args.to.toLowerCase() === treasury.toLowerCase()) {
+                        totalUsdcTransferred += decoded.args.value;
+                    }
+                } catch (e) {
+                    continue; 
+                }
+            }
+        }
+
+        // 4. Validate Amount
+        const rewardPerUserRaw = BigInt(Math.floor(parseFloat(mission.reward_amount_per_user || 0) * 1e6));
+        const totalRewardPoolRaw = rewardPerUserRaw * BigInt(mission.max_participants || 0);
+        const listingFeeRaw = BigInt(Math.floor(parseFloat(ugcConfig.listing_fee_usdc || 0) * 1e6));
+        const expectedTotalRaw = totalRewardPoolRaw + listingFeeRaw;
+
+        if (totalUsdcTransferred < expectedTotalRaw) {
+            return res.status(400).json({ 
+                error: `Payment insufficient. Expected ${Number(expectedTotalRaw)/1e6} USDC, found ${Number(totalUsdcTransferred)/1e6} USDC.`,
+                found: Number(totalUsdcTransferred)/1e6,
+                expected: Number(expectedTotalRaw)/1e6
+            });
+        }
+
+        // 5. Success
+        // Calculate shares for storage
+        const sbtSharePct = parseFloat(ugcConfig.sbt_pool_share_pct || 10);
+        const listingFeeDecimal = parseFloat(ugcConfig.listing_fee_usdc || 0);
+        const sbtShareAmount = (listingFeeDecimal * sbtSharePct) / 100;
+
+        await supabaseAdmin.from('campaigns').update({ 
+            is_verified_payment: true, 
+            status: 'active',
+            is_active: true,
+            listing_fee_usdc: listingFeeDecimal,
+            sbt_share_amount: sbtShareAmount,
+            is_revenue_allocated: false
+        }).eq('id', mission_id);
+        
+        await supabaseAdmin.from('daily_tasks').update({ is_active: true }).eq('onchain_id', mission_id);
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Payment verified & mission activated",
+            tx: mission.payment_tx_hash,
+            amount_verified: Number(totalUsdcTransferred)/1e6
+        });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 }

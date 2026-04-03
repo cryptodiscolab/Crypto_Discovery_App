@@ -68,7 +68,7 @@ export function LoginPage() {
                 <h1 className="text-3xl font-black text-white mb-1 text-center uppercase italic tracking-tighter relative z-10">
                     Daily<span className="text-indigo-500">App</span>
                 </h1>
-                <p className="text-slate-500 text-center mb-6 text-[10px] font-bold uppercase tracking-[0.3em] relative z-10">
+                <p className="text-slate-500 text-center mb-6 text-[11px] font-bold uppercase tracking-[0.3em] relative z-10">
                     Initialize Protocol Session
                 </p>
 
@@ -76,7 +76,7 @@ export function LoginPage() {
                 <div className="flex items-center justify-center gap-2 mb-8 relative z-10">
                     {[1, 2, 3].map((s) => (
                         <div key={s} className="flex items-center gap-2">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black transition-all ${
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${
                                 step > s ? 'bg-green-500 text-white' :
                                 step === s ? 'bg-indigo-500 text-white ring-2 ring-indigo-500/30' :
                                 'bg-slate-800 text-slate-600'
@@ -92,7 +92,7 @@ export function LoginPage() {
 
                     {/* ── STEP 1: Connect Wallet ── */}
                     <div className={`transition-all ${step > 1 ? 'opacity-60' : ''}`}>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
                             <Wallet className="w-3 h-3 text-indigo-400" />
                             Step 1 — Connect Wallet (Required)
                         </p>
@@ -130,7 +130,7 @@ export function LoginPage() {
                                                 <button
                                                     onClick={openAccountModal}
                                                     type="button"
-                                                    className="px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-[10px] font-black uppercase tracking-widest"
+                                                    className="px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-[11px] font-black uppercase tracking-widest"
                                                 >
                                                     ✓ {account.displayName}
                                                 </button>
@@ -145,7 +145,7 @@ export function LoginPage() {
                     {/* ── STEP 2: Sign & Verify (SIWE) ── */}
                     {isConnected && (
                         <div className={`transition-all ${step > 2 ? 'opacity-60' : ''}`}>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                 <ShieldCheck className="w-3 h-3 text-indigo-400" />
                                 Step 2 — Sign & Verify Identity (Required)
                             </p>
@@ -163,7 +163,7 @@ export function LoginPage() {
                                     )}
                                 </button>
                             ) : (
-                                <div className="w-full px-4 py-3 bg-green-500/10 border border-green-500/20 rounded-2xl text-green-400 text-[10px] font-black uppercase tracking-widest text-center">
+                                <div className="w-full px-4 py-3 bg-green-500/10 border border-green-500/20 rounded-2xl text-green-400 text-[11px] font-black uppercase tracking-widest text-center">
                                     ✓ Wallet Verified — Profile Created
                                 </div>
                             )}
@@ -173,7 +173,7 @@ export function LoginPage() {
                     {/* ── STEP 3: Social Identity Link (Optional) ── */}
                     {siweSession && (
                         <div className="pt-2 border-t border-slate-800/60">
-                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                 <span className="text-indigo-400">○</span>
                                 Step 3 — Link Social Identity (Optional)
                             </p>
@@ -186,7 +186,7 @@ export function LoginPage() {
                             <button
                                 onClick={linkGoogle}
                                 disabled={isLinking || !!linkedGoogle}
-                                className={`w-full flex items-center justify-between px-4 py-3 mb-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                className={`w-full flex items-center justify-between px-4 py-3 mb-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border ${
                                     linkedGoogle
                                         ? 'bg-green-500/10 border-green-500/20 text-green-400 cursor-default'
                                         : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 active:scale-95'
@@ -205,7 +205,7 @@ export function LoginPage() {
                             <button
                                 onClick={linkX}
                                 disabled={isLinking || !!linkedX}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border ${
                                     linkedX
                                         ? 'bg-green-500/10 border-green-500/20 text-green-400 cursor-default'
                                         : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 active:scale-95'
@@ -229,14 +229,14 @@ export function LoginPage() {
 
                 {/* Farcaster CTA */}
                 <div className="mt-8 pt-6 border-t border-slate-800/60 text-center relative z-10">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-3">
+                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-3">
                         New to Farcaster?
                     </p>
                     <a
                         href="https://farcaster.xyz/~/code/CJ393F"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
                     >
                         Get Account & Join the Gacha
                         <ExternalLink className="w-3 h-3" />

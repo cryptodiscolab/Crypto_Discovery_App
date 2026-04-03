@@ -14,6 +14,10 @@
         color: inherit !important;
         text-decoration: none !important;
     }
+
+    select {
+        cursor: pointer;
+    }
 }
 
 /* Flat-Native Utilities */
@@ -30,13 +34,12 @@
     border-radius: 1rem;
 }
 
-/* Safe Area Utilities for Mobile */
 .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(1.5rem, calc(58px + env(safe-area-inset-bottom, 0px)));
 }
 
 .pt-safe {
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -137,3 +140,49 @@
 .delay-500 {
     animation-delay: 500ms;
 }
+
+/* --- Native+ UI Components (v3.40.18) --- */
+
+.sticky-under-header {
+    position: sticky;
+    top: 4rem; /* h-16 */
+    z-index: 40;
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+    .sticky-under-header {
+        top: calc(4rem + env(safe-area-inset-top, 0px));
+    }
+}
+
+.admin-label {
+    @apply text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block;
+}
+
+.btn-native {
+    @apply px-5 py-3 rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+    @apply bg-indigo-600 text-white shadow-indigo-900/20 hover:bg-indigo-500;
+}
+
+.btn-secondary {
+    @apply bg-zinc-800 text-slate-300 border border-white/5 hover:bg-zinc-700;
+}
+
+.input-native {
+    @apply w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all;
+}
+
+.select-wrapper {
+    @apply relative w-full;
+}
+
+.select-native {
+    @apply w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 appearance-none transition-all;
+}
+
+.select-chevron {
+    @apply absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500;
+}

@@ -8,8 +8,10 @@ export function ModerationCenterTab() {
     const { signMessageAsync } = useSignMessage();
     const [pendingRaffles, setPendingRaffles] = useState([]);
     const [pendingMissions, setPendingMissions] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [activeSubTab, setActiveSubTab] = useState('raffles');
+
+    // Feature Flags & Environment
+    const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
 
     const fetchPending = async () => {
         setLoading(true);
@@ -75,6 +77,37 @@ export function ModerationCenterTab() {
         }
     };
 
+    const handleVerifyOnchain = async (missionId) => {
+        const tid = toast.loading("Verifying on-chain payment...");
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Verify UGC Payment\nMission: ${missionId}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'VERIFY_UGC_PAYMENT_ONCHAIN',
+                    wallet_address: address,
+                    signature,
+                    message,
+                    mission_id: missionId
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                toast.success(result.message || "Payment verified & mission activated!", { id: tid });
+                setPendingMissions(prev => prev.filter(m => m.id !== missionId));
+            } else {
+                throw new Error(result.error || "Verification failed");
+            }
+        } catch (error) {
+            toast.error(error.message, { id: tid });
+        }
+    };
+
     const handleApproveMission = async (missionId) => {
         const tid = toast.loading("Approving mission...");
         try {
@@ -112,9 +145,9 @@ export function ModerationCenterTab() {
                 <div>
                     <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
                         <Shield className="w-5 h-5 text-indigo-400" />
-                        UGC Moderation Center
+                        Moderation Center
                     </h2>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Reviewing User-Generated Content</p>
+                    <p className="admin-label !mb-0 !text-[11px] mt-1">Reviewing User-Generated Content</p>
                 </div>
                 <button onClick={fetchPending} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
                     <RefreshCw className={`w-4 h-4 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
@@ -124,13 +157,13 @@ export function ModerationCenterTab() {
             <div className="flex gap-4 border-b border-white/5 pb-4 mb-8">
                 <button
                     onClick={() => setActiveSubTab('raffles')}
-                    className={`text-xs font-black uppercase tracking-widest pb-2 transition-all flex items-center gap-2 ${activeSubTab === 'raffles' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`text-[11px] font-black uppercase tracking-widest pb-2 transition-all flex items-center gap-2 ${activeSubTab === 'raffles' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}
                 >
                     <Ticket className="w-3 h-3" /> Pending Raffles ({pendingRaffles.length})
                 </button>
                 <button
                     onClick={() => setActiveSubTab('missions')}
-                    className={`text-xs font-black uppercase tracking-widest pb-2 transition-all flex items-center gap-2 ${activeSubTab === 'missions' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`text-[11px] font-black uppercase tracking-widest pb-2 transition-all flex items-center gap-2 ${activeSubTab === 'missions' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500 hover:text-white'}`}
                 >
                     <Zap className="w-3 h-3" /> Pending Missions ({pendingMissions.length})
                 </button>
@@ -139,7 +172,7 @@ export function ModerationCenterTab() {
             {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center animate-pulse">
                     <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Scanning Blockchain & DB...</p>
+                    <p className="admin-label !text-[11px]">Scanning Blockchain & DB...</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
@@ -154,11 +187,11 @@ export function ModerationCenterTab() {
                                 <div key={raffle.id} className="bg-[#121214] p-6 rounded-3xl border border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-indigo-500/30 transition-all">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-[10px] font-black text-indigo-400 uppercase bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">UGC Raffle #{raffle.id}</span>
-                                            <span className="text-[10px] font-mono text-slate-500">{new Date(raffle.created_at).toLocaleString()}</span>
+                                            <span className="text-[10px] font-black text-indigo-400 uppercase bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">Raffle #{raffle.id}</span>
+                                            <span className="text-[11px] font-mono text-slate-500">{new Date(raffle.created_at).toLocaleString()}</span>
                                         </div>
                                         <h3 className="text-lg font-black text-white truncate max-w-md">Metadata: {raffle.metadata_uri}</h3>
-                                        <p className="text-[10px] text-slate-500 font-mono mt-1">Creator: {raffle.creator_address}</p>
+                                        <p className="text-[11px] text-slate-500 font-mono mt-1">Creator: {raffle.creator_address}</p>
                                         <div className="flex gap-4 mt-3">
                                             <div className="text-[10px] text-slate-400 font-bold uppercase">Tickets: {raffle.max_tickets}</div>
                                             <div className="text-[10px] text-slate-400 font-bold uppercase">Winners: {raffle.winner_count}</div>
@@ -167,9 +200,9 @@ export function ModerationCenterTab() {
                                     <div className="flex gap-2">
                                         <button 
                                             onClick={() => handleApproveRaffle(raffle.id)}
-                                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                                            className="btn-native bg-emerald-600 hover:bg-emerald-500 text-white !py-2.5"
                                         >
-                                            <CheckCircle className="w-3.5 h-3.5" /> Approve & Go Live
+                                            <CheckCircle className="w-3.5 h-3.5" /> Approve
                                         </button>
                                         <button className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all">
                                             <Trash2 className="w-4 h-4" />
@@ -192,19 +225,57 @@ export function ModerationCenterTab() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-3 mb-2">
                                             <span className="text-[10px] font-black text-purple-400 uppercase bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20">UGC Mission</span>
-                                            <span className="text-[10px] font-mono text-slate-500">{new Date(mission.created_at || Date.now()).toLocaleString()}</span>
+                                            <span className="text-[11px] font-mono text-slate-500">{new Date(mission.created_at || Date.now()).toLocaleString()}</span>
+                                            {mission.is_verified_payment ? (
+                                                <span className="text-[11px] font-black text-emerald-400 uppercase flex items-center gap-1">
+                                                    <CheckCircle className="w-2.5 h-2.5" /> Paid
+                                                </span>
+                                            ) : (
+                                                <span className="text-[11px] font-black text-amber-500 uppercase flex items-center gap-1">
+                                                    <Clock className="w-2.5 h-2.5" /> Unverified
+                                                </span>
+                                            )}
                                         </div>
                                         <h3 className="text-lg font-black text-white truncate max-w-md">{mission.title}</h3>
-                                        <p className="text-[10px] text-slate-500 font-mono mt-1">Reward: {mission.reward_points} XP | Platform: {mission.platform}</p>
-                                        <a href={mission.link} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-400 hover:underline flex items-center gap-1 mt-2 font-bold uppercase tracking-widest">View Source Link</a>
+                                        <p className="text-[10px] text-slate-500 font-mono mt-1">Reward: {mission.reward_amount_per_user} {mission.reward_symbol || 'USDC'} | Participants: {mission.max_participants}</p>
+                                        
+                                        <div className="mt-3 flex flex-wrap gap-3">
+                                            <div className="px-3 py-1.5 bg-white/5 rounded-xl border border-white/5">
+                                                <p className="admin-label !mb-1 !text-[9px]">Sponsor Wallet</p>
+                                                <p className="text-[11px] text-slate-300 font-mono">{mission.sponsor_address}</p>
+                                            </div>
+                                            {mission.payment_tx_hash && (
+                                                <div className="px-3 py-1.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
+                                                    <p className="admin-label !mb-1 !text-[9px] !text-indigo-400">Payment Proof (TX)</p>
+                                                    <a 
+                                                        href={isMainnet ? `https://basescan.org/tx/${mission.payment_tx_hash}` : `https://sepolia.basescan.org/tx/${mission.payment_tx_hash}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[11px] text-blue-400 font-mono hover:underline truncate block max-w-[120px]"
+                                                    >
+                                                        {mission.payment_tx_hash.substring(0, 10)}...{mission.payment_tx_hash.substring(54)}
+                                                    </a>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <a href={mission.link} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-400 hover:underline flex items-center gap-1 mt-4 font-bold uppercase tracking-widest bg-blue-500/5 w-fit px-2 py-1 rounded">View Mission Source</a>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button 
-                                            onClick={() => handleApproveMission(mission.id)}
-                                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
-                                        >
-                                            <CheckCircle className="w-3.5 h-3.5" /> Approve & Go Live
-                                        </button>
+                                        {!mission.is_verified_payment ? (
+                                            <button 
+                                                onClick={() => handleVerifyOnchain(mission.id)}
+                                                className="btn-native bg-indigo-600 hover:bg-indigo-500 text-white !py-2.5 shadow-lg shadow-indigo-500/20"
+                                            >
+                                                <Shield className="w-3.5 h-3.5" /> Verify Payment
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={() => handleApproveMission(mission.id)}
+                                                className="btn-native bg-emerald-600 hover:bg-emerald-500 text-white !py-2.5 shadow-lg shadow-emerald-500/20"
+                                            >
+                                                <CheckCircle className="w-3.5 h-3.5" /> Approve
+                                            </button>
+                                        )}
                                         <button className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -219,8 +290,8 @@ export function ModerationCenterTab() {
             <div className="mt-12 p-6 bg-amber-500/5 rounded-3xl border border-amber-500/10 flex items-start gap-4">
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
                 <div className="space-y-1">
-                    <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest font-mono">Goverance Notice</p>
-                    <p className="text-[9px] text-slate-500 leading-relaxed font-bold">Approved content will become visible to all users across the global dashboard. Every approval action is cryptographically signed and recorded in the permanent admin audit logs.</p>
+                    <p className="admin-label !mb-1 !text-amber-500">Governance Notice</p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-bold">Approved content will become visible to all users across the global dashboard. Every approval action is cryptographically signed and recorded in the permanent admin audit logs.</p>
                 </div>
             </div>
         </div>

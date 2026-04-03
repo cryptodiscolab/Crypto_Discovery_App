@@ -252,7 +252,7 @@ export default function ProfilePage() {
       */}
 
       {/* Top Action Bar (Mobile only usually, or simplified header) */}
-      <div className="flex justify-between items-center px-4 h-14 bg-zinc-900/50 backdrop-blur-md md:hidden">
+      <div className="flex justify-between items-center px-4 h-14 bg-zinc-900/50 backdrop-blur-md pt-safe md:hidden">
         <h1 className="text-sm font-bold text-white uppercase tracking-wider">Profile</h1>
         <button
           onClick={() => disconnect()}
@@ -371,16 +371,16 @@ export default function ProfilePage() {
           <div className="space-y-3">
             {isEditing && (
               <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Avatar URL (GIF/PNG/WebP)</label>
+                <label className="admin-label">Avatar URL (GIF/PNG/WebP)</label>
                 <input
                   type="url"
                   maxLength={500}
                   value={profileData.avatarUrl}
                   onChange={(e) => setProfileData({ ...profileData, avatarUrl: e.target.value })}
-                  className="w-full bg-transparent border-b border-gray-700 py-1 text-sm text-indigo-400 focus:border-indigo-500 outline-none placeholder-slate-600"
+                  className="input-native"
                   placeholder="https://example.com/my-avatar.gif"
                 />
-                <p className="text-[10px] text-slate-500 mt-1">Use direct links. Avoid huge files for better loading performance.</p>
+                <p className="text-[11px] text-slate-500 mt-1">Use direct links. Avoid huge files for better loading performance.</p>
               </div>
             )}
 
@@ -420,7 +420,7 @@ export default function ProfilePage() {
                         ? 'bg-indigo-500/20 border-indigo-500/40 animate-pulse' 
                         : 'bg-zinc-800/50 border-white/10'}`}
                   >
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-indigo-400">
                       {profileData.rankName}
                     </span>
                     {onChainUserData?.currentTier < potentialTier && <ArrowUpCircle size={10} className="text-indigo-400" />}
@@ -436,7 +436,7 @@ export default function ProfilePage() {
                   )}
                 </div>
               )}
-              {profileData.fid && !isEditing && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] text-slate-500">FID: {profileData.fid}</span>}
+              {profileData.fid && !isEditing && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[11px] text-slate-500">FID: {profileData.fid}</span>}
             </div>
           </div>
 
@@ -494,15 +494,15 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-indigo-400" />
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+                <span className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">
                   Ascension Ready: {getTierName(potentialTier)}
                 </span>
-                <span className="text-[8px] text-slate-500 uppercase">Mint SBT for {getTierName(potentialTier)} Multiplier</span>
+                <span className="text-[10px] text-slate-500 uppercase">Mint SBT for {getTierName(potentialTier)} Multiplier</span>
               </div>
             </div>
             <button 
               onClick={() => setActiveModal('upgrade')}
-              className="text-[9px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-lg uppercase tracking-tight hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20"
+              className="text-[11px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-lg uppercase tracking-tight hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20"
             >
               Mint Status
             </button>
@@ -518,8 +518,8 @@ export default function ProfilePage() {
                 ${claimReady ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-900 text-zinc-600 opacity-50'}`}
             >
               <Calendar size={18} />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Daily Bonus</span>
-              {claimCountdown && <span className="text-[9px] font-mono">{claimCountdown}</span>}
+              <span className="text-[11px] font-bold uppercase tracking-tight">Daily Bonus</span>
+              {claimCountdown && <span className="text-[10px] font-mono">{claimCountdown}</span>}
             </button>
 
             <button
@@ -527,7 +527,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <Plus size={18} />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Create Task</span>
+              <span className="text-[11px] font-bold uppercase tracking-tight">Create Task</span>
             </button>
 
             <button
@@ -535,7 +535,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <Ticket size={18} />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Launch Raffle</span>
+              <span className="text-[11px] font-bold uppercase tracking-tight">Launch Raffle</span>
             </button>
 
             <button
@@ -543,7 +543,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <RefreshCw size={18} />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Renew Job</span>
+              <span className="text-[11px] font-bold uppercase tracking-tight">Renew Job</span>
             </button>
 
             {onChainUserData?.currentTier > 0 && (
@@ -558,9 +558,9 @@ export default function ProfilePage() {
                    <div className="absolute inset-0 bg-indigo-500/10 animate-pulse pointer-events-none" />
                 )}
                 <Coins size={18} className={claimableAmount > 0n ? "animate-bounce" : ""} />
-                <span className="text-[10px] font-bold uppercase tracking-tight">Claim Dividends</span>
+                <span className="text-[11px] font-bold uppercase tracking-tight">Claim Dividends</span>
                 {claimableAmount > 0n && (
-                  <span className="text-[9px] font-mono text-indigo-300">
+                  <span className="text-[10px] font-mono text-indigo-300">
                     {Number(claimableAmount).toFixed(4)} ETH
                   </span>
                 )}
@@ -684,7 +684,7 @@ export default function ProfilePage() {
                   ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 cursor-default' 
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Mail size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
+              <span className="text-[11px] font-black uppercase tracking-widest">
                 {profileData.google_id ? 'Google Linked' : 'Link Google'}
               </span>
               {profileData.google_id && <Check size={10} className="text-blue-400" />}
@@ -703,7 +703,7 @@ export default function ProfilePage() {
                   ? 'bg-white/10 border-white/20 text-white cursor-default' 
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Twitter size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
+              <span className="text-[11px] font-black uppercase tracking-widest">
                 {profileData.twitter_id ? 'X Linked' : 'Link X (Twitter)'}
               </span>
               {profileData.twitter_id && <Check size={10} className="text-white" />}
@@ -715,7 +715,7 @@ export default function ProfilePage() {
                 ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' 
                 : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
               <Share2 size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
+              <span className="text-[11px] font-black uppercase tracking-widest">
                 {profileData.fid && profileData.fid !== 'N/A' ? 'Farcaster Linked' : 'Farcaster Unlinked'}
               </span>
               {profileData.fid && profileData.fid !== 'N/A' && <Check size={10} className="text-indigo-400" />}
@@ -750,7 +750,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="h-24" /> {/* Safe spacing for bottom nav */}
+        <div className="pb-safe" />
       </div>
     </div>
   );

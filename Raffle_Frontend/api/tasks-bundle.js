@@ -99,6 +99,16 @@ async function validateAndCalculateXP(wallet_address, signature, message, task_i
         if (count > 0) throw new Error('[Security] Target account already claimed');
     }
 
+    // [Hardening v3.40.12] Global Uniqueness Check
+    // Ensuring user cannot claim the SAME task ID twice ever, unless a new task is created.
+    const { count: globalClaimCount } = await supabaseAdmin
+        .from('user_task_claims')
+        .select('id', { count: 'exact', head: true })
+        .eq('wallet_address', wallet_address.toLowerCase())
+        .eq('task_id', task_id);
+    
+    if (globalClaimCount > 0) throw new Error('Task already completed. Look for new missions!');
+
     return { xp, targetId };
 }
 

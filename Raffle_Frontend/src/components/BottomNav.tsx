@@ -28,7 +28,7 @@ export function BottomNav() {
 
     return (
         <nav
-            className="fixed bottom-0 left-0 right-0 w-full z-[9999] pointer-events-auto md:hidden"
+            className="fixed bottom-0 left-0 right-0 w-full z-[10000] pointer-events-auto md:hidden pb-safe"
             style={{ 
                 paddingBottom: isFrame ? `${safeAreaInsets?.bottom || 0}px` : 'env(safe-area-inset-bottom, 0px)' 
             }}
@@ -67,7 +67,7 @@ export function BottomNav() {
                                                 <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-400 rounded-full" />
                                             )}
                                         </div>
-                                        <span className={`text-[9px] font-semibold leading-none tracking-wide ${isActive ? 'text-indigo-400' : 'text-zinc-600'}`}>
+                                        <span className={`text-[11px] font-black leading-none uppercase tracking-[0.02em] ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}>
                                             {item.label}
                                         </span>
                                     </>
@@ -95,7 +95,7 @@ export function BottomNav() {
                                             <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-amber-400 rounded-full" />
                                         )}
                                     </div>
-                                    <span className={`text-[9px] font-semibold leading-none tracking-wide ${isActive ? 'text-amber-400' : 'text-zinc-600'}`}>
+                                    <span className={`text-[11px] font-black leading-none uppercase tracking-[0.02em] ${isActive ? 'text-amber-400' : 'text-zinc-500'}`}>
                                         Admin
                                     </span>
                                 </>
@@ -121,7 +121,7 @@ export function BottomNav() {
                                         <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full" />
                                     )}
                                 </div>
-                                <span className={`text-[9px] font-semibold leading-none tracking-wide ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                                <span className={`text-[11px] font-black leading-none uppercase tracking-[0.02em] ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-500'}`}>
                                     Profile
                                 </span>
                             </Link>
@@ -131,7 +131,7 @@ export function BottomNav() {
                                 className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${location.pathname === '/login' ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'}`}
                             >
                                 <Wallet className="w-[22px] h-[22px]" strokeWidth={1.75} />
-                                <span className="text-[9px] font-semibold leading-none tracking-wide">Login</span>
+                                <span className="text-[11px] font-black leading-none uppercase tracking-[0.02em] text-zinc-500">Login</span>
                             </Link>
                         )}
                     </div>

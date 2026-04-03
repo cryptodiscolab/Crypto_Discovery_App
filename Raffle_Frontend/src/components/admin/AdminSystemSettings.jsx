@@ -27,6 +27,7 @@ import { BlockchainConfigSection } from './system/BlockchainConfigSection';
 import { SponsorshipConfigSection } from './system/SponsorshipConfigSection';
 import { HealthDashboardSection } from './system/HealthDashboardSection';
 import { AdminFeatureFlagsSection } from './system/AdminFeatureFlagsSection';
+import { UgcConfigSection } from './system/UgcConfigSection';
 
 /**
  * Admin System Settings Component
@@ -392,7 +393,12 @@ export default function AdminSystemSettings() {
 
             {activeTab === 'logs' && <AuditLogsSection logs={auditLogs} />}
             {activeTab === 'blockchain' && <BlockchainConfigSection />}
-            {activeTab === 'sponsorship' && <SponsorshipConfigSection />}
+            {activeTab === 'sponsorship' && (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <SponsorshipConfigSection />
+                    <UgcConfigSection />
+                </div>
+            )}
             {activeTab === 'health' && <HealthDashboardSection />}
 
             {/* Footer Policy */}

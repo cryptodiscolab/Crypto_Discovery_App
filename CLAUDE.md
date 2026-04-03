@@ -20,11 +20,11 @@ Before responding to ANY request, read these files IN ORDER:
 5. **`IMPLEMENTATION_SUMMARY.md`** (Top 50 Lines) — Recent history & changelog
 6. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.40.9)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.40.18)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.40.6)
+## 🔴 ABSOLUTE LAWS (Nexus v3.40.18)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.

@@ -101,23 +101,23 @@ export const SignatureGuard = ({ children }) => {
                 <button
                     onClick={handleSignApproval}
                     disabled={isSigning}
-                    className="flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-indigo-500/20"
+                    className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-indigo-500/20"
                 >
                     {isSigning ? (
                         <div className="flex items-center gap-2">
-                            <RefreshCw className="animate-spin w-3 h-3" />
+                            <RefreshCw className="animate-spin w-4 h-4" />
                             Verifying...
                         </div>
                     ) : (
                         <>
-                            <ShieldCheck size={14} />
+                            <ShieldCheck size={16} />
                             Verify Identity
                         </>
                     )}
                 </button>
                 <button 
                     onClick={handleReject}
-                    className="text-[9px] text-slate-600 font-bold uppercase tracking-widest hover:text-red-400 transition-colors"
+                    className="text-[11px] text-slate-500 font-bold uppercase tracking-widest hover:text-red-400 transition-colors pt-2"
                 >
                     Disconnect Wallet
                 </button>

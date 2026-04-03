@@ -13,7 +13,7 @@ async function main() {
     const CREATOR_TOKEN = (process.env.CREATOR_TOKEN_ADDRESS || "0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c").toLowerCase();
     const OPS_WALLET = (process.env.OPERATIONS_WALLET || "0x73F76B2b436E2E50bB6F81A6e33a42875f1cDff3").toLowerCase();
     const TREASURY = (process.env.TREASURY_WALLET || "0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa").toLowerCase();
-    const PRICE_FEED = (process.env.PRICE_FEED_ETH_USD || "0x4adC67696BA383f43fd60604633031D935f9584b").toLowerCase();
+    const PRICE_FEED = (process.env.PRICE_FEED_ETH_USD || "0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1").toLowerCase();
     const AIRNODE_RRP = (process.env.AIRNODE_RRP || "0x2ab9f26E18b6103274414940251539D0105e2Add").toLowerCase();
 
     console.log("📋 Parameters:");

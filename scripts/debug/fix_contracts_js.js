@@ -37,7 +37,7 @@ export const ERC20_ABI = ${JSON.stringify(erc20Abi, null, 2)};
 
 export const CONTRACTS = {
     // Master X: XP, Revenue Sharing, SBT tiers (LATEST DEPLOYED)
-    MASTER_X: import.meta.env.VITE_MASTER_X_ADDRESS || "0x1ED8B135F01522505717D1E620c4EF869D7D25e7",
+    MASTER_X: import.meta.env.VITE_MASTER_X_ADDRESS || "0x980770dAcE8f13E10632D3EC1410FAA4c707076c",
     // Daily App V12: Tasks, Sponsorship, Daily Claim (LATEST DEPLOYED)
     DAILY_APP: import.meta.env.VITE_V12_CONTRACT_ADDRESS || "0xfc12f4FEFf825860c5145680bde38BF222cC669A",
     // Raffle Contract (LATEST DEPLOYED)

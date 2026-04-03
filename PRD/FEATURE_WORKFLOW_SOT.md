@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.40.6)
-**Last Updated**: 2026-04-02T15:24+07:00 — Off-Chain Task XP Sync Fix & Social Banner Update
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.40.13)
+**Last Updated**: 2026-04-03T21:46+07:00 — Nexus Protocol Synchronization (Full-Stack Parity Audit)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -11,7 +11,7 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 
 | Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
 | :--- | :--- | :--- | :--- |
-| **New MasterX** | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
+| **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
 | **DailyApp V13.2** | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
 | **Raffle Manager** | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | Maret 2026 | Tiket Gacha, Undian Sponsor, Prizing distribution. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
@@ -172,3 +172,23 @@ Semua status flag dikontrol melalui: **Admin UI -> System Settings -> Features F
 
 ---
 *End of Source of Truth Document - DO NOT IGNORE.*
+## 💼 5. UGC Revenue Management & Transaction History Flow (v3.40.12)
+
+Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berputar pada dua siklus: Sistem verifikasi tugas dan History log.
+
+### 5.1 Admin Revenue Reconciliation (Manual Batching SOT)
+- **Revenue Sources**:
+  1. **UGC Missions (USDC)**: Sponsor membayar *Reward Pool + Listing Fee* via deposit Gnosis Multisig `VITE_SAFE_MULTISIG`.
+  2. **UGC Raffles (ETH)**: Sponsor mendeploy deposit + platform surcharge menggunakan smart contract `Raffle` native.
+- **Admin Reconciliation (UGCRevenueTab)**:
+  1. Frontend / UI mendeteksi seluruh Kampanye yang sudah lolos `is_verified: true` namun `is_revenue_allocated: false`.
+  2. Data disajikan dalam Tab **"Pending Allocation"**, memisahkan beban *Listing Fee* (untuk Platform) dan porsi *SBT Share* (untuk dikirim Admin secara *manual batch* ke `MasterX`).
+  3. Setelah Admin sukses mengeksekusi transfer dari Multisig Safe, tombol **"Mark Funded"** akan mengunci alokasi revenue tersebut.
+  4. Misi kemudian secara permanen pindah ke **"Allocation History"** dengan visual indikator `Funded (Emerald)` yang tidak bisa lagi diputarbalikkan.
+
+### 5.2 Unified Activity Logs Tracking
+- Semua transaksi yang memengaruhi poin atau ekuitas user **WAJIB** terpusat di fungsi `logActivity` (di backend APIs). Frontend *ProfilePage* => `ActivityLogSection` mem-parse data log secara realtime dengan pembagian:
+  1. **XP Gains (ZAP)**: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.
+  2. **Purchases (SHOPPING CART)**: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan `raffle_buy_`.
+  3. **Rewards (ACCOMPLISHMENT)**: Pemenang undian Raffle / Airdrop khusus.
+- Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.

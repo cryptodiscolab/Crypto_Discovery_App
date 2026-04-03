@@ -38,7 +38,10 @@ export function Header() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[9999] pointer-events-auto bg-[#0B0E14]/80 backdrop-blur-2xl">
+    <header 
+      className="fixed top-0 left-0 right-0 z-[10000] pointer-events-auto bg-black/40 backdrop-blur-3xl border-b border-white/[0.05] active:z-[10001]"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="max-w-screen-xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
 
@@ -51,11 +54,13 @@ export function Header() {
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <span className="hidden lg:inline tracking-tighter">CRYPTO <span className="text-indigo-400">DISCO</span></span>
+              <span className="inline lg:inline tracking-tighter text-sm lg:text-xl transform lg:scale-100 origin-left">
+                CRYPTO <span className="text-indigo-400">DISCO</span>
+              </span>
             </Link>
             {frameUser && (
-              <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mt-1 ml-1 animate-pulse">
-                Welcome, @{frameUser.username}
+              <p className="text-[11px] font-black text-indigo-400/80 uppercase tracking-widest mt-0.5 ml-1 truncate max-w-[120px]">
+                @{frameUser.username}
               </p>
             )}
           </div>
@@ -84,8 +89,8 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right: RainbowKit ConnectButton - Custom Styled */}
-          <div className="hidden md:flex flex-1 justify-end items-center">
+          {/* Right: RainbowKit ConnectButton - Responsive */}
+          <div className="flex flex-1 justify-end items-center">
             <ConnectButton.Custom>
               {({
                 account,
@@ -121,10 +126,10 @@ export function Header() {
                           <button
                             onClick={openConnectModal}
                             type="button"
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 transition-colors rounded-lg min-h-[44px]"
+                            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 transition-all rounded-xl min-h-[40px] active:scale-95 shadow-lg shadow-indigo-500/20"
                           >
                             <Wallet className="w-4 h-4 text-white" strokeWidth={2.5} />
-                            <span className="text-sm font-bold text-white">Connect</span>
+                            <span className="text-xs md:text-sm font-bold text-white hidden sm:inline">Connect</span>
                           </button>
                         );
                       }
@@ -134,21 +139,22 @@ export function Header() {
                           <button
                             onClick={() => switchChain({ chainId: baseSepolia.id })}
                             type="button"
-                            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-bold transition-colors min-h-[44px]"
+                            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all min-h-[40px] active:scale-95 shadow-lg shadow-red-500/20"
                           >
-                            Switch to Base
+                            <span className="hidden sm:inline">Switch Network</span>
+                            <span className="sm:hidden">Switch</span>
                           </button>
                         );
                       }
 
                       return (
-                        <button
+                         <button
                           onClick={openAccountModal}
                           type="button"
-                          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors min-h-[44px]"
+                          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all min-h-[40px] active:scale-95"
                         >
-                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                          <span className="text-sm font-semibold text-white">{account.displayName}</span>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+                          <span className="text-[11px] font-black text-white uppercase tracking-widest max-w-[80px] md:max-w-none truncate">{account.displayName}</span>
                         </button>
                       );
                     })()}

@@ -4,10 +4,12 @@
 
 ## 📝 Changelog
 
-### v3.40.2 — 2026-03-27 (MetaMask Provider Conflict Resolution)
-- **Safe Provider Boot**: Added a pre-emptive script in `index.html` to ensure `window.ethereum` is writable, preventing initialization crashes.
-- **Enhanced Conflict Sentinel**: Upgraded `Web3Provider.jsx` to detect and resolve read-only property traps at runtime, providing clear diagnostic logs.
-- **Protocol Hardening**: Synchronized version v3.40.2 across all master documentation and agent skills.
+### v3.40.18 — 2026-04-03 (Global Mobile UI Hardening - Native+)
+- **Typography Standardization**: Set all micro-text and labels to **11px (Bold/Uppercase/Tracking-Wide)** for premium mobile legibility.
+- **Safe Area Hardening**: Implemented `.pb-safe` and `.pt-safe` across all pages and fixed navigation bars to prevent overlap with device notches and home indicators.
+- **Admin Hub Hardening**: Refactored `ModerationCenterTab` and `UgcRevenueTab` with "Native+" component styles and improved layout logic.
+- **Component Parity**: Standardized form inputs and dropdowns (`select-native`) across the entire frontend.
+- **Protocol Sync**: Updated all ecosystem documentation (`PRD`, `.cursorrules`, `CLAUDE.md`, `gemini.md`) to reflect v3.40.18 standards.
 
 ### v3.40.1 — 2026-03-27 (Daily Claim Optimization)
 - **Structural Optimization**: Streamlined Daily Claim and Sponsored Task flows by removing redundant wallet signature requests.

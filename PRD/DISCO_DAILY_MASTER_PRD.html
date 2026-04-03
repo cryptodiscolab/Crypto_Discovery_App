@@ -1,6 +1,6 @@
-<h1>CRYPTO DISCO MASTER PRD (v3.40.10)</h1>
-<p><strong>Version</strong>: <code>v3.40.10</code> (Evidence-Based E2E Sync)
-<strong>Last Updated</strong>: <code>02 April 2026 17:58</code>
+<h1>CRYPTO DISCO MASTER PRD (v3.40.18)</h1>
+<p><strong>Version</strong>: <code>v3.40.18</code> (Global Mobile UI Hardening)
+<strong>Last Updated</strong>: <code>03 April 2026 16:00</code>
 <strong>Status</strong>: 🛡️ RE-HARDENED, SYNCHRONIZED &amp; LOCKED 💎
 <strong>Audit Status</strong>: <code>✅ 100% OPERATIONAL (13/13 Sync + Physical Hex Proof)</code></p>
 <hr>
@@ -433,24 +433,36 @@
 <tr>
 <td><strong>Bot</strong></td>
 <td><code>verification-server/</code></td>
-<td>Telegram Webho## 11. Work Report — v3.40.2 (Current)</td>
-</tr>
-<tr>
-<td><strong>Date</strong>: 2026-03-27</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>Task</strong>: MetaMask Provider Conflict Resolution &amp; EIP-6963 Hardening.</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>Action</strong>:</td>
-<td></td>
-<td></td>
+<td>Telegram Webhook API</td>
 </tr>
 </tbody></table>
+<h2>11. Work Report — v3.40.12 (Current)</h2>
+<p><strong>Date</strong>: 2026-04-03
+<strong>Task</strong>: UGC Revenue Display Hardening &amp; Allocation History Setup.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>UI Currency Fix</strong>: Corrected <code>OffersList.jsx</code> to accurately parse database numeric scalars (USDC) from campaign <code>reward_amount_per_user</code> instead of improperly applying a <code>/ 1e18</code> ETH math to USDC.</li>
+<li><strong>Strict Task Locking</strong>: Overhauled <code>TaskList.jsx</code> to respect the global backend condition: &quot;One User, One Task ID, Ever.&quot; This prevents local cache glitches from suggesting &#39;daily&#39; tasks can be repeated the next day.</li>
+<li><strong>Admin Allocation Log/Tabs</strong>: Upgraded <code>UgcRevenueTab.jsx</code> to segment the table into &quot;Pending Allocation&quot; (actionable balances waiting for Gnosis Safe transfers) vs &quot;Allocation History&quot; (past processed records), vastly improving admin readability and throughput tracking.</li>
+<li><strong>Activity Logging Centralization</strong>: Verified absolute enforcement of <code>logActivity</code> for UGC Actions, Mints, and Raffle ticket paths for dynamic rendering in <code>ProfilePage</code>.
+<strong>Outcome</strong>: 100% Admin &amp; User financial transparency. Tasks correctly enforce single completion without UI glitches. Vercel synchronized successfully.</li>
+</ul>
+<h2>12. Work Report — v3.40.11 (Legacy)</h2>
+<p><strong>Date</strong>: 2026-04-03
+<strong>Task</strong>: MasterX Checksum Correction &amp; OAuth Protocol Identity Hardening.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Checksum Hardening</strong>: Sanitized all 6 local/Vercel <code>.env</code> environments to reflect the correct viem EIP-55 checksum <code>0x980770dAcE8f13E10632D3EC1410FAA4c707076c</code> to prevent <code>InvalidAddressError</code>.</li>
+<li><strong>Address Resilience</strong>: Embedded <code>getAddress(cleaned)</code> auto-normalization into <code>contracts.js</code> cleanAddr to automatically fix future capitalization mismatch issues from runtime envs.</li>
+<li><strong>Protocol Identity View Sync</strong>: Hardcoded full identity data bypass in Supabase <code>v_user_full_profile</code> SQL View allowing Farcaster/X badges to correctly report linked states across the frontend.</li>
+<li><strong>PKCE Migration (Supabase v2.39)</strong>: Rewrote <code>OAuthCallbackPage.jsx</code> to process URL <code>?code=</code> instead of implicit grant hashes. Updated backend alias checking (<code>x</code> vs <code>twitter</code>).</li>
+<li><strong>Data Parity (Raffles)</strong>: Injected 7 missing UGC Raffle columns into <code>raffles</code> table keeping payload parity synced between DB layer and Contract layer.</li>
+<li><strong>Tracker Log Payload Flatting</strong>: Corrected nested Activity payload formatting on both Gas/Gasless <code>buyTickets</code> calls allowing accurate analytics consumption by <code>/api/user-bundle</code>.
+<strong>Outcome</strong>: 100% End-to-End System Synchronization achieved. Supabase PKCE flow established. 13/13 Security Audit PASSED. All environment strings fully intact.</li>
+</ul>
+<h2>12. Work Report — v3.40.2</h2>
+<p><strong>Date</strong>: 2026-03-27
+<strong>Action</strong>:</p>
 <ul>
 <li><strong>Safe Provider Boot</strong>: Injected a pre-emptive &quot;Provisioner&quot; script in <code>index.html</code> to initialize <code>window.ethereum</code> as a writable property, preventing legacy injection crashes from MetaMask when other extensions (Coinbase/Phantom) are present.</li>
 <li><strong>Enhanced Conflict Sentinel</strong>: Upgraded <code>Web3Provider.jsx</code> diagnostics to runtime-resolve read-only property traps and provide explicit user guidance for non-configurable conflicts.</li>
@@ -864,6 +876,33 @@
 <li><strong>Network-Aware Backends</strong>: Severless APIs dynamically parse <code>VITE_CHAIN_ID</code> to block execution on Mainnet if the corresponding feature flag is <code>false</code>.</li>
 <li><strong>UI Locking Mechanism</strong>: Protected <code>CreateRafflePage</code> and <code>SBTUpgradeCard</code> with real-time React UI Locks that gray-out and prevent interaction based on points context flag status.</li>
 <li><strong>Admin Command Center</strong>: Built an integrated UI in <code>Admin Dashboard -&gt; System Settings</code> allowing Admin users to toggle all Feature Flags directly via signature validation.</li>
+</ul>
+<hr>
+<hr>
+<h2>38. Work Report v3.40.13 — Nexus Protocol Synchronization</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-04-03
+<strong>Focus</strong>: Specialized environment sanitation, MasterX checksum correction, and global documentation synchronization.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>MasterX Correction</strong>: Purged legacy <code>0x1ED8...</code> (Checksum/Revert conflict) and unified ecosystem around <code>0x980770dAcE8f13E10632D3EC1410FAA4c707076c</code>.</li>
+<li><strong>Specialized Env Audit</strong>: Sanitized 7 environment files (<code>.env</code>, <code>.env.example</code>, <code>.env.local</code>, <code>.env.vercel</code>, <code>.env.vercel.preview</code>, <code>.env.vercel.production</code>, <code>.env.verification.vercel</code>).</li>
+<li><strong>Clean-Pipe Sync</strong>: Resolved &quot;Silent Corruption&quot; (shell-induced <code>\r\n</code>) in Vercel environment variables via <code>spawnSync</code> protocol.</li>
+<li><strong>Protocol Parity</strong>: Synchronized <code>.cursorrules</code>, <code>CLAUDE.md</code>, <code>gemini.md</code>, <code>WORKSPACE_MAP.md</code>, and <code>FEATURE_WORKFLOW_SOT.md</code> to ensure absolute parity.</li>
+<li><strong>Security Validation</strong>: Verified 13/13 Security Matrix checks pass (<code>check_sync_status.cjs</code>) and zero secret leaks (<code>gitleaks</code>).</li>
+</ul>
+<hr>
+<h2>39. Work Report v3.40.18 — Global Mobile UI Hardening</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-04-03
+<strong>Focus</strong>: Achieving &quot;Native+&quot; professional consistency and mobile accessibility across the entire ecosystem.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Design System Lockdown</strong>: Standardized all small labels and micro-text to <strong>11px (Bold/Uppercase/Tracking-Wide)</strong>. This eliminates the previous 9px/10px &quot;flicker&quot; and ensures readability on high-density displays.</li>
+<li><strong>Safe Area Insets (Notch Proofing)</strong>: Implemented <code>.pb-safe</code> and <code>.pt-safe</code> utilities across all pages and fixed navigation bars (Header/BottomNav), resolving all overlap issues with device home indicators.</li>
+<li><strong>Admin Hub Hardening</strong>: Refactored the <code>ModerationCenterTab</code> and <code>UgcRevenueTab</code> with standardized typography, premium <code>btn-native</code> styles, and improved empty states. Fixed a critical <code>isMainnet</code> reference bug in the moderation center.</li>
+<li><strong>Component Parity</strong>: Standardized all form inputs, dropdowns (<code>select-native</code>), and interactive elements on <code>CreateMissionPage</code> and <code>CreateRafflePage</code> to match the new &quot;Native+&quot; component library.</li>
+<li><strong>Header &amp; BottomNav</strong>: Re-engineered for a refined &quot;Native+&quot; feel with enhanced glassmorphism (<code>backdrop-blur-3xl</code>), 11px micro-text labels, and precise safe-area-inset handling via environment variables.</li>
 </ul>
 <hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>

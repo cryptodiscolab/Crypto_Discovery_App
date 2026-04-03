@@ -56,7 +56,7 @@ export function HomePage() {
 
   return (
     // Tidak perlu min-h-screen atau pt di sini — sudah di-handle App.jsx main
-    <div className={`w-full ${isLight ? 'bg-white text-zinc-900' : 'bg-[#0B0E14] text-slate-100'}`}>
+    <div className={`w-full pb-safe ${isLight ? 'bg-white text-zinc-900' : 'bg-[#0B0E14] text-slate-100'}`}>
 
       {/* Farcaster Frame Immersion: Top Status Bar */}
       {isFrame && (
@@ -72,7 +72,7 @@ export function HomePage() {
               </div>
             )}
             <div>
-              <p className="text-[10px] font-black uppercase tracking-tighter text-indigo-500 leading-none">
+            <p className="text-[11px] font-black uppercase tracking-tighter text-indigo-500 leading-none">
                 {frameUser?.username || 'Nexus Agent'}
               </p>
               <p className={`text-xs font-bold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
@@ -83,7 +83,7 @@ export function HomePage() {
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-[10px] font-black uppercase tracking-tighter text-emerald-500 leading-none">Points</p>
+              <p className="text-[11px] font-black uppercase tracking-tighter text-emerald-500 leading-none">Points</p>
               <p className={`text-xs font-black ${isLight ? 'text-zinc-900' : 'text-white'}`}>{userPoints} XP</p>
             </div>
             <div className="w-px h-6 bg-white/10" />
@@ -137,7 +137,7 @@ export function HomePage() {
                 <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3 self-start sm:self-auto">
                   <TimerIcon className="w-5 h-5 text-indigo-400 shrink-0" />
                   <div>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Next Drop</p>
+                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">Next Drop</p>
                     <div className="text-sm font-black text-white font-mono">
                       <HomeCountdown timestamp={poolSettings.claimTimestamp} />
                     </div>

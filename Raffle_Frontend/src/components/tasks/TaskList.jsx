@@ -130,15 +130,8 @@ export function TaskList() {
         const history = userClaims.filter(c => c.task_id === task.id);
         const hasAnyClaim = history.length > 0;
 
-        // One-time tasks: hide if ever claimed
-        if (task.task_type === 'onetime' && hasAnyClaim) return false;
-
-        // Daily tasks: hide if claimed today
-        if (task.task_type === 'daily') {
-            const today = new Date().toISOString().split('T')[0];
-            const claimedToday = history.some(c => c.claimed_at.startsWith(today));
-            if (claimedToday) return false;
-        }
+        // All tasks are treated as one-time per unique task ID now to match backend rules
+        if (hasAnyClaim) return false;
 
         // System tasks are handled separately, but we exclude them here too
         if (task.task_type === 'system') return false;
@@ -147,13 +140,7 @@ export function TaskList() {
     });
 
     const isTaskCompletedForInterval = (task) => {
-        const history = userClaims.filter(c => c.task_id === task.id);
-        if (task.task_type === 'onetime') return history.length > 0;
-        if (task.task_type === 'daily') {
-            const today = new Date().toISOString().split('T')[0];
-            return history.some(c => c.claimed_at.startsWith(today));
-        }
-        return false;
+        return userClaims.some(c => c.task_id === task.id);
     };
 
     if (isLoading && tasks.length === 0) {

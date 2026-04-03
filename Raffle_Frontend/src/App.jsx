@@ -18,6 +18,7 @@ const CreateRafflePage = lazy(() => import('./pages/CreateRafflePage').then(m =>
 const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.default || m.TasksPage })));
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.default || m.AdminPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.default || m.LoginPage })));
+const CreateMissionPage = lazy(() => import('./pages/CreateMissionPage').then(m => ({ default: m.default || m.CreateMissionPage })));
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: m.default || m.OAuthCallbackPage })));
 
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx').then(m => ({ default: m.default || m.AdminDashboard })));
@@ -74,6 +75,7 @@ function AppContent() {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/profile/:userAddress" element={<ProfilePage />} />
                   <Route path="/create-raffle" element={<CreateRafflePage />} />
+                  <Route path="/create-mission" element={<CreateMissionPage />} />
                   <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                 </Route>
               </Routes>

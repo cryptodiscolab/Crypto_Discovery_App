@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.40.4)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.40.18)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -120,7 +120,7 @@ graph TD
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Governance |
 |----------|---------------------|----------------------|------------|
-| **MasterX** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` | `Ownable` ✅ |
+| **MasterX** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` ✅ |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` ✅ |
 | **DailyApp** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | `AccessControl` ✅ |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
@@ -128,5 +128,4 @@ graph TD
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-04-02T17:30+07:00 | DailyApp V13.2 Fixed Mapping Revert (0xaC43...), Social Banner Update, point_settings keys added. Ecosystem v3.40.6.*
-
+*Last Updated: 2026-04-03T23:00:00+07:00 | Global Mobile UI Hardening Complete (Native+). UI Parity verified. Ecosystem v3.40.18.*

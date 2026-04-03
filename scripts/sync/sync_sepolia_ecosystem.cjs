@@ -2,7 +2,7 @@ const { ethers } = require("hardhat");
 require("dotenv").config();
 
 async function main() {
-    const masterXAddress = "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
+    const masterXAddress = "0x980770dAcE8f13E10632D3EC1410FAA4c707076c";
     const dailyAppAddress = "0xaC430adE9217e2280b852EA29b91d14b12b3E151"; // New V13.2 Sepolia Fixed
 
     console.log("🚀 Syncing Ecosystem on Base Sepolia...");

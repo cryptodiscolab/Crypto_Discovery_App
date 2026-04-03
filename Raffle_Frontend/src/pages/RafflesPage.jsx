@@ -67,10 +67,10 @@ function RaffleRow({ raffleId, filter = 'all' }) {
               {raffle.metadataURI?.includes('ipfs') ? "Community Prize" : `Elite Raffle #${raffle.id}`}
             </h3>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
                 {raffle.isActive ? 'LIVE' : 'CLOSED'}
               </span>
-              <span className="text-[10px] text-slate-500 font-mono">
+              <span className="text-[11px] text-slate-500 font-mono">
                 Entry: {ticketPriceETH ? parseFloat(formatEther(ticketPriceETH)).toFixed(6) : '...'} ETH
               </span>
             </div>
@@ -86,7 +86,7 @@ function RaffleRow({ raffleId, filter = 'all' }) {
 
       {/* Progress Bar (Subtle) */}
       <div className="mt-2 mb-3">
-        <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+        <div className="flex justify-between text-[11px] text-slate-500 mb-1">
           <span>Tickets Sold</span>
           <span>{currentTickets}/{maxTickets}</span>
         </div>
@@ -131,7 +131,7 @@ export function RafflesPage() {
   // Here we just pass the filter prop so each row can hide itself.
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
+    <div className="min-h-screen bg-[#0B0E14] pb-safe pt-safe">
       <div className="max-w-screen-lg mx-auto">
         {/* Header */}
         <div className="px-4 py-6 border-b-subtle">

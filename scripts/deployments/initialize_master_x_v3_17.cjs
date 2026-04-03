@@ -3,7 +3,7 @@ require("dotenv").config();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const MASTER_X_ADDRESS = "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
+    const MASTER_X_ADDRESS = "0x980770dAcE8f13E10632D3EC1410FAA4c707076c";
     const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA || "0xaC430adE9217e2280b852EA29b91d14b12b3E151";
     const RAFFLE = process.env.VITE_RAFFLE_ADDRESS_SEPOLIA || "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08";
 

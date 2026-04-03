@@ -13,14 +13,13 @@ cd /d "%~dp0Raffle_Frontend"
 echo [2/4] Starting App Engine (Vite) in background...
 start "Disco-App-Engine" cmd /k "echo 🤖 MESIN FRONTEND SEDANG BERJALAN... & echo JANGAN TUTUP JENDELA INI! & echo. & npm run dev"
 
+echo [3/4] Starting Verification Node (Backend) on port 3000...
+start "Disco-Verification-Node" cmd /k "cd /d \"%~dp0verification-server\" & echo 🛡️ VERIFICATION NODE SEDANG BERJALAN... & echo JANGAN TUTUP JENDELA INI! & echo. & npm run dev"
+
 echo.
 echo [!] Stabilizing...
-timeout /t 2 > nul
+timeout /t 3 > nul
 
-echo [3/4] Skip Nexus Qwen Worker (Ollama uninstalled)...
-echo.
-
-echo.
 echo [4/4] Opening Dashboard...
 echo Dashboard akan terbuka dalam 2 detik.
 timeout /t 2

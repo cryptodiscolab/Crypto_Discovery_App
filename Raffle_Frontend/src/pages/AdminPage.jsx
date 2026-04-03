@@ -26,6 +26,7 @@ const AdminCMSContent = React.lazy(() => import('../components/admin/AdminCMSCon
 const TaskManager = React.lazy(() => import('../components/admin/TaskManager').then(m => ({ default: m.TaskManager })));
 const AdminCampaignTab = React.lazy(() => import('../components/admin/AdminCampaignTab'));
 const ModerationCenterTab = React.lazy(() => import('../components/admin/ModerationCenterTab').then(m => ({ default: m.ModerationCenterTab })));
+const UgcRevenueTab = React.lazy(() => import('../components/admin/UgcRevenueTab').then(m => ({ default: m.UgcRevenueTab })));
 
 // Newly Extracted Tabs
 const AnnouncementTab = React.lazy(() => import('../components/admin/tabs/AnnouncementTab').then(m => ({ default: m.AnnouncementTab })));
@@ -113,6 +114,7 @@ export function AdminPage({ initialTab = 'pool' }) {
             label: 'Economy & Assets',
             items: [
                 { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
+                { id: 'ugc-revenue', label: 'UGC Revenue', icon: Landmark, color: 'emerald' },
                 { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
             ]
         },
@@ -141,12 +143,12 @@ export function AdminPage({ initialTab = 'pool' }) {
     const allTabs = groups.flatMap(g => g.items);
 
     return (
-        <div className="z-[9999] pointer-events-auto relative h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden">
+        <div className="z-[9999] pointer-events-auto relative h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden pb-safe">
             {/* Mobile Header — Only visible on mobile */}
             <header className="md:hidden h-16 bg-[#080808] border-b border-white/5 px-6 flex items-center justify-between shrink-0 z-[101]">
                 <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-indigo-400" />
-                    <h2 className="text-sm font-black text-white uppercase tracking-widest truncate max-w-[150px]">
+                    <h2 className="text-[11px] font-black text-white uppercase tracking-[0.2em] truncate max-w-[150px]">
                         {allTabs.find(t => t.id === activeTab)?.label || 'Admin'}
                     </h2>
                 </div>
@@ -171,14 +173,14 @@ export function AdminPage({ initialTab = 'pool' }) {
                         </div>
                         <div className="text-left">
                             <h2 className="text-lg font-black text-white tracking-tight">Admin<span className="text-indigo-500">Hub</span></h2>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Protocol V2</p>
+                            <p className="admin-label !mb-0 !text-[10px]">Protocol V2.1</p>
                         </div>
                     </div>
 
                     <nav className="flex-1 space-y-6 overflow-y-auto no-scrollbar -mx-2 px-2 pt-16 md:pt-0 pb-10">
                         {groups.map((group) => (
                             <div key={group.label} className="space-y-1">
-                                <h3 className="px-3 text-[9px] font-black text-slate-700 uppercase tracking-[0.2em] mb-2">{group.label}</h3>
+                                <h3 className="admin-label px-3 !text-[10px] !mb-3">{group.label}</h3>
                                 {group.items.map((tab) => {
                                     const Icon = tab.icon;
                                     const isActive = activeTab === tab.id;
@@ -195,7 +197,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                                                 }`}
                                         >
                                             <Icon className={`w-3.5 h-3.5 transition-colors ${isActive ? 'text-indigo-400' : 'group-hover:text-indigo-400'}`} />
-                                            <span className="text-[10px] uppercase tracking-wider">{tab.label}</span>
+                                            <span className="text-[11px] font-bold uppercase tracking-wider">{tab.label}</span>
                                         </button>
                                     );
                                 })}
@@ -206,7 +208,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                     <div className="mt-auto pt-6 border-t border-white/5">
                         <button
                             onClick={() => navigate('/')}
-                            className="w-full h-11 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all border border-white/5"
+                            className="w-full h-11 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 rounded-xl text-[11px] font-black uppercase tracking-widest text-slate-400 transition-all border border-white/5"
                         >
                             <ExternalLink className="w-3 h-3" /> Exit
                         </button>
@@ -224,12 +226,12 @@ export function AdminPage({ initialTab = 'pool' }) {
                         <div className="h-4 w-px bg-white/10 mx-2" />
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Global Sync Active</span>
+                            <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Global Sync Active</span>
                         </div>
                         <div className="h-4 w-px bg-white/10 mx-2" />
                         <div className="flex items-center gap-2 bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
-                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">
-                                Protocol Authority: {isContractOwner ? 'Contract Owner' : isCMSAdmin ? 'CMS Admin' : isOperator ? 'Operator' : 'Delegated'}
+                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                                Authority: {isContractOwner ? 'Owner' : isCMSAdmin ? 'CMS Admin' : isOperator ? 'Operator' : 'Delegated'}
                             </span>
                         </div>
                     </div>
@@ -244,9 +246,9 @@ export function AdminPage({ initialTab = 'pool' }) {
                                 toast.error("Global Sync Partial Failure", { id });
                             }
                         }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-indigo-400 transition-all text-[10px] font-black uppercase tracking-widest active:scale-95"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-indigo-400 transition-all text-[11px] font-black uppercase tracking-widest active:scale-95"
                     >
-                        <RefreshCw className="w-3.5 h-3.5" /> Global Sync
+                        <RefreshCw className="w-3.5 h-3.5" /> Force Sync
                     </button>
                 </header>
 
@@ -255,10 +257,10 @@ export function AdminPage({ initialTab = 'pool' }) {
                         <React.Suspense fallback={
                             <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
                                 <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4 opacity-50" />
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Initialising Module...</p>
+                                <p className="admin-label !text-center">Initialising Module...</p>
                             </div>
                         }>
-                            <div key={activeTab} className="animate-fade-in pb-20">
+                            <div key={activeTab} className="animate-fade-in pb-10">
                                 {activeTab === 'reputation' && <UserReputationTable />}
                                 {activeTab === 'sbt' && <SBTRewardsDashboard />}
                                 {activeTab === 'pool' && (
@@ -306,9 +308,10 @@ export function AdminPage({ initialTab = 'pool' }) {
                                 {activeTab === 'campaigns' && <AdminCampaignTab />}
                                 {activeTab === 'news' && <NewsTab />}
                                 {activeTab === 'content' && <AdminCMSContent />}
-                                {activeTab === 'sync-logs' && <SyncLogTab />}
+                                { activeTab === 'sync-logs' && <SyncLogTab />}
                                 { activeTab === 'moderation' && <ModerationCenterTab /> }
-                                {activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
+                                { activeTab === 'ugc-revenue' && <UgcRevenueTab /> }
+                                { activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
                                 {activeTab === 'nexus' && <NexusMonitorTab />}
                             </div>
                         </React.Suspense>

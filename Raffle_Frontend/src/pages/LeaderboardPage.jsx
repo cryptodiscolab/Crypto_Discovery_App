@@ -86,7 +86,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
         <span className="text-yellow-500 font-bold font-mono">
           {Number(user.total_xp || 0).toLocaleString()}
         </span>
-        <span className="text-[10px] text-slate-500 font-medium">XP</span>
+        <span className="text-[11px] text-slate-500 font-medium">XP</span>
       </div>
     </div>
   );
@@ -137,15 +137,15 @@ export function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] pb-24 pt-safe">
+    <div className="min-h-screen bg-[#0B0E14] pb-safe pt-safe">
       <div className="max-w-screen-md mx-auto">
         {/* Header Section */}
-        <div className="flex flex-col border-b border-white/5 pb-0 pt-6 bg-[#0B0E14] sticky top-0 z-20">
+        <div className="flex flex-col border-b border-white/5 pb-0 pt-6 bg-[#0B0E14] sticky-under-header">
           <div className="flex items-center gap-2 px-4 mb-2">
             <Trophy className="text-yellow-500 w-5 h-5" />
             <h1 className="text-xl font-black tracking-tight text-white uppercase italic">Leaderboard</h1>
           </div>
-          <p className="px-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-4">
+            <p className="px-4 text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-4">
             Season 1: The Gacha Awakening
           </p>
 
@@ -155,7 +155,7 @@ export function LeaderboardPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95
                   ${activeTab === tab.id
                     ? 'bg-white/10 border-white/20 text-white shadow-lg'
                     : 'bg-transparent border-white/5 text-slate-500 hover:text-slate-300'}`}
@@ -176,7 +176,7 @@ export function LeaderboardPage() {
         <div className="p-4">
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 mb-4">
             <Sparkles size={14} className="text-indigo-400 animate-pulse" />
-            <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest leading-none">
+            <span className="text-[11px] text-indigo-300 font-bold uppercase tracking-widest leading-none">
               {activeTab === 'All' ? 'Showing top 100 global hunters' : `Showing users in ${activeTab} league`}
             </span>
           </div>

@@ -9,6 +9,7 @@ import { ABIS, CONTRACTS, APP_CONFIG, DAILY_APP_ABI } from '../lib/contracts';
 import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
 import { OffersList } from '../components/tasks/OffersList';
+import { useNavigate } from 'react-router-dom';
 
 function TaskRow({ taskId, userStats, refetchStats }) {
     const { task, isLoading } = useTaskInfo(taskId);
@@ -228,6 +229,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
 }
 
 export function TasksPage() {
+    const navigate = useNavigate();
     const { address, isConnected } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { totalTasks: tasksCount } = useAllTasks();
@@ -276,25 +278,34 @@ export function TasksPage() {
 
     return (
         <div className="w-full bg-[#0B0E14] min-h-screen">
-            <div className="max-w-screen-lg mx-auto pb-12">
+            <div className="max-w-screen-lg mx-auto pb-safe">
                 {/* Header (Flat) */}
                 <div className="px-4 py-8 border-b-subtle">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div>
-                            <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">Earn Rewards</h1>
-                            <p className="text-slate-500 text-sm font-medium">Complete missions and level up your status.</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div>
+                                <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">Earn Rewards</h1>
+                                <p className="text-slate-500 text-sm font-medium">Complete missions and level up your status.</p>
+                            </div>
+                            <button 
+                                onClick={() => navigate('/create-mission')}
+                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group w-fit"
+                            >
+                                <Zap className="w-3.5 h-3.5 fill-indigo-500 group-hover:fill-white" />
+                                Sponsor Mission
+                            </button>
                         </div>
 
                         {/* Stats Row (Inline) */}
                         {isConnected && (
                             <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl">
                                 <div>
-                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Your XP</p>
+                                    <p className="text-[11px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Your XP</p>
                                     <p className="text-xl font-mono font-black text-white">{String(userPoints)}</p>
                                 </div>
                                 <div className="w-px h-8 bg-white/10" />
                                 <div>
-                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Current Rank</p>
+                                    <p className="text-[11px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Current Rank</p>
                                     <div className="flex items-center gap-1.5">
                                         <Award className="w-4 h-4 text-indigo-400" />
                                         <p className="text-xl font-black text-indigo-400 uppercase tracking-tighter">{rankName || `LVL ${userTier}`}</p>
@@ -455,7 +466,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
             <div className="px-4 py-3 bg-zinc-800/60 border-b border-white/5 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <Award className="text-yellow-400" size={18} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white italic">Sponsored Mission</span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white italic">Sponsored Mission</span>
                 </div>
                 {isGlobalCompleted && (
                     <span className="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30 font-black uppercase tracking-tighter">Mission Accomplished</span>

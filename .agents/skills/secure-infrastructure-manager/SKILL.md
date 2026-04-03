@@ -24,10 +24,10 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | ENV Key |
 |---|---|---|---|
 | **DailyApp V12 (Mainnet)** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| **MasterX (XP)** | `[RESERVED]` | `0x1ED8B135F01522505717D1E620c4EF869D7D25e7` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
+| **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA` |
-| **PRD v3.40.9** | `[ACTIVE]` | `2026-04-02T17:55:00+07:00` | `DOC_SOT` |
+| **PRD v3.40.11** | `[ACTIVE]` | `2026-04-03T21:30:11+07:00` | `DOC_SOT` |
 
 ## 🏛️ Core Competencies
 

@@ -1,7 +1,7 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-    const masterXAddress = "0x1ED8B135F01522505717D1E620c4EF869D7D25e7";
+    const masterXAddress = "0x980770dAcE8f13E10632D3EC1410FAA4c707076c";
     const [deployer] = await ethers.getSigners();
     
     const masterX = await ethers.getContractAt("CryptoDiscoMasterX", masterXAddress);
