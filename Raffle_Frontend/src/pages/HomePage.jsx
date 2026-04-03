@@ -75,7 +75,7 @@ export function HomePage() {
             <p className="text-[11px] font-black uppercase tracking-tighter text-indigo-500 leading-none">
                 {frameUser?.username || 'Nexus Agent'}
               </p>
-              <p className={`text-xs font-bold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
+              <p className={`text-[11px] font-bold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
                 {isConnected ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Guest Mode'}
               </p>
             </div>
@@ -84,7 +84,7 @@ export function HomePage() {
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-[11px] font-black uppercase tracking-tighter text-emerald-500 leading-none">Points</p>
-              <p className={`text-xs font-black ${isLight ? 'text-zinc-900' : 'text-white'}`}>{userPoints} XP</p>
+              <p className={`text-[11px] font-black ${isLight ? 'text-zinc-900' : 'text-white'}`}>{userPoints} XP</p>
             </div>
             <div className="w-px h-6 bg-white/10" />
             <Trophy className="w-4 h-4 text-yellow-500" />
@@ -104,10 +104,10 @@ export function HomePage() {
         {/* Lebih kecil di mobile (py-8), lebih besar di desktop (md:py-14) */}
         <div className="text-center py-8 md:py-14">
           <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight">
-            Crypto Disco
+            CRYPTO DISCO
           </h1>
-          <p className="text-sm md:text-base text-zinc-400 max-w-md mx-auto leading-relaxed">
-            Complete daily tasks, earn points, and win premium NFTs through our on-chain raffle system.
+          <p className="text-[11px] text-zinc-400 max-w-md mx-auto leading-relaxed font-black uppercase tracking-widest">
+            COMPLETE DAILY TASKS, EARN POINTS, AND WIN PREMIUM NFTS THROUGH OUR ON-CHAIN RAFFLE SYSTEM.
           </p>
         </div>
 
@@ -121,8 +121,8 @@ export function HomePage() {
 
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
               <div>
-                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">
-                  SBT Reward Pool
+                <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mb-3">
+                  SBT REWARD POOL
                 </p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl md:text-5xl font-black text-white tabular-nums">
@@ -130,15 +130,15 @@ export function HomePage() {
                   </span>
                   <span className="text-zinc-500 font-semibold text-base">USDC</span>
                 </div>
-                <p className="text-zinc-600 text-xs mt-1 font-mono">≈ {poolETH} ETH</p>
+                <p className="text-zinc-600 text-[11px] mt-1 font-mono">≈ {poolETH} ETH</p>
               </div>
 
               {poolSettings?.claimTimestamp > Date.now() && (
                 <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3 self-start sm:self-auto">
                   <TimerIcon className="w-5 h-5 text-indigo-400 shrink-0" />
                   <div>
-                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">Next Drop</p>
-                    <div className="text-sm font-black text-white font-mono">
+                    <p className="text-[11px] text-zinc-500 font-black uppercase tracking-widest">NEXT DROP</p>
+                    <div className="text-[11px] font-black text-white font-mono uppercase tracking-widest">
                       <HomeCountdown timestamp={poolSettings.claimTimestamp} />
                     </div>
                   </div>
@@ -149,8 +149,8 @@ export function HomePage() {
             {/* Progress Bar — bersih, tanpa glow shadow berat */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-zinc-500 font-medium">Reward Progress</span>
-                <span className="text-xs font-bold text-indigo-400">{progressPct}% of ${targetUSDC.toLocaleString()}</span>
+                <span className="text-[11px] text-zinc-500 font-black uppercase tracking-widest">REWARD PROGRESS</span>
+                <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">{progressPct}% OF ${targetUSDC.toLocaleString()}</span>
               </div>
               <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                 <div
@@ -160,9 +160,9 @@ export function HomePage() {
               </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-zinc-800 flex items-center gap-2 text-xs text-emerald-500 font-semibold">
+            <div className="mt-5 pt-4 border-t border-zinc-800 flex items-center gap-2 text-[11px] text-emerald-500 font-black uppercase tracking-widest">
               <CheckCircle className="w-3.5 h-3.5" />
-              No Riba · Verified On-Chain · Live Rate
+              NO RIBA · VERIFIED ON-CHAIN · LIVE RATE
             </div>
           </div>
         </div>
@@ -195,9 +195,9 @@ export function HomePage() {
                         )}
                       </div>
 
-                      <h3 className="text-base font-bold text-white mb-1 leading-snug">{String(card.title || '')}</h3>
-                      <p className="text-zinc-500 text-sm leading-relaxed">
-                        {String(card.description || '')}
+                      <h3 className="text-[11px] font-black text-white mb-1 leading-snug uppercase tracking-widest">{String(card.title || '').toUpperCase()}</h3>
+                      <p className="text-zinc-500 text-[11px] leading-relaxed font-black uppercase tracking-widest">
+                        {String(card.description || '').toUpperCase()}
                       </p>
 
                       {card.linkText && (
@@ -207,9 +207,9 @@ export function HomePage() {
                       )}
 
                       {card.badge && (
-                        <div className="flex items-center gap-1 text-xs text-zinc-600 mt-2">
+                        <div className="flex items-center gap-1 text-[11px] text-zinc-600 mt-2 font-black uppercase tracking-widest">
                           <Shield className="w-3 h-3" />
-                          <span>{String(card.badge)}</span>
+                          <span>{String(card.badge).toUpperCase()}</span>
                         </div>
                       )}
                     </div>

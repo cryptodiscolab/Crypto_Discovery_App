@@ -89,16 +89,16 @@ export const HypeFeed = () => {
                             <Users size={8} className="text-indigo-400" />
                         </div>
                     )}
-                    <span className="text-[10px] font-black text-white italic uppercase tracking-tighter">
-                        {current.name}
+                    <span className="text-[11px] font-black text-white italic uppercase tracking-widest shrink-0">
+                        {current.name.toUpperCase()}
                     </span>
                 </div>
-                <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest leading-none">
-                    {current.message}
+                <span className="text-[11px] font-black text-indigo-300 uppercase tracking-widest leading-none truncate overflow-hidden">
+                    {current.message.toUpperCase()}
                 </span>
-                <div className="flex items-center gap-1 ml-1">
+                <div className="flex items-center gap-1.5 ml-auto shrink-0">
                     <Zap size={10} className="text-yellow-500 animate-pulse" />
-                    <span className="text-[8px] font-black text-indigo-400/50 uppercase tracking-[0.2em]">LIVE</span>
+                    <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">LIVE</span>
                 </div>
             </div>
 

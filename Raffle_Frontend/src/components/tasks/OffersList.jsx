@@ -42,48 +42,48 @@ function CampaignCard({ campaign, onClaim, userAddress }) {
 
             <div className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-white font-bold text-sm leading-tight line-clamp-2">{campaign.title}</h3>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ${STATUS_COLORS[status]}`}>
+                    <h3 className="text-white font-black text-[11px] uppercase tracking-widest leading-tight line-clamp-2">{campaign.title}</h3>
+                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ${STATUS_COLORS[status]}`}>
                         {status}
                     </span>
                 </div>
 
                 {campaign.description && (
-                    <p className="text-slate-400 text-xs line-clamp-2">{campaign.description}</p>
+                    <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest line-clamp-2">{campaign.description}</p>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-black uppercase tracking-widest">
                     <div className="flex items-center gap-1.5 text-slate-400">
-                        <Gift className="w-3 h-3 text-indigo-400" />
-                        <span>{rewardFormatted} {rewardSymbol} / user</span>
+                        <Gift className="w-3 h-3 text-indigo-400 font-black uppercase tracking-widest" />
+                        <span>{rewardFormatted} {rewardSymbol} / USER</span>
                     </div>
                     {daysLeft !== null && (
-                        <div className="flex items-center gap-1.5 text-slate-400">
+                        <div className="flex items-center gap-1.5 text-slate-400 font-black uppercase tracking-widest">
                             <Clock className="w-3 h-3 text-yellow-400" />
-                            <span>{status === 'ended' ? 'Ended' : `${daysLeft}d left`}</span>
+                            <span>{status === 'ended' ? 'ENDED' : `${daysLeft}D LEFT`}</span>
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-500">
-                    <span>{campaign.current_participants || 0} / {campaign.max_participants || '∞'} joined</span>
+                <div className="flex items-center justify-between text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    <span>{campaign.current_participants || 0} / {campaign.max_participants || '∞'} JOINED</span>
                 </div>
 
                 <button
                     onClick={() => onClaim(campaign)}
                     disabled={status !== 'active' || !userAddress}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${status === 'active' && userAddress
+                    className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${status === 'active' && userAddress
                         ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-transparent hover:scale-[1.02] active:scale-[0.98] shadow-indigo-500/20 shadow-md'
                         : 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
                         }`}
                 >
                     {!userAddress
-                        ? 'Connect Wallet'
+                        ? 'CONNECT WALLET'
                         : status === 'active'
-                            ? <>Join Campaign <ChevronRight className="w-3 h-3" /></>
+                            ? <>JOIN MISSION <ChevronRight className="w-3 h-3" /></>
                             : status === 'upcoming'
-                                ? 'Coming Soon'
-                                : 'Campaign Ended'}
+                                ? 'COMING SOON'
+                                : 'MISSION ENDED'}
                 </button>
             </div>
         </div>
@@ -170,16 +170,16 @@ export function OffersList() {
                             type="text"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            placeholder="Search partner offers..."
-                            className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50"
+                            placeholder="SEARCH PARTNER OFFERS..."
+                            className="w-full pl-9 pr-3 py-3 bg-slate-900 border border-white/10 rounded-xl text-[11px] font-black uppercase tracking-widest text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50"
                         />
                     </div>
-                    <div className="flex rounded-xl border border-white/10 overflow-hidden text-xs font-bold shrink-0">
+                    <div className="flex rounded-xl border border-white/10 overflow-hidden text-[11px] font-black uppercase tracking-widest shrink-0">
                         {['active', 'all'].map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
-                                className={`px-4 py-2 capitalize transition-colors ${filter === f ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white bg-slate-900'}`}
+                                className={`px-4 py-2 uppercase tracking-widest transition-colors ${filter === f ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white bg-slate-900'}`}
                             >
                                 {f}
                             </button>
@@ -191,14 +191,14 @@ export function OffersList() {
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-                    <span className="text-sm font-medium">Loading offers...</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest">LOADING OFFERS...</span>
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-4 glass-card border-dashed">
                     <Megaphone className="w-12 h-12 opacity-10" />
                     <div className="text-center">
-                        <p className="text-sm font-bold text-slate-300">No active offers</p>
-                        <p className="text-xs text-slate-500 mt-1">Check back later for partner rewards.</p>
+                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">NO ACTIVE OFFERS</p>
+                        <p className="text-[11px] text-slate-500 mt-1 uppercase tracking-widest">Check back later for rewards.</p>
                     </div>
                 </div>
             ) : (

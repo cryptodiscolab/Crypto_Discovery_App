@@ -252,8 +252,8 @@ export default function ProfilePage() {
       */}
 
       {/* Top Action Bar (Mobile only usually, or simplified header) */}
-      <div className="flex justify-between items-center px-4 h-14 bg-zinc-900/50 backdrop-blur-md pt-safe md:hidden">
-        <h1 className="text-sm font-bold text-white uppercase tracking-wider">Profile</h1>
+      <div className="flex justify-between items-center px-4 h-14 bg-zinc-900/50 backdrop-blur-md pt-safe md:hidden sticky top-0 z-[100]">
+        <h1 className="text-[11px] font-black text-white uppercase tracking-widest">PROFILE</h1>
         <button
           onClick={() => disconnect()}
           className="text-zinc-500 hover:text-red-400 p-2"
@@ -305,21 +305,21 @@ export default function ProfilePage() {
                       }
                     }}
                     disabled={isFarcasterLoading}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${!profileData.fid ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+                    className={`px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-colors ${!profileData.fid ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
                   >
                     {isFarcasterLoading ? (
                       <Loader2 className="animate-spin w-4 h-4" />
                     ) : !profileData.fid ? (
-                      "Sync Farcaster"
+                      "SYNC FARCASTER"
                     ) : (
-                      "Refresh"
+                      "REFRESH"
                     )}
                   </button>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-1.5 rounded-full border border-white/20 text-sm font-medium hover:bg-white/10 active:scale-95 transition-transform"
+                    className="px-4 py-1.5 rounded-full border border-white/20 text-[11px] font-black uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-transform"
                   >
-                    Edit
+                    EDIT
                   </button>
                   {/* Farcaster Referral Icon */}
                   <a
@@ -336,16 +336,16 @@ export default function ProfilePage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-1.5 rounded-full border border-red-500/50 text-red-400 text-sm font-medium active:scale-95 transition-transform"
+                    className="px-4 py-1.5 rounded-full border border-red-500/50 text-red-400 text-[11px] font-black uppercase tracking-widest active:scale-95 transition-transform"
                   >
-                    Cancel
+                    CANCEL
                   </button>
                   <button
                     onClick={handleSaveProfile}
                     disabled={isSaving}
-                    className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-bold active:scale-95 transition-transform"
+                    className="px-4 py-1.5 rounded-full bg-white text-black text-[11px] font-black uppercase tracking-widest active:scale-95 transition-transform"
                   >
-                    {isSaving ? "Saving..." : "Save"}
+                    {isSaving ? "SAVING..." : "SAVE"}
                   </button>
                 </div>
               )}
@@ -359,8 +359,8 @@ export default function ProfilePage() {
                   <ShieldCheck size={18} className="text-zinc-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[12px] text-zinc-300 font-black uppercase tracking-wider mb-1">Link a Social Account</p>
-                  <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                  <p className="text-[11px] text-zinc-300 font-black uppercase tracking-widest mb-1">LINK A SOCIAL ACCOUNT</p>
+                  <p className="text-[11px] text-slate-400 leading-relaxed font-black uppercase tracking-widest">
                     Link your <b>Farcaster</b>, <b>Google</b>, or <b>X (Twitter)</b> account below to enhance your profile and unlock social task verification.
                   </p>
                 </div>
@@ -369,8 +369,10 @@ export default function ProfilePage() {
           )}
 
           <div className="space-y-3">
-            {isEditing && (
+            {isEditing ? (
               <div className="space-y-1">
+                <p className="text-[11px] font-black text-white uppercase tracking-widest opacity-60">Display Name</p>
+                <p className="text-lg font-black text-white italic">{profileData.username || "Anonymous Disco"}</p>
                 <label className="admin-label">Avatar URL (GIF/PNG/WebP)</label>
                 <input
                   type="url"
@@ -382,17 +384,6 @@ export default function ProfilePage() {
                 />
                 <p className="text-[11px] text-slate-500 mt-1">Use direct links. Avoid huge files for better loading performance.</p>
               </div>
-            )}
-
-            {isEditing ? (
-              <input
-                type="text"
-                maxLength={50}
-                value={profileData.displayName}
-                onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
-                className="w-full bg-transparent border-b border-gray-700 py-1 text-xl font-bold text-white focus:border-indigo-500 outline-none"
-                placeholder="Display Name"
-              />
             ) : (
               <h2 className="text-xl font-bold text-white leading-tight">{profileData.displayName || 'No Name'}</h2>
             )}
@@ -400,6 +391,14 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2 text-slate-500 text-sm">
               {isEditing ? (
                 <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] font-black text-white uppercase tracking-widest">{profileData.total_following || 0}</span>
+                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Following</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] font-black text-white uppercase tracking-widest">{profileData.total_followers || 0}</span>
+                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Followers</span>
+                  </div>
                   <span className="text-slate-500">@</span>
                   <input
                     type="text"
@@ -412,7 +411,12 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400">@{profileData.username || 'username'}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest">
+                      TIER {userData?.tier?.toString() || '0'} RESIDENT
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-black uppercase text-slate-400 tracking-widest">@{profileData.username || 'USERNAME'}</span>
                   <div 
                     onClick={() => onChainUserData?.currentTier < potentialTier && setActiveModal('upgrade')}
                     className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all cursor-pointer
@@ -430,13 +434,13 @@ export default function ProfilePage() {
                   {(onChainUserData?.currentTier === 1 || onChainUserData?.currentTier === 2) && 
                    onChainUserData?.lastActivity > 0 && 
                    (Math.floor(Date.now() / 1000) <= onChainUserData.lastActivity + 48 * 3600) && (
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[9px] font-bold text-amber-500 animate-pulse">
-                      <Zap size={8} /> Catch-up active
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[11px] font-black text-amber-500 animate-pulse uppercase tracking-widest">
+                      <Zap size={8} /> CATCH-UP ACTIVE
                     </div>
                   )}
                 </div>
               )}
-              {profileData.fid && !isEditing && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[11px] text-slate-500">FID: {profileData.fid}</span>}
+              {profileData.fid && !isEditing && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[11px] text-slate-500 font-black uppercase tracking-widest">FID: {profileData.fid}</span>}
             </div>
           </div>
 
@@ -446,30 +450,30 @@ export default function ProfilePage() {
                 maxLength={160}
                 value={profileData.bio}
                 onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                className="w-full bg-transparent border border-gray-700 rounded p-2 text-sm text-slate-300 focus:border-indigo-500 outline-none h-20"
+                className="w-full bg-transparent border border-gray-700 rounded p-2 text-[11px] text-slate-300 focus:border-indigo-500 outline-none h-20 uppercase font-black tracking-widest"
                 placeholder="Bio..."
               />
             ) : (
-              <p className="text-[15px] text-slate-300 leading-snug whitespace-pre-wrap">
-                {profileData.bio || "No bio yet."}
+              <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap font-black uppercase tracking-widest">
+                {profileData.bio || "NO BIO YET."}
               </p>
             )}
           </div>
 
           {/* FOLLOW STATS & WALLET */}
-          <div className="flex items-center gap-4 mt-3 text-sm">
+          <div className="flex items-center gap-4 mt-3 text-[11px]">
             <div className="flex gap-1">
-              <span className="font-bold text-white">{profileData.followingCount.toLocaleString()}</span>
-              <span className="text-slate-500">Following</span>
+              <span className="font-black text-white uppercase tracking-widest">{profileData.followingCount.toLocaleString()}</span>
+              <span className="text-slate-500 font-black uppercase tracking-widest">Following</span>
             </div>
             <div className="flex gap-1">
-              <span className="font-bold text-white">{profileData.followerCount.toLocaleString()}</span>
-              <span className="text-slate-500">Followers</span>
+              <span className="font-black text-white uppercase tracking-widest">{profileData.followerCount.toLocaleString()}</span>
+              <span className="text-slate-500 font-black uppercase tracking-widest">Followers</span>
             </div>
             {profileData.streakCount > 0 && (
               <div className="flex gap-1 items-center bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
                 <Flame size={12} className="text-orange-500 fill-current" />
-                <span className="font-bold text-orange-500 text-[11px]">{profileData.streakCount} Day Streak</span>
+                <span className="font-black text-orange-500 text-[11px] uppercase tracking-widest">{profileData.streakCount} Day Streak</span>
               </div>
             )}
             <div
@@ -477,7 +481,7 @@ export default function ProfilePage() {
               onClick={handleCopyAddress}
             >
               <div className={`w-2 h-2 rounded-full ${address ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="font-mono text-xs">
+              <span className="font-mono text-[11px] font-black uppercase tracking-widest">
                 {address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Connect Wallet'}
               </span>
               {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
@@ -497,7 +501,7 @@ export default function ProfilePage() {
                 <span className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">
                   Ascension Ready: {getTierName(potentialTier)}
                 </span>
-                <span className="text-[10px] text-slate-500 uppercase">Mint SBT for {getTierName(potentialTier)} Multiplier</span>
+                <span className="text-[11px] text-slate-500 uppercase tracking-widest">Mint SBT for {getTierName(potentialTier)} Multiplier</span>
               </div>
             </div>
             <button 
@@ -519,7 +523,7 @@ export default function ProfilePage() {
             >
               <Calendar size={18} />
               <span className="text-[11px] font-bold uppercase tracking-tight">Daily Bonus</span>
-              {claimCountdown && <span className="text-[10px] font-mono">{claimCountdown}</span>}
+              {claimCountdown && <span className="text-[11px] font-mono font-black">{claimCountdown}</span>}
             </button>
 
             <button
@@ -560,7 +564,7 @@ export default function ProfilePage() {
                 <Coins size={18} className={claimableAmount > 0n ? "animate-bounce" : ""} />
                 <span className="text-[11px] font-bold uppercase tracking-tight">Claim Dividends</span>
                 {claimableAmount > 0n && (
-                  <span className="text-[10px] font-mono text-indigo-300">
+                  <span className="text-[11px] font-mono font-black text-indigo-300">
                     {Number(claimableAmount).toFixed(4)} ETH
                   </span>
                 )}
@@ -620,12 +624,12 @@ export default function ProfilePage() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Neynar Score</h3>
-                <p className="text-xs text-slate-500">Reputation Health</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Neynar Score</h3>
+                <p className="text-[11px] text-slate-500 uppercase tracking-widest">Reputation Health</p>
               </div>
             </div>
             <div className="text-right">
-              <span className={`text-lg font-mono font-bold ${profileData.neynarScore >= 90 ? 'text-green-400' : 'text-yellow-400'}`}>
+              <span className={`text-lg font-mono font-black ${profileData.neynarScore >= 90 ? 'text-green-400' : 'text-yellow-400'}`}>
                 {(profileData.neynarScore * 100).toFixed(1)}%
               </span>
             </div>
@@ -638,12 +642,12 @@ export default function ProfilePage() {
                 <Award size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Total XP</h3>
-                <p className="text-xs text-slate-500">Season Progress</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Total XP</h3>
+                <p className="text-[11px] text-slate-500 uppercase tracking-widest">Season Progress</p>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-lg font-mono font-bold text-white">
+              <span className="text-lg font-mono font-black text-white">
                 {Number(profileData.total_xp).toLocaleString()}
               </span>
             </div>
@@ -656,12 +660,12 @@ export default function ProfilePage() {
                 <Crown size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Current Rank</h3>
-                <p className="text-xs text-slate-500">Leaderboard Tier</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Current Rank</h3>
+                <p className="text-[11px] text-slate-500 uppercase tracking-widest">Leaderboard Tier</p>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-lg font-bold text-blue-400">
+              <span className="text-lg font-black text-blue-400 italic">
                 {profileData.rankName}
               </span>
             </div>
@@ -722,7 +726,7 @@ export default function ProfilePage() {
             </div>
           </div>
           {profileData.google_email && (
-            <p className="text-[9px] text-slate-500 mt-2 ml-4 font-mono uppercase">
+            <p className="text-[11px] text-slate-500 mt-2 ml-4 font-mono font-black uppercase tracking-widest">
               Primary identity: <span className="text-slate-400">{profileData.google_email}</span>
             </p>
           )}
@@ -736,11 +740,11 @@ export default function ProfilePage() {
         {/* VERIFICATIONS LIST */}
         {profileData.verifications && profileData.verifications.length > 0 && (
           <div className="mt-6 px-4">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Verified Addresses</h3>
+            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Verified Addresses</h3>
             <div className="space-y-2">
               {profileData.verifications.map((vAddr, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                  <span className="font-mono text-sm text-slate-300">
+                  <span className="font-mono text-[11px] font-black text-slate-300 uppercase tracking-widest">
                     {vAddr.slice(0, 10)}...{vAddr.slice(-8)}
                   </span>
                   <ExternalLink size={14} className="text-slate-600" />
@@ -854,7 +858,7 @@ function CreateTaskModal({ onClose }) {
                  <Globe size={80} />}
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400">{idx + 1}</div>
+                <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-[11px] font-black text-indigo-400">{idx + 1}</div>
                 <select
                   value={task.platform}
                   onChange={(e) => {
@@ -862,7 +866,7 @@ function CreateTaskModal({ onClose }) {
                     newBatch[idx].platform = e.target.value;
                     setTasksBatch(newBatch);
                   }}
-                  className="bg-transparent text-xs font-bold text-slate-400 outline-none uppercase tracking-widest cursor-pointer"
+                  className="bg-transparent text-[11px] font-black text-slate-400 outline-none uppercase tracking-widest cursor-pointer"
                 >
                   <option value="farcaster">Farcaster</option>
                   <option value="x">X (Twitter)</option>
@@ -877,7 +881,7 @@ function CreateTaskModal({ onClose }) {
                     newBatch[idx].action_type = e.target.value;
                     setTasksBatch(newBatch);
                   }}
-                  className="bg-transparent text-xs font-bold text-indigo-400 outline-none uppercase tracking-widest cursor-pointer"
+                  className="bg-transparent text-[11px] font-black text-indigo-400 outline-none uppercase tracking-widest cursor-pointer"
                 >
                   <option value="follow">Follow</option>
                   <option value="like">Like</option>
@@ -895,7 +899,7 @@ function CreateTaskModal({ onClose }) {
                   newBatch[idx].title = e.target.value;
                   setTasksBatch(newBatch);
                 }}
-                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none"
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-[11px] text-white focus:border-indigo-500 outline-none"
               />
               <input
                 type="text"
@@ -906,7 +910,7 @@ function CreateTaskModal({ onClose }) {
                   newBatch[idx].link = e.target.value;
                   setTasksBatch(newBatch);
                 }}
-                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-indigo-400 font-mono focus:border-indigo-500 outline-none"
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-[11px] text-indigo-400 font-mono focus:border-indigo-500 outline-none"
               />
             </div>
           ))}
@@ -915,7 +919,7 @@ function CreateTaskModal({ onClose }) {
         <div className="space-y-4">
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="flex items-center gap-2 text-[11px] font-black uppercase text-indigo-400 hover:text-indigo-300 transition-colors"
           >
             {showAdvanced ? <Shield size={14} /> : <Zap size={14} />}
             {showAdvanced ? "Hide Advanced Settings" : "Configure Sybil Filters (Optional)"}
@@ -924,26 +928,26 @@ function CreateTaskModal({ onClose }) {
           {showAdvanced && (
             <div className="grid grid-cols-2 gap-3 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl animate-in fade-in slide-in-from-top-2">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Min Neynar Score</label>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Min Neynar Score</label>
                 <input
                   type="number"
                   value={sybilFilters.minNeynarScore}
                   onChange={(e) => setSybilFilters({ ...sybilFilters, minNeynarScore: e.target.value })}
-                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-indigo-500"
+                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-[11px] text-white outline-none focus:border-indigo-500"
                   placeholder="0-100"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-500 uppercase">Min Followers</label>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Min Followers</label>
                 <input
                   type="number"
                   value={sybilFilters.minFollowers}
                   onChange={(e) => setSybilFilters({ ...sybilFilters, minFollowers: e.target.value })}
-                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-indigo-500"
+                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-[11px] text-white outline-none focus:border-indigo-500"
                 />
               </div>
               <div className="col-span-2 flex items-center justify-between py-2 border-t border-white/5 mt-2">
-                <span className="text-[9px] font-bold text-slate-400 uppercase">Require Power Badge</span>
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Require Power Badge</span>
                 <button
                   onClick={() => setSybilFilters({ ...sybilFilters, powerBadge: !sybilFilters.powerBadge })}
                   className={`w-10 h-5 rounded-full transition-colors relative ${sybilFilters.powerBadge ? 'bg-indigo-600' : 'bg-slate-800'}`}
@@ -956,13 +960,13 @@ function CreateTaskModal({ onClose }) {
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Admin Contact Email</label>
+          <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest px-1">Admin Contact Email</label>
           <input
             type="email"
             placeholder="For sponsorship listing coordination"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white focus:border-indigo-500 outline-none"
+            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-[11px] text-white focus:border-indigo-500 outline-none"
           />
         </div>
 
@@ -972,43 +976,43 @@ function CreateTaskModal({ onClose }) {
           
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between px-1">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sponsorship Asset</label>
-              <div className="flex items-center gap-1.5 py-0.5 px-2 rounded-full bg-emerald-500/20 border border-emerald-500/20">
-                <Shield size={8} className="text-emerald-400" />
-                <span className="text-[8px] font-black text-emerald-400 uppercase">ETH Restricted</span>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Sponsorship Asset</label>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/5 rounded-full">
+                <Shield size={10} className="text-slate-400" />
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Protocol Admin</span>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-zinc-900/50 border border-indigo-500/30 rounded-2xl">
               <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-xl">⟠</div>
               <div>
-                <p className="text-[11px] font-bold text-white uppercase tracking-wider">Ethereum (Native)</p>
-                <p className="text-[9px] text-slate-500">Fastest settlement & non-custodial payouts</p>
+                <p className="text-[11px] font-black text-white uppercase tracking-widest">Ethereum (Native)</p>
+                <p className="text-[11px] text-slate-500">Fastest settlement & non-custodial payouts</p>
               </div>
               <Check size={16} className="ml-auto text-indigo-400" />
             </div>
           </div>
 
           <div className="space-y-4 pt-4 border-t border-white/5 relative z-10">
-            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+            <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
               <span className="text-slate-400">Platform Listing Fee</span>
               <span className="text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-lg border border-emerald-400/20">${feeUsd.toFixed(2)} USDC</span>
             </div>
             
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Determine Reward Pool (ETH)</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Determine Reward Pool (ETH)</label>
               <div className="relative">
                 <input
                   type="number"
                   step="0.001"
                   value={ethReward}
                   onChange={(e) => setEthReward(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-4 text-lg font-mono text-indigo-400 outline-none focus:border-indigo-500 transition-all"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-4 text-lg font-mono font-black text-indigo-400 outline-none focus:border-indigo-500 transition-all"
                   placeholder="0.01"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
-                  <span className="text-[10px] font-black text-white px-2 py-0.5 bg-indigo-500 rounded-md mb-1">ETH</span>
+                  <span className="text-[11px] font-black text-white px-2 py-0.5 bg-indigo-500 rounded-md mb-1">ETH</span>
                   {rewardUsdValue > 0 && (
-                    <span className="text-[10px] font-bold text-slate-500 animate-in fade-in slide-in-from-right-1 duration-300">
+                    <span className="text-[11px] font-black text-slate-500 animate-in fade-in slide-in-from-right-1 duration-300 uppercase tracking-widest">
                       ≈ ${rewardUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
                     </span>
                   )}
@@ -1017,10 +1021,10 @@ function CreateTaskModal({ onClose }) {
             </div>
           </div>
           
-          <div className="p-3 rounded-xl bg-black/40 border border-white/5 text-[9px] text-slate-500 leading-relaxed italic relative z-10">
+          <div className="p-3 rounded-xl bg-black/40 border border-white/5 text-[11px] text-slate-500 leading-relaxed italic relative z-10">
             <div className="flex items-start gap-2">
               <Shield size={10} className="mt-0.5" />
-              <span>
+              <span className="font-black uppercase tracking-widest">
                 Standard 3-day activation. Reward pool is distributed to users who complete all {tasksBatch.length} tasks in your batch.
               </span>
             </div>
@@ -1080,10 +1084,10 @@ function CreateTaskModal({ onClose }) {
             }}
           >
             <TransactionButton
-              className="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+              className="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
               text="PAY & CREATE MISSION"
             />
-            <div className="mt-2 text-[10px] text-slate-500 font-mono text-center">
+            <div className="mt-2 text-[11px] text-slate-500 font-mono font-black uppercase tracking-widest text-center">
               <TransactionStatus>
                 <TransactionStatusLabel />
                 <TransactionStatusAction />
@@ -1248,12 +1252,12 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
         </div>
         <div>
           <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">
-            Daily <span className="text-emerald-500">Mojo</span>
+            DAILY <span className="text-emerald-500">MOJO</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-2">
+          <p className="text-[11px] text-slate-400 mt-2 font-black uppercase tracking-widest leading-relaxed">
             {isCooldown
-              ? "You've claimed today! Next bonus in:"
-              : `Claim your daily ${pointSettings?.daily_claim || 0} XP boost to climb the leaderboard!`}
+              ? "YOU'VE CLAIMED TODAY! NEXT BONUS IN:"
+              : `CLAIM YOUR DAILY ${pointSettings?.daily_claim || 0} XP BOOST TO CLIMB THE LEADERBOARD!`}
           </p>
         </div>
         {streakCount > 0 && (
@@ -1269,13 +1273,13 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
             <p className="text-3xl font-black font-mono text-indigo-400 tracking-widest tabular-nums">
               {countdown}
             </p>
-            <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-1">HH : MM : SS</p>
+            <p className="text-[11px] text-slate-600 uppercase tracking-widest mt-1 font-black">HH : MM : SS</p>
           </div>
         )}
         <button
           onClick={handleClaim}
           disabled={isClaiming || isCooldown || isStatsLoading}
-          className={`w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-60
+          className={`w-full py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-60
             ${isCooldown || isStatsLoading
               ? 'bg-slate-800 border border-slate-700 cursor-not-allowed text-slate-500'
               : 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20'
@@ -1291,9 +1295,9 @@ function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount, profi
         </button>
         <button
           onClick={onClose}
-          className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors"
+          className="text-[11px] text-slate-500 uppercase font-black tracking-widest hover:text-white transition-colors"
         >
-          Maybe later
+          MAYBE LATER
         </button>
       </div>
     </div>
@@ -1316,7 +1320,7 @@ function RenewSponsorshipModal({ onClose }) {
             <RefreshCw size={32} className="text-blue-400" />
           </div>
           <h2 className="text-xl font-black text-white italic tracking-tighter uppercase">Renew <span className="text-blue-500">Visiblity</span></h2>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <p className="text-[11px] text-slate-500 leading-relaxed font-black uppercase tracking-widest">
             Extend your task visibility for another **3 Days** for **${feeUsd} USDC**.
             Title and Link will remain the same.
           </p>
@@ -1324,13 +1328,13 @@ function RenewSponsorshipModal({ onClose }) {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">Sponsorship ID</label>
+            <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest px-1">Sponsorship ID</label>
             <input
               type="number"
               placeholder="Enter ID (e.g. 12)"
               value={reqId}
               onChange={(e) => setReqId(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm text-white focus:border-blue-500 outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-[11px] text-white focus:border-blue-500 outline-none"
             />
           </div>
 
@@ -1383,10 +1387,10 @@ function RenewSponsorshipModal({ onClose }) {
               }}
             >
               <TransactionButton
-                className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+                className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
                 text={`PAY $${feeUsd} USDC & RENEW`}
               />
-              <div className="mt-2 text-[10px] text-slate-500 font-mono text-center">
+              <div className="mt-2 text-[11px] text-slate-500 font-mono font-black uppercase tracking-widest text-center">
                 <TransactionStatus>
                   <TransactionStatusLabel />
                   <TransactionStatusAction />
@@ -1394,7 +1398,7 @@ function RenewSponsorshipModal({ onClose }) {
               </div>
             </Transaction>
           </div>
-          <button onClick={onClose} className="w-full text-[10px] text-slate-600 uppercase font-black hover:text-white transition-colors">Cancel</button>
+          <button onClick={onClose} className="w-full text-[11px] text-slate-600 uppercase font-black tracking-widest hover:text-white transition-colors">CANCEL</button>
         </div>
       </div>
     </div>
@@ -1464,31 +1468,30 @@ function RevenueClaimModal({ onClose, claimable, onSuccess }) {
         
         <div>
           <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">
-            Revenue <span className="text-indigo-500">Share</span>
+            REVENUE <span className="text-indigo-500">SHARE</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-2">
-            Your SBT status entitles you to a share of the protocol revenue.
+          <p className="text-[11px] text-slate-400 mt-2 font-black uppercase tracking-widest leading-relaxed">
+            YOUR SBT STATUS ENTITLES YOU TO A SHARE OF THE PROTOCOL REVENUE.
           </p>
         </div>
 
         <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-6 px-4">
-          <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest mb-1">Available to Claim</p>
+          <p className="text-[11px] text-indigo-300 font-black uppercase tracking-widest mb-1">Available to Claim</p>
           <p className="text-4xl font-black text-white font-mono">{Number(claimable).toFixed(6)} <span className="text-sm text-slate-500">ETH</span></p>
         </div>
 
         <button
           onClick={handleClaim}
           disabled={isClaiming || claimable === 0n}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
         >
           {isClaiming ? "PROCESSING..." : "CLAIM DIVIDENDS NOW"}
         </button>
-
         <button
           onClick={onClose}
-          className="text-[10px] text-slate-500 uppercase font-black hover:text-white transition-colors"
+          className="text-[11px] text-slate-500 uppercase font-black tracking-widest hover:text-white transition-colors"
         >
-          Maybe later
+          MAYBE LATER
         </button>
       </div>
     </div>

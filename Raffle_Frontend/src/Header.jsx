@@ -25,16 +25,16 @@ export function Header() {
   }, [isSBTAdmin, isCMSAdmin, canEditCMS]);
 
   const navItems = [
-    { path: '/', label: 'Home' },
-    { path: '/tasks', label: 'Tasks' },
-    { path: '/raffles', label: 'Raffles' },
-    { path: '/leaderboard', label: 'Leaderboard' },
-    { path: '/profile', label: 'Profile' },
+    { path: '/', label: 'HOME' },
+    { path: '/tasks', label: 'TASKS' },
+    { path: '/raffles', label: 'RAFFLES' },
+    { path: '/leaderboard', label: 'LEADERBOARD' },
+    { path: '/profile', label: 'PROFILE' },
   ];
 
   // Add admin links if user is admin
   if (isAdmin) {
-    navItems.push({ path: '/admin', label: 'Admin Hub', isAdmin: true });
+    navItems.push({ path: '/admin', label: 'ADMIN HUB', isAdmin: true });
   }
 
   return (
@@ -54,7 +54,7 @@ export function Header() {
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <span className="inline lg:inline tracking-tighter text-sm lg:text-xl transform lg:scale-100 origin-left">
+              <span className="inline lg:inline tracking-tighter text-[11px] lg:text-xl transform lg:scale-100 origin-left">
                 CRYPTO <span className="text-indigo-400">DISCO</span>
               </span>
             </Link>
@@ -73,7 +73,7 @@ export function Header() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${isActive
+                  className={`px-4 py-2 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${isActive
                     ? item.isAdmin
                       ? 'text-yellow-400 bg-yellow-400/10'
                       : 'text-white bg-indigo-600'
@@ -129,7 +129,7 @@ export function Header() {
                             className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 transition-all rounded-xl min-h-[40px] active:scale-95 shadow-lg shadow-indigo-500/20"
                           >
                             <Wallet className="w-4 h-4 text-white" strokeWidth={2.5} />
-                            <span className="text-xs md:text-sm font-bold text-white hidden sm:inline">Connect</span>
+                            <span className="text-[11px] font-black text-white uppercase tracking-widest hidden sm:inline">CONNECT</span>
                           </button>
                         );
                       }
@@ -141,8 +141,8 @@ export function Header() {
                             type="button"
                             className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all min-h-[40px] active:scale-95 shadow-lg shadow-red-500/20"
                           >
-                            <span className="hidden sm:inline">Switch Network</span>
-                            <span className="sm:hidden">Switch</span>
+                            <span className="hidden sm:inline">SWITCH NETWORK</span>
+                            <span className="sm:hidden">SWITCH</span>
                           </button>
                         );
                       }

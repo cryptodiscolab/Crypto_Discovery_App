@@ -27,14 +27,14 @@ export function ClaimTimer({ deadline, totalDuration = 8 * 60 * 60 * 1000 }) {
     else if (progress < 50) colorClass = "bg-yellow-500";
 
     if (timeLeft <= 0) {
-        return <div className="text-red-500 font-bold text-sm">EXPIRED</div>;
+        return <div className="text-red-500 font-black text-[11px] uppercase tracking-widest">EXPIRED</div>;
     }
 
     return (
         <div className="w-full max-w-[200px]">
-            <div className="flex justify-between items-end mb-1">
-                <span className="text-xs text-slate-400">Claims expire in:</span>
-                <span className="text-sm font-mono font-bold text-white tracking-widest">
+            <div className="flex justify-between items-center mb-1">
+                <span className="text-[11px] text-slate-400 font-black uppercase tracking-widest">EXPIRES IN:</span>
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">
                     {formatTimeLeft(timeLeft)}
                 </span>
             </div>

@@ -48,7 +48,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
             />
           ) : (
             <div className={`w-10 h-10 rounded-full border flex items-center justify-center bg-slate-800 ${isCurrentUser ? 'border-yellow-500/50' : 'border-white/10'}`}>
-              <span className="text-xs text-slate-500">{displayName?.substring(0, 2).toUpperCase()}</span>
+              <span className="text-[11px] text-slate-500">{displayName?.substring(0, 2).toUpperCase()}</span>
             </div>
           )}
           {rank <= 3 && (
@@ -60,12 +60,12 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
 
         {/* Name & Tier */}
         <div className="flex flex-col min-w-0">
-          <span className={`font-bold text-[15px] truncate max-w-[120px] sm:max-w-xs ${isCurrentUser ? 'text-white' : 'text-slate-200'}`}>
+          <span className={`text-[11px] font-black uppercase tracking-widest truncate max-w-[120px] sm:max-w-xs ${isCurrentUser ? 'text-white' : 'text-slate-200'}`}>
             {displayName}
           </span>
-          <span className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-2">
-            {user.rank_name || 'Rookie'} 
-            {isCurrentUser && <span className="text-yellow-500 font-bold">(You)</span>}
+          <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-2">
+            {user.rank_name || 'ROOKIE'} 
+            {isCurrentUser && <span className="text-yellow-500 font-black">(YOU)</span>}
             {streakCount > 0 && (
               <span className="flex items-center gap-0.5 text-orange-500 font-black italic text-[10px]">
                 <Sparkles size={10} className="fill-current" />
@@ -83,10 +83,10 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
 
       {/* XP Stats */}
       <div className="flex flex-col items-end">
-        <span className="text-yellow-500 font-bold font-mono">
+        <span className="text-yellow-500 font-black font-mono">
           {Number(user.total_xp || 0).toLocaleString()}
         </span>
-        <span className="text-[11px] text-slate-500 font-medium">XP</span>
+        <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">XP</span>
       </div>
     </div>
   );
@@ -143,10 +143,10 @@ export function LeaderboardPage() {
         <div className="flex flex-col border-b border-white/5 pb-0 pt-6 bg-[#0B0E14] sticky-under-header">
           <div className="flex items-center gap-2 px-4 mb-2">
             <Trophy className="text-yellow-500 w-5 h-5" />
-            <h1 className="text-xl font-black tracking-tight text-white uppercase italic">Leaderboard</h1>
+            <h1 className="text-xl font-black tracking-tight text-white uppercase italic">LEADERBOARD</h1>
           </div>
-            <p className="px-4 text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-4">
-            Season 1: The Gacha Awakening
+            <p className="px-4 text-slate-500 text-[11px] font-black uppercase tracking-widest mb-4">
+            SEASON 1: THE GACHA AWAKENING
           </p>
 
           {/* Sliding Tabs (Carousel Mode) */}
@@ -176,8 +176,8 @@ export function LeaderboardPage() {
         <div className="p-4">
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 mb-4">
             <Sparkles size={14} className="text-indigo-400 animate-pulse" />
-            <span className="text-[11px] text-indigo-300 font-bold uppercase tracking-widest leading-none">
-              {activeTab === 'All' ? 'Showing top 100 global hunters' : `Showing users in ${activeTab} league`}
+            <span className="text-[11px] text-indigo-300 font-black uppercase tracking-widest leading-none">
+              {activeTab === 'All' ? 'SHOWING TOP 100 GLOBAL HUNTERS' : `SHOWING USERS IN ${activeTab.toUpperCase()} LEAGUE`}
             </span>
           </div>
         </div>
@@ -202,9 +202,9 @@ export function LeaderboardPage() {
               <div className="p-4 bg-slate-900/50 rounded-full text-slate-700">
                 <Trophy size={48} />
               </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-slate-400">Liga Belum Terisi</h3>
-                <p className="text-xs text-slate-600 max-w-[200px]">Jadilah yang pertama untuk mencapai rank ini dan pimpin papan peringkat!</p>
+               <div className="space-y-1">
+                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">LEAGUE VACANT</h3>
+                <p className="text-[11px] text-slate-600 max-w-[200px] font-black uppercase tracking-widest">BE THE FIRST TO REACH THIS RANK AND LEAD THE BOARD!</p>
               </div>
             </div>
           ) : (

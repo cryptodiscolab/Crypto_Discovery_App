@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign, Image as ImageIcon, Link as LinkIcon, Twitter, Tag, Shield, Clock, ChevronDown } from 'lucide-react';
+import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign, Image as ImageIcon, Link as LinkIcon, Twitter, Tag, Shield, Clock, ChevronDown, Lock } from 'lucide-react';
 import { useAccount, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
 import { usePoints } from '../shared/context/PointsContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI, APP_CONFIG } from '../lib/contracts';
+import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI } from '../lib/contracts';
 import { usePriceOracle } from '../hooks/usePriceOracle';
 
-const RafflePreview = ({ data, stats }) => {
+const RafflePreview = ({ data }) => {
     return (
         <div className="glass-card overflow-hidden border-white/5 bg-slate-900/40 group">
             <div className="relative aspect-video bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -19,33 +19,33 @@ const RafflePreview = ({ data, stats }) => {
                     <ImageIcon className="w-12 h-12 text-slate-700" />
                 )}
                 <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="px-2 py-1 rounded bg-blue-500/80 backdrop-blur-md text-[8px] font-black text-white uppercase tracking-tighter shadow-lg">
+                    <span className="px-2 py-1 rounded bg-blue-500/80 backdrop-blur-md text-[11px] font-black text-white uppercase tracking-widest shadow-lg">
                         {data.category}
                     </span>
-                    <span className="px-2 py-1 rounded bg-indigo-500/80 backdrop-blur-md text-[8px] font-black text-white uppercase tracking-tighter shadow-lg">
+                    <span className="px-2 py-1 rounded bg-indigo-500/80 backdrop-blur-md text-[11px] font-black text-white uppercase tracking-widest shadow-lg">
                         LEVEL {data.minSbtLevel}+
                     </span>
                 </div>
                 <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 shadow-lg">
                     <Clock className="w-2.5 h-2.5 text-blue-400" />
-                    <span className="text-[9px] font-black text-white font-mono uppercase tracking-tighter">
+                    <span className="text-[11px] font-black text-white font-mono uppercase tracking-widest">
                         {data.durationDays}D REMAINING
                     </span>
                 </div>
             </div>
             <div className="p-4 space-y-3">
-                <h3 className="text-lg font-black text-white truncate">{data.title || 'Your Event Title'}</h3>
-                <p className="text-xs text-slate-400 line-clamp-2 min-h-[32px]">
-                    {data.description || 'No description provided yet. Add a story to your raffle!'}
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest truncate">{data.title || 'YOUR EVENT TITLE'}</h3>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest line-clamp-2 min-h-[32px]">
+                    {data.description || 'ADD A STORY TO YOUR RAFFLE!'}
                 </p>
                 <div className="flex justify-between items-end pt-2 border-t border-white/5">
                     <div>
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Prize Pool</p>
-                        <p className="text-sm font-black text-blue-400 font-mono tracking-tighter">{parseFloat(data.prizeDeposit || 0).toFixed(2)} ETH</p>
+                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">PRIZE POOL</p>
+                        <p className="text-[11px] font-black text-blue-400 font-mono tracking-widest">{parseFloat(data.prizeDeposit || 0).toFixed(2)} ETH</p>
                     </div>
                     <div className="text-right">
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Ticket Price</p>
-                        <p className="text-sm font-black text-indigo-400 font-mono tracking-tighter">{parseFloat(data.ticketPrice || 0).toFixed(4)} ETH</p>
+                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">TICKET PRICE</p>
+                        <p className="text-[11px] font-black text-indigo-400 font-mono tracking-widest">{parseFloat(data.ticketPrice || 0).toFixed(4)} ETH</p>
                     </div>
                 </div>
             </div>
@@ -123,7 +123,7 @@ export function CreateRafflePage() {
         const sponsorPayback = totalRevenue * (1 - (rBP / 10000));
 
         return {
-            price: price, // actual price being used
+            price: price,
             priceUsd: (price * ethPrice).toFixed(4),
             depositUsd: (deposit * ethPrice).toFixed(2),
             surcharge: surcharge.toFixed(4),
@@ -148,7 +148,6 @@ export function CreateRafflePage() {
 
         setIsSubmitting(true);
         try {
-            // Construct rich metadata
             const fullMetadata = {
                 title: formData.title,
                 description: formData.description,
@@ -160,8 +159,6 @@ export function CreateRafflePage() {
                 created_at: new Date().toISOString()
             };
 
-            // For now, we use a base64 encoded JSON as metadataURI to save on-chain 
-            // and allow the backend to parse it during sync.
             const metadataStr = JSON.stringify(fullMetadata);
             const metadataURI = `data:application/json;base64,${btoa(unescape(encodeURIComponent(metadataStr)))}`;
 
@@ -171,7 +168,6 @@ export function CreateRafflePage() {
                 durationDays: formData.durationDays,
                 metadataURI: metadataURI,
                 depositETH: parseEther(formData.prizeDeposit || '0'),
-                // Pass extra metadata for backend sync
                 extraMetadata: fullMetadata
             });
             toast.success("Raffle Event Sponsored!");
@@ -188,8 +184,8 @@ export function CreateRafflePage() {
             <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
                 <div className="text-center glass-card p-12 max-w-md w-full border border-white/5">
                     <Gift className="w-16 h-16 text-blue-500 mx-auto mb-6 opacity-20" />
-                    <h2 className="text-2xl font-black text-white mb-2">Connect Wallet</h2>
-                    <p className="text-slate-400 mb-8">You need to be connected to sponsor an event.</p>
+                    <h2 className="text-[11px] font-black text-white uppercase tracking-widest mb-2">CONNECT WALLET</h2>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-8">YOU NEED TO BE CONNECTED TO SPONSOR AN EVENT.</p>
                 </div>
             </div>
         );
@@ -199,15 +195,14 @@ export function CreateRafflePage() {
         <div className="min-h-screen pt-24 pb-safe px-4 bg-slate-950">
             <div className="container mx-auto max-w-5xl">
                 <div className="flex flex-col md:flex-row gap-8">
-                    {/* Form Section */}
                     <div className="flex-1 space-y-6">
                         <div className="mb-8">
-                            <h1 className="text-3xl font-black text-white mb-2">Sponsor an Event</h1>
-                            <p className="text-slate-400">Host your own NFT raffle and reach the community.</p>
+                            <h1 className="text-2xl font-black text-white uppercase tracking-widest mb-2">SPONSOR AN EVENT</h1>
+                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">HOST YOUR OWN NFT RAFFLE AND REACH THE DISCO COMMUNITY.</p>
                             {!isUgcFeatureEnabled && (
-                                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold uppercase text-sm flex items-center gap-2">
-                                    <Shield className="w-5 h-5" />
-                                    Feature currently disabled for Mainnet Phased Rollout (Phase 4).
+                                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-black uppercase text-[11px] tracking-widest flex items-center gap-2">
+                                    <Shield className="w-5 h-5 font-black uppercase tracking-widest" />
+                                    FEATURE ACCESSIBILITY: PHASE 4 MAINNET ROLLOUT ENFORCED.
                                 </div>
                             )}
                         </div>
@@ -267,7 +262,7 @@ export function CreateRafflePage() {
                                                     onChange={e => setFormData({ ...formData, prizeDeposit: e.target.value })}
                                                 />
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <span className="text-[10px] font-black text-indigo-300/40 uppercase tracking-tighter">
+                                                    <span className="text-[11px] font-black text-indigo-300/40 uppercase tracking-widest">
                                                         ≈ ${stats.depositUsd}
                                                     </span>
                                                 </div>
@@ -297,7 +292,7 @@ export function CreateRafflePage() {
                                 <div className="glass-card p-4 space-y-4 border-white/5">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-indigo-400/60 tracking-widest mb-1.5 block">Ticket Price (ETH)</label>
+                                            <label className="text-[11px] font-black uppercase text-indigo-400/60 tracking-widest mb-1.5 block">Ticket Price (ETH)</label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <Ticket className="w-4 h-4 text-indigo-500/50 group-focus-within:text-indigo-400 transition-colors" />
@@ -310,14 +305,14 @@ export function CreateRafflePage() {
                                                     value={formData.ticketPrice}
                                                 />
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <span className="text-[10px] font-black text-indigo-300/40 uppercase tracking-tighter">
+                                                    <span className="text-[11px] font-black text-indigo-300/40 uppercase tracking-widest">
                                                         FIXED
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Max Tickets</label>
+                                            <label className="text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1 block">MAX TICKETS</label>
                                             <div className="relative">
                                                 <input
                                                     type="number"
@@ -326,7 +321,7 @@ export function CreateRafflePage() {
                                                     onChange={e => setFormData({ ...formData, maxTickets: e.target.value })}
                                                 />
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">
+                                                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
                                                         CAP
                                                     </span>
                                                 </div>
@@ -338,7 +333,7 @@ export function CreateRafflePage() {
                                 <div className="glass-card p-4 space-y-4 border-white/5 bg-indigo-500/5">
                                     <div className="flex items-center gap-2 mb-2">
                                         <Shield className="w-4 h-4 text-indigo-400" />
-                                        <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Syarat & Kategorisasi</h3>
+                                        <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-widest">REQUIREMENTS & CATEGORY</h3>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
@@ -425,11 +420,10 @@ export function CreateRafflePage() {
                         </form>
                     </div>
 
-                    {/* Calculator & Preview Section */}
                     <div className="w-full md:w-[380px] space-y-6">
                         <div className="space-y-2">
-                            <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] px-1">Live Preview</h3>
-                            <RafflePreview data={formData} stats={stats} />
+                            <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.2em] px-1">LIVE PREVIEW</h3>
+                            <RafflePreview data={formData} />
                         </div>
 
                         <div className="glass-card p-6 border-blue-500/20 bg-blue-500/5 relative overflow-hidden">
@@ -437,59 +431,58 @@ export function CreateRafflePage() {
                                 <Calculator className="w-12 h-12 text-blue-400" />
                             </div>
 
-                            <h3 className="text-xs font-black uppercase text-blue-400 tracking-[0.2em] mb-6 flex items-center gap-2">
-                                <Info className="w-4 h-4" /> Earnings Calculator
+                            <h3 className="text-[11px] font-black uppercase text-blue-400 tracking-[0.2em] mb-6 flex items-center gap-2">
+                                <Info className="w-4 h-4 font-black uppercase tracking-widest" /> EARNINGS CALCULATOR
                             </h3>
 
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center group">
-                                    <span className="text-slate-400 text-sm">Platform Fee (5%)</span>
+                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">PLATFORM FEE (5%)</span>
                                     <div className="flex flex-col items-end">
-                                        <span className="text-red-400 font-mono text-sm">+{stats.surcharge} ETH</span>
-                                        <span className="text-[10px] text-red-400/50 font-mono">≈ ${stats.surchargeUsd}</span>
+                                        <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">+{stats.surcharge} ETH</span>
+                                        <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.surchargeUsd}</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-white font-bold text-sm">Initial Payment</span>
+                                    <span className="text-white font-black text-[11px] uppercase tracking-widest">INITIAL PAYMENT</span>
                                     <div className="flex flex-col items-end">
-                                        <span className="text-white font-black font-mono">{stats.totalPayment} ETH</span>
-                                        <span className="text-[10px] text-indigo-400 font-black">≈ ${stats.totalPaymentUsd} USDC</span>
+                                        <span className="text-white font-black font-mono text-[11px] uppercase tracking-widest">{stats.totalPayment} ETH</span>
+                                        <span className="text-[11px] text-indigo-400 font-black uppercase tracking-widest">≈ ${stats.totalPaymentUsd} USDC</span>
                                     </div>
                                 </div>
 
                                 <div className="h-px bg-white/10 my-4" />
 
                                 <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-sm">Estimated Total Sales</span>
+                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">ESTIMATED SALES</span>
                                     <div className="flex flex-col items-end">
-                                        <span className="text-emerald-400 font-mono text-sm">{stats.totalRevenue} ETH</span>
-                                        <span className="text-[10px] text-emerald-400/50 font-mono">≈ ${stats.totalRevenueUsd}</span>
+                                        <span className="text-emerald-400 font-mono text-[11px] font-black uppercase tracking-widest">{stats.totalRevenue} ETH</span>
+                                        <span className="text-[11px] text-emerald-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.totalRevenueUsd}</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-sm">Project Rake (20%)</span>
+                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">PROJECT RAKE (20%)</span>
                                     <div className="flex flex-col items-end">
-                                        <span className="text-red-400 font-mono text-sm">-{stats.projectRake} ETH</span>
-                                        <span className="text-[10px] text-red-400/50 font-mono">≈ ${stats.projectRakeUsd}</span>
+                                        <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">-{stats.projectRake} ETH</span>
+                                        <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.projectRakeUsd}</span>
                                     </div>
                                 </div>
 
                                 <div className="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 mt-4 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-indigo-500/5 animate-pulse" />
-                                    <p className="text-[10px] font-black uppercase text-indigo-400 mb-1 relative z-10">Your Potential Profit</p>
+                                    <p className="text-[11px] font-black uppercase text-indigo-400 mb-1 relative z-10 tracking-widest">YOUR POTENTIAL PROFIT</p>
                                     <div className="flex items-baseline gap-2 relative z-10">
-                                        <p className="text-3xl font-black text-white font-mono">{stats.profit}</p>
-                                        <span className="text-xs text-slate-500 font-black">ETH</span>
+                                        <p className="text-2xl font-black text-white font-mono uppercase tracking-widest">{stats.profit}</p>
+                                        <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">ETH</span>
                                     </div>
-                                    <p className="text-sm font-black text-indigo-400 relative z-10">≈ ${stats.profitUsd} USDC</p>
-                                    <p className="text-[9px] text-slate-500 mt-2 italic leading-tight">
-                                        *You will receive your profit + original deposit ({formData.prizeDeposit} ETH) after the event ends.
+                                    <p className="text-[11px] font-black text-indigo-400 relative z-10 uppercase tracking-widest">≈ ${stats.profitUsd} USDC</p>
+                                    <p className="text-[11px] font-black text-slate-500 mt-2 italic leading-tight uppercase tracking-widest">
+                                        *YOU WILL RECEIVE YOUR PROFIT + ORIGINAL DEPOSIT ({formData.prizeDeposit} ETH) AFTER THE EVENT ENDS.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Terms */}
                         <div className="glass-card p-4 border-white/5 bg-slate-900/40">
                             <ul className="space-y-3">
                                 {[

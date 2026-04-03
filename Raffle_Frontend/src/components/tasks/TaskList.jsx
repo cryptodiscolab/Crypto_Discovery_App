@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { supabase } from '../../lib/supabaseClient';
-import { Loader2, CheckCircle2, Zap, Clock, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, Zap, Clock, AlertCircle, Coins } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePoints } from '../../shared/context/PointsContext';
 import { useVerifiedAction } from '../../hooks/useVerifiedAction';
@@ -158,8 +158,8 @@ export function TaskList() {
     return (
         <div className="mb-8 animate-fade-in">
             <div className="flex items-center gap-2 mb-4 px-1">
-                <Zap className="w-5 h-5 text-yellow-400" />
-                <h3 className="text-xl font-bold text-white">Quick Tasks</h3>
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">QUICK MISSIONS</h3>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -189,19 +189,25 @@ export function TaskList() {
                                     }
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <div className={`px-2 py-1 rounded-md text-xs font-black font-mono flex items-center gap-1 ${isClaimed ? 'bg-slate-800 text-slate-500' : 'bg-yellow-500/20 text-yellow-400'
-                                        }`}>
+                                    <div className={`px-2 py-1 rounded-md text-[11px] font-black uppercase tracking-widest flex items-center gap-1.5 ${isClaimed ? 'bg-slate-800 text-slate-500' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                        <Coins size={12} />
                                         <span>+{task.xp_reward} XP</span>
                                     </div>
                                     {requiresScore && (
-                                        <div className={`text-[10px] font-bold ${isScoreLow ? 'text-red-400' : 'text-slate-500'}`}>
-                                            Min Score: {task.min_neynar_score}
+                                        <div className={`text-[11px] font-black uppercase tracking-widest ${isScoreLow ? 'text-red-400' : 'text-slate-500'}`}>
+                                            MIN SCORE: {task.min_neynar_score}
+                                        </div>
+                                    )}
+                                    {isClaimed && (
+                                        <div className="text-[11px] font-black text-green-400 uppercase tracking-widest flex items-center gap-1 bg-green-400/10 px-2 py-1 rounded-lg border border-green-400/20 mt-1">
+                                            <CheckCircle2 size={12} />
+                                            DONE
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <h4 className={`text-sm font-bold mb-4 ${isClaimed ? 'text-slate-500 line-through' : 'text-white'}`}>
+                            <h4 className={`text-[11px] font-black uppercase tracking-widest leading-relaxed mb-4 ${isClaimed ? 'text-slate-500 line-through' : 'text-white'}`}>
                                 {task.description}
                             </h4>
 
@@ -209,7 +215,7 @@ export function TaskList() {
                                 <button
                                     onClick={() => !isDisabled && handleClaim(task)}
                                     disabled={isDisabled}
-                                    className={`w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isClaimed
+                                    className={`w-full py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${isClaimed
                                         ? 'bg-transparent text-green-500 cursor-default'
                                         : isScoreLow
                                             ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
@@ -221,21 +227,21 @@ export function TaskList() {
                                     ) : isClaimed ? (
                                         <>
                                             <CheckCircle2 className="w-4 h-4" />
-                                            Completed
+                                            CLAIMED
                                         </>
                                     ) : isScoreLow ? (
                                         <div className="flex items-center gap-2">
-                                            <AlertCircle className="w-4 h-4" />
-                                            Low Reputation
+                                            <AlertCircle size={14} className="text-red-400" />
+                                            <span className="text-red-400">LOW REPUTATION</span>
                                         </div>
                                     ) : (
-                                        "Claim Reward"
+                                        "CLAIM REWARD"
                                     )}
                                 </button>
 
                                 {isScoreLow && (
-                                    <div className="absolute bottom-full left-0 w-full mb-2 p-2 bg-black/90 text-white text-[10px] rounded pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-opacity z-10 text-center">
-                                        Your Neynar Score ({userScore || 0}) is below {task.min_neynar_score}
+                                    <div className="absolute bottom-full left-0 w-full mb-2 p-3 bg-black/95 border border-white/10 rounded-xl text-white text-[11px] font-black uppercase tracking-widest pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-opacity z-10 text-center shadow-2xl">
+                                        REP SCORE ({userScore || 0}) BELOW {task.min_neynar_score}
                                     </div>
                                 )}
                             </div>

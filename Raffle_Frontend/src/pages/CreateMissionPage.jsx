@@ -1,15 +1,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { 
     Zap, Users, DollarSign, Calculator, Info, 
-    CheckCircle2, ArrowRight, Loader2, Globe, 
-    Link as LinkIcon, Shield, Wallet, Save, ChevronDown
+    CheckCircle2, ArrowRight, Loader2, 
+    Link as LinkIcon, Shield, Wallet, ChevronDown, Lock
 } from 'lucide-react';
 import { useAccount, useWriteContract, usePublicClient, useSignMessage } from 'wagmi';
-import { parseUnits, formatUnits, erc20Abi } from 'viem';
+import { parseUnits, erc20Abi } from 'viem';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { CONTRACTS } from '../lib/contracts';
 
 // USDC Address (Base Sepolia for testing, Base Mainnet for production)
 const USDC_ADDRESS = import.meta.env.VITE_CHAIN_ID === '8453' 
@@ -105,8 +104,8 @@ export function CreateMissionPage() {
                 title: formData.title,
                 description: formData.description,
                 platform_code: formData.platform,
-                reward_amount_per_user: formData.reward_amount_per_user, // Human readable (e.g. "0.1")
-                total_reward_pool: stats.rewardPool, // Human readable
+                reward_amount_per_user: formData.reward_amount_per_user,
+                total_reward_pool: stats.rewardPool,
                 max_participants: parseInt(formData.max_participants),
                 sponsor_address: address.toLowerCase(),
                 duration_days: parseInt(formData.duration_days),
@@ -122,7 +121,7 @@ export function CreateMissionPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     wallet_address: address,
-                    action: 'CREATE_UGC_MISSION', // Use common 'action' key
+                    action: 'CREATE_UGC_MISSION',
                     payload: payload,
                     message,
                     signature
@@ -143,11 +142,11 @@ export function CreateMissionPage() {
 
     if (!isConnected) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center pt-20">
+            <div className="min-h-screen flex items-center justify-center px-4 bg-[#050505]">
                 <div className="text-center glass-card p-12 max-w-md w-full border border-white/5">
                     <Shield className="w-16 h-16 text-indigo-500 mx-auto mb-6 opacity-20" />
-                    <h2 className="text-2xl font-black text-white mb-2 uppercase">Identity Required</h2>
-                    <p className="text-slate-400 text-sm mb-8">Connect your wallet to sponsor a Discovery Mission.</p>
+                    <h2 className="text-[11px] font-black text-white uppercase tracking-widest mb-2">IDENTITY REQUIRED</h2>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-8">CONNECT WALLET TO SPONSOR A MISSION.</p>
                 </div>
             </div>
         );
@@ -162,15 +161,14 @@ export function CreateMissionPage() {
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <Zap className="w-6 h-6 text-indigo-500 fill-indigo-500/20" />
-                                <h1 className="text-4xl font-black text-white uppercase tracking-tight">Create <span className="text-indigo-500">Mission</span></h1>
+                                <h1 className="text-2xl font-black text-white uppercase tracking-widest">CREATE <span className="text-indigo-500">MISSION</span></h1>
                             </div>
-                            <p className="text-slate-400 text-sm font-medium">Sponsor a task and reward users with $USDC for completing actions.</p>
+                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">SPONSOR A TASK AND REWARD USERS WITH $USDC COMPLETED ACTIONS.</p>
                         </div>
 
                         <form onSubmit={handleCreate} className="space-y-6">
                             <div className="glass-card p-6 bg-slate-900/40 border-white/5 space-y-6 rounded-3xl">
                                 <div className="space-y-4">
-                                    {/* Title */}
                                     <div className="space-y-2">
                                         <label className="admin-label">Mission Title</label>
                                         <input
@@ -183,7 +181,6 @@ export function CreateMissionPage() {
                                         />
                                     </div>
 
-                                    {/* Description */}
                                     <div className="space-y-2">
                                         <label className="admin-label">Description (Optional)</label>
                                         <textarea
@@ -194,7 +191,6 @@ export function CreateMissionPage() {
                                         />
                                     </div>
 
-                                    {/* Platform & Link */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="admin-label">Platform</label>
@@ -232,11 +228,10 @@ export function CreateMissionPage() {
 
                                 <div className="h-px bg-white/5" />
 
-                                {/* Reward Settings */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-[11px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                                            <DollarSign className="w-3 h-3" /> Reward per User (USDC)
+                                            <DollarSign className="w-3 h-3" /> REWARD PER USER (USDC)
                                         </label>
                                         <input
                                             type="number"
@@ -249,7 +244,7 @@ export function CreateMissionPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[11px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                                            <Users className="w-3 h-3" /> Max Participants
+                                            <Users className="w-3 h-3" /> MAX PARTICIPANTS
                                         </label>
                                         <input
                                             type="number"
@@ -267,7 +262,9 @@ export function CreateMissionPage() {
                                 disabled={isSubmitting || !ugcConfig.is_active}
                                 className="btn-native btn-primary w-full"
                             >
-                                {isSubmitting ? (
+                                {!ugcConfig.is_active ? (
+                                    <>System Maintenance <Lock className="w-5 h-5" /></>
+                                ) : isSubmitting ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
                                     <>Pay & Submit Mission <ArrowRight className="w-5 h-5" /></>
@@ -283,24 +280,24 @@ export function CreateMissionPage() {
                                 <Calculator className="w-20 h-20 text-indigo-400" />
                             </div>
 
-                            <h3 className="text-xs font-black uppercase text-indigo-400 tracking-[0.2em] mb-8 flex items-center gap-2">
-                                <Info className="w-4 h-4" /> Settlement Quote
+                            <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.2em] mb-8 flex items-center gap-2">
+                                <Info className="w-4 h-4" /> SETTLEMENT QUOTE
                             </h3>
 
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Reward Pool</span>
+                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">REWARD POOL</span>
                                     <div className="text-right">
-                                        <p className="text-lg font-black text-white font-mono">{stats.rewardPool} <span className="text-[10px] text-slate-500">USDC</span></p>
-                                        <p className="text-[9px] text-slate-500 uppercase">{formData.reward_amount_per_user} × {formData.max_participants} users</p>
+                                        <p className="text-lg font-black text-white font-mono uppercase tracking-widest">{stats.rewardPool} <span className="text-[11px] text-slate-500">USDC</span></p>
+                                        <p className="text-[11px] text-slate-500 uppercase font-black tracking-widest">{formData.reward_amount_per_user} × {formData.max_participants} USERS</p>
                                     </div>
                                 </div>
 
                                 <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Listing Fee</span>
+                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">LISTING FEE</span>
                                     <div className="text-right">
-                                        <p className="text-lg font-black text-indigo-400 font-mono">{stats.listingFee} <span className="text-[11px] text-slate-500">USDC</span></p>
-                                        <p className="text-[10px] text-slate-500 uppercase italic">Dynamic Platform Fee</p>
+                                        <p className="text-lg font-black text-indigo-400 font-mono uppercase tracking-widest">{stats.listingFee} <span className="text-[11px] text-slate-500">USDC</span></p>
+                                        <p className="text-[11px] text-slate-500 uppercase font-black italic tracking-widest">DYNAMIC PLATFORM FEE</p>
                                     </div>
                                 </div>
 
@@ -308,9 +305,9 @@ export function CreateMissionPage() {
 
                                 <div className="pt-2">
                                     <div className="flex justify-between items-end mb-4">
-                                        <span className="text-white text-xs font-black uppercase tracking-widest">Total Required</span>
+                                        <span className="text-white text-[11px] font-black uppercase tracking-widest">TOTAL REQUIRED</span>
                                         <div className="text-right">
-                                            <p className="text-4xl font-black text-white font-mono tracking-tighter">{stats.totalAmount}</p>
+                                            <p className="text-4xl font-black text-white font-mono tracking-tighter uppercase tracking-widest">{stats.totalAmount}</p>
                                             <p className="text-[11px] font-black text-indigo-500 uppercase tracking-widest">$USDC (BASE)</p>
                                         </div>
                                     </div>
@@ -319,8 +316,8 @@ export function CreateMissionPage() {
                                         <div className="flex items-start gap-2">
                                             <Wallet className="w-3 h-3 text-indigo-400 mt-1 shrink-0" />
                                             <div className="space-y-1">
-                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Target Treasury</p>
-                                                <p className="text-[10px] text-white font-mono break-all opacity-60 hover:opacity-100 transition-opacity">
+                                                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">TARGET TREASURY</p>
+                                                <p className="text-[11px] text-white font-mono break-all opacity-60 hover:opacity-100 transition-opacity uppercase tracking-widest">
                                                     {ugcConfig.treasury_address}
                                                 </p>
                                             </div>
@@ -332,7 +329,7 @@ export function CreateMissionPage() {
 
                         {/* Rules */}
                         <div className="glass-card p-6 border-white/5 bg-slate-900/40 rounded-3xl space-y-4">
-                            <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Protocol Rules</h4>
+                            <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">PROTOCOL RULES</h4>
                             <ul className="space-y-3">
                                 {[
                                     "Missions are pending moderation",
@@ -340,7 +337,7 @@ export function CreateMissionPage() {
                                     "No refunds for rejected spammed content",
                                     "USDC rewards distributed automatically"
                                 ].map((rule, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-[11px] text-slate-400">
+                                    <li key={i} className="flex items-start gap-2 text-[11px] text-slate-400 uppercase tracking-widest font-black">
                                         <CheckCircle2 className="w-3 h-3 text-indigo-500 shrink-0 mt-0.5" />
                                         {rule}
                                     </li>

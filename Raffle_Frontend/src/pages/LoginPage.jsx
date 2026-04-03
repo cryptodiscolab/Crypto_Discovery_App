@@ -68,15 +68,15 @@ export function LoginPage() {
                 <h1 className="text-3xl font-black text-white mb-1 text-center uppercase italic tracking-tighter relative z-10">
                     Daily<span className="text-indigo-500">App</span>
                 </h1>
-                <p className="text-slate-500 text-center mb-6 text-[11px] font-bold uppercase tracking-[0.3em] relative z-10">
-                    Initialize Protocol Session
+                <p className="text-slate-500 text-center mb-6 text-[11px] font-black uppercase tracking-[0.3em] relative z-10">
+                    INITIALIZE PROTOCOL SESSION
                 </p>
 
                 {/* Step Indicator */}
                 <div className="flex items-center justify-center gap-2 mb-8 relative z-10">
                     {[1, 2, 3].map((s) => (
                         <div key={s} className="flex items-center gap-2">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black transition-all ${
                                 step > s ? 'bg-green-500 text-white' :
                                 step === s ? 'bg-indigo-500 text-white ring-2 ring-indigo-500/30' :
                                 'bg-slate-800 text-slate-600'
@@ -92,9 +92,9 @@ export function LoginPage() {
 
                     {/* ── STEP 1: Connect Wallet ── */}
                     <div className={`transition-all ${step > 1 ? 'opacity-60' : ''}`}>
-                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
                             <Wallet className="w-3 h-3 text-indigo-400" />
-                            Step 1 — Connect Wallet (Required)
+                            STEP 1 — CONNECT WALLET (REQUIRED)
                         </p>
                         <div className="w-full flex justify-center relative z-50 pointer-events-auto">
                             <ConnectButton.Custom>
@@ -122,7 +122,7 @@ export function LoginPage() {
                                                 <button
                                                     onClick={() => switchChain({ chainId: baseSepolia.id })}
                                                     type="button"
-                                                    className="px-6 py-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                                                    className="px-6 py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all"
                                                 >
                                                     Switch to Base
                                                 </button>
@@ -145,21 +145,21 @@ export function LoginPage() {
                     {/* ── STEP 2: Sign & Verify (SIWE) ── */}
                     {isConnected && (
                         <div className={`transition-all ${step > 2 ? 'opacity-60' : ''}`}>
-                            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                             <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                 <ShieldCheck className="w-3 h-3 text-indigo-400" />
-                                Step 2 — Sign & Verify Identity (Required)
+                                STEP 2 — SIGN & VERIFY IDENTITY (REQUIRED)
                             </p>
                             {!siweSession ? (
                                 <button
                                     onClick={() => signIn(frameUser?.fid)}
                                     disabled={isSigningIn}
                                     type="button"
-                                    className="w-full px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
-                                    {isSigningIn ? (
-                                        <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Verifying...</>
+                                     {isSigningIn ? (
+                                        <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> VERIFYING...</>
                                     ) : (
-                                        <><ShieldCheck className="w-4 h-4" /> Sign & Verify Wallet</>
+                                        <><ShieldCheck className="w-4 h-4" /> SIGN & VERIFY WALLET</>
                                     )}
                                 </button>
                             ) : (
@@ -173,11 +173,11 @@ export function LoginPage() {
                     {/* ── STEP 3: Social Identity Link (Optional) ── */}
                     {siweSession && (
                         <div className="pt-2 border-t border-slate-800/60">
-                            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                 <span className="text-indigo-400">○</span>
-                                Step 3 — Link Social Identity (Optional)
+                                STEP 3 — LINK SOCIAL IDENTITY (OPTIONAL)
                             </p>
-                            <p className="text-[8px] text-slate-600 font-bold uppercase tracking-widest mb-3 leading-relaxed">
+                            <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest mb-3 leading-relaxed">
                                 Link Google or X to enable pfp sync & Sybil protection.
                                 Your wallet remains the primary identity — this step is optional.
                             </p>
@@ -197,7 +197,7 @@ export function LoginPage() {
                                     {linkedGoogle ? `Google: ${linkedGoogle.email}` : 'Link Google Account'}
                                 </div>
                                 {linkedGoogle && (
-                                    <span className="text-[8px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
+                                    <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
                                 )}
                             </button>
 
@@ -216,11 +216,11 @@ export function LoginPage() {
                                     {linkedX ? `X: @${linkedX.username}` : 'Link X (Twitter) Account'}
                                 </div>
                                 {linkedX && (
-                                    <span className="text-[8px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
+                                    <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
                                 )}
                             </button>
 
-                            <p className="text-[8px] text-slate-600 text-center mt-3 font-bold uppercase tracking-widest animate-pulse">
+                            <p className="text-[11px] text-slate-600 text-center mt-3 font-black uppercase tracking-widest animate-pulse">
                                 Redirecting to app in a moment...
                             </p>
                         </div>
@@ -228,9 +228,9 @@ export function LoginPage() {
                 </div>
 
                 {/* Farcaster CTA */}
-                <div className="mt-8 pt-6 border-t border-slate-800/60 text-center relative z-10">
-                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-3">
-                        New to Farcaster?
+                 <div className="mt-8 pt-6 border-t border-slate-800/60 text-center relative z-10">
+                    <p className="text-[11px] text-slate-500 font-black uppercase tracking-wider mb-3">
+                        NEW TO FARCASTER?
                     </p>
                     <a
                         href="https://farcaster.xyz/~/code/CJ393F"
@@ -238,12 +238,12 @@ export function LoginPage() {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
                     >
-                        Get Account & Join the Gacha
+                         GET ACCOUNT & JOIN THE GACHA
                         <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>
 
-                <div className="mt-6 text-center text-[8px] text-slate-600 font-bold uppercase tracking-widest leading-relaxed relative z-10">
+                <div className="mt-6 text-center text-[11px] text-slate-600 font-black uppercase tracking-widest leading-relaxed relative z-10">
                     Wallet is your primary identity. No Riba. Honest Data Only.
                 </div>
             </div>

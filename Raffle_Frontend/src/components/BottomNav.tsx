@@ -17,10 +17,10 @@ export function BottomNav() {
 
     // Core nav items — max 5 untuk menghindari cramped layout di mobile
     const navItems = [
-        { path: '/', label: 'Home', icon: Home },
-        { path: '/tasks', label: 'Tasks', icon: Zap },
-        { path: '/raffles', label: 'Raffles', icon: Ticket },
-        { path: '/leaderboard', label: 'Rank', icon: Trophy },
+        { path: '/', label: 'HOME', icon: Home },
+        { path: '/tasks', label: 'TASKS', icon: Zap },
+        { path: '/raffles', label: 'RAFFLES', icon: Ticket },
+        { path: '/leaderboard', label: 'RANK', icon: Trophy },
     ];
 
     // Hitung total kolom: navItems + wallet + (admin jika ada)
@@ -67,7 +67,7 @@ export function BottomNav() {
                                                 <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-400 rounded-full" />
                                             )}
                                         </div>
-                                        <span className={`text-[11px] font-black leading-none uppercase tracking-[0.02em] ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                                        <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}>
                                             {item.label}
                                         </span>
                                     </>
@@ -95,8 +95,8 @@ export function BottomNav() {
                                             <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-amber-400 rounded-full" />
                                         )}
                                     </div>
-                                    <span className={`text-[11px] font-black leading-none uppercase tracking-[0.02em] ${isActive ? 'text-amber-400' : 'text-zinc-500'}`}>
-                                        Admin
+                                    <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${isActive ? 'text-amber-400' : 'text-zinc-500'}`}>
+                                        ADMIN
                                     </span>
                                 </>
                             )}
@@ -121,8 +121,8 @@ export function BottomNav() {
                                         <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full" />
                                     )}
                                 </div>
-                                <span className={`text-[11px] font-black leading-none uppercase tracking-[0.02em] ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                                    Profile
+                                <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                    PROFILE
                                 </span>
                             </Link>
                         ) : (
@@ -131,7 +131,7 @@ export function BottomNav() {
                                 className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${location.pathname === '/login' ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'}`}
                             >
                                 <Wallet className="w-[22px] h-[22px]" strokeWidth={1.75} />
-                                <span className="text-[11px] font-black leading-none uppercase tracking-[0.02em] text-zinc-500">Login</span>
+                                <span className="text-[11px] font-black leading-none uppercase tracking-widest text-zinc-500">LOGIN</span>
                             </Link>
                         )}
                     </div>

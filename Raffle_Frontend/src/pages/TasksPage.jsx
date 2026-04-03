@@ -168,21 +168,21 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[15px] font-bold text-white truncate">{task.title}</span>
+                        <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">{task.title}</span>
                         {isCompleted && (
-                            <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black uppercase tracking-tighter">Completed</span>
+                            <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black uppercase tracking-widest">COMPLETED</span>
                         )}
                         {task.requiresVerification && !isCompleted && (
                             <Shield size={12} className="text-green-500 flex-shrink-0" />
                         )}
                         {isTierLocked && (
-                            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
+                            <span className="text-[11px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700 font-black uppercase tracking-widest">
                                 LVL {task.minTier}
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <span className="font-bold text-yellow-500 flex items-center gap-1">
+                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-black uppercase tracking-widest">
+                        <span className="font-black text-yellow-500 flex items-center gap-1">
                             +{Number(task.baseReward)} XP
                         </span>
                         {!isCompleted && task.sponsorshipId == 0 && (
@@ -205,7 +205,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                     <button
                         onClick={handleVerify}
                         disabled={isVerifying || isTierLocked || timeLeft > 0}
-                        className={`px-4 py-1.5 rounded-full text-white text-xs font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-slate-700 shadow-none' : 'bg-blue-600 shadow-blue-900/20'}`}
+                        className={`px-4 py-1.5 rounded-full text-white text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-slate-700 shadow-none' : 'bg-blue-600 shadow-blue-900/20'}`}
                     >
                         {isVerifying ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -284,12 +284,12 @@ export function TasksPage() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div>
-                                <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">Earn Rewards</h1>
-                                <p className="text-slate-500 text-sm font-medium">Complete missions and level up your status.</p>
+                                <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">EARN REWARDS</h1>
+                                <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest">COMPLETE MISSIONS AND LEVEL UP YOUR STATUS.</p>
                             </div>
                             <button 
                                 onClick={() => navigate('/create-mission')}
-                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group w-fit"
+                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group w-fit"
                             >
                                 <Zap className="w-3.5 h-3.5 fill-indigo-500 group-hover:fill-white" />
                                 Sponsor Mission
@@ -300,12 +300,12 @@ export function TasksPage() {
                         {isConnected && (
                             <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl">
                                 <div>
-                                    <p className="text-[11px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Your XP</p>
+                                    <p className="text-[11px] text-slate-500 uppercase font-black tracking-widest mb-0.5">YOUR XP</p>
                                     <p className="text-xl font-mono font-black text-white">{String(userPoints)}</p>
                                 </div>
                                 <div className="w-px h-8 bg-white/10" />
                                 <div>
-                                    <p className="text-[11px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">Current Rank</p>
+                                    <p className="text-[11px] text-slate-500 uppercase font-black tracking-widest mb-0.5">CURRENT RANK</p>
                                     <div className="flex items-center gap-1.5">
                                         <Award className="w-4 h-4 text-indigo-400" />
                                         <p className="text-xl font-black text-indigo-400 uppercase tracking-tighter">{rankName || `LVL ${userTier}`}</p>
@@ -319,14 +319,14 @@ export function TasksPage() {
                     <div className="flex gap-2 mt-8 p-1.5 bg-zinc-900 border border-white/5 rounded-2xl w-full max-w-md mx-auto md:mx-0">
                         <button
                             onClick={() => setActiveTab('tasks')}
-                            className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             <Zap className={activeTab === 'tasks' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Daily Tasks
                         </button>
                         <button
                             onClick={() => setActiveTab('offers')}
-                            className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             <Megaphone className={activeTab === 'offers' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Partner Offers
@@ -367,15 +367,15 @@ export function TasksPage() {
                         {isTasksLoading && (
                             <div className="py-24 text-center">
                                 <Loader2 className="w-10 h-10 text-indigo-500 mx-auto animate-spin mb-4" />
-                                <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Checking Rewards...</p>
+                                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">CHECKING REWARDS...</p>
                             </div>
                         )}
 
                         {!isTasksLoading && taskGroups.regulars.length === 0 && Object.keys(taskGroups.sponsored).length === 0 && (
                             <div className="py-24 text-center glass-card border-dashed bg-indigo-500/5">
                                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4 opacity-50" />
-                                <h3 className="text-white font-bold text-lg">All Tasks Completed!</h3>
-                                <p className="text-slate-500 text-sm mt-1">You've finished all available daily missions. Check back tomorrow!</p>
+                                <h3 className="text-white font-black text-[11px] uppercase tracking-widest">ALL MISSIONS COMPLETED!</h3>
+                                <p className="text-slate-500 text-[11px] mt-1 font-black uppercase tracking-widest">YOU'VE FINISHED ALL AVAILABLE DAILY MISSIONS. CHECK BACK TOMORROW!</p>
                             </div>
                         )}
                     </div>
@@ -488,7 +488,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                 {verifyingStatus === 'success' && timer > 0 && (
                     <div className="bg-green-500/10 text-green-400 p-3 rounded-xl border border-green-500/20 text-center animate-pulse">
                         <p className="text-[10px] font-black uppercase tracking-widest mb-1">Status: Verified</p>
-                        <p className="text-xs font-bold">Claim rewarding in {timer}s...</p>
+                        <p className="text-[11px] font-bold">Claim rewarding in {timer}s...</p>
                     </div>
                 )}
 
@@ -538,7 +538,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                             }
                         }}
                         disabled={isClaiming}
-                        className="w-full bg-green-600 hover:bg-green-500 py-3.5 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/20"
+                        className="w-full bg-green-600 hover:bg-green-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/20"
                     >
                         {isClaiming ? <Loader2 className="animate-spin" size={14} /> : <Gift size={14} />}
                         Claim Task Reward
@@ -548,7 +548,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                 {verifyingStatus === 'fail' && (
                     <div className="bg-red-500/10 text-red-400 p-3 rounded-xl border border-red-500/20 text-center">
                         <p className="text-[10px] font-black uppercase tracking-widest mb-1">Verification Failed</p>
-                        <p className="text-xs font-bold">Please ensure all tasks are completed</p>
+                        <p className="text-[11px] font-bold">Please ensure all tasks are completed</p>
                     </div>
                 )}
 

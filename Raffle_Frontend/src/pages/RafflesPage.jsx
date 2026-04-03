@@ -63,31 +63,31 @@ function RaffleRow({ raffleId, filter = 'all' }) {
             <Trophy size={20} className="text-indigo-400" />
           </div>
           <div>
-            <h3 className="text-[15px] font-bold text-white leading-tight">
-              {raffle.metadataURI?.includes('ipfs') ? "Community Prize" : `Elite Raffle #${raffle.id}`}
+            <h3 className="text-[11px] font-black text-white leading-tight uppercase tracking-widest">
+              {raffle.metadataURI?.includes('ipfs') ? "COMMUNITY PRIZE" : `ELITE RAFFLE #${raffle.id}`}
             </h3>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+              <span className={`text-[11px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
                 {raffle.isActive ? 'LIVE' : 'CLOSED'}
               </span>
-              <span className="text-[11px] text-slate-500 font-mono">
-                Entry: {ticketPriceETH ? parseFloat(formatEther(ticketPriceETH)).toFixed(6) : '...'} ETH
+              <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest font-mono">
+                ENTRY: {ticketPriceETH ? parseFloat(formatEther(ticketPriceETH)).toFixed(6) : '...'} ETH
               </span>
             </div>
           </div>
         </div>
 
         <div className="text-right">
-          <div className="flex items-center gap-1 text-xs font-mono text-slate-400 justify-end">
-            <Timer size={10} /> {isFinalized ? "Finalized" : timeLeft}
+          <div className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest font-mono text-slate-400 justify-end">
+            <Timer size={10} /> {isFinalized ? "FINALIZED" : timeLeft.toUpperCase()}
           </div>
         </div>
       </div>
 
       {/* Progress Bar (Subtle) */}
       <div className="mt-2 mb-3">
-        <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-          <span>Tickets Sold</span>
+        <div className="flex justify-between text-[11px] text-slate-500 mb-1 font-black uppercase tracking-widest">
+          <span>TICKETS SOLD</span>
           <span>{currentTickets}/{maxTickets}</span>
         </div>
         <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
@@ -103,19 +103,19 @@ function RaffleRow({ raffleId, filter = 'all' }) {
         <button
           onClick={handleAction}
           disabled={isProcessing}
-          className="w-full py-2 rounded-lg bg-emerald-600 text-white text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          className="w-full py-2 rounded-lg bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-emerald-900/20"
         >
           {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <Gift size={16} />}
-          Claim Prize
+          CLAIM PRIZE
         </button>
       ) : (
         <button
           onClick={handleAction}
           disabled={isProcessing || isFinalized || !raffle.isActive}
-          className={`w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform ${isFinalized || !raffle.isActive ? 'bg-slate-800 text-slate-500' : 'bg-white/10 text-white hover:bg-white/20'}`}
+          className={`w-full py-2 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg ${isFinalized || !raffle.isActive ? 'bg-slate-800 text-slate-500' : 'bg-white/10 text-white hover:bg-white/20 shadow-white/5'}`}
         >
           {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <Ticket size={16} />}
-          {isFinalized ? 'Results Out' : isGaslessSupported ? '⛽ Buy Free' : 'Buy Ticket'}
+          {isFinalized ? 'RESULTS OUT' : isGaslessSupported ? '⛽ BUY FREE' : 'BUY TICKET'}
         </button>
       )}
     </div>
@@ -137,11 +137,11 @@ export function RafflesPage() {
         <div className="px-4 py-6 border-b-subtle">
           <div className="flex justify-between items-end mb-4">
             <div>
-              <h1 className="text-2xl font-black text-white mb-1">NFT Raffles</h1>
-              <div className="flex items-center gap-2">
-                <p className="text-slate-500 text-sm">Win exclusive prizes.</p>
-                <GaslessBadge />
-              </div>
+                <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">NFT RAFFLES</h1>
+                <div className="flex items-center gap-2">
+                  <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest">WIN EXCLUSIVE PRIZES.</p>
+                  <GaslessBadge />
+                </div>
             </div>
             <Link to="/create-raffle" className="p-2 rounded-full bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 active:scale-95 transition-transform">
               <Gift size={20} />
@@ -151,12 +151,12 @@ export function RafflesPage() {
           {/* Filter Pills */}
           <div className="flex gap-2">
             {['all', 'active', 'completed'].map((f) => (
-              <button
+               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${filter === f ? 'bg-white text-black border-white' : 'text-slate-500 border-white/10 hover:border-white/30'}`}
+                className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border ${filter === f ? 'bg-white text-black border-white shadow-lg' : 'text-slate-500 border-white/10 hover:border-white/30'}`}
               >
-                {f}
+                {f.toUpperCase()}
               </button>
             ))}
           </div>
@@ -167,7 +167,7 @@ export function RafflesPage() {
           {!raffleIds || raffleIds.length === 0 ? (
             <div className="py-20 text-center col-span-full">
               <RefreshCw className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
-              <p className="text-sm text-slate-500">Syncing Raffles...</p>
+              <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest">SYNCING RAFFLES...</p>
             </div>
           ) : (
             <>

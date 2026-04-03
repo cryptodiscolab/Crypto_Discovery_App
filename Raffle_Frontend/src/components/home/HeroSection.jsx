@@ -16,7 +16,7 @@ export function HeroSection() {
                 >
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-8">
                         <Sparkles className="w-4 h-4 text-yellow-400" />
-                        <span className="text-sm font-medium text-slate-300">Powered by API3 QRNG on Base</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">POWERED BY API3 QRNG ON BASE</span>
                     </div>
 
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
@@ -34,14 +34,14 @@ export function HeroSection() {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link to="/raffles">
-                            <button className="px-8 py-4 bg-white text-slate-950 rounded-full font-bold text-lg hover:bg-slate-200 transition-colors flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-                                Start Winning
+                            <button className="px-8 py-4 bg-white text-slate-950 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                                START WINNING
                                 <ArrowRight className="w-5 h-5" />
                             </button>
                         </Link>
                         <Link to="/tasks">
-                            <button className="px-8 py-4 bg-white/5 text-white border border-white/10 rounded-full font-bold text-lg hover:bg-white/10 transition-all backdrop-blur-sm">
-                                Earn Free Tickets
+                            <button className="px-8 py-4 bg-white/5 text-white border border-white/10 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-all backdrop-blur-sm">
+                                EARN FREE TICKETS
                             </button>
                         </Link>
                     </div>

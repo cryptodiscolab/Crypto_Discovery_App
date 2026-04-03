@@ -172,15 +172,15 @@ export function AdminPage({ initialTab = 'pool' }) {
                             <Shield className="w-5 h-5 text-indigo-400" />
                         </div>
                         <div className="text-left">
-                            <h2 className="text-lg font-black text-white tracking-tight">Admin<span className="text-indigo-500">Hub</span></h2>
-                            <p className="admin-label !mb-0 !text-[10px]">Protocol V2.1</p>
+                            <h2 className="text-lg font-black text-white tracking-tight">ADMIN<span className="text-indigo-500">HUB</span></h2>
+                            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-0.5">PROTOCOL V2.1</p>
                         </div>
                     </div>
 
                     <nav className="flex-1 space-y-6 overflow-y-auto no-scrollbar -mx-2 px-2 pt-16 md:pt-0 pb-10">
                         {groups.map((group) => (
                             <div key={group.label} className="space-y-1">
-                                <h3 className="admin-label px-3 !text-[10px] !mb-3">{group.label}</h3>
+                                <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest px-3 mb-3">{group.label}</h3>
                                 {group.items.map((tab) => {
                                     const Icon = tab.icon;
                                     const isActive = activeTab === tab.id;
@@ -197,7 +197,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                                                 }`}
                                         >
                                             <Icon className={`w-3.5 h-3.5 transition-colors ${isActive ? 'text-indigo-400' : 'group-hover:text-indigo-400'}`} />
-                                            <span className="text-[11px] font-bold uppercase tracking-wider">{tab.label}</span>
+                                            <span className="text-[11px] font-black uppercase tracking-widest">{tab.label}</span>
                                         </button>
                                     );
                                 })}
@@ -230,7 +230,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                         </div>
                         <div className="h-4 w-px bg-white/10 mx-2" />
                         <div className="flex items-center gap-2 bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
-                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                            <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">
                                 Authority: {isContractOwner ? 'Owner' : isCMSAdmin ? 'CMS Admin' : isOperator ? 'Operator' : 'Delegated'}
                             </span>
                         </div>
@@ -257,7 +257,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                         <React.Suspense fallback={
                             <div className="h-[60vh] flex flex-col items-center justify-center animate-pulse">
                                 <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4 opacity-50" />
-                                <p className="admin-label !text-center">Initialising Module...</p>
+                                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-center">INITIALISING MODULE...</p>
                             </div>
                         }>
                             <div key={activeTab} className="animate-fade-in pb-10">
@@ -280,19 +280,19 @@ export function AdminPage({ initialTab = 'pool' }) {
                                         <div className="flex gap-4 border-b border-white/5 pb-4 mb-8">
                                             <button
                                                 onClick={() => setTaskSubTab('batch')}
-                                                className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'batch' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                                className={`text-[11px] font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'batch' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
                                             >
                                                 Smart Batch Creator
                                             </button>
                                             <button
                                                 onClick={() => setTaskSubTab('quick')}
-                                                className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'quick' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                                className={`text-[11px] font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'quick' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
                                             >
                                                 Quick Task Manager
                                             </button>
                                             <button
                                                 onClick={() => setTaskSubTab('history')}
-                                                className={`text-xs font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'history' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                                className={`text-[11px] font-black uppercase tracking-widest pb-2 transition-all ${taskSubTab === 'history' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
                                             >
                                                 Claim History
                                             </button>

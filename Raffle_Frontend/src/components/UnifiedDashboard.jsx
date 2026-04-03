@@ -121,14 +121,14 @@ export function UnifiedDashboard() {
                 }`}>
                 {fcUser ? <ShieldCheck className="w-5 h-5 shrink-0" /> : <ShieldAlert className="w-5 h-5 shrink-0 animate-pulse" />}
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold">{fcUser ? 'Identity Verified' : 'Identity Required'}</p>
-                    <p className="text-[11px] opacity-70">
-                        {fcUser ? `Linked to @${fcUser.username}` : 'Connect Farcaster to unlock gasless rewards'}
+                    <p className="text-[11px] font-black uppercase tracking-widest">{fcUser ? 'IDENTITY VERIFIED' : 'IDENTITY REQUIRED'}</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest opacity-70 leading-none mt-1">
+                        {fcUser ? `LINKED TO @${fcUser.username.toUpperCase()}` : 'CONNECT FARCASTER TO UNLOCK GASLESS REWARDS'}
                     </p>
                 </div>
                 {!fcUser && (
-                    <a href="https://warpcast.com" target="_blank" rel="noreferrer" className="text-[10px] font-bold text-amber-400 underline underline-offset-2 shrink-0">
-                        Link
+                    <a href="https://warpcast.com" target="_blank" rel="noreferrer" className="text-[11px] font-black uppercase tracking-widest text-amber-400 underline underline-offset-2 shrink-0">
+                        LINK
                     </a>
                 )}
             </div>
@@ -213,12 +213,12 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
     return (
         <div className={`glass-card p-4 flex justify-between items-center transition-colors ${isCompleted ? 'opacity-40' : 'hover:bg-zinc-800/60'}`}>
             <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isCompleted ? 'bg-indigo-500/20 text-indigo-500' : 'bg-indigo-600 text-white'}`}>
-                    {isCompleted ? <Check className="w-4 h-4" /> : <Zap className="w-3 h-3 fill-white" />}
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-500/10 text-indigo-400">
+                    <Zap className="w-3 h-3 fill-current" />
                 </div>
                 <div>
-                    <p className={`text-xs font-bold leading-tight ${isCompleted ? 'line-through' : 'text-white'}`}>{task.title}</p>
-                    <p className="text-[10px] font-black text-indigo-400 mt-0.5">+{task.baseReward} XP</p>
+                    <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'}`}>{task.title.toUpperCase()}</p>
+                    <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mt-0.5">+{task.baseReward} XP</p>
                 </div>
             </div>
 
@@ -228,15 +228,15 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
                         <button
                             onClick={handleVerifyOrClaim}
                             disabled={isVerifying || isDisabled}
-                            className={`btn-primary py-1.5 px-3 text-[9px] bg-blue-600 hover:bg-blue-500 ${isVerifying || isDisabled ? 'opacity-50' : ''}`}
+                            className={`btn-primary py-1.5 px-3 text-[11px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-500 ${isVerifying || isDisabled ? 'opacity-50' : ''}`}
                         >
-                            {isVerifying ? 'Verifying...' : 'Verify'}
+                            {isVerifying ? 'VERIFYING...' : 'VERIFY'}
                         </button>
                     ) : (
                         <Transaction calls={calls} onSuccess={(tx) => { onSuccess(tx.transactionHash); refetchCompletion(); }}>
                             <TransactionButton
-                                className={`btn-primary py-1.5 px-3 text-[9px] ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                text={isDisabled ? 'Locked' : 'Claim'}
+                                className={`btn-primary py-1.5 px-3 text-[11px] font-black uppercase tracking-widest ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                text={isDisabled ? 'LOCKED' : 'CLAIM'}
                                 disabled={isDisabled}
                             />
                         </Transaction>
@@ -296,8 +296,8 @@ function SponsorCard({ sponsorId, isDisabled, address, onSuccess }) {
         <div className={`glass-card p-5 relative overflow-hidden transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-zinc-800/60'}`}>
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <span className="text-[9px] font-black uppercase text-indigo-500 tracking-widest block mb-1">Partner</span>
-                    <h4 className="font-black text-lg uppercase tracking-tighter text-white">{sponsorName}</h4>
+                    <span className="text-[11px] font-black uppercase text-indigo-500 tracking-widest block mb-1">PARTNER MISSION</span>
+                    <h4 className="font-black text-lg uppercase tracking-tighter text-white">{sponsorName.toUpperCase()}</h4>
                 </div>
                 <Zap className="w-4 h-4 text-indigo-500 fill-indigo-500/20" />
             </div>
@@ -317,8 +317,8 @@ function SponsorCard({ sponsorId, isDisabled, address, onSuccess }) {
             <div className="relative z-[9999] pointer-events-auto">
                 <Transaction calls={calls} onSuccess={handleBatchSuccess}>
                     <TransactionButton
-                        className={`w-full btn-primary py-3 text-[10px] ${cardsDisabled ? 'opacity-50 grayscale' : ''}`}
-                        text={isDisabled ? 'Identity Required' : selectedTasks.length > 0 ? `Verify ${selectedTasks.length} Tasks` : 'Select Tasks'}
+                        className={`w-full btn-primary py-3 text-[11px] font-black uppercase tracking-widest ${cardsDisabled ? 'opacity-50 grayscale' : ''}`}
+                        text={isDisabled ? 'IDENTITY REQUIRED' : selectedTasks.length > 0 ? `VERIFY ${selectedTasks.length} MISSIONS` : 'SELECT MISSIONS'}
                         disabled={cardsDisabled}
                     />
                 </Transaction>
@@ -389,16 +389,16 @@ function SubTaskItem({ taskId, isSelected, onToggle, address }) {
                 </div>
                 <div>
                     <div className="flex items-center gap-2">
-                        <p className={`text-[11px] font-bold tracking-tight ${isCompleted ? 'line-through text-slate-500'
+                        <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500'
                             : isSelected ? 'text-white'
                                 : 'text-slate-300'
-                            }`}>{task.title}</p>
+                            }`}>{task.title.toUpperCase()}</p>
                         {task.requiresVerification && (
                             <ShieldCheck className={`w-3 h-3 ${isVerified ? 'text-emerald-400' : 'text-amber-400'}`} />
                         )}
                     </div>
-                    <p className={`text-[9px] font-black ${isCompleted ? 'text-indigo-400/50'
-                        : isSelected ? 'text-white/80'
+                    <p className={`text-[11px] font-black uppercase tracking-widest ${isCompleted ? 'text-indigo-400/50'
+                        : isSelected ? 'text-white'
                             : 'text-indigo-400'
                         }`}>+{task.baseReward} XP</p>
                 </div>
@@ -408,13 +408,13 @@ function SubTaskItem({ taskId, isSelected, onToggle, address }) {
                 {needsVerify ? (
                     <button
                         disabled={isVerifying}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-black py-1.5 px-3 rounded-lg transition-all"
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest py-1.5 px-3 rounded-lg transition-all"
                     >
-                        {isVerifying ? 'Wait...' : 'Verify'}
+                        {isVerifying ? 'WAIT...' : 'VERIFY'}
                     </button>
                 ) : isCompleted ? (
-                    <span className="text-[8px] font-black uppercase text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
-                        Done
+                    <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                        DONE
                     </span>
                 ) : null}
             </div>
