@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-03*
-*PRD Version: v3.40.18 (Global Mobile UI Hardening)*
+*Last Updated: 2026-04-04*
+*PRD Version: v3.42.0 (Identity Hardened & Growth Optimized)*
 
 ---
 
@@ -179,11 +179,38 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Local Resource Leak**: Dilarang membiarkan server lokal (Vite/Express) berjalan di background setelah tugas selesai (**LOCAL_HYGIENE**).
 - 🚫 **Admin State Drift**: Dilarang mengubah state di Smart Contract tanpa sinkronisasi Database (**ADMIN_SYNC_MANDATE**).
 - 🚫 **Schema Immutable Protection**: 🚨 DILARANG KERAS menghapus, mengganti nama, atau memodifikasi kolom `last_seen_at` dari tabel `user_profiles`. Kolom ini adalah tulang punggung XP Sync API dan Leaderboard. Menghapusnya = **Protocol Breach Level-1**.
-- 🚫 **Identity Ghosting Prevention**: 🚨 Setiap penambahan kolom identitas di `user_profiles` WAJIB diikuti dengan pembaruan pada SQL View `v_user_full_profile` (v3.26.0).
-- 🚫 **RPC Indexing Resilience**: 🚨 Backend API harus mendukung `tx_hash` sebagai fallback verifikasi jika data di Supabase/Indexer sedang tertunda (*lag*) (v3.26.0).
+- 🚫 **Identity Ghosting Prevention**: 🚨 Setiap penambahan kolom identitas di `user_profiles` WAJIB diikuti dengan pembaruan pada SQL View `v_user_full_profile` (v3.41.0).
+- 🚫 **RPC Indexing Resilience**: 🚨 Backend API harus mendukung `tx_hash` sebagai fallback verifikasi jika data di Supabase/Indexer sedang tertunda (*lag*) (v3.41.0).
 - 🚫 **No-Lost-Agent Breach**: Dilarang melakukan pencarian file manual (explorative `list_dir`) tanpa memeriksa [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) terlebih dahulu. Mandat ini WAJIB dijalankan ulang setiap kali protokol di-reset via `> re-read skills`.
 - 🚫 **Blind-Replacement Execution (Table Hallucination)**: 🚨 DILARANG KERAS mengeksekusi `multi_replace_file_content` pada baris tabel Markdown manapun tanpa melakukan `view_file` pada Header Tabel (-15 baris ke atas) untuk memastikan hirarki kolom. Dilarang berasumsi kolom 2 = Mainnet.
+- 🚫 **Referral Anti-Sybil Breach**: Dilarang melepaskan reward referral secara instan. Wajib melalui logic vesting **500 XP Milestone**.
+- 🚫 **Identity Guard Bypass**: Dilarang mengizinkan claim mission yang memiliki flag `is_base_social_required` jika profil user belum terverifikasi Basename.
 
+### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
+- **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).
+- **Secondary Standard (Content)**: Exactly `text-[13px] font-medium leading-relaxed` (`.content-native`) for readability.
+- **Emphasis (Values)**: Exactly `text-[12px] font-bold tracking-wide` (`.value-native`).
+- **Contrast**: Use `font-black` (weight 900) for labels and `font-medium` for body to create professional balanced contrast.
+- **Glassmorphism**: Combine with `bg-white/5` and `backdrop-blur-xl` for a premium feel.
+- **Micro-Animations**: Linear gradient animations on progress bars and pulse effects on active CTA labels are mandatory.
+- **Safe Area**: Ensure `pb-safe` is applied to all scrollable views to handle notch/home-indicator overlaps.
+- **Consistency**: Purge `text-xs`, `text-sm`, and `text-[10px]` from the workspace.
+
+### Section 4.2: REFERRAL & IDENTITY HARDENING (v3.42.0)
+- **Referral Vesting**: Reward 50 XP hanya cair (vested) ke Referrer saat User yang diajak mencapai **500 XP**.
+- **Nexus Dividend**: Tier 1 Referrer berhak mendapatkan **10% Lifetime XP Dividend** secara atomis via RPC `fn_increment_xp`.
+- **Identity Gating**: Tasks dengan partner Base wajib mensyaratkan `is_base_social_verified = true`.
+- **Basename Resolution**: On-chain reverse resolution (via viem) adalah standar verifikasi identitas sosial.
+
+---
+## 4. SECURE ENVIRONMENT & ZERO-TRUST ADDRESSES
+- **Mandat Alamat Kanonikal**: Gunakan [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) sebagai satu-satunya Source of Truth alamat kontrak.
+- **Blacklisted Addresses**: DILARANG KERAS menggunakan alamat berikut (LEGACY/VULNERABLE):
+  - `0x1ED8B135F01522505717D1E620C4Ef869D7D25e7`
+  - `0x87a3E63ca3eE8B832B2f520f91b79DeD98d601bF`
+  - `0x7890...` (and other unverified addresses).
+- **Checksum Enforcement**: Gunakan viem `getAddress()` untuk memastikan checksum address valid (EIP-55).
+- **Environment Parity**: Samakan nilai `.env`, `.env.local`, `.env.vercel`, dan `.env.vercel.production`.
 
 ---
 

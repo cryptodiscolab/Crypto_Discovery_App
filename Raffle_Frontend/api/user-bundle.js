@@ -184,6 +184,7 @@ export default async function handler(req, res) {
         case 'sync-pool-claim': await handleSyncPoolClaim(req, res); break;
         case 'leaderboard': await handleLeaderboard(req, res); break;
         case 'sync-oauth': await handleSyncOAuth(req, res); break;
+        case 'sync-base-social': await handleSyncBaseSocial(req, res); break;
         case 'approve-mission': await handleApproveMission(req, res); break;
         case 'approve-raffle': await handleApproveRaffle(req, res); break;
         case 'check-admin': await handleCheckAdmin(req, res); break;
@@ -239,49 +240,7 @@ async function handleLoginSync(req, res) {
             .select().single();
 
         if (error) throw error;
-
-        // 5. REFERRAL REWARD: If this is a new user and they were referred, award points to the referrer
-        if (!existing && updateData.referred_by) {
-            try {
-                const { data: refSetting } = await supabaseAdmin
-                    .from('point_settings')
-                    .select('points_value')
-                    .eq('activity_key', 'referral_invite')
-                    .single();
-
-                if (refSetting?.points_value) {
-                    const refReward = refSetting.points_value;
-
-                    const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
-                        wallet_address: updateData.referred_by,
-                        task_id: TASK_IDS.REFERRAL_INVITE, // System: Referral Invitation
-                        xp_earned: refReward,
-                        claimed_at: new Date().toISOString(),
-                        platform: 'system',
-                        action_type: 'referral_bonus',
-                        target_id: cleanAddress // Security: Track who was referred
-                    });
-
-                    if (claimErr && claimErr.code !== '23505') throw claimErr;
-
-                    // Log activity for the referrer
-                    await logActivity({
-                        wallet: updateData.referred_by,
-                        category: 'XP',
-                        type: 'Referral Bonus',
-                        description: `Earned ${refReward} XP for inviting ${cleanAddress}`,
-                        amount: refReward,
-                        symbol: 'XP',
-                        metadata: { invited_user: cleanAddress }
-                    });
-
-                    console.log(`[Referral] Credited ${updateData.referred_by} with ${refReward} XP for inviting ${cleanAddress}`);
-                }
-            } catch (refErr) {
-                console.error('[Referral] Failed to credit referrer:', refErr.message);
-            }
-        }
-
+        
         return res.status(200).json({ success: true, profile: data });
     } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -409,20 +368,11 @@ async function handleXpSync(req, res) {
 
         const currentTierOnChain = Number(onChainStats?.[3] || 0);
 
-        // 6. Underdog Bonus Calculation
+        // [REMOVED v3.41.2] Underdog and Global Scaling is now handled atomically by Supabase RPC.
+        // On-chain syncs will be adjusted via manual_xp_bonus internally if needed,
+        // but for now we maintain 1:1 parity with the contract for total_xp.
         let appliedBonusXP = 0;
-        if (xpDelta > 0) {
-            const underdogThreshold = parseInt(settings.underdog_threshold_xp || '0');
-            if (dbLastPoints <= underdogThreshold) {
-                const windowHrs = parseInt(settings.underdog_activity_window_hours || '48');
-                const lastClaimAt = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
-                
-                if (!lastClaimAt || (new Date() - lastClaimAt) / (1000 * 60 * 60) <= windowHrs) {
-                    const multiplierBP = parseInt(settings.underdog_bonus_multiplier_bp || '11000');
-                    appliedBonusXP = Math.floor((xpDelta * (multiplierBP - 10000)) / 10000);
-                }
-            }
-        }
+
 
         // 7. FIX v3.40.3: Recalculate tier from sbt_thresholds DB (not on-chain which may be stale)
         // This ensures tier updates instantly after XP increment, without waiting for cron.
@@ -722,7 +672,7 @@ async function handleSyncUgcMission(req, res) {
         const valid = await verifyMessage({ address: wallet, message, signature });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks_batch, reward_symbol, payment_token } = payload;
+        const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks_batch, reward_symbol, payment_token, is_base_social_required } = payload;
 
         // Get dynamic platform fee and XP settings
         const [{ data: sysSetting }, { data: pointSetting }] = await Promise.all([
@@ -760,6 +710,7 @@ async function handleSyncUgcMission(req, res) {
                 task_type: 'ugc',
                 onchain_id: campaign.id,
                 creator_address: wallet.toLowerCase(),
+                is_base_social_required: !!is_base_social_required, // v3.41.2 Hardening
                 created_at: new Date().toISOString()
             }));
 
@@ -775,10 +726,9 @@ async function handleSyncUgcMission(req, res) {
                 .eq('activity_key', 'sponsor_task')
                 .single();
             
-            if (sponsorPoints?.points_value) {
                 let creatorXp = sponsorPoints.points_value;
-                const multiplier = await getUserMultiplier(wallet);
-                creatorXp = Math.floor((creatorXp * multiplier) / 10000);
+                // [Refactor v3.41.2] Scaling is now handled via database RPC fn_increment_xp
+
 
                 const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
                     wallet_address: wallet.toLowerCase(),
@@ -791,6 +741,18 @@ async function handleSyncUgcMission(req, res) {
 
                 if (claimErr && claimErr.code !== '23505') throw claimErr;
 
+                // [Fix v3.41.2] Award XP atomically using the Hybrid Formula
+                if (!claimErr) {
+                    try {
+                        await supabaseAdmin.rpc('fn_increment_xp', {
+                            p_wallet: wallet.toLowerCase(),
+                            p_amount: creatorXp
+                        });
+                    } catch (xp_err) {
+                        console.error('[handleSyncUgcMission] fn_increment_xp failed:', xp_err.message);
+                    }
+                }
+
                 await logActivity({
                     wallet,
                     category: 'XP',
@@ -801,10 +763,9 @@ async function handleSyncUgcMission(req, res) {
                     txHash,
                     metadata: { campaign_id: campaign.id }
                 });
+            } catch (xpErr) {
+                console.warn('[SyncUgcMission] Failed to award sponsor XP:', xpErr.message);
             }
-        } catch (xpErr) {
-            console.warn('[SyncUgcMission] Failed to award sponsor XP:', xpErr.message);
-        }
 
         // 4. Record Listing Fee Payment Activity
         await logActivity({
@@ -865,14 +826,8 @@ async function handleSyncUgcRaffle(req, res) {
             const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_create').single();
             if (setting?.points_value) {
                 let creatorXp = setting.points_value;
-                const { data: profile } = await supabaseAdmin.from('user_profiles').select('tier').eq('wallet_address', wallet.toLowerCase()).single();
-                const tier = profile?.tier || 0;
-                if (tier > 0) {
-                    const { data: multSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'tier_multipliers').single();
-                    const multipliers = multSetting?.value || {};
-                    const mult = parseInt(multipliers[tier]) || 10000;
-                    creatorXp = Math.floor((creatorXp * mult) / 10000);
-                }
+                // [Refactor v3.41.2] Scaling is now handled via database RPC fn_increment_xp
+
 
                 const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
                     wallet_address: wallet.toLowerCase(),
@@ -885,7 +840,20 @@ async function handleSyncUgcRaffle(req, res) {
 
                 if (claimErr && claimErr.code !== '23505') throw claimErr;
 
+                // [Fix v3.41.2] Award XP atomically using the Hybrid Formula
                 if (!claimErr) {
+                    try {
+                        await supabaseAdmin.rpc('fn_increment_xp', {
+                            p_wallet: wallet.toLowerCase(),
+                            p_amount: creatorXp
+                        });
+                    } catch (xpErr) {
+                        console.error('[handleSyncUgcRaffle] fn_increment_xp failed:', xpErr.message);
+                    }
+                }
+
+                if (!claimErr) {
+
                     await logActivity({
                         wallet,
                         category: 'XP',
@@ -1243,6 +1211,63 @@ async function handleFetchPendingRaffles(req, res) {
 
         if (error) throw error;
         return res.status(200).json(data);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleSyncBaseSocial(req, res) {
+    const { wallet_address, signature, message } = req.body;
+    if (!wallet_address || !signature || !message) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        const valid = await verifyMessage({ address: wallet_address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const normalizedWallet = wallet_address.toLowerCase();
+
+        // 1. Resolve Basename via viem
+        // Note: For Base, the public resolver is at 0xC69781Be07731755f3d91fDc58b29c61463a5ADD (Mainnet)
+        // On Sepolia, we attempt standard reverse resolution.
+        let basename = null;
+        try {
+            basename = await rpcClient.getEnsName({
+                address: normalizedWallet,
+                // Basename resolver on Mainnet. 
+                // viem's getEnsName handles reverse resolution if the RPC supports it.
+            });
+        } catch (err) {
+            console.warn('[Basename Sync] Error resolving name:', err.message);
+        }
+
+        if (!basename) {
+            return res.status(404).json({ error: 'No Basename found for this wallet. Please register at base.org/names first.' });
+        }
+
+        // 2. Update Database
+        const { error } = await supabaseAdmin
+            .from('user_profiles')
+            .update({
+                base_username: basename,
+                is_base_social_verified: true,
+                updated_at: new Date().toISOString()
+            })
+            .eq('wallet_address', normalizedWallet);
+
+        if (error) throw error;
+
+        // 3. Log Activity
+        await logActivity({
+            wallet: normalizedWallet,
+            category: 'IDENTITY',
+            type: 'Base Social Link',
+            description: `Verified Base Social: ${basename}`,
+            metadata: { basename }
+        });
+
+        return res.status(200).json({ success: true, basename });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }

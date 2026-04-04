@@ -105,6 +105,110 @@ router.get('/health', (req, res) => {
     });
 });
 
+/**
+ * Check Farcaster identity by wallet address
+ * GET /api/verify/farcaster/check?address=0x...
+ */
+router.get('/farcaster/check', async (req, res) => {
+    try {
+        const { address } = req.query;
+        if (!address) return res.status(400).json({ success: false, error: 'Missing address' });
+
+        const neynarService = require('../services/neynar.service');
+        const user = await neynarService.getUserByAddress(address);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'No Farcaster account linked to this wallet found on Neynar',
+            });
+        }
+
+        res.json({
+            success: true,
+            fid: user.fid,
+            username: user.username,
+            displayName: user.display_name,
+            pfp: user.pfp_url,
+            verified: true
+        });
+    } catch (error) {
+        console.error('Error in Farcaster check:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Check Twitter identity by wallet address
+ * GET /api/verify/twitter/check?address=0x...
+ */
+router.get('/twitter/check', async (req, res) => {
+    try {
+        const { address } = req.query;
+        if (!address) return res.status(400).json({ success: false, error: 'Missing address' });
+
+        const supabaseService = require('../services/supabase.service');
+        const linkage = await supabaseService.getSocialLinkage(address);
+
+        if (!linkage || !linkage.twitter_id) {
+            return res.status(404).json({
+                success: false,
+                error: 'No Twitter account linked to this wallet in our database',
+            });
+        }
+
+        res.json({
+            success: true,
+            twitterId: linkage.twitter_id,
+            username: linkage.twitter_username,
+            verified: true
+        });
+    } catch (error) {
+        console.error('Error in Twitter check:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ══════════════════════════════════════════════════════════
+
+/**
+ * Verify Base Social Identity (Basenames)
+ * POST /api/verify/base-social
+ * Body: { userAddress, signature, message }
+ */
+router.post('/base-social', async (req, res) => {
+    try {
+        const { userAddress, signature, message } = req.body;
+
+        if (!userAddress || !signature || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: userAddress, signature, message',
+            });
+        }
+
+        // ── Security Check: Verify wallet ownership ──
+        if (!verificationService.verifySignature(userAddress, signature, message)) {
+            return res.status(401).json({
+                success: false,
+                error: '[Security] Cryptographic verification failed.',
+            });
+        }
+
+        const supabaseService = require('../services/supabase.service');
+        const result = await supabaseService.verifyBaseSocial(userAddress);
+
+        res.json({
+            success: true,
+            message: `Base Social Identity verified for ${userAddress}`,
+            data: result.data
+        });
+    } catch (error) {
+        console.error('Error in Base Social verification:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ══════════════════════════════════════════════════════════
 // WILDCARD VERIFICATION ROUTES (Unified Pattern)
 // All social task verification follows the same pipeline:

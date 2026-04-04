@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
-import { Transaction, TransactionButton } from '@coinbase/onchainkit/transaction';
+import { AdminTransactionButton } from '../AdminTransactionButton';
 
 export function QuickTaskForgeSection({
     dailyDesc, onDailyDescChange,
@@ -77,9 +77,13 @@ export function QuickTaskForgeSection({
                     </select>
                 </div>
             </div>
-            <Transaction calls={buildAdminTaskCall()} onSuccess={handleTxSuccess}>
-                <TransactionButton className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/20" text="DEPLOY SYSTEM TASK" />
-            </Transaction>
+            
+            <AdminTransactionButton 
+                calls={buildAdminTaskCall()} 
+                onSuccess={handleTxSuccess}
+                text="DEPLOY SYSTEM TASK"
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/20"
+            />
         </div>
     );
 }

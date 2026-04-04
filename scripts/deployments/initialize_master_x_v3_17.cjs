@@ -4,7 +4,7 @@ require("dotenv").config();
 async function main() {
     const [deployer] = await ethers.getSigners();
     const MASTER_X_ADDRESS = "0x980770dAcE8f13E10632D3EC1410FAA4c707076c";
-    const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA || "0xaC430adE9217e2280b852EA29b91d14b12b3E151";
+    const DAILY_APP = process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA || "0x369aBcD44d3D510f4a20788BBa6F47C99e57d267";
     const RAFFLE = process.env.VITE_RAFFLE_ADDRESS_SEPOLIA || "0x2c28bced53Cdfe9d9ECe7DFa79fE1066e453DE08";
 
     console.log("🛠️  Initializing CryptoDiscoMasterX at:", MASTER_X_ADDRESS);

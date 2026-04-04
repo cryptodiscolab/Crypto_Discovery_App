@@ -33,6 +33,48 @@ const ProtectedLayout = () => (
 
 import { FarcasterProvider, useFarcaster } from './shared/context/FarcasterContext';
 
+import { useConnect, useAccount } from 'wagmi';
+
+function DebugMockConnect() {
+  const { connect, connectors } = useConnect();
+  const { isConnected } = useAccount();
+  
+  // Only show in dev and when not connected
+  if (import.meta.env.MODE !== 'development' || isConnected) return null;
+
+  const mockConnector = connectors.find(c => c.id === 'mock');
+
+  return (
+    <button
+      id="debug-mock-connect"
+      onClick={() => {
+        console.log('🚀 Debug: Connecting Mock Wallet...');
+        connect({ connector: mockConnector });
+      }}
+      style={{
+        position: 'fixed',
+        bottom: '100px',
+        right: '20px',
+        zIndex: 99999,
+        background: 'linear-gradient(135deg, #FF3D00 0%, #D50000 100%)',
+        color: 'white',
+        padding: '10px 16px',
+        borderRadius: '12px',
+        fontSize: '11px',
+        fontWeight: 900,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        border: '1px solid rgba(255,255,255,0.2)',
+        cursor: 'pointer',
+        boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
+        fontFamily: 'Inter, sans-serif'
+      }}
+    >
+      DEBUG: MOCK CONNECT
+    </button>
+  );
+}
+
 function AppContent() {
   const { isFrame, safeAreaInsets, client } = useFarcaster();
 
@@ -46,6 +88,7 @@ function AppContent() {
   return (
     <BrowserRouter>
       <ReferralTracker />
+      <DebugMockConnect />
       <div className={`${theme} min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col`}>
         {!isFrame && <Header />}
         

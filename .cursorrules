@@ -34,6 +34,42 @@ After reading, internally confirm:
 - [ ] Vercel 12-function limit understood
 
 > ❗ If you skip this step and start working without reading skills, **you are in Protocol Breach**.
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL
+
+---
+## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
+
+> **This applies to ALL AI models: Gemini, Claude (Sonnet/Opus/Haiku), GPT, DeepSeek, Qwen — no exceptions.**
+
+Before responding to ANY request, you MUST perform these reads IN ORDER:
+
+### STEP 1 — Read Core Skills (WAJIB, URUT)
+```
+1. .agents/skills/ecosystem-sentinel/SKILL.md   ← Audit protocol & fix cycle
+2. .agents/skills/secure-infrastructure-manager/SKILL.md  ← Security & contracts
+3. .agents/skills/git-hygiene/SKILL.md          ← Clean tree mandate
+4. .agents/WORKSPACE_MAP.md                     ← Canonical Nav Map
+5. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
+6. PRD/FEATURE_WORKFLOW_SOT.md                  ← Feature & Sync Source of Truth (Anti-Hallucination)
+```
+
+### STEP 2 — Read Situational Skills (baca jika relevan dengan task)
+```
+4. .agents/skills/raffle-integration/SKILL.md   ← Raffle/NFT features
+5. .agents/skills/xp-reward-lifecycle/SKILL.md  ← XP & reward logic
+6. .agents/skills/economy-profitability-manager/SKILL.md  ← PnL & economy
+7. .agents/skills/supabase-audit/SKILL.md       ← DB audit tasks
+8. .agents/skills/admin-stability/SKILL.md      ← Admin dashboard tasks
+```
+
+### STEP 3 — Confirm before proceeding
+After reading, internally confirm:
+- [ ] Zero-Hardcode Mandate understood
+- [ ] Audit-First Fix Cycle (Section 29) understood
+- [ ] Zero-Trust Security rules understood
+- [ ] Vercel 12-function limit understood
+
+> ❗ If you skip this step and start working without reading skills, **you are in Protocol Breach**.
 ### Section 20.1: OpenClaw Local Installation
 - **Binary Path**: `C:\Users\chiko\AppData\Roaming\npm\openclaw.ps1`
 - **Ollama Model**: `OpenClaw:3.38.0` (Powered by `qwen2.5-coder`)
@@ -41,7 +77,8 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.40.18**
+**Protocol Version: 3.42.0 (Identity Hardened & Growth Optimized)**
+
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
 ---
@@ -70,6 +107,18 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - **NO Heavy Animation**: DO NOT use `framer-motion`. Rely strictly on Native CSS Keyframes (@keyframes) and Tailwind classes.
 - **Z-Index & Pointer Events**: For fixed layouts (BottomNav/Header), always use `relative z-[9999] pointer-events-auto`.
 - **The "Glass Wall" Bug**: If buttons become unclickable, check for full-screen div overlays. Add `pointer-events-none` to background wrappers while keeping children `pointer-events-auto`.
+
+### 4.1 THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0) - MANDATORY
+- **Baseline Typography (Hybrid)**:
+  - **Labels/Metadata**: Exactly `text-[11px] font-black uppercase tracking-[0.2em] leading-none` (Scannability).
+  - **Content/Body**: `text-[13px] font-medium leading-relaxed` (Readability).
+  - **Values/Stats**: `text-[12px] font-bold tracking-wide` (Emphasis).
+- **Consistency Purge**: Eradicate legacy `text-xs`, `text-sm`, and `text-[10px]`.
+- **Visual Hierarchy**: Use `font-black` for labels to create a high-density, professional "Native" look. Use `font-medium` for 13px body text to ensure professional balanced contrast.
+
+- **Micro-Animations**: Use subtle `@keyframes` for "wow" factor (e.g., Pulse on active states, Linear Gradient on progress bars).
+- **Safe Area**: ALWAYS use `.pb-safe` or `pt-safe` on scrollable containers.
+- **Component Hygiene**: Standardize button/input sizing via global `.btn-native` and `.input-native` (11px internal typography).
 
 ## 5. AUTHENTICATION, ADMIN, & SECURITY (THE PROTECTOR)
 - **Master Admin Addresses:**
@@ -120,7 +169,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - **SCANNING PROTOCOL**: Before every "Finish", "Notify User", or `git push`, AI MUST run `npm run gitleaks-check` to ensure no leaks were introduced.
 - **CLEANUP**: All temporary or archive files containing secrets MUST be scrubbed or deleted immediately upon discovery.
 
-### 8.4 Dynamic Activity Pattern (System Tasks)
+## 8.4 Dynamic Activity Pattern (System Tasks)
 - **DISTINCTION:** API Handlers MUST distinguish between Static Tasks (stored in `daily_tasks`) and Dynamic System Activities (e.g., `raffle_buy_123` or `raffle_win_456`).
 - **RESOLUTION:** Dynamic activities MUST fetch their canonical `points_value` directly from the `point_settings` table using their base `activity_key` (e.g., `raffle_buy`), NEVER from `daily_tasks`.
 - **UGC MODERATION:** All User Generated Content (Missions, Raffles, Profile Updates) MUST default to `is_active: false` or `status: 'pending'` and require explicit Admin Approval (v3.38.3).
@@ -138,12 +187,13 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V13.2** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` |
+| **DailyApp V13.2** | `[RESERVED]` | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` |
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| **Last Synced** | `2026-04-03T23:00:00+07:00` | PRD v3.40.18 (UI Hardening) |
+| *---
+*Last Updated: 2026-04-04T08:45:00+07:00 | Native+ Balanced UI Hardening & Social Guard Secure. v3.41.0 Release READY.*
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -157,8 +207,9 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 
 ## 13. UI/UX DESIGN & FRONTEND STANDARDS (NATIVE+ v3.40.18)
 1. **Native+ Aesthetic:** Standardized high-density mobile interface. No heavy libraries.
-2. **Typography Mandate:** ALL micro-text, labels, and metadata MUST use **11px (Bold/Uppercase/Tracking-Wide)**.
+2. **Typography Mandate:** Use "Native+ Balanced" (11px Bold Labels / 13px Medium Content).
 3. **Safe Area Insets:** ALL fixed layouts MUST implement `.pb-safe` and `.pt-safe` recursive padding to ensure notch/home-indicator compliance.
+
 4. **Component Parity:** Use `.btn-native`, `.input-native`, and `.select-native` for all interactive states.
 5. **Atomic Layout:** 100% responsiveness. Mobile uses bottom-sheets/drawers.
 6. **Z-Index Management:** ALL fixed UI components MUST use `z-[9999] pointer-events-auto`.
@@ -177,12 +228,12 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 
 ## 22. POST-FIX DOCUMENTATION SYNC MANDATE (WAJIB)
 **Setiap kali** melakukan perubahan kode, memperbaiki bug/error, atau menyelesaikan sesi kerja, Antigravity WAJIB memperbarui SEMUA dokumen berikut sebelum menutup task:
-- `PRD/DISCO_DAILY_MASTER_PRD.md` � Tambah Work Report + naikkan versi
-- `CLAUDE.md` � Update versi di Absolute Laws
-- `.agents/WORKSPACE_MAP.md` � Update path/route jika ada yang berubah
-- `ROADMAP.md` � Centang item jika feature/fix selesai
-- `IMPLEMENTATION_SUMMARY.md` � Catat ringkasan perubahan
-- `.cursorrules` � Naikkan Protocol Version
+- `PRD/DISCO_DAILY_MASTER_PRD.md`  Tambah Work Report + naikkan versi
+- `CLAUDE.md`  Update versi di Absolute Laws
+- `.agents/WORKSPACE_MAP.md`  Update path/route jika ada yang berubah
+- `ROADMAP.md`  Centang item jika feature/fix selesai
+- `IMPLEMENTATION_SUMMARY.md`  Catat ringkasan perubahan
+- `.cursorrules`  Naikkan Protocol Version
 - File `SKILL.md` yang relevan (contoh: `xp-reward-lifecycle`, `ecosystem-sentinel`)
 **MELANGGAR ATURAN INI = PROTOCOL BREACH.**
 ## 15. SOCIAL IDENTITY LOCK & ECOSYSTEM INTEGRITY MANDATE
@@ -411,8 +462,7 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **ENFORCEMENT**: Every administrative action on-chain (Token Whitelist, SBT Upgrade) MUST be synchronized with the database immediately upon transaction confirmation via a signed secure request to the backend. No state drift between Contract and Database is permitted.
 
 ## 36. SCHEMA IMMUTABLE PROTECTION MANDATE (v3.24.0)
-- **ANTI-DELETION**: The `last_seen_at` column in the `user_profiles` table is a CRITICAL component for XP Sync API and the Anti-Whale Underdog Catch-up logic.
-- **ENFORCEMENT**: 🚨 NEVER delete, rename, or modify the `last_seen_at` column, nor any other vital schema columns governing rewards without explicit A-D-R-R-E cycles. Deleting this column breaks the ecosystem's leaderboard synchronization process.
+- **ENFORCEMENT**: 🚨 NEVER delete, rename, or modify the `last_seen_at` column, nor any other vital schema columns governing rewards without explicit A-D-R-R-E cycles. Deleting this column breaks the ecosystem's leaderboard synchronization process. All XP rewards MUST use `fn_increment_xp` to apply the **Nexus Hybrid Formula** (v3.41.2).
 
 ## 37. ECOSYSTEM DOCUMENTATION & SURGICAL CHANGE MANDATE (v3.26.1)
 - **No-Lost-Agent Breach**: Dilarang melakukan pencarian file manual (explorative `list_dir`) tanpa memeriksa [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) terlebih dahulu. Mandat navigasi ini WAJIB dijalankan ulang setiap kali `> re-read skills` diaktifkan.
@@ -458,5 +508,18 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
   - **MANDATE**: Enforce 11px micro-typography and notch-proof safe areas across all mobile viewports.
   - **VERIFICATION**: UI audits MUST be performed via browser sub-agent on multiple device emulations (iPhone SE, Pro Max).
 
-- **Current Protocol Version**: v3.40.18 (Global Mobile UI Hardening)
-*Antigravity: Integrity Restored. Visual Audit Mandated. Native+ UI Hardened.*
+- **41.2 ANTI-WHALE XP SCALING (v3.41.2)**: 🚨 PROHIBIT manual scaling or multiplier calculations in the backend (`api/`) or frontend (`src/`).
+  - **MANDATE**: All XP increments MUST be processed via the Supabase RPC `fn_increment_xp(p_wallet, p_amount)`.
+  - **TRUTH**: The logarithmic Global Multiplier and Tier-Safe Individual Multiplier are purely database-side logic. Agents MUST send raw `Base_XP` from `point_settings` to the RPC.
+
+- **42.0 REFERRAL GROWTH LOOP v2 (v3.42.0)**: 🚨 MANDATORY VESTING & DIVIDENDS.
+  - **MANDATE**: Referral bonuses (50 XP) MUST ONLY be awarded after the referred user reaches the **500 XP threshold**.
+  - **PASSIVE INCOME**: Tier 1 referrers MUST receive a **10% lifetime XP dividend** from their invites, handled atomically via `fn_increment_xp`.
+  - **LOGGING**: Every referral dividend MUST generate a `REFERRAL_DIVIDEND` log entry in `user_activity_logs`.
+
+- **42.1 BASE SOCIAL IDENTITY GUARD (v3.42.0)**: 🚨 IDENTITY-LOCKED TASKS.
+  - **MANDATE**: High-value tasks MUST be gated behind `is_base_social_verified`. 
+  - **VERIFICATION**: Basename reverse resolution is the standard for identity proof. Admin tasks MUST enforce `is_base_social_required` labels.
+
+- **Current Protocol Version**: v3.42.0 (Identity Hardened & Growth Optimized)
+*Antigravity: Integrity Restored. Identity Guarded. v3.42.0 Locked.*

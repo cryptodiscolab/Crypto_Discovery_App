@@ -152,7 +152,7 @@ export function UgcRevenueTab() {
             {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center animate-pulse">
                     <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Calculating Revenue...</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest">Calculating Revenue...</p>
                 </div>
             ) : (
                 <div className="bg-[#121214] rounded-3xl border border-white/5 overflow-hidden">
@@ -169,7 +169,7 @@ export function UgcRevenueTab() {
                         <tbody className="divide-y divide-white/5">
                             {revenueData.filter(m => filterTab === 'PENDING' ? !m.is_revenue_allocated : m.is_revenue_allocated).length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-20 text-center text-[10px] text-slate-600 font-bold uppercase">No records found for this view</td>
+                                    <td colSpan="5" className="px-6 py-20 text-center text-[11px] font-black uppercase tracking-widest">No records found for this view</td>
                                 </tr>
                             ) : (
                                 revenueData
@@ -178,7 +178,7 @@ export function UgcRevenueTab() {
                                     <tr key={mission.id} className="hover:bg-white/[0.02] transition-all group">
                                         <td className="px-6 py-4">
                                             <p className="text-xs font-bold text-white">{mission.title}</p>
-                                            <p className="text-[8px] text-slate-500 font-mono mt-0.5">{mission.id}</p>
+                                            <p className="text-[11px] font-black uppercase tracking-widest">{mission.id}</p>
                                         </td>
                                         <td className="px-6 py-4 text-xs font-mono text-slate-300">
                                             {parseFloat(mission.listing_fee_usdc || 0).toFixed(2)}
@@ -188,9 +188,9 @@ export function UgcRevenueTab() {
                                         </td>
                                         <td className="px-6 py-4">
                                             {mission.is_revenue_allocated ? (
-                                                <span className="text-[8px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 uppercase tracking-widest">Funded</span>
+                                                <span className="text-[11px] font-black uppercase tracking-widest">Funded</span>
                                             ) : (
-                                                <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 uppercase tracking-widest">Pending</span>
+                                                <span className="text-[11px] font-black uppercase tracking-widest">Pending</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">

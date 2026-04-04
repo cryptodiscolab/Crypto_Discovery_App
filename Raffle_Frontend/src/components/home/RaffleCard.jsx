@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { usePoints } from '../../shared/context/PointsContext';
+import { useSocialGuard } from '../../hooks/useSocialGuard';
 
 export function RaffleCard() {
     const { isConnected, address } = useAccount();
@@ -13,6 +14,7 @@ export function RaffleCard() {
     const latestId = raffleIds.length > 0 ? raffleIds[raffleIds.length - 1] : null;
     const { raffle, isLoading } = useRaffleInfo(latestId || 0);
     const { buyTickets, buyTicketsGasless, claimPrize, isGaslessSupported } = useRaffle();
+    const { data: socialProfile, isLoading: isSocialLoading } = useSocialGuard(address);
     const [isBuying, setIsBuying] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
 
@@ -23,6 +25,15 @@ export function RaffleCard() {
     const handleBuy = async () => {
         if (!isConnected) return toast.error("Please connect wallet first");
         if (!raffle || !raffle.isActive) return toast.error("No active raffle");
+
+        // 🛡️ ANTI-SYBIL GUARD: Requires Farcaster or Twitter Linkage
+        if (!socialProfile?.isVerified) {
+            toast.error("Social Identity Required. Please link Farcaster or Twitter in Profile.", {
+                duration: 4000,
+                icon: '🛡️'
+            });
+            return;
+        }
 
         setIsBuying(true);
         try {
@@ -95,45 +106,45 @@ export function RaffleCard() {
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/50 rounded-full border border-white/10">
                     <Shield className="w-3 h-3 text-yellow-400" />
-                    <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">API3 VERIFIED</span>
+                    <span className="label-native text-slate-300">API3 VERIFIED</span>
                 </div>
             </div>
 
-            <h3 className="text-lg font-black text-white mb-1 uppercase tracking-tighter italic leading-none">
+            <h3 className="text-xl font-black text-white mb-1 uppercase tracking-tighter italic leading-none">
                 {displayedRaffle.id ? `EXCLUSIVE RAFFLE #${displayedRaffle.id}` : "UPCOMING RAFFLE"}
             </h3>
-            <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-6 opacity-70">WIN BLUE-CHIP NFTS. FAIR RANDOMNESS POWERED BY QUANTUM RNG.</p>
+            <p className="label-native opacity-60 mb-6">WIN BLUE-CHIP NFTS. FAIR RANDOMNESS POWERED BY QUANTUM RNG.</p>
 
             {/* Live Raffle Details */}
-            <div className="bg-slate-950/50 rounded-2xl p-4 border border-white/5 mb-6">
+            <div className="bg-zinc-950/40 rounded-2xl p-4 border border-white/5 mb-6">
                 <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/10">
                         <Ticket className="text-white w-6 h-6" />
                     </div>
                     <div>
-                        <h4 className="text-white font-black text-[11px] uppercase tracking-widest leading-none">REWARD: NFT PRIZE</h4>
-                        <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest mt-1">POOL: {(Number(displayedRaffle.prizePool || 0) / 1e18).toFixed(4)} ETH</p>
+                        <h4 className="label-native !mb-0.5">REWARD: NFT PRIZE</h4>
+                        <p className="value-native !text-indigo-400">POOL: {(Number(displayedRaffle.prizePool || 0) / 1e18).toFixed(4)} ETH</p>
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                        <span className="text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {timeLeft > 0 ? "ENDS IN" : "STATUS"}
+                <div className="space-y-3">
+                    <div className="flex justify-between items-end">
+                        <span className="label-native !mb-0 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-slate-600" /> {timeLeft > 0 ? "ENDS IN" : "STATUS"}
                         </span>
-                        <span className={`italic tracking-tighter ${timeLeft > 0 ? 'text-white' : 'text-red-400'}`}>
+                        <span className={`value-native italic tracking-tighter ${timeLeft > 0 ? 'text-white' : 'text-red-400'}`}>
                             {timeLeft > 0 ? formatTime(timeLeft) : (displayedRaffle.isActive ? "ENDING SOON" : "ENDED")}
                         </span>
                     </div>
-                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700 ease-out"
                             style={{ width: `${Math.min(100, progress)}%` }}
                         />
                     </div>
-                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                        <span>{displayedRaffle.totalTickets} TICKETS SOLD</span>
-                        <span>{displayedRaffle.maxTickets} MAX</span>
+                    <div className="flex justify-between items-center mt-1">
+                        <span className="label-native !mb-0 !text-slate-600 font-bold">{displayedRaffle.totalTickets} TICKETS SOLD</span>
+                        <span className="label-native !mb-0 !text-slate-600 font-bold">{displayedRaffle.maxTickets} MAX</span>
                     </div>
                 </div>
             </div>
@@ -143,8 +154,8 @@ export function RaffleCard() {
                 <div className="flex items-center gap-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl mb-3 animate-pulse">
                     <Trophy className="w-5 h-5 text-yellow-400 flex-shrink-0" />
                     <div>
-                        <p className="text-yellow-300 text-[11px] font-black uppercase tracking-widest">🏆 YOU&apos;RE A WINNER!</p>
-                        <p className="text-yellow-200/70 text-[11px] font-black uppercase tracking-widest mt-0.5">CLAIM YOUR NFT PRIZE BELOW.</p>
+                        <p className="label-native !text-yellow-500 !mb-0.5">🏆 YOU&apos;RE A WINNER!</p>
+                        <p className="label-native !text-yellow-200/50">CLAIM YOUR NFT PRIZE BELOW.</p>
                     </div>
                 </div>
             )}
@@ -154,7 +165,7 @@ export function RaffleCard() {
                 <button
                     onClick={handleClaim}
                     disabled={isClaiming}
-                    className={`w-full py-4 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
+                    className={`w-full py-4 rounded-xl label-native transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
                         ${isClaiming
                             ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
                             : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400 shadow-yellow-500/20'
@@ -170,7 +181,7 @@ export function RaffleCard() {
                 <button
                     onClick={handleBuy}
                     disabled={isBuying || !displayedRaffle.isActive || timeLeft <= 0}
-                    className={`w-full py-4 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
+                    className={`w-full py-4 rounded-xl label-native transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
                         ${isBuying
                             ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
                             : 'bg-white/10 hover:bg-white/20 text-white border-white/10'

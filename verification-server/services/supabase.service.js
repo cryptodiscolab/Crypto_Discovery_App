@@ -390,10 +390,20 @@ class SupabaseService {
                 throw claimError;
             }
 
-            // 2. Increment total_xp: Handled by database trigger 'trg_sync_user_xp_on_claim'
-            // in Supabase. The trigger automatically sums all claims for the user.
+            // 2. Increment total_xp: [Fix v3.41.2 Hardening] 
+            // Scaling is now handled atomically by public.fn_increment_xp 
+            // to ensure Global & Individual multipliers are calculated.
+            try {
+                await this.client.rpc('fn_increment_xp', {
+                    p_wallet: walletAddress.toLowerCase(),
+                    p_amount: finalXp
+                });
+            } catch (xpErr) {
+                console.error('[SupabaseService] fn_increment_xp failed:', xpErr.message);
+                // We don't fail the whole request since the claim was already recorded.
+            }
 
-            return { success: true, claim, xpAwarded: xpReward };
+            return { success: true, claim, xpAwarded: finalXp };
         } catch (error) {
             console.error('[SupabaseService] Error awarding XP:', error.message);
             throw error;
@@ -441,6 +451,54 @@ class SupabaseService {
         } catch (error) {
             console.error('[SupabaseService] Error syncing task batch:', error.message);
             throw error;
+        }
+    }
+    /**
+     * Mark user as Base Social Verified (Basenames)
+     * @param {string} walletAddress - User's wallet
+     * @returns {Promise<Object>}
+     */
+    async verifyBaseSocial(walletAddress) {
+        if (!this.client) throw new Error('Supabase client not initialized');
+        const normalizedWallet = walletAddress.toLowerCase();
+
+        try {
+            const { data, error } = await this.client
+                .from('user_profiles')
+                .update({
+                    is_base_social_verified: true,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('wallet_address', normalizedWallet)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return { success: true, data };
+        } catch (error) {
+            console.error('[Supabase] Error verifying Base Social:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Get social linkage (FID, TwitterID) for a wallet address
+     * @param {string} walletAddress - User's wallet
+     */
+    async getSocialLinkage(walletAddress) {
+        if (!this.client) return null;
+        try {
+            const { data, error } = await this.client
+                .from('user_profiles')
+                .select('fid, twitter_id, twitter_username, discord_id, telegram_id')
+                .eq('wallet_address', walletAddress.toLowerCase())
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('[Supabase] Error getting social linkage:', error.message);
+            return null;
         }
     }
 }

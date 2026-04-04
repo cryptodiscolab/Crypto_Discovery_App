@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.42.0)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -20,11 +20,11 @@ Before responding to ANY request, read these files IN ORDER:
 5. **`IMPLEMENTATION_SUMMARY.md`** (Top 50 Lines) — Recent history & changelog
 6. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.40.18)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.42.0)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.40.18)
+## 🔴 ABSOLUTE LAWS (Nexus v3.41.0)
 
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
@@ -52,6 +52,9 @@ Before responding to ANY request, read these files IN ORDER:
 48. **RPC INDEXING FALLBACK**: When syncing XP or Claims, APIs MUST accept `tx_hash` and verify signatures/receipts directly via RPC if the indexer/Supabase state is lagging (v3.26.0).
 49. **VIEW SYNCHRONIZATION**: Any addition of columns to `user_profiles` MUST be immediately followed by an update to `v_user_full_profile` SQL View to prevent frontend data-ghosting (v3.26.0).
 50. **NO-LOST-AGENT**: Prohibit explorative file listing without first checking [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md). This mapping MANDATE is automatically reset and MUST be followed every time `> re-read skills` is triggered.
+51. **NATIVE+ UI STANDARD**: ALL UI labels, metadata, and sub-headers MUST be `text-[11px] font-black uppercase tracking-widest` (`.label-native`). Body content MUST be `text-[13px] font-medium leading-relaxed` (`.content-native`). Eradicate legacy `text-xs`, `text-sm`, and `text-[10px]` from the workspace (v3.41.0).
+52. **REFERRAL GROWTH LOOP v2**: Referral bonuses (50 XP) MUST ONLY be awarded after the **500 XP threshold**. Tier 1 referrers MUST receive a **10% lifetime XP dividend**, handled atomically via `fn_increment_xp` (v3.42.0).
+53. **BASE SOCIAL IDENTITY GUARD**: High-value tasks MUST be gated behind `is_base_social_verified`. Basename resolution is the canonical proof of identity (v3.42.0).
 
 
 ---
@@ -81,7 +84,7 @@ Notify user format (Standard Reporting v3.26.0):
 
 -   **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
 -   **DailyAppV12Secured (Mainnet)**: `[RESERVED]`
--   **DailyAppV13.2 (Sepolia)**: `0xaC430adE9217e2280b852EA29b91d14b12b3E151`
+-   **DailyAppV13.2 (Sepolia)**: `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267`
 -   **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 -   **Language**: Chat = Bahasa Indonesia | UI/Code = English
 

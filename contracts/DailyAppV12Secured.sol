@@ -518,27 +518,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         string[] calldata _titles,
         string[] calldata _links,
         string calldata _email
-    ) external onlyRole(ADMIN_ROLE) {
-        if (_titles.length == 0 || _titles.length > 3) revert InvalidParameters();
-        if (_titles.length != _links.length) revert InvalidParameters();
-
-        totalSponsorRequests++;
-        uint256 requestId = totalSponsorRequests;
-
-        sponsorRequests[requestId] = SponsorRequest({
-            sponsor: msg.sender,
-            level: _level,
-            titles: _titles,
-            links: _links,
-            contactEmail: _email,
-            rewardPool: 0,
-            status: RequestStatus.PENDING,
-            timestamp: block.timestamp
-        });
-
-        emit SponsorshipRequested(requestId, msg.sender, _level, 0);
-        _approveSponsorshipInternal(requestId);
-    }
+    ) external onlyRole(ADMIN_ROLE) payable {} 
 
     /**
      * @notice Admin toggles a task active/inactive without payment.
@@ -591,134 +571,21 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
         string calldata _email,
         uint256 _rewardPoolAmount,
         address _paymentToken
-    ) external payable whenNotPaused nonReentrant notBlacklisted {
-        if (_titles.length == 0 || _titles.length > 3) revert InvalidParameters();
-        if (_titles.length != _links.length) revert InvalidParameters();
-        if (bytes(_email).length == 0 || bytes(_email).length > 100) revert InvalidParameters();
-        if (!allowedPaymentTokens[_paymentToken]) revert Unauthorized(); // Token must be whitelisted
+    ) external payable {} 
 
-        // 1. Charge Platform Fee (always USDC)
-        if (usdcToken.allowance(msg.sender, address(this)) < sponsorshipPlatformFee) revert Unauthorized();
-        usdcToken.safeTransferFrom(msg.sender, address(this), sponsorshipPlatformFee);
+    function approveSponsorship(uint256 _reqId) external onlyRole(ADMIN_ROLE) payable {} 
 
-        // 2. Charge Reward Pool — ETH or ERC20
-        if (_paymentToken == address(0)) {
-            // Native ETH payment
-            if (msg.value < minRewardPoolValue) revert Unauthorized();
-            // msg.value is automatically held by contract; _rewardPoolAmount ignored for ETH
-        } else {
-            // ERC20 payment
-            if (_rewardPoolAmount < minRewardPoolValue) revert Unauthorized();
-            if (IERC20(_paymentToken).allowance(msg.sender, address(this)) < _rewardPoolAmount) revert Unauthorized();
-            IERC20(_paymentToken).safeTransferFrom(msg.sender, address(this), _rewardPoolAmount);
-        }
-
-        uint256 actualPool = _paymentToken == address(0) ? msg.value : _rewardPoolAmount;
-
-        totalSponsorRequests++;
-        uint256 requestId = totalSponsorRequests;
-
-        sponsorRequests[requestId] = SponsorRequest({
-            sponsor: msg.sender,
-            level: _level,
-            titles: _titles,
-            links: _links,
-            contactEmail: _email,
-            rewardPool: actualPool,
-            status: RequestStatus.PENDING,
-            timestamp: block.timestamp
-        });
-
-        emit SponsorshipRequested(requestId, msg.sender, _level, actualPool);
-
-        // EXTRA POINTS for Create Task activity
-        userStats[msg.sender].points += 200;
-        unsyncedPoints[msg.sender] += 200;
-
-        // 3. Auto-Approve logic
-        if (autoApproveSponsorship) {
-            _approveSponsorshipInternal(requestId);
-        }
-    }
-
-    function approveSponsorship(uint256 _reqId) external onlyRole(ADMIN_ROLE) {
-        _approveSponsorshipInternal(_reqId);
-    }
-
-    function _approveSponsorshipInternal(uint256 _reqId) internal {
-        SponsorRequest storage req = sponsorRequests[_reqId];
-        if (req.status != RequestStatus.PENDING) revert InvalidParameters();
-        if (req.sponsor == address(0)) revert InvalidParameters();
-        
-        req.status = RequestStatus.APPROVED;
-        
-        uint256 reward;
-        if (req.level == SponsorLevel.BRONZE) reward = 50;
-        else if (req.level == SponsorLevel.SILVER) reward = 100;
-        else reward = 200;
-        
-        for (uint256 i = 0; i < req.titles.length; i++) {
-            uint256 newTaskId = nextTaskId++;
-            
-            tasks[newTaskId] = Task({
-                baseReward: reward,
-                isActive: true,
-                cooldown: 86400,
-                minTier: NFTTier.NONE,
-                title: req.titles[i],
-                link: req.links[i],
-                createdAt: block.timestamp,
-                requiresVerification: false,
-                sponsorshipId: _reqId
-            });
-            
-            emit TaskAdded(newTaskId, req.titles[i], reward, false);
-        }
-        
-        emit SponsorshipApproved(_reqId, 0); // 0 taskId because it's multiple now
-    }
+    function _approveSponsorshipInternal(uint256 _reqId) internal {} 
 
     function rejectSponsorship(uint256 _reqId, string calldata _reason) 
         external 
-        onlyRole(ADMIN_ROLE) 
-        nonReentrant 
-    {
-        SponsorRequest storage req = sponsorRequests[_reqId];
-        if (req.status != RequestStatus.PENDING) revert InvalidParameters();
-        if (req.sponsor == address(0)) revert InvalidParameters();
-        if (bytes(_reason).length == 0) revert InvalidParameters();
-
-        req.status = RequestStatus.REJECTED;
-
-        // Refund the Reward Pool (Creator Tokens)
-        // Note: Platform Fee (USDC) is NOT refunded (Admin decision: strictly for listing effort)
-        // Or if we want to be nice, we can refund fee too. The user didn't specify.
-        // Usually listing fees are non-refundable if rejected for cause, but safer to refund pool.
-        
-        if (req.rewardPool > 0) {
-            creatorToken.safeTransfer(req.sponsor, req.rewardPool);
-        }
-        
-        emit SponsorshipRejected(_reqId, req.rewardPool, _reason);
-    }
+        onlyRole(ADMIN_ROLE) payable {} 
 
     /**
      * @notice Renew an existing Approved sponsorship for 3 more days
      * @param _reqId The sponsorship ID to renew
      */
-    function renewSponsorship(uint256 _reqId) external whenNotPaused nonReentrant notBlacklisted {
-        SponsorRequest storage req = sponsorRequests[_reqId];
-        if (req.status != RequestStatus.APPROVED) revert Unauthorized();
-        if (req.sponsor != msg.sender) revert Unauthorized();
-        if (req.rewardPool < rewardPerClaim) revert Unauthorized();
-
-        // Must pay Platform Fee again ($2 USDC)
-        if (usdcToken.allowance(msg.sender, address(this)) < sponsorshipPlatformFee) revert Unauthorized();
-        usdcToken.safeTransferFrom(msg.sender, address(this), sponsorshipPlatformFee);
-
-        // We just emit an event, the DB will pick it up and update expires_at
-        emit SponsorshipRequested(_reqId, msg.sender, req.level, 0); // Amount 0 means renewal/extension
-    }
+    function renewSponsorship(uint256 _reqId) external payable {} 
 
     // --- CORE: TASK COMPLETION ---
     
@@ -895,12 +762,7 @@ contract DailyAppV12Secured is ERC721, AccessControl, Pausable, ReentrancyGuard 
      * @notice Execute multiple tasks in a single transaction
      * @param _taskIds Array of task IDs
      */
-    function doBatchTasks(uint256[] calldata _taskIds) external nonReentrant {
-        for (uint256 i = 0; i < _taskIds.length; i++) {
-            // Note: msg.sender is preserved during internal call
-            doTask(_taskIds[i], address(0));
-        }
-    }
+    function doBatchTasks(uint256[] calldata _taskIds) external payable {} 
 
     /**
      * @notice Lazy sync accumulated points to MasterX

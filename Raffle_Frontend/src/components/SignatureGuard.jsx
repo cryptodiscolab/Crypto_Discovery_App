@@ -63,9 +63,17 @@ export const SignatureGuard = ({ children }) => {
 
         setIsSigning(true);
         try {
-            await signMessageAsync({ message });
+            // 🛡️ Development Bypass: Auto-approve for Mock Wallet
+            const isMockWallet = address?.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266';
+            if (import.meta.env.MODE === 'development' && isMockWallet) {
+                console.log('🛡️ [Security] Mock Wallet detected. Bypassing real signature...');
+                // Artificial delay for UX "Verified" feel
+                await new Promise(r => setTimeout(r, 800));
+            } else {
+                await signMessageAsync({ message });
+            }
 
-            localStorage.setItem(AUTH_KEY, 'authenticated');
+            localStorage.setItem(AUTH_KEY, JSON.stringify({ status: 'AUTHENTICATED', timestamp }));
             setIsApproved(true);
             toast.success("Identity Verified", { icon: '🛡️' });
         } catch (err) {
@@ -74,7 +82,7 @@ export const SignatureGuard = ({ children }) => {
         } finally {
             setIsSigning(false);
         }
-    }, [signMessageAsync, isSigning]);
+    }, [signMessageAsync, isSigning, address]);
 
     const handleReject = () => {
         disconnect();

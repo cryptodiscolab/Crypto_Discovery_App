@@ -43,9 +43,15 @@ export function SBTUpgradeCard() {
     if (!nextTier) return null;
 
     const hasTotalXP = Number(userPoints) >= nextTier.pointsRequired;
-    const hasOnChainXP = Number(userOnChainXP || 0) >= nextTier.pointsRequired;
+    // DEV BYPASS: Auto-pass XP check for mock admin
+    const hasOnChainXP = (import.meta.env.DEV && address?.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'.toLowerCase()) 
+        ? true 
+        : Number(userOnChainXP || 0) >= nextTier.pointsRequired;
     const isSoldOut = nextTier.maxSupply > 0 && nextTier.currentSupply >= nextTier.maxSupply;
-    const hasEnoughETH = balanceData?.value >= nextTier.mintPrice;
+    // DEV BYPASS: Auto-pass ETH balance check for mock admin
+    const hasEnoughETH = (import.meta.env.DEV && address?.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'.toLowerCase())
+        ? true
+        : balanceData?.value >= nextTier.mintPrice;
     
     const xpShortfall = nextTier.pointsRequired - Number(userPoints);
     const syncShortfall = nextTier.pointsRequired - Number(userOnChainXP || 0);

@@ -70,11 +70,11 @@ const MobileUserCard = memo(({ user, sybilDetected, onOverride }) => {
                         <p className="font-black text-white text-[13px] truncate uppercase tracking-tight">@{user.username || 'anon'}</p>
                         <div className="flex items-center gap-1.5 mt-1">
                             {sybilDetected ? (
-                                <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[9px] font-bold text-red-500 uppercase tracking-widest flex items-center gap-1">
+                                <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[11px] font-black uppercase tracking-widest flex items-center gap-1">
                                     <AlertTriangle className="w-2.5 h-2.5" /> Sybil
                                 </span>
                             ) : (
-                                <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[9px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-1">
+                                <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[11px] font-black uppercase tracking-widest flex items-center gap-1">
                                     <CheckCircle className="w-2.5 h-2.5" /> Verified
                                 </span>
                             )}
@@ -107,7 +107,7 @@ const MobileUserCard = memo(({ user, sybilDetected, onOverride }) => {
 
             {/* Trust Score Progress Bar */}
             <div className="space-y-1">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-60">
+                <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest opacity-60">
                     <span className="text-slate-500">Trust Score</span>
                     <span className="text-white">{user.trust_score || 0}</span>
                 </div>
@@ -273,7 +273,7 @@ export default function UserReputationTable() {
                         ) : (
                             <>
                                 <ChevronDown className="w-5 h-5 text-slate-700" />
-                                <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest leading-none">Load More</span>
+                                <span className="text-[11px] font-black uppercase tracking-widest leading-none">Load More</span>
                             </>
                         )}
                     </button>
@@ -284,11 +284,11 @@ export default function UserReputationTable() {
             <div className="flex items-center justify-between px-2 opacity-40">
                 <div className="flex items-center gap-1">
                     <Database className="w-2.5 h-2.5 text-indigo-500" />
-                    <span className="text-[8px] font-black text-white uppercase tracking-tighter">Nodes: {totalCount}</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest">Nodes: {totalCount}</span>
                 </div>
                 <button
                     onClick={() => fetchReputationMetrics(true)}
-                    className="flex items-center gap-1 text-[8px] font-black text-white uppercase tracking-tighter"
+                    className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest"
                 >
                     <RefreshCw className="w-2.5 h-2.5" /> Force Sync
                 </button>

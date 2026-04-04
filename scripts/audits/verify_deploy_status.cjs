@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 async function main() {
   const addresses = [
     { name: 'DailyApp V12 (Mainnet - Reserved)', addr: '[RESERVED]' },
-    { name: 'DailyApp V13.2 (Sepolia)', addr: '0xaC430adE9217e2280b852EA29b91d14b12b3E151' },
+    { name: 'DailyApp V13.2 (Sepolia)', addr: '0x369aBcD44d3D510f4a20788BBa6F47C99e57d267' },
     { name: 'MasterX', addr: '0x980770dAcE8f13E10632D3EC1410FAA4c707076c' },
     { name: 'Raffle', addr: '0x012FAdd087540e1B51a587f420e77D007fED2a84' },
     { name: 'CMS V2', addr: '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302' },

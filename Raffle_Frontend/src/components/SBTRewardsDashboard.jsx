@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, Timer as TimerIcon } from 'lucide-react';
+import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, Timer as TimerIcon, Globe, User, Info, Zap } from 'lucide-react';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import { formatEther, formatUnits } from 'viem';
-import { usePublicClient, useAccount } from 'wagmi';
+import { usePublicClient, useAccount, useSignMessage } from 'wagmi';
+import { useUserInfo, useV12Stats } from '../hooks/useContract';
+import { calculateMultipliers } from '../lib/economy';
 import toast from 'react-hot-toast';
 
 export function SBTRewardsDashboard() {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { totalPoolBalance, userTier, claimableAmount, maxGasPrice, claimRewards, isLoading: loadingSBT } = useSBT();
     const { ethPrice, poolSettings, isLoading: loadingCMS } = useCMS();
+    const { stats: userStats } = useUserInfo(address);
+    const { totalUsers } = useV12Stats();
     const publicClient = usePublicClient();
+
+    const multis = calculateMultipliers(userStats, totalUsers);
     const [currentGasPrice, setCurrentGasPrice] = useState(0n);
     const [isClaiming, setIsClaiming] = useState(false);
 
@@ -106,29 +113,29 @@ export function SBTRewardsDashboard() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <div className="flex items-center gap-2 mb-2">
-                                <p className="text-indigo-400 text-[11px] font-black uppercase tracking-widest">Pool Reward Collected</p>
-                                <span className="bg-indigo-500/20 text-indigo-400 text-[11px] px-2 py-0.5 rounded font-black uppercase tracking-widest">SYNC v2</span>
+                                <p className="label-native text-indigo-400">Pool Reward Collected</p>
+                                <span className="label-native bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">SYNC v2</span>
                             </div>
                             <div className="flex items-baseline gap-2">
                                 <h2 className="text-4xl font-black text-white tracking-tight uppercase italic">
                                     ${((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </h2>
-                                <span className="text-slate-500 font-black text-[11px] uppercase italic tracking-widest">USDC</span>
+                                <span className="label-native text-slate-500 italic">USDC</span>
                             </div>
-                            <p className="text-slate-500 text-[11px] mt-1 flex items-center gap-1 font-black uppercase tracking-widest">
+                            <p className="value-native text-slate-500 mt-1 flex items-center gap-1">
                                 ≈ {parseFloat(formatEther(totalPoolBalance || 0n)).toFixed(6)} ETH
                             </p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-2 text-[11px] text-green-400 font-black uppercase tracking-widest bg-green-400/5 px-3 py-1.5 rounded-full border border-green-400/10">
+                            <div className="label-native flex items-center gap-2 text-green-400 bg-green-400/5 px-3 py-1.5 rounded-full border border-green-400/10">
                                 <CheckCircle className="w-3 h-3" />
                                 On-Chain Verified
                             </div>
-                            <p className="text-[11px] text-slate-500 italic uppercase font-black tracking-widest">* Rate: 1 ETH = ${ethPrice.toLocaleString()}</p>
+                            <p className="label-native text-slate-500 italic">* Rate: 1 ETH = ${ethPrice.toLocaleString()}</p>
                         </div>
                     </div>
                     <div className="mt-6 space-y-2">
-                        <div className="flex justify-between items-center text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                        <div className="label-native flex justify-between items-center text-slate-500">
                             <span>Reward Progress</span>
                             <span className="text-indigo-400">
                                 {Math.min(((parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice) / (poolSettings?.targetUSDC || 5000)) * 100, 100).toFixed(1)}%
@@ -151,25 +158,25 @@ export function SBTRewardsDashboard() {
                         <Award className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-slate-400 text-[11px] uppercase font-black tracking-widest">YOUR SOULBOUND STATUS</p>
+                        <p className="label-native text-slate-400">YOUR SOULBOUND STATUS</p>
                         <p className={`text-xl font-black italic uppercase tracking-tighter ${tierColors[userTier]}`}>{tierNames[userTier]} Tier</p>
                     </div>
                 </div>
                 <div className="glass-card p-5 flex flex-col justify-between bg-slate-900/50">
                     <div className="flex items-center gap-2 mb-2">
-                        <p className="text-indigo-400 text-[11px] font-black uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                        <p className="label-native text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
                             COMMUNITY POOL
                         </p>
                     </div>
                     <div className="mb-4 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
-                        <p className="text-[11px] text-indigo-300 font-black uppercase tracking-widest flex items-center gap-2">
+                        <p className="label-native text-indigo-300 flex items-center gap-2">
                             <TimerIcon className="w-3 h-3" />
                             DATA UPDATES EVERY 24H AT 07:00 UTC
                         </p>
                     </div>
                     <div className="flex items-end justify-between">
                         <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">
-                            {parseFloat(formatEther(claimableAmount)).toFixed(6)} <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest italic">ETH</span>
+                            {parseFloat(formatEther(claimableAmount)).toFixed(6)} <span className="label-native text-slate-500 italic">ETH</span>
                         </h3>
                         <button
                             onClick={handleClaim}
@@ -189,18 +196,21 @@ export function SBTRewardsDashboard() {
             {/* 3. NEW: Community Tier Breakdown from sbt_pool_stats */}
             <SBTTierBreakdown />
 
-            {/* 4. Gas Warning */}
+            {/* 4. Nexus Economy Transparency (v3.41.2) */}
+            <NexusEconomyPanel multipliers={multis} totalUsers={totalUsers} />
+
+            {/* 5. Gas Warning */}
             {Number(currentGasPrice) / 1e9 > 150 && (
                 <div className="flex items-center justify-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-500">
                     <ShieldAlert className="w-4 h-4 animate-pulse" />
-                    <span className="text-[11px] font-black uppercase tracking-widest">
+                    <span className="label-native">
                         NETWORK CONGESTION: {(Number(currentGasPrice) / 1e9).toFixed(0)} GWEI. RECOMMEND WAITING.
                     </span>
                 </div>
             )}
 
             <div className="text-center">
-                <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest">
+                <p className="label-native text-slate-600">
                     POWERED BY ANTI-GRAVITY REVENUE DISTRIBUTION LOGIC (NO-RIBA GUARANTEED)
                 </p>
             </div>
@@ -252,12 +262,12 @@ function SBTTierBreakdown() {
         <div className="glass-card p-5 bg-slate-900/40 border-white/5">
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">COMMUNITY TIER BREAKDOWN</p>
-                    <p className="text-slate-600 text-[11px] mt-0.5 font-black uppercase tracking-widest">LAST DISTRIBUTION: {lastDist}</p>
+                    <p className="label-native text-slate-400">COMMUNITY TIER BREAKDOWN</p>
+                    <p className="label-native text-slate-600 mt-0.5">LAST DISTRIBUTION: {lastDist}</p>
                 </div>
                 <div className="text-right">
                     <p className="text-white font-black text-lg italic tracking-tighter">{loading ? '—' : totalHolders}</p>
-                    <p className="text-slate-500 text-[11px] uppercase font-black tracking-widest">TOTAL HOLDERS</p>
+                    <p className="label-native text-slate-500">TOTAL HOLDERS</p>
                 </div>
             </div>
 
@@ -274,13 +284,74 @@ function SBTTierBreakdown() {
                             <div key={t.key} className={`flex flex-col items-center justify-center gap-1 p-3 rounded-xl border ${t.bg} ${t.border}`}>
                                 <span className="text-lg">{t.emoji}</span>
                                 <p className={`text-base font-black ${t.color}`}>{count}</p>
-                                <p className={`text-[11px] font-black uppercase tracking-widest ${t.color} opacity-80`}>{t.label}</p>
-                                <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest">{pct}%</p>
+                                <p className={`label-native ${t.color} opacity-80`}>{t.label}</p>
+                                <p className="label-native text-slate-600">{pct}%</p>
                             </div>
                         );
                     })}
                 </div>
             )}
+        </div>
+    );
+}
+
+// ============================================================
+// NexusEconomyPanel — Transparency for XP Scaling (v3.41.2)
+// ============================================================
+function NexusEconomyPanel({ multipliers, totalUsers }) {
+    return (
+        <div className="glass-card p-5 bg-indigo-500/5 border-indigo-500/20">
+            <div className="flex items-center gap-2 mb-4">
+                <Zap className="w-4 h-4 text-indigo-400 fill-indigo-400/20" />
+                <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400">Nexus Economy Status</h4>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Global Factor */}
+                <div className="p-3 bg-black/20 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Globe className="w-3 h-3 text-slate-500" />
+                        <span className="label-native mb-0">Macro-Scaling</span>
+                    </div>
+                    <p className="text-xl font-black text-white italic">{multipliers.global}x</p>
+                    <p className="text-[10px] uppercase font-bold text-slate-500 mt-1">
+                        Based on {totalUsers.toLocaleString()} Users
+                    </p>
+                </div>
+
+                {/* Personal Factor */}
+                <div className="p-3 bg-black/20 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                        <User className="w-3 h-3 text-slate-500" />
+                        <span className="label-native mb-0">Micro-Scaling</span>
+                    </div>
+                    <p className="text-xl font-black text-white italic">{multipliers.individual}x</p>
+                    <p className="text-[10px] uppercase font-bold text-slate-500 mt-1">
+                        Personal XP Multiplier
+                    </p>
+                </div>
+
+                {/* Catch-up Factor */}
+                <div className="p-3 bg-black/20 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Zap className={`w-3 h-3 ${multipliers.isUnderdogActive ? 'text-indigo-400' : 'text-slate-500'}`} />
+                        <span className="label-native mb-0">Catch-Up Bonus</span>
+                    </div>
+                    <p className={`text-xl font-black italic ${multipliers.isUnderdogActive ? 'text-indigo-400' : 'text-slate-500 opacity-40'}`}>
+                        {multipliers.underdog}x
+                    </p>
+                    <p className="text-[10px] uppercase font-bold text-slate-500 mt-1">
+                        {multipliers.isUnderdogActive ? 'ACTIVE (Tier 0-2)' : 'INACTIVE'}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-4 flex items-start gap-3 p-3 bg-black/40 rounded-xl">
+                <Info className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
+                <p className="text-[10px] font-medium text-slate-500 leading-tight uppercase tracking-tight">
+                    The Nexus Hybrid Formula prevents reward inflation by scaling XP based on total ecosystem size (Macro) and prevents whale dominance by scaling based on individual XP (Micro). Underdogs receive a +10% boost.
+                </p>
+            </div>
         </div>
     );
 }

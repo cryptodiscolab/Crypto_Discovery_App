@@ -32,6 +32,10 @@
   <!-- Safe Provider Boot: Prevent window.ethereum from being trapped as a read-only getter by greedy extensions -->
   <script>
     (function() {
+      // 🛡️ Global & Buffer Polyfills for Web3 Libraries
+      window.global = window;
+      window.process = window.process || { env: {} };
+      
       try {
         let currentProvider = window.ethereum;
         // Attempt to "unlock" the property if it's currently a non-writable getter

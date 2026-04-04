@@ -4,6 +4,13 @@
 
 ## 📝 Changelog
 
+### v3.41.0 — 2026-04-04 (Social Guard Hardening & Balanced UI)
+- **Multi-Platform Social Guard**: Integrated Farcaster (via Neynar) and Twitter (via DB linkage) into Raffle purchase flows to prevent Sybil attacks.
+- **New Endpoints**: Implemented `GET /api/verify/farcaster/check` and `GET /api/verify/twitter/check` in the verification server.
+- **Native+ Balanced Typography**: Refined UI with a mix of 11px Bold/Uppercase labels and 13px Medium content for optimal scannability and readability.
+- **Security Hardening**: Enforced identity checks before all raffle entry actions.
+- **Protocol Sync**: Updated all ecosystem documentation and agent skills to v3.41.0 standards.
+
 ### v3.40.18 — 2026-04-03 (Global Mobile UI Hardening - Native+)
 - **Typography Standardization**: Set all micro-text and labels to **11px (Bold/Uppercase/Tracking-Wide)** for premium mobile legibility.
 - **Safe Area Hardening**: Implemented `.pb-safe` and `.pt-safe` across all pages and fixed navigation bars to prevent overlap with device notches and home indicators.

@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAccount, useReadContract } from 'wagmi';
-import {
-    Transaction,
-    TransactionButton,
-    TransactionStatus,
-    TransactionStatusLabel,
-    TransactionStatusAction,
-} from '@coinbase/onchainkit/transaction';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { MASTER_X_ABI, DAILY_APP_ABI, CONTRACTS } from '../lib/contracts';
 import { Trophy, Star, Zap, ShieldCheck, ShieldAlert, Check, Calendar, ChevronRight } from 'lucide-react';
 import { useSocialGuard } from '../hooks/useSocialGuard';
@@ -17,6 +10,9 @@ import { encodeFunctionData } from 'viem';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCMS } from '../hooks/useCMS';
 import { GovernancePanel } from './GovernancePanel';
+import { calculateMultipliers, estimateXP } from '../lib/economy';
+import { useUserInfo, useV12Stats } from '../hooks/useContract';
+import { supabase } from '@/lib/supabaseClient';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -24,8 +20,25 @@ export function UnifiedDashboard() {
     const { address, isConnected } = useAccount();
     const [mounted, setMounted] = useState(false);
     const queryClient = useQueryClient();
-    const { refetch: refetchStats } = useUserV12Stats(address);
+    const { refetch: refetchStats, stats: userStats } = useUserV12Stats(address);
+    const { totalUsers } = useV12Stats();
     const { isAdmin } = useCMS();
+    const [isBaseVerified, setIsBaseVerified] = useState(false);
+
+    useEffect(() => {
+        if (!address) return;
+        const fetchBaseStatus = async () => {
+            const { data } = await supabase
+                .from('user_profiles')
+                .select('is_base_social_verified')
+                .eq('wallet_address', address.toLowerCase())
+                .maybeSingle();
+            if (data) setIsBaseVerified(!!data.is_base_social_verified);
+        };
+        fetchBaseStatus();
+    }, [address]);
+
+    const multis = calculateMultipliers(userStats, totalUsers);
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -133,6 +146,21 @@ export function UnifiedDashboard() {
                 )}
             </div>
 
+            {/* v3.41.2: Nexus Economy Underdog Badge */}
+            {multis.isUnderdogActive && (
+                <div className="flex items-center gap-2 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl animate-scale-in">
+                    <div className="p-1.5 bg-indigo-500 rounded-lg animate-pulse-zap">
+                        <Zap className="w-3 h-3 text-white fill-current" />
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400">CATCH-UP ACTIVE</p>
+                        <p className="text-[10px] font-bold uppercase tracking-tight text-indigo-400/60 leading-none mt-0.5">
+                            YOUR REWARDS ARE BOOSTED BY +10%
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Daily Admin Tasks */}
                 <div className="space-y-4">
@@ -141,9 +169,11 @@ export function UnifiedDashboard() {
                             <DailyTaskItem
                                 key={Number(tid)}
                                 taskId={Number(tid)}
-                                isDisabled={!fcUser}
+                                isDisabled={!fcUser || isBaseVerified === false}
+                                isBaseVerified={isBaseVerified}
                                 address={address}
-                                onSuccess={handleTransactionSuccess}
+                                onSucceed={handleTransactionSuccess}
+                                multipliers={multis}
                             />
                         ))}
                     </div>
@@ -152,13 +182,15 @@ export function UnifiedDashboard() {
                 {/* Sponsorship Missions */}
                 <div className="space-y-4">
                     <div className="space-y-4">
-                        {sponsorshipIds.map((id) => (
+                        {sponsorshipIds.map((sid) => (
                             <SponsorCard
-                                key={id}
-                                sponsorId={id}
-                                isDisabled={!fcUser}
+                                key={Number(sid)}
+                                sponsorId={Number(sid)}
+                                isDisabled={!fcUser || isBaseVerified === false}
+                                isBaseVerified={isBaseVerified}
                                 address={address}
                                 onSuccess={handleTransactionSuccess}
+                                multipliers={multis}
                             />
                         ))}
                     </div>
@@ -168,9 +200,9 @@ export function UnifiedDashboard() {
     );
 }
 
-function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
+function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed, multipliers }) {
     const { task, isLoading } = useTaskInfo(taskId);
-    const { verifyTask, isVerifying, registerTaskStart } = useVerification(onSuccess);
+    const { verifyTask, isVerifying, registerTaskStart } = useVerification(onSucceed);
 
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
         address: CONTRACTS.DAILY_APP,
@@ -187,6 +219,10 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
     });
 
     if (isLoading || !task) return null;
+
+    // Hardening v3.41.2: Check Base Social Requirement
+    const isBaseLocked = task.isBaseSocialRequired && !isBaseVerified;
+    const finalDisabled = isDisabled || isBaseLocked;
 
     const needsVerify = task.requiresVerification && !isVerified;
 
@@ -218,7 +254,16 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
                 </div>
                 <div>
                     <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'}`}>{task.title.toUpperCase()}</p>
-                    <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mt-0.5">+{task.baseReward} XP</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">
+                            +{estimateXP(task.baseReward, multipliers)} XP
+                        </p>
+                        {multipliers.total !== 1.0 && (
+                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight line-through opacity-50">
+                                {task.baseReward} XP
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -227,19 +272,20 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
                     {needsVerify ? (
                         <button
                             onClick={handleVerifyOrClaim}
-                            disabled={isVerifying || isDisabled}
-                            className={`btn-primary py-1.5 px-3 text-[11px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-500 ${isVerifying || isDisabled ? 'opacity-50' : ''}`}
+                            disabled={isVerifying || finalDisabled}
+                            className={`btn-primary py-1.5 px-3 text-[11px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-500 ${isVerifying || finalDisabled ? 'opacity-50' : ''}`}
                         >
-                            {isVerifying ? 'VERIFYING...' : 'VERIFY'}
+                            {isVerifying ? 'VERIFYING...' : isBaseLocked ? 'BASE REQ' : 'VERIFY'}
                         </button>
                     ) : (
-                        <Transaction calls={calls} onSuccess={(tx) => { onSuccess(tx.transactionHash); refetchCompletion(); }}>
-                            <TransactionButton
-                                className={`btn-primary py-1.5 px-3 text-[11px] font-black uppercase tracking-widest ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                text={isDisabled ? 'LOCKED' : 'CLAIM'}
-                                disabled={isDisabled}
-                            />
-                        </Transaction>
+                        <ClaimButton 
+                            taskId={taskId} 
+                            isDisabled={finalDisabled} 
+                            onSuccess={(hash) => {
+                                onSucceed(hash);
+                                refetchCompletion();
+                            }} 
+                        />
                     )}
                 </div>
             )}
@@ -247,8 +293,38 @@ function DailyTaskItem({ taskId, isDisabled, address, onSuccess }) {
     );
 }
 
-function SponsorCard({ sponsorId, isDisabled, address, onSuccess }) {
-    const [selectedTasks, setSelectedTasks] = useState([]);
+function ClaimButton({ taskId, isDisabled, onSuccess }) {
+    const { writeContract, data: hash, isPending } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+    useEffect(() => {
+        if (isSuccess && hash) {
+            onSuccess(hash);
+        }
+    }, [isSuccess, hash, onSuccess]);
+
+    const handleClaim = () => {
+        writeContract({
+            address: CONTRACTS.DAILY_APP,
+            abi: DAILY_APP_ABI,
+            functionName: 'doTask',
+            args: [BigInt(taskId), ZERO_ADDRESS],
+        });
+    };
+
+    return (
+        <button
+            onClick={handleClaim}
+            disabled={isPending || isConfirming || isDisabled}
+            className={`btn-primary py-1.5 px-3 text-[11px] font-black uppercase tracking-widest ${isDisabled || isPending || isConfirming ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+            {isPending ? 'SIGNING...' : isConfirming ? 'WAIT...' : isDisabled ? 'LOCKED' : 'CLAIM'}
+        </button>
+    );
+}
+
+function SponsorCard({ sponsorId, isDisabled, isBaseVerified, address, onSuccess, multipliers }) {
+const [selectedTasks, setSelectedTasks] = useState([]);
 
     const { data: sponsorData } = useReadContract({
         address: CONTRACTS.DAILY_APP,
@@ -310,25 +386,59 @@ function SponsorCard({ sponsorId, isDisabled, address, onSuccess }) {
                         isSelected={selectedTasks.includes(Number(tid))}
                         onToggle={(id, comp) => toggleTask(id, comp)}
                         address={address}
+                        isBaseVerified={isBaseVerified}
+                        multipliers={multipliers}
                     />
-                ))}
+            ))}
             </div>
 
             <div className="relative z-[9999] pointer-events-auto">
-                <Transaction calls={calls} onSuccess={handleBatchSuccess}>
-                    <TransactionButton
-                        className={`w-full btn-primary py-3 text-[11px] font-black uppercase tracking-widest ${cardsDisabled ? 'opacity-50 grayscale' : ''}`}
-                        text={isDisabled ? 'IDENTITY REQUIRED' : selectedTasks.length > 0 ? `VERIFY ${selectedTasks.length} MISSIONS` : 'SELECT MISSIONS'}
-                        disabled={cardsDisabled}
-                    />
-                </Transaction>
+                <BatchClaimButton 
+                    selectedTasks={selectedTasks} 
+                    isDisabled={cardsDisabled} 
+                    onSuccess={(hash) => {
+                        setSelectedTasks([]);
+                        onSuccess(hash);
+                    }} 
+                />
             </div>
         </div>
     );
 }
 
-function SubTaskItem({ taskId, isSelected, onToggle, address }) {
-    const { task, isLoading } = useTaskInfo(taskId);
+function BatchClaimButton({ selectedTasks, isDisabled, onSuccess }) {
+    const { writeContract, data: hash, isPending } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+    useEffect(() => {
+        if (isSuccess && hash) {
+            onSuccess(hash);
+        }
+    }, [isSuccess, hash, onSuccess]);
+
+    const handleBatchClaim = () => {
+        if (selectedTasks.length === 0) return;
+        writeContract({
+            address: CONTRACTS.DAILY_APP,
+            abi: DAILY_APP_ABI,
+            functionName: 'doBatchTasks',
+            args: [selectedTasks.map((t) => BigInt(t))],
+        });
+    };
+
+    return (
+        <button
+            onClick={handleBatchClaim}
+            disabled={isPending || isConfirming || isDisabled}
+            className={`w-full btn-primary py-3 text-[11px] font-black uppercase tracking-widest ${isDisabled || isPending || isConfirming ? 'opacity-50 grayscale' : ''}`}
+        >
+            {isPending ? 'SIGNING...' : isConfirming ? 'CONFIRMING...' : isDisabled ? 'SELECT MISSIONS' : `VERIFY ${selectedTasks.length} MISSIONS`}
+        </button>
+    );
+}
+
+function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, multipliers }) {
+const { task, isLoading } = useTaskInfo(taskId);
     const { verifyTask, isVerifying } = useVerification();
 
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
@@ -347,12 +457,16 @@ function SubTaskItem({ taskId, isSelected, onToggle, address }) {
 
     if (isLoading || !task) return null;
 
-    const needsVerify = task.requiresVerification && !isVerified;
+    const isBaseLocked = task.isBaseSocialRequired && !isBaseVerified;
 
     const handleAction = async (e) => {
         e.stopPropagation();
+        if (isBaseLocked) {
+            toast.error("Base.app Social Link required for this mission!");
+            return;
+        }
         if (needsVerify) {
-            window.open(task.link, '_blank');
+        window.open(task.link, '_blank');
             const success = await verifyTask(task, address, taskId);
             if (success) {
                 refetchVerification();
@@ -368,26 +482,32 @@ function SubTaskItem({ taskId, isSelected, onToggle, address }) {
             onClick={handleAction}
             className={`flex items-center justify-between p-3 rounded-xl transition-colors cursor-pointer select-none ${isCompleted
                     ? 'bg-zinc-800/50 opacity-60'
-                    : isSelected
-                        ? 'bg-indigo-600'
-                        : 'bg-zinc-800 hover:bg-zinc-700/80'
+                    : isBaseLocked
+                        ? 'bg-amber-500/5 border border-amber-500/20 opacity-50 grayscale'
+                        : isSelected
+                            ? 'bg-indigo-600'
+                            : 'bg-zinc-800 hover:bg-zinc-700/80'
                 }`}
         >
-            <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-colors ${isCompleted
                     ? 'bg-emerald-500 border-emerald-500'
-                    : isSelected
-                        ? 'bg-white border-white'
-                        : 'border-white/10 bg-slate-900'
+                    : isBaseLocked
+                        ? 'bg-amber-500/10 border-amber-500/30'
+                        : isSelected
+                            ? 'bg-white border-white'
+                            : 'border-white/10 bg-slate-900'
                     }`}>
-                    {(isCompleted || isSelected) && (
+                    {isBaseLocked ? (
+                        <ShieldAlert className="w-3 h-3 text-amber-500" />
+                    ) : (isCompleted || isSelected) && (
                         <Check
                             className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-indigo-500'}`}
                             strokeWidth={4}
                         />
                     )}
                 </div>
-                <div>
+            <div>
                     <div className="flex items-center gap-2">
                         <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500'
                             : isSelected ? 'text-white'
@@ -397,12 +517,11 @@ function SubTaskItem({ taskId, isSelected, onToggle, address }) {
                             <ShieldCheck className={`w-3 h-3 ${isVerified ? 'text-emerald-400' : 'text-amber-400'}`} />
                         )}
                     </div>
-                    <p className={`text-[11px] font-black uppercase tracking-widest ${isCompleted ? 'text-indigo-400/50'
-                        : isSelected ? 'text-white'
-                            : 'text-indigo-400'
-                        }`}>+{task.baseReward} XP</p>
+                        <p className={`text-[11px] font-black uppercase tracking-widest ${isSelected ? 'text-white' : 'text-indigo-400'}`}>
+                            +{estimateXP(task.baseReward, multipliers)} XP
+                        </p>
+                    </div>
                 </div>
-            </div>
 
             <div className="flex items-center gap-2">
                 {needsVerify ? (

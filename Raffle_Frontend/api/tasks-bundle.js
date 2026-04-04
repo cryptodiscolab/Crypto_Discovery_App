@@ -29,26 +29,8 @@ async function getPointValue(activityKey) {
     }
 }
 
-async function getUserMultiplier(walletAddress) {
-    try {
-        const { data: profile } = await supabaseAdmin
-            .from('user_profiles')
-            .select('tier')
-            .eq('wallet_address', walletAddress.toLowerCase())
-            .single();
-        const tier = profile?.tier || 0;
-        if (tier === 0) return 10000;
-        const { data: multiplierSetting } = await supabaseAdmin
-            .from('system_settings')
-            .select('value')
-            .eq('key', 'tier_multipliers')
-            .single();
-        const multipliers = multiplierSetting?.value || {};
-        return parseInt(multipliers[tier]) || 10000;
-    } catch (e) {
-        return 10000;
-    }
-}
+// [REMOVED v3.41.2] getUserMultiplier is now handled atomically by public.fn_increment_xp in Supabase
+
 
 async function getTaskReward(taskId) {
     if (taskId?.startsWith('raffle_buy_')) return await getPointValue('raffle_buy');
@@ -72,8 +54,9 @@ async function validateAndCalculateXP(wallet_address, signature, message, task_i
     if (!valid) throw new Error('Invalid signature');
 
     let xp = await getTaskReward(task_id);
-    const multiplier = await getUserMultiplier(wallet_address);
-    xp = Math.floor((xp * multiplier) / 10000);
+    // [Refactor v3.41.2] Scaling is now handled via database RPC fn_increment_xp 
+    // to ensure Global & Individual multipliers are calculated atomically.
+
 
     if (task_id && task_id.startsWith('raffle_buy_')) {
         const amountMatch = message.match(/Amount:\s*(\d+)/i);
@@ -259,7 +242,25 @@ async function handleVerify(req, res) {
         xp_earned: xp,
         target_id: targetId
     });
-    if (error) throw error;
+
+    if (error) {
+        if (error.code === '23505') {
+            return res.status(200).json({ success: true, message: "Already verified.", already_claimed: true });
+        }
+        throw error;
+    }
+
+    // [Fix v3.41.2 Hardening] Award XP atomically using the Hybrid Formula
+    if (xp > 0) {
+        try {
+            await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: wallet_address.toLowerCase(),
+                p_amount: xp
+            });
+        } catch (xpErr) {
+            console.error('[handleVerify] fn_increment_xp failed:', xpErr.message);
+        }
+    }
 
     await logActivity({
         wallet: wallet_address,

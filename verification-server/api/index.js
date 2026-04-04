@@ -106,6 +106,46 @@ app.use((req, res, next) => {
     next();
 });
 
+// 🛠️ RECONSTRUCTED: Missing Identity & Task Bundle Endpoints
+app.get('/api/user-bundle', async (req, res) => {
+    try {
+        const { userAddress } = req.query;
+        if (!userAddress) return res.status(400).json({ error: 'Missing userAddress' });
+        
+        const supabaseService = require('../services/supabase.service');
+        const profile = await supabaseService.client
+            .from('user_profiles')
+            .select('*')
+            .eq('wallet_address', userAddress.toLowerCase())
+            .maybeSingle();
+            
+        res.json({ success: true, profile: profile.data, timestamp: new Date().toISOString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/tasks-bundle', async (req, res) => {
+    try {
+        const supabaseService = require('../services/supabase.service');
+        const { data: tasks } = await supabaseService.client
+            .from('daily_tasks')
+            .select('*')
+            .eq('is_active', true);
+            
+        res.json({ success: true, tasks: tasks || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/is-admin', async (req, res) => {
+    const { userAddress } = req.query;
+    const admins = (process.env.VITE_ADMIN_WALLETS || '').toLowerCase().split(',');
+    const isAdmin = admins.includes(userAddress?.toLowerCase());
+    res.json({ isAdmin });
+});
+
 // Routes
 app.use('/api/verify', verifyRoutes);
 app.use('/api/user', userRoutes);

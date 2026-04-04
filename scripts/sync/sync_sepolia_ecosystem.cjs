@@ -3,7 +3,7 @@ require("dotenv").config();
 
 async function main() {
     const masterXAddress = "0x980770dAcE8f13E10632D3EC1410FAA4c707076c";
-    const dailyAppAddress = "0xaC430adE9217e2280b852EA29b91d14b12b3E151"; // New V13.2 Sepolia Fixed
+    const dailyAppAddress = "0x369aBcD44d3D510f4a20788BBa6F47C99e57d267"; // New V13.2 Sepolia Fixed
 
     console.log("🚀 Syncing Ecosystem on Base Sepolia...");
     console.log("MasterX :", masterXAddress);

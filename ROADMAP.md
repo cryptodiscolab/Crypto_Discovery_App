@@ -29,6 +29,7 @@
 - [x] **ABI Consistency Audit & Sync (v3.38.8)**: Full stack ABI parity.
 - [x] **UGC & Price Oracle Restoration (v3.38.10)**: `renewSponsorship` fix and drift identification.
 - [x] **Global Mobile UI Hardening ("Native+") v3.40.18**: Full responsive audit, 11px standardized typography, and notch-proof safe area implementation.
+- [x] **Identity Hardening & Growth Loop v2 (v3.42.0)**: Base Social Verification (Basenames) and 500 XP Referral Vesting with 10% passive dividends.
 
 ## Identified ABI Drift (DAILY_APP) - [REPAIRED v3.38.25]
 All identified drifts have been synchronized with `DailyAppV12Secured.json`.

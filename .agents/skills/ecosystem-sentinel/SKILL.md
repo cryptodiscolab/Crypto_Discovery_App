@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Anti-Hallucination Mandate (v3.39.1)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
+  - **Anti-Hallucination Mandate (v3.42.0)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -81,7 +81,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** 3.40.5 (Total Ecosystem Contract Synchronization).
+- **Versi Terakhir:** v3.42.0 (Identity Hardened & Growth Optimized).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -134,11 +134,11 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V12 (Mainnet)** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` |
+| **DailyApp V13.2** | `[RESERVED]` | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` |
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
-| **PRD v3.40.11** | `2026-04-03T21:30:11+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.42.0** | `2026-04-04T16:55:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🧭 Workspace Navigation & Data Flow (MANDATORY)
@@ -228,7 +228,8 @@ Agent **WAJIB** merujuk pada `WORKSPACE_MAP.md` sebelum melakukan `list_dir` ata
 
 ### 7. Viral Growth & Social Proof (NEW)
 - **Referral Mandate**: Setiap user baru wajib dicek `ref` param-nya di URL dan disimpan di `localStorage` sebelum sync profile.
-- **Proof of Activity (PoA)**: Referral dianggap aktif hanya jika memiliki > 500 XP. Jangan tampilkan reward untuk referral dormant.
+- **Proof of Activity (PoA)**: Referral dianggap aktif dan mendapatkan reward pendaftaran (50 XP) hanya jika user tersebut mencapai **500 XP**.
+- **Nexus Growth Dividend**: Tier 1 Referrer mendapatkan **10% passive dividend** dari setiap aktivitas user yang diajak, dilakukan secara atomis di level database (`fn_increment_xp`).
 - **Hype Engine Logic**: Gunakan `HypeFeed` untuk menampilkan aktivitas real-time guna meningkatkan retensi dan FOMO.
 
 ### 5. Zero-Trust Security Standard (MANDATORY)
@@ -352,10 +353,23 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **View Sync Audit**: Apakah SQL View `v_user_full_profile` sudah diperbarui jika ada kolom identitas baru? (v3.26.0)
 - [ ] **Tier Precision Audit**: Apakah logika SBT menggunakan `min_xp` (bukan `xp_required`)? (v3.26.0)
 - [ ] **✅ POST-FIX RE-AUDIT** *(BARU - WAJIB dijalankan SETELAH fix v3.35.0)*: `node scripts/audits/check_sync_status.cjs` — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.
-- [ ] **🛡️ PROTOCOL INTEGRITY AUDIT (v3.39.1)**: Setelah mengedit file protokol (`.cursorrules`, `CLAUDE.md`, `.agents/gemini.md`), apakah Anda sudah melakukan `view_file` pada baris yang diedit (+10 baris konteks) untuk memastikan tidak ada penghapusan bagian/poin secara tidak sengaja? **WAJIB.**
+- [ ] **🛡️ PROTOCOL INTEGRITY AUDIT (v3.41.0)**: Setelah mengedit file protokol (`.cursorrules`, `CLAUDE.md`, `.agents/gemini.md`), apakah Anda sudah melakukan `view_file` pada baris yang diedit (+10 baris konteks) untuk memastikan tidak ada penghapusan bagian/poin secara tidak sengaja? **WAJIB.**
+- [ ] **✨ NATIVE+ UI HARDENING AUDIT**: Apakah seluruh elemen UI baru (labels, metadata, handles) sudah menggunakan `text-[11px] font-black uppercase tracking-widest`? Apakah legacy sizes (`text-xs`, etc.) sudah dibersihkan? **WAJIB.**
 - [ ] **🌐 NETWORK ISOLATION AUDIT (v3.40.7)**: Verifikasi bahwa TIDAK ADA alamat Sepolia (`0xaC43...`) yang tertulis di konfigurasi/label Mainnet. Pastikan Mainnet tetap `[RESERVED]` jika belum deploy. **WAJIB.**
 - [ ] **🧪 RPC TRUTHINESS & EVIDENCE AUDIT (v3.40.9)**: Apakah skrip verifikasi menggunakan `code && code !== '0x'`? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? **WAJIB.**
+- [ ] **📈 ANTI-WHALE XP SCALING AUDIT (v3.41.2)**: Verifikasi bahwa XP scaling mengacu pada `fn_increment_xp` di database. PROHIBIT manual scaling di backend. Pastikan `p_amount` dikirim mentah (raw). **WAJIB.**
+- [ ] **🚀 REFERRAL GROWTH LOOP v2 AUDIT (v3.42.0)**: Verifikasi bahwa reward 50 XP hanya cair saat milestone 500 XP tercapai. Pastikan 10% passive dividend tercatat di logs dengan kategori `REFERRAL_DIVIDEND`. **WAJIB.**
+- [ ] **🛡️ BASE SOCIAL IDENTITY AUDIT (v3.42.0)**: Verifikasi bahwa tasks dengan flag `is_base_social_required` terkunci untuk user non-verified. Pastikan reverse resolution Basename berfungsi. **WAJIB.**
 
+### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
+- **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).
+- **Secondary Standard (Content)**: Exactly `text-[13px] font-medium leading-relaxed` (`.content-native`) for readability.
+- **Emphasis (Values)**: Exactly `text-[12px] font-bold tracking-wide` (`.value-native`).
+- **Contrast**: Use `font-black` (weight 900) for labels and `font-medium` for body to create professional balanced contrast.
+- **Glassmorphism**: Combine with `bg-white/5` and `backdrop-blur-xl` for a premium feel.
+- **Micro-Animations**: Linear gradient animations on progress bars and pulse effects on active CTA labels are mandatory.
+- **Safe Area**: Ensure `pb-safe` is applied to all scrollable views to handle notch/home-indicator overlaps.
+- **Consistency**: Purge `text-xs`, `text-sm`, and `text-[10px]` from the workspace.
 
 ## 🚨 Pantangan
 - Melakukan push kode yang belum diaudit secara otomatis.

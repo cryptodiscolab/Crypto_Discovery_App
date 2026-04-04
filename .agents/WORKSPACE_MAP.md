@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.40.18)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -65,12 +65,12 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 
 | Table/View | Purpose | Key Columns |
 |------------|---------|-------------|
-| `user_profiles` | Core User Identity | `wallet_address`, `total_xp`, `tier`, `last_seen_at` |
+| `user_profiles` | Core User Identity | `wallet_address`, `total_xp`, `tier`, `referred_by`, `is_base_social_verified`, `last_seen_at` |
 | `user_activity_logs` | Audit Trail (History) | `category`, `activity_type`, `description`, `tx_hash` |
 | `point_settings` | Zero-Hardcode Rewards | `activity_key`, `points_value` |
 | `system_settings` | Global System Params | `key`, `value` |
 | `v_user_full_profile` | Unified Profile View | Joining profiles with Tier names, SBT stats, and Raffle stats |
-| `daily_tasks` | Off-Chain Tasks (Supabase) | `platform`, `action_type`, `xp_reward`, `task_type` |
+| `daily_tasks` | Off-Chain Tasks (Supabase) | `platform`, `action_type`, `xp_reward`, `task_type`, `is_base_social_required` |
 
 **Key `point_settings` Keys** (pattern: `{platform}_{action_type}`):
 `daily_claim`, `farcaster_follow`, `x_follow`, `x_repost`, `x_like`, `base_transaction`, `raffle_buy`, `sponsor_task`
@@ -122,10 +122,11 @@ graph TD
 |----------|---------------------|----------------------|------------|
 | **MasterX** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` ✅ |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` ✅ |
-| **DailyApp** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | `AccessControl` ✅ |
+| **DailyApp** | `[RESERVED]` | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` | `AccessControl` ✅ |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
 ---
-*Last Updated: 2026-04-03T23:00:00+07:00 | Global Mobile UI Hardening Complete (Native+). UI Parity verified. Ecosystem v3.40.18.*
+---
+*Last Updated: 2026-04-04T16:55:00+07:00 | Identity Hardening & Growth Loop v2 (Vesting/Dividends). v3.42.0 Release READY.*

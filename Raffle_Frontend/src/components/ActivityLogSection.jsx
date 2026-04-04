@@ -43,7 +43,7 @@ const ActivityLogSection = ({ walletAddress }) => {
         <div className="bg-[#0f0f0f]/80 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden mt-8 shadow-2xl">
             {/* Header & Tabs */}
             <div className="p-6 border-b border-white/5">
-                <h3 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 mb-4 text-white">
+                <h3 className="label-native flex items-center gap-2 mb-4 text-white">
                     <History className="w-5 h-5 text-purple-400" />
                     ACTIVITY HISTORY
                 </h3>
@@ -53,7 +53,7 @@ const ActivityLogSection = ({ walletAddress }) => {
                         <button
                             key={cat.id}
                             onClick={() => setCategory(cat.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${category === cat.id
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full label-native transition-all whitespace-nowrap ${category === cat.id
                                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20'
                                     : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/5'
                                 }`}
@@ -70,11 +70,11 @@ const ActivityLogSection = ({ walletAddress }) => {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-3">
                         <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
-                        <p className="text-white/40 text-[11px] uppercase font-black tracking-widest">SYNCING FEED...</p>
+                        <p className="label-native text-white/40">SYNCING FEED...</p>
                     </div>
                 ) : logs.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-white/30 text-[11px] font-black uppercase tracking-widest italic">NO ACTIVITY FOUND</p>
+                        <p className="label-native text-white/30 italic">NO ACTIVITY FOUND</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -93,19 +93,19 @@ const ActivityLogSection = ({ walletAddress }) => {
                                                 <Award className="w-5 h-5" />}
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="font-black text-white group-hover:text-purple-300 transition-colors uppercase text-[11px] tracking-widest mb-0.5">
+                                        <div className="value-native text-white group-hover:text-purple-300 transition-colors uppercase mb-0.5">
                                             {log.activity_type.toUpperCase()}
                                         </div>
-                                        <div className="text-white/60 text-[11px] uppercase tracking-widest font-black truncate max-w-[150px] sm:max-w-none opacity-70">{log.description.toUpperCase()}</div>
+                                        <div className="label-native text-white/60 truncate max-w-[150px] sm:max-w-none opacity-70">{log.description.toUpperCase()}</div>
                                         <div className="flex items-center gap-2 mt-1">
                                             <Clock className="w-3 h-3 text-white/20" />
-                                            <span className="text-[11px] text-white/40 font-black uppercase tracking-widest">{formatDate(log.created_at).toUpperCase()}</span>
+                                            <span className="label-native text-white/40">{formatDate(log.created_at).toUpperCase()}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col items-end gap-1 text-right ml-4">
-                                    <div className={`font-black text-[11px] uppercase tracking-widest flex items-center gap-1 ${log.value_amount > 0 ? 'text-green-400' :
+                                    <div className={`value-native flex items-center gap-1 ${log.value_amount > 0 ? 'text-green-400' :
                                             log.value_amount < 0 ? 'text-red-400' : 'text-white'
                                         }`}>
                                         {log.value_amount > 0 ? '+' : ''}{log.value_amount} <span className="opacity-60">{log.value_symbol}</span>
@@ -115,7 +115,7 @@ const ActivityLogSection = ({ walletAddress }) => {
                                             href={`https://sepolia.basescan.org/tx/${log.tx_hash}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-[11px] font-black text-white/40 hover:text-purple-400 flex items-center gap-1 uppercase tracking-widest transition-colors"
+                                            className="label-native text-white/40 hover:text-purple-400 flex items-center gap-1 transition-colors"
                                         >
                                             BLOCKCHAIN <ExternalLink className="w-2 h-2" />
                                         </a>
@@ -130,7 +130,7 @@ const ActivityLogSection = ({ walletAddress }) => {
             <div className="p-4 bg-white/[0.02] text-center border-t border-white/5">
                 <button
                     onClick={fetchLogs}
-                    className="text-[11px] font-black text-white/30 hover:text-white uppercase tracking-widest flex items-center gap-2 mx-auto transition-all group"
+                    className="label-native text-white/30 hover:text-white flex items-center gap-2 mx-auto transition-all group"
                 >
                     REFRESH LOGS <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                 </button>

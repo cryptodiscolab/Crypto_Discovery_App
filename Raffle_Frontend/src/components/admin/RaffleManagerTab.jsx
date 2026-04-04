@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal } from 'lucide-react';
 import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
-import {
-    Transaction,
-    TransactionButton,
-    TransactionStatus,
-    TransactionStatusLabel,
-    TransactionStatusAction,
-} from '@coinbase/onchainkit/transaction';
+import { AdminTransactionButton } from './AdminTransactionButton';
 import { encodeFunctionData } from 'viem';
 import { RAFFLE_ABI, CONTRACTS } from '../../lib/contracts';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../../hooks/useRaffle';
@@ -28,16 +22,14 @@ function AdminRaffleCreateForm() {
 
     const calls = [{
         to: RAFFLE_ADDRESS,
-        data: encodeFunctionData({
-            abi: RAFFLE_ABI,
-            functionName: 'adminCreateRaffle',
-            args: [
-                BigInt(form.winnerCount || 1),
-                BigInt(form.maxTickets || 100),
-                BigInt(form.durationDays || 1),
-                form.metadataURI || 'ipfs://admin-raffle'
-            ],
-        }),
+        abi: RAFFLE_ABI,
+        functionName: 'adminCreateRaffle',
+        args: [
+            BigInt(form.winnerCount || 1),
+            BigInt(form.maxTickets || 100),
+            BigInt(form.durationDays || 1),
+            form.metadataURI || 'ipfs://admin-raffle'
+        ],
     }];
 
     const handleSuccess = async () => {
@@ -91,6 +83,7 @@ function AdminRaffleCreateForm() {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
+                {/* ... fields stay the same ... */}
                 <div>
                     <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Winners</label>
                     <input type="number" min="1" max="10"
@@ -130,22 +123,12 @@ function AdminRaffleCreateForm() {
                 </div>
             </div>
 
-            <Transaction
-                calls={calls}
+            <AdminTransactionButton 
+                calls={calls} 
                 onSuccess={handleSuccess}
-                onError={(err) => toast.error(err.shortMessage || 'Create failed')}
-            >
-                <TransactionButton
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all"
-                    text="DEPLOY ADMIN RAFFLE (FREE)"
-                />
-                <div className="mt-2 text-[10px] text-slate-500 font-mono text-center">
-                    <TransactionStatus>
-                        <TransactionStatusLabel />
-                        <TransactionStatusAction />
-                    </TransactionStatus>
-                </div>
-            </Transaction>
+                text="DEPLOY ADMIN RAFFLE (FREE)"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+            />
         </div>
     );
 }

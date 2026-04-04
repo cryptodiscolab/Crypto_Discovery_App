@@ -17,7 +17,7 @@ const mainnetAddresses = [
 ];
 
 const sepoliaAddresses = [
-  { name: 'DailyApp V13.2', addr: '0xaC430adE9217e2280b852EA29b91d14b12b3E151' },
+  { name: 'DailyApp V13.2', addr: '0x369aBcD44d3D510f4a20788BBa6F47C99e57d267' },
   { name: 'MasterX', addr: '0x980770dAcE8f13E10632D3EC1410FAA4c707076c' },
   { name: 'Raffle', addr: '0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB' },
   { name: 'CMS V2', addr: '0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC' }

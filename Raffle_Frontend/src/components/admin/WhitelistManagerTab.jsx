@@ -61,7 +61,7 @@ export function WhitelistManagerTab() {
         return (
             <div className="py-20 flex flex-col items-center gap-4">
                 <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Loading Whitelist...</p>
+                <p className="text-[11px] font-black uppercase tracking-widest">Loading Whitelist...</p>
             </div>
         );
     }
@@ -251,7 +251,7 @@ export function WhitelistManagerTab() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <label className="block text-[11px] font-black uppercase tracking-widest">
                             Wallet Address
                         </label>
                         <input
@@ -264,7 +264,7 @@ export function WhitelistManagerTab() {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <label className="block text-[11px] font-black uppercase tracking-widest">
                             Feature Access
                         </label>
                         <select
@@ -296,7 +296,7 @@ export function WhitelistManagerTab() {
                 </h3>
 
                 <div className="mb-4">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-black uppercase tracking-widest">
                         Wallet Addresses (one per line)
                     </label>
                     <textarea
@@ -312,7 +312,7 @@ export function WhitelistManagerTab() {
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-black uppercase tracking-widest mb-2">
                         Feature Access (applies to all)
                     </label>
                     <select
@@ -350,13 +350,13 @@ export function WhitelistManagerTab() {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-white/5">
-                                    <th className="text-left py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    <th className="text-left py-3 px-4 text-[11px] font-black uppercase tracking-widest">
                                         Address
                                     </th>
-                                    <th className="text-left py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    <th className="text-left py-3 px-4 text-[11px] font-black uppercase tracking-widest">
                                         Feature
                                     </th>
-                                    <th className="text-right py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    <th className="text-right py-3 px-4 text-[11px] font-black uppercase tracking-widest">
                                         Actions
                                     </th>
                                 </tr>

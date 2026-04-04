@@ -161,19 +161,25 @@ class NeynarService {
     }
 
     /**
-     * Get user info by FID
-     * @param {number} fid - Farcaster ID
-     * @returns {Promise<Object>}
+     * Get Farcaster user info by wallet address
+     * @param {string} walletAddress - Ethereum address
+     * @returns {Promise<Object|null>}
      */
-    async getUserByFid(fid) {
+    async getUserByAddress(walletAddress) {
         try {
-            const response = await this.client.v2.fetchBulkUsers([fid]);
-            return response.users[0] || null;
+            const response = await this.client.v2.fetchBulkUsersByAddress([walletAddress.toLowerCase()]);
+            // The API returns an object where keys are addresses
+            const users = response[walletAddress.toLowerCase()];
+            return (users && users.length > 0) ? users[0] : null;
         } catch (error) {
-            console.error('Error fetching Farcaster user:', error);
+            console.error('Error fetching Farcaster user by address:', error);
             return null;
         }
     }
+
+    /**
+     * Get user info by FID
+     ...
 
     /**
      * Verify if a wallet address is linked to a Farcaster ID

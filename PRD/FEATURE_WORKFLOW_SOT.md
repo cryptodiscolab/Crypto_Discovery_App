@@ -1,4 +1,4 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.40.13)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.0)
 **Last Updated**: 2026-04-03T21:46+07:00 — Nexus Protocol Synchronization (Full-Stack Parity Audit)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
@@ -12,7 +12,7 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 | Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
 | :--- | :--- | :--- | :--- |
 | **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
-| **DailyApp V13.2** | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
+| **DailyApp V13.2** | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
 | **Raffle Manager** | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | Maret 2026 | Tiket Gacha, Undian Sponsor, Prizing distribution. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
 
@@ -50,7 +50,7 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 ### 2.1 The Claim Execution
 - **Triggers**: User klik "Claim" pada `DailyClaimModal`.
 - **Pre-Check (Frontend)**: `ProfilePage.jsx` membaca **HANYA** dari `userData.lastDailyBonusClaim` (on-chain) untuk menghitung sisa waktu cooldown (Single Source of Truth).
-- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0xaC430adE9217e2280b852EA29b91d14b12b3E151`).
+- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0x369aBcD44d3D510f4a20788BBa6F47C99e57d267`).
 - **Success**: MetaMask/Wallet mengembalikan `tx_hash`.
 
 ### 2.2 The Backend Synchronization
@@ -192,3 +192,80 @@ Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berpu
   2. **Purchases (SHOPPING CART)**: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan `raffle_buy_`.
   3. **Rewards (ACCOMPLISHMENT)**: Pemenang undian Raffle / Airdrop khusus.
 - Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.
+
+---
+
+## 🏛️ 9. XP Reward Lifecycle & Anti-Whale Economic Model (v3.41.2)
+
+Untuk menjaga nilai kelangkaan XP dan keadilan ekosistem jangka panjang, Crypto Disco menggunakan **The Nexus Hybrid Formula**. Semua perhitungan dilakukan secara **atomic** di level database dalam fungsi RPC `public.fn_increment_xp`.
+
+### 9.1 Rumus Perhitungan Utama
+`Final XP = MAX( 5, ROUND(Base_XP * G * I * U) )`
+
+| Variabel | Nama | Deskripsi & Rumus |
+| :--- | :--- | :--- |
+| **G** | **Global Multiplier** (Macro) | `1.5 / (1 + log10(Total_Users / 1000 + 1))` <br/> Menjaga inflasi saat populasi user bertambah besar. |
+| **I** | **Individual Multiplier** (Micro) | `MAX( 0.5, 1.0 - (User_XP / 20000) )` <br/> Melambatkan pemain lama (Whales) agar pemain baru bisa mengejar. |
+| **U** | **Underdog Bonus** | `1.1` *(+10%)* jika User Tier $\le$ Silver (Level 2). |
+| **5** | **Minimum Floor** | Hadiah terkecil yang bisa diterima user untuk menjamin kepuasan. |
+
+### 9.2 Filosofi Anti-Whale
+Sistem ini dirancang agar pemain Diamond (10,000+ XP) mendapatkan XP yang lebih sedikit untuk tugas yang sama dibanding pemain Bronze. Hal ini mencegah monopoli Leaderboard secara permanen.
+
+- **Sybil Resistance**: XP scaling membuat pembuatan banyak akun (botting) kurang efisien karena hadiah per akun mengecil seiring waktu (Individual Scaling).
+- **Early Incentives**: Pemain di fase awal aplikasi (< 1,000 user) mendapatkan bonus global hingga **1.5x lipat** untuk memicu pertumbuhan viral.
+
+### 9.3 Implementasi Teknis (Staff Rules)
+- **Constraint**: Dilarang menghitung XP di Frontend atau Backend (JavaScript/React).
+- **Execution**: Backend wajib mengambil `points_value` dari `point_settings` (sebagai `Base_XP`) lalu mengirimkannya secara mentah ke RPC `fn_increment_xp(p_wallet, p_amount)`.
+- **Sync Parity**: Hasil akhir XP di database harus langsung tercermin di `v_user_full_profile`.
+
+---
+
+## 🏛️ 10. Referral Growth Loop v2 (Vesting & Dividends)
+
+Transformasi dari "Instant Reward" ke "High-Integrity Growth".
+
+### 10.1 Pendaftaran & Tracking
+1. New User men-download/akses via Referral Link.
+2. Link disimpan di `localStorage` dan dikirim ke `/api/user-bundle` saat login pertama.
+3. Backend mencatat `referred_by` di `user_profiles`. **Tidak ada XP yang diberikan secara instan.**
+
+### 10.2 Milestone Reward (Vesting)
+1. User yang diajak melakukan aktivitas (Claim Daily/Tasks).
+2. Fungsi `fn_increment_xp` memantau akumulasi XP user tersebut.
+3. Saat `total_xp >= 500`:
+   - Sistem secara otomatis memberikan 50 XP ke Referrer.
+   - Kolom `referral_bonus_paid` di-set menjadi `true` untuk mencegah repeat.
+   - Aktivitas dicatat sebagai `REFERRAL_VESTING`.
+
+### 10.3 Passive Dividend (Scaling)
+1. Setiap kali user yang diajak mendapatkan XP > 0:
+   - Referrer (Tier 1) otomatis mendapatkan 10% x XP tersebut.
+   - Aktivitas dicatat sebagai `REFERRAL_DIVIDEND` ("Nexus Growth Dividend from {user}").
+   - Logic ini berjalan secara rekursif di Postgres untuk menjamin integritas.
+
+---
+
+## 🏛️ 11. Base Social Verification (Identity Link)
+
+Integrasi Basename untuk eliminasi bot dan standardisasi identitas on-chain.
+
+### 11.1 Link Identity Flow
+1. User mengunjungi Profil -> Klik "LINK BASE SOCIAL".
+2. Frontend memanggil `/api/user-bundle?action=sync-base-social`.
+3. Backend melakukan reverse resolution via viem/RPC (`0xC697...`).
+4. Jika Basename ditemukan:
+   - `user_profiles.base_username` di-update.
+   - `is_base_social_verified` di-set menjadi `true`.
+   - Nama user di dashboard berubah menjadi Basename.
+
+### 11.2 Task Gate (Social Guard)
+1. Admin menandai tugas dengan flag `is_base_social_required = true`.
+2. Frontend `UnifiedDashboard` mengevaluasi profil user.
+3. Jika tugas butuh verifikasi tapi user belum link:
+   - Tombol "Claim" di-replace dengan "LINK BASE".
+   - Status visual: `BASE REQ`.
+
+---
+*End of Source of Truth Document - Nexus v3.42.0 Locked.*
