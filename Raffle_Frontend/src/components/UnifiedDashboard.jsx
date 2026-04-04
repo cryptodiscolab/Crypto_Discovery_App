@@ -144,15 +144,15 @@ export function UnifiedDashboard() {
                 {isAdmin && <GovernancePanel />}
 
                 {/* Social Verification Guard */}
-                <div className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${fcUser
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${fcUser?.isVerified
                     ? 'bg-emerald-500/10 text-emerald-400'
                     : 'bg-amber-500/10 text-amber-400'
                     }`}>
-                    {fcUser ? <ShieldCheck className="w-5 h-5 shrink-0" /> : <ShieldAlert className="w-5 h-5 shrink-0 animate-pulse" />}
+                    {fcUser?.isVerified ? <ShieldCheck className="w-5 h-5 shrink-0" /> : <ShieldAlert className="w-5 h-5 shrink-0 animate-pulse" />}
                     <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-black uppercase tracking-widest">{fcUser ? 'IDENTITY VERIFIED' : 'IDENTITY REQUIRED'}</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest">{fcUser?.isVerified ? 'IDENTITY VERIFIED' : 'IDENTITY REQUIRED'}</p>
                         <p className="text-[11px] font-black uppercase tracking-widest opacity-70 leading-none mt-1">
-                            {fcUser ? `LINKED TO @${fcUser.username.toUpperCase()}` : 'CONNECT FARCASTER TO UNLOCK GASLESS REWARDS'}
+                            {fcUser?.isVerified ? `LINKED TO @${(fcUser.farcaster?.username || fcUser.twitter?.username || 'ANONYMOUS').toUpperCase()}` : 'CONNECT FARCASTER TO UNLOCK GASLESS REWARDS'}
                         </p>
                     </div>
                     {!fcUser && (
@@ -235,7 +235,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
     const isBaseLocked = task.isBaseSocialRequired && !isBaseVerified;
     const finalDisabled = isDisabled || isBaseLocked;
 
-    const needsVerify = task.requiresVerification && !isVerified;
+    const needsVerify = task.requiresVerification && !isCompleted;
 
     const handleVerifyOrClaim = async () => {
         if (needsVerify) {
@@ -255,7 +255,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
                     <Zap className="w-3 h-3 fill-current" />
                 </div>
                 <div>
-                    <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'}`}>{task.title.toUpperCase()}</p>
+                    <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'}`}>{String(task.title || '').toUpperCase()}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">
                             +{estimateXP(task.baseReward, multipliers)} XP
@@ -363,7 +363,7 @@ function SponsorCard({ sponsorId, isDisabled, isBaseVerified, address, onSuccess
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <span className="text-[11px] font-black uppercase text-indigo-500 tracking-widest block mb-1">PARTNER MISSION</span>
-                    <h4 className="font-black text-lg uppercase tracking-tighter text-white">{sponsorName.toUpperCase()}</h4>
+                    <h4 className="font-black text-lg uppercase tracking-tighter text-white">{String(sponsorName || 'PARTNER').toUpperCase()}</h4>
                 </div>
                 <Zap className="w-4 h-4 text-indigo-500 fill-indigo-500/20" />
             </div>
@@ -442,7 +442,7 @@ function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, mu
     if (isLoading || !task || isCompleted) return null;
 
     const isBaseLocked = task.isBaseSocialRequired && !isBaseVerified;
-    const needsVerify = task.requiresVerification && !isVerified;
+    const needsVerify = task.requiresVerification && !isCompleted;
 
     const handleAction = async (e) => {
         e.stopPropagation();
@@ -497,9 +497,9 @@ function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, mu
                         <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500'
                             : isSelected ? 'text-white'
                                 : 'text-slate-300'
-                            }`}>{task.title.toUpperCase()}</p>
+                            }`}>{String(task.title || '').toUpperCase()}</p>
                         {task.requiresVerification && (
-                            <ShieldCheck className={`w-3 h-3 ${isVerified ? 'text-emerald-400' : 'text-amber-400'}`} />
+                            <ShieldCheck className={`w-3 h-3 ${isCompleted ? 'text-emerald-400' : 'text-amber-400'}`} />
                         )}
                     </div>
                     <p className={`text-[11px] font-black uppercase tracking-widest ${isSelected ? 'text-white' : 'text-indigo-400'}`}>

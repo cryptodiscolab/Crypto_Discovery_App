@@ -202,14 +202,14 @@ export function HomePage() {
 
                       {card.linkText && (
                         <div className={`flex items-center mt-3 text-[11px] font-black uppercase tracking-widest text-${card.color || 'indigo'}-400 group-hover:underline`}>
-                          {String(card.linkText).toUpperCase()} →
+                          {String(card.linkText || '').toUpperCase()} →
                         </div>
                       )}
 
                       {card.badge && (
                         <div className="flex items-center gap-1 text-[11px] text-zinc-600 mt-2 font-black uppercase tracking-widest">
                           <Shield className="w-3 h-3" />
-                          <span>{String(card.badge).toUpperCase()}</span>
+                          <span>{String(card.badge || '').toUpperCase()}</span>
                         </div>
                       )}
                     </div>
