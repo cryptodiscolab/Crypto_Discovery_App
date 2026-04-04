@@ -116,11 +116,23 @@ export function TaskBatchCreatorSection({ tasksBatch, onUpdateTask, onDeploy, is
                                     <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Verification</label>
                                     <button
                                         onClick={() => onUpdateTask(idx, 'requiresVerification', !task.requiresVerification)}
-                                        className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${task.requiresVerification ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'bg-slate-950/50 border-white/5 text-slate-50'}`}
+                                        className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${task.requiresVerification ? 'bg-purple-500/20 border-purple-500/50 text-purple-400 font-black' : 'bg-slate-950/50 border-white/5 text-slate-50'}`}
                                     >
-                                        <Shield className={`w-4 h-4 ${task.requiresVerification ? 'animate-pulse' : ''}`} />
+                                        <Shield className={`w-3.5 h-3.5 ${task.requiresVerification ? 'animate-pulse' : ''}`} />
                                         <span className="text-[10px] font-black uppercase tracking-tighter">
-                                            {task.requiresVerification ? 'Auto-Verify ON' : 'Manual Claim'}
+                                            {task.requiresVerification ? 'VERIFY ON' : 'MANUAL'}
+                                        </span>
+                                    </button>
+                                </div>
+                                <div className="flex flex-col justify-between">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest text-blue-400">Identity Guard</label>
+                                    <button
+                                        onClick={() => onUpdateTask(idx, 'isBaseSocialRequired', !task.isBaseSocialRequired)}
+                                        className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${task.isBaseSocialRequired ? 'bg-blue-500/20 border-blue-500/50 text-blue-400 font-black shadow-lg shadow-blue-500/10' : 'bg-slate-950/50 border-white/5 text-slate-50'}`}
+                                    >
+                                        <svg className={`w-3.5 h-3.5 ${task.isBaseSocialRequired ? 'animate-bounce' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                        <span className="text-[10px] font-black uppercase tracking-tighter">
+                                            {task.isBaseSocialRequired ? 'IDENTITY ON' : 'OPEN'}
                                         </span>
                                     </button>
                                 </div>

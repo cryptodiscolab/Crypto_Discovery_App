@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Anti-Hallucination Mandate (v3.42.0)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
+  - **Anti-Hallucination Mandate (v3.42.2)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -81,7 +81,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.42.0 (Identity Hardened & Growth Optimized).
+- **Versi Terakhir:** v3.42.2 (Identity Guard Hardening & Disappearing Tasks).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -138,7 +138,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
-| **PRD v3.42.0** | `2026-04-04T16:55:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.42.2** | `2026-04-05T02:15:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🧭 Workspace Navigation & Data Flow (MANDATORY)
@@ -359,7 +359,9 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **🧪 RPC TRUTHINESS & EVIDENCE AUDIT (v3.40.9)**: Apakah skrip verifikasi menggunakan `code && code !== '0x'`? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? **WAJIB.**
 - [ ] **📈 ANTI-WHALE XP SCALING AUDIT (v3.41.2)**: Verifikasi bahwa XP scaling mengacu pada `fn_increment_xp` di database. PROHIBIT manual scaling di backend. Pastikan `p_amount` dikirim mentah (raw). **WAJIB.**
 - [ ] **🚀 REFERRAL GROWTH LOOP v2 AUDIT (v3.42.0)**: Verifikasi bahwa reward 50 XP hanya cair saat milestone 500 XP tercapai. Pastikan 10% passive dividend tercatat di logs dengan kategori `REFERRAL_DIVIDEND`. **WAJIB.**
-- [ ] **🛡️ BASE SOCIAL IDENTITY AUDIT (v3.42.0)**: Verifikasi bahwa tasks dengan flag `is_base_social_required` terkunci untuk user non-verified. Pastikan reverse resolution Basename berfungsi. **WAJIB.**
+- [ ] **🛡️ BASE SOCIAL IDENTITY AUDIT (v3.42.0)**: Verifikasi bahwa tasks dengan flag `is_base_social_verified` terkunci untuk user non-verified. Pastikan reverse resolution Basename berfungsi. **WAJIB.**
+- [ ] **🧹 DISAPPEARING TASK AUDIT (v3.42.2)**: Verifikasi bahwa task yang sudah DONE/CLAIMED menghilang dari UI. Pastikan filter `null` aktif di model frontend. **WAJIB.**
+- [ ] **💎 PREMIUM IDENTITY BRANDING AUDIT (v3.42.2)**: Verifikasi penggunaan shield badge lencana "Verified" (Base Blue) untuk user valid. **WAJIB.**
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

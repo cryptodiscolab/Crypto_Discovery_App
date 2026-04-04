@@ -9,6 +9,7 @@ export function QuickSponsorPortalSection({
     sponsorEmail, onSponsorEmailChange,
     sponsorTotalClaims, onSponsorTotalClaimsChange,
     sponsorRewardPerUser, onSponsorRewardPerUserChange,
+    sponsorIsBaseSocialRequired, onSponsorIsBaseSocialRequiredChange,
     platformFee,
     minRewardUSD,
     minPoolUSD,
@@ -18,9 +19,13 @@ export function QuickSponsorPortalSection({
     handleTxSuccess
 }) {
     return (
-        <div className="bg-[#121214] p-5 rounded-2xl border border-white/5 space-y-4 text-left">
-            <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-yellow-500" /> Sponsor-Grade Engagement
+        <div className="bg-[#121214] p-5 rounded-2xl border border-white/5 space-y-4 text-left relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+                <svg className="w-8 h-8 text-indigo-500 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+
+            <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2 italic">
+                <Zap className="w-3.5 h-3.5 text-yellow-500" /> Sponsor-Grade <span className="text-indigo-500">Engagement</span>
             </h3>
             <div className="p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl space-y-1">
                 <div className="flex items-center gap-2">
@@ -35,9 +40,26 @@ export function QuickSponsorPortalSection({
 
             <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-3">
-                    <input placeholder="App/Community Name" value={sponsorTitle} onChange={e => onSponsorTitleChange(e.target.value)} className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] font-medium text-white outline-none focus:border-indigo-500/50" />
+                    <input placeholder="App/Community Name" value={sponsorTitle} onChange={e => onSponsorTitleChange(e.target.value)} className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] font-black text-white uppercase tracking-tight outline-none focus:border-indigo-500/50" />
                     <input placeholder="Destination URL (Farcaster/X/App)" value={sponsorLink} onChange={e => onSponsorLinkChange(e.target.value)} className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] font-medium text-white outline-none focus:border-indigo-500/50" />
                     <input placeholder="Contact Email (Verification Only)" value={sponsorEmail} onChange={e => onSponsorEmailChange(e.target.value)} className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] font-medium text-white outline-none focus:border-indigo-500/50" />
+                </div>
+
+                {/* IDENTITY GUARD (v3.42.0) */}
+                <div className={`p-4 rounded-xl border transition-all cursor-pointer select-none flex items-center justify-between group ${sponsorIsBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30' : 'bg-[#0a0a0c] border-white/5 hover:border-white/10'}`}
+                     onClick={() => onSponsorIsBaseSocialRequiredChange(!sponsorIsBaseSocialRequired)}>
+                    <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${sponsorIsBaseSocialRequired ? 'bg-blue-500 text-white' : 'bg-slate-900 border border-white/5 text-slate-600'}`}>
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <div className="flex flex-col text-left">
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${sponsorIsBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Guard</span>
+                            <span className="text-[9px] font-bold text-slate-600 uppercase">Require Base Social Link</span>
+                        </div>
+                    </div>
+                    <div className={`w-10 h-5 rounded-full p-1 transition-colors ${sponsorIsBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                        <div className={`w-3 h-3 bg-white rounded-full transition-transform transform ${sponsorIsBaseSocialRequired ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

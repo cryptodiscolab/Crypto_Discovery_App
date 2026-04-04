@@ -10,8 +10,8 @@ This workflow automates the end-to-end synchronization of the Crypto Disco ecosy
 
 1. **Increment PRD Version**
    - Identify the current version in `PRD/`.
-   - Create a new `.md` file with the incremented version.
-   - Update the Changelog with recent fixes, upgrades, or changes.
+   - Update `PRD/DISCO_DAILY_MASTER_PRD.md` and create a new version snapshot.
+   - **MANDATORY**: Update `PRD/FEATURE_WORKFLOW_SOT.md` to reflect latest feature logic.
    - Generate the corresponding `.html` version using `npx marked`.
 
 2. **Synchronize Agent Instruction Files**
@@ -27,6 +27,7 @@ This workflow automates the end-to-end synchronization of the Crypto Disco ecosy
 4. **Audit & Upgrade Skills**
    - Review each skill in `.agents/skills/`.
    - Update `SKILL.md` files if underlying technology or protocol has evolved.
+   - **MANDATORY**: Update `.agents/WORKSPACE_MAP.md` to ensure version parity.
    - Verify `ecosystem-sentinel`, `secure-infrastructure-manager`, and `git-hygiene` are in-sync with `.cursorrules`.
 
 5. **Nexus War Room Final Sync**

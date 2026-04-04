@@ -776,7 +776,7 @@ async function handleSyncUgcMission(req, res) {
             amount: platformFee,
             symbol: 'USDC',
             txHash,
-            metadata: { title, tasks: tasks_batch?.length || 0, platform: platform_code, campaign_id: campaign.id }
+            metadata: { title, tasks: tasks_batch?.length || 0, platform: platform_code, campaign_id: campaign.id, is_base_social_required: !!is_base_social_required }
         });
 
         return res.status(200).json({ success: true });

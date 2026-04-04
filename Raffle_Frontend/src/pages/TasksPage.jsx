@@ -55,10 +55,11 @@ function TaskRow({ taskId, userStats, refetchStats }) {
         query: { enabled: !!address && !!task }
     });
 
-    if (isLoading || !task || !task.isActive || isCompleted) return null;
+    const isBaseLocked = task?.isBaseSocialRequired && !profileData?.is_base_social_verified;
+    const isTierLocked = Number(userTier) < Number(task?.minTier);
+    const canDo = !isTierLocked && !isCompleted && !isBaseLocked;
 
-    const isTierLocked = Number(userTier) < Number(task.minTier);
-    const canDo = !isTierLocked && !isCompleted;
+    if (isLoading || !task || !task.isActive || isCompleted) return null;
 
     const handleAction = async () => {
         if (!address) {
@@ -104,6 +105,31 @@ function TaskRow({ taskId, userStats, refetchStats }) {
             return;
         }
 
+        // Base Social Identity Check (v3.42.0 Hardening)
+        if (task.isBaseSocialRequired && !profileData?.is_base_social_verified) {
+            toast((t) => (
+                <div className="flex flex-col gap-3 p-1">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
+                        <Shield className="w-3 h-3 text-blue-400" />
+                        Identity Verification Required
+                    </span>
+                    <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
+                        THIS PREMIUM TASK REQUIRES A VERIFIED <span className="text-blue-400">BASE SOCIAL (BASENAMES)</span> IDENTITY.
+                    </p>
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            navigate('/profile');
+                        }}
+                        className="w-full py-2 bg-blue-600 rounded-lg text-white text-[11px] font-black uppercase tracking-[0.2em] text-center hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                    >
+                        GO TO PROFILE TO VERIFY
+                    </button>
+                </div>
+            ), { duration: 8000, id: 'base-social-nudge' });
+            return;
+        }
+
         // 1. Register start time for anti-fraud (30s)
         registerTaskStart(taskId);
 
@@ -117,6 +143,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
             toast.success("Action registered! Wait 30s before Verification.", { id: `task-${taskId}` });
             refetchCompletion();
         } catch (error) {
+            console.error("DoTask error:", error);
             toast.error("Action failed: " + (error.shortMessage || error.message), { id: `task-${taskId}` });
         }
     };
@@ -156,33 +183,38 @@ function TaskRow({ taskId, userStats, refetchStats }) {
 
     return (
         <div
-            onClick={canDo ? handleAction : undefined}
-            className={`flex items-center justify-between p-4 border-b-subtle active:bg-white/5 transition-colors cursor-pointer group ${!canDo ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={(!isTierLocked && !isCompleted) ? (isBaseLocked ? handleAction : handleAction) : undefined}
+            className={`flex items-center justify-between p-4 border-b-subtle active:bg-white/5 transition-colors cursor-pointer group ${(!isTierLocked && !isCompleted) ? (isBaseLocked ? 'bg-blue-500/5' : '') : 'opacity-50 cursor-not-allowed'}`}
         >
             <div className="flex items-center gap-4 flex-1 min-w-0">
                 {/* Icon Box */}
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${!canDo ? 'bg-slate-800' : task.requiresVerification ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                    {isCompleted ? <CheckCircle size={18} className="text-green-500" /> : isTierLocked ? <Shield size={18} className="text-slate-500" /> : task.title.toLowerCase().includes('twitter') ? <Twitter size={18} /> : <Zap size={18} />}
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500/10' : isBaseLocked ? 'bg-blue-500/10' : isTierLocked ? 'bg-slate-800' : task.requiresVerification ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                    {isCompleted ? <CheckCircle size={18} className="text-green-500" /> : isBaseLocked ? <Shield size={18} className="text-blue-400" /> : isTierLocked ? <Shield size={18} className="text-slate-500" /> : task.platform?.toLowerCase() === 'twitter' || task.title.toLowerCase().includes('twitter') ? <Twitter size={18} /> : <Zap size={18} />}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">{task.title}</span>
+                        <span className="value-native text-white truncate">{task.title}</span>
                         {isCompleted && (
-                            <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black uppercase tracking-widest">COMPLETED</span>
+                            <span className="label-native bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30">COMPLETED</span>
                         )}
-                        {task.requiresVerification && !isCompleted && (
+                        {isBaseLocked && (
+                            <span className="label-native bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30 flex items-center gap-1">
+                                <Shield size={10} /> IDENTITY GUARD
+                            </span>
+                        )}
+                        {task.requiresVerification && !isCompleted && !isBaseLocked && (
                             <Shield size={12} className="text-green-500 flex-shrink-0" />
                         )}
                         {isTierLocked && (
-                            <span className="text-[11px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700 font-black uppercase tracking-widest">
+                            <span className="label-native bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
                                 LVL {task.minTier}
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-black uppercase tracking-widest">
-                        <span className="font-black text-yellow-500 flex items-center gap-1">
+                    <div className="flex items-center gap-3 text-slate-500 label-native">
+                        <span className="text-yellow-500 flex items-center gap-1">
                             +{Number(task.baseReward)} XP
                         </span>
                         {!isCompleted && task.sponsorshipId == 0 && (
@@ -201,11 +233,15 @@ function TaskRow({ taskId, userStats, refetchStats }) {
             <div className="flex items-center gap-3 pl-4">
                 {isCompleted ? (
                     <CheckCircle className="text-green-500" size={20} />
+                ) : isBaseLocked ? (
+                   <div className="flex items-center gap-2 text-blue-400 label-native border border-blue-400/30 bg-blue-400/5 px-2 py-1 rounded-lg">
+                      <Shield size={12} /> VERIFY REQ
+                   </div>
                 ) : task.requiresVerification ? (
                     <button
                         onClick={handleVerify}
                         disabled={isVerifying || isTierLocked || timeLeft > 0}
-                        className={`px-4 py-1.5 rounded-full text-white text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-slate-700 shadow-none' : 'bg-blue-600 shadow-blue-900/20'}`}
+                        className={`px-4 py-1.5 rounded-full text-white label-native shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-slate-700 shadow-none' : 'bg-blue-600 shadow-blue-900/20'}`}
                     >
                         {isVerifying ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -285,11 +321,11 @@ export function TasksPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div>
                                 <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">EARN REWARDS</h1>
-                                <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest">COMPLETE MISSIONS AND LEVEL UP YOUR STATUS.</p>
+                                <p className="label-native text-slate-500">COMPLETE MISSIONS AND LEVEL UP YOUR STATUS.</p>
                             </div>
                             <button 
                                 onClick={() => navigate('/create-mission')}
-                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group w-fit"
+                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white label-native transition-all flex items-center gap-2 group w-fit"
                             >
                                 <Zap className="w-3.5 h-3.5 fill-indigo-500 group-hover:fill-white" />
                                 Sponsor Mission
@@ -300,12 +336,12 @@ export function TasksPage() {
                         {isConnected && (
                             <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl">
                                 <div>
-                                    <p className="text-[11px] text-slate-500 uppercase font-black tracking-widest mb-0.5">YOUR XP</p>
+                                    <p className="label-native text-slate-500 mb-0.5">YOUR XP</p>
                                     <p className="text-xl font-mono font-black text-white">{String(userPoints)}</p>
                                 </div>
                                 <div className="w-px h-8 bg-white/10" />
                                 <div>
-                                    <p className="text-[11px] text-slate-500 uppercase font-black tracking-widest mb-0.5">CURRENT RANK</p>
+                                    <p className="label-native text-slate-500 mb-0.5">CURRENT RANK</p>
                                     <div className="flex items-center gap-1.5">
                                         <Award className="w-4 h-4 text-indigo-400" />
                                         <p className="text-xl font-black text-indigo-400 uppercase tracking-tighter">{rankName || `LVL ${userTier}`}</p>
@@ -319,14 +355,14 @@ export function TasksPage() {
                     <div className="flex gap-2 mt-8 p-1.5 bg-zinc-900 border border-white/5 rounded-2xl w-full max-w-md mx-auto md:mx-0">
                         <button
                             onClick={() => setActiveTab('tasks')}
-                            className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             <Zap className={activeTab === 'tasks' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Daily Tasks
                         </button>
                         <button
                             onClick={() => setActiveTab('offers')}
-                            className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             <Megaphone className={activeTab === 'offers' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Partner Offers
@@ -372,10 +408,10 @@ export function TasksPage() {
                         )}
 
                         {!isTasksLoading && taskGroups.regulars.length === 0 && Object.keys(taskGroups.sponsored).length === 0 && (
-                            <div className="py-24 text-center glass-card border-dashed bg-indigo-500/5">
-                                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4 opacity-50" />
-                                <h3 className="text-white font-black text-[11px] uppercase tracking-widest">ALL MISSIONS COMPLETED!</h3>
-                                <p className="text-slate-500 text-[11px] mt-1 font-black uppercase tracking-widest">YOU'VE FINISHED ALL AVAILABLE DAILY MISSIONS. CHECK BACK TOMORROW!</p>
+                            <div className="py-24 text-center glass-card border-dashed bg-indigo-500/5 transition-all animate-in fade-in zoom-in duration-500">
+                                <CheckCircle2 className="w-12 h-12 text-green-500/30 mx-auto mb-4" />
+                                <h3 className="text-white font-black text-[11px] uppercase tracking-widest">YOU ARE ALL CAUGHT UP!</h3>
+                                <p className="text-slate-500 text-[10px] uppercase font-bold mt-2">Check back later for new sponsored missions</p>
                             </div>
                         )}
                     </div>
@@ -419,8 +455,13 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
         query: { enabled: !!address }
     });
 
-    const isGlobalCompleted = Number(progress || 0) >= tasks.length;
+    const progressCount = Number(progress || 0);
+    const isGlobalCompleted = progressCount >= tasks.length;
     
+    // Identity Guard Hardening (v3.42.1)
+    const hasGatedTask = tasks.some(t => t.isBaseSocialRequired);
+    const isIdentityBlocked = hasGatedTask && !profileData?.is_base_social_verified;
+
     if (isGlobalCompleted) return null;
 
 
@@ -465,11 +506,17 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
         <div className={`glass-card overflow-hidden transition-colors ${verifyingStatus === 'success' ? 'ring-1 ring-green-500/40' : ''}`}>
             <div className="px-4 py-3 bg-zinc-800/60 border-b border-white/5 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <Award className="text-yellow-400" size={18} />
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white italic">Sponsored Mission</span>
+                    {hasGatedTask ? (
+                        <Shield className="text-blue-400 animate-pulse" size={18} />
+                    ) : (
+                        <Award className="text-yellow-400" size={18} />
+                    )}
+                    <span className={`label-native italic ${hasGatedTask ? 'text-blue-400 font-black' : 'text-white'}`}>
+                        {hasGatedTask ? 'IDENTITY GUARDED MISSION' : 'Sponsored Mission'}
+                    </span>
                 </div>
                 {isGlobalCompleted && (
-                    <span className="text-[11px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30 font-black uppercase tracking-widest">Mission Accomplished</span>
+                    <span className="label-native bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30">Mission Accomplished</span>
                 )}
             </div>
 
@@ -487,8 +534,8 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
             <div className="p-4 bg-black/20 border-t border-white/5 space-y-4">
                 {verifyingStatus === 'success' && timer > 0 && (
                     <div className="bg-green-500/10 text-green-400 p-3 rounded-xl border border-green-500/20 text-center animate-pulse">
-                        <p className="text-[11px] font-black uppercase tracking-widest mb-1">Status: Verified</p>
-                        <p className="text-[11px] font-black uppercase tracking-widest">Claim rewarding in {timer}s...</p>
+                        <p className="label-native mb-1">Status: Verified</p>
+                        <p className="label-native">Claim rewarding in {timer}s...</p>
                     </div>
                 )}
 
@@ -538,7 +585,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                             }
                         }}
                         disabled={isClaiming}
-                        className="w-full bg-green-600 hover:bg-green-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/20"
+                        className="w-full bg-green-600 hover:bg-green-500 py-3.5 rounded-xl text-white label-native transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/20"
                     >
                         {isClaiming ? <Loader2 className="animate-spin" size={14} /> : <Gift size={14} />}
                         Claim Task Reward
@@ -547,18 +594,24 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
 
                 {verifyingStatus === 'fail' && (
                     <div className="bg-red-500/10 text-red-400 p-3 rounded-xl border border-red-500/20 text-center">
-                        <p className="text-[11px] font-black uppercase tracking-widest mb-1">Verification Failed</p>
-                        <p className="text-[11px] font-black uppercase tracking-widest">Please ensure all tasks are completed</p>
+                        <p className="label-native mb-1">Verification Failed</p>
+                        <p className="label-native">Please ensure all tasks are completed</p>
                     </div>
                 )}
 
                 {!isGlobalCompleted && verifyingStatus !== 'success' && (
                     <button
-                        onClick={handleVerifyCard}
+                        onClick={isIdentityBlocked ? () => {
+                            toast.error("Identity verification required to start this mission!");
+                            navigate('/profile');
+                        } : handleVerifyCard}
                         disabled={isVerifying}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-[0.3em] transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-indigo-900/20"
+                        className={`w-full py-3.5 rounded-xl text-white label-native transition-all active:scale-95 disabled:opacity-50 shadow-xl 
+                          ${isIdentityBlocked 
+                            ? 'bg-blue-600/10 border border-blue-500/30 text-blue-400 hover:bg-blue-600/20' 
+                            : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/20'}`}
                     >
-                        {isVerifying ? "SYSTEM CHECKING..." : "VERIFY MISSION"}
+                        {isVerifying ? "SYSTEM CHECKING..." : isIdentityBlocked ? "VERIFY IDENTITY TO UNLOCK" : "VERIFY MISSION"}
                     </button>
                 )}
             </div>
@@ -575,15 +628,25 @@ function IndividualTaskRow({ task, address, onAction }) {
         query: { enabled: !!address }
     });
 
+    const { data: isCompleted } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'hasCompletedTask',
+        args: [address, BigInt(task.id)],
+        query: { enabled: !!address }
+    });
+
+    if (isCompleted) return null;
+
     return (
-        <div className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors">
+        <div className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
             <div className="flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${isVerified ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-white/5 text-slate-500 border-white/5'}`}>
                     {isVerified ? <CheckCircle size={18} /> : <Zap size={18} />}
                 </div>
                 <div>
-                    <h4 className={`text-[11px] font-black uppercase tracking-widest ${isVerified ? 'text-slate-500 line-through' : 'text-white'}`}>{task.title}</h4>
-                    <p className="text-[11px] text-slate-500 font-mono font-black uppercase tracking-widest opacity-60">Task ID #{task.id}</p>
+                    <h4 className={`value-native ${isVerified ? 'text-slate-500 line-through' : 'text-white'}`}>{task.title}</h4>
+                    <p className="label-native text-slate-500 font-mono opacity-60">Task ID #{task.id}</p>
                 </div>
             </div>
 

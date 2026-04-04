@@ -112,6 +112,12 @@
     }
 }
 
+@keyframes pulseZap {
+    0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 0 rgba(79, 70, 229, 0)); }
+    50% { transform: scale(1.1); opacity: 0.8; filter: drop-shadow(0 0 8px rgba(79, 70, 229, 0.6)); }
+    100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 0 rgba(79, 70, 229, 0)); }
+}
+
 .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
 }
@@ -122,6 +128,10 @@
 
 .animate-scale-in {
     animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-zap {
+    animation: pulseZap 2s infinite ease-in-out;
 }
 
 /* Staggered Delays */
@@ -141,7 +151,7 @@
     animation-delay: 500ms;
 }
 
-/* --- Native+ UI Components (v3.40.18) --- */
+/* --- Native+ Balanced UI Components (v3.41.0) --- */
 
 .sticky-under-header {
     position: sticky;
@@ -155,8 +165,23 @@
     }
 }
 
+/* 🏷️ LABELS: High Scannability, Professional, Strict */
+.label-native {
+    @apply text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1.5 block leading-none;
+}
+
+/* 📄 CONTENT: High Readability, Balanced, Modern */
+.content-native {
+    @apply text-[13px] font-medium text-slate-200 leading-relaxed;
+}
+
+/* 💎 VALUES: Standout, Clear, Geometric */
+.value-native {
+    @apply text-[12px] font-bold text-white tracking-wide;
+}
+
 .admin-label {
-    @apply text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block;
+    @apply label-native;
 }
 
 .btn-native {
@@ -164,25 +189,25 @@
 }
 
 .btn-primary {
-    @apply bg-indigo-600 text-white shadow-indigo-900/20 hover:bg-indigo-500;
+    @apply bg-indigo-600 text-white shadow-indigo-900/10 hover:bg-indigo-500 hover:shadow-indigo-600/20;
 }
 
 .btn-secondary {
-    @apply bg-zinc-800 text-slate-300 border border-white/5 hover:bg-zinc-700;
+    @apply bg-zinc-900/80 text-slate-300 border border-white/5 hover:bg-zinc-800 hover:text-white;
 }
 
 .input-native {
-    @apply w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all;
+    @apply w-full bg-zinc-950/50 border border-white/5 rounded-xl px-4 py-3 text-[13px] font-medium text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500/50 transition-all;
+}
+
+.select-native {
+    @apply w-full bg-zinc-950/50 border border-white/5 rounded-xl px-4 py-3 text-[13px] font-medium text-white focus:outline-none focus:border-indigo-500/50 appearance-none transition-all;
 }
 
 .select-wrapper {
     @apply relative w-full;
 }
 
-.select-native {
-    @apply w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-indigo-500/50 appearance-none transition-all;
-}
-
 .select-chevron {
-    @apply absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500;
+    @apply absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600;
 }

@@ -7,6 +7,7 @@ export function QuickTaskForgeSection({
     dailyPoints, onDailyPointsChange,
     dailyCooldown, onDailyCooldownChange,
     dailyRequiresVerify, onDailyRequiresVerifyChange,
+    dailyIsBaseSocialRequired, onDailyIsBaseSocialRequiredChange,
     dailyMinTier, onDailyMinTierChange,
     pointSettings,
     buildAdminTaskCall,
@@ -64,17 +65,32 @@ export function QuickTaskForgeSection({
                         </select>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 px-2 bg-[#0a0a0c] py-3 rounded-xl border border-white/5">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" checked={dailyRequiresVerify} onChange={e => onDailyRequiresVerifyChange(e.target.checked)} className="rounded border-white/5 bg-slate-900 text-indigo-600" />
-                        <span className="text-[9px] font-black text-slate-500 uppercase group-hover:text-white transition-colors">Requires Human Verification</span>
-                    </label>
-                    <div className="h-4 w-px bg-white/5" />
-                    <select value={dailyMinTier} onChange={e => onDailyMinTierChange(Number(e.target.value))} className="bg-transparent text-[9px] font-black text-indigo-500 uppercase outline-none">
-                        <option value={0}>Min Tier: ALL</option>
-                        <option value={1}>Tier: Bronze</option>
-                        <option value={2}>Tier: Silver+</option>
-                    </select>
+
+                <div className="space-y-2">
+                    <div className="flex items-center gap-4 px-2 bg-[#0a0a0c] py-3 rounded-xl border border-white/5">
+                        <label className="flex items-center gap-2 cursor-pointer group flex-1">
+                            <input type="checkbox" checked={dailyRequiresVerify} onChange={e => onDailyRequiresVerifyChange(e.target.checked)} className="rounded border-white/5 bg-slate-900 text-indigo-600" />
+                            <span className="text-[9px] font-black text-slate-500 uppercase group-hover:text-white transition-colors">Requires Human verification</span>
+                        </label>
+                        <div className="h-4 w-px bg-white/5" />
+                        <select value={dailyMinTier} onChange={e => onDailyMinTierChange(Number(e.target.value))} className="bg-transparent text-[9px] font-black text-indigo-500 uppercase outline-none">
+                            <option value={0}>Min Tier: ALL</option>
+                            <option value={1}>Tier: Bronze</option>
+                            <option value={2}>Tier: Silver+</option>
+                        </select>
+                    </div>
+
+                    {/* IDENTITY GUARD (v3.42.0) */}
+                    <div className={`flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all cursor-pointer select-none ${dailyIsBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30 shadow-lg shadow-blue-500/5' : 'bg-[#0a0a0c] border-white/5 hover:border-white/10'}`}
+                         onClick={() => onDailyIsBaseSocialRequiredChange(!dailyIsBaseSocialRequired)}>
+                        <div className="flex items-center gap-2">
+                            <svg className={`w-3 h-3 ${dailyIsBaseSocialRequired ? 'text-blue-400' : 'text-slate-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${dailyIsBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Guard (v3.42.0)</span>
+                        </div>
+                        <div className={`w-8 h-4 rounded-full p-1 transition-colors ${dailyIsBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                            <div className={`w-2 h-2 bg-white rounded-full transition-transform transform ${dailyIsBaseSocialRequired ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                    </div>
                 </div>
             </div>
             

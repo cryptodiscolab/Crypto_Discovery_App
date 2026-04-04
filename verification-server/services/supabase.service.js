@@ -482,6 +482,59 @@ class SupabaseService {
     }
 
     /**
+     * Fetch Real-time Ecosystem Analytics (Nexus Pulse)
+     * Provides DAU, CCU, Total Members, and Volume
+     * @returns {Promise<Object>}
+     */
+    async getEcosystemStats() {
+        if (!this.client) throw new Error('Supabase client not initialized');
+
+        try {
+            const now = new Date();
+            const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
+            const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+
+            // 1. Total Registered Members
+            const { count: totalMembers, error: err1 } = await this.client
+                .from('user_profiles')
+                .select('*', { count: 'exact', head: true });
+
+            // 2. DAU (Daily Active Users - 24h)
+            const { count: dau, error: err2 } = await this.client
+                .from('user_profiles')
+                .select('*', { count: 'exact', head: true })
+                .gt('updated_at', twentyFourHoursAgo); // using updated_at as proxy for activity
+
+            // 3. CCU (Online Users - 5m)
+            const { count: online, error: err3 } = await this.client
+                .from('user_profiles')
+                .select('*', { count: 'exact', head: true })
+                .gt('updated_at', fiveMinsAgo);
+
+            // 4. Total Ecosystem Transactions (Activity Logs)
+            const { count: totalTx, error: err4 } = await this.client
+                .from('user_activity_logs')
+                .select('*', { count: 'exact', head: true });
+
+            if (err1 || err2 || err3 || err4) throw new Error('Aggregation failed');
+
+            return {
+                success: true,
+                stats: {
+                    totalMembers: totalMembers || 0,
+                    dau: dau || 0,
+                    online: online || 0,
+                    totalTx: totalTx || 0,
+                    timestamp: now.toISOString()
+                }
+            };
+        } catch (error) {
+            console.error('[Supabase] Error fetching stats:', error.message);
+            throw error;
+        }
+    }
+
+    /**
      * Get social linkage (FID, TwitterID) for a wallet address
      * @param {string} walletAddress - User's wallet
      */

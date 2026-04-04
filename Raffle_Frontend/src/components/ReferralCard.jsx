@@ -65,12 +65,12 @@ export const ReferralCard = () => {
     };
 
     const shareFarcaster = () => {
-        const text = encodeURIComponent(`Stop being exit liquidity. 🕺💃\n\nJoin the Nexus Economy v3.41.2 at Crypto Disco. Real yield, real game, real XP.\n\nClaim your spot:`);
+        const text = encodeURIComponent(`Stop being exit liquidity. 🕺💃\n\nJoin the Nexus Pulse Economy v3.42.0 at Crypto Disco. Real-time yield, real identity, real XP.\n\nClaim your spot:`);
         window.open(`https://warpcast.com/~/compose?text=${text}&embeds[]=${encodeURIComponent(refLink)}`, '_blank');
     };
 
     const shareTwitter = () => {
-        const text = encodeURIComponent(`Stop being exit liquidity. 🕺💃\n\nJoin the Nexus Economy v3.41.2 at Crypto Disco. Real yield, real game, real XP.\n\nClaim your spot here: ${refLink}\n\n#Base #CryptoDisco #NexusEconomy`);
+        const text = encodeURIComponent(`Stop being exit liquidity. 🕺💃\n\nJoin the Nexus Pulse Economy v3.42.0 at Crypto Disco. Real-time yield, real identity, real XP.\n\nClaim your spot here: ${refLink}\n\n#Base #CryptoDisco #NexusPulse`);
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     };
 
@@ -78,8 +78,8 @@ export const ReferralCard = () => {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Crypto Disco - Nexus Economy',
-                    text: 'Join the Nexus Economy v3.41.2. Real yield, real game, real XP.',
+                    title: 'Crypto Disco - Nexus Pulse',
+                    text: 'Join the Nexus Pulse Economy v3.42.0. Real-time yield, real identity, real XP.',
                     url: refLink,
                 });
             } catch (err) {
@@ -98,21 +98,21 @@ export const ReferralCard = () => {
                 {/* 1. Promo Section */}
                 <div className="flex-1">
                     <h4 className="text-xl font-black text-white italic uppercase tracking-tighter mb-2">
-                        GROW THE <span className="text-indigo-400">ECOSYSTEM</span>
+                        GROW THE <span className="text-indigo-400">NEXUS PULSE</span>
                     </h4>
                     <p className="text-[11px] font-black text-slate-500 mb-6 leading-relaxed max-w-[320px] uppercase tracking-widest">
-                        INVITE FRIENDS. EARN <span className="text-indigo-400 font-extrabold">{BONUS}% XP BONUS</span> FROM THEIR ACTIVITIES FOREVER!
+                        INVITE FRIENDS. EARN <span className="text-indigo-400 font-extrabold">{BONUS}% XP PASSIVE DIVIDENDS</span> FROM THEIR ACTIVITIES FOREVER!
                     </p>
 
                     {/* How it Works / Flow Explanation */}
                     <div className="space-y-4 mb-6">
-                        <h5 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em]">How it Works</h5>
+                        <h5 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em]">GROWTH LOOP v2 (VESTED)</h5>
                         <div className="grid grid-cols-1 gap-2">
                             {[
-                                { step: "01", text: "COPY & SHARE YOUR LINK", icon: <Share2 className="w-3 h-3" /> },
-                                { step: "02", text: "FRIENDS JOIN DISCO APP", icon: <Users className="w-3 h-3" /> },
-                                { step: "03", text: `THEY REACH ${THRESHOLD} XP`, icon: <Zap className="w-3 h-3" /> },
-                                { step: "04", text: `${BONUS}% PASSIVE BONUS UNLOCKED`, icon: <Trophy className="w-3 h-3 text-yellow-500" /> },
+                                { step: "01", text: "COPY & SHARE LINK", icon: <Share2 className="w-3 h-3" /> },
+                                { step: "02", text: "FRIENDS JOIN & VERIFY", icon: <Shield className="w-3 h-3 text-blue-400" /> },
+                                { step: "03", text: `MILESTONE: THEY REACH ${THRESHOLD} XP`, icon: <Zap className="w-3 h-3" /> },
+                                { step: "04", text: `UNLOCKED: ${BONUS}% PASSIVE YIELD`, icon: <Trophy className="w-3 h-3 text-yellow-500" /> },
                             ].map((item, idx) => (
                                 <div key={idx} className="flex items-center gap-3 bg-black/20 p-2.5 rounded-2xl border border-white/5 group/step hover:border-indigo-500/30 transition-all">
                                     <span className="text-[9px] font-black text-indigo-500/50 group-hover/step:text-indigo-400 transition-colors w-4">{item.step}</span>
@@ -138,7 +138,7 @@ export const ReferralCard = () => {
                             onClick={shareBaseApp}
                             className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98]"
                         >
-                            <Zap className="w-4 h-4 fill-current" /> BASE APP
+                            <Shield className="w-4 h-4 fill-current" /> BASE IDENTITY
                         </button>
 
                         <button

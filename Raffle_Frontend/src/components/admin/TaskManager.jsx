@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage } from 'wagmi';
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 import {
     Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle,
@@ -120,6 +120,7 @@ export function TaskManager() {
     const [dailyPoints, setDailyPoints] = useState('');
     const [dailyCooldown, setDailyCooldown] = useState('24h');
     const [dailyRequiresVerify, setDailyRequiresVerify] = useState(false);
+    const [dailyIsBaseSocialRequired, setDailyIsBaseSocialRequired] = useState(false);
     const [dailyMinTier, setDailyMinTier] = useState(0);
 
     const [sponsorTitle, setSponsorTitle] = useState('');
@@ -127,6 +128,7 @@ export function TaskManager() {
     const [sponsorEmail, setSponsorEmail] = useState('');
     const [sponsorRewardPerUser, setSponsorRewardPerUser] = useState('0.10');
     const [sponsorTotalClaims, setSponsorTotalClaims] = useState('50');
+    const [sponsorIsBaseSocialRequired, setSponsorIsBaseSocialRequired] = useState(false);
 
     const [configPlatformFee, setConfigPlatformFee] = useState('');
     const [configMinPool, setConfigMinPool] = useState('');
@@ -134,8 +136,9 @@ export function TaskManager() {
 
     const [pointSettings, setPointSettings] = useState([]);
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { data: hash, error: writeError } = useWriteContract();
-    const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({ hash });
+    const { data: receipt, isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
 
     const { data: platformFee } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
     const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'minRewardPoolUSD' });
@@ -154,10 +157,64 @@ export function TaskManager() {
     }, []);
 
     const handleTxSuccess = () => {
-        toast.success('Transaction Successful!');
-        setDailyDesc('');
-        setSponsorTitle('');
+        toast.success('Transaction Confirmed! Syncing with system...');
     };
+
+    useEffect(() => {
+        const syncQuickAction = async () => {
+            if (isTxSuccess && receipt) {
+                const tid = toast.loading("Syncing Backend Gating...");
+                try {
+                    const timestamp = new Date().toISOString();
+                    const message = `Sync Quick Admin Action\nTX: ${receipt.transactionHash}\nAdmin: ${address}\nTime: ${timestamp}`;
+                    const signature = await signMessageAsync({ message });
+
+                    if (mode === 'daily') {
+                        // Sync single task
+                        await fetch('/api/admin/tasks/sync', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                action: 'task-sync',
+                                wallet_address: address, signature, message,
+                                tasks: [{
+                                    platform: 'system',
+                                    action_type: 'custom',
+                                    title: dailyDesc,
+                                    link: '',
+                                    is_base_social_required: dailyIsBaseSocialRequired
+                                }]
+                            })
+                        });
+                    } else if (mode === 'sponsor') {
+                        // Sync sponsorship
+                        await fetch('/api/admin/tasks/sync', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                action: 'task-sync',
+                                wallet_address: address, signature, message,
+                                tasks: [{
+                                    platform: 'sponsor',
+                                    action_type: 'visit',
+                                    title: sponsorTitle,
+                                    link: sponsorLink,
+                                    is_base_social_required: sponsorIsBaseSocialRequired
+                                }]
+                            })
+                        });
+                    }
+                    toast.success("Ecosystem Synchronized!", { id: tid });
+                    setDailyDesc('');
+                    setSponsorTitle('');
+                } catch (err) {
+                    console.error('[Quick Sync Error]', err);
+                    toast.error("Sync Failed - Audit Required", { id: tid });
+                }
+            }
+        };
+        syncQuickAction();
+    }, [isTxSuccess, receipt]);
 
     const buildAdminTaskCall = () => {
         const cd = dailyCooldown === '24h' ? 86400 : dailyCooldown === '1h' ? 3600 : 43200;
@@ -219,6 +276,7 @@ export function TaskManager() {
                     dailyPoints={dailyPoints} onDailyPointsChange={setDailyPoints}
                     dailyCooldown={dailyCooldown} onDailyCooldownChange={setDailyCooldown}
                     dailyRequiresVerify={dailyRequiresVerify} onDailyRequiresVerifyChange={setDailyRequiresVerify}
+                    dailyIsBaseSocialRequired={dailyIsBaseSocialRequired} onDailyIsBaseSocialRequiredChange={setDailyIsBaseSocialRequired}
                     dailyMinTier={dailyMinTier} onDailyMinTierChange={setDailyMinTier}
                     pointSettings={pointSettings}
                     buildAdminTaskCall={buildAdminTaskCall}
@@ -233,6 +291,7 @@ export function TaskManager() {
                     sponsorEmail={sponsorEmail} onSponsorEmailChange={setSponsorEmail}
                     sponsorTotalClaims={sponsorTotalClaims} onSponsorTotalClaimsChange={setSponsorTotalClaims}
                     sponsorRewardPerUser={sponsorRewardPerUser} onSponsorRewardPerUserChange={setSponsorRewardPerUser}
+                    sponsorIsBaseSocialRequired={sponsorIsBaseSocialRequired} onSponsorIsBaseSocialRequiredChange={setSponsorIsBaseSocialRequired}
                     platformFee={platformFee}
                     minRewardUSD={minRewardUSD}
                     minPoolUSD={minPoolUSD}

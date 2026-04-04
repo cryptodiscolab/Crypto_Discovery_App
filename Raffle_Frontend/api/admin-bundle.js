@@ -220,6 +220,7 @@ export default async function handler(req, res) {
                     action_type: task_data.action_type || 'transaction',
                     link: task_data.link || 'https://warpcast.com/CryptoDisco',
                     is_active: !!task_data.is_active,
+                    is_base_social_required: !!task_data.is_base_social_required, // v3.42.0
                     created_at: new Date().toISOString()
                 }).select().single();
                 if (error) throw error;
@@ -303,6 +304,7 @@ export default async function handler(req, res) {
                         platform: task.platform,
                         action_type: task.action_type,
                         link: task.link,
+                        is_base_social_required: !!task.is_base_social_required, // v3.42.0
                         is_active: true
                     }]);
                 }

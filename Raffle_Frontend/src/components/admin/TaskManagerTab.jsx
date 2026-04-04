@@ -38,6 +38,7 @@ export function TaskManagerTab() {
     const [sponsorEmail, setSponsorEmail] = useState('');
     const [rewardPerUserUSD, setRewardPerUserUSD] = useState('0.01');
     const [targetClaims, setTargetClaims] = useState('500');
+    const [isBaseSocialRequired, setIsBaseSocialRequired] = useState(false); // v3.42.0
 
     // On-Chain Data
     const { data: currentPlatformFee } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
@@ -48,9 +49,9 @@ export function TaskManagerTab() {
 
     // Tasks Batch State
     const [tasksBatch, setTasksBatch] = useState([
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
-        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true }
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, isBaseSocialRequired: false, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, isBaseSocialRequired: false, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, isBaseSocialRequired: false, minNeynarScore: 0, minFollowers: 0, accountAgeLimit: 0, powerBadgeRequired: false, noSpamFilter: true }
     ]);
     const [pointSettings, setPointSettings] = useState([]);
     const [isLoadingPoints, setIsLoadingPoints] = useState(true);
@@ -122,6 +123,7 @@ export function TaskManagerTab() {
                         reward_points: task.baseReward,
                         min_tier: task.minTier,
                         requires_verification: task.requiresVerification,
+                        is_base_social_required: task.isBaseSocialRequired, // v3.42.0
                         min_neynar_score: task.minNeynarScore,
                         min_followers: task.minFollowers,
                         account_age_requirement: task.accountAgeLimit,
@@ -237,16 +239,54 @@ export function TaskManagerTab() {
         setIsSponsorSaving(true);
         const tid = toast.loading("Processing...");
         try {
-            await writeContractAsync({
+            const hash = await writeContractAsync({
                 address: DAILY_APP_ADDRESS,
                 abi: DAILY_APP_ABI,
                 functionName: 'buySponsorshipWithToken',
                 args: [0, sponsorTitle, sponsorLink, sponsorEmail, BigInt(parseFloat(rewardPerUserUSD) * 1e18), BigInt(targetClaims)]
             });
-            toast.success("Deployed!", { id: tid });
-            setViewMode('VIEW_TASKS');
-        } catch (e) { toast.error(e.shortMessage, { id: tid }); }
-        finally { setIsSponsorSaving(false); }
+
+            if (hash) {
+                toast.loading("Syncing with database...", { id: tid });
+                
+                const timestamp = new Date().toISOString();
+                const message = `Sync UGC Mission\nTX: ${hash}\nAdmin: ${address}\nTitle: ${sponsorTitle}\nTime: ${timestamp}`;
+                const signature = await signMessageAsync({ message });
+
+                await fetch('/api/user/bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        wallet: address,
+                        signature,
+                        message,
+                        action: 'sync-ugc-mission',
+                        payload: {
+                            title: sponsorTitle,
+                            description: `Sponsored mission by ${sponsorEmail}`,
+                            sponsor_address: address,
+                            platform_code: 'base',
+                            reward_amount_per_user: rewardPerUserUSD,
+                            max_participants: targetClaims,
+                            txHash: hash,
+                            is_base_social_required: isBaseSocialRequired, // v3.42.0
+                            tasks_batch: [{
+                                title: sponsorTitle,
+                                link: sponsorLink,
+                                platform: 'base',
+                                action_type: 'visit'
+                            }]
+                        }
+                    })
+                });
+                
+                toast.success("Deployed & Synchronized!", { id: tid });
+                setViewMode('VIEW_TASKS');
+            }
+        } catch (e) { 
+            console.error("Sponsorship error:", e);
+            toast.error(e.shortMessage || "Failed to deploy", { id: tid }); 
+        } finally { setIsSponsorSaving(false); }
     };
 
     const handleApprove = async (rid) => {
@@ -294,6 +334,7 @@ export function TaskManagerTab() {
                     sponsorEmail={sponsorEmail} onSponsorEmailChange={setSponsorEmail}
                     rewardPerUserUSD={rewardPerUserUSD} onRewardPerUserUSDChange={setRewardPerUserUSD}
                     targetClaims={targetClaims} onTargetClaimsChange={setTargetClaims}
+                    isBaseSocialRequired={isBaseSocialRequired} onIsBaseSocialRequiredChange={setIsBaseSocialRequired}
                     currentTokenPrice={currentTokenPrice}
                     currentPlatformFee={currentPlatformFee}
                     onCreateSponsorship={handleCreateSponsorship}

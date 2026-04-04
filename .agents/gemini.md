@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-04*
-*PRD Version: v3.42.0 (Identity Hardened & Growth Optimized)*
+*Last Updated: 2026-04-05*
+*PRD Version: v3.42.2 (Identity Guarded & Disappearing Tasks)*
 
 ---
 
@@ -201,6 +201,13 @@ State sharing via `agents_vault` table di Supabase.
 - **Nexus Dividend**: Tier 1 Referrer berhak mendapatkan **10% Lifetime XP Dividend** secara atomis via RPC `fn_increment_xp`.
 - **Identity Gating**: Tasks dengan partner Base wajib mensyaratkan `is_base_social_verified = true`.
 - **Basename Resolution**: On-chain reverse resolution (via viem) adalah standar verifikasi identitas sosial.
+- **Identity UI Branding**: Shield lencana "Verified" (Base Blue) adalah standar visual untuk user valid.
+
+### Section 4.3: DISAPPEARING TASK MANDATE (v3.42.2)
+- **Immediate Vanish**: Task yang sudah selesai atau diklaim **WAJIB** langsung dihilangkan dari antarmuka (`return null` atau filter data). 
+- **No Progress List**: Dilarang menampilkan task yang sudah berstatus `Done` di halaman utama user untuk menjaga kebersihan "Daily To-Do".
+- **Sponsorship Closure**: Kartu sponsor (card) wajib menghilang jika seluruh sub-task di dalamnya sudah berstatus `Completed`.
+- **Catch-Up Feedback**: Gunakan komponen "YOU ARE ALL CAUGHT UP!" jika tidak ada task tersisa.
 
 ---
 ## 4. SECURE ENVIRONMENT & ZERO-TRUST ADDRESSES

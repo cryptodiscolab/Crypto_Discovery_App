@@ -7,48 +7,72 @@ export function SponsorshipPortalSection({
     sponsorEmail, onSponsorEmailChange,
     rewardPerUserUSD, onRewardPerUserUSDChange,
     targetClaims, onTargetClaimsChange,
+    isBaseSocialRequired, onIsBaseSocialRequiredChange,
     currentTokenPrice,
     currentPlatformFee,
     onCreateSponsorship,
     isSponsorSaving
 }) {
     return (
-        <div className="glass-card p-8 bg-indigo-950/10 border border-indigo-500/10 shadow-2xl relative rounded-3xl">
+        <div className="glass-card p-8 bg-indigo-950/10 border border-indigo-500/10 shadow-2xl relative rounded-3xl overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-indigo-500 animate-pulse" />
+            </div>
+
             <div className="mb-6">
-                <h3 className="text-2xl font-black text-white flex items-center gap-2 uppercase">
-                    <Share2 className="w-6 h-6 text-indigo-400" /> Sponsor Engagement Portal
+                <h3 className="text-2xl font-black text-white flex items-center gap-2 uppercase italic">
+                    <Share2 className="w-6 h-6 text-indigo-400" /> Sponsor Engagement <span className="text-indigo-500">Portal</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold text-left">Paid campaigns using Creator Tokens</p>
+                <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-[0.2em] font-black text-left italic">v3.42.0 Identity Hardened Interface</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-[10px] font-black text-indigo-400 uppercase mb-1 block">Project / Campaign Name</label>
-                        <input
-                            value={sponsorTitle}
-                            onChange={(e) => onSponsorTitleChange(e.target.value)}
-                            placeholder="e.g. Disco Gacha Season 1"
-                            className="w-full bg-slate-900/50 border border-white/10 p-4 rounded-2xl text-white font-bold focus:border-indigo-500 outline-none"
-                        />
+                <div className="space-y-6">
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-[10px] font-black text-indigo-400 uppercase mb-2 block tracking-widest">Project / Campaign Name</label>
+                            <input
+                                value={sponsorTitle}
+                                onChange={(e) => onSponsorTitleChange(e.target.value)}
+                                placeholder="e.g. Disco Gacha Season 1"
+                                className="w-full bg-slate-900/50 border border-white/5 p-4 rounded-2xl text-white font-black uppercase tracking-tight focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-indigo-400 uppercase mb-2 block tracking-widest">Landing Link</label>
+                            <input
+                                value={sponsorLink}
+                                onChange={(e) => onSponsorLinkChange(e.target.value)}
+                                placeholder="https://"
+                                className="w-full bg-slate-900/50 border border-white/5 p-4 rounded-2xl text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-indigo-400 uppercase mb-2 block tracking-widest">Contact Email (Internal)</label>
+                            <input
+                                value={sponsorEmail}
+                                onChange={(e) => onSponsorEmailChange(e.target.value)}
+                                placeholder="sponsor@example.com"
+                                className="w-full bg-slate-900/50 border border-white/5 p-4 rounded-2xl text-white font-black uppercase tracking-tight focus:border-indigo-500 outline-none"
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="text-[10px] font-black text-indigo-400 uppercase mb-1 block">Landing Link</label>
-                        <input
-                            value={sponsorLink}
-                            onChange={(e) => onSponsorLinkChange(e.target.value)}
-                            placeholder="https://"
-                            className="w-full bg-slate-900/50 border border-white/10 p-4 rounded-2xl text-white font-mono text-sm focus:border-indigo-500 outline-none"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-black text-indigo-400 uppercase mb-1 block">Contact Email</label>
-                        <input
-                            value={sponsorEmail}
-                            onChange={(e) => onSponsorEmailChange(e.target.value)}
-                            placeholder="sponsor@example.com"
-                            className="w-full bg-slate-900/50 border border-white/10 p-4 rounded-2xl text-white focus:border-indigo-500 outline-none"
-                        />
+
+                    {/* IDENTITY GUARD (v3.42.0) */}
+                    <div className={`p-5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between group ${isBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30 shadow-lg shadow-blue-500/5' : 'bg-slate-900/50 border-white/5 hover:border-white/10'}`}
+                         onClick={() => onIsBaseSocialRequiredChange(!isBaseSocialRequired)}>
+                        <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isBaseSocialRequired ? 'bg-blue-500 text-white rotate-12 scale-110' : 'bg-slate-800 text-slate-500 shadow-inner'}`}>
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className={`text-[11px] font-black uppercase tracking-widest ${isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Guard</span>
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">Require Base Social (Basenames)</span>
+                            </div>
+                        </div>
+                        <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform transform ${isBaseSocialRequired ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </div>
                     </div>
                 </div>
 

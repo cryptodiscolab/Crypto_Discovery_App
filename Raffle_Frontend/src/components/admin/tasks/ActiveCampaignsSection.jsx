@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Shield, RefreshCw, Zap, Clock, List, Share2 } from 'lucide-react';
+import { Shield, RefreshCw, Zap, Clock, List, Share2, ShieldAlert } from 'lucide-react';
 import { useReadContract } from 'wagmi';
 import { CONTRACTS, ABIS } from '../../../lib/contracts';
+import { supabase } from '../../../lib/supabaseClient';
 
 const DAILY_APP_ADDRESS = CONTRACTS.DAILY_APP;
 
@@ -148,6 +149,17 @@ function OrganicTaskRow({ id, onToggle }) {
         args: [id]
     });
 
+    const [dbMeta, setDbMeta] = React.useState(null);
+
+    React.useEffect(() => {
+        if (!id) return;
+        const fetchMeta = async () => {
+            const { data } = await supabase.from('daily_tasks').select('is_base_social_required').eq('id', Number(id)).maybeSingle();
+            if (data) setDbMeta(data);
+        };
+        fetchMeta();
+    }, [id]);
+
     if (!task || task[0] === "") return null;
 
     const baseReward = task[0];
@@ -159,10 +171,13 @@ function OrganicTaskRow({ id, onToggle }) {
         <div className="p-4 rounded-xl border border-white/5 bg-slate-900/40 flex items-center justify-between group hover:border-indigo-500/20 transition-all">
             <div className="flex items-center gap-4">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-500'}`}>
-                    {requiresVerification ? <Shield className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                    {dbMeta?.is_base_social_required ? <ShieldAlert className="w-4 h-4 text-blue-400" /> : requiresVerification ? <Shield className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
                 </div>
                 <div>
-                    <h5 className="text-xs font-black text-white uppercase">{title}</h5>
+                    <h5 className="text-xs font-black text-white uppercase flex items-center gap-2">
+                        {title}
+                        {dbMeta?.is_base_social_required && <span className="bg-blue-500/10 text-blue-400 text-[6px] px-1.5 py-0.5 rounded border border-blue-500/30">IDENTITY_GUARD</span>}
+                    </h5>
                     <div className="flex gap-2 mt-1">
                         <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">{Number(baseReward)} XP</span>
                         <span className={`text-[8px] font-bold uppercase ${isActive ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -189,6 +204,18 @@ function AuditRequestRow({ id, onApprove, onReject }) {
         args: [id]
     });
 
+    const [dbMeta, setDbMeta] = React.useState(null);
+
+    React.useEffect(() => {
+        if (!id) return;
+        const fetchMeta = async () => {
+            // Sponsored tasks share the campaign ID in onchain_id
+            const { data } = await supabase.from('daily_tasks').select('is_base_social_required').eq('onchain_id', Number(id)).maybeSingle();
+            if (data) setDbMeta(data);
+        };
+        fetchMeta();
+    }, [id]);
+
     if (!request || Number(request[8]) === 2) return null; // REJECTED
 
     const sponsor = request[0];
@@ -213,6 +240,11 @@ function AuditRequestRow({ id, onApprove, onReject }) {
                         <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${status === 0 ? 'bg-yellow-500/10 text-yellow-500' : 'bg-green-500/10 text-green-500'}`}>
                             {status === 0 ? 'PENDING AUDIT' : 'APPROVED'}
                         </span>
+                        {dbMeta?.is_base_social_required && (
+                            <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-full font-bold flex items-center gap-1">
+                                <ShieldAlert size={8} /> IDENTITY GUARD
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -246,6 +278,17 @@ function SponsorCardItem({ id }) {
         args: [id]
     });
 
+    const [dbMeta, setDbMeta] = React.useState(null);
+
+    React.useEffect(() => {
+        if (!id) return;
+        const fetchMeta = async () => {
+            const { data } = await supabase.from('daily_tasks').select('is_base_social_required').eq('onchain_id', Number(id)).maybeSingle();
+            if (data) setDbMeta(data);
+        };
+        fetchMeta();
+    }, [id]);
+
     if (!request || Number(request[8]) !== 1) return null; // ONLY SHOW APPROVED
 
     const title = request[2];
@@ -265,7 +308,11 @@ function SponsorCardItem({ id }) {
                 </div>
                 <div>
                     <h4 className="font-bold text-white text-sm truncate max-w-[120px]">{title}</h4>
-                    <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Live Campaign</p>
+                    <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold flex items-center gap-1">
+                        {dbMeta?.is_base_social_required ? (
+                            <span className="text-blue-400">IDENTITY GUARDED</span>
+                        ) : "Live Campaign"}
+                    </p>
                 </div>
             </div>
 

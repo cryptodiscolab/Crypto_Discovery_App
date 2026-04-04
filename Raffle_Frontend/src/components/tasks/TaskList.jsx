@@ -15,7 +15,8 @@ export function TaskList() {
     const [userClaims, setUserClaims] = useState([]); // Array of {task_id, claimed_at}
     const [isLoading, setIsLoading] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
-    const [claimingTask, setClaimingTask] = useState(null); // Missing: tracks which task is being claimed
+    const [isBaseVerified, setIsBaseVerified] = useState(false); // v3.42.0
+    const [claimingTask, setClaimingTask] = useState(null); 
     const { execute: executeClaim } = useVerifiedAction();
     const { refetch } = usePoints();
 
@@ -46,7 +47,7 @@ export function TaskList() {
 
                     supabase
                         .from('user_profiles')
-                        .select('neynar_score')
+                        .select('neynar_score, is_base_social_verified')
                         .eq('wallet_address', address.toLowerCase())
                         .single()
                 ]);
@@ -59,9 +60,11 @@ export function TaskList() {
 
                 if (profileResult.data) {
                     setUserScore(profileResult.data.neynar_score || 0);
+                    setIsBaseVerified(!!profileResult.data.is_base_social_verified);
                     setHasProfile(true);
                 } else {
-                    setUserScore(0); // Reset score if no profile
+                    setUserScore(0);
+                    setIsBaseVerified(false);
                     setHasProfile(false);
                 }
             } else {
@@ -94,6 +97,11 @@ export function TaskList() {
 
         if (task.min_neynar_score > 0 && userScore < task.min_neynar_score) {
             toast.error(`Low Reputation: Requires Neynar Score ${task.min_neynar_score}`);
+            return;
+        }
+
+        if (task.is_base_social_required && !isBaseVerified) {
+            toast.error("Identity Guard: Base Social (Basenames) required!");
             return;
         }
 
@@ -171,7 +179,8 @@ export function TaskList() {
                     // Anti-Sybil Check
                     const requiresScore = task.min_neynar_score && task.min_neynar_score > 0;
                     const isScoreLow = requiresScore && userScore < task.min_neynar_score;
-                    const isDisabled = isClaimed || isClaiming || !isConnected || isScoreLow;
+                    const isBaseLocked = task.is_base_social_required && !isBaseVerified; // v3.42.0
+                    const isDisabled = isClaimed || isClaiming || !isConnected || isScoreLow || isBaseLocked;
 
                     return (
                         <div
@@ -182,10 +191,12 @@ export function TaskList() {
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-3">
-                                <div className={`p-2 rounded-lg ${isClaimed ? 'bg-slate-800' : 'bg-indigo-500/20'}`}>
+                                <div className={`p-2 rounded-lg ${isClaimed ? 'bg-slate-800' : isBaseLocked ? 'bg-blue-500/10' : 'bg-indigo-500/20'}`}>
                                     {isClaimed
                                         ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                        : <Clock className="w-5 h-5 text-indigo-400" />
+                                        : isBaseLocked
+                                            ? <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                            : <Clock className="w-5 h-5 text-indigo-400" />
                                     }
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
@@ -219,7 +230,9 @@ export function TaskList() {
                                         ? 'bg-transparent text-green-500 cursor-default'
                                         : isScoreLow
                                             ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
-                                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                            : isBaseLocked
+                                                ? 'bg-blue-900/20 text-blue-400 border border-blue-500/30'
+                                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
                                         }`}
                                 >
                                     {isClaiming ? (
@@ -234,14 +247,19 @@ export function TaskList() {
                                             <AlertCircle size={14} className="text-red-400" />
                                             <span className="text-red-400">LOW REPUTATION</span>
                                         </div>
+                                    ) : isBaseLocked ? (
+                                        <div className="flex items-center gap-2 text-blue-400">
+                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                            <span>IDENTITY REQUIRED</span>
+                                        </div>
                                     ) : (
                                         "CLAIM REWARD"
                                     )}
                                 </button>
 
-                                {isScoreLow && (
-                                    <div className="absolute bottom-full left-0 w-full mb-2 p-3 bg-black/95 border border-white/10 rounded-xl text-white text-[11px] font-black uppercase tracking-widest pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-opacity z-10 text-center shadow-2xl">
-                                        REP SCORE ({userScore || 0}) BELOW {task.min_neynar_score}
+                                {isBaseLocked && (
+                                    <div className="absolute bottom-full left-0 w-full mb-2 p-3 bg-blue-950 border border-blue-500/30 rounded-xl text-blue-200 text-[10px] font-black uppercase tracking-widest pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-opacity z-10 text-center shadow-2xl">
+                                        BASE APP SOCIAL (BASENAMES) REQUIRED. LINK YOUR PROFILE TO UNLOCK.
                                     </div>
                                 )}
                             </div>

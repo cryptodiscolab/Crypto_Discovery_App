@@ -299,6 +299,22 @@ class VerificationService {
                 }
             }
 
+            // ── v3.42.0 Identity Guard Enforcement ──
+            if (taskData.is_base_social_required) {
+                const { data: profile } = await supabaseService.client
+                    .from('user_profiles')
+                    .select('is_base_social_verified')
+                    .eq('wallet_address', userAddress.toLowerCase())
+                    .single();
+
+                if (!profile?.is_base_social_verified) {
+                    return {
+                        success: false,
+                        error: '[Identity Guard] Base Social (Basenames) verification required to claim rewards for this mission.'
+                    };
+                }
+            }
+
             let verified = false;
 
             // Verify based on platform

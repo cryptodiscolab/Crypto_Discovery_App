@@ -77,7 +77,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.42.0 (Identity Hardened & Growth Optimized)**
+**Protocol Version: 3.42.2 (Identity Guard Hardening & Disappearing Tasks)**
 
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
@@ -521,5 +521,15 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
   - **MANDATE**: High-value tasks MUST be gated behind `is_base_social_verified`. 
   - **VERIFICATION**: Basename reverse resolution is the standard for identity proof. Admin tasks MUST enforce `is_base_social_required` labels.
 
-- **Current Protocol Version**: v3.42.0 (Identity Hardened & Growth Optimized)
-*Antigravity: Integrity Restored. Identity Guarded. v3.42.0 Locked.*
+- **42.2 DISAPPEARING TASK MANDATE (v3.42.2)**: 🚨 CLEAN SWEEP INTERFACE.
+  - **MANDATE**: Tasks and mission cards MUST be hidden immediately upon completion/claim. 
+  - **IMPLEMENTATION**: Use `return null` or array filtering in `TasksPage.jsx` based on `hasCompletedTask` or `hasClaimed`.
+  - **SPONSORSHIP**: Gated mission cards MUST vanish if all child tasks are complete.
+  - **EMPTY STATE**: Display the "YOU ARE ALL CAUGHT UP!" banner as a positive reinforcement.
+
+- **42.3 PREMIUM IDENTITY BRANDING (v3.42.2)**: 🚨 VISUAL SIGNALING.
+  - **STANDARD**: "Verified" status MUST use the **Base Blue** (`#0052FF`) shield badge (`ShieldCheck` icon).
+  - **UI/UX**: Linkage status MUST be clearly differentiated between "Verified" (Premium Shield) and "Unverified" (Call-to-Action).
+
+- **Current Protocol Version**: v3.42.2 (Identity Guard Hardening & Disappearing Tasks)
+*Antigravity: Integrity Restored. Identity Guarded. v3.42.2 Locked.*

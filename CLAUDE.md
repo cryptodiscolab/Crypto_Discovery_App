@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.42.0)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.42.2)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -20,7 +20,7 @@ Before responding to ANY request, read these files IN ORDER:
 5. **`IMPLEMENTATION_SUMMARY.md`** (Top 50 Lines) — Recent history & changelog
 6. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.42.0)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.42.2)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
@@ -55,6 +55,7 @@ Before responding to ANY request, read these files IN ORDER:
 51. **NATIVE+ UI STANDARD**: ALL UI labels, metadata, and sub-headers MUST be `text-[11px] font-black uppercase tracking-widest` (`.label-native`). Body content MUST be `text-[13px] font-medium leading-relaxed` (`.content-native`). Eradicate legacy `text-xs`, `text-sm`, and `text-[10px]` from the workspace (v3.41.0).
 52. **REFERRAL GROWTH LOOP v2**: Referral bonuses (50 XP) MUST ONLY be awarded after the **500 XP threshold**. Tier 1 referrers MUST receive a **10% lifetime XP dividend**, handled atomically via `fn_increment_xp` (v3.42.0).
 53. **BASE SOCIAL IDENTITY GUARD**: High-value tasks MUST be gated behind `is_base_social_verified`. Basename resolution is the canonical proof of identity (v3.42.0).
+54. **DISAPPEARING TASK MANDATE**: Completed or claimed tasks MUST be immediately hidden from the UI (`return null` or data filter). Card-level containers MUST vanish once all internal tasks are done. Catch-up feedback ("YOU ARE ALL CAUGHT UP!") is mandatory for empty states (v3.42.2).
 
 
 ---

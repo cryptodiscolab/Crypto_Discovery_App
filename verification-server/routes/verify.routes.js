@@ -210,6 +210,24 @@ router.post('/base-social', async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════
+
+/**
+ * Fetch Ecosystem Analytics (Nexus Pulse)
+ * GET /api/verify/ecosystem-stats
+ * (Public visibility for social proof)
+ */
+router.get('/ecosystem-stats', async (req, res) => {
+    try {
+        const supabaseService = require('../services/supabase.service');
+        const result = await supabaseService.getEcosystemStats();
+        res.json(result);
+    } catch (error) {
+        console.error('Error in ecosystem stats:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ══════════════════════════════════════════════════════════
 // WILDCARD VERIFICATION ROUTES (Unified Pattern)
 // All social task verification follows the same pipeline:
 //   1. Validate required fields per platform

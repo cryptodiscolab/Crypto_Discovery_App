@@ -1,4 +1,5 @@
 import { createConfig, http, fallback } from 'wagmi';
+import { mock, baseAccount } from 'wagmi/connectors';
 import { base, baseSepolia } from 'wagmi/chains';
 // IMPORT WAJIB DARI RAINBOWKIT:
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
@@ -28,6 +29,15 @@ const connectors = connectorsForWallets(
                 walletConnectWallet,
                 rabbyWallet,
                 bitgetWallet,
+                () => ({
+                    id: 'mock',
+                    name: 'Mock Wallet',
+                    iconUrl: 'https://avatars.githubusercontent.com/u/106669223?v=4',
+                    iconBackground: '#fff',
+                    createConnector: (details) => mock({
+                        accounts: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'],
+                    }),
+                }),
             ],
         },
     ],
@@ -42,7 +52,15 @@ const activeChain = activeChainId === 84532 ? baseSepolia : base;
 
 export const config = createConfig({
     chains: [base, baseSepolia],
-    connectors,
+    connectors: [
+        ...connectors,
+        mock({
+            accounts: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'],
+            features: {
+                reconnect: true,
+            },
+        })
+    ],
     multiInjectedProviderDiscovery: true, // EIP-6963 support
     transports: {
         [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org'),

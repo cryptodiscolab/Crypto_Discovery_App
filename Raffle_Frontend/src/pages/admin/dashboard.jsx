@@ -50,7 +50,7 @@ const AdminDashboard = () => {
                             <h1 className="text-lg font-black text-white uppercase tracking-tighter italic">
                                 Admin <span className="text-indigo-500">Hub</span>
                             </h1>
-                            <p className="text-[8px] font-black text-slate-700 uppercase tracking-widest">
+                            <p className="text-[11px] font-black uppercase tracking-widest">
                                 Extreme Mobile Node v3.0
                             </p>
                         </div>
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
 
                     <div className="bg-[#121214] px-3 py-1.5 rounded-full border border-white/5 flex items-center gap-2">
                         <Database className="w-3 h-3 text-indigo-600" />
-                        <span className="text-[8px] font-black text-white uppercase tracking-tighter">Auth: Active</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest">Auth: Active</span>
                     </div>
                 </div>
 
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
                 <div className="flex overflow-x-auto scrollbar-hide bg-[#121214] p-1 rounded-xl border border-white/5 mb-6 gap-1 no-scrollbar">
                     <button
                         onClick={() => setActiveTab('reputation')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'reputation'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'reputation'
                             ? 'bg-[#0a0a0c] text-white shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -76,7 +76,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('sbt')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'sbt'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'sbt'
                             ? 'bg-[#0a0a0c] text-indigo-400 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('pool')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'pool'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'pool'
                             ? 'bg-[#0a0a0c] text-indigo-400 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('raffles')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'raffles'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'raffles'
                             ? 'bg-[#0a0a0c] text-blue-400 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -106,7 +106,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('tasks')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'tasks'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'tasks'
                             ? 'bg-[#0a0a0c] text-yellow-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -116,7 +116,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('announcement')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'announcement'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'announcement'
                             ? 'bg-[#0a0a0c] text-blue-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -126,7 +126,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('news')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'news'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'news'
                             ? 'bg-[#0a0a0c] text-green-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -136,7 +136,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('system')}
-                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
+                        className={`flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'system'
                             ? 'bg-[#0a0a0c] text-red-500 shadow-lg border border-white/5'
                             : 'text-slate-600 hover:text-slate-400'
                             }`}
@@ -151,7 +151,7 @@ const AdminDashboard = () => {
                 <Suspense fallback={
                     <div className="py-20 flex flex-col items-center gap-4">
                         <RefreshCw className="w-6 h-6 text-slate-800 animate-spin" />
-                        <p className="text-[8px] font-black text-slate-800 uppercase tracking-widest">Loading Module...</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest">Loading Module...</p>
                     </div>
                 }>
                     <ErrorBoundary>
@@ -185,7 +185,7 @@ const AdminDashboard = () => {
                 <div className="mt-8 pt-6 border-t border-white/5">
                     <div className="flex items-start gap-4 opacity-30">
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-1 flex-shrink-0" />
-                        <p className="text-[8px] text-white leading-relaxed font-black uppercase tracking-tighter">
+                        <p className="text-[11px] font-black uppercase tracking-widest">
                             Restricted Protocol: 0x0845...204B. All telemetry data is confidential.
                             Built for high-efficiency mobile WebViews.
                         </p>

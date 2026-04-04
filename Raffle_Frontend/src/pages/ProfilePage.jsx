@@ -16,13 +16,7 @@ import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI, MASTER_X_ADDRESS } from '../lib/contracts';
 import ActivityLogSection from '../components/ActivityLogSection';
-import {
-  Transaction,
-  TransactionButton,
-  TransactionStatus,
-  TransactionStatusLabel,
-  TransactionStatusAction,
-} from '@coinbase/onchainkit/transaction';
+import { useWriteContracts } from 'wagmi/experimental';
 import { usePriceOracle } from '../hooks/usePriceOracle';
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 
@@ -52,13 +46,14 @@ export default function ProfilePage() {
     verifications: [],
     powerBadge: false,
     total_xp: 0,
-    rankName: 'Rookie',
-    streakCount: 0,
+    last_daily_bonus_claim: null,
     google_id: null,
     google_email: '',
     twitter_id: null,
     twitter_username: '',
-    oauth_provider: null
+    oauth_provider: null,
+    base_username: '',
+    is_base_social_verified: false
   });
 
   const [copied, setCopied] = useState(false);
@@ -155,7 +150,9 @@ export default function ProfilePage() {
         google_email: data.google_email || '',
         twitter_id: data.twitter_id || null,
         twitter_username: data.twitter_username || '',
-        oauth_provider: data.oauth_provider || null
+        oauth_provider: data.oauth_provider || null,
+        base_username: data.base_username || '',
+        is_base_social_verified: data.is_base_social_verified || false
       });
       setPotentialTier(calculatePotentialTier(data.total_xp || 0));
     } else {
@@ -236,6 +233,37 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLinkBaseSocial = async () => {
+    if (!address) return toast.error("Connect wallet first!");
+    
+    const tid = toast.loading("Resolving Basename...");
+    try {
+      const timestamp = new Date().toISOString();
+      const message = `Verify Base Social Identity\nWallet: ${address.toLowerCase()}\nTimestamp: ${timestamp}`;
+      const signature = await signMessageAsync({ message });
+
+      const res = await fetch('/api/user-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sync-base-social',
+          wallet_address: address.toLowerCase(),
+          signature,
+          message
+        })
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Sync failed");
+
+      toast.success(`Success! Linked as ${result.basename}`, { id: tid });
+      fetchProfile();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Failed to link Base Social", { id: tid });
+    }
+  };
+
   const handleCopyAddress = () => {
     if (!address) return;
     navigator.clipboard.writeText(address);
@@ -253,7 +281,7 @@ export default function ProfilePage() {
 
       {/* Top Action Bar (Mobile only usually, or simplified header) */}
       <div className="flex justify-between items-center px-4 h-14 bg-zinc-900/50 backdrop-blur-md pt-safe md:hidden sticky top-0 z-[100]">
-        <h1 className="text-[11px] font-black text-white uppercase tracking-widest">PROFILE</h1>
+        <h1 className="label-native text-white">PROFILE</h1>
         <button
           onClick={() => disconnect()}
           className="text-zinc-500 hover:text-red-400 p-2"
@@ -317,7 +345,7 @@ export default function ProfilePage() {
                   </button>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-1.5 rounded-full border border-white/20 text-[11px] font-black uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-transform"
+                    className="px-4 py-1.5 rounded-full border border-white/20 label-native hover:bg-white/10 active:scale-95 transition-transform"
                   >
                     EDIT
                   </button>
@@ -336,14 +364,14 @@ export default function ProfilePage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-1.5 rounded-full border border-red-500/50 text-red-400 text-[11px] font-black uppercase tracking-widest active:scale-95 transition-transform"
+                    className="px-4 py-1.5 rounded-full border border-red-500/50 text-red-400 label-native active:scale-95 transition-transform"
                   >
                     CANCEL
                   </button>
                   <button
                     onClick={handleSaveProfile}
                     disabled={isSaving}
-                    className="px-4 py-1.5 rounded-full bg-white text-black text-[11px] font-black uppercase tracking-widest active:scale-95 transition-transform"
+                    className="px-4 py-1.5 rounded-full bg-white text-black label-native active:scale-95 transition-transform"
                   >
                     {isSaving ? "SAVING..." : "SAVE"}
                   </button>
@@ -359,8 +387,8 @@ export default function ProfilePage() {
                   <ShieldCheck size={18} className="text-zinc-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[11px] text-zinc-300 font-black uppercase tracking-widest mb-1">LINK A SOCIAL ACCOUNT</p>
-                  <p className="text-[11px] text-slate-400 leading-relaxed font-black uppercase tracking-widest">
+                  <p className="label-native text-zinc-300 mb-1">LINK A SOCIAL ACCOUNT</p>
+                  <p className="label-native text-slate-400 leading-relaxed">
                     Link your <b>Farcaster</b>, <b>Google</b>, or <b>X (Twitter)</b> account below to enhance your profile and unlock social task verification.
                   </p>
                 </div>
@@ -385,7 +413,14 @@ export default function ProfilePage() {
                 <p className="text-[11px] text-slate-500 mt-1">Use direct links. Avoid huge files for better loading performance.</p>
               </div>
             ) : (
-              <h2 className="text-lg font-black text-white uppercase tracking-tighter italic leading-none">{profileData.displayName || 'ANONYMOUS DISCO'}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-white uppercase tracking-tighter italic leading-none">{profileData.displayName || 'ANONYMOUS DISCO'}</h2>
+                {profileData.is_base_social_verified && (
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.4)]" title="Verified Base Social Identity">
+                    <ShieldCheck size={12} className="text-white" />
+                  </div>
+                )}
+              </div>
             )}
 
             <div className="flex items-center gap-2 text-slate-500 text-[11px] font-black uppercase tracking-widest">
@@ -412,11 +447,11 @@ export default function ProfilePage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest">
-                      TIER {userData?.tier?.toString() || '0'} RESIDENT
+                    <span className="label-native text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                      TIER {onChainUserData?.currentTier?.toString() || '0'} RESIDENT
                     </span>
                   </div>
-                  <span className="text-[11px] font-black uppercase text-slate-400 tracking-widest">@{profileData.username || 'USERNAME'}</span>
+                  <span className="label-native text-slate-400 whitespace-nowrap">@{profileData.username || 'USERNAME'}</span>
                   <div 
                     onClick={() => onChainUserData?.currentTier < potentialTier && setActiveModal('upgrade')}
                     className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all cursor-pointer
@@ -424,7 +459,7 @@ export default function ProfilePage() {
                         ? 'bg-indigo-500/20 border-indigo-500/40 animate-pulse' 
                         : 'bg-zinc-800/50 border-white/10'}`}
                   >
-                    <span className="text-[11px] font-black uppercase tracking-widest text-indigo-400">
+                    <span className="label-native text-indigo-400">
                       {profileData.rankName}
                     </span>
                     {onChainUserData?.currentTier < potentialTier && <ArrowUpCircle size={10} className="text-indigo-400" />}
@@ -434,57 +469,67 @@ export default function ProfilePage() {
                   {(onChainUserData?.currentTier === 1 || onChainUserData?.currentTier === 2) && 
                    onChainUserData?.lastActivity > 0 && 
                    (Math.floor(Date.now() / 1000) <= onChainUserData.lastActivity + 48 * 3600) && (
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[11px] font-black text-amber-500 animate-pulse uppercase tracking-widest">
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 label-native text-amber-500 animate-pulse">
                       <Zap size={8} /> CATCH-UP ACTIVE
                     </div>
                   )}
                 </div>
               )}
-              {profileData.fid && !isEditing && <span className="px-1.5 py-0.5 rounded bg-white/5 text-[11px] text-slate-500 font-black uppercase tracking-widest">FID: {profileData.fid}</span>}
+              {profileData.fid && !isEditing && <span className="px-1.5 py-0.5 rounded bg-white/5 label-native text-slate-500">FID: {profileData.fid}</span>}
             </div>
           </div>
 
-          <div className="mt-3">
+          <div className="mt-4">
             {isEditing ? (
               <textarea
                 maxLength={160}
                 value={profileData.bio}
                 onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                className="w-full bg-transparent border border-gray-700 rounded p-2 text-[11px] text-slate-300 focus:border-indigo-500 outline-none h-20 uppercase font-black tracking-widest"
-                placeholder="Bio..."
+                className="w-full bg-transparent border border-gray-700 rounded-xl p-3 content-native text-slate-300 focus:border-indigo-500 outline-none h-24"
+                placeholder="Share your story..."
               />
             ) : (
-              <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap font-black uppercase tracking-widest">
+              <p className="content-native text-slate-300 leading-relaxed whitespace-pre-wrap">
                 {profileData.bio || "NO BIO YET."}
               </p>
             )}
           </div>
 
           {/* FOLLOW STATS & WALLET */}
-          <div className="flex items-center gap-4 mt-3 text-[11px]">
+          <div className="flex items-center gap-4 mt-4">
             <div className="flex gap-1">
-              <span className="font-black text-white uppercase tracking-widest">{profileData.followingCount.toLocaleString()}</span>
-              <span className="text-slate-500 font-black uppercase tracking-widest">FOLLOWING</span>
+              <span className="value-native text-white">{profileData.followingCount.toLocaleString()}</span>
+              <span className="label-native text-slate-500">FOLLOWING</span>
             </div>
             <div className="flex gap-1">
-              <span className="font-black text-white uppercase tracking-widest">{profileData.followerCount.toLocaleString()}</span>
-              <span className="text-slate-500 font-black uppercase tracking-widest">FOLLOWERS</span>
+              <span className="value-native text-white">{profileData.followerCount.toLocaleString()}</span>
+              <span className="label-native text-slate-500">FOLLOWERS</span>
             </div>
             {profileData.streakCount > 0 && (
               <div className="flex gap-1 items-center bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
                 <Flame size={12} className="text-orange-500 fill-current" />
-                <span className="font-black text-orange-500 text-[11px] uppercase tracking-widest">{profileData.streakCount} DAY STREAK</span>
+                <span className="label-native text-orange-500">{profileData.streakCount} DAY STREAK</span>
               </div>
             )}
             <div
               className="flex items-center gap-1 text-slate-500 cursor-pointer hover:text-indigo-400 transition-colors ml-auto"
-              onClick={handleCopyAddress}
             >
               <div className={`w-2 h-2 rounded-full ${address ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="font-mono text-[11px] font-black uppercase tracking-widest">
+              <span className="value-native font-mono" onClick={handleCopyAddress}>
                 {address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Connect Wallet'}
               </span>
-              {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+              {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} onClick={handleCopyAddress} />}
+              {address && (
+                <a 
+                  href={`https://base.app/profile/${address}`} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="ml-1 p-1 hover:bg-white/5 rounded-full transition-colors text-indigo-400"
+                  title="View on Base Profile"
+                >
+                  <ExternalLink size={12} />
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -498,15 +543,15 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-indigo-400" />
               <div className="flex flex-col">
-                <span className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">
+                <span className="label-native text-indigo-300">
                   Ascension Ready: {getTierName(potentialTier)}
                 </span>
-                <span className="text-[11px] text-slate-500 uppercase tracking-widest">Mint SBT for {getTierName(potentialTier)} Multiplier</span>
+                <span className="label-native text-slate-500">Mint SBT for {getTierName(potentialTier)} Multiplier</span>
               </div>
             </div>
             <button 
               onClick={() => setActiveModal('upgrade')}
-              className="text-[11px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-lg uppercase tracking-tight hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20"
+              className="label-native text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20"
             >
               Mint Status
             </button>
@@ -522,8 +567,8 @@ export default function ProfilePage() {
                 ${claimReady ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-900 text-zinc-600 opacity-50'}`}
             >
               <Calendar size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">DAILY BONUS</span>
-              {claimCountdown && <span className="text-[11px] font-mono font-black">{claimCountdown}</span>}
+              <span className="label-native">DAILY BONUS</span>
+              {claimCountdown && <span className="value-native font-mono">{claimCountdown}</span>}
             </button>
 
             <button
@@ -531,7 +576,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <Plus size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">CREATE MISSION</span>
+              <span className="label-native">CREATE MISSION</span>
             </button>
 
             <button
@@ -539,7 +584,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <Ticket size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">LAUNCH RAFFLE</span>
+              <span className="label-native">LAUNCH RAFFLE</span>
             </button>
 
             <button
@@ -547,7 +592,7 @@ export default function ProfilePage() {
               className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
             >
               <RefreshCw size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">RENEW JOB</span>
+              <span className="label-native">RENEW JOB</span>
             </button>
 
             {onChainUserData?.currentTier > 0 && (
@@ -562,9 +607,9 @@ export default function ProfilePage() {
                    <div className="absolute inset-0 bg-indigo-500/10 animate-pulse pointer-events-none" />
                 )}
                 <Coins size={18} className={claimableAmount > 0n ? "animate-bounce" : ""} />
-                <span className="text-[11px] font-black uppercase tracking-widest">CLAIM DIVIDENDS</span>
+                <span className="label-native">CLAIM DIVIDENDS</span>
                 {claimableAmount > 0n && (
-                  <span className="text-[11px] font-mono font-black text-indigo-300">
+                  <span className="value-native font-mono text-indigo-300">
                     {Number(claimableAmount).toFixed(4)} ETH
                   </span>
                 )}
@@ -624,8 +669,8 @@ export default function ProfilePage() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">NEYNER SCORE</h3>
-                <p className="text-[11px] text-slate-500 uppercase tracking-widest">REPUTATION HEALTH</p>
+                <h3 className="label-native text-white">NEYNER SCORE</h3>
+                <p className="label-native text-slate-500">REPUTATION HEALTH</p>
               </div>
             </div>
             <div className="text-right">
@@ -642,8 +687,8 @@ export default function ProfilePage() {
                 <Award size={20} />
               </div>
               <div>
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">TOTAL XP</h3>
-                <p className="text-[11px] text-slate-500 uppercase tracking-widest">SEASON PROGRESS</p>
+                <h3 className="label-native text-white">TOTAL XP</h3>
+                <p className="label-native text-slate-500">SEASON PROGRESS</p>
               </div>
             </div>
             <div className="text-right">
@@ -660,8 +705,8 @@ export default function ProfilePage() {
                 <Crown size={20} />
               </div>
               <div>
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">CURRENT RANK</h3>
-                <p className="text-[11px] text-slate-500 uppercase tracking-widest">LEADERBOARD TIER</p>
+                <h3 className="label-native text-white">CURRENT RANK</h3>
+                <p className="label-native text-slate-500">LEADERBOARD TIER</p>
               </div>
             </div>
             <div className="text-right">
@@ -688,7 +733,7 @@ export default function ProfilePage() {
                   ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 cursor-default' 
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Mail size={14} />
-              <span className="text-[11px] font-black uppercase tracking-widest">
+              <span className="label-native">
                 {profileData.google_id ? 'GOOGLE LINKED' : 'LINK GOOGLE'}
               </span>
               {profileData.google_id && <Check size={10} className="text-blue-400" />}
@@ -707,7 +752,7 @@ export default function ProfilePage() {
                   ? 'bg-white/10 border-white/20 text-white cursor-default' 
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-95'}`}>
               <Twitter size={14} />
-              <span className="text-[11px] font-black uppercase tracking-widest">
+              <span className="label-native">
                 {profileData.twitter_id ? 'X LINKED' : 'LINK X (TWITTER)'}
               </span>
               {profileData.twitter_id && <Check size={10} className="text-white" />}
@@ -718,15 +763,32 @@ export default function ProfilePage() {
               ${profileData.fid && profileData.fid !== 'N/A'
                 ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' 
                 : 'bg-zinc-900 border-white/5 text-zinc-600'}`}>
-              <Share2 size={14} />
-              <span className="text-[11px] font-black uppercase tracking-widest">
-                {profileData.fid && profileData.fid !== 'N/A' ? 'FARCASTER LINKED' : 'FARCASTER UNLINKED'}
-              </span>
               {profileData.fid && profileData.fid !== 'N/A' && <Check size={10} className="text-indigo-400" />}
             </div>
+
+            {/* Base Social Identity (v3.42.1 Premium) */}
+            <button
+              onClick={handleLinkBaseSocial}
+              disabled={profileData.is_base_social_verified}
+              className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border transition-all shadow-lg
+                ${profileData.is_base_social_verified 
+                  ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 cursor-default shadow-none' 
+                  : 'bg-[#0052FF] border-[#0052FF] text-white hover:bg-[#0042CC] active:scale-95 shadow-blue-900/20'}`}>
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${profileData.is_base_social_verified ? 'bg-blue-500/20' : 'bg-white/20'}`}>
+                {profileData.is_base_social_verified ? <ShieldCheck size={14} /> : <Shield size={14} />}
+              </div>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {profileData.is_base_social_verified ? 'IDENTITY VERIFIED' : 'VERIFY BASE IDENTITY'}
+                </span>
+                <span className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">
+                  {profileData.is_base_social_verified ? `LINKED AS ${profileData.base_username || 'BASENAME'}` : 'SYBIL PROTECTION VIA BASENAMES'}
+                </span>
+              </div>
+            </button>
           </div>
           {profileData.google_email && (
-            <p className="text-[11px] text-slate-500 mt-2 ml-4 font-mono font-black uppercase tracking-widest">
+            <p className="label-native text-slate-500 mt-2 ml-4 font-mono">
               PRIMARY IDENTITY: <span className="text-slate-400">{profileData.google_email.toUpperCase()}</span>
             </p>
           )}
@@ -783,7 +845,8 @@ function CreateTaskModal({ onClose }) {
     minFollowers: 0,
     accountAgeDays: 0,
     powerBadge: false,
-    requiresVerification: true
+    requiresVerification: true,
+    isBaseSocialRequired: false
   });
   
   const rewardTokenAddr = ethToken?.address || "0x0000000000000000000000000000000000000000";
@@ -899,7 +962,7 @@ function CreateTaskModal({ onClose }) {
                   newBatch[idx].title = e.target.value;
                   setTasksBatch(newBatch);
                 }}
-                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-[11px] text-white focus:border-indigo-500 outline-none"
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white focus:border-indigo-500 outline-none placeholder:text-slate-600"
               />
               <input
                 type="text"
@@ -910,7 +973,7 @@ function CreateTaskModal({ onClose }) {
                   newBatch[idx].link = e.target.value;
                   setTasksBatch(newBatch);
                 }}
-                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-[11px] text-indigo-400 font-mono focus:border-indigo-500 outline-none"
+                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-indigo-400 font-mono focus:border-indigo-500 outline-none placeholder:text-indigo-900"
               />
             </div>
           ))}
@@ -933,7 +996,7 @@ function CreateTaskModal({ onClose }) {
                   type="number"
                   value={sybilFilters.minNeynarScore}
                   onChange={(e) => setSybilFilters({ ...sybilFilters, minNeynarScore: e.target.value })}
-                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-[11px] text-white outline-none focus:border-indigo-500"
+                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white outline-none focus:border-indigo-500"
                   placeholder="0-100"
                 />
               </div>
@@ -943,7 +1006,7 @@ function CreateTaskModal({ onClose }) {
                   type="number"
                   value={sybilFilters.minFollowers}
                   onChange={(e) => setSybilFilters({ ...sybilFilters, minFollowers: e.target.value })}
-                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-[11px] text-white outline-none focus:border-indigo-500"
+                  className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white outline-none focus:border-indigo-500"
                 />
               </div>
               <div className="col-span-2 flex items-center justify-between py-2 border-t border-white/5 mt-2">
@@ -954,6 +1017,23 @@ function CreateTaskModal({ onClose }) {
                 >
                   <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${sybilFilters.powerBadge ? 'left-6' : 'left-1'}`} />
                 </button>
+              </div>
+              <div className="col-span-2 flex flex-col gap-1 py-3 border-t border-white/5 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Shield size={12} className="fill-blue-400/20" />
+                    Identity Guard
+                  </span>
+                  <button
+                    onClick={() => setSybilFilters({ ...sybilFilters, isBaseSocialRequired: !sybilFilters.isBaseSocialRequired })}
+                    className={`w-10 h-5 rounded-full transition-all relative ${sybilFilters.isBaseSocialRequired ? 'bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.3)]' : 'bg-slate-800'}`}
+                  >
+                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white shadow-sm transition-all ${sybilFilters.isBaseSocialRequired ? 'left-6' : 'left-1'}`} />
+                  </button>
+                </div>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-tight">
+                  Require verified <span className="text-blue-400">Base Social (Basenames)</span> for high-value rewards (Pro Identity)
+                </p>
               </div>
             </div>
           )}
@@ -966,7 +1046,7 @@ function CreateTaskModal({ onClose }) {
             placeholder="For sponsorship listing coordination"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-[11px] text-white focus:border-indigo-500 outline-none"
+            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-[11px] font-black uppercase tracking-widest text-white focus:border-indigo-500 outline-none placeholder:text-slate-600"
           />
         </div>
 
@@ -986,7 +1066,7 @@ function CreateTaskModal({ onClose }) {
               <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-xl">⟠</div>
               <div>
                 <p className="text-[11px] font-black text-white uppercase tracking-widest">Ethereum (Native)</p>
-                <p className="text-[11px] text-slate-500">Fastest settlement & non-custodial payouts</p>
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Fastest settlement & non-custodial payouts</p>
               </div>
               <Check size={16} className="ml-auto text-indigo-400" />
             </div>
@@ -1034,13 +1114,16 @@ function CreateTaskModal({ onClose }) {
 
       <div className="p-4 border-t border-white/5 bg-black/50 backdrop-blur-md">
         <div className="relative z-[9999] pointer-events-auto">
-          <Transaction
-            calls={buildCalls()}
-            onSuccess={async (receipt) => {
-              toast.success("Missions Created Successfully! Syncing... 🚀");
-
-              // Sync UGC Mission to DB & Log
-              try {
+          <PayAndCreateMissionButton 
+            calls={buildCalls()} 
+            ethReward={ethReward}
+            address={address}
+            tasksBatch={tasksBatch}
+            rewardTokenAddr={rewardTokenAddr}
+            onSuccess={async (hash) => {
+               toast.success("Missions Created Successfully! Syncing... 🚀");
+               // ... (existing sync logic)
+               try {
                 const timestamp = new Date().toISOString();
                 const taskCount = tasksBatch.filter(t => t.title && t.link).length;
                 const firstTask = tasksBatch.find(t => t.title && t.link) || { title: "New Missions", platform: "farcaster" };
@@ -1063,9 +1146,10 @@ function CreateTaskModal({ onClose }) {
                       platform_code: firstTask.platform,
                       reward_amount_per_user: ethReward.toString(), 
                       max_participants: 100,
-                      txHash: receipt.transactionHash,
+                      txHash: hash,
                       payment_token: rewardTokenAddr,
                       reward_symbol: 'ETH',
+                      is_base_social_required: sybilFilters.isBaseSocialRequired,
                       tasks_batch: tasksBatch.filter(t => t.title && t.link)
                     }
                   }),
@@ -1078,22 +1162,7 @@ function CreateTaskModal({ onClose }) {
               await refetchStats();
               onClose();
             }}
-            onError={(err) => {
-              console.error(err);
-              toast.error("Failed: " + (err.shortMessage || err.message));
-            }}
-          >
-            <TransactionButton
-              className="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
-              text="PAY & CREATE MISSION"
-            />
-            <div className="mt-2 text-[11px] text-slate-500 font-mono font-black uppercase tracking-widest text-center">
-              <TransactionStatus>
-                <TransactionStatusLabel />
-                <TransactionStatusAction />
-              </TransactionStatus>
-            </div>
-          </Transaction>
+          />
         </div>
       </div>
     </div>
@@ -1334,69 +1403,20 @@ function RenewSponsorshipModal({ onClose }) {
               placeholder="Enter ID (e.g. 12)"
               value={reqId}
               onChange={(e) => setReqId(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-[11px] text-white focus:border-blue-500 outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-[11px] font-black uppercase tracking-widest text-white focus:border-blue-500 outline-none placeholder:text-slate-600"
             />
           </div>
 
           <div className="relative z-[9999] pointer-events-auto">
-            <Transaction
-              calls={[{
-                to: CONTRACTS.DAILY_APP,
-                data: encodeFunctionData({
-                  abi: DAILY_APP_ABI,
-                  functionName: 'renewSponsorship',
-                  args: [BigInt(reqId || 0)],
-                }),
-              }]}
-              onSuccess={async (receipt) => {
-                toast.success("Sponsorship Extended 3 Days!");
-
-                // Log Activity
-                try {
-                  const timestamp = new Date().toISOString();
-                  const logDescription = `Renewed sponsorship for ID ${reqId}`;
-                  const message = `Log activity for ${address}\nAction: Sponsorship Renewal\nTimestamp: ${timestamp}`;
-                  const signature = await signMessageAsync({ message });
-
-                  await fetch('/api/user-bundle', {
-                    method: 'POST',
-                    headers: { 'content-type': 'application/json' },
-                    body: JSON.stringify({
-                      action: 'log-activity',
-                      wallet_address: address,
-                      signature,
-                      message,
-                      category: 'PURCHASE',
-                      type: 'Sponsorship Renewal',
-                      description: logDescription,
-                      amount: feeUsd,
-                      symbol: 'USDC',
-                      txHash: receipt.transactionHash,
-                      metadata: { reqId: reqId }
-                    }),
-                  });
-                } catch (logErr) {
-                  console.warn('Logging sponsorship renewal failed:', logErr);
-                }
-
-                await refetchStats();
+            <RenewButton 
+              reqId={reqId} 
+              feeUsd={feeUsd} 
+              address={address} 
+              onSuccess={() => {
+                refetchStats();
                 onClose();
-              }}
-              onError={(err) => {
-                toast.error(err.shortMessage || "Failed to renew");
-              }}
-            >
-              <TransactionButton
-                className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
-                text={`PAY $${feeUsd} USDC & RENEW`}
-              />
-              <div className="mt-2 text-[11px] text-slate-500 font-mono font-black uppercase tracking-widest text-center">
-                <TransactionStatus>
-                  <TransactionStatusLabel />
-                  <TransactionStatusAction />
-                </TransactionStatus>
-              </div>
-            </Transaction>
+              }} 
+            />
           </div>
           <button onClick={onClose} className="w-full text-[11px] text-slate-600 uppercase font-black tracking-widest hover:text-white transition-colors">CANCEL</button>
         </div>
@@ -1497,5 +1517,102 @@ function RevenueClaimModal({ onClose, claimable, onSuccess }) {
         </button>
       </div>
     </div>
+  );
+}
+function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, rewardTokenAddr, onSuccess }) {
+  const { writeContracts, data: bundleId, isPending } = useWriteContracts();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: bundleId });
+  const { signMessageAsync } = useSignMessage();
+
+  useEffect(() => {
+    if (isSuccess && bundleId) {
+      onSuccess(bundleId);
+    }
+  }, [isSuccess, bundleId, onSuccess]);
+
+  const handleClick = async () => {
+    if (calls.length === 0) return toast.error("No valid tasks in batch");
+    
+    // We pass 'data' directly to Smart Wallet batch providers which many support, 
+    // or expand if the provider is restrictive.
+    writeContracts({
+      contracts: calls.map(c => ({
+        address: c.to,
+        data: c.data,
+        value: c.value || 0n
+      }))
+    });
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={isPending || isConfirming}
+      className={`w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-widest transition-all ${isPending || isConfirming ? 'opacity-50' : ''}`}
+    >
+      {isPending ? "SIGNING..." : isConfirming ? "WAITING..." : "PAY & CREATE MISSION"}
+    </button>
+  );
+}
+
+function RenewButton({ reqId, feeUsd, address, onSuccess }) {
+  const { writeContract, data: hash, isPending } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { signMessageAsync } = useSignMessage();
+
+  useEffect(() => {
+    const syncLog = async () => {
+      if (isSuccess && hash) {
+        toast.success("Sponsorship Extended 3 Days!");
+        try {
+          const timestamp = new Date().toISOString();
+          const logDescription = `Renewed sponsorship for ID ${reqId}`;
+          const message = `Log activity for ${address}\nAction: Sponsorship Renewal\nTimestamp: ${timestamp}`;
+          const signature = await signMessageAsync({ message });
+
+          await fetch('/api/user-bundle', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              action: 'log-activity',
+              wallet_address: address,
+              signature,
+              message,
+              category: 'PURCHASE',
+              type: 'Sponsorship Renewal',
+              description: logDescription,
+              amount: feeUsd,
+              symbol: 'USDC',
+              txHash: hash,
+              metadata: { reqId: reqId }
+            }),
+          });
+        } catch (logErr) {
+          console.warn('Logging sponsorship renewal failed:', logErr);
+        }
+        onSuccess();
+      }
+    };
+    if (isSuccess) syncLog();
+  }, [isSuccess, hash, address, feeUsd, reqId, signMessageAsync, onSuccess]);
+
+  const handleRenew = () => {
+    if (!reqId) return toast.error("Enter a valid ID");
+    writeContract({
+      address: CONTRACTS.DAILY_APP,
+      abi: DAILY_APP_ABI,
+      functionName: 'renewSponsorship',
+      args: [BigInt(reqId)],
+    });
+  };
+
+  return (
+    <button
+      onClick={handleRenew}
+      disabled={isPending || isConfirming}
+      className={`w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest transition-all ${isPending || isConfirming ? 'opacity-50' : ''}`}
+    >
+      {isPending ? "SIGNING..." : isConfirming ? "WAITING..." : `PAY $${feeUsd} USDC & RENEW`}
+    </button>
   );
 }

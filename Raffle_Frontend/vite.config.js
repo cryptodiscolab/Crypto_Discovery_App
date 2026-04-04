@@ -34,7 +34,8 @@ export default defineConfig({
   },
   define: {
     'process.env': {},
-    'global': 'globalThis', // Helps with some legacy web3 libs
+    'global': 'globalThis',
+    'Buffer': ['buffer', 'Buffer'], // Vite 5+ automated polyfill hint or manual injection
   },
   build: {
     target: 'esnext',
