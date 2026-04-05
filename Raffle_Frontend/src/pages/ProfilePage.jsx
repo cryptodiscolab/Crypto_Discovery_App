@@ -487,7 +487,7 @@ export default function ProfilePage() {
           </div>
 
           {/* FOLLOW STATS & WALLET */}
-          <div className="flex items-center gap-4 mt-4">
+          <div className="flex flex-wrap items-center gap-4 mt-4">
             <div className="flex gap-1">
               <span className="value-native text-white">{profileData.followingCount.toLocaleString()}</span>
               <span className="label-native text-slate-500">FOLLOWING</span>

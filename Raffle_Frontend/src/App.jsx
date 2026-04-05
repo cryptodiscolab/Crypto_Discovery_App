@@ -89,7 +89,7 @@ function AppContent() {
     <BrowserRouter>
       <ReferralTracker />
       <DebugMockConnect />
-      <div className={`${theme} min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col`}>
+      <div className={`${theme} min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col overflow-x-hidden w-full max-w-[100vw] relative`}>
         {!isFrame && <Header />}
         
         <main 

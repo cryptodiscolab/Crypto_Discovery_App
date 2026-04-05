@@ -39,7 +39,7 @@ export function Header() {
 
   return (
     <header 
-      className="fixed top-0 left-0 right-0 z-[10000] pointer-events-auto bg-[#050505]/80 backdrop-blur-3xl border-b border-white/[0.05] active:z-[10001]"
+      className="fixed top-0 left-0 right-0 z-[10000] pointer-events-auto bg-[#0B0E14] border-b border-white/[0.05] active:z-[10001]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="max-w-screen-xl mx-auto px-4">
