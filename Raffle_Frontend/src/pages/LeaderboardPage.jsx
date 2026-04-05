@@ -31,7 +31,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
   };
 
   return (
-    <div className={`flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors ${isCurrentUser ? 'bg-yellow-500/5' : ''}`}>
+    <div className={`flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors ${isCurrentUser ? 'bg-blue-500/5' : ''}`}>
       <div className="flex items-center gap-4 min-w-0">
         {/* Rank Number */}
         <div className={`w-6 text-center font-bold ${getRankColor(rank)} text-lg`}>
@@ -47,7 +47,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
               className={`w-10 h-10 rounded-full border ${isCurrentUser ? 'border-yellow-500/50' : 'border-white/10'}`}
             />
           ) : (
-            <div className={`w-10 h-10 rounded-full border flex items-center justify-center bg-slate-800 ${isCurrentUser ? 'border-yellow-500/50' : 'border-white/10'}`}>
+            <div className={`w-10 h-10 rounded-full border flex items-center justify-center bg-slate-800 ${isCurrentUser ? 'border-blue-500/50' : 'border-white/10'}`}>
               <span className="text-[11px] text-slate-500">{displayName?.substring(0, 2).toUpperCase()}</span>
             </div>
           )}
@@ -65,7 +65,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
           </span>
           <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-2">
             {user.rank_name || 'ROOKIE'} 
-            {isCurrentUser && <span className="text-yellow-500 font-black">(YOU)</span>}
+            {isCurrentUser && <span className="text-blue-500 font-black">(YOU)</span>}
             {streakCount > 0 && (
               <span className="flex items-center gap-0.5 text-orange-500 font-black italic text-[11px] uppercase tracking-widest">
                 <Sparkles size={10} className="fill-current" />
@@ -83,7 +83,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
 
       {/* XP Stats */}
       <div className="flex flex-col items-end">
-        <span className="text-yellow-500 font-black font-mono">
+        <span className="text-blue-500 font-black font-mono">
           {Number(user.total_xp || 0).toLocaleString()}
         </span>
         <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">XP</span>
@@ -142,7 +142,7 @@ export function LeaderboardPage() {
         {/* Header Section */}
         <div className="flex flex-col border-b border-white/5 pb-0 pt-6 bg-[#0B0E14] sticky-under-header">
           <div className="flex items-center gap-2 px-4 mb-2">
-            <Trophy className="text-yellow-500 w-5 h-5" />
+            <Trophy className="text-blue-500 w-5 h-5" />
             <h1 className="text-xl font-black tracking-tight text-white uppercase italic">LEADERBOARD</h1>
           </div>
             <p className="px-4 text-slate-500 text-[11px] font-black uppercase tracking-widest mb-4">

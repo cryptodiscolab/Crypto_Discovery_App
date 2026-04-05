@@ -353,7 +353,7 @@ export function TasksPage() {
                     </div>
 
                     {/* Tab Switcher */}
-                    <div className="flex gap-2 mt-8 p-1.5 bg-[#080808] border border-white/10 rounded-2xl w-full max-w-md mx-auto md:mx-0 shadow-2xl">
+                    <div className="flex gap-2 mt-8 p-1 bg-[#080808] border border-white/5 rounded-xl w-full max-w-sm mx-auto md:mx-0 shadow-lg">
                         <button
                             onClick={() => setActiveTab('tasks')}
                             className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-[#0052FF] text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
@@ -642,7 +642,7 @@ function IndividualTaskRow({ task, address, onAction }) {
     if (isCompleted) return null;
 
     return (
-        <div className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
+        <div className="flex items-center justify-between px-4 py-4 hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
             <div className="flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${isVerified ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-white/5 text-slate-500 border-white/5'}`}>
                     {isVerified ? <CheckCircle size={18} /> : <Zap size={18} />}

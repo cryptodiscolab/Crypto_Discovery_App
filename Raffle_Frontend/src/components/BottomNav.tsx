@@ -37,7 +37,7 @@ export function BottomNav() {
             <div className={`h-px w-full ${isLight ? 'bg-black/[0.06]' : 'bg-white/[0.06]'}`} />
 
             {/* Backdrop */}
-            <div className={`${isLight ? 'bg-white/97 text-zinc-900 border-t border-black/5' : 'bg-[#050505]/95 text-slate-100 border-t border-white/5'} backdrop-blur-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.4)]`}>
+            <div className={`${isLight ? 'bg-white/97 text-zinc-900 border-t border-black/5' : 'bg-[#050505]/95 text-slate-100 border-t border-white/5'} backdrop-blur-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)]`}>
                 <div
                     className="w-full h-[62px] px-1"
                     style={{ display: 'grid', gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}

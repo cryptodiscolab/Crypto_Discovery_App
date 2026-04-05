@@ -53,7 +53,8 @@ export default function ProfilePage() {
     twitter_username: '',
     oauth_provider: null,
     base_username: '',
-    is_base_social_verified: false
+    is_base_social_verified: false,
+    rankName: 'ROOKIE'
   });
 
   const [copied, setCopied] = useState(false);
@@ -701,7 +702,7 @@ export default function ProfilePage() {
             </div>
             <div className="text-right">
               <span className="text-xl font-black text-blue-400 italic">
-                {profileData.rankName.toUpperCase()}
+                {profileData.rankName?.toUpperCase() || 'ROOKIE'}
               </span>
             </div>
           </div>
@@ -779,7 +780,7 @@ export default function ProfilePage() {
           </div>
           {profileData.google_email && (
             <p className="label-native text-slate-500 mt-2 ml-4 font-mono">
-              PRIMARY IDENTITY: <span className="text-slate-400">{profileData.google_email.toUpperCase()}</span>
+              PRIMARY IDENTITY: <span className="text-slate-400">{profileData.google_email?.toUpperCase() || ''}</span>
             </p>
           )}
         </div>

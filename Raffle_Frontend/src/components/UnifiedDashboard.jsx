@@ -147,7 +147,7 @@ export function UnifiedDashboard() {
                 {/* Social Verification Guard */}
                 <div className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${fcUser?.isVerified
                     ? 'bg-emerald-500/10 text-emerald-400'
-                    : 'bg-amber-500/10 text-amber-400'
+                    : 'bg-blue-500/10 text-blue-400'
                     }`}>
                     {fcUser?.isVerified ? <ShieldCheck className="w-5 h-5 shrink-0" /> : <ShieldAlert className="w-5 h-5 shrink-0 animate-pulse" />}
                     <div className="flex-1 min-w-0">
@@ -157,7 +157,7 @@ export function UnifiedDashboard() {
                         </p>
                     </div>
                     {!fcUser && (
-                        <a href="https://warpcast.com" target="_blank" rel="noreferrer" className="text-[11px] font-black uppercase tracking-widest text-amber-400 underline underline-offset-2 shrink-0">
+                        <a href="https://warpcast.com" target="_blank" rel="noreferrer" className="text-[11px] font-black uppercase tracking-widest text-blue-400 underline underline-offset-2 shrink-0">
                             LINK
                         </a>
                     )}

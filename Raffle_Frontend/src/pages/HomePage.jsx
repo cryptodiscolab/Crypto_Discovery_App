@@ -87,7 +87,7 @@ export function HomePage() {
               <p className={`text-[11px] font-black ${isLight ? 'text-zinc-900' : 'text-white'}`}>{userPoints} XP</p>
             </div>
             <div className="w-px h-6 bg-white/10" />
-            <Trophy className="w-4 h-4 text-yellow-500" />
+            <Trophy className="w-4 h-4 text-[#0052FF]" />
           </div>
         </div>
       )}
