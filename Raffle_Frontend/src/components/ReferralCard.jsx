@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Copy, Share2, Users, Trophy, Zap, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { Copy, Share2, Users, Trophy, Zap, Check, ExternalLink, Loader2, Shield } from 'lucide-react';
 import { referralUtils } from '../utils/referralUtils';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';

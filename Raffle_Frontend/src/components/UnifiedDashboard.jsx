@@ -15,6 +15,7 @@ import { useUserInfo, useV12Stats } from '../hooks/useContract';
 import { supabase } from '@/lib/supabaseClient';
 import { NexusPulseStrip } from './home/NexusPulseStrip';
 import toast from 'react-hot-toast';
+import { usePoints } from '../shared/context/PointsContext';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -428,14 +429,16 @@ function BatchClaimButton({ selectedTasks, isDisabled, onSuccess }) {
 }
 
 function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, multipliers }) {
+    const { refetch: refetchPoints } = usePoints();
     const { task, isLoading } = useTaskInfo(taskId);
-    const { verifyTask, isVerifying } = useVerification();
+    const { verifyTask, isVerifying } = useVerification(refetchPoints);
 
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
-        functionName: 'hasDoneTask',
+        functionName: 'hasCompletedTask',
         args: [address, BigInt(taskId)],
+        query: { enabled: !!address && !!task }
     });
 
     // v3.42.2: Hard Hide for completed subtasks
@@ -454,7 +457,6 @@ function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, mu
             window.open(task.link, '_blank');
             const success = await verifyTask(task, address, taskId);
             if (success) {
-                refetchVerification();
                 refetchCompletion();
             }
         } else {

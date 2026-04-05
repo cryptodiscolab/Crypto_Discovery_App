@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Shield, Sparkles, CheckCircle, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift, Megaphone } from 'lucide-react';
+import { Shield, Sparkles, CheckCircle, CheckCircle2, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift, Megaphone } from 'lucide-react';
 import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
 import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/useContract';
 import { useVerification } from '../hooks/useVerification';
@@ -19,6 +19,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
     const { profileData } = useFarcaster();
     const { verifyTask, isVerifying, registerTaskStart, lastActionTime } = useVerification(refetchStats);
     const [timeLeft, setTimeLeft] = useState(0);
+    const navigate = useNavigate();
 
     // Countdown Logic
     useEffect(() => {
@@ -427,6 +428,8 @@ export function TasksPage() {
 }
 
 function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
+    const navigate = useNavigate();
+    const { profileData } = useFarcaster();
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { writeContractAsync } = useWriteContract();

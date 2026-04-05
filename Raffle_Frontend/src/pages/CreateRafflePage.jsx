@@ -97,7 +97,8 @@ export function CreateRafflePage() {
         category: 'NFT',
         twitterLink: '',
         externalLink: '',
-        minSbtLevel: '0'
+        minSbtLevel: '0',
+        isBaseSocialRequired: false
     });
 
     // Sync manual ticketPrice with global price when it loads
@@ -168,7 +169,7 @@ export function CreateRafflePage() {
                 durationDays: formData.durationDays,
                 metadataURI: metadataURI,
                 depositETH: parseEther(formData.prizeDeposit || '0'),
-                extraMetadata: fullMetadata
+                extraMetadata: { ...fullMetadata, is_base_social_required: formData.isBaseSocialRequired }
             });
             toast.success("Raffle Event Sponsored!");
             navigate('/raffles');
@@ -212,7 +213,7 @@ export function CreateRafflePage() {
                                 <div className="glass-card p-4 space-y-4 border-white/5">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="admin-label">Event Title</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Event Title</label>
                                             <input
                                                 type="text"
                                                 required
@@ -238,7 +239,7 @@ export function CreateRafflePage() {
                                     </div>
 
                                     <div>
-                                        <label className="admin-label">Description</label>
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Description</label>
                                         <textarea
                                             placeholder="Tell the community about this prize and any requirements..."
                                             className="input-native min-h-[100px] resize-none"
@@ -249,7 +250,7 @@ export function CreateRafflePage() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="admin-label text-indigo-400/60">Prize Reward (ETH)</label>
+                                            <label className="text-[11px] font-black text-indigo-400/60 uppercase tracking-widest">Prize Reward (ETH)</label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <DollarSign className="w-4 h-4 text-indigo-500/50 group-focus-within:text-indigo-400 transition-colors" />
@@ -269,7 +270,7 @@ export function CreateRafflePage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="admin-label">Duration</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Duration</label>
                                             <div className="select-wrapper">
                                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                                                 <select
@@ -337,7 +338,7 @@ export function CreateRafflePage() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="admin-label">Category</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Category</label>
                                             <div className="select-wrapper">
                                                 <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                                                 <select
@@ -355,7 +356,7 @@ export function CreateRafflePage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="admin-label">Min SBT Level</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Min SBT Level</label>
                                             <div className="select-wrapper">
                                                 <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                                                 <select
@@ -373,9 +374,26 @@ export function CreateRafflePage() {
                                         </div>
                                     </div>
 
+                                    {/* IDENTITY GUARD (v3.42.0) */}
+                                    <div className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between group ${formData.isBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30' : 'bg-slate-900/50 border-white/5 hover:border-white/10'}`}
+                                         onClick={() => setFormData(prev => ({ ...prev, isBaseSocialRequired: !prev.isBaseSocialRequired }))}>
+                                        <div className="flex items-center gap-4 text-left">
+                                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${formData.isBaseSocialRequired ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 text-slate-500'}`}>
+                                                <Shield className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${formData.isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Guard</span>
+                                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">Require Basenames Verification</span>
+                                            </div>
+                                        </div>
+                                        <div className={`w-10 h-5 rounded-full p-1 transition-colors ${formData.isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                                            <div className={`w-3 h-3 bg-white rounded-full transition-transform transform ${formData.isBaseSocialRequired ? 'translate-x-5' : 'translate-x-0'}`} />
+                                        </div>
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="admin-label">Twitter Link</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Twitter Link</label>
                                             <div className="relative">
                                                 <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                                 <input
@@ -388,7 +406,7 @@ export function CreateRafflePage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="admin-label">External Link</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">External Link</label>
                                             <div className="relative">
                                                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                                 <input

@@ -3,7 +3,7 @@ import {
   RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins, Mail, Twitter
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
+import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient, useWaitForTransactionReceipt } from 'wagmi';
 import { useUserInfo } from '../hooks/useContract';
 import { SBTUpgradeCard } from '../components/SBTUpgradeCard';
 import { SBTGallery } from '../components/SBTGallery';

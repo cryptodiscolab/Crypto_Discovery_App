@@ -9,6 +9,7 @@ export function ModerationCenterTab() {
     const [pendingRaffles, setPendingRaffles] = useState([]);
     const [pendingMissions, setPendingMissions] = useState([]);
     const [activeSubTab, setActiveSubTab] = useState('raffles');
+    const [loading, setLoading] = useState(false);
 
     // Feature Flags & Environment
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';

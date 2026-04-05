@@ -38,7 +38,8 @@ export function CreateMissionPage() {
         link: '',
         reward_amount_per_user: '0.1', // USDC
         max_participants: '100',
-        duration_days: '7'
+        duration_days: '7',
+        isBaseSocialRequired: false
     });
 
     useEffect(() => {
@@ -113,7 +114,8 @@ export function CreateMissionPage() {
                 reward_symbol: 'USDC',
                 payment_tx_hash: txHash,
                 is_active: false,
-                is_verified_payment: false
+                is_verified_payment: false,
+                is_base_social_required: formData.isBaseSocialRequired
             };
 
             const response = await fetch('/api/admin/bundle', {
@@ -170,7 +172,7 @@ export function CreateMissionPage() {
                             <div className="glass-card p-6 bg-slate-900/40 border-white/5 space-y-6 rounded-3xl">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="admin-label">Mission Title</label>
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Mission Title</label>
                                         <input
                                             type="text"
                                             required
@@ -182,7 +184,7 @@ export function CreateMissionPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="admin-label">Description (Optional)</label>
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Description (Optional)</label>
                                         <textarea
                                             placeholder="Enter additional details or requirements..."
                                             className="input-native h-24 resize-none"
@@ -193,7 +195,7 @@ export function CreateMissionPage() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="admin-label">Platform</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Platform</label>
                                             <div className="select-wrapper">
                                                 <select
                                                     className="select-native"
@@ -210,7 +212,7 @@ export function CreateMissionPage() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="admin-label">Target Link</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Target Link</label>
                                             <div className="relative">
                                                 <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                                                 <input
@@ -223,6 +225,23 @@ export function CreateMissionPage() {
                                                 />
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+
+                                {/* IDENTITY GUARD (v3.42.0) */}
+                                <div className={`p-5 rounded-3xl border transition-all cursor-pointer select-none flex items-center justify-between group ${formData.isBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30 shadow-lg shadow-blue-500/5' : 'bg-slate-950/40 border-white/5 hover:border-white/10'}`}
+                                     onClick={() => setFormData(prev => ({ ...prev, isBaseSocialRequired: !prev.isBaseSocialRequired }))}>
+                                    <div className="flex items-center gap-4 text-left">
+                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${formData.isBaseSocialRequired ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 text-slate-600'}`}>
+                                            <Shield className="w-5 h-5" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${formData.isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Guard</span>
+                                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Require Basenames Verification</span>
+                                        </div>
+                                    </div>
+                                    <div className={`w-12 h-6 rounded-full p-1 transition-colors ${formData.isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                                        <div className={`w-5 h-4 bg-white rounded-full transition-transform transform ${formData.isBaseSocialRequired ? 'translate-x-6' : 'translate-x-0'}`} />
                                     </div>
                                 </div>
 
