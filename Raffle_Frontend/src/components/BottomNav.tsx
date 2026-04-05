@@ -37,7 +37,7 @@ export function BottomNav() {
             <div className={`h-px w-full ${isLight ? 'bg-black/[0.06]' : 'bg-white/[0.06]'}`} />
 
             {/* Backdrop */}
-            <div className={`${isLight ? 'bg-white/97 text-zinc-900' : 'bg-[#0B0E14]/97 text-slate-100'} backdrop-blur-3xl`}>
+            <div className={`${isLight ? 'bg-white/97 text-zinc-900 border-t border-black/5' : 'bg-[#050505]/95 text-slate-100 border-t border-white/5'} backdrop-blur-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.4)]`}>
                 <div
                     className="w-full h-[62px] px-1"
                     style={{ display: 'grid', gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}
@@ -52,7 +52,7 @@ export function BottomNav() {
                                 end={item.path === '/'}
                                 className={({ isActive }) =>
                                     `flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none touch-manipulation
-                                     ${isActive ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'}`
+                                     ${isActive ? 'text-[#0052FF]' : 'text-zinc-600 active:text-zinc-300'}`
                                 }
                             >
                                 {({ isActive }) => (
@@ -63,10 +63,10 @@ export function BottomNav() {
                                                 strokeWidth={isActive ? 2.5 : 1.75}
                                             />
                                             {isActive && (
-                                                <div className="w-4 h-0.5 bg-indigo-400 rounded-full mx-auto mt-0.5" />
+                                                <div className="w-4 h-0.5 bg-[#0052FF] rounded-full mx-auto mt-0.5" />
                                             )}
                                         </div>
-                                        <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                                        <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${isActive ? 'text-[#0052FF]' : 'text-zinc-500'}`}>
                                             {item.label}
                                         </span>
                                     </>
@@ -115,7 +115,7 @@ export function BottomNav() {
                                         strokeWidth={location.pathname.startsWith('/profile') ? 2.5 : 1.75}
                                     />
                                     {/* Green dot = connected indicator */}
-                                    <div className="absolute -top-0.5 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#0B0E14]" />
+                                    <div className="absolute -top-0.5 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#050505]" />
                                     {location.pathname.startsWith('/profile') && (
                                         <div className="w-4 h-0.5 bg-emerald-400 rounded-full mx-auto mt-0.5" />
                                     )}
@@ -127,7 +127,7 @@ export function BottomNav() {
                         ) : (
                             <Link
                                 to="/login"
-                                className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${location.pathname === '/login' ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'}`}
+                                className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${location.pathname === '/login' ? 'text-[#0052FF]' : 'text-zinc-600 active:text-zinc-300'}`}
                             >
                                 <Wallet className="w-[22px] h-[22px]" strokeWidth={1.75} />
                                 <span className="text-[11px] font-black leading-none uppercase tracking-widest text-zinc-500">LOGIN</span>

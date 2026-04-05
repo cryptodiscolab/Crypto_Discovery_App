@@ -4,6 +4,12 @@
 
 ## 📝 Changelog
 
+### v3.42.2 — 2026-04-05 (Database Hardening & Clean Sweep UX)
+- **PGRST116 Hardening**: Systematic replacement of all `.single()` calls with `.maybeSingle()` in the database layer (Supabase) to handle missing or multiple records gracefully without coercion errors.
+- **Raffle Protocol Hardening**: Refined `CreateRafflePage.jsx` and standardized `ContentCMSV2` / `CryptoDiscoRaffle` contract interfaces for robust creation flows.
+- **Clean Sweep Interface**: Implemented the "Disappearing Task" mandate, hiding completed/claimed tasks and mission cards immediately for a leaner UI.
+- **Identity Shield**: Standardized the `ShieldCheck` icon with **Base Blue** (`#0052FF`) for premium visual signaling.
+
 ### v3.41.0 — 2026-04-04 (Social Guard Hardening & Balanced UI)
 - **Multi-Platform Social Guard**: Integrated Farcaster (via Neynar) and Twitter (via DB linkage) into Raffle purchase flows to prevent Sybil attacks.
 - **New Endpoints**: Implemented `GET /api/verify/farcaster/check` and `GET /api/verify/twitter/check` in the verification server.

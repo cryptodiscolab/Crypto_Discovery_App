@@ -39,7 +39,7 @@ export function Header() {
 
   return (
     <header 
-      className="fixed top-0 left-0 right-0 z-[10000] pointer-events-auto bg-black/40 backdrop-blur-3xl border-b border-white/[0.05] active:z-[10001]"
+      className="fixed top-0 left-0 right-0 z-[10000] pointer-events-auto bg-[#050505]/80 backdrop-blur-3xl border-b border-white/[0.05] active:z-[10001]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="max-w-screen-xl mx-auto px-4">
@@ -49,13 +49,13 @@ export function Header() {
           <div className="flex-1 flex flex-col justify-center">
             <Link
               to="/"
-              className="flex items-center gap-2.5 font-black text-xl text-white hover:text-indigo-400 transition-colors group"
+              className="flex items-center gap-2.5 font-black text-xl text-white hover:text-[#0052FF] transition-colors group"
             >
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
+              <div className="w-8 h-8 bg-[#0052FF] rounded-lg flex items-center justify-center group-hover:bg-[#0052FF]/80 transition-colors">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <span className="inline lg:inline tracking-tighter text-[11px] lg:text-xl transform lg:scale-100 origin-left">
-                CRYPTO <span className="text-indigo-400">DISCO</span>
+                CRYPTO <span className="text-[#0052FF]">DISCO</span>
               </span>
             </Link>
             {frameUser && (
@@ -76,7 +76,7 @@ export function Header() {
                   className={`px-4 py-2 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${isActive
                     ? item.isAdmin
                       ? 'text-yellow-400 bg-yellow-400/10'
-                      : 'text-white bg-indigo-600'
+                      : 'text-white bg-[#0052FF]'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                 >
@@ -126,7 +126,7 @@ export function Header() {
                           <button
                             onClick={openConnectModal}
                             type="button"
-                            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 transition-all rounded-xl min-h-[40px] active:scale-95 shadow-lg shadow-indigo-500/20"
+                            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-[#0052FF] premium-glow hover:bg-[#0052FF]/90 transition-all rounded-xl min-h-[40px] active:scale-95 shadow-lg shadow-blue-500/20"
                           >
                             <Wallet className="w-4 h-4 text-white" strokeWidth={2.5} />
                             <span className="text-[11px] font-black text-white uppercase tracking-widest hidden sm:inline">CONNECT</span>

@@ -156,6 +156,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 ### 8.4 Database Access (Supabase)
 - **CLIENT SIDE:** Use `createClient` with `ANON_KEY` only for READ operations.
 - **SERVER SIDE:** Use `createClient` with `SERVICE_ROLE_KEY` inside API Routes for WRITE operations.
+- **8.4.1 SINGLETON FETCH HARDENING (PGRST116)**: 🚨 ALWAYS use `.maybeSingle()` instead of `.single()` for all singleton record fetches. Returning 0 rows MUST be handled as `null` data, not as a transaction-blocking coercion error (v3.42.2).
 
 ### 8.5 ZERO HARDCODE SECRETS MANDATE (CRITICAL - from gemini.md)
 ### 8.6 Anti-Hallucination & Parity Lockdown (v3.38.25)

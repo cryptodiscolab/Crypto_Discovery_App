@@ -185,7 +185,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
     return (
         <div
             onClick={(!isTierLocked && !isCompleted) ? (isBaseLocked ? handleAction : handleAction) : undefined}
-            className={`flex items-center justify-between p-4 border-b-subtle active:bg-white/5 transition-colors cursor-pointer group ${(!isTierLocked && !isCompleted) ? (isBaseLocked ? 'bg-blue-500/5' : '') : 'opacity-50 cursor-not-allowed'}`}
+            className={`flex items-center justify-between p-4 border-b border-white/5 active:bg-white/5 transition-colors cursor-pointer group ${(!isTierLocked && !isCompleted) ? (isBaseLocked ? 'bg-blue-500/5' : '') : 'opacity-50 cursor-not-allowed'}`}
         >
             <div className="flex items-center gap-4 flex-1 min-w-0">
                 {/* Icon Box */}
@@ -242,7 +242,7 @@ function TaskRow({ taskId, userStats, refetchStats }) {
                     <button
                         onClick={handleVerify}
                         disabled={isVerifying || isTierLocked || timeLeft > 0}
-                        className={`px-4 py-1.5 rounded-full text-white label-native shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-slate-700 shadow-none' : 'bg-blue-600 shadow-blue-900/20'}`}
+                        className={`px-4 py-1.5 rounded-full text-white label-native shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-zinc-800 shadow-none' : 'bg-[#0052FF] premium-glow shadow-blue-500/10'}`}
                     >
                         {isVerifying ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -314,10 +314,10 @@ export function TasksPage() {
     }, [allTasksRaw]);
 
     return (
-        <div className="w-full bg-[#0B0E14] min-h-screen">
+        <div className="w-full bg-[#050505] min-h-screen">
             <div className="max-w-screen-lg mx-auto pb-28 md:pb-8">
                 {/* Header (Flat) */}
-                <div className="px-4 py-8 border-b-subtle">
+                <div className="px-4 py-8 border-b border-white/5">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div>
@@ -353,17 +353,17 @@ export function TasksPage() {
                     </div>
 
                     {/* Tab Switcher */}
-                    <div className="flex gap-2 mt-8 p-1.5 bg-zinc-900 border border-white/5 rounded-2xl w-full max-w-md mx-auto md:mx-0">
+                    <div className="flex gap-2 mt-8 p-1.5 bg-[#080808] border border-white/10 rounded-2xl w-full max-w-md mx-auto md:mx-0 shadow-2xl">
                         <button
                             onClick={() => setActiveTab('tasks')}
-                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-[#0052FF] text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
                         >
                             <Zap className={activeTab === 'tasks' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Daily Tasks
                         </button>
                         <button
                             onClick={() => setActiveTab('offers')}
-                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-[#0052FF] text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
                         >
                             <Megaphone className={activeTab === 'offers' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Partner Offers
@@ -507,7 +507,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
 
     return (
         <div className={`glass-card overflow-hidden transition-colors ${verifyingStatus === 'success' ? 'ring-1 ring-green-500/40' : ''}`}>
-            <div className="px-4 py-3 bg-zinc-800/60 border-b border-white/5 flex justify-between items-center">
+            <div className="px-4 py-3 bg-[#080808]/80 border-b border-white/5 flex justify-between items-center backdrop-blur-3xl">
                 <div className="flex items-center gap-2">
                     {hasGatedTask ? (
                         <Shield className="text-blue-400 animate-pulse" size={18} />
@@ -611,8 +611,8 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                         disabled={isVerifying}
                         className={`w-full py-3.5 rounded-xl text-white label-native transition-all active:scale-95 disabled:opacity-50 shadow-xl 
                           ${isIdentityBlocked 
-                            ? 'bg-blue-600/10 border border-blue-500/30 text-blue-400 hover:bg-blue-600/20' 
-                            : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/20'}`}
+                            ? 'bg-blue-600/10 border border-blue-500/30 text-[#0052FF] hover:bg-blue-600/20' 
+                            : 'bg-[#0052FF] premium-glow shadow-blue-500/20'}`}
                     >
                         {isVerifying ? "SYSTEM CHECKING..." : isIdentityBlocked ? "VERIFY IDENTITY TO UNLOCK" : "VERIFY MISSION"}
                     </button>

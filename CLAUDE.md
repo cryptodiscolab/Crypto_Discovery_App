@@ -29,6 +29,7 @@ Before responding to ANY request, read these files IN ORDER:
 1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
 2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
 3. **ZERO HARDCODE**: No literal XP, fee, or reward numbers. All values from `point_settings`/`system_settings` in Supabase
+3.1 **SINGLETON FETCH HARDENING (PGRST116)**: ALWAYS use `.maybeSingle()` instead of `.single()` for all singleton record fetches to prevent transaction-blocking coercion errors (v3.42.2).
 4. **ZERO SECRETS**: No Private Keys (EIP-191), Service Role Keys, or API Keys as string literals. Always `process.env.*`
 5. **ZERO RIBA**: Never implement interest-bearing, inflationary staking APY, or deceptive tokenomics
 6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.

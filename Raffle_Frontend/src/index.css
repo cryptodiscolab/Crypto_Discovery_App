@@ -4,7 +4,7 @@
 
 @layer base {
     body {
-        background-color: #0B0E14 !important;
+        background-color: #050505 !important;
         color: #f1f5f9 !important;
         margin: 0;
     }
@@ -167,7 +167,7 @@
 
 /* 🏷️ LABELS: High Scannability, Professional, Strict */
 .label-native {
-    @apply text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1.5 block leading-none;
+    @apply text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1.5 block leading-none;
 }
 
 /* 📄 CONTENT: High Readability, Balanced, Modern */
@@ -210,4 +210,17 @@
 
 .select-chevron {
     @apply absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600;
+}
+
+/* Premium Glow Utilities */
+.premium-glow-indigo {
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.15), 0 0 40px rgba(79, 70, 229, 0.1);
+}
+
+.premium-glow-gold {
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.15), 0 0 40px rgba(234, 179, 8, 0.1);
+}
+
+.text-glow-gold {
+    text-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
 }

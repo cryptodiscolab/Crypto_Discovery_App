@@ -56,12 +56,12 @@ export function HomePage() {
 
   return (
     // Tidak perlu min-h-screen atau pt di sini — sudah di-handle App.jsx main
-    <div className={`w-full pb-28 md:pb-8 ${isLight ? 'bg-white text-zinc-900' : 'bg-[#0B0E14] text-slate-100'}`}>
+    <div className={`w-full pb-28 md:pb-8 ${isLight ? 'bg-white text-zinc-900' : 'bg-[#050505] text-white'}`}>
 
       {/* Farcaster Frame Immersion: Top Status Bar */}
       {isFrame && (
-        <div className={`sticky top-0 z-50 w-full px-4 py-3 backdrop-blur-md border-b flex items-center justify-between ${
-          isLight ? 'bg-white/80 border-black/5' : 'bg-[#0B0E14]/80 border-white/5'
+        <div className={`sticky top-0 z-50 w-full px-4 py-3 backdrop-blur-3xl border-b flex items-center justify-between ${
+          isLight ? 'bg-white/80 border-black/5' : 'bg-[#050505]/80 border-white/5'
         }`}>
           <div className="flex items-center gap-2.5">
             {frameUser?.pfpUrl ? (
@@ -117,7 +117,7 @@ export function HomePage() {
         {/* ── Pool Widget ──────────────────────────────────────────────────── */}
         {/* Minimalist: bg-zinc-900, tanpa border warna, tanpa glow overlay berlapis */}
         <div className="w-full mb-8">
-          <div className="bg-zinc-900 rounded-2xl p-6 md:p-8">
+          <div className="glass-card p-6 md:p-8">
 
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
               <div>
@@ -134,7 +134,7 @@ export function HomePage() {
               </div>
 
               {poolSettings?.claimTimestamp > Date.now() && (
-                <div className="bg-zinc-800 rounded-xl p-4 flex items-center gap-3 self-start sm:self-auto">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/5 rounded-xl p-4 flex items-center gap-3 self-start sm:self-auto">
                   <TimerIcon className="w-5 h-5 text-indigo-400 shrink-0" />
                   <div>
                     <p className="text-[11px] text-zinc-500 font-black uppercase tracking-widest">NEXT DROP</p>
@@ -152,7 +152,7 @@ export function HomePage() {
                 <span className="text-[11px] text-zinc-500 font-black uppercase tracking-widest">REWARD PROGRESS</span>
                 <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">{progressPct}% OF ${targetUSDC.toLocaleString()}</span>
               </div>
-              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                 <div
                   style={{ width: `${progressPct}%` }}
                   className="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out"
@@ -160,7 +160,7 @@ export function HomePage() {
               </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-zinc-800 flex items-center gap-2 text-[11px] text-emerald-500 font-black uppercase tracking-widest">
+            <div className="mt-5 pt-4 border-t border-white/5 flex items-center gap-2 text-[11px] text-emerald-500 font-black uppercase tracking-widest">
               <CheckCircle className="w-3.5 h-3.5" />
               NO RIBA · VERIFIED ON-CHAIN · LIVE RATE
             </div>
@@ -184,10 +184,10 @@ export function HomePage() {
 
                 return (
                   <Link key={index} to={card.link || '/'} className="group">
-                    {/* Card: bg-zinc-900 on bg-black — subtle elevation tanpa border tebal */}
-                    <div className="bg-zinc-900 rounded-xl p-5 h-full hover:bg-zinc-800 transition-colors duration-150">
+                    {/* Card: glass-card standard */}
+                    <div className="glass-card p-5 h-full hover:bg-white/5 transition-colors duration-150">
                       {/* Icon */}
-                      <div className="w-10 h-10 bg-zinc-800 rounded-lg flex items-center justify-center mb-4 group-hover:bg-indigo-600/20 transition-colors overflow-hidden">
+                      <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center mb-4 group-hover:bg-[#0052FF]/20 transition-colors overflow-hidden border border-white/5">
                         {isCustomImage ? (
                           <img src={card.icon} alt={card.title} className="w-full h-full object-cover" loading="lazy" />
                         ) : (

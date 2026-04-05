@@ -180,7 +180,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                     <nav className="flex-1 space-y-6 overflow-y-auto no-scrollbar -mx-2 px-2 pt-16 md:pt-0 pb-10">
                         {groups.map((group) => (
                             <div key={group.label} className="space-y-1">
-                                <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest px-3 mb-3">{group.label}</h3>
+                                <h3 className="text-[11px] font-black text-zinc-600 uppercase tracking-widest px-3 mb-3">{group.label}</h3>
                                 {group.items.map((tab) => {
                                     const Icon = tab.icon;
                                     const isActive = activeTab === tab.id;
@@ -229,8 +229,8 @@ export function AdminPage({ initialTab = 'pool' }) {
                             <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Global Sync Active</span>
                         </div>
                         <div className="h-4 w-px bg-white/10 mx-2" />
-                        <div className="flex items-center gap-2 bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
-                            <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">
+                        <div className="flex items-center gap-2 bg-[#0052FF]/10 px-2.5 py-1 rounded-lg border border-[#0052FF]/20 shadow-lg shadow-[#0052FF]/5">
+                            <span className="text-[11px] font-black text-[#0052FF] uppercase tracking-widest">
                                 Authority: {isContractOwner ? 'Owner' : isCMSAdmin ? 'CMS Admin' : isOperator ? 'Operator' : 'Delegated'}
                             </span>
                         </div>

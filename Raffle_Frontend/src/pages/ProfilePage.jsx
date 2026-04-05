@@ -280,22 +280,12 @@ export default function ProfilePage() {
       */}
 
       {/* Top Action Bar (Mobile only usually, or simplified header) */}
-      <div className="flex justify-between items-center px-4 h-14 bg-zinc-900/50 backdrop-blur-md pt-safe md:hidden sticky top-0 z-[100]">
-        <h1 className="label-native text-white">PROFILE</h1>
-        <button
-          onClick={() => disconnect()}
-          className="text-zinc-500 hover:text-red-400 p-2"
-        >
-          <LogOut size={18} />
-        </button>
-      </div>
-
       <div className="max-w-screen-md mx-auto">
         {/* AVATAR & MAIN INFO */}
         <div className="px-4 pt-6 pb-4">
           <div className="flex justify-between items-start mb-4">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-gray-800 overflow-hidden border-4 border-[#0B0E14] shadow-sm">
+              <div className="w-20 h-20 rounded-full bg-[#050505] overflow-hidden border-2 border-white/10 shadow-xl">
                 {profileData.avatarUrl ? (
                   <img src={profileData.avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
                 ) : (
@@ -539,7 +529,7 @@ export default function ProfilePage() {
 
         {/* TIER UPGRADE PROMPT (MINIMALIST) */}
         {onChainUserData?.currentTier < potentialTier && (
-          <div className="mx-4 mb-4 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between gap-3 animate-pulse">
+          <div className="mx-4 mb-4 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between gap-3 premium-glow-indigo">
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-indigo-400" />
               <div className="flex flex-col">
@@ -551,7 +541,7 @@ export default function ProfilePage() {
             </div>
             <button 
               onClick={() => setActiveModal('upgrade')}
-              className="label-native text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20"
+              className="px-4 py-2 rounded-xl bg-yellow-500 text-black text-[11px] font-black uppercase tracking-[0.2em] hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] active:scale-95"
             >
               Mint Status
             </button>
@@ -573,35 +563,35 @@ export default function ProfilePage() {
 
             <button
               onClick={() => setActiveModal('task')}
-              className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#080808] border border-white/5 text-zinc-400 hover:bg-zinc-800 transition-all hover:border-white/10 group"
             >
-              <Plus size={18} />
-              <span className="label-native">CREATE MISSION</span>
+              <Plus size={18} className="group-hover:text-white transition-colors" />
+              <span className="label-native mb-0">CREATE MISSION</span>
             </button>
 
             <button
               onClick={() => navigate('/create-raffle')}
-              className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#080808] border border-white/5 text-zinc-400 hover:bg-zinc-800 transition-all hover:border-white/10 group"
             >
-              <Ticket size={18} />
-              <span className="label-native">LAUNCH RAFFLE</span>
+              <Ticket size={18} className="group-hover:text-white transition-colors" />
+              <span className="label-native mb-0">LAUNCH RAFFLE</span>
             </button>
 
             <button
               onClick={() => setActiveModal('renew')}
-              className="flex flex-col items-center justify-center gap-1 p-4 rounded-xl bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition-colors"
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#080808] border border-white/5 text-zinc-400 hover:bg-zinc-800 transition-all hover:border-white/10 group"
             >
-              <RefreshCw size={18} />
-              <span className="label-native">RENEW JOB</span>
+              <RefreshCw size={18} className="group-hover:text-white transition-colors" />
+              <span className="label-native mb-0">RENEW JOB</span>
             </button>
 
             {onChainUserData?.currentTier > 0 && (
               <button
                 onClick={() => setActiveModal('revenue')}
-                className={`flex flex-col items-center justify-center gap-1 p-4 rounded-xl transition-all relative overflow-hidden group
+                className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all relative overflow-hidden group border
                   ${claimableAmount > 0n 
-                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-lg shadow-indigo-500/10' 
-                    : 'bg-zinc-900 text-zinc-600'}`}
+                    ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/30 shadow-lg shadow-indigo-500/10' 
+                    : 'bg-[#080808] border-white/5 text-zinc-600'}`}
               >
                 {claimableAmount > 0n && (
                    <div className="absolute inset-0 bg-indigo-500/10 animate-pulse pointer-events-none" />
@@ -661,57 +651,57 @@ export default function ProfilePage() {
         </div>
 
         {/* STATS LIST (Mobile Native Style) */}
-        <div className="flex flex-col">
+        <div className="flex flex-col bg-[#080808] border-y border-white/5">
           {/* Neynar Score */}
-          <div className="flex items-center justify-between px-4 py-3 border-b-subtle active:bg-white/5 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 active:bg-white/5 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h3 className="label-native text-white">NEYNER SCORE</h3>
-                <p className="label-native text-slate-500">REPUTATION HEALTH</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest leading-none mb-1">NEYNER SCORE</h3>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">REPUTATION HEALTH</p>
               </div>
             </div>
             <div className="text-right">
-              <span className={`text-lg font-mono font-black ${profileData.neynarScore >= 90 ? 'text-green-400' : 'text-yellow-400'}`}>
+              <span className={`text-xl font-mono font-black ${profileData.neynarScore >= 0.9 ? 'text-green-400' : 'text-yellow-400'}`}>
                 {(profileData.neynarScore * 100).toFixed(1)}%
               </span>
             </div>
           </div>
 
           {/* Total XP */}
-          <div className="flex items-center justify-between px-4 py-3 border-b-subtle active:bg-white/5 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-400">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 active:bg-white/5 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 rounded-xl bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
                 <Award size={20} />
               </div>
               <div>
-                <h3 className="label-native text-white">TOTAL XP</h3>
-                <p className="label-native text-slate-500">SEASON PROGRESS</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest leading-none mb-1">TOTAL XP</h3>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">SEASON PROGRESS</p>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-lg font-mono font-black text-white">
+              <span className="text-xl font-mono font-black text-white">
                 {Number(profileData.total_xp).toLocaleString()}
               </span>
             </div>
           </div>
 
           {/* Rank */}
-          <div className="flex items-center justify-between px-4 py-3 border-b-subtle active:bg-white/5 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+          <div className="flex items-center justify-between px-6 py-4 active:bg-white/5 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Crown size={20} />
               </div>
               <div>
-                <h3 className="label-native text-white">CURRENT RANK</h3>
-                <p className="label-native text-slate-500">LEADERBOARD TIER</p>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-widest leading-none mb-1">CURRENT RANK</h3>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">LEADERBOARD TIER</p>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-lg font-black text-blue-400 italic">
-                {profileData.rankName}
+              <span className="text-xl font-black text-blue-400 italic">
+                {profileData.rankName.toUpperCase()}
               </span>
             </div>
           </div>

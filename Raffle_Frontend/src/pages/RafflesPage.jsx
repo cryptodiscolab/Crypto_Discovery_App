@@ -64,11 +64,11 @@ function RaffleRow({ raffleId, filter = 'all' }) {
   const progress = Math.min((currentTickets / maxTickets) * 100, 100);
 
   return (
-    <div className="flex flex-col p-4 border-b-subtle active:bg-white/5 transition-colors">
+    <div className="flex flex-col p-4 border-b border-white/5 active:bg-white/5 transition-colors">
       {/* Header Row */}
       <div className="flex justify-between items-start mb-2">
         <div className="flex gap-3">
-          <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center flex-shrink-0 border border-white/5">
+          <div className="w-12 h-12 rounded-lg bg-[#080808] flex items-center justify-center flex-shrink-0 border border-white/10 shadow-xl">
             <Trophy size={20} className="text-indigo-400" />
           </div>
           <div className="flex flex-col justify-center">
@@ -121,7 +121,7 @@ function RaffleRow({ raffleId, filter = 'all' }) {
         <button
           onClick={handleAction}
           disabled={isProcessing || isFinalized || !raffle.isActive}
-          className={`w-full py-2 rounded-lg label-native flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg ${isFinalized || !raffle.isActive ? 'bg-slate-800 text-slate-500' : 'bg-white/10 text-white hover:bg-white/20 shadow-white/5'}`}
+          className={`w-full py-2 rounded-lg label-native flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl ${isFinalized || !raffle.isActive ? 'bg-zinc-800 text-zinc-500' : 'bg-yellow-500 text-black font-black premium-glow shadow-yellow-500/10 hover:bg-yellow-400'}`}
         >
           {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <Ticket size={16} />}
           {isFinalized ? 'RESULTS OUT' : isGaslessSupported ? '⛽ BUY FREE' : 'BUY TICKET'}
@@ -140,10 +140,10 @@ export function RafflesPage() {
   // Here we just pass the filter prop so each row can hide itself.
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] pb-28 md:pb-8 pt-safe">
+    <div className="min-h-screen bg-[#050505] pb-28 md:pb-8 pt-safe">
       <div className="max-w-screen-lg mx-auto">
         {/* Header */}
-        <div className="px-4 py-6 border-b-subtle">
+        <div className="px-4 py-6 border-b border-white/5">
           <div className="flex justify-between items-end mb-6">
             <div>
                 <h1 className="text-4xl font-black text-white mb-2 uppercase tracking-tighter italic leading-none">NFT RAFFLES</h1>
