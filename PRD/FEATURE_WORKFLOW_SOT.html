@@ -1,5 +1,5 @@
-<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.0)</h1>
-<p><strong>Last Updated</strong>: 2026-04-03T21:46+07:00 — Nexus Protocol Synchronization (Full-Stack Parity Audit)
+<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.7)</h1>
+<p><strong>Last Updated</strong>: 2026-04-05T14:48+07:00 — Mobile UI Standard &amp; Task Integrity (v3.42.7)
 <strong>Status</strong>: 🛡️ MAINNET PHASED ROLLOUT LOCKED</p>
 <p>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. <strong>JANGAN berhalusinasi atau menebak</strong>. Jika ada yang error, rujuk dokumen ini.</p>
 <hr>
@@ -354,4 +354,12 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 </li>
 </ol>
 <hr>
-<p><em>End of Source of Truth Document - Nexus v3.42.0 Locked.</em></p>
+<h3>11.3 Task Visibility Mandate (v3.42.7)</h3>
+<ol>
+<li><strong>Immediate Hiding</strong>: Tasks that are <code>hasCompletedTask</code> or <code>hasClaimed</code> MUST be filtered out from the <code>TasksPage</code> UI.</li>
+<li><strong>Type-Safe Filtering</strong>: When comparing task IDs (e.g., in <code>activeTasks.filter</code>), ALWAYS use <code>String()</code> conversion (e.g., <code>String(task.id) === String(claim.task_id)</code>). This prevents silence failures caused by the mismatch between Contract IDs (Integer) and Supabase IDs (UUID).</li>
+<li><strong>Sponsorship Card Closure</strong>: Cards (Sponsored/Organic) MUST be hidden if 100% of internal tasks are complete.</li>
+<li><strong>Verified Badge Branding</strong>: All verified identities MUST display the <strong>Base Blue</strong> shield icon for premium signaling.</li>
+</ol>
+<hr>
+<p><em>End of Source of Truth Document - Nexus v3.42.2 Locked.</em></p>

@@ -21,7 +21,7 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 | Raffle (Latest) | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | MasterX (XP) | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
-| PRD Version | `v3.42.0` (Identity Hardened) |
+| PRD Version | `v3.42.7` (Mobile UI & Task Integrity) |
 
 ### 3. Bahasa & Komunikasi
 - **Teknis/Chat**: **Bahasa Indonesia**.
@@ -73,7 +73,10 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - [ ] **🌐 NETWORK ISOLATION AUDIT (v3.40.7)**: Verifikasi bahwa TIDAK ADA alamat Sepolia (`0x369a...`) yang tertulis di konfigurasi/label Mainnet. Pastikan Mainnet tetap `[RESERVED]` jika belum deploy. **WAJIB.**
 - [ ] **🧪 RPC TRUTHINESS & EVIDENCE AUDIT (v3.40.9)**: Apakah skrip verifikasi menggunakan `code && code !== '0x'`? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? **WAJIB.**
 - [x] **v3.41.1 (E2E Simulators)**: Verified on-chain via MasterX at `0x9807...` and DailyApp at `0x369a...`.
-- [ ] **🚀 REFERRAL & IDENTITY SYNC (v3.42.0)**: Apakah raffle pembelian berkontribusi pada dividends? Apakah gating Base Social sudah diterapkan pada tombol Beli? **WAJIB.**
+- [ ] **🚀 REFERRAL & IDENTITY SYNC (v3.42.7)**:
+    - [x] Apakah raffle pembelian berkontribusi pada dividends? 
+    - [x] Apakah gating Base Social sudah diterapkan pada tombol Beli?
+    - [x] **v3.42.7**: Apakah `Buy Ticket` button menggunakan Indigo transparent/border baseline dan NO icons? **WAJIB.**
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Labels**: `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-04-05*
-*PRD Version: v3.42.2 (Identity Guarded & Disappearing Tasks)*
+*PRD Version: v3.42.7 (Mobile UI Standard & Task Integrity)*
 
 ---
 
@@ -185,6 +185,7 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Blind-Replacement Execution (Table Hallucination)**: 🚨 DILARANG KERAS mengeksekusi `multi_replace_file_content` pada baris tabel Markdown manapun tanpa melakukan `view_file` pada Header Tabel (-15 baris ke atas) untuk memastikan hirarki kolom. Dilarang berasumsi kolom 2 = Mainnet.
 - 🚫 **Referral Anti-Sybil Breach**: Dilarang melepaskan reward referral secara instan. Wajib melalui logic vesting **500 XP Milestone**.
 - 🚫 **Identity Guard Bypass**: Dilarang mengizinkan claim mission yang memiliki flag `is_base_social_required` jika profil user belum terverifikasi Basename.
+- 🚫 **Type-Mismatch Comparison**: Dilarang membandingkan ID task (Supabase UUID vs Contract Integer) tanpa konversi `String()`. Selalu gunakan `String(a) === String(b)` untuk ID filtering (v3.42.7).
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).
@@ -208,6 +209,12 @@ State sharing via `agents_vault` table di Supabase.
 - **No Progress List**: Dilarang menampilkan task yang sudah berstatus `Done` di halaman utama user untuk menjaga kebersihan "Daily To-Do".
 - **Sponsorship Closure**: Kartu sponsor (card) wajib menghilang jika seluruh sub-task di dalamnya sudah berstatus `Completed`.
 - **Catch-Up Feedback**: Gunakan komponen "YOU ARE ALL CAUGHT UP!" jika tidak ada task tersisa.
+
+### Section 4.4: MOBILE UI & TASK INTEGRITY HARDENING (v3.42.7)
+- **Native+ Button Baseline**: Semua tombol aksi utama wajib menggunakan `bg-indigo-600/20`, `border-indigo-500/30`, dan `text-indigo-400`.
+- **Zero-Icon Action Mandate**: Tombol "Daily Tasks", "Partner Offers", dan "Buy Ticket" dilarang menggunakan ikon dekoratif (Zap, Megaphone, dll).
+- **Viewport Containment**: Layout utama wajib menggunakan `overflow-x-hidden` dan `max-w-[100vw]` untuk menjamin visibilitas BottomNav dan mencegah clipping horizontal.
+- **Fail-Safe Claim Sync**: Logic `handleClaim` wajib melakukan `fetchData()`/sync paksa jika backend melempar error "already completed" untuk mengatasi race condition UI.
 
 ---
 ## 4. SECURE ENVIRONMENT & ZERO-TRUST ADDRESSES

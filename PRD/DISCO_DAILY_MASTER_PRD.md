@@ -1,6 +1,6 @@
-# CRYPTO DISCO MASTER PRD (v3.42.2)
-**Version**: `v3.42.2` (Identity Guard Hardening & Disappearing Task Mandate)
-**Last Updated**: `05 April 2026 02:15`
+# CRYPTO DISCO MASTER PRD (v3.42.7)
+**Version**: `v3.42.7` (Mobile UI Standardization & Task Integrity Hardening)
+**Last Updated**: `05 April 2026 14:47`
 **Status**: 🛡️ RE-HARDENED, GROWTH-OPTIMIZED & LOCKED 💎
 **Audit Status**: `✅ 100% OPERATIONAL (Identity Safeguards Active)`
 
@@ -11,10 +11,12 @@
 2. [Ecosystem Core Architecture (High-Level)](#2-ecosystem-core-architecture-high-level)
 3. [User & Reward Lifecycle (End-to-End)](#3-user--reward-lifecycle-end-to-end)
 4. [Admin & Sponsorship Workflow](#4-admin--sponsorship-workflow)
-5. [Historical Analysis & Changelog](#5-historical-analysis--changelog)
-6. [Audit & Security Mandates](#6-audit-security-mandates)
-7. [Current Ecosystem Status (v3.28.0 Audit Report)](#7-current-ecosystem-status-v3280-audit-report)
-8. [Workspace Architecture & Data Flow (v3.28.0)](#8-workspace-architecture--data-flow-v3280)
+5. [Work Report v3.42.7 (Current)](#5-work-report-v3427-current)
+6. [Work Report v3.42.2 (Legacy)](#6-work-report-v3422-legacy)
+7. [Historical Analysis & Changelog](#7-historical-analysis--changelog)
+8. [Audit & Security Mandates](#8-audit-security-mandates)
+9. [Current Ecosystem Status (v3.28.0 Audit Report)](#9-current-ecosystem-status-v3280-audit-report)
+10. [Workspace Architecture & Data Flow (v3.28.0)](#10-workspace-architecture--data-flow-v3280)
 
 ---
 
@@ -347,7 +349,8 @@ Berdasarkan audit ekosistem v3.26.0, Section ini mendefinisikan standar pemuliha
 
 ### 10.1 Evolution Summary
 | Milestone | Version | Focus | Legacy Status |
-| **Identity UI Hardening** | 3.42.2 | Create Mission/Raffle Native+ Identity Guard | CURRENT |
+| **Mobile UI & Task Fix** | 3.42.7 | Mobile UI Standardization (Native+) & Type-Safe Task Claims | CURRENT |
+| **Identity UI Hardening** | 3.42.2 | Create Mission/Raffle Native+ Identity Guard | RESOLVED |
 | **Referral & Identity Core** | 3.42.0 | Base Social Sync & Referral Growth Loop v2 | RESOLVED |
 | **Critical Bug Fix** | 3.26.1 | Fixed user-bundle SyntaxError (Claims/Logs/Leaderboard) | RESOLVED |
 | **Identity & Resilience** | 3.26.0 | SQL View fix, RPC Lag Fallback, UGC Modal TDZ fixes | RESOLVED |
@@ -423,7 +426,18 @@ graph TD
 | **Ops** | `scripts/` | Audits, Sync, Deploy, Debug |
 | **Bot** | `verification-server/` | Telegram Webhook API |
 
-## 11. Work Report — v3.42.2 (Current)
+## 11. Work Report — v3.42.7 (Current)
+**Date**: 2026-04-05
+**Task**: Mobile UI Standardization & Task Claim Integrity.
+**Action**:
+- **Mobile UI Standardization**: Aligned all primary action buttons (Daily Tasks, Partner Offers, Buy Ticket) with the "Sponsor Mission" aesthetic (Indigo-600/20 background, Indigo-500/30 border, text-indigo-400).
+- **Icon Pruning**: Removed all decorative icons (Zap, Megaphone, Ticket) from action buttons to achieve a cleaner, minimalist Native+ interface.
+- **Layout Hardening**: Implemented `overflow-x-hidden` and `max-w-[100vw]` on the root wrapper to prevent horizontal scrolling and ensure BottomNav visibility on all mobile viewports.
+- **Task Integrity (Bug Fix)**: Resolved type-mismatch bugs in `TaskList.jsx` where `String()` conversion was missing, causing completed tasks to remain visible.
+- **Reactive Error Sync**: Updated `handleClaim` to force-sync claims from Supabase when the backend reports "Task already completed", ensuring UI accurately reflects state even after race conditions.
+**Outcome**: 100% Mobile UI consistency. Guaranteed "Disappearing Task" behavior. Zero layout regressions.
+
+## 12. Work Report — v3.42.2 (Legacy)
 **Date**: 2026-04-05
 **Task**: Frontend Identity Guard Hardening & Native+ UI Standardization.
 **Action**:
