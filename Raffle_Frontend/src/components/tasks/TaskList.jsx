@@ -243,7 +243,7 @@ export function TaskList() {
                                             ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
                                             : isBaseLocked
                                                 ? 'bg-blue-900/20 text-blue-400 border border-blue-500/30'
-                                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                                : 'bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-400 hover:text-white'
                                         }`}
                                 >
                                     {isClaiming ? (

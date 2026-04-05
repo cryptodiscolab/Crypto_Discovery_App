@@ -73,14 +73,14 @@ function CampaignCard({ campaign, onClaim, userAddress }) {
                     onClick={() => onClaim(campaign)}
                     disabled={status !== 'active' || !userAddress}
                     className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${status === 'active' && userAddress
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-transparent hover:scale-[1.02] active:scale-[0.98] shadow-indigo-500/20 shadow-md'
+                        ? 'bg-indigo-600/20 hover:bg-indigo-600 border-indigo-500/30 text-indigo-400 hover:text-white'
                         : 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
                         }`}
                 >
                     {!userAddress
                         ? 'CONNECT WALLET'
                         : status === 'active'
-                            ? <>JOIN MISSION <ChevronRight className="w-3 h-3" /></>
+                            ? 'JOIN MISSION'
                             : status === 'upcoming'
                                 ? 'COMING SOON'
                                 : 'MISSION ENDED'}

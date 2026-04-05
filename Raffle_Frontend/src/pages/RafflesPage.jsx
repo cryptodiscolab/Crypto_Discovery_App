@@ -121,9 +121,9 @@ function RaffleRow({ raffleId, filter = 'all' }) {
         <button
           onClick={handleAction}
           disabled={isProcessing || isFinalized || !raffle.isActive}
-          className={`w-full py-2.5 rounded-xl label-native flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg ${isFinalized || !raffle.isActive ? 'bg-zinc-800 text-zinc-500' : 'bg-[#0052FF] text-white font-black hover:bg-[#0042CC] shadow-blue-500/10'}`}
+          className={`w-full py-2.5 rounded-xl label-native flex items-center justify-center gap-2 active:scale-95 transition-all ${isFinalized || !raffle.isActive ? 'bg-zinc-800 text-zinc-500 border border-zinc-700/50' : 'bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-400 hover:text-white'}`}
         >
-          {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <Ticket size={16} />}
+          {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : null}
           {isFinalized ? 'RESULTS OUT' : isGaslessSupported ? '⛽ BUY FREE' : 'BUY TICKET'}
         </button>
       )}

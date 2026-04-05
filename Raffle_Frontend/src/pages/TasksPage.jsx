@@ -326,9 +326,8 @@ export function TasksPage() {
                             </div>
                             <button 
                                 onClick={() => navigate('/create-mission')}
-                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white label-native transition-all flex items-center gap-2 group w-fit"
+                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white label-native transition-all flex items-center justify-center w-fit"
                             >
-                                <Zap className="w-3.5 h-3.5 fill-indigo-500 group-hover:fill-white" />
                                 Sponsor Mission
                             </button>
                         </div>
@@ -356,16 +355,14 @@ export function TasksPage() {
                     <div className="flex gap-2 mt-8 p-1 bg-[#080808] border border-white/5 rounded-xl w-full max-w-sm mx-auto md:mx-0 shadow-lg">
                         <button
                             onClick={() => setActiveTab('tasks')}
-                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'tasks' ? 'bg-[#0052FF] text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
+                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center ${activeTab === 'tasks' ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400' : 'text-zinc-500 hover:text-zinc-300 border border-transparent'}`}
                         >
-                            <Zap className={activeTab === 'tasks' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Daily Tasks
                         </button>
                         <button
                             onClick={() => setActiveTab('offers')}
-                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center gap-2 ${activeTab === 'offers' ? 'bg-[#0052FF] text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
+                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center ${activeTab === 'offers' ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400' : 'text-zinc-500 hover:text-zinc-300 border border-transparent'}`}
                         >
-                            <Megaphone className={activeTab === 'offers' ? 'w-3 h-3 fill-white' : 'w-3 h-3'} />
                             Partner Offers
                         </button>
                     </div>
