@@ -48,7 +48,7 @@ export function CreateMissionPage() {
 
     const fetchUgcConfig = async () => {
         try {
-            const { data } = await supabase.from('system_settings').select('value').eq('key', 'ugc_config').single();
+            const { data } = await supabase.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
             if (data?.value) setUgcConfig(data.value);
         } catch (e) {
             console.error('Failed to fetch UGC config:', e);

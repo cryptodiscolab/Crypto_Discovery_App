@@ -222,7 +222,7 @@ async function handleSyncEvents(req, res) {
             .from("sync_state")
             .select("last_synced_block")
             .eq("id", "main")
-            .single();
+            .maybeSingle();
 
         const lastBlock = state?.last_synced_block ?? 0;
         const latestBlock = await provider.getBlockNumber();

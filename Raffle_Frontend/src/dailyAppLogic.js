@@ -81,7 +81,7 @@ export async function getUserStatsByFid(fid) {
             .from('user_profiles')
             .select('*')
             .eq('fid', fid)
-            .single();
+            .maybeSingle();
 
         if (error && error.code !== 'PGRST116') throw error;
         return data || { total_xp: 0, tier: 1, last_seen_at: null };

@@ -28,7 +28,7 @@ export default async function handler(req, res) {
                 .select('id')
                 .eq('campaign_id', campaign_id)
                 .eq('user_address', wallet.toLowerCase())
-                .single();
+                .maybeSingle();
 
             if (existing) {
                 return res.status(400).json({ error: 'Already joined this campaign' });
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
                 .from('campaigns')
                 .select('max_participants, current_participants, status')
                 .eq('id', campaign_id)
-                .single();
+                .maybeSingle();
 
             if (cErr || !campaign) throw new Error('Campaign not found');
             if (campaign.status !== 'active') throw new Error('Campaign is not active');

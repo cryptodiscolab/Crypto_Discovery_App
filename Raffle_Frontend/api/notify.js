@@ -32,7 +32,7 @@ export default async function handler(req, res) {
             .from('user_profiles')
             .select('fid')
             .eq('wallet_address', wallet.toLowerCase())
-            .single();
+            .maybeSingle();
 
         if (!profile || Number(profile.fid) !== Number(fid)) {
             return res.status(403).json({ error: 'Unauthorized: You can only notify your own FID' });

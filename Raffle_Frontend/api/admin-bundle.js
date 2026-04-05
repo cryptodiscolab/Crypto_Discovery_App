@@ -198,7 +198,7 @@ export default async function handler(req, res) {
                     status: (req.body.target_agent === 'qwen' ? 'pending' : 'processing'),
                     input_data: { ...req.body.input_data, system_memory: systemMemory },
                     requested_by_wallet: targetAddress
-                }).select().single();
+                }).select().maybeSingle();
                 if (taskError) throw taskError;
                 if (req.body.target_agent !== 'qwen') processCloudAgent(task, systemMemory);
                 await logAdminAction(targetAddress, 'NEXUS_DISPATCH', { task_id: task.id, ...req.body });
@@ -222,7 +222,7 @@ export default async function handler(req, res) {
                     is_active: !!task_data.is_active,
                     is_base_social_required: !!task_data.is_base_social_required, // v3.42.0
                     created_at: new Date().toISOString()
-                }).select().single();
+                }).select().maybeSingle();
                 if (error) throw error;
                 await logAdminAction(targetAddress, 'TASK_CREATE', data);
                 return res.status(200).json({ success: true, data });
@@ -359,7 +359,7 @@ export default async function handler(req, res) {
                         .from('campaigns')
                         .insert([missionData])
                         .select()
-                        .single();
+                        .maybeSingle();
                     
                     if (cErr) throw cErr;
 
@@ -465,7 +465,7 @@ async function handleVerifyUgcPaymentOnchain(req, res) {
             .from('campaigns')
             .select('*')
             .eq('id', mission_id)
-            .single();
+            .maybeSingle();
         
         if (mErr || !mission) throw new Error("Mission not found");
         if (!mission.payment_tx_hash) throw new Error("No transaction hash associated with this mission");

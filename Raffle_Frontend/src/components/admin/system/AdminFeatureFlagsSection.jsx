@@ -20,7 +20,7 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }) {
     const fetchFlags = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'active_features').single();
+            const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'active_features').maybeSingle();
             if (error) throw error;
             if (data?.value) {
                 setFlags(data.value);

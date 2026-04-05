@@ -28,7 +28,7 @@ export function UgcConfigSection() {
                 .from('system_settings')
                 .select('value')
                 .eq('key', 'ugc_config')
-                .single();
+                .maybeSingle();
 
             if (data && data.value) {
                 setConfig(data.value);

@@ -51,7 +51,7 @@ async function checkFeatureGuard(featureKey, res) {
             .from('system_settings')
             .select('value')
             .eq('key', 'active_features')
-            .single();
+            .maybeSingle();
         
         const activeFeatures = data?.value || {};
         if (activeFeatures[featureKey] !== true) {
@@ -131,7 +131,7 @@ async function handleClaimPrize(req, res) {
             .from('point_settings')
             .select('points_value')
             .eq('activity_key', 'raffle_win')
-            .single();
+            .maybeSingle();
 
         const xpAwarded = setting?.points_value || 0; // Default to 0 if not set, enforcing config-driven rewards
 

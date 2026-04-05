@@ -84,7 +84,7 @@ export function PointsProvider({ children }) {
                 .from('v_user_full_profile')
                 .select('*') // Changed to select all as per instruction
                 .eq('wallet_address', address.toLowerCase())
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
 

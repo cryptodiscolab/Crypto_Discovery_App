@@ -233,7 +233,7 @@ function SBTTierBreakdown() {
                 const { data, error } = await supabase
                     .from('sbt_pool_stats')
                     .select('*')
-                    .single();
+                    .maybeSingle();
                 if (!error && data && mounted) setStats(data);
             } catch (e) {
                 console.warn('[SBTTierBreakdown] fetch error:', e.message);

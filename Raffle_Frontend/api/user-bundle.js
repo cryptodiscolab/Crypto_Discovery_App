@@ -694,7 +694,7 @@ async function handleSyncUgcMission(req, res) {
             created_at: new Date().toISOString(),
             payment_token: payment_token || null,
             reward_symbol: reward_symbol || 'TOKEN'
-        }]).select().single();
+        }]).select().maybeSingle();
 
         if (campaignErr) throw campaignErr;
 
@@ -823,7 +823,7 @@ async function handleSyncUgcRaffle(req, res) {
         if (raffleErr) throw raffleErr;
 
         try {
-            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_create').single();
+            const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_create').maybeSingle();
             if (setting?.points_value) {
                 let creatorXp = setting.points_value;
                 // [Refactor v3.41.2] Scaling is now handled via database RPC fn_increment_xp

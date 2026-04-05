@@ -32,7 +32,7 @@ export function SBTGallery({ walletAddress }) {
             .from('system_settings')
             .select('value')
             .eq('key', 'tier_pool_weights')
-            .single();
+            .maybeSingle();
         if (data?.value) setWeights(data.value);
     };
 
