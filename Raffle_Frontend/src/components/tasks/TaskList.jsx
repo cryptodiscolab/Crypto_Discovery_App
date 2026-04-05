@@ -138,7 +138,7 @@ export function TaskList() {
 
 
     const activeTasks = tasks.filter(task => {
-        const history = userClaims.filter(c => c.task_id === task.id);
+        const history = userClaims.filter(c => String(c.task_id) === String(task.id));
         const hasAnyClaim = history.length > 0;
 
         // All tasks are treated as one-time per unique task ID now to match backend rules
