@@ -5,6 +5,8 @@ const LazyWeb3Wallet = lazy(() => import('./components/LazyWeb3Provider'));
 
 export function Web3Provider({ children }) {
   const [isMounted, setIsMounted] = useState(false);
+  const [walletConflict, setWalletConflict] = useState(false);
+  const [showConflictBanner, setShowConflictBanner] = useState(true);
 
   // Ensure we only render Web3 providers on the client side
   useEffect(() => {
@@ -33,13 +35,14 @@ export function Web3Provider({ children }) {
             console.log('%c[WalletConflict] Resolved: Provider slot is now writable.', 'color: #4ade80; font-weight: bold;');
           } catch (e) {
             console.error('[WalletConflict] Failed to resolve trap:', e);
+            setWalletConflict(true);
           }
         } else {
           console.error(
             '[WalletConflict] CRITICAL: window.ethereum is locked as read-only and NOT configurable. ' +
-            'This will cause MetaMask and other legacy extensions to fail. ' +
             'Please disable conflicting extensions like Coinbase Wallet if you experience issues.'
           );
+          setWalletConflict(true);
         }
       }
     }
@@ -58,10 +61,28 @@ export function Web3Provider({ children }) {
   // Client-side only: render the actual Web3 providers
   return (
     <LazyWeb3Wallet>
+      {/* Wallet Conflict Advisory Banner */}
+      {walletConflict && showConflictBanner && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-orange-500/95 backdrop-blur-sm border-b border-orange-400/50 px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className="text-lg flex-shrink-0">⚠️</span>
+            <p className="text-[11px] font-black uppercase tracking-widest text-white truncate">
+              WALLET CONFLICT: Disable Coinbase Wallet or other extensions to use MetaMask properly.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowConflictBanner(false)}
+            className="flex-shrink-0 text-white/70 hover:text-white text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-white/10 transition-colors"
+          >
+            DISMISS
+          </button>
+        </div>
+      )}
       {children}
     </LazyWeb3Wallet>
   );
 }
+
 
 // Preload the Web3 bundle when the browser is idle
 // This ensures it's ready before the user even clicks "Connect"

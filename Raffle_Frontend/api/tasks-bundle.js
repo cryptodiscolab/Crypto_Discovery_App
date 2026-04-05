@@ -20,7 +20,7 @@ async function getPointValue(activityKey) {
             .select('points_value')
             .eq('activity_key', activityKey)
             .eq('is_active', true)
-            .single();
+            .maybeSingle();
         if (error || !data) return 0;
         return data.points_value || 0;
     } catch (e) {
@@ -41,7 +41,7 @@ async function getTaskReward(taskId) {
             .from('daily_tasks')
             .select('xp_reward, platform, action_type')
             .eq('id', taskId)
-            .single();
+            .maybeSingle();
         if (!task) return 0;
         const dynamicKey = `${task.platform}_${task.action_type}`.toLowerCase().replace(/\s+/g, '_');
         const dynamicValue = await getPointValue(dynamicKey);
@@ -70,7 +70,7 @@ async function validateAndCalculateXP(wallet_address, signature, message, task_i
     if (task_id && task_id.startsWith('raffle_')) {
         targetId = task_id.split('_').pop();
     } else {
-        const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).single();
+        const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).maybeSingle();
         targetId = task?.target_id;
     }
 
@@ -124,7 +124,7 @@ async function checkFeatureGuard(featureKey, res) {
             .from('system_settings')
             .select('value')
             .eq('key', 'active_features')
-            .single();
+            .maybeSingle();
         
         const activeFeatures = data?.value || {};
         if (activeFeatures[featureKey] !== true) {

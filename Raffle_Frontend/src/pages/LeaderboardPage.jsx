@@ -137,7 +137,7 @@ export function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] pb-safe pt-safe">
+    <div className="min-h-screen bg-[#0B0E14] pb-28 md:pb-8 pt-safe">
       <div className="max-w-screen-md mx-auto">
         {/* Header Section */}
         <div className="flex flex-col border-b border-white/5 pb-0 pt-6 bg-[#0B0E14] sticky-under-header">

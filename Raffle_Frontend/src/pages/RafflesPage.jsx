@@ -140,7 +140,7 @@ export function RafflesPage() {
   // Here we just pass the filter prop so each row can hide itself.
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] pb-safe pt-safe">
+    <div className="min-h-screen bg-[#0B0E14] pb-28 md:pb-8 pt-safe">
       <div className="max-w-screen-lg mx-auto">
         {/* Header */}
         <div className="px-4 py-6 border-b-subtle">

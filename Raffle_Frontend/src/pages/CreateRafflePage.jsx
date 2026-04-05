@@ -193,7 +193,7 @@ export function CreateRafflePage() {
     }
 
     return (
-        <div className="min-h-screen pt-24 pb-safe px-4 bg-slate-950">
+        <div className="min-h-screen pt-24 pb-28 md:pb-8 px-4 bg-slate-950">
             <div className="container mx-auto max-w-5xl">
                 <div className="flex flex-col md:flex-row gap-8">
                     <div className="flex-1 space-y-6">

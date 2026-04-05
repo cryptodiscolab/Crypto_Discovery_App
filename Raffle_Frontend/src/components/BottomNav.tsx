@@ -39,7 +39,7 @@ export function BottomNav() {
             {/* Backdrop */}
             <div className={`${isLight ? 'bg-white/97 text-zinc-900' : 'bg-[#0B0E14]/97 text-slate-100'} backdrop-blur-3xl`}>
                 <div
-                    className="w-full h-[58px] px-1"
+                    className="w-full h-[62px] px-1"
                     style={{ display: 'grid', gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}
                 >
                     {/* Core Nav Links */}
@@ -51,7 +51,7 @@ export function BottomNav() {
                                 to={item.path}
                                 end={item.path === '/'}
                                 className={({ isActive }) =>
-                                    `flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none
+                                    `flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none touch-manipulation
                                      ${isActive ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'}`
                                 }
                             >
@@ -62,9 +62,8 @@ export function BottomNav() {
                                                 className={`w-[22px] h-[22px] transition-all duration-150 ${isActive ? 'scale-110' : ''}`}
                                                 strokeWidth={isActive ? 2.5 : 1.75}
                                             />
-                                            {/* Active indicator dot */}
                                             {isActive && (
-                                                <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-400 rounded-full" />
+                                                <div className="w-4 h-0.5 bg-indigo-400 rounded-full mx-auto mt-0.5" />
                                             )}
                                         </div>
                                         <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}>
@@ -81,7 +80,7 @@ export function BottomNav() {
                         <NavLink
                             to="/admin"
                             className={({ isActive }) =>
-                                `flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${isActive ? 'text-amber-400' : 'text-zinc-600 active:text-zinc-300'}`
+                                `flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none touch-manipulation ${isActive ? 'text-amber-400' : 'text-zinc-600 active:text-zinc-300'}`
                             }
                         >
                             {({ isActive }) => (
@@ -92,7 +91,7 @@ export function BottomNav() {
                                             strokeWidth={isActive ? 2.5 : 1.75}
                                         />
                                         {isActive && (
-                                            <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-amber-400 rounded-full" />
+                                            <div className="w-4 h-0.5 bg-amber-400 rounded-full mx-auto mt-0.5" />
                                         )}
                                     </div>
                                     <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${isActive ? 'text-amber-400' : 'text-zinc-500'}`}>
@@ -108,7 +107,7 @@ export function BottomNav() {
                         {isConnected ? (
                             <Link
                                 to="/profile"
-                                className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-600 active:text-zinc-300'}`}
+                                className={`flex flex-col items-center justify-center gap-[3px] w-full h-full transition-all duration-150 select-none touch-manipulation ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-600 active:text-zinc-300'}`}
                             >
                                 <div className="relative flex items-center justify-center">
                                     <Wallet
@@ -118,7 +117,7 @@ export function BottomNav() {
                                     {/* Green dot = connected indicator */}
                                     <div className="absolute -top-0.5 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#0B0E14]" />
                                     {location.pathname.startsWith('/profile') && (
-                                        <div className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full" />
+                                        <div className="w-4 h-0.5 bg-emerald-400 rounded-full mx-auto mt-0.5" />
                                     )}
                                 </div>
                                 <span className={`text-[11px] font-black leading-none uppercase tracking-widest ${location.pathname.startsWith('/profile') ? 'text-emerald-400' : 'text-zinc-500'}`}>

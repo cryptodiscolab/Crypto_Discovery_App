@@ -70,7 +70,7 @@ async function checkBreaker(serviceKey) {
         .from('system_health')
         .select('*')
         .eq('service_key', serviceKey)
-        .single();
+        .maybeSingle();
     
     if (data?.status === 'failed') {
         const lastUpdate = new Date(data.updated_at).getTime();
@@ -129,7 +129,7 @@ async function checkFeatureGuard(featureKey, res) {
             .from('system_settings')
             .select('value')
             .eq('key', 'active_features')
-            .single();
+            .maybeSingle();
         
         const activeFeatures = data?.value || {};
         if (activeFeatures[featureKey] !== true) {
@@ -237,7 +237,7 @@ async function handleLoginSync(req, res) {
         const { data, error } = await supabaseAdmin
             .from('user_profiles')
             .upsert(updateData, { onConflict: 'wallet_address' })
-            .select().single();
+            .select().maybeSingle();
 
         if (error) throw error;
         
@@ -354,7 +354,7 @@ async function handleXpSync(req, res) {
             .from('point_settings')
             .select('points_value')
             .eq('activity_key', 'daily_claim')
-            .single();
+            .maybeSingle();
 
         const standardDailyReward = dailySetting?.points_value || 100;
 
@@ -505,9 +505,9 @@ async function handleFarcasterSync(req, res) {
                     pfp_url: fcUser.pfp_url,
                     neynar_score: fcUser.experimental?.neynar_user_score || 0
                 }, { onConflict: 'wallet_address' })
-                .select().single();
+                .select().maybeSingle();
             if (error) throw error;
-            return res.status(200).json({ ok: true, profile: data });
+            return res.status(200).json({ ok: true, profile: data || { wallet_address: address.toLowerCase() } });
         }
         return res.status(404).json({ error: 'No Farcaster profile' });
     } catch (error) {
@@ -676,7 +676,7 @@ async function handleSyncUgcMission(req, res) {
 
         // Get dynamic platform fee and XP settings
         const [{ data: sysSetting }, { data: pointSetting }] = await Promise.all([
-            supabaseAdmin.from('system_settings').select('value').eq('key', 'sponsorship_listing_fee_usdc').single(),
+            supabaseAdmin.from('system_settings').select('value').eq('key', 'sponsorship_listing_fee_usdc').maybeSingle(),
             supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'ugc_task_completion').maybeSingle()
         ]);
         const platformFee = sysSetting?.value ? parseFloat(sysSetting.value) : 0;
@@ -724,9 +724,9 @@ async function handleSyncUgcMission(req, res) {
                 .from('point_settings')
                 .select('points_value')
                 .eq('activity_key', 'sponsor_task')
-                .single();
+                .maybeSingle();
             
-                let creatorXp = sponsorPoints.points_value;
+                let creatorXp = sponsorPoints?.points_value || 0;
                 // [Refactor v3.41.2] Scaling is now handled via database RPC fn_increment_xp
 
 

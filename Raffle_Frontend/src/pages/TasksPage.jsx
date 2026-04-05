@@ -315,7 +315,7 @@ export function TasksPage() {
 
     return (
         <div className="w-full bg-[#0B0E14] min-h-screen">
-            <div className="max-w-screen-lg mx-auto pb-safe">
+            <div className="max-w-screen-lg mx-auto pb-28 md:pb-8">
                 {/* Header (Flat) */}
                 <div className="px-4 py-8 border-b-subtle">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

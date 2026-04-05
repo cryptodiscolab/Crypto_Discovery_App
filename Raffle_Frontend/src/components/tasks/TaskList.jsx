@@ -49,7 +49,7 @@ export function TaskList() {
                         .from('user_profiles')
                         .select('neynar_score, is_base_social_verified')
                         .eq('wallet_address', address.toLowerCase())
-                        .single()
+                        .maybeSingle()
                 ]);
 
                 if (claimsResult.data) {
@@ -117,8 +117,11 @@ export function TaskList() {
             });
 
             toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
+            // Optimistic update: immediately hide task from UI
             setUserClaims(prev => [...prev, { task_id: task.id, claimed_at: new Date().toISOString() }]);
             if (refetch) refetch();
+            // Server-sync after a small delay to ensure DB is committed
+            setTimeout(() => fetchData(), 1500);
 
         } catch (err) {
             console.error("Claim error:", err);
@@ -159,8 +162,16 @@ export function TaskList() {
         );
     }
 
-    if (activeTasks.length === 0) {
-        return null; // Don't show anything if no unclaimed tasks
+    if (activeTasks.length === 0 && !isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-7 h-7 text-green-500" />
+                </div>
+                <p className="text-[11px] font-black uppercase tracking-widest text-green-400">ALL MISSIONS COMPLETED</p>
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">Check back tomorrow for new tasks</p>
+            </div>
+        );
     }
 
     return (

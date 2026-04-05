@@ -273,7 +273,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="w-full text-slate-100">
+    <div className="w-full text-slate-100 pb-28 md:pb-8">
       {/* 
         FLAT-NATIVE HEADER 
         Minimalist elevation via bg contrast.
@@ -312,7 +312,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Action Buttons (Edit/Sync) */}
-            <div className="flex gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 mt-2 items-center">
               {!isEditing ? (
                 <>
                   <button

@@ -83,7 +83,7 @@ export default function AdminSystemSettings() {
 
     const fetchTierConfig = async () => {
         try {
-            const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'tier_config').single();
+            const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'tier_config').maybeSingle();
             if (!error && data) setTierConfig(data.value);
         } catch (error) { console.error('Fetch Tier Config Error:', error); }
     };

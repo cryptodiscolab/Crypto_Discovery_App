@@ -155,7 +155,7 @@ export function CreateMissionPage() {
     }
 
     return (
-        <div className="min-h-screen pt-24 pb-safe px-4 bg-[#050505]">
+        <div className="min-h-screen pt-24 pb-28 md:pb-8 px-4 bg-[#050505]">
             <div className="container mx-auto max-w-5xl">
                 <div className="flex flex-col lg:flex-row gap-12">
                     {/* Form Section */}

@@ -63,7 +63,7 @@ async function logAdminAction(admin_address, action, details) {
 async function isAuthorizedAdmin(address) {
     let isAuthorized = AUTHORIZED_ADMINS.includes(address.toLowerCase());
     if (!isAuthorized) {
-        const { data: profile } = await supabaseAdmin.from('user_profiles').select('is_admin').eq('wallet_address', address.toLowerCase()).single();
+        const { data: profile } = await supabaseAdmin.from('user_profiles').select('is_admin').eq('wallet_address', address.toLowerCase()).maybeSingle();
         if (profile?.is_admin) isAuthorized = true;
     }
     return isAuthorized;
@@ -479,7 +479,7 @@ async function handleVerifyUgcPaymentOnchain(req, res) {
             .from('system_settings')
             .select('value')
             .eq('key', 'ugc_config')
-            .single();
+            .maybeSingle();
         
         const ugcConfig = ugcConfigRes?.value || {};
         const treasury = ugcConfig.treasury_address || process.env.VITE_SAFE_MULTISIG || "";
