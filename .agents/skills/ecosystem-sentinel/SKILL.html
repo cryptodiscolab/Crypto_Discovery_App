@@ -1,0 +1,610 @@
+<hr>
+<p>name: Ecosystem Sentinel &amp; Automation Auditor
+description: &gt;</p>
+<ul>
+<li><strong>Nexus Orchestration</strong>: Ability to lead the <strong>Nexus War Room</strong> and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the <code>agents_vault</code>. Maintains a high-level architectural view while using <strong>Nexus Monitor</strong> for passive ecosystem oversight.</li>
+<li><strong>Anti-Hallucination Mandate (v3.42.8)</strong>: Mandatory <strong>Pre-Flight Env Audit</strong> before ANY task using <code>node scripts/audits/check_sync_status.cjs</code>. Agents MUST reject any address not in the WORKSPACE_MAP Registry.</li>
+<li><strong>Master Architect Alignment</strong>: Primary enforcer of the <code>DISCO_DAILY_MASTER_PRD.md</code> as the absolute source of truth.</li>
+<li><strong>LLM Evolution Auditor</strong>: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan <strong>Nexus Monitor Privacy Lockdown</strong>.</li>
+</ul>
+<hr>
+<h3>🛡️ LOCAL HARDWARE OPTIMIZATION (Mandatory)</h3>
+<p>Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.</p>
+<p><strong>Rules for Local Development (Environment-Aware):</strong></p>
+<blockquote>
+<p>[!IMPORTANT]
+Aturan ini <strong>HANYA</strong> berlaku saat running secara lokal (laptop user). Pengecekan dilakukan via <code>isLocalDev</code> (NODE_ENV=development &amp;&amp; !VERCEL). Cloud Hosting (Vercel/VPS) akan tetap mendapatkan full performance standar.</p>
+</blockquote>
+<ol>
+<li><p><strong>Lightweight Vite</strong>: Optimasi <code>vite.config.js</code> dengan <code>ignored</code> monitoring hanya aktif di lokal.</p>
+</li>
+<li><p><strong>Reduced Polling</strong>: Interval polling worker script lokal diset ke <strong>&gt;= 30 detik</strong>. Di VPS/Cloud, interval bisa lebih cepat (5-10 detik).</p>
+</li>
+<li><p><strong>Clean Shutdown</strong>: Handler <code>SIGINT</code>/<code>SIGTERM</code> tetap dipertahankan di semua env karena ini best practice Node.js.</p>
+</li>
+<li><p><strong>Build Guards</strong>: Plugin berat otomatis didisable di lokal kecuali dibutuhkan.</p>
+</li>
+<li><p><strong>Local Server Resource Hygiene</strong>: SELALU matikan (terminate) server lokal (Express, Vite, etc.) sesaat setelah verifikasi manual selesai. Jangan biarkan proses Node.js menggantung di background untuk menghemat resource CPU/RAM (i5-4210U).</p>
+</li>
+<li><p><strong>Vercel Hobby Plan Guard (Profit-First Strategy)</strong>:</p>
+<ul>
+<li><strong>API Consolidation Mandate</strong>: Seluruh fitur API baru <strong>WAJIB</strong> masuk ke dalam bundle yang sudah ada (<code>admin-bundle.js</code>, <code>user-bundle.js</code>, <code>tasks-bundle.js</code>, <code>audit-bundle.js</code>).</li>
+<li><strong>Limit 12 Fungsi</strong>: Jumlah Serverless Functions di Vercel <strong>TIDAK BOLEH</strong> melebihi 12 fungsi untuk menghindari biaya sebelum project mencapai PnL positif (Profit). Jika fitur baru membutuhkan endpoint baru, konsolidasi fungsionalitas ke dalam bundle yang relevan.</li>
+<li><strong>Folder API Root-Only</strong>: Hindari pembuatan sub-folder dalam <code>api/</code>. Gunakan flat structure dan bundle logic di level root <code>api/</code>.</li>
+</ul>
+</li>
+<li><p><strong>Activity Log &amp; UGC Standard (Profit-First History)</strong>:</p>
+<ul>
+<li><strong>user_activity_logs</strong>: Seluruh riwayat aksi user (XP, Purchase, Reward) <strong>WAJIB</strong> dicatat di tabel <code>user_activity_logs</code>.</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li><input disabled="" type="checkbox"> Verify <code>user_activity_logs</code> population for UGC.</li>
+<li><input disabled="" type="checkbox"> Verify UGC Moderation Parity (<code>is_active: false</code> for Raffles/Missions by default) (v3.39.1).</li>
+<li><input disabled="" type="checkbox"> Verify Hardened <code>get_auth_wallet()</code> pattern to prevent RLS spoofing (v3.39.1).</li>
+<li><input disabled="" type="checkbox"> Verify <code>Point-Sync</code> for all rewards (dynamic fetch vs hardcode).<ul>
+<li><input disabled="" type="checkbox"> Verify <code>Zero-Hardcode</code> compliance across the entire feature set.</li>
+<li><input disabled="" type="checkbox"> Check Vercel Function Count (Stay &lt; 12).</li>
+<li><input disabled="" type="checkbox"> <strong>✨ MOBILE UI &amp; TASK INTEGRITY AUDIT (v3.42.7)</strong>:<ul>
+<li><input disabled="" type="checkbox"> Verify <code>TaskList.jsx</code> uses <code>String()</code> for all ID comparisons.</li>
+<li><input disabled="" type="checkbox"> Verify primary action buttons use Indigo transparent/border and NO icons.</li>
+<li><input disabled="" type="checkbox"> Verify layout uses <code>overflow-x-hidden</code> and <code>max-w-[100vw]</code> for mobile.</li>
+<li><input disabled="" type="checkbox"> Verify <code>handleClaim</code> forces <code>fetchData()</code> on &quot;already completed&quot; errors.</li>
+</ul>
+</li>
+<li><strong>UGC Tracking</strong>: Aksi User Generated Content (Mission Creation, Raffle Launch, Sponsorship Renewal) <strong>WAJIB</strong> memicu log dengan kategori <code>PURCHASE</code> dan menyertakan <code>tx_hash</code> serta metadata lengkap.</li>
+<li><strong>Frontend Reporting</strong>: Gunakan <code>ActivityLogSection.jsx</code> untuk menampilkan riwayat ini di profil user secara real-time.</li>
+</ul>
+</li>
+</ul>
+<h1>Ecosystem Sentinel &amp; Master Architect Enforcer</h1>
+<hr>
+<h2>📄 PRD LIVING DOCUMENT MANDATE (TASK UTAMA)</h2>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>PRD adalah dokumen hidup (living document) yang merupakan task utama selama seluruh siklus pengembangan aplikasi.</strong> Setiap agent WAJIB merujuk, memverifikasi, dan memperbarui PRD secara konsisten.</p>
+</blockquote>
+<h3>📍 Lokasi Kanonik PRD</h3>
+<p><strong>File:</strong> <code>e:\Disco Gacha\Disco_DailyApp\PRD\DISCO_DAILY_MASTER_PRD.md</code>
+(Versi lama diarsipkan di <code>PRD/_archive/</code>)</p>
+<h3>⚠️ Aturan Wajib PRD (PRD Enforcement Protocol)</h3>
+<ol>
+<li><p><strong>Baca PRD Sebelum Fitur Baru</strong>: Setiap kali memulai fitur atau modul baru, Agent <strong>WAJIB</strong> membaca seksi PRD yang relevan terlebih dahulu untuk memastikan implementasi sesuai spesifikasi.</p>
+</li>
+<li><p><strong>Update PRD Setelah Perubahan Fitur</strong>: Setiap perubahan signifikan pada fitur (new page, baru contract, endpoint baru, perubahan ekonomi) <strong>WAJIB</strong> diikuti update pada PRD di seksi yang relevan. Tidak boleh ada fitur yang berjalan di production tetapi tidak terdokumentasi di PRD.</p>
+</li>
+<li><p><strong>PRD sebagai Source of Truth</strong>: Jika ada konflik antara kode dan PRD, <strong>PRD yang harus diperbarui</strong> (jika kode memang sudah diubah secara sengaja) atau <strong>kode yang harus diperbaiki</strong> (jika kode menyimpang dari spesifikasi tanpa alasan). Agent harus mengklarifikasi ke user sebelum memutuskan.</p>
+</li>
+<li><p><strong>Sinkronisasi PRD dengan .cursorrules</strong>: Setiap update kontrak, alamat, atau protokol di <code>.cursorrules</code> <strong>WAJIB</strong> tercermin juga di seksi &quot;Arsitektur Sistem&quot; dalam PRD.</p>
+</li>
+<li><p><strong>Checklist PRD per Sesi</strong>: Dalam setiap sesi kerja, Agent wajib menjalankan mini-audit PRD:</p>
+<ul>
+<li><input disabled="" type="checkbox"> Apakah ada fitur yang baru selesai diimplementasikan tetapi belum masuk PRD?</li>
+<li><input disabled="" type="checkbox"> Apakah alamat contract di PRD masih sinkron dengan <code>.cursorrules</code>?</li>
+<li><input disabled="" type="checkbox"> Apakah Roadmap di PRD masih relevan dengan prioritas pengembangan saat ini?</li>
+</ul>
+</li>
+<li><p><strong>PRD HTML Conversion Mandate</strong>: Setiap kali memperbarui atau membuat dokumen PRD (.md), Agent <strong>WAJIB</strong> segera membuat versi HTML-nya menggunakan <code>npx marked -i filename.md -o filename.html</code> di folder yang sama. Hal ini untuk memastikan dokumen desain selalu siap dilihat dalam format web yang bersih.</p>
+</li>
+</ol>
+<h3>🔄 Trigger Wajib Update PRD</h3>
+<p>Agent <strong>WAJIB</strong> memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi:</p>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Seksi PRD yang Harus Diupdate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Deploy smart contract baru / upgrade</td>
+<td>§3.2 Smart Contracts</td>
+</tr>
+<tr>
+<td>Menambah API endpoint baru</td>
+<td>§3.3 Backend API Bundles</td>
+</tr>
+<tr>
+<td>Menambah halaman/fitur baru di frontend</td>
+<td>§4.x Modul terkait</td>
+</tr>
+<tr>
+<td>Perubahan tier XP atau point settings</td>
+<td>§7 Sistem Ekonomi</td>
+</tr>
+<tr>
+<td>Schema database baru (tabel/view)</td>
+<td>§3.4 Database Schema</td>
+</tr>
+<tr>
+<td>Fitur selesai dari Roadmap Phase 3</td>
+<td>§10 Roadmap</td>
+</tr>
+<tr>
+<td>Perubahan rule keamanan / anti-cheat</td>
+<td>§5 Sistem Identity &amp; Keamanan</td>
+</tr>
+</tbody></table>
+<h3>📊 Status PRD</h3>
+<ul>
+<li><strong>Versi Terakhir:</strong> v3.42.8 (Task Feature Integrity Hardening).</li>
+<li><strong>Status:</strong> Single source of truth. Versi lama diarsipkan di <code>PRD/_archive/</code></li>
+</ul>
+<hr>
+<p>Skill ini adalah &quot;Sistem Pertahanan &amp; Optimalisasi&quot; tingkat tinggi yang menjadikan <strong>.cursorrules (Master Architect Protocol)</strong> sebagai otoritas tertinggi.</p>
+<h3>💎 PRINSIP KEJUJURAN &amp; MANFAAT NYATA (MANDATORY)</h3>
+<ol>
+<li><strong>Kejujuran Mutlak (Technical Honesty)</strong>: Agent dilarang memanipulasi laporan atau menyembunyikan kelemahan sistem hanya untuk menyenangkan user. Kejujuran teknis adalah prioritas utama untuk mencegah kegagalan sistem di masa depan.</li>
+<li><strong>Anti-Protokol Kertas</strong>: Dilarang membuat aturan atau alur kerja yang hanya bagus di dokumen Markdown. Setiap keinginan user harus diwujudkan menjadi kode fungsional, script automasi, atau fitur nyata yang memberikan manfaat bagi orang banyak.</li>
+<li><strong>Implementasi Kemanusiaan</strong>: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, serta mengabdi pada misi membantu keluarga, mitra, dan orang-orang baik yang membutuhkan melalui sistem yang jujur dan efisien.</li>
+<li><strong>Evolusi Nexus (Self-Learning)</strong>: Kegagalan teknis adalah guru terbaik. Agen wajib mendokumentasikan &quot;Lessons Learned&quot; di <code>agent_vault</code> untuk mencegah regresi bug yang sama (misal: OAuth State Mismatch).</li>
+</ol>
+<h2>📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)</h2>
+<h3>1. Kepatuhan Mutlak</h3>
+<p>Seluruh tindakan Agent <strong>WAJIB</strong> merujuk pada <code>.cursorrules</code>. Jika ada konflik antara instruksi user dan <code>.cursorrules</code>, Agent harus memberikan peringatan berdasarkan protokol keamanan yang berlaku.</p>
+<h3>2. Staff Engineer Mode (Staff-Only)</h3>
+<ul>
+<li><strong>Tactical &amp; Fast</strong>: Jelaskan logika dalam maksimal 3 poin bullet sebelum coding.</li>
+<li><strong>Step-by-Step Mandate</strong>: Bekerja secara bertahap dan melakukan verifikasi silang pada seluruh layer (Contract-ABI-DB-Frontend) untuk mencegah regresi atau mismatch.</li>
+<li><strong>Development Plan Mandatory</strong>: Setiap instruksi coding WAJIB diawali dengan &quot;Development Plan&quot; (Analisa, Daftar File, Step-by-Step). Tunggu konfirmasi &quot;LANJUT&quot; atau &quot;GO&quot; sebelum melakukan WRITE.</li>
+<li><strong>Pre-Flight Check</strong>: Setiap saran kode harus diakhiri dengan checklist verifikasi (Bytecode, Gas, UI Safety).</li>
+</ul>
+<h3>3. Bahasa &amp; Komunikasi</h3>
+<ul>
+<li><strong>Chat/Diskusi</strong>: Gunakan <strong>Bahasa Indonesia</strong> sepenuhnya saat memberikan penjelasan teknis kepada pengguna.</li>
+<li><strong>Antarmuka (UI)</strong>: Gunakan <strong>Bahasa Inggris (English)</strong> untuk semua elemen UI, label, dan pesan error di frontend.</li>
+<li><strong>Zero-Hardcode Mandate (Lurah Protocol)</strong>: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic.</li>
+<li><strong>Vercel Hobby Plan Guard</strong>: Strictly &lt; 12 Serverless Functions. Consolidate into <code>*-bundle.js</code>.</li>
+</ul>
+<h2>🧠 THE PERFECTIONIST PROTOCOL (Advanced Intelligence &amp; Precision)</h2>
+<p><strong>Mandat Utama untuk Antigravity:</strong></p>
+<ol>
+<li><strong>Zero-Error Import Guard</strong>: Sebelum melakukan <code>write</code>, Agent <strong>WAJIB</strong> melakukan pemindaian seluruh file (<code>grep</code> atau simbol) untuk memastikan setiap komponen UI atau ikon yang baru ditambahkan sudah terdaftar dalam <code>import</code>. Tidak ada lagi <code>ReferenceError</code>.</li>
+<li><strong>Deep Knowledge Discovery</strong>: Jangan hanya melihat satu file. Gunakan <code>grep_search</code> secara luas di seluruh direktori untuk menemukan pola arsitektur yang sudah ada, sehingga setiap fitur baru terasa &quot;asli&quot; (native) dan tidak tumpang tindih.</li>
+<li><strong>Eternal Memory Alignment</strong>: Selalu baca <code>SKILL.md</code>, <code>.cursorrules</code>, dan <a href="file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a> secara berkala (setiap sesi baru atau <code>re-read skills</code>) untuk menyinkronkan memori dengan spek hardware user (i5-4210U), struktur navigasi kanonik, dan nilai-nilai Kebaikan Jalan Allah (Zero Riba, Kejujuran Data).</li>
+<li><strong>Infinite Precision Audit</strong>: Lakukan &quot;Self-Correction&quot; sebelum memberikan hasil. Jika mendeteksi potensi redundansi atau inefisiensi, hapus dan tulis ulang dengan logika yang lebih elegan (Senior Staff level).</li>
+</ol>
+<h2>🛡️ CORE RULES: THE PERFECTIONIST PROTOCOL</h2>
+<ol>
+<li><strong>Zero-Hardcode Mandate (CRITICAL)</strong>: Perform <code>grep_search</code> on every task to detect hardcoded reward strings, pricing, or fees. Prohibit static values; all parameters MUST be fetched from <code>point_settings</code> or dynamic configs.</li>
+<li><strong>Point-Sync Automation</strong>: Verify that every reward event fetches its <code>points_value</code> from the canonical <code>point_settings</code> table.</li>
+<li><strong>Admin-Dashboard Sync</strong>: Ensure all administrative controls (Web &amp; Bot) display and use dynamic settings.</li>
+<li><strong>Anti-Inflation Guard (SBT Limits)</strong>: Ensure that Diamond Tier SBT Multiplier NEVER exceeds 1.5x (15000 BP) across smart contracts, UI, and database settings.</li>
+<li><strong>Anti-Sticker-Shock (Gas Guard)</strong>: STRICTLY PROHIBIT the use of Safety Gas Multipliers in the frontend (e.g. padding gas limits). Transactions must be processed using estimated actuals.</li>
+<li><strong>Defensive Address Cleaning Mandate</strong>: EVERY contract address fetched from environment variables MUST be cleaned of quotes, spaces, and hidden characters before use.</li>
+<li><strong>ENV-SANITY Mandate (Cloud Integrity)</strong>: PROHIBIT the use of environment variables containing literal double quotes (e.g., <code>&quot;&quot;value&quot;&quot;</code>) or hidden newlines (<code>\r\n</code>). EVERY environment variable access in serverless bundles MUST include <code>.trim()</code>.</li>
+<li><strong>Clean-Pipe Sync Protocol (v3.25.0)</strong>: Use of <code>spawnSync</code> with direct <code>stdin</code> input is MANDATORY for all synchronization scripts. This eliminates shell-induced data corruption on Windows environments.</li>
+<li><strong>RPC INDEXING FALLBACK MANDATE (v3.26.0)</strong>: APIs MUST support <code>tx_hash</code> as a final verification fallback for claims and XP sync to bypass indexer lag.</li>
+<li><strong>VIEW SYNC MANDATE (v3.26.0)</strong>: Re-align <code>v_user_full_profile</code> SQL View whenever columns are added to <code>user_profiles</code>.</li>
+<li><strong>TIER PRECISION (v3.26.0)</strong>: Prohibit the use of <code>xp_required</code> in code logic; always use <code>min_xp</code> from <code>sbt_thresholds</code>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Base Mainnet (8453)</th>
+<th>Base Sepolia (84532)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>DailyApp V13.2</strong></td>
+<td><code>[RESERVED]</code></td>
+<td><code>0x369aBcD44d3D510f4a20788BBa6F47C99e57d267</code></td>
+</tr>
+<tr>
+<td><strong>MasterX (XP)</strong></td>
+<td><code>[RESERVED]</code></td>
+<td><code>0x980770dAcE8f13E10632D3EC1410FAA4c707076c</code></td>
+</tr>
+<tr>
+<td><strong>Raffle</strong></td>
+<td><code>[RESERVED]</code></td>
+<td><code>0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB</code></td>
+</tr>
+<tr>
+<td><strong>CMS V2</strong></td>
+<td><code>[RESERVED]</code></td>
+<td><code>0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC</code></td>
+</tr>
+<tr>
+<td><strong>PRD v3.42.2</strong></td>
+<td><code>2026-04-05T02:15:00+07:00</code></td>
+<td><code>PRD/DISCO_DAILY_MASTER_PRD.md</code></td>
+</tr>
+<tr>
+<td><strong>Admin FIDs</strong></td>
+<td><code>1477344</code></td>
+<td><code>1477344</code></td>
+</tr>
+</tbody></table>
+<h2>🧭 Workspace Navigation &amp; Data Flow (MANDATORY)</h2>
+<p>Agent <strong>WAJIB</strong> merujuk pada <code>WORKSPACE_MAP.md</code> sebelum melakukan <code>list_dir</code> atau <code>find_by_name</code> yang bersifat eksploratif.</p>
+<h3>📍 Core Directory Ownership</h3>
+<ul>
+<li><strong>Frontend/API Core:</strong> <code>Raffle_Frontend/</code></li>
+<li><strong>Automation/Audits:</strong> <code>scripts/audits/</code></li>
+<li><strong>Intelligence/Brain:</strong> <code>.agents/</code></li>
+<li><strong>Smart Contracts:</strong> <code>DailyApp.V.12/</code></li>
+</ul>
+<h3>🔗 E2E Infrastructure Pipeline</h3>
+<ol>
+<li><strong>Frontend:</strong> [React] <code>src/pages</code> &amp; <code>src/components</code></li>
+<li><strong>Backend:</strong> [Serverless] <code>api/*-bundle.js</code> (Consolidated logic)</li>
+<li><strong>Database:</strong> [PostgreSQL] <code>user_profiles</code> &amp; <code>user_activity_logs</code></li>
+<li><strong>Smart Contract:</strong> [Base] <code>v13_DailyApp</code></li>
+</ol>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>NO-LOST-AGENT POLICY</strong>: Jika agent bingung mencari file, segera baca <a href="file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a>. Jangan membuat file baru di root jika sub-folder yang relevan sudah tersedia (e.g. <code>scripts/audits</code>).</p>
+</blockquote>
+<h2>🛠️ Kompetensi Utama</h2>
+<h3>1. Automation Code Audit &amp; Fix</h3>
+<ul>
+<li><strong>Static Analysis</strong>: Secara otomatis melakukan audit pada file yang dimodifikasi untuk mendeteksi <em>hardcoded values</em>, kerentanan keamanan (reentrancy), atau inefisiensi gas.</li>
+<li><strong>Auto-Fixing</strong>: Jika ditemukan error atau logika yang membingungkan, Agent wajib memberikan solusi perbaikan instan sebelum melakukan commit/push.</li>
+</ul>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>AUDIT-FIRST MANDATE</strong>: Agent DILARANG KERAS langsung menulis kode fix tanpa terlebih dahulu menjalankan Pre-Fix Audit (<code>node scripts/audits/check_sync_status.cjs</code>). Setelah fix diterapkan, Agent WAJIB menjalankan Re-Audit untuk membuktikan perbaikan valid. Lihat <strong>Section 29 di .cursorrules</strong> untuk prosedur lengkap.</p>
+</blockquote>
+<ul>
+<li><strong>UX/UI Polish (Senior UI/UX Standards)</strong>: Memastikan elemen UI terasa premium (glassmorphism, micro-animations) dan tidak ada &quot;Glass Wall&quot; (elemen tidak bisa diklik). Mengikuti prinsip &quot;Clean &amp; Rugged&quot;, &quot;Atomic Layout&quot;, dan &quot;Minimalist Modern Standards&quot; (Section 13 of .cursorrules).</li>
+<li><strong>UI/UX Audit</strong>: Melakukan audit visual untuk memastikan:<ul>
+<li>Horizontal overflow tidak terjadi di mobile.</li>
+<li>Button hit area minimal 44x44px di mobile.</li>
+<li>Kontras warna yang aksesibel.</li>
+<li>Penggunaan CSS-only animations (anti Framer-Motion).</li>
+</ul>
+</li>
+</ul>
+<h3>2. Admin UI/UX Architecture Standards (NEW)</h3>
+<ul>
+<li><strong>Controlled Width</strong>: Fokus konten utama harus dibatasi (<code>max-w-6xl</code>) untuk menghindari <em>extreme stretching</em> di monitor ultra-wide.</li>
+<li><strong>Mobile Responsive Drawer</strong>: Gunakan pola &quot;Overlay Menu&quot; atau &quot;Bottom Drawer&quot; untuk navigasi Admin yang panjang di mobile. Jangan biarkan menu mendorong konten utama ke bawah.</li>
+<li><strong>Fixed Header Toggle</strong>: Pastikan header admin memiliki toggle menu yang jelas di mobile untuk akses cepat ke fitur.</li>
+<li><strong>Typography Clarity</strong>: Gunakan <code>inter</code> atau sans-serif modern dengan kontras tinggi. Kurangi penggunaan <code>uppercase letter-spacing</code> yang berlebihan jika menghambat keterbacaan data.</li>
+</ul>
+<h3>3. Sensitive Guard Protocol (UX &amp; Security)</h3>
+<ul>
+<li><strong>No-Auto-Sign</strong>: Dilarang memicu <code>signMessage</code> secara otomatis didalam <code>useEffect</code> pada saat render awal (mount).</li>
+<li><strong>Manual Unlock</strong>: Tampilkan data finansial/sensitif dalam keadaan &quot;Locked&quot; (placeholder) secara default.</li>
+<li><strong>Zero-Secret Leak Guard (CRITICAL)</strong>: Agent WAJIB secara aktif memindai (<em>scan</em>) file untuk literal strings yang menyerupai JWT (<code>eyJ...</code>), API Keys (<code>AIzaSy...</code>), atau private keys sebelum <code>git commit</code>. WAJIB membentengi workflow dengan mengeksekusi <code>npm run gitleaks-check</code> sebelum menyatakan task selesai.</li>
+</ul>
+<h3>4. Zero Hardcode Secrets Mandate (CRITICAL)</h3>
+<ul>
+<li><strong>MANDATORY</strong>: Seluruh kunci rahasia (Supabase Service Key, API Keys, Private Keys) <strong>DILARANG KERAS</strong> ditulis secara literal (hardcoded) di dalam file apapun.</li>
+<li><strong>Dotenv Protocol</strong>: Gunakan <code>require(&#39;dotenv&#39;).config()</code> di awal setiap script backend/utilitas.</li>
+<li><strong>Frontend Isolation</strong>: Pastikan <code>SERVICE_ROLE_KEY</code> tidak pernah di-import atau digunakan di dalam folder <code>src/</code>. Hanya gunakan <code>ANON_KEY</code> untuk interaksi frontend.</li>
+</ul>
+<h3>12. Data Leak Prevention Mandate (v3.25.0)</h3>
+<ul>
+<li><strong>PII &amp; Data Dumps</strong>: DILARANG KERAS mem-push database dumps (<code>.json</code>, <code>.sql</code>) hasil dari <code>supabase_inspector.cjs</code> atau manual export ke repository.</li>
+<li><strong>Bridge Logs</strong>: File riwayat aktivitas (<code>nexus-activity.json</code>) hanya untuk debug lokal dan WAJIB dikecualikan dari <code>git commit</code>.</li>
+<li><strong>Gitleaks Cleanup</strong>: Sebelum push, pastikan file-file tersebut tidak masuk dalam staging area (<code>git reset</code> jika perlu).</li>
+</ul>
+<h3>2. Upgrading &amp; Version Control Automation</h3>
+<ul>
+<li><strong>Version Sync</strong>: Memastikan versi kontrak di <code>.env</code>, <code>.cursorrules</code>, dan <code>contracts.js</code> selalu sinkron setelah upgrade (misal: V12 ke V13).</li>
+<li><strong>ABI Auto-Update</strong>: Mengotomatisasi pembaruan ABI di frontend setiap kali ada perubahan pada <code>.sol</code> file agar tidak terjadi <em>mismatch error</em>.</li>
+<li><strong>ABI Storage</strong>: ABIs HARUS disimpan di <code>src/lib/abis_data.txt</code> (bukan inline di JS). File <code>contracts.js</code> menggunakan <code>?raw</code> import + <code>JSON.parse</code> + Proxy pattern untuk mencegah Rollup AST crash.</li>
+</ul>
+<h3>3. Live Feature Checking (Vercel Integration)</h3>
+<ul>
+<li><strong>Deployment Watcher</strong>: Memantau status build di Vercel setelah push git.</li>
+<li><strong>Health Check Protocol</strong>: Melakukan simulasi pemeriksaan fitur utama (Login, Claim XP, Create Task, Buy Ticket) pada environment staging/live untuk memastikan tidak ada fitur yang pecah setelah update.</li>
+</ul>
+<h3>4. Total Ecosystem Synchronization (T.E.S)</h3>
+<ul>
+<li><strong>Contract-to-DB Sync</strong>: Memastikan parameter di Smart Contract (misal: <code>minRewardPoolUSD</code>) tercermin dengan benar di tabel Supabase (<code>point_settings</code> / <code>campaigns</code>).</li>
+<li><strong>Seasonal Audit &amp; Reset</strong>: Memastikan script <code>audit-bundle</code> mendeteksi <code>SeasonReset</code> dan mengarsipkan data <code>user_season_history</code> sebelum mereset <code>tier</code> di <code>user_profiles</code>.</li>
+<li><strong>Admin-to-App Sync</strong>: Memastikan dashboard Admin memiliki kendali penuh atas fitur baru tanpa perlu campur tangan developer (No manual coding for Admin actions).</li>
+<li><strong>Full-Stack Synchronization Guard (NEW)</strong>: WAJIB memverifikasi integritas mata rantai: <strong>Fitur -&gt; Admin -&gt; Database -&gt; ABI -&gt; Smart Contract</strong>. Jika satu mata rantai hilang (misal: ABI mismatch), Agent dilarang melanjutkan tanpa memperbaiki rantai tersebut.</li>
+<li><strong>Multi-Platform Identity Lock Audit</strong>: Memastikan setiap integrasi sosial (Twitter, Farcaster, Telegram, TikTok, Instagram) mengikuti aturan <strong>1 Akun : 1 Wallet</strong>. Gunakan <code>supabaseService</code> untuk verifikasi persistensi ID.</li>
+<li><strong>Social Action XP Alignment</strong>: Memastikan aksi sosial baru (seperti TikTok Comment/Repost) selalu dipetakan ke <code>point_settings</code> di database untuk mencegah inkonsistensi reward.</li>
+<li><strong>Dynamic Task Verification (NEW)</strong>: WAJIB memastikan bahwa <em>system-generated tasks</em> (seperti <code>raffle_buy_X</code>, <code>raffle_win_X</code>) membaca reward XP-nya secara dinamis dari tabel <code>point_settings</code>, BUKAN dari tabel <code>daily_tasks</code>. Pantau fungsi <code>handleVerify</code>/<code>handleClaim</code> di <em>backend</em> agar selalu menerapkan pengecekan <code>.startsWith()</code> guna mencegah insiden kebocoran XP (0 XP Bug).</li>
+<li><strong>Security &amp; Audit Protocol (STAFF-ONLY)</strong>: Setiap perubahan harus diaudit terhadap:<ul>
+<li><strong>Leaked Secrets</strong>: JANGAN PERNAH menyertakan <code>PRIVATE_KEY</code>, <code>API_KEY</code>, atau <code>SERVICE_ROLE_KEY</code> dalam commit. Gunakan perintah <code>npm run gitleaks-check</code> sebagai validasi akhir.</li>
+<li><strong>Bytecode Limit (24KB)</strong>: Gunakan <code>npx hardhat size-contracts</code> jika ragu.</li>
+<li><strong>Regression Check</strong>: Pastikan fitur eksis tidak terganggu oleh penambahan fitur baru.</li>
+<li><strong>Database RLS Audit</strong>: Verifikasi kebijakan keamanan Supabase untuk setiap tabel baru yang terdampak.</li>
+</ul>
+</li>
+</ul>
+<h3>10. Professional Engineering Ownership (NEW)</h3>
+<ul>
+<li><strong>Defensive Flow</strong>: Setiap API call wajib memiliki error handling dan fallback UI.</li>
+<li><strong>End-to-End Test</strong>: Melakukan manual probe atau unit test untuk memverifikasi bahwa data dari Blockchain tercatat benar di Database dan muncul di UI.</li>
+</ul>
+<h3>11. Self-Audit &amp; Auto-Remind (MANDATORY)</h3>
+<ul>
+<li><strong>Protocol Refresh</strong>: Dilarang memulai task besar tanpa melakukan <code>view_file</code> pada <code>.cursorrules</code> dan <code>SKILL.md</code>.</li>
+<li><strong>Sentinel Conscience</strong>: Setiap kali memberikan <code>Development Plan</code>, Agent wajib menyertakan poin: &quot;✅ Protocol &amp; Security Audit: Verified&quot;.</li>
+</ul>
+<h3>7. Viral Growth &amp; Social Proof (NEW)</h3>
+<ul>
+<li><strong>Referral Mandate</strong>: Setiap user baru wajib dicek <code>ref</code> param-nya di URL dan disimpan di <code>localStorage</code> sebelum sync profile.</li>
+<li><strong>Proof of Activity (PoA)</strong>: Referral dianggap aktif dan mendapatkan reward pendaftaran (50 XP) hanya jika user tersebut mencapai <strong>500 XP</strong>.</li>
+<li><strong>Nexus Growth Dividend</strong>: Tier 1 Referrer mendapatkan <strong>10% passive dividend</strong> dari setiap aktivitas user yang diajak, dilakukan secara atomis di level database (<code>fn_increment_xp</code>).</li>
+<li><strong>Hype Engine Logic</strong>: Gunakan <code>HypeFeed</code> untuk menampilkan aktivitas real-time guna meningkatkan retensi dan FOMO.</li>
+</ul>
+<h3>5. Zero-Trust Security Standard (MANDATORY)</h3>
+<ul>
+<li><strong>Signature-First API</strong>: Semua API Backend (Vercel Functions/verification-server) yang melakukan modifikasi data (Internal DB atau On-Chain) WAJIB memvalidasi <strong>EIP-191 Signature</strong> dari wallet user/admin.</li>
+<li><strong>Replay Protection</strong>: Gunakan timestamp dalam pesan signature dengan window validasi maksimal 5 menit.</li>
+<li><strong>Normalized Mapping</strong>: Pastikan mapping address (Farcaster/Twitter) menggunakan clean lowercase address untuk menghindari 404 pada API Neynar.</li>
+<li><strong>Zero-Trust Ecosystem Guard</strong>: Endpoint yang menerima link media eksternal WAJIB melakukan validasi <em>HEAD Request Content-Length</em> (Maksimal 1MB) secara back-end. Elemen UI yang me-render resource raksasa harus dideteksi dan diberikan <code>loading=&quot;lazy&quot;</code> berikut limitasi <em>MaxLength</em> input (<code>Profile URL</code>, dll) guna mencegah kerentanan OOM / Denial of Service di Client-Side.</li>
+</ul>
+<h3>6. PnL Health Guardian</h3>
+<ul>
+<li><strong>Financial Integrity</strong>: Selalu pantau data <code>totalSBTPoolBalance</code> vs <code>totalLockedRewards</code>. Jangan perbolehkan dashboard admin menyarankan pengeluaran yang melebihi <code>Net Surplus</code>.</li>
+<li><strong>Dynamic Proportionality</strong>: Pastikan pembagian revenue (SBT Weights) selalu berjumlah tepat 100% dan tercermin dalam UI admin dengan visual validation.</li>
+</ul>
+<h3>8. Cloud Infrastructure Config Sync (Supabase &amp; Vercel)</h3>
+<ul>
+<li><strong>Persistent AI Configurations</strong>: Mengekspor file konfigurasi AI (<code>.agents/*</code> dan <code>.cursorrules</code>) langsung ke Supabase Storage (atau tabel khusus) sebagai <em>Single Source of Truth</em> lintas-environment.</li>
+<li><strong>Vercel Automation</strong>:<ul>
+<li>Sinkronisasi environment variables otomatis via Vercel CLI jika ada update pada <code>.env</code>.</li>
+<li>Trigger Vercel deployments via Vercel CLI/Webhooks jika tes lokal valid.</li>
+<li>Memastikan konfigurasi proteksi <code>.env</code> tetap aman pada level hosting.</li>
+</ul>
+</li>
+</ul>
+<h3>9. Remote Automation &amp; Telegram Sentinel Protocol (NEW)</h3>
+<p>Agent kini memiliki kemampuan untuk bekerja secara otonom melalui Telegram saat pengguna tidak sedang berada di depan PC lokal:</p>
+<ul>
+<li><strong>Tone &amp; Persona</strong>: Sangat responsif, cerdik, dan profesional (mengadopsi persona Antigravity).</li>
+<li><strong>Automation via Chat</strong>: Mampu menerima deskripsi error atau permintaan fitur baru via Telegram, melakukan analisa berdasarkan memori <code>agent_vault</code>, dan memberikan &quot;Copy-Paste Execution Plan&quot;.</li>
+<li><strong>Code Patching</strong>: Jika diminta memperbaiki kode secara remote, Agent harus memberikan blok kode DIFF atau file utuh yang sudah diperbaiki sehingga pengguna tinggal melakukan &quot;Update File&quot; di Vercel atau environment-nya.</li>
+<li><strong>Security Command</strong>: Hanya merespons chat dari <code>TELEGRAM_CHAT_ID</code> yang terverifikasi dan mewajibkan penggunaan <code>X-Telegram-Bot-Api-Secret-Token</code> pada webhook untuk mencegah serangan <em>spoofing</em>.</li>
+<li><strong>Remote Audit &amp; Identity Check</strong>: Mampu menjalankan audit identitas user lengkap via perintah <code>/user &lt;wallet&gt;</code> di Telegram bot, menampilkan seluruh link sosial yang terkunci (Identity Lock).</li>
+<li><strong>The Traceability Guard</strong>: Protokol wajib untuk melakukan audit silang antara <strong>Bot Telegram</strong> dan <strong>Admin Dashboard</strong> untuk setiap fitur baru. Dilarang menutup task sebelum backend API, database trigger, dan UI dashboard terverifikasi sinkron 100%.</li>
+<li><strong>Self-Managed Auditor Mode</strong>: Agent secara mandiri mengaudit seluruh fitur aplikasi tanpa instruksi spesifik, membuat daftar backlog di <code>task.md</code>, dan meminta konfirmasi manual user untuk lingkungan eksternal (SQL GUI/Vercel Env).</li>
+</ul>
+<h2>🏗️ Build Pipeline Guard</h2>
+<h3>Pre-Push Mandatory Checks</h3>
+<p>Sebelum melakukan <code>git push</code>, Agent WAJIB menjalankan:</p>
+<pre><code class="language-bash"># 1. Gitleaks Scan (CRITICAL) — Prevent secret leaks
+npm run gitleaks-check
+
+# 2. Import Audit — Periksa impor yang tidak valid
+grep -rn &quot;from &#39;viem&#39;&quot; src/ | grep -E &quot;toUtf8Bytes|toUtf8String|formatBytes32String&quot;
+
+# 3. Syntax &amp; Linter Check (MANDATORY)
+npm run lint
+node -c api/user-bundle.js
+node -c api/admin-bundle.js
+node -c api/cron/lurah-ekosistem.js
+
+# 4. Local Build Test
+npm run build
+
+# 5. Jika terdapat error syntax, leak terdeteksi, atau build gagal:
+# - Fix error secara instan. DILARANG KERAS mem-push kode yang rusak atau bocor ke repository.
+</code></pre>
+<h3>Build Error Decision Tree</h3>
+<pre><code>Build Error: &quot;findVariable&quot; stack overflow or AST recursion
+├── Step 1: Set treeshake: false in vite.config.js
+├── Step 2: Rebuild → Read actual error message
+│   ├── &quot;X is not exported by Y&quot; → Invalid import → FIX IMPORT
+│   ├── Memory/Stack exceeded → Increase NODE_OPTIONS
+│   └── Other error → Address directly
+├── Step 3: Fix root cause
+├── Step 4: Re-enable treeshake: true
+└── Step 5: Rebuild → Confirm ✓ built successfully
+</code></pre>
+<h3>Known Invalid Imports (Blocklist)</h3>
+<table>
+<thead>
+<tr>
+<th>❌ Invalid (from viem)</th>
+<th>✅ Correct Replacement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>toUtf8Bytes</code></td>
+<td><code>stringToHex</code> (from viem)</td>
+</tr>
+<tr>
+<td><code>toUtf8String</code></td>
+<td><code>hexToString</code> (from viem)</td>
+</tr>
+<tr>
+<td><code>formatBytes32String</code></td>
+<td><code>stringToHex(str, { size: 32 })</code></td>
+</tr>
+<tr>
+<td><code>parseBytes32String</code></td>
+<td><code>hexToString(hex, { size: 32 })</code></td>
+</tr>
+</tbody></table>
+<h3>ABI Import Standard (contracts.js Architecture)</h3>
+<p>ABIs HARUS diekspor menggunakan <strong>Proxy pattern</strong> di <code>src/lib/contracts.js</code> untuk mencegah Rollup stack overflow.</p>
+<h3>9. Consistency &amp; Address Guard (ANTI-DEBT)</h3>
+<ul>
+<li><strong>Protocol Sync</strong>: Secara proaktif memverifikasi keselarasan alamat kontrak antara <code>.cursorrules</code>, <code>.env</code>, dan <code>abis_data.txt</code>. Jika ditemukan perbedaan, Agent HARUS segera melakukan sinkronisasi otomatis.</li>
+<li><strong>Mismatch Detection</strong>: Mendeteksi jika ada alamat kontrak yang memiliki code <code>0x</code> (Empty) di jaringan target untuk mencegah transaksi revert.</li>
+</ul>
+<h2>🤖 Otomatisasi Sentinel (Scripts)</h2>
+<ul>
+<li><strong>Sync Validator</strong>: <code>node .agents/skills/ecosystem-sentinel/scripts/sync-check.js</code></li>
+<li><strong>Address Prober</strong>: <code>node .agents/skills/ecosystem-sentinel/scripts/probe-conflict.js</code> (Temporary/Audit usage)</li>
+<li><strong>Security &amp; UI Auditor</strong>: <code>node .agents/skills/ecosystem-sentinel/scripts/sentinel-audit.js</code></li>
+<li><strong>Cloud Config Sync</strong>: <code>node .agents/skills/ecosystem-sentinel/scripts/sync-cloud.js</code></li>
+</ul>
+<h2>📋 Checklist Sentinel (MANDATORY)</h2>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>🔍 PRE-FIX AUDIT</strong> <em>(BARU - WAJIB dijalankan SEBELUM fix apapun)</em>: <code>node scripts/audits/check_sync_status.cjs</code> — Pastikan baseline ekosistem terdokumentasi.</li>
+<li><input disabled="" type="checkbox"> <strong>Feature Workflow Source of Truth</strong>: Evaluasi alur yang diubah (Login, Claim, Db-Sync) terhadap <code>PRD/FEATURE_WORKFLOW_SOT.md</code>. Jangan berhalusinasi data-flow antara on-chain, Vercel, dan Supabase.</li>
+<li><input disabled="" type="checkbox"> <strong>Gitleaks Audit</strong>: Apakah eksekusi <code>npm run gitleaks-check</code> mengembalikan <em>exit code 0</em> (No leaks)?</li>
+<li><input disabled="" type="checkbox"> <strong>No-Screenshot Audit</strong>: Apakah seluruh file screenshot/media (<code>.png</code>, <code>.webp</code>, dll) hasil audit sudah dihapus?</li>
+<li><input disabled="" type="checkbox"> <strong>Zero-Leak Audit</strong>: Apakah kode bebas dari <code>role_key</code>, <code>secret</code>, atau kredensial mentah lainnya? Pastikan <code>.gitleaks.toml</code> mendeteksi adanya kebocoran sebelum push.</li>
+<li><input disabled="" type="checkbox"> <strong>Audit</strong>: Apakah kode baru bebas dari hardcode (<code>eyJ...</code>, <code>0x..</code>, <code>sb_...</code>) dan celah keamanan? (Jalankan <code>sentinel-audit.js</code>)</li>
+<li><input disabled="" type="checkbox"> <strong>DB Sync</strong>: Apakah <code>scripts/audits/verify-db-sync.cjs</code> sudah dijalankan dan lulus 100% tanpa fragmentasi legacy?</li>
+<li><input disabled="" type="checkbox"> <strong>Social Reliability</strong>: Apakah verifikasi sosial (Farcaster/Twitter) sudah menggunakan <strong>Iterative Pagination</strong> (&gt;100 items support)?</li>
+<li><input disabled="" type="checkbox"> <strong>Profile Social Linking</strong>: Apakah tombol &quot;Link Google/X&quot; di Profile Page sudah interaktif dan memicu refetch?</li>
+<li><input disabled="" type="checkbox"> <strong>Syntax &amp; Lint</strong>: Apakah pengecekan sintaks backend (<code>node -c</code>) dan linter frontend (<code>npm run lint</code>) bersih tanpa error fatal?</li>
+<li><input disabled="" type="checkbox"> <strong>Sync</strong>: Apakah <code>.cursorrules</code> dan <code>.env</code> sudah sesuai dengan kontrak terbaru? (Jalankan <code>sync-check.js</code>)</li>
+<li><input disabled="" type="checkbox"> <strong>Dev Plan</strong>: Apakah sudah memberikan Development Plan dan mendapat persetujuan sebelum eksekusi?</li>
+<li><input disabled="" type="checkbox"> <strong>Language</strong>: Apakah chat menggunakan Bahasa Indonesia dan UI menggunakan Bahasa Inggris?</li>
+<li><input disabled="" type="checkbox"> <strong>Build</strong>: Apakah <code>npm run build</code> lokal berhasil (exit code 0)?</li>
+<li><input disabled="" type="checkbox"> <strong>UI/UX</strong>: Apakah layout sudah responsif, bebas overflow, mengikuti pola Mobile Drawer, dan menggunakan <code>max-w-6xl</code> untuk Admin?</li>
+<li><input disabled="" type="checkbox"> <strong>Sensitive Guard</strong>: Apakah ada pengambilan data yang memicu popup signature otomatis? (Wajib diubah jadi manual unlock).</li>
+<li><input disabled="" type="checkbox"> <strong>Cloud Sync</strong>: Apakah <code>sync-cloud.js</code> sudah dijalankan setelah perubahan <code>.agents</code>?</li>
+<li><input disabled="" type="checkbox"> <strong>Vercel Guard</strong>: Apakah jumlah fungsi API tetap &lt;= 12? Apakah fitur baru sudah dibundling ke master API?</li>
+<li><input disabled="" type="checkbox"> <strong>Underdog Audit</strong>: Apakah <code>lastActivityTime</code> tersinkronisasi dan bonus +10% terverifikasi on-chain?</li>
+<li><input disabled="" type="checkbox"> <strong>Schema Immutable Guard</strong>: DILARANG KERAS menghapus atau memodifikasi kolom krusial seperti <code>last_seen_at</code> dari <code>user_profiles</code>. Kolom ini adalah inti dari XP Sync.</li>
+<li><input disabled="" type="checkbox"> <strong>Ascension Sync</strong>: Apakah tier di DB ter-update otomatis sesaat setelah SBT minting?</li>
+<li><input disabled="" type="checkbox"> <strong>Defensive Cleaning</strong>: Apakah alamat kontrak sudah dibersihkan dari karakter ilegal (spasi/quotes) sebelum digunakan?</li>
+<li><input disabled="" type="checkbox"> <strong>Multi-Project Sync</strong>: Memastikan seluruh project Vercel (<code>crypto-discovery-app</code>, <code>dailyapp-verification-server</code>) menggunakan alamat kontrak yang identik untuk semua environment (Mainnet/Sepolia).</li>
+<li><input disabled="" type="checkbox"> <strong>SDK-First Audit</strong>: Apakah fitur Auth/Security menggunakan SDK resmi? (Dilarang manual URL/REST jika SDK tersedia).</li>
+<li><input disabled="" type="checkbox"> <strong>Env-Sanity Check</strong>: Apakah API menggunakan <code>.trim()</code> pada alamat kontrak/key dari environment variables untuk mencegah silent corruption?</li>
+<li><input disabled="" type="checkbox"> <strong>🌐 SPECIALIZED ENV AUDIT (v3.40.11)</strong>: Verify that <code>.env.example</code>, <code>.env.local</code>, <code>.env.vercel</code>, <code>.env.vercel.preview</code>, <code>.env.vercel.production</code>, and <code>.env.verification.vercel</code> are all purged of legacy strings (<code>0xfA75</code>, <code>0x87a3</code>, <code>0xDe61</code>) and synced to v13.2 verified truth. <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>Vercel Cloud Purge Audit</strong>: Apakah environment cloud sudah diverifikasi bersih dari literal double quotes (<code>&quot;&quot;value&quot;&quot;</code>) and hidden newlines (<code>\r\n</code>)?</li>
+<li><input disabled="" type="checkbox"> <strong>Nexus Evolution</strong>: Apakah pelajaran dari task ini (jika ada bug pelik) sudah didokumentasikan di protokol atau <code>agent_vault</code>?</li>
+<li><input disabled="" type="checkbox"> <strong>Admin Sync Audit</strong>: Apakah setiap aksi admin on-chain sudah sinkron ke database via secure backend request?</li>
+<li><input disabled="" type="checkbox"> <strong>Clean Data Audit</strong>: Apakah file <code>supabase_full_dump.json</code> dan logs aktivitas sudah dikecualikan dari staging?</li>
+<li><input disabled="" type="checkbox"> <strong>RPC Indexing Resilience</strong>: Apakah API mendukung verifikasi <code>tx_hash</code> jika data Supabase/Indexer tertunda? (v3.26.0)</li>
+<li><input disabled="" type="checkbox"> <strong>View Sync Audit</strong>: Apakah SQL View <code>v_user_full_profile</code> sudah diperbarui jika ada kolom identitas baru? (v3.26.0)</li>
+<li><input disabled="" type="checkbox"> <strong>Tier Precision Audit</strong>: Apakah logika SBT menggunakan <code>min_xp</code> (bukan <code>xp_required</code>)? (v3.26.0)</li>
+<li><input disabled="" type="checkbox"> <strong>✅ POST-FIX RE-AUDIT</strong> <em>(BARU - WAJIB dijalankan SETELAH fix v3.35.0)</em>: <code>node scripts/audits/check_sync_status.cjs</code> — Hasilnya HARUS ✅ ALL SYSTEMS SYNCHRONIZED sebelum task ditutup.</li>
+<li><input disabled="" type="checkbox"> <strong>🛡️ PROTOCOL INTEGRITY AUDIT (v3.41.0)</strong>: Setelah mengedit file protokol (<code>.cursorrules</code>, <code>CLAUDE.md</code>, <code>.agents/gemini.md</code>), apakah Anda sudah melakukan <code>view_file</code> pada baris yang diedit (+10 baris konteks) untuk memastikan tidak ada penghapusan bagian/poin secara tidak sengaja? <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>✨ NATIVE+ UI HARDENING AUDIT</strong>: Apakah seluruh elemen UI baru (labels, metadata, handles) sudah menggunakan <code>text-[11px] font-black uppercase tracking-widest</code>? Apakah legacy sizes (<code>text-xs</code>, etc.) sudah dibersihkan? <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>🌐 NETWORK ISOLATION AUDIT (v3.40.7)</strong>: Verifikasi bahwa TIDAK ADA alamat Sepolia (<code>0xaC43...</code>) yang tertulis di konfigurasi/label Mainnet. Pastikan Mainnet tetap <code>[RESERVED]</code> jika belum deploy. <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>🧪 RPC TRUTHINESS &amp; EVIDENCE AUDIT (v3.40.9)</strong>: Apakah skrip verifikasi menggunakan <code>code &amp;&amp; code !== &#39;0x&#39;</code>? Apakah laporan menyertakan bukti bytecode literal (10 karakter awal)? <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>📈 ANTI-WHALE XP SCALING AUDIT (v3.41.2)</strong>: Verifikasi bahwa XP scaling mengacu pada <code>fn_increment_xp</code> di database. PROHIBIT manual scaling di backend. Pastikan <code>p_amount</code> dikirim mentah (raw). <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>🚀 REFERRAL GROWTH LOOP v2 AUDIT (v3.42.0)</strong>: Verifikasi bahwa reward 50 XP hanya cair saat milestone 500 XP tercapai. Pastikan 10% passive dividend tercatat di logs dengan kategori <code>REFERRAL_DIVIDEND</code>. <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>🛡️ BASE SOCIAL IDENTITY AUDIT (v3.42.0)</strong>: Verifikasi bahwa tasks dengan flag <code>is_base_social_verified</code> terkunci untuk user non-verified. Pastikan reverse resolution Basename berfungsi. <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>🧹 DISAPPEARING TASK AUDIT (v3.42.2)</strong>: Verifikasi bahwa task yang sudah DONE/CLAIMED menghilang dari UI. Pastikan filter <code>null</code> aktif di model frontend. <strong>WAJIB.</strong></li>
+<li><input disabled="" type="checkbox"> <strong>💎 PREMIUM IDENTITY BRANDING AUDIT (v3.42.2)</strong>: Verifikasi penggunaan shield badge lencana &quot;Verified&quot; (Base Blue) untuk user valid. <strong>WAJIB.</strong></li>
+</ul>
+<h3>Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)</h3>
+<ul>
+<li><strong>Primary Standard (Labels)</strong>: Exactly <code>text-[11px] font-black uppercase tracking-widest</code> (<code>.label-native</code>).</li>
+<li><strong>Secondary Standard (Content)</strong>: Exactly <code>text-[13px] font-medium leading-relaxed</code> (<code>.content-native</code>) for readability.</li>
+<li><strong>Emphasis (Values)</strong>: Exactly <code>text-[12px] font-bold tracking-wide</code> (<code>.value-native</code>).</li>
+<li><strong>Contrast</strong>: Use <code>font-black</code> (weight 900) for labels and <code>font-medium</code> for body to create professional balanced contrast.</li>
+<li><strong>Glassmorphism</strong>: Combine with <code>bg-white/5</code> and <code>backdrop-blur-xl</code> for a premium feel.</li>
+<li><strong>Micro-Animations</strong>: Linear gradient animations on progress bars and pulse effects on active CTA labels are mandatory.</li>
+<li><strong>Safe Area</strong>: Ensure <code>pb-safe</code> is applied to all scrollable views to handle notch/home-indicator overlaps.</li>
+<li><strong>Consistency</strong>: Purge <code>text-xs</code>, <code>text-sm</code>, and <code>text-[10px]</code> from the workspace.</li>
+</ul>
+<h2>🚨 Pantangan</h2>
+<ul>
+<li>Melakukan push kode yang belum diaudit secara otomatis.</li>
+<li><strong>Push tanpa menjalankan <code>node -c</code>, <code>npm run lint</code>, dan <code>npm run build</code> lokal terlebih dahulu.</strong></li>
+<li>Membiarkan mismatch antara UI dan data blockchain (misal: XP tidak sinkron).</li>
+<li>Mengabaikan prinsip Kebaikan Jalan Allah (Ketidakjujuran data atau sistem Riba).</li>
+<li><strong>Mengubah file .agents atau .cursorrules tanpa menjalankan sync-cloud.js.</strong></li>
+<li>🚫 <strong>MELAKUKAN FIX TANPA PRE-FIX AUDIT</strong> (<code>scripts/audits/check_sync_status.cjs</code>). Ini adalah Protocol Breach Level-1.</li>
+<li>🚫 <strong>MENUTUP TASK / NOTIFY USER TANPA RE-AUDIT</strong> setelah fix diterapkan. Wajib sertakan output audit di notifikasi.</li>
+<li>🚫 <strong>MENGABAIKAN TEMUAN BARU dari audit</strong> yang tidak dilaporkan user. Semua temuan wajib dilaporkan.</li>
+</ul>
+<hr>
+<h2>🔄 AUDIT-FIRST ERROR FIX CYCLE (MANDATORY WORKFLOW)</h2>
+<pre><code>[ERROR DILAPORKAN]
+    │
+    ▼
+🔍 STEP 1: PRE-FIX AUDIT
+    node scripts/audits/check_sync_status.cjs
+    node -c api/user-bundle.js &amp;&amp; node -c api/admin-bundle.js
+    │
+    ├─ Temuan baru? ──► REPORT KE USER sebelum lanjut
+    │
+    ▼
+🧠 STEP 2: ROOT CAUSE ANALYSIS
+    grep_search() + view_file() untuk seluruh entry point
+    Cek XP/Fee/Reward → harus dari point_settings/system_settings
+    │
+    ▼
+🔧 STEP 3: IMPLEMENTASI FIX
+    Tulis kode perbaikan sesuai Zero-Hardcode &amp; Zero-Trust
+    │
+    ▼
+✅ STEP 4: POST-FIX RE-AUDIT
+    node scripts/audits/check_sync_status.cjs
+    npm run gitleaks-check
+    │
+    ├─ PASS (✅ ALL SYSTEMS SYNCHRONIZED) ──► Notify User + git commit
+    └─ FAIL ──────────────────────────────► Kembali ke STEP 1
+
+&gt; [!CAUTION]
+&gt; **SURGICAL FIX MANDATE**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
+</code></pre>
+<p>Output re-audit WAJIB disertakan dalam pesan ke user:</p>
+<pre><code>✅ VERDICT: ALL SYSTEMS SYNCHRONIZED &amp; OPERATIONAL
+📡 Task Claim Pipeline: FULLY FUNCTIONAL
+🛡️  Security Matrix: X checks PASSED
+</code></pre>
+<hr>
+<h2>🎯 SECTION 12: TASK WORKFLOW AUDIT PROTOCOL (v3.42.8)</h2>
+<h3>12.1 Canonical Reference</h3>
+<p><strong>ABSOLUTE SOURCE OF TRUTH untuk Task Feature</strong>:
+<code>PRD/TASK_FEATURE_WORKFLOW.md</code></p>
+<p>Dokumen ini mencakup:</p>
+<ul>
+<li>Arsitektur E2E (Frontend → Hooks → API → DB → Blockchain)</li>
+<li>Dual Task Pipeline (On-Chain vs Off-Chain)</li>
+<li>Smart Contract function registry (DailyApp V13.2)</li>
+<li>Database schema lengkap (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs)</li>
+<li>XP Hybrid Formula (fn_increment_xp)</li>
+<li>Social verification flow (EIP-191 + 30s anti-fraud)</li>
+<li>Identity Guard &amp; Access Control matrix</li>
+<li>Disappearing Task mandate</li>
+<li>Partner Offers (Campaigns)</li>
+<li>File reference map</li>
+</ul>
+<h3>12.2 Mandatory Pre-Read Protocol</h3>
+<p>Sebelum MEMODIFIKASI file berikut, agent WAJIB membaca <code>PRD/TASK_FEATURE_WORKFLOW.md</code>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Alasan</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>src/pages/TasksPage.jsx</code></td>
+<td>On-Chain Task UI + Sponsored Cards</td>
+</tr>
+<tr>
+<td><code>src/components/tasks/TaskList.jsx</code></td>
+<td>Off-Chain Task klaim</td>
+</tr>
+<tr>
+<td><code>src/hooks/useVerification.js</code></td>
+<td>Social verify pipeline</td>
+</tr>
+<tr>
+<td><code>src/hooks/useVerifiedAction.js</code></td>
+<td>Secure claim hook</td>
+</tr>
+<tr>
+<td><code>api/tasks-bundle.js</code></td>
+<td>Backend task handlers</td>
+</tr>
+<tr>
+<td><code>src/lib/economy.js</code></td>
+<td>XP formula mirror</td>
+</tr>
+<tr>
+<td><code>src/lib/contracts.js</code></td>
+<td>ABI &amp; address config</td>
+</tr>
+</tbody></table>
+<h3>12.3 Task Audit Checklist</h3>
+<p>Saat menjalankan audit tugas, verifikasi:</p>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>Zero-Hardcode XP</strong>: Semua reward dari <code>point_settings</code>, bukan literal</li>
+<li><input disabled="" type="checkbox"> <strong>Dual Pipeline Sync</strong>: On-chain + Off-chain keduanya memanggil <code>fn_increment_xp</code></li>
+<li><input disabled="" type="checkbox"> <strong>Disappearing Tasks</strong>: Completed tasks <code>return null</code>, bukan badge &quot;DONE&quot;</li>
+<li><input disabled="" type="checkbox"> <strong>Type-Safe ID</strong>: <code>String()</code> conversion pada semua perbandingan ID</li>
+<li><input disabled="" type="checkbox"> <strong>EIP-191 Signature</strong>: Semua write ops terverifikasi di backend</li>
+<li><input disabled="" type="checkbox"> <strong>Already Claimed Handling</strong>: Frontend mendeteksi <code>already_claimed: true</code> flag untuk mencegah toast misleading saat task menghilang.</li>
+<li><input disabled="" type="checkbox"> <strong>Anti-Sybil Active</strong>: <code>target_id</code> uniqueness + wallet+task_id uniqueness</li>
+<li><input disabled="" type="checkbox"> <strong>Mandatory Setup</strong>: Task memiliki <code>title</code> dan <code>expires_at</code> yang valid di database.</li>
+<li><input disabled="" type="checkbox"> <strong>Identity Guard</strong>: is_base_social_required flag direspek</li>
+<li><input disabled="" type="checkbox"> <strong>Feature Guard</strong>: Mainnet kill switch operational</li>
+<li><input disabled="" type="checkbox"> <strong>Activity Logging</strong>: Setiap klaim tercatat di user_activity_logs</li>
+<li><input disabled="" type="checkbox"> <strong>ABI Parity</strong>: abis_data.txt sinkron dengan deployed contract</li>
+</ul>

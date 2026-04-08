@@ -2,7 +2,7 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Anti-Hallucination Mandate (v3.42.7)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
+  - **Anti-Hallucination Mandate (v3.42.8)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST reject any address not in the WORKSPACE_MAP Registry.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
 ---
@@ -86,7 +86,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.42.7 (Mobile UI Standard & Task Integrity).
+- **Versi Terakhir:** v3.42.8 (Task Feature Integrity Hardening).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -428,3 +428,55 @@ Output re-audit WAJIB disertakan dalam pesan ke user:
 📡 Task Claim Pipeline: FULLY FUNCTIONAL
 🛡️  Security Matrix: X checks PASSED
 ```
+
+---
+
+## 🎯 SECTION 12: TASK WORKFLOW AUDIT PROTOCOL (v3.42.8)
+
+### 12.1 Canonical Reference
+
+**ABSOLUTE SOURCE OF TRUTH untuk Task Feature**:
+`PRD/TASK_FEATURE_WORKFLOW.md`
+
+Dokumen ini mencakup:
+- Arsitektur E2E (Frontend → Hooks → API → DB → Blockchain)
+- Dual Task Pipeline (On-Chain vs Off-Chain)
+- Smart Contract function registry (DailyApp V13.2)
+- Database schema lengkap (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs)
+- XP Hybrid Formula (fn_increment_xp)
+- Social verification flow (EIP-191 + 30s anti-fraud)
+- Identity Guard & Access Control matrix
+- Disappearing Task mandate
+- Partner Offers (Campaigns)
+- File reference map
+
+### 12.2 Mandatory Pre-Read Protocol
+
+Sebelum MEMODIFIKASI file berikut, agent WAJIB membaca `PRD/TASK_FEATURE_WORKFLOW.md`:
+
+| File | Alasan |
+|------|--------|
+| `src/pages/TasksPage.jsx` | On-Chain Task UI + Sponsored Cards |
+| `src/components/tasks/TaskList.jsx` | Off-Chain Task klaim |
+| `src/hooks/useVerification.js` | Social verify pipeline |
+| `src/hooks/useVerifiedAction.js` | Secure claim hook |
+| `api/tasks-bundle.js` | Backend task handlers |
+| `src/lib/economy.js` | XP formula mirror |
+| `src/lib/contracts.js` | ABI & address config |
+
+### 12.3 Task Audit Checklist
+
+Saat menjalankan audit tugas, verifikasi:
+
+- [ ] **Zero-Hardcode XP**: Semua reward dari `point_settings`, bukan literal
+- [ ] **Dual Pipeline Sync**: On-chain + Off-chain keduanya memanggil `fn_increment_xp`
+- [ ] **Disappearing Tasks**: Completed tasks `return null`, bukan badge "DONE"
+- [ ] **Type-Safe ID**: `String()` conversion pada semua perbandingan ID
+- [ ] **EIP-191 Signature**: Semua write ops terverifikasi di backend
+- [ ] **Already Claimed Handling**: Frontend mendeteksi `already_claimed: true` flag untuk mencegah toast misleading saat task menghilang.
+- [ ] **Anti-Sybil Active**: `target_id` uniqueness + wallet+task_id uniqueness
+- [ ] **Mandatory Setup**: Task memiliki `title` dan `expires_at` yang valid di database.
+- [ ] **Identity Guard**: is_base_social_required flag direspek
+- [ ] **Feature Guard**: Mainnet kill switch operational
+- [ ] **Activity Logging**: Setiap klaim tercatat di user_activity_logs
+- [ ] **ABI Parity**: abis_data.txt sinkron dengan deployed contract

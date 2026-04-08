@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-05*
-*PRD Version: v3.42.7 (Mobile UI Standard & Task Integrity)*
+*Last Updated: 2026-04-08*
+*PRD Version: v3.42.8 (Task Feature Integrity Hardening)*
 
 ---
 
@@ -210,11 +210,12 @@ State sharing via `agents_vault` table di Supabase.
 - **Sponsorship Closure**: Kartu sponsor (card) wajib menghilang jika seluruh sub-task di dalamnya sudah berstatus `Completed`.
 - **Catch-Up Feedback**: Gunakan komponen "YOU ARE ALL CAUGHT UP!" jika tidak ada task tersisa.
 
-### Section 4.4: MOBILE UI & TASK INTEGRITY HARDENING (v3.42.7)
+### Section 4.4: TASK FEATURE INTEGRITY HARDENING (v3.42.8)
 - **Native+ Button Baseline**: Semua tombol aksi utama wajib menggunakan `bg-indigo-600/20`, `border-indigo-500/30`, dan `text-indigo-400`.
 - **Zero-Icon Action Mandate**: Tombol "Daily Tasks", "Partner Offers", dan "Buy Ticket" dilarang menggunakan ikon dekoratif (Zap, Megaphone, dll).
 - **Viewport Containment**: Layout utama wajib menggunakan `overflow-x-hidden` dan `max-w-[100vw]` untuk menjamin visibilitas BottomNav dan mencegah clipping horizontal.
-- **Fail-Safe Claim Sync**: Logic `handleClaim` wajib melakukan `fetchData()`/sync paksa jika backend melempar error "already completed" untuk mengatasi race condition UI.
+- **Improved Claim Sync**: `handleClaim` wajib mendeteksi flag `already_claimed: true` dari backend untuk memberikan feedback akurat dan mencegah race condition UI.
+- **Pipeline Metadata**: Seluruh task baru wajib menyertakan `title`, `target_id`, dan `expires_at` (v3.42.8).
 
 ---
 ## 4. SECURE ENVIRONMENT & ZERO-TRUST ADDRESSES

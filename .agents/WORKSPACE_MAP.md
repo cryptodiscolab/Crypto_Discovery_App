@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.7)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.8)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -41,6 +41,7 @@ e:\Disco Gacha\Disco_DailyApp
 └── PRD/                     # 📄 Product Requirements Documentation
     ├── DISCO_DAILY_MASTER_PRD.md   # Source of Truth
     ├── FEATURE_WORKFLOW_SOT.md     # Feature Workflow & Sync SOT
+    ├── TASK_FEATURE_WORKFLOW.md    # 🎯 Task Feature E2E Workflow (Complete SOT)
     └── DISCO_DAILY_MASTER_PRD.html # Viewable Design Doc
 ```
 
@@ -127,6 +128,18 @@ graph TD
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 
+## 7. Mandatory Agent Reading Protocol
+
+Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut secara berurutan:
+
+1. `.cursorrules` — Master Architect Protocol
+2. `.agents/skills/ecosystem-sentinel/SKILL.md` — Audit & Orchestration
+3. `.agents/skills/git-hygiene/SKILL.md` — Clean Git Mandate
+4. `.agents/skills/raffle-integration/SKILL.md` — Raffle Standards
+5. `.agents/WORKSPACE_MAP.md` — Navigation Map (this file)
+6. `PRD/TASK_FEATURE_WORKFLOW.md` — 🎯 **Task Feature E2E Workflow (MANDATORY)**
+7. `PRD/FEATURE_WORKFLOW_SOT.md` — Feature Workflow SOT
+8. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
+
 ---
----
-*Last Updated: 2026-04-05T02:20:00+07:00 | Identity Guard Hardening & Disappearing Tasks. v3.42.2 Release READY.*
+*Last Updated: 2026-04-08T08:50:00+07:00 | Task Feature Workflow Canonization. v3.42.7 LOCKED.*

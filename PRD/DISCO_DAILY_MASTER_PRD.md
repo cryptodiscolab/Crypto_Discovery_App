@@ -1,6 +1,6 @@
-# CRYPTO DISCO MASTER PRD (v3.42.7)
-**Version**: `v3.42.7` (Mobile UI Standardization & Task Integrity Hardening)
-**Last Updated**: `05 April 2026 14:47`
+# CRYPTO DISCO MASTER PRD (v3.42.8)
+**Version**: `v3.42.8` (Task Feature Integrity Hardening)
+**Last Updated**: `08 April 2026 12:30`
 **Status**: 🛡️ RE-HARDENED, GROWTH-OPTIMIZED & LOCKED 💎
 **Audit Status**: `✅ 100% OPERATIONAL (Identity Safeguards Active)`
 
@@ -11,9 +11,10 @@
 2. [Ecosystem Core Architecture (High-Level)](#2-ecosystem-core-architecture-high-level)
 3. [User & Reward Lifecycle (End-to-End)](#3-user--reward-lifecycle-end-to-end)
 4. [Admin & Sponsorship Workflow](#4-admin--sponsorship-workflow)
-5. [Work Report v3.42.7 (Current)](#5-work-report-v3427-current)
-6. [Work Report v3.42.2 (Legacy)](#6-work-report-v3422-legacy)
-7. [Historical Analysis & Changelog](#7-historical-analysis--changelog)
+5. [Work Report v3.42.8 (Current)](#41-work-report--v3428-current)
+6. [Work Report v3.42.7 (Legacy)](#5-work-report-v3427-current)
+7. [Work Report v3.42.2 (Legacy)](#40-work-report--v3422-legacy)
+8. [Historical Analysis & Changelog](#7-historical-analysis--changelog)
 8. [Audit & Security Mandates](#8-audit-security-mandates)
 9. [Current Ecosystem Status (v3.28.0 Audit Report)](#9-current-ecosystem-status-v3280-audit-report)
 10. [Workspace Architecture & Data Flow (v3.28.0)](#10-workspace-architecture--data-flow-v3280)
@@ -938,7 +939,18 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
 **Outcome**: 100% Sybil-resistant raffle participation and a more readable, high-end "Professional Native" mobile interface. Ecosystem fully synchronized.
 
 ---
-## 40. Work Report — v3.42.2 (CURRENT)
+## 41. Work Report — v3.42.8 (CURRENT)
+**Date**: 2026-04-08
+**Task**: Task Feature Integrity Hardening & Cleanup.
+**Action**:
+- **Admin Creation Pipeline**: Fixed missing `title`, `expires_at`, and `target_id` injection in `admin-bundle.js` handlers. All system tasks now have explicit expiry metadata.
+- **Claim Handler Hardening**: `TaskList.jsx` now explicitly handles the `already_claimed` flag from the backend success response to prevent misleading UI states and ensure instant task removal.
+- **Database Sanitization**: Purged all dummy tasks (`Follow @CryptoDisco`, etc.) and cleaned 9 orphan user claims to maintain a performance-optimized baseline.
+- **Documentation Sync**: Synchronized `TASK_FEATURE_WORKFLOW.md` and `FEATURE_WORKFLOW_SOT.md` to version v3.42.8.
+**Outcome**: 100% mission persistence consistency and hardened social claim security. Ecosystem fully synchronized to v3.42.8.
+
+---
+## 40. Work Report — v3.42.2 (LEGACY)
 **Date**: 2026-04-05
 **Task**: Identity Guard UI Hardening & Disappearing Task Mandate.
 **Action**:

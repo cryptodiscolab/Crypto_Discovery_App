@@ -354,7 +354,7 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 </li>
 </ol>
 <hr>
-<h3>11.3 Task Visibility Mandate (v3.42.7)</h3>
+<h3>11.3 Task Visibility Mandate (v3.42.8)</h3>
 <ol>
 <li><strong>Immediate Hiding</strong>: Tasks that are <code>hasCompletedTask</code> or <code>hasClaimed</code> MUST be filtered out from the <code>TasksPage</code> UI.</li>
 <li><strong>Type-Safe Filtering</strong>: When comparing task IDs (e.g., in <code>activeTasks.filter</code>), ALWAYS use <code>String()</code> conversion (e.g., <code>String(task.id) === String(claim.task_id)</code>). This prevents silence failures caused by the mismatch between Contract IDs (Integer) and Supabase IDs (UUID).</li>
@@ -362,4 +362,30 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><strong>Verified Badge Branding</strong>: All verified identities MUST display the <strong>Base Blue</strong> shield icon for premium signaling.</li>
 </ol>
 <hr>
-<p><em>End of Source of Truth Document - Nexus v3.42.2 Locked.</em></p>
+<h2>12. Task Feature E2E Workflow (Canonical Reference)</h2>
+<blockquote>
+<p>[!IMPORTANT]
+Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
+<strong><code>PRD/TASK_FEATURE_WORKFLOW.md</code></strong></p>
+</blockquote>
+<p>Dokumen tersebut mencakup (15 section):</p>
+<ol>
+<li>Arsitektur tingkat tinggi (Mermaid diagram)</li>
+<li>Dual Task Pipeline (On-Chain vs Off-Chain)</li>
+<li>Smart Contract Registry &amp; Functions (DailyApp V13.2)</li>
+<li>Database Schema (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs, fn_increment_xp)</li>
+<li>API Routing &amp; Bundle Map (tasks-bundle.js handlers)</li>
+<li>On-Chain Task Workflow E2E (Sequence diagram)</li>
+<li>Off-Chain Task Workflow E2E (Sequence diagram)</li>
+<li>Social Verification Flow (EIP-191 + anti-fraud)</li>
+<li>XP Economy &amp; Hybrid Formula (G × I × U)</li>
+<li>Identity Guard &amp; Access Control Matrix</li>
+<li>Disappearing Task Mandate (v3.42.2)</li>
+<li>Partner Offers (Campaigns)</li>
+<li>Admin Task Management</li>
+<li>File Reference Map (14 files)</li>
+<li>Healthy State Checklist (14-point)</li>
+</ol>
+<p><strong>Semua modifikasi terhadap fitur Task WAJIB mematuhi alur yang tertera di dokumen tersebut.</strong></p>
+<hr>
+<p><em>End of Source of Truth Document - Nexus v3.42.7 Locked.</em></p>

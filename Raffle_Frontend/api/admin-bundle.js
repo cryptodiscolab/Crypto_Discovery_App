@@ -214,13 +214,17 @@ export default async function handler(req, res) {
 
             case 'task-create': {
                 const { data, error } = await supabaseAdmin.from('daily_tasks').insert({
+                    title: task_data.title || task_data.description,
                     description: task_data.description || task_data.title,
                     xp_reward: task_data.xp_reward || 0,
                     platform: task_data.platform || 'base',
                     action_type: task_data.action_type || 'transaction',
                     link: task_data.link || 'https://warpcast.com/CryptoDisco',
+                    target_id: task_data.target_id || null,
                     is_active: !!task_data.is_active,
-                    is_base_social_required: !!task_data.is_base_social_required, // v3.42.0
+                    is_base_social_required: !!task_data.is_base_social_required,
+                    min_neynar_score: task_data.min_neynar_score || 0,
+                    expires_at: task_data.expires_at || null,
                     created_at: new Date().toISOString()
                 }).select().maybeSingle();
                 if (error) throw error;
@@ -299,12 +303,17 @@ export default async function handler(req, res) {
             case 'task-sync': {
                 for (const task of tasks) {
                     await supabaseAdmin.from('daily_tasks').insert([{
+                        title: task.title,
                         description: task.title,
                         xp_reward: task.reward_points,
                         platform: task.platform,
                         action_type: task.action_type,
                         link: task.link,
-                        is_base_social_required: !!task.is_base_social_required, // v3.42.0
+                        target_id: task.target_id || null,
+                        is_base_social_required: !!task.is_base_social_required,
+                        min_neynar_score: task.min_neynar_score || 0,
+                        expires_at: task.expires_at || null,
+                        created_at: new Date().toISOString(),
                         is_active: true
                     }]);
                 }

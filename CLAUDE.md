@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.42.7)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.42.8)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -20,7 +20,7 @@ Before responding to ANY request, read these files IN ORDER:
 5. **`IMPLEMENTATION_SUMMARY.md`** (Top 50 Lines) — Recent history & changelog
 6. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.42.7)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.42.8)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
@@ -60,7 +60,8 @@ Before responding to ANY request, read these files IN ORDER:
 55. **NATIVE+ BUTTON BASELINE**: All primary action buttons MUST strictly use `bg-indigo-600/20`, `border-indigo-500/30`, and `text-indigo-400` with NO decorative icons (Zap/Ticket) for a premium minimalist feel (v3.42.7).
 56. **MOBILE VIEWPORT CONTAINMENT**: Layouts MUST use `overflow-x-hidden` and `max-w-[100vw]` to ensure mobile UI integrity and BottomNav visibility (v3.42.7).
 57. **TYPE-SAFE TASK KEY COMPARISON**: ALWAYS use `String()` conversion when filtering/comparing Task IDs (Contract/Supabase) to avoid silent type-mismatch bugs (v3.42.7).
-58. **FAIL-SAFE UI SYNC**: UI `handleClaim` logic MUST force a full data refetch if the backend returns "already completed" to resolve state race conditions (v3.42.7).
+58. **FAIL-SAFE UI SYNC**: UI `handleClaim` logic MUST explicitly handle `already_claimed: true` and force a data refetch to resolve state race conditions (v3.42.8).
+59. **TASK PIPELINE INTEGRITY**: Admin task creation and sync MUST include `title`, `expires_at`, `target_id`, and `min_neynar_score` as mandatory metadata (v3.42.8).
 
 
 ---

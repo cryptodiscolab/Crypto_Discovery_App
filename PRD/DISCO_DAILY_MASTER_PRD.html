@@ -1,6 +1,6 @@
-<h1>CRYPTO DISCO MASTER PRD (v3.42.7)</h1>
-<p><strong>Version</strong>: <code>v3.42.7</code> (Mobile UI Standardization &amp; Task Integrity Hardening)
-<strong>Last Updated</strong>: <code>05 April 2026 14:47</code>
+<h1>CRYPTO DISCO MASTER PRD (v3.42.8)</h1>
+<p><strong>Version</strong>: <code>v3.42.8</code> (Task Feature Integrity Hardening)
+<strong>Last Updated</strong>: <code>08 April 2026 12:30</code>
 <strong>Status</strong>: 🛡️ RE-HARDENED, GROWTH-OPTIMIZED &amp; LOCKED 💎
 <strong>Audit Status</strong>: <code>✅ 100% OPERATIONAL (Identity Safeguards Active)</code></p>
 <hr>
@@ -10,8 +10,9 @@
 <li><a href="#2-ecosystem-core-architecture-high-level">Ecosystem Core Architecture (High-Level)</a></li>
 <li><a href="#3-user--reward-lifecycle-end-to-end">User &amp; Reward Lifecycle (End-to-End)</a></li>
 <li><a href="#4-admin--sponsorship-workflow">Admin &amp; Sponsorship Workflow</a></li>
-<li><a href="#5-work-report-v3427-current">Work Report v3.42.7 (Current)</a></li>
-<li><a href="#6-work-report-v3422-legacy">Work Report v3.42.2 (Legacy)</a></li>
+<li><a href="#41-work-report--v3428-current">Work Report v3.42.8 (Current)</a></li>
+<li><a href="#5-work-report-v3427-current">Work Report v3.42.7 (Legacy)</a></li>
+<li><a href="#40-work-report--v3422-legacy">Work Report v3.42.2 (Legacy)</a></li>
 <li><a href="#7-historical-analysis--changelog">Historical Analysis &amp; Changelog</a></li>
 <li><a href="#8-audit-security-mandates">Audit &amp; Security Mandates</a></li>
 <li><a href="#9-current-ecosystem-status-v3280-audit-report">Current Ecosystem Status (v3.28.0 Audit Report)</a></li>
@@ -941,7 +942,19 @@ system documents.
 <strong>Outcome</strong>: 100% Sybil-resistant raffle participation and a more readable, high-end &quot;Professional Native&quot; mobile interface. Ecosystem fully synchronized.</li>
 </ul>
 <hr>
-<h2>40. Work Report — v3.42.2 (CURRENT)</h2>
+<h2>41. Work Report — v3.42.8 (CURRENT)</h2>
+<p><strong>Date</strong>: 2026-04-08
+<strong>Task</strong>: Task Feature Integrity Hardening &amp; Cleanup.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Admin Creation Pipeline</strong>: Fixed missing <code>title</code>, <code>expires_at</code>, and <code>target_id</code> injection in <code>admin-bundle.js</code> handlers. All system tasks now have explicit expiry metadata.</li>
+<li><strong>Claim Handler Hardening</strong>: <code>TaskList.jsx</code> now explicitly handles the <code>already_claimed</code> flag from the backend success response to prevent misleading UI states and ensure instant task removal.</li>
+<li><strong>Database Sanitization</strong>: Purged all dummy tasks (<code>Follow @CryptoDisco</code>, etc.) and cleaned 9 orphan user claims to maintain a performance-optimized baseline.</li>
+<li><strong>Documentation Sync</strong>: Synchronized <code>TASK_FEATURE_WORKFLOW.md</code> and <code>FEATURE_WORKFLOW_SOT.md</code> to version v3.42.8.
+<strong>Outcome</strong>: 100% mission persistence consistency and hardened social claim security. Ecosystem fully synchronized to v3.42.8.</li>
+</ul>
+<hr>
+<h2>40. Work Report — v3.42.2 (LEGACY)</h2>
 <p><strong>Date</strong>: 2026-04-05
 <strong>Task</strong>: Identity Guard UI Hardening &amp; Disappearing Task Mandate.
 <strong>Action</strong>:</p>

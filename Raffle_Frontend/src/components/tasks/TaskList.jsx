@@ -111,13 +111,18 @@ export function TaskList() {
         try {
             // ── SECURE CLAIM FLOW ──
             // Using unified secure API route via custom hook
-            await executeClaim('claim_task', {
+            const result = await executeClaim('claim_task', {
                 task_id: task.id,
                 xp_earned: task.xp_reward
             });
 
-            toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
-            // Optimistic update: immediately hide task from UI
+            // Handle already_claimed flag from backend (returns success:true but no new XP)
+            if (result?.already_claimed) {
+                toast.success("Mission already completed! Syncing...", { id: toastId });
+            } else {
+                toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
+            }
+            // Optimistic update: immediately hide task from UI (both paths)
             setUserClaims(prev => [...prev, { task_id: task.id, claimed_at: new Date().toISOString() }]);
             if (refetch) refetch();
             // Server-sync after a small delay to ensure DB is committed

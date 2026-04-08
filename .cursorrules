@@ -530,11 +530,53 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 
 - **UI/UX**: Linkage status MUST be clearly differentiated between "Verified" (Premium Shield) and "Unverified" (Call-to-Action).
 
-- **42.4 MOBILE UI & TASK INTEGRITY HARDENING (v3.42.7)**: 🚨 NATIVE+ CONSISTENCY.
+- **42.4 TASK FEATURE INTEGRITY HARDENING (v3.42.8)**: 🚨 NATIVE+ & METADATA CONSISTENCY.
   - **MANDATE**: All primary action buttons (Daily Tasks, Partner Offers, Buy Ticket) MUST use `bg-indigo-600/20`, `border-indigo-500/30`, and `text-indigo-400` with NO decorative icons.
   - **LAYOUT**: Root wrappers MUST implement `overflow-x-hidden` and `max-w-[100vw]` to prevent horizontal clipping.
   - **TYPE-SAFETY**: Task filtering in `TaskList.jsx` and similar components MUST use `String()` conversion for comparing Contract IDs (Integer) and Supabase (UUID).
-  - **REACTIVE SYNC**: UI logic MUST force an unconditional `fetchData()`/sync if the backend returns "already completed" to resolve state race conditions.
+  - **REACTIVE SYNC**: UI logic MUST explicitly handle `already_claimed: true` success flag to resolve state race conditions and show accurate mission completion status.
+  - **PIPELINE INTEGRITY**: Task creation/sync in `admin-bundle.js` MUST include `title`, `expires_at`, `target_id`, and `min_neynar_score`. Task cleanup MUST be performed periodically to maintain a healthy baseline.
 
-- **Current Protocol Version**: v3.42.7 (Mobile UI Standard & Task Integrity Hardening)
-*Antigravity: Integrity Restored. Identity Guarded. v3.42.7 Locked.*
+---
+
+### SECTION 31: TASK FEATURE INTEGRITY MANDATE (v3.42.8) 🎯
+
+> **CANONICAL REFERENCE**: `PRD/TASK_FEATURE_WORKFLOW.md`
+> This document is the ABSOLUTE Source of Truth for all Task feature logic.
+> Agents MUST read it BEFORE modifying ANY of the following files:
+> - `src/pages/TasksPage.jsx` (On-Chain Tasks UI)
+> - `src/components/tasks/TaskList.jsx` (Off-Chain Tasks UI)
+> - `src/components/tasks/OffersList.jsx` (Partner Campaigns)
+> - `src/hooks/useVerification.js` (Social Verify Flow)
+> - `src/hooks/useVerifiedAction.js` (Secure Claim Flow)
+> - `src/hooks/useContract.js` (On-Chain Read/Write)
+> - `src/dailyAppLogic.js` (XP Award Bridge)
+> - `api/tasks-bundle.js` (Backend Task Handlers)
+> - `src/lib/contracts.js` (ABI & Address Config)
+> - `src/lib/economy.js` (Hybrid Formula Mirror)
+
+**31.1 DUAL TASK PIPELINE AWARENESS**:
+- On-Chain Tasks: Read from `DailyApp V13.2` contract → verify via `useVerification` → claim via `tasks-bundle.js handleSocialVerify`.
+- Off-Chain Tasks: Read from `daily_tasks` table → claim via `useVerifiedAction` → `tasks-bundle.js handleClaim`.
+- Both pipelines MUST terminate at `fn_increment_xp()` in Postgres. NEVER calculate XP scaling in JS.
+
+**31.2 XP RESOLUTION PRIORITY**:
+1. `point_settings` dynamic key (`{platform}_{action_type}`)
+2. Fallback: `daily_tasks.xp_reward`
+3. All scaling: `fn_increment_xp` (Hybrid Formula: G × I × U, Floor=5)
+
+**31.3 ANTI-SYBIL & METADATA ENFORCEMENT**:
+- `target_id` uniqueness per claim (FID/TweetID link)
+- `expires_at` mandatory for campaigns/sponsored tasks
+- `min_neynar_score` gating for Farcaster reputation
+- UNIQUE(wallet_address, task_id) constraint
+- EIP-191 signature on every write operation
+- 30s anti-fraud delay before social verify
+
+**31.4 DISAPPEARING TASK ENFORCEMENT** (reiterated from Section 42.2):
+- Completed tasks: `return null` (NOT badge "DONE")
+- Type-safe comparison: `String(c.task_id) === String(task.id)`
+- Reactive sync on `already_claimed` flag or "already completed" error
+
+- **Current Protocol Version**: v3.42.8 (Task Feature Integrity Hardening)
+*Antigravity: Integrity Restored. Identity Guarded. v3.42.8 Locked.*

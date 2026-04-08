@@ -268,11 +268,38 @@ Integrasi Basename untuk eliminasi bot dan standardisasi identitas on-chain.
    - Status visual: `BASE REQ`.
 
 ---
-### 11.3 Task Visibility Mandate (v3.42.7)
+### 11.3 Task Visibility Mandate (v3.42.8)
 1. **Immediate Hiding**: Tasks that are `hasCompletedTask` or `hasClaimed` MUST be filtered out from the `TasksPage` UI.
 2. **Type-Safe Filtering**: When comparing task IDs (e.g., in `activeTasks.filter`), ALWAYS use `String()` conversion (e.g., `String(task.id) === String(claim.task_id)`). This prevents silence failures caused by the mismatch between Contract IDs (Integer) and Supabase IDs (UUID).
 3. **Sponsorship Card Closure**: Cards (Sponsored/Organic) MUST be hidden if 100% of internal tasks are complete.
 4. **Verified Badge Branding**: All verified identities MUST display the **Base Blue** shield icon for premium signaling.
 
 ---
-*End of Source of Truth Document - Nexus v3.42.2 Locked.*
+
+## 12. Task Feature E2E Workflow (Canonical Reference)
+
+> [!IMPORTANT]
+> Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
+> **`PRD/TASK_FEATURE_WORKFLOW.md`**
+
+Dokumen tersebut mencakup (15 section):
+1. Arsitektur tingkat tinggi (Mermaid diagram)
+2. Dual Task Pipeline (On-Chain vs Off-Chain)
+3. Smart Contract Registry & Functions (DailyApp V13.2)
+4. Database Schema (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs, fn_increment_xp)
+5. API Routing & Bundle Map (tasks-bundle.js handlers)
+6. On-Chain Task Workflow E2E (Sequence diagram)
+7. Off-Chain Task Workflow E2E (Sequence diagram)
+8. Social Verification Flow (EIP-191 + anti-fraud)
+9. XP Economy & Hybrid Formula (G × I × U)
+10. Identity Guard & Access Control Matrix
+11. Disappearing Task Mandate (v3.42.2)
+12. Partner Offers (Campaigns)
+13. Admin Task Management
+14. File Reference Map (14 files)
+15. Healthy State Checklist (14-point)
+
+**Semua modifikasi terhadap fitur Task WAJIB mematuhi alur yang tertera di dokumen tersebut.**
+
+---
+*End of Source of Truth Document - Nexus v3.42.7 Locked.*
