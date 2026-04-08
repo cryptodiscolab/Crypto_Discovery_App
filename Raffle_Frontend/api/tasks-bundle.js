@@ -288,7 +288,7 @@ async function handleSocialVerify(req, res) {
     });
 
     if (error) {
-        if (error.code === '23505') return res.status(200).json({ success: true, message: "Already recorded." });
+        if (error.code === '23505') return res.status(200).json({ success: true, message: "Already recorded.", already_claimed: true });
         throw error;
     }
 

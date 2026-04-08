@@ -760,22 +760,22 @@ All User Generated Content (Missions, Raffles) default to `is_active: false` and
 
 Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 
-- [ ] **Zero-Hardcode XP**: Tidak ada literal XP value di kode (e.g., `reward: 100`). Semua dari `point_settings`.
-- [ ] **Dual Task Sync**: On-chain tasks via contract + Off-chain tasks via Supabase keduanya menghasilkan `fn_increment_xp` call.
-- [ ] **Disappearing Tasks**: Completed tasks return `null` (not "DONE" badge) — verified di kedua jalur.
-- [ ] **Type-Safe Comparison**: `String()` conversion pada semua ID comparison (Contract Integer vs Supabase UUID).
-- [ ] **Signature Verification**: Semua write operations melewati EIP-191 signature verification di backend.
-- [ ] **Already Claimed Handling**: Frontend mendeteksi `already_claimed: true` flag untuk mencegah toast misleading saat task menghilang.
-- [ ] **Anti-Sybil**: `target_id` uniqueness + global `(wallet, task_id)` uniqueness enforced.
-- [ ] **Expiry Logic**: Task creation menyertakan `expires_at` dan frontend memfilter task yang sudah lewat waktu.
-- [ ] **Identity Guard**: `is_base_social_required` tasks locked untuk user non-verified.
-- [ ] **Tier Gating**: `minTier` on-chain check aktif dan UI menampilkan lock badge.
-- [ ] **Feature Guard**: Mainnet kill switch via `system_settings.active_features` operational.
-- [ ] **Activity Logging**: Setiap klaim menghasilkan entry di `user_activity_logs`.
-- [ ] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
-- [ ] **30s Anti-Fraud**: Timer aktif sebelum social verification.
-- [ ] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract.
-- [ ] **Vercel < 12**: Total serverless functions under Hobby Plan limit.
+- [x] **Zero-Hardcode XP**: Tidak ada literal XP value di kode (e.g., `reward: 100`). Semua dari `point_settings`.
+- [x] **Dual Task Sync**: On-chain tasks via contract + Off-chain tasks via Supabase keduanya menghasilkan `fn_increment_xp` call.
+- [x] **Disappearing Tasks**: Completed tasks return `null` (not "DONE" badge) — verified di kedua jalur.
+- [x] **Type-Safe Comparison**: `String()` conversion pada semua ID comparison (Contract Integer vs Supabase UUID).
+- [x] **Signature Verification**: Semua write operations melewati EIP-191 signature verification di backend.
+- [x] **Already Claimed Handling**: Frontend mendeteksi `already_claimed: true` flag untuk mencegah toast misleading saat task menghilang.
+- [x] **Anti-Sybil**: `target_id` uniqueness + global `(wallet, task_id)` uniqueness enforced.
+- [x] **Expiry Logic**: Task creation menyertakan `expires_at` dan frontend memfilter task yang sudah lewat waktu.
+- [x] **Identity Guard**: `is_base_social_required` tasks locked untuk user non-verified.
+- [x] **Tier Gating**: `minTier` on-chain check aktif dan UI menampilkan lock badge.
+- [x] **Feature Guard**: Mainnet kill switch via `system_settings.active_features` operational.
+- [x] **Activity Logging**: Setiap klaim menghasilkan entry di `user_activity_logs`.
+- [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
+- [x] **30s Anti-Fraud**: Timer aktif sebelum social verification.
+- [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract.
+- [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
 
 ---
 
