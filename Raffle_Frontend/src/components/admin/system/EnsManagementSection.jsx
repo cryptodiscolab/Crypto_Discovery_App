@@ -1,7 +1,13 @@
-import React from 'react';
-import { UserCheck, CheckCircle, Search, RefreshCw, Trash2, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { UserCheck, CheckCircle, Globe } from 'lucide-react';
 
 export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, saving }) {
+    const [labelMap, setLabelMap] = useState({});
+
+    const handleLabelChange = (fid, value) => {
+        setLabelMap(prev => ({ ...prev, [fid]: value }));
+    };
+
     return (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-2">
             <div className="space-y-4">
@@ -18,17 +24,18 @@ export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, s
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <input
-                                        id={`label-${user.fid}`}
                                         type="text"
                                         placeholder="label"
+                                        value={labelMap[user.fid] || ''}
+                                        onChange={(e) => handleLabelChange(user.fid, e.target.value)}
                                         className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none font-bold"
                                     />
                                     <span className="text-slate-500 text-xs font-black">.cryptodiscovery.eth</span>
                                 </div>
                                 <button
-                                    onClick={() => onIssue(user, document.getElementById(`label-${user.fid}`).value)}
-                                    disabled={saving}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black py-2.5 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                                    onClick={() => onIssue(user, labelMap[user.fid] || '')}
+                                    disabled={saving || !labelMap[user.fid]}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black py-2.5 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <CheckCircle className="w-4 h-4" /> Issue Subname Identity
                                 </button>

@@ -8,6 +8,7 @@ import {
     ShieldAlert,
     ExternalLink
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function HealthDashboardSection() {
     const [healthData, setHealthData] = useState([]);
@@ -35,7 +36,8 @@ export function HealthDashboardSection() {
     }, []);
 
     const handleReset = async (serviceKey) => {
-        if (!confirm(`Reset health for ${serviceKey}?`)) return;
+        if (!confirm(`Reset health status for ${serviceKey}?`)) return;
+        const tid = toast.loading(`Resetting ${serviceKey}...`);
         try {
             const res = await fetch('/api/user-bundle', {
                 method: 'POST',
@@ -43,10 +45,14 @@ export function HealthDashboardSection() {
                 body: JSON.stringify({ action: 'reset-health', service_key: serviceKey })
             });
             const data = await res.json();
-            if (data.ok) fetchHealth();
-            else alert(data.error || 'Reset failed');
+            if (data.ok) {
+                toast.success(`${serviceKey} health reset successfully.`, { id: tid });
+                fetchHealth();
+            } else {
+                toast.error(data.error || 'Reset failed', { id: tid });
+            }
         } catch (e) {
-            alert('Reset error');
+            toast.error('Network error during reset', { id: tid });
         }
     };
 

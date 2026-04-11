@@ -12,18 +12,19 @@ export function SponsorshipConfigSection() {
     const [minPool, setMinPool] = useState('10');
     const [isSaving, setIsSaving] = useState(false);
 
+    // ✅ Verified function names against active ABI (abis_data.txt)
     const { data: currentFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
     const { data: currentAutoApprove } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'autoApproveSponsorship' });
-    const { data: currentReward } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipRewardPerClaim' });
-    const { data: currentTasks } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipTasksForReward' });
-    const { data: currentMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipMinPoolValue' });
+    const { data: currentReward } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
+    const { data: currentTasks } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'tasksForReward' });
+    const { data: currentMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
 
     useEffect(() => {
         if (currentFee) setFee((Number(currentFee) / 1e6).toString());
         if (currentAutoApprove !== undefined) setAutoApprove(currentAutoApprove);
         if (currentReward) setRewardPerClaim(currentReward.toString());
         if (currentTasks) setTasksForReward(currentTasks.toString());
-        if (currentMinPool) setMinPool((Number(currentMinPool) / 1e6).toString());
+        if (currentMinPool) setMinPool((Number(currentMinPool) / 1e18).toFixed(4)); // minRewardPoolValue is in wei
     }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
     const { writeContractAsync } = useWriteContract();
@@ -32,30 +33,20 @@ export function SponsorshipConfigSection() {
         setIsSaving(true);
         const tid = toast.loading("Updating Sponsorship Params...");
         try {
-            // Update Platform Fee if changed
-            if (fee !== (Number(currentFee) / 1e6).toString()) {
-                await writeContractAsync({
-                    address: CONTRACTS.DAILY_APP,
-                    abi: DAILY_APP_ABI,
-                    functionName: 'setSponsorshipPlatformFee',
-                    args: [BigInt(Number(fee) * 1e6)],
-                });
-            }
-
-            // Update Global Params
+            // ✅ Correct ABI function: setSettings(fee, minPool, reward, tasks)
             await writeContractAsync({
                 address: CONTRACTS.DAILY_APP,
                 abi: DAILY_APP_ABI,
-                functionName: 'setSponsorshipParams',
+                functionName: 'setSettings',
                 args: [
-                    BigInt(rewardPerClaim),
-                    BigInt(tasksForReward),
-                    BigInt(Number(minPool) * 1e6),
-                    BigInt(Number(fee) * 1e6)
+                    BigInt(Math.floor(Number(fee) * 1e6)),           // _feeUSDC
+                    BigInt(Math.floor(Number(minPool) * 1e18)),      // _minPool (in wei)
+                    BigInt(rewardPerClaim),                          // _reward
+                    BigInt(tasksForReward)                           // _tasks
                 ],
             });
 
-            // Update Auto-Approve if changed
+            // ✅ Auto-Approve is a separate function (verified in ABI)
             if (autoApprove !== currentAutoApprove) {
                 await writeContractAsync({
                     address: CONTRACTS.DAILY_APP,
@@ -73,6 +64,7 @@ export function SponsorshipConfigSection() {
             setIsSaving(false);
         }
     };
+
 
     return (
         <div className="glass-card p-8 bg-slate-900/40 border border-white/5 space-y-6 rounded-3xl">
@@ -98,11 +90,12 @@ export function SponsorshipConfigSection() {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Min Pool (USDC)</label>
+                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Min Pool Value (ETH)</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">$</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">Ξ</span>
                             <input
                                 type="number"
+                                step="0.0001"
                                 value={minPool}
                                 onChange={(e) => setMinPool(e.target.value)}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Save, Loader2, DollarSign, Wallet } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAccount, useSignMessage } from 'wagmi';
+import { CONTRACTS } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
 
 export function UgcConfigSection() {
@@ -11,7 +12,7 @@ export function UgcConfigSection() {
     const [config, setConfig] = useState({
         listing_fee_usdc: '5',
         sbt_pool_share_pct: '10',
-        treasury_address: '0x980770dAcE8f13E10632D3EC1410FAA4c707076c', // Fallback to MasterX
+        treasury_address: CONTRACTS.MASTER_X || '', // ✅ Resolved from canonical contracts lib, not hardcoded
         is_active: true
     });
     const [loading, setLoading] = useState(true);

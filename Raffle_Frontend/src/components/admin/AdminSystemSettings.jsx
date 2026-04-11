@@ -186,7 +186,7 @@ export default function AdminSystemSettings() {
 
             if (!response.ok) throw new Error("Failed to update thresholds");
             toast.success('SBT Thresholds updated!', { id: tid });
-            fetchPointSettings();
+            await fetchPointSettings();
         } catch (error) { toast.error('Failed to save thresholds: ' + error.message, { id: tid }); }
         finally { setSaving(false); }
     };

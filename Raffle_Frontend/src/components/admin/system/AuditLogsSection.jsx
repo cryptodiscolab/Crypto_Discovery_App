@@ -51,8 +51,12 @@ export function AuditLogsSection({ logs }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{log.action_type || 'SYSTEM_ACTION'}</span>
-                                                <span className="text-[11px] text-slate-300 truncate max-w-[300px]">{log.details?.reason || 'System sync executed'}</span>
+                                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{log.action || 'UNKNOWN'}</span>
+                                                <span className="text-[11px] text-slate-300 truncate max-w-[300px]">
+                                                    {typeof log.details === 'object' && log.details !== null
+                                                        ? Object.keys(log.details).slice(0, 2).map(k => `${k}: ${String(log.details[k]).slice(0,20)}`).join(' · ')
+                                                        : 'System sync executed'}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">

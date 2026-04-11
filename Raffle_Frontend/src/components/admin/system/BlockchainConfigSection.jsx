@@ -50,7 +50,7 @@ export function BlockchainConfigSection() {
         pPerTicket: '15',
         desc: ''
     });
-    const [isDistributing, setIsDistributing] = useState(false);
+
 
     const { prices } = usePriceOracle((ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens)?.map(t => t.address) || []);
     
@@ -735,11 +735,11 @@ export function BlockchainConfigSection() {
 
                 <button 
                     onClick={handleDistribute} 
-                    disabled={isDistributing} 
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all flex items-center justify-center gap-2"
+                    disabled={isSaving} 
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                    <RefreshCw className={`w-4 h-4 ${isDistributing ? 'animate-spin' : ''}`} />
-                    {isDistributing ? "Processing Batch..." : "Force Batch Distribution (Manual)"}
+                    <RefreshCw className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+                    {isSaving ? "Processing..." : "Force Batch Distribution (Manual)"}
                 </button>
                 <p className="text-[9px] text-slate-500 italic text-center">* Bypasses cooldown. Updates all user reward pools.</p>
             </div>
