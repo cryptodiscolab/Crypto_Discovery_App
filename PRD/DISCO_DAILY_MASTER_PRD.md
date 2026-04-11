@@ -1,5 +1,5 @@
 # CRYPTO DISCO MASTER PRD (v3.42.8)
-**Version**: `v3.42.8` (Task Feature Integrity Hardening)
+**Version**: `v3.42.8` (Admin System Hardening & ABI Synchronization)
 **Last Updated**: `08 April 2026 12:30`
 **Status**: 🛡️ RE-HARDENED, GROWTH-OPTIMIZED & LOCKED 💎
 **Audit Status**: `✅ 100% OPERATIONAL (Identity Safeguards Active)`
@@ -427,7 +427,17 @@ graph TD
 | **Ops** | `scripts/` | Audits, Sync, Deploy, Debug |
 | **Bot** | `verification-server/` | Telegram Webhook API |
 
-## 11. Work Report — v3.42.7 (Current)
+## 11. Work Report — v3.42.8 (Current)
+**Date**: 2026-04-11
+**Task**: System Settings Audit & Admin Resilience Hardening.
+**Action**:
+- **ABI Synchronization**: Corrected multiple phantom function calls (e.g., `sponsorshipRewardPerClaim`, `setSponsorshipParams`) in `SponsorshipConfigSection` to strictly use the active ABI definitions from `abis_data.txt` (`rewardPerClaim`, `setSettings`).
+- **State Protection**: Purged dead `isDistributing` state loops in `BlockchainConfigSection` to properly enforce `isSaving` block logic, migrating it from a soft-disable to a true transaction guard.
+- **Identity Architecture Fix**: Surgically removed React anti-pattern `document.getElementById()` in `EnsManagementSection` and replaced it with a controlled `useState` map to prevent catastrophic UI crashes.
+- **Data Hardness**: Remedied logical flaws in Admin Hub (e.g., migrated USDC prefix to ETH Wei, addressed backend key mapping `log.action`, removed hardcoded addresses with canonical `CONTRACTS.MASTER_X`).
+**Outcome**: 100% ABI compliance in Admin configs. Eliminated double-transaction risks. Type-safe and React-safe architectural restoration. Zero logical fallbacks.
+
+## 12. Work Report — v3.42.7 (Legacy)
 **Date**: 2026-04-05
 **Task**: Mobile UI Standardization & Task Claim Integrity.
 **Action**:
