@@ -33,7 +33,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
 - [ ] Verify `Point-Sync` for all rewards (dynamic fetch vs hardcode).
     - [ ] Verify `Zero-Hardcode` compliance across the entire feature set.
     - [ ] Check Vercel Function Count (Stay < 12).
-    - [ ] **✨ MOBILE UI & TASK INTEGRITY AUDIT (v3.42.7)**:
+    - [ ] **✨ ADMIN SYSTEM HARDENING & ABI SYNC AUDIT (v3.42.8)**:
         - [ ] Verify `TaskList.jsx` uses `String()` for all ID comparisons.
         - [ ] Verify primary action buttons use Indigo transparent/border and NO icons.
         - [ ] Verify layout uses `overflow-x-hidden` and `max-w-[100vw]` for mobile.
@@ -86,7 +86,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.42.8 (Task Feature Integrity Hardening).
+- **Versi Terakhir:** v3.42.8 (Admin System Hardening & ABI Synchronization).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -143,7 +143,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
-| **PRD v3.42.2** | `2026-04-05T02:15:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.42.8** | `2026-04-11T12:00:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🧭 Workspace Navigation & Data Flow (MANDATORY)

@@ -142,4 +142,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 8. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
 
 ---
-*Last Updated: 2026-04-08T08:50:00+07:00 | Task Feature Workflow Canonization. v3.42.7 LOCKED.*
+*Last Updated: 2026-04-11T12:45:00+07:00 | Admin System Hardening & ABI Synchronization. v3.42.8 LOCKED.*
