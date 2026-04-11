@@ -24,8 +24,9 @@ async function testScaling() {
     const { error: rpcErr } = await supabase.rpc('fn_increment_xp', { p_wallet: testWallet, p_amount: baseReward });
     if (rpcErr) throw new Error(`RPC failed: ${rpcErr.message}`);
 
-    const { data: res1, error: selErr } = await supabase.from('user_profiles').select('total_xp').eq('wallet_address', testWallet.toLowerCase()).single();
+    const { data: res1, error: selErr } = await supabase.from('user_profiles').select('total_xp').eq('wallet_address', testWallet.toLowerCase()).maybeSingle(); // v3.42.2
     if (selErr) throw new Error(`Selection failed: ${selErr.message}`);
+    if (!res1) throw new Error('Profile not found after upsert');
     console.log(`Base: ${baseReward} | Result: ${res1.total_xp} XP`);
 
     // 2. Advance User to Diamond (15,000 XP)
@@ -36,7 +37,7 @@ async function testScaling() {
 
     console.log(`\n[Scenario 2] WHALE USER (Diamond, 15,000 XP)`);
     await supabase.rpc('fn_increment_xp', { p_wallet: testWallet.not_exists_path ? 'ERROR' : testWallet, p_amount: baseReward });
-    const { data: res2 } = await supabase.from('user_profiles').select('total_xp').eq('wallet_address', testWallet.toLowerCase()).single();
+    const { data: res2 } = await supabase.from('user_profiles').select('total_xp').eq('wallet_address', testWallet.toLowerCase()).maybeSingle(); // v3.42.2
     const delta = res2.total_xp - 15000;
     console.log(`Base: ${baseReward} | Result: +${delta} XP (Expected: Significant reduction, no Underdog bonus)`);
 
@@ -44,7 +45,7 @@ async function testScaling() {
     console.log(`\n[Scenario 3] MINIMUM FLOOR TEST (Tiny Reward)`);
     const tinyReward = 1; 
     await supabase.rpc('fn_increment_xp', { p_wallet: testWallet, p_amount: tinyReward });
-    const { data: res3 } = await supabase.from('user_profiles').select('total_xp').eq('wallet_address', testWallet.toLowerCase()).single();
+    const { data: res3 } = await supabase.from('user_profiles').select('total_xp').eq('wallet_address', testWallet.toLowerCase()).maybeSingle(); // v3.42.2
     const floorDelta = res3.total_xp - res2.total_xp;
     console.log(`Base: ${tinyReward} | Result: +${floorDelta} XP (Expected: 5 XP Floor)`);
 

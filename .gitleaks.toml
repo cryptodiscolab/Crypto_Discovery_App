@@ -62,3 +62,21 @@ paths = [
     id = "ecosystem-log-leak"
     description = "Forbidden Activity/History Log: Committing large ecosystem activity logs or bridge history metadata is prohibited."
     path = '''(?i)(?:nexus-activity\.json|nexus-bridge\.json|history_.*\.json)$'''
+
+[[rules]]
+    id = "mcp-supabase-token"
+    description = "Detected MCP Supabase Access Token (sbp_ prefix). High risk of compromising MCP server access."
+    regex = '''sbp_[a-zA-Z0-9]{40}'''
+    keywords = ["sbp_"]
+
+[[rules]]
+    id = "mcp-github-token"
+    description = "Detected MCP GitHub Personal Access Token (ghp_ prefix). High risk of compromising repository access."
+    regex = '''ghp_[a-zA-Z0-9]{36,40}'''
+    keywords = ["ghp_"]
+
+[[rules]]
+    id = "mcp-config-secret"
+    description = "Detected sensitive MCP configuration key. Environment variables starting with MCP_ are reserved for secure model context protocol configurations."
+    regex = '''(?i)MCP_[A-Z_]+[=:]\s*(?:['"]?[0-9a-zA-Z]{10,200}['"]?)'''
+    keywords = ["MCP_"]

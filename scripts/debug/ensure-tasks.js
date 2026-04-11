@@ -12,7 +12,7 @@ async function main() {
     ];
 
     for (const t of tasksToEnsure) {
-        const { data: existing } = await supabase.from('daily_tasks').select('id').eq('description', t.description).single();
+        const { data: existing } = await supabase.from('daily_tasks').select('id').eq('description', t.description).maybeSingle(); // v3.42.2
         if (!existing) {
             console.log(`Creating task: ${t.description}`);
             const { data: created, error } = await supabase.from('daily_tasks').insert([t]).select('id').single();

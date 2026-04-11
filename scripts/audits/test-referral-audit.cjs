@@ -60,7 +60,7 @@ async function runAudit() {
     const { data: updatedReferrer } = await supabase.from('user_profiles')
         .select('total_xp, referred_by')
         .eq('wallet_address', REFERRER)
-        .single();
+        .maybeSingle(); // v3.42.2: referrer may not exist in DB
         
     // Note: In our current setup, the CONTRACT awards the points, 
     // and the sync-points.js script MUST detect this and update the referrer profile.

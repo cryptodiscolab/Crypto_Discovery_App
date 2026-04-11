@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
             .from('system_settings')
             .select('value')
             .eq('key', 'audit_settings')
-            .single();
+            .maybeSingle(); // v3.42.2: setting row may not exist yet
 
         const auditSettings = settingsData?.value || {
             xp_anomaly_threshold: 5000,

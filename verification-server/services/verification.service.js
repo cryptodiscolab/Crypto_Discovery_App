@@ -305,7 +305,7 @@ class VerificationService {
                     .from('user_profiles')
                     .select('is_base_social_verified')
                     .eq('wallet_address', userAddress.toLowerCase())
-                    .single();
+                    .maybeSingle(); // v3.42.2: wallet may not exist yet
 
                 if (!profile?.is_base_social_verified) {
                     return {
@@ -334,7 +334,7 @@ class VerificationService {
                     .from('user_profiles')
                     .select('twitter_id')
                     .eq('wallet_address', userAddress.toLowerCase())
-                    .single();
+                    .maybeSingle(); // v3.42.2: wallet may not be linked yet
 
                 if (!profile?.twitter_id || profile.twitter_id !== socialId) {
                     return {
@@ -351,7 +351,7 @@ class VerificationService {
                     .from('user_profiles')
                     .select('tiktok_username')
                     .eq('wallet_address', userAddress.toLowerCase())
-                    .single();
+                    .maybeSingle(); // v3.42.2: wallet may not be linked yet
 
                 if (!profile?.tiktok_username || profile.tiktok_username !== socialId) {
                     return {
@@ -368,7 +368,7 @@ class VerificationService {
                     .from('user_profiles')
                     .select('instagram_username')
                     .eq('wallet_address', userAddress.toLowerCase())
-                    .single();
+                    .maybeSingle(); // v3.42.2: wallet may not be linked yet
 
                 if (!profile?.instagram_username || profile.instagram_username !== socialId) {
                     return {
@@ -398,7 +398,7 @@ class VerificationService {
                         .from('user_profiles')
                         .select('display_name, pfp_url, bio')
                         .eq('wallet_address', userAddress.toLowerCase())
-                        .single();
+                        .maybeSingle(); // v3.42.2: autofill check, safe if null
 
                     if (!dbProfile?.display_name || !dbProfile?.pfp_url) {
                         let socialUser = null;

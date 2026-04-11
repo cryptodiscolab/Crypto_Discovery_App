@@ -31,7 +31,7 @@ class SupabaseService {
                 .from('daily_tasks')
                 .select('*')
                 .eq('id', taskId)
-                .single();
+                .maybeSingle(); // v3.42.2: PGRST116 — returns null if not found
 
             if (error) throw error;
             return data;
@@ -150,13 +150,14 @@ class SupabaseService {
     async ensureProfile(walletAddress) {
         if (!this.client) throw new Error('Supabase client not initialized');
 
+        // v3.42.2: .maybeSingle() cleanly returns null if no profile found (no PGRST116 needed)
         const { data: profile, error: profileError } = await this.client
             .from('user_profiles')
             .select('wallet_address')
             .eq('wallet_address', walletAddress)
-            .single();
+            .maybeSingle();
 
-        if (profileError && profileError.code !== 'PGRST116') throw profileError;
+        if (profileError) throw profileError;
 
         if (!profile) {
             try {
@@ -315,7 +316,7 @@ class SupabaseService {
                     ignoreDuplicates: false,
                 })
                 .select()
-                .single();
+                .maybeSingle(); // v3.42.2: upsert may return null if no changes
 
             if (error) {
                 // Security Check: Handle Unique Identity Lock Violation
@@ -363,7 +364,7 @@ class SupabaseService {
                     .from('point_settings')
                     .select('points_value')
                     .eq('activity_key', activityName)
-                    .single();
+                    .maybeSingle(); // v3.42.2: safe if activity key not found
 
                 if (setting) {
                     finalXp = setting.points_value;
@@ -471,7 +472,7 @@ class SupabaseService {
                 })
                 .eq('wallet_address', normalizedWallet)
                 .select()
-                .single();
+                .maybeSingle(); // v3.42.2: wallet may not exist yet
 
             if (error) throw error;
             return { success: true, data };

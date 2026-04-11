@@ -132,7 +132,7 @@ async function main() {
             .from('user_profiles')
             .select('wallet_address, total_xp, tier')
             .eq('wallet_address', account.address.toLowerCase())
-            .single();
+            .maybeSingle(); // v3.42.2: wallet may not be in DB yet
 
         if (profile) {
             console.log(`  DB Wallet : ${profile.wallet_address}`);

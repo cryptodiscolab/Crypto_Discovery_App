@@ -35,10 +35,10 @@ module.exports = async (req, res) => {
                 .from('daily_tasks')
                 .select('description, current_claims')
                 .eq('id', taskId)
-                .single();
+                .maybeSingle(); // v3.42.2: task may not exist (safe delete)
 
-            if (fetchError) {
-                await sendTelegram(chatId, `❌ Error: ${fetchError.message}`);
+            if (fetchError || !task) {
+                await sendTelegram(chatId, fetchError ? `❌ Error: ${fetchError.message}` : `❌ Task ${taskId} tidak ditemukan.`);
             } else if (task.current_claims > 0) {
                 // Task has claims, suggest deactivation instead of deletion to protect XP
                 await supabase.from('daily_tasks').update({ is_active: false }).eq('id', taskId);

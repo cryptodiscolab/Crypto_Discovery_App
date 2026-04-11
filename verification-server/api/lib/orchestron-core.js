@@ -56,7 +56,7 @@ async function getAgentStatus(agentName) {
         .from('system_settings')
         .select('value')
         .eq('key', `heartbeat_${agentName.toLowerCase()}`)
-        .single();
+        .maybeSingle(); // v3.42.2: heartbeat row may not exist if agent never ran
     
     if (!data) return 'OFFLINE';
     
