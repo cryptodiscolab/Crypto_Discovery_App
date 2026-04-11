@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.8)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.9)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -12,6 +12,7 @@ e:\Disco Gacha\Disco_DailyApp
 │   ├── skills/              # Agent skillsets (SKILL.md)
 │   ├── workflows/           # Automated workflow definitions (.md)
 │   ├── gemini.md            # operational constitution for Gemini
+│   ├── VERCEL_ECOSYSTEM_SOT.md # Vercel UI & CLI standards
 │   └── WORKSPACE_MAP.md     # This file (Canonical Nav)
 │
 ├── Raffle_Frontend/         # 💻 Main Web Application (Vite + React)
@@ -139,7 +140,8 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 5. `.agents/WORKSPACE_MAP.md` — Navigation Map (this file)
 6. `PRD/TASK_FEATURE_WORKFLOW.md` — 🎯 **Task Feature E2E Workflow (MANDATORY)**
 7. `PRD/FEATURE_WORKFLOW_SOT.md` — Feature Workflow SOT
-8. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
+8. `.agents/VERCEL_ECOSYSTEM_SOT.md` — 🌐 Vercel Deploy & UI Guidelines
+9. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
 
 ---
-*Last Updated: 2026-04-11T12:45:00+07:00 | Admin System Hardening & ABI Synchronization. v3.42.8 LOCKED.*
+*Last Updated: 2026-04-12T00:00:00+07:00 | Vercel Ecosystem Automation & Skill Integration. v3.42.9 LOCKED.*

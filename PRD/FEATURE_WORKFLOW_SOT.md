@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.7)
-**Last Updated**: 2026-04-05T14:48+07:00 — Mobile UI Standard & Task Integrity (v3.42.7)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.8)
+**Last Updated**: 2026-04-11T12:45:00+07:00 — Admin System Hardening & ABI Synchronization (v3.42.8)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -302,4 +302,4 @@ Dokumen tersebut mencakup (15 section):
 **Semua modifikasi terhadap fitur Task WAJIB mematuhi alur yang tertera di dokumen tersebut.**
 
 ---
-*End of Source of Truth Document - Nexus v3.42.7 Locked.*
+*End of Source of Truth Document - Nexus v3.42.8 Locked.*
