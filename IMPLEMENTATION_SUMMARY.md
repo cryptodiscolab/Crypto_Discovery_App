@@ -4,6 +4,13 @@
 
 ## 📝 Changelog
 
+### v3.42.8 — 2026-04-11 (Admin System Hardening & ABI Synchronization)
+- **ABI Synchronization**: Corrected `SponsorshipConfigSection` to use strictly active ABI functions from `abis_data.txt` (`rewardPerClaim`, `tasksForReward`, `minRewardPoolValue`, `setSettings`), eliminating silent failures and wagmi RPC errors.
+- **State Hardening**: Resolved dead `isDistributing` state in `BlockchainConfigSection` to properly mitigate double-transactions by enforcing `isSaving` block logic.
+- **Identity Shield Fix**: Replaced the React anti-pattern `document.getElementById()` in `EnsManagementSection` with fully controlled input state (`labelMap`) to prevent catastrophic crash errors during active rendering.
+- **Anti-Hallucination Guard**: Eliminated hardcoded fallback addresses in UGC config, enforcing canonical routing via `CONTRACTS.MASTER_X` directly sourced from the ecosystem workspace registry.
+- **UX Standardization**: Migrated legacy native browser alerts and confirm blocks in `HealthDashboardSection` systematically to `react-hot-toast` to comply with the unified Admin Hub UX policy.
+
 ### v3.42.2 — 2026-04-05 (Database Hardening & Clean Sweep UX)
 - **PGRST116 Hardening**: Systematic replacement of all `.single()` calls with `.maybeSingle()` in the database layer (Supabase) to handle missing or multiple records gracefully without coercion errors.
 - **Raffle Protocol Hardening**: Refined `CreateRafflePage.jsx` and standardized `ContentCMSV2` / `CryptoDiscoRaffle` contract interfaces for robust creation flows.
