@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAccount, useSwitchChain } from 'wagmi';
+import { useAccount, useSwitchChain, useConnect } from 'wagmi';
 import { ShieldCheck, ExternalLink, Mail, Twitter, Wallet } from 'lucide-react';
 import { baseSepolia } from 'wagmi/chains';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -9,6 +9,7 @@ import { useSIWE } from '../hooks/useSIWE';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 import { useOAuth } from '../hooks/useOAuth';
 import { HypeFeed } from '../components/HypeFeed';
+import { useEnvironment } from '../useEnvironment';
 
 /**
  * LoginPage — Wallet-First 3-Step Registration.
@@ -28,7 +29,9 @@ export function LoginPage() {
     const { signIn, session: siweSession, isLoading: isSigningIn } = useSIWE();
     const { linkGoogle, linkX, isLinking, linkedGoogle, linkedX } = useOAuth();
     const from = location.state?.from?.pathname || '/';
-    const { address, isConnected } = useAccount();
+    const { address, isConnected, isConnecting, isReconnecting } = useAccount();
+    const { connect, connectors } = useConnect();
+    const { isBaseApp, isFarcaster, isReady: envReady } = useEnvironment();
     const AUTH_KEY = 'crypto_disco_auth_status';
 
     // Auto-navigate when wallet connected AND SIWE done (social link is optional)
@@ -53,6 +56,32 @@ export function LoginPage() {
             }
         }
     }, [navigate, from, isConnected]);
+
+    // Auto-Connect for Base App & Farcaster
+    useEffect(() => {
+        if (!envReady || isConnected || isConnecting || isReconnecting) return;
+
+        if (isBaseApp) {
+            const cbConnector = connectors.find(c => c.id === 'coinbaseWalletSDK' || c.name?.includes('Coinbase'));
+            if (cbConnector) connect({ connector: cbConnector });
+        } else if (isFarcaster) {
+            const injectedConnector = connectors.find(c => c.id === 'injected' || c.id === 'metaMask');
+            if (injectedConnector) connect({ connector: injectedConnector });
+        }
+    }, [envReady, isConnected, isConnecting, isReconnecting, isBaseApp, isFarcaster, connectors, connect]);
+
+    // Auto-SIWE for Base App & Farcaster
+    useEffect(() => {
+        if (isConnected && address && !siweSession && !isSigningIn) {
+            if (isBaseApp || isFarcaster) {
+                // Beri jeda 500ms agar provider mount secara sempurna sebelum SIWE popup muncul
+                const timer = setTimeout(() => {
+                    signIn(frameUser?.fid);
+                }, 500);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [isConnected, address, siweSession, isSigningIn, isBaseApp, isFarcaster, frameUser?.fid, signIn]);
 
     // Determine current step
     const step = !isConnected ? 1 : !siweSession ? 2 : 3;

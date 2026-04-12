@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.9)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.11)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -10,6 +10,9 @@ Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di se
 e:\Disco Gacha\Disco_DailyApp
 ├── .agents/                 # 🧠 Intelligence & Protocols (The "Brain")
 │   ├── skills/              # Agent skillsets (SKILL.md)
+│   │   ├── 30-seconds-of-code # JS/CSS/HTML utilities
+│   │   ├── agent-customization # Agent personalization protocols
+│   │   └── meteora-agent      # Meteora LP analysis workflow
 │   ├── workflows/           # Automated workflow definitions (.md)
 │   ├── gemini.md            # operational constitution for Gemini
 │   ├── VERCEL_ECOSYSTEM_SOT.md # Vercel UI & CLI standards
@@ -139,9 +142,15 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 4. `.agents/skills/raffle-integration/SKILL.md` — Raffle Standards
 5. `.agents/WORKSPACE_MAP.md` — Navigation Map (this file)
 6. `PRD/TASK_FEATURE_WORKFLOW.md` — 🎯 **Task Feature E2E Workflow (MANDATORY)**
-7. `PRD/FEATURE_WORKFLOW_SOT.md` — Feature Workflow SOT
-8. `.agents/VERCEL_ECOSYSTEM_SOT.md` — 🌐 Vercel Deploy & UI Guidelines
-9. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
+7. `.agents/skills/agent-customization/SKILL.md` — Agent Personalization
+8. `.agents/skills/30-seconds-of-code/SKILL.md` — JS/CSS Utilities
+9. `PRD/FEATURE_WORKFLOW_SOT.md` — Feature Workflow SOT
+10. `.agents/VERCEL_ECOSYSTEM_SOT.md` — 🌐 Vercel Deploy & UI Guidelines
+11. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
+12. `.agents/skills/meteora-agent/SKILL.md` — Meteora Data Protocol
+13. `.agents/WORKSPACE_MAP.md` — Navigation Map (this file)
+14. `.agents/gemini.md` — Operational Constitution
+15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-12T00:00:00+07:00 | Vercel Ecosystem Automation & Skill Integration. v3.42.9 LOCKED.*
+*Last Updated: 2026-04-12T00:00:00+07:00 | Global Skill Synchronization & Ecosystem Hardening. v3.42.10 LOCKED.*

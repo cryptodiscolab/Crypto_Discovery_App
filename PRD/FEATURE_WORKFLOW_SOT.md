@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.8)
-**Last Updated**: 2026-04-11T12:45:00+07:00 — Admin System Hardening & ABI Synchronization (v3.42.8)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.11)
+**Last Updated**: 2026-04-12T18:40:00+07:00 — Seamless Auto-Login (v3.42.11)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -36,10 +36,11 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 ### 1.2 Wallet Connect (Web3)
 - **Tujuan**: Autentikasi wallet ke ekosistem Base Sepolia.
 - **Workflow**:
-  1. User klik "Connect Wallet" (Metamask / AppKit).
-  2. `Web3Provider.jsx` memastikan `window.ethereum` tidak crash oleh konflik ekstensi.
-  3. Frontend membaca `chainId`. Jika salah jaringan, memunculkan prompt pindah ke Base Sepolia (84532).
-  4. Jika dompet terhubung + social terhubung = Akun siap menerima XP dan tier.
+  1. (A) **Auto-Login via Platform**: Jika `useEnvironment` mendeteksi `isFarcaster` atau `isBaseApp`, Wagmi akan melakukan `connect` otomatis ke connector spesifik (`injected` untuk Farcaster, `coinbaseWalletSDK` untuk Base App) dan langsung menembak `signIn()` ke Backend (SIWE).
+  2. (B) **Manual Login**: Jika browser Web biasa, user harus klik "Connect Wallet".
+  3. `Web3Provider.jsx` memastikan `window.ethereum` tidak crash oleh konflik ekstensi.
+  4. Frontend membaca `chainId`. Jika salah jaringan, memunculkan prompt pindah ke Base Sepolia (84532).
+  5. Jika dompet terhubung + social terhubung = Akun siap menerima XP dan tier.
 
 ---
 
