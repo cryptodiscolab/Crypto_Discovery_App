@@ -81,6 +81,19 @@
                     <div class="system-msg">Establishing connection to Nexus Bridge...</div>
                 </div>
 
+                <div class="agent-command-panel">
+                    <div class="command-input-wrapper">
+                        <select id="agent-selector" class="select-native">
+                            <option value="antigravity">@antigravity (Gemini/OpenClaude)</option>
+                            <option value="qwen">@qwen (Local 7B)</option>
+                            <option value="deepseek">@deepseek (Local Gemma)</option>
+                        </select>
+                        <input type="text" id="command-input" class="input-native" placeholder="Enter prompt / task..." />
+                        <button id="send-command" class="btn-native pulse-btn">EXECUTE</button>
+                        <button id="run-audit-btn" class="btn-native btn-audit">SYSTEM AUDIT</button>
+                    </div>
+                    <div class="command-status" id="command-status">Idle</div>
+                </div>
             </section>
         </main>
     </div>

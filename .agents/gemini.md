@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-12*
-*PRD Version: v3.42.10 (Global Skill Synchronization & Ecosystem Hardening)*
+*Last Updated: 2026-04-22*
+*PRD Version: v3.43.0 (Ecosystem Security Remediation & Env Synchronization)*
 
 ---
 
@@ -34,6 +34,7 @@ Before responding to ANY request, read these files IN ORDER:
 3. .agents/skills/git-hygiene/SKILL.md
 4. .agents/WORKSPACE_MAP.md  (Canonical Navigation Map)
 5. .cursorrules  (full Master Architect Protocol)
+6. PRD/DISCO_DAILY_MASTER_PRD.md  (Master Source of Truth)
 ```
 
 **STEP 2 — Situational (baca jika relevan):**
@@ -216,6 +217,11 @@ State sharing via `agents_vault` table di Supabase.
 - **Viewport Containment**: Layout utama wajib menggunakan `overflow-x-hidden` dan `max-w-[100vw]` untuk menjamin visibilitas BottomNav dan mencegah clipping horizontal.
 - **Improved Claim Sync**: `handleClaim` wajib mendeteksi flag `already_claimed: true` dari backend untuk memberikan feedback akurat dan mencegah race condition UI.
 - **Pipeline Metadata**: Seluruh task baru wajib menyertakan `title`, `target_id`, dan `expires_at` (v3.42.8).
+
+### Section 4.5: ECOSYSTEM SECURITY REMEDIATION MANDATE (v3.43.0)
+- **Clean-Pipe Sync Protocol**: DILARANG KERAS melakukan verifikasi environment tanpa menggunakan skrip `robust_sync.cjs` atau yang setara (spawnSync + stdin).
+- **Multi-Project Parity**: Setiap perubahan pada environment di satu proyek Vercel (Frontend) wajib disinkronkan ke proyek pendukung (Verification Server) secara atomis.
+- **Zero-Trust Token Rotation**: VERCEL_TOKEN wajib dianggap sebagai materi berisiko tinggi; setiap indikasi kebocoran harus memicu rotasi total dan audit sinkronisasi ulang.
 
 ---
 ## 4. SECURE ENVIRONMENT & ZERO-TRUST ADDRESSES

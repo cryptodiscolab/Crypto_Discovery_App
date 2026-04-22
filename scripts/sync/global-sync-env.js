@@ -113,7 +113,7 @@ async function sync() {
                     } catch (e) {}
                     
                     // Adheres to Clean-Pipe Sync Protocol v3.16.0
-                    const result = spawnSync('vercel', ['env', 'add', key, env], {
+                    const result = spawnSync('vercel', ['env', 'add', key, env, '--yes'], {
                         input: val,
                         encoding: 'utf-8',
                         shell: true,

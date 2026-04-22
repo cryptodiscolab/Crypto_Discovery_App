@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.43.0)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -24,46 +24,6 @@ Before responding to ANY request, you MUST perform these reads IN ORDER:
 6. .agents/skills/economy-profitability-manager/SKILL.md  ← PnL & economy
 7. .agents/skills/supabase-audit/SKILL.md       ← DB audit tasks
 8. .agents/skills/admin-stability/SKILL.md      ← Admin dashboard tasks
-```
-
-### STEP 3 — Confirm before proceeding
-After reading, internally confirm:
-- [ ] Zero-Hardcode Mandate understood
-- [ ] Audit-First Fix Cycle (Section 29) understood
-- [ ] Zero-Trust Security rules understood
-- [ ] Vercel 12-function limit understood
-
-> ❗ If you skip this step and start working without reading skills, **you are in Protocol Breach**.
-# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL
-
----
-## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
-
-> **This applies to ALL AI models: Gemini, Claude (Sonnet/Opus/Haiku), GPT, DeepSeek, Qwen — no exceptions.**
-
-Before responding to ANY request, you MUST perform these reads IN ORDER:
-
-### STEP 1 — Read Core Skills (WAJIB, URUT)
-```
-1. .agents/skills/ecosystem-sentinel/SKILL.md   ← Audit protocol & fix cycle
-2. .agents/skills/secure-infrastructure-manager/SKILL.md  ← Security & contracts
-3. .agents/skills/git-hygiene/SKILL.md          ← Clean tree mandate
-4. .agents/WORKSPACE_MAP.md                     ← Canonical Nav Map
-5. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
-6. PRD/FEATURE_WORKFLOW_SOT.md                  ← Feature & Sync Source of Truth (Anti-Hallucination)
-7. .agents/VERCEL_ECOSYSTEM_SOT.md              ← Vercel Deploy & React Best Practices
-```
-
-### STEP 2 — Read Situational Skills (baca jika relevan dengan task)
-```
-4. .agents/skills/raffle-integration/SKILL.md   ← Raffle/NFT features
-5. .agents/skills/xp-reward-lifecycle/SKILL.md  ← XP & reward logic
-6. .agents/skills/economy-profitability-manager/SKILL.md  ← PnL & economy
-7. .agents/skills/supabase-audit/SKILL.md       ← DB audit tasks
-8. .agents/skills/admin-stability/SKILL.md      ← Admin dashboard tasks
-9. .agents/skills/deploy-to-vercel/SKILL.md     ← Vercel deployment automation
-10. .agents/skills/vercel-composition-patterns/SKILL.md ← UI/React Refactoring
-11. .agents/skills/vercel-react-view-transitions/SKILL.md ← UI Animations
 ```
 
 ### STEP 3 — Confirm before proceeding
@@ -81,7 +41,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.42.11 (Seamless Auto-Login)**
+**Protocol Version: 3.43.0 (Ecosystem Security Remediation)**
 
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
@@ -342,6 +302,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 ## 27. CLEAN GIT TREE MANDATE (Source Control Hygiene Protocol)
 - **PRINCIPLE**: The Git repository is the single source of truth for all source code. It MUST be kept strictly clean — only commit code, config, and deployment scripts.
 - **NO-SCREENSHOT MANDATE (CRITICAL)**: DILARANG KERAS mengambil, menyimpan, atau men-staged screenshot/media file (`.png`, `.jpg`, `.webp`, `.gif`, `.mp4`) ke dalam Git repository. Seluruh file pendukung sesi audit WAJIB dihapus sebelum task ditutup.
+- **AGENT CACHE HYGIENE**: Agent WAJIB secara aktif membersihkan direktori `browser_recordings/` dan `**/browser/` di dalam App Data atau workspace setelah tugas selesai. Media hanya boleh disimpan sementara untuk keperluan debugging visual instan dan HARUS segera di-purge.
 - **VITE HYGIENE**: DILARANG KERAS melakukan commit terhadap file temporer Vite (`vite.config.js.timestamp-*.mjs`).
 - **ZERO-LEAK PROTOCOL (SECURITY)**: DLARANG KERAS melakukan commit atau push terhadap variabel atau file yang mengandung `role_key`, `service_role_key`, `secret`, `api_secret`, `jwt_secret`, atau file sensitif berekstensi `.key`, `.pem`, `.p12`, `.cert`. Segala bentuk kredensial WAJIB melalui `.env` yang ter-ignore. File dalam `tools/nexus-monitor/` WAJIB terdaftar di `.gitleaks.toml` dan `.gitignore`.
 - **CLEAN UP ON SIGHT**: When a scratch file (`tmp_*.cjs`, etc.) or screenshot has served its purpose, delete it. Do not leave dead code or artifacts in the repository.
@@ -374,6 +335,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 Before fixing any error, Agent WAJIB menjalankan audit ekosistem terlebih dahulu:
 ```bash
 # Step 1: Ecosystem Sync Audit (Mandatory Weekly: Sunday 00:00 UTC)
+# MANDATORY: Use Clean-Pipe Sync Protocol (spawnSync + stdin) via robust_sync.cjs
 node scripts/audits/check_sync_status.cjs
 
 # Step 2: Syntax Check all bundles
@@ -582,5 +544,19 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - Type-safe comparison: `String(c.task_id) === String(task.id)`
 - Reactive sync on `already_claimed` flag or "already completed" error
 
-- **Current Protocol Version**: v3.42.8 (Task Feature Integrity Hardening)
-*Antigravity: Integrity Restored. Identity Guarded. v3.42.8 Locked.*
+## 43. ECOSYSTEM SECURITY REMEDIATION MANDATE (v3.43.0)
+- **Clean-Pipe Sync Protocol**: DILARANG KERAS melakukan verifikasi environment tanpa menggunakan skrip `robust_sync.cjs` atau yang setara (spawnSync + stdin).
+- **Multi-Project Parity**: Setiap perubahan pada environment di satu proyek Vercel (Frontend) wajib disinkronkan ke proyek pendukung (Verification Server) secara atomis menggunakan mandate Multi-Vercel Sync.
+- **Zero-Trust Token Rotation**: VERCEL_TOKEN wajib dianggap sebagai materi berisiko tinggi; setiap indikasi kebocoran harus memicu rotasi total dan audit sinkronisasi ulang.
+- **Audit-First Deployment**: DILARANG melakukan `vercel --prod` tanpa menjalankan audit `check_sync_status.cjs` terlebih dahulu.
+
+## 44. MEDIA PRIVACY & ZERO-SNAPSHOT MANDATE (CTO MANDATE v3.43.1)
+- **PRINCIPLE**: Data visual yang diambil dari browser seringkali mengandung informasi sensitif (PII, tokens, private UI).
+- **STORAGE POLICY**:
+  - Media (JPG, PNG, WEBP, MP4) **TIDAK BOLEH** disimpan di cloud, direktori publik, atau masuk ke dalam Git history.
+  - Aset aplikasi resmi (Logo, Icon, UI assets) diperbolehkan di lokal saja selama tidak mengandung data sensitif.
+- **AUTO-PURGE MANDATE**: Setiap kali Agent menyelesaikan tugas yang melibatkan `browser_subagent`, Agent WAJIB menjalankan perintah penghapusan cache internal secara rekursif pada direktori `browser_recordings/` dan `**/browser/`.
+- **DATA SOVEREIGNTY**: Tanggung jawab keamanan data sensitif berada pada Agent sebagai perpanjangan tangan CTO/Owner. Kegagalan menghapus snapshot adalah pelanggaran berat terhadap Zero-Leak Protocol.
+
+- **Current Protocol Version**: v3.43.1 (Ecosystem Security & Media Privacy)
+*Antigravity: Integrity Restored. Privacy Guarded. ECOSYSTEM RE-HARDENED. DATA RE-BOUND. v3.43.1 Locked.*

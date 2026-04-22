@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.42.11)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.43.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -30,8 +30,11 @@ e:\Disco Gacha\Disco_DailyApp
 │
 ├── scripts/                 # 🛠️ System Automation & Audits
 │   ├── audits/              # CRITICAL: Verification & Health Checks
-│   │   └── check_sync_status.cjs # Most important health script
+│   │   ├── check_sync_status.cjs # Most important health script
+│   │   └── verify-db-sync.cjs   # Database sync verification
 │   ├── sync/                # Data & Contract synchronization
+│   │   ├── robust_sync.cjs      # Clean-Pipe Sync Engine (v3.43.0)
+│   │   └── sync_vercel_all.cjs  # Multi-Project Sync Trigger
 │   ├── deployments/         # CI/CD and deploy helpers
 │   └── database/            # DB Schema & Dump tools
 │
@@ -153,4 +156,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-12T00:00:00+07:00 | Global Skill Synchronization & Ecosystem Hardening. v3.42.10 LOCKED.*
+*Last Updated: 2026-04-22T14:15:00+07:00 | Ecosystem Security Remediation & Parity Sync. v3.43.0 LOCKED.*

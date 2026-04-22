@@ -27,7 +27,7 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
 | **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA` |
-| **PRD v3.40.11** | `[ACTIVE]` | `2026-04-03T21:30:11+07:00` | `DOC_SOT` |
+| **PRD v3.43.0** | `[ACTIVE]` | `2026-04-22T14:15:00+07:00` | `DOC_SOT` |
 
 ## 🏛️ Core Competencies
 
@@ -44,8 +44,9 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 - [x] **Defensive Address Cleaning**: DILARANG menggunakan alamat kontrak yang masih mengandung tanda kutip, spasi, atau karakter tersembunyi. WAJIB dibersihkan via `cleanAddr` atau `.trim()`.
 - [x] **ENV-SANITY Mandate**: ALL environment variables fetched for serverless initialization (e.g., `SUPABASE_URL`, `SERVICE_KEY`) MUST be cleaned of "Silent Corruption" (literal double quotes and hidden newlines) using `.trim()`.
 - [x] **SDK-First Principle**: Mandatory usage of official SDKs for Auth and Social flows to ensure State/PKCE integrity.
-- [x] **Multi-Project Vercel Sync**: Wajib melakukan sinkronisasi environment variable atomik di seluruh project terkait (`dailyapp-verification-server`) menggunakan Vercel CLI via Clean-Pipe protocol.
+- [x] **Multi-Project Vercel Sync**: Wajib melakukan sinkronisasi environment variable atomik di seluruh project terkait (`dailyapp-verification-server`) menggunakan Vercel CLI via **Clean-Pipe Sync Protocol** (`robust_sync.cjs`).
 - [x] **Pre-Push Scan**: Wajib menjalankan `npm run gitleaks-check` sebelum push untuk mendeteksi kebocoran `.env`, `PRIVATE_KEY`, atau `role_key`.
+- [x] **Ecosystem Security Remediation (v3.43.0)**: Mandatory rotation of compromised tokens and absolute parity enforcement across Vercel environments.
 
 ### 3. Zero-Trust Frontend Architecture
 - **No Direct Writes**: DILARANG menulis langsung ke Supabase (`insert`/`upsert`) dari frontend.
@@ -77,8 +78,8 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Sync Verification Mandate (CRITICAL)**: Agent WAJIB mengeksekusi `node scripts/audits/verify-db-sync.cjs` setiap kali memulai atau menyelesaikan task database/backend.
 - **Legacy Column Cleanup**: Laporkan kolom redundan dan unifikasi melalui SQL migration.
 
-## 📋 Checklist Security & Infra (v3.39.1)
-- [ ] Apakah kontrak yang digunakan adalah versi terbaru (PRD v3.39.1)?
+## 📋 Checklist Security & Infra (v3.43.0)
+- [ ] Apakah kontrak yang digunakan adalah versi terbaru (PRD v3.43.0)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?
 - [ ] Apakah Gitleaks scan (`npm run gitleaks-check`) sudah dijalankan dan Pass?
 - [ ] Apakah mutasi data mengikuti pola Zero-Trust Backend?
@@ -104,4 +105,4 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan tanpa `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines).
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.40.9*
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.43.0*

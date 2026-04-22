@@ -288,3 +288,128 @@ pre {
     margin: 10px 0;
     font-style: italic;
 }
+
+/* Interactive Agent Panel */
+.agent-command-panel {
+    background: rgba(0, 0, 0, 0.4);
+    border-top: 1px solid var(--glass-border);
+    padding: 15px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+.command-input-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.select-native {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    outline: none;
+    cursor: pointer;
+}
+
+.select-native option {
+    background: var(--bg-color);
+    color: var(--text-primary);
+}
+
+.input-native {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.input-native:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
+}
+
+.btn-native {
+    background: var(--gradient-accent);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+}
+
+.btn-native:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn-native:active {
+    transform: translateY(1px);
+}
+
+.command-status {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.btn-audit {
+    background: transparent;
+    border: 1px solid rgba(255, 50, 50, 0.4);
+    color: #ff5555;
+}
+
+.btn-audit:hover {
+    background: rgba(255, 50, 50, 0.1);
+    box-shadow: 0 0 10px rgba(255, 50, 50, 0.2);
+}
+
+.nexus-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.nexus-table th, .nexus-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.nexus-table th {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.nexus-table tr:last-child td {
+    border-bottom: none;
+}

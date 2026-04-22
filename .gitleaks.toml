@@ -37,6 +37,11 @@ paths = [
     path = '''(?i)\.(?:png|jpg|jpeg|webp|gif|mp4|mov|avi)$'''
 
 [[rules]]
+    id = "agent-brain-leak"
+    description = "Detected agent brain metadata or browser session leak. These files contain sensitive interaction history."
+    path = '''(?i)(?:brain/|browser_recordings/|scratchpad_.*\.md\.resolved)'''
+
+[[rules]]
     id = "supabase-role-key"
     description = "Detected Supabase Service Role Key or equivalent. High risk of full database compromise."
     regex = '''(?i)(?:role[_-]key|service[_-]role|service_role_key)[=:]\s*(?:['"]?[0-9a-zA-Z]{50,200}['"]?)'''

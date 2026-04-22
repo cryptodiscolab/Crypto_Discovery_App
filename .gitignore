@@ -93,6 +93,9 @@ nexus-activity.json
 nexus-bridge.json
 
 # === MEDIA & SCREENSHOTS (MANDATORY — Section 27) ===
+# No agent-generated media or browser snapshots allowed in repo.
+browser_recordings/
+**/browser/
 *.png
 *.jpg
 *.jpeg
@@ -101,6 +104,7 @@ nexus-bridge.json
 *.svg
 *.mp4
 *.mov
+artifacts/*.png
 
 # === SECURITY CERTIFICATES & PRIVATE KEYS ===
 *.pem

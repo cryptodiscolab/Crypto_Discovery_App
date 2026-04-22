@@ -23,7 +23,7 @@ function addMessage(agentKey, text, code = null) {
             <span class="msg-time">${time}</span>
         </div>
         <div class="msg-bubble">
-            <p>${text.replace(/\n/g, '<br>')}</p>
+            <div class="msg-content">${text.includes('<table') ? text : text.replace(/\n/g, '<br>')}</div>
             ${codeHtml}
         </div>
     `;
@@ -89,3 +89,88 @@ document.addEventListener('DOMContentLoaded', () => {
     addSystemMsg('📡 Nexus Monitor: Live Data Feed Active.');
     updateLogs();
 });
+
+// Interactive Panel Setup
+const commandInput = document.getElementById('command-input');
+const sendCommandBtn = document.getElementById('send-command');
+const agentSelector = document.getElementById('agent-selector');
+const commandStatus = document.getElementById('command-status');
+
+sendCommandBtn.addEventListener('click', async () => {
+    const prompt = commandInput.value.trim();
+    if (!prompt) return;
+
+    const agent = agentSelector.value;
+    
+    addMessage(agent, `[EXECUTING TASK]\nPrompt: ${prompt}`);
+    
+    commandInput.value = '';
+    sendCommandBtn.disabled = true;
+    sendCommandBtn.innerText = 'WAIT...';
+    commandStatus.innerText = 'Status: Forwarding to local LLM...';
+
+    try {
+        const res = await fetch('/api/agent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agent, prompt })
+        });
+        
+        const data = await res.json();
+        
+        if (data.status === 'ok') {
+            commandStatus.innerText = `Status: Complete.`;
+            addMessage(agent, `[RESPONSE]\n${data.response}`);
+        } else {
+            commandStatus.innerText = `Status: Error.`;
+            addSystemMsg(`⚠️ Agent execution failed: ${data.message || 'Unknown error'}`);
+        }
+    } catch (err) {
+        commandStatus.innerText = `Status: Network Error.`;
+        addSystemMsg(`⚠️ Failed to connect to server backend: ${err.message}`);
+    } finally {
+        sendCommandBtn.disabled = false;
+        sendCommandBtn.innerText = 'EXECUTE';
+        setTimeout(() => commandStatus.innerText = 'Idle', 3000);
+    }
+});
+
+commandInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendCommandBtn.click();
+});
+
+const runAuditBtn = document.getElementById('run-audit-btn');
+if (runAuditBtn) {
+    runAuditBtn.addEventListener('click', async () => {
+        addMessage('lurah', `[CRITICAL ACTION]\nMemulai End-To-End Orchestron Audit...\nPerkiraan Waktu: 20-30 detik. Harap tunggu.`);
+        
+        runAuditBtn.disabled = true;
+        runAuditBtn.innerText = 'AUDITING...';
+        commandStatus.innerText = 'Status: Executing nexus_orchestrator.cjs...';
+        
+        try {
+            const res = await fetch('/api/agent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agent: 'lurah', prompt: '/audit' })
+            });
+            
+            const data = await res.json();
+            
+            if (data.status === 'ok') {
+                commandStatus.innerText = `Status: Audit Complete.`;
+                addMessage('lurah', data.response);
+            } else {
+                commandStatus.innerText = `Status: Audit Error.`;
+                addMessage('lurah', `⚠️ Audit execution failed: ${data.message || 'Unknown error'}`);
+            }
+        } catch (err) {
+            commandStatus.innerText = `Status: Network Error.`;
+            addSystemMsg(`⚠️ Failed to connect to server for audit: ${err.message}`);
+        } finally {
+            runAuditBtn.disabled = false;
+            runAuditBtn.innerText = 'SYSTEM AUDIT';
+            setTimeout(() => commandStatus.innerText = 'Idle', 3000);
+        }
+    });
+}
