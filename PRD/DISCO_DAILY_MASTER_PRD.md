@@ -1,6 +1,6 @@
-# CRYPTO DISCO MASTER PRD (v3.44.0)
-**Version**: `v3.44.0` (Design Protocol & Global Aesthetic Standardization)
-**Last Updated**: `22 April 2026 14:15`
+# CRYPTO DISCO MASTER PRD (v3.45.0)
+**Version**: `v3.45.0` (Mission Creation UX & Batch Transaction Resilience)
+**Last Updated**: `23 April 2026 00:25`
 **Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
 **Audit Status**: `✅ 100% OPERATIONAL (Ecosystem Parity Locked)`
 
@@ -11,9 +11,9 @@
 2. [Ecosystem Core Architecture (High-Level)](#2-ecosystem-core-architecture-high-level)
 3. [User & Reward Lifecycle (End-to-End)](#3-user--reward-lifecycle-end-to-end)
 4. [Admin & Sponsorship Workflow](#4-admin--sponsorship-workflow)
-5. [Work Report v3.43.0 (Current)](#11-work-report--v3430-current)
-6. [Work Report v3.42.13 (Legacy)](#11.1-work-report--v34213-legacy)
-7. [Work Report v3.42.12 (Legacy)](#11.2-work-report--v34212-legacy)
+5. [Work Report v3.45.0 (Current)](#11-work-report--v3450-current)
+6. [Work Report v3.44.0 (Legacy)](#11.1-work-report--v3440-legacy)
+7. [Work Report v3.43.0 (Legacy)](#11.2-work-report--v3430-legacy)
 8. [Historical Analysis & Changelog](#7-historical-analysis--changelog)
 9. [Audit & Security Mandates](#8-audit-security-mandates)
 10. [Current Ecosystem Status (v3.28.0 Audit Report)](#9-current-ecosystem-status-v3280-audit-report)
@@ -21,11 +21,18 @@
 
 ---
 
-## 11. Work Report v3.44.0 (Current)
-**Date:** 2026-04-22
-**Subject:** Design Protocol Integration & Global Aesthetic Standardization.
-**Implementation:** Mengintegrasikan standar `google-labs-code/design.md` ke dalam ekosistem. Membuat file `DESIGN.md` sebagai Single Source of Truth (SSOT) untuk identitas visual (Midnight Cyber). Menambahkan skill `design-protocol` dan skrip audit `design_lint.cjs` untuk memastikan konsistensi UI/UX di seluruh agent. Memperbarui `.cursorrules` dengan mandat desain v3.44.0.
-**Result:** Seluruh agent kini memiliki panduan desain yang terstruktur secara mesin (YAML) dan manusia (Markdown). Konsistensi "Midnight Cyber" (Dark #050505 & Glassmorphism) terjamin untuk seluruh komponen baru.
+## 11. Work Report v3.45.0 (Current)
+**Date:** 2026-04-23
+**Subject:** Mission Creation UX Refinement & Batch Transaction Resilience.
+**Implementation:**
+- **UX Reward Pool**: Menambahkan tooltip informasi pada input Reward Pool untuk memperjelas bahwa pembayaran dilakukan dalam ETH (Native), sedangkan nilai USDC yang tampil adalah konversi real-time.
+- **Batch Transaction Fix**: Mengganti logic `useWaitForTransactionReceipt` dengan `useCallsStatus` (wagmi/experimental) pada tombol "Create Mission" untuk mendukung penanganan status transaksi batch (EIP-5792) yang sebelumnya menyebabkan UI hang.
+- **UI Refinement**: Standarisasi tombol "CREATE mission" dengan ukuran proporsional (`w-fit`) dan label yang lebih ringkas.
+**Result:** Alur pembuatan misi (UGC Mission) kini jauh lebih responsif, informatif, dan tahan terhadap konflik provider wallet saat melakukan batch calls.
+
+---
+
+## 11.1 Work Report v3.44.0 (Legacy)
 
 ---
 

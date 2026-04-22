@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.11)
-**Last Updated**: 2026-04-12T18:40:00+07:00 — Seamless Auto-Login (v3.42.11)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.45.0)
+**Last Updated**: 2026-04-23T00:30:00+07:00 — Mission Creation UX & Resilience (v3.45.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -187,7 +187,15 @@ Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berpu
   3. Setelah Admin sukses mengeksekusi transfer dari Multisig Safe, tombol **"Mark Funded"** akan mengunci alokasi revenue tersebut.
   4. Misi kemudian secara permanen pindah ke **"Allocation History"** dengan visual indikator `Funded (Emerald)` yang tidak bisa lagi diputarbalikkan.
 
-### 5.2 Unified Activity Logs Tracking
+
+ ### 5.3 UGC Mission Creation Flow (Sponsor Side)
+ 1. **Input Reward Pool**: Sponsor menentukan jumlah reward dalam nominal ETH. UI secara otomatis mengonversi ke estimasi USDC.
+ 2. **UX Safeguard**: Tooltip info menjelaskan bahwa pembayaran aktual dilakukan dalam ETH (Native).
+ 3. **Batch Execution (EIP-5792)**: Tombol "CREATE" mengeksekusi batch call (Listing Fee USDC + Reward Pool ETH).
+ 4. **Resilient Tracking**: Sistem menggunakan `useCallsStatus` untuk memantau status bundle transaksi batch, mencegah UI hang saat menunggu konfirmasi dari provider (v3.45.0).
+ 
+ ### 5.2 Unified Activity Logs Tracking
+
 - Semua transaksi yang memengaruhi poin atau ekuitas user **WAJIB** terpusat di fungsi `logActivity` (di backend APIs). Frontend *ProfilePage* => `ActivityLogSection` mem-parse data log secara realtime dengan pembagian:
   1. **XP Gains (ZAP)**: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.
   2. **Purchases (SHOPPING CART)**: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan `raffle_buy_`.

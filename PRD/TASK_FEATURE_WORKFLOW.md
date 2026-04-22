@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.42.8` | **Last Updated**: `2026-04-11T12:45:00+07:00`
+**Version**: `v3.45.0` | **Last Updated**: `2026-04-23T00:35:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -774,6 +774,7 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Activity Logging**: Setiap klaim menghasilkan entry di `user_activity_logs`.
 - [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
 - [x] **30s Anti-Fraud**: Timer aktif sebelum social verification.
+- [x] **Batch Resilience**: Create Mission menggunakan `useCallsStatus` (EIP-5792) untuk mencegah UI hang pada batch transactions.
 - [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract.
 - [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
 
