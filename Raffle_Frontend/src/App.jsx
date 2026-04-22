@@ -110,8 +110,8 @@ function AppContent() {
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+                <Route path="/" element={<HomePage />} />
                 <Route element={<ProtectedLayout />}>
-                  <Route path="/" element={<HomePage />} />
                   <Route path="/tasks" element={<TasksPage />} />
                   <Route path="/raffles" element={<RafflesPage />} />
                   <Route path="/leaderboard" element={<LeaderboardPage />} />

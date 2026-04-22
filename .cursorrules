@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.43.0)
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.44.0)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -41,7 +41,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.43.0 (Ecosystem Security Remediation)**
+**Protocol Version: 3.44.0 (Design Protocol Integration)**
 
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
@@ -558,5 +558,11 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **AUTO-PURGE MANDATE**: Setiap kali Agent menyelesaikan tugas yang melibatkan `browser_subagent`, Agent WAJIB menjalankan perintah penghapusan cache internal secara rekursif pada direktori `browser_recordings/` dan `**/browser/`.
 - **DATA SOVEREIGNTY**: Tanggung jawab keamanan data sensitif berada pada Agent sebagai perpanjangan tangan CTO/Owner. Kegagalan menghapus snapshot adalah pelanggaran berat terhadap Zero-Leak Protocol.
 
-- **Current Protocol Version**: v3.43.1 (Ecosystem Security & Media Privacy)
-*Antigravity: Integrity Restored. Privacy Guarded. ECOSYSTEM RE-HARDENED. DATA RE-BOUND. v3.43.1 Locked.*
+## 45. DESIGN PROTOCOL & AGENTIC VISUAL IDENTITY (v3.44.0)
+- **DESIGN SOURCE OF TRUTH**: `DESIGN.md` is the ABSOLUTE authority on colors, typography, and component rationale.
+- **MANDATE**: Agents MUST read `DESIGN.md` and use the `.agents/skills/design-protocol/SKILL.md` before initiating any frontend changes.
+- **AUDIT**: Run `node scripts/audits/design_lint.cjs` before every frontend PR to ensure token integrity.
+- **AESTHETIC**: Enforce "Midnight Cyber" (Dark #050505, Glassmorphism, 11px/13px balanced typography).
+
+- **Current Protocol Version**: v3.44.0 (Design Protocol Integration)
+*Antigravity: Integrity Restored. Privacy Guarded. DESIGN PROTOCOL ENFORCED. v3.44.0 Locked.*

@@ -1,11 +1,14 @@
+@import "./design-tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
     body {
-        background-color: #050505 !important;
-        color: #f1f5f9 !important;
+        background-color: var(--colors-background-primary) !important;
+        color: var(--colors-text-primary) !important;
+        font-family: var(--typography-family-sans);
         margin: 0;
     }
 
@@ -18,20 +21,37 @@
     select {
         cursor: pointer;
     }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--typography-family-heading);
+    }
 }
 
 /* Flat-Native Utilities */
 .border-b-subtle {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    /* White/8 */
 }
 
 
-/* Card base style — elevation via bg contrast, bukan border tebal */
+/* Midnight Cyber Card Style */
 .glass-card {
-    background: rgb(24, 28, 36);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 1rem;
+    background: var(--components-card-background);
+    border: var(--components-card-border);
+    backdrop-filter: blur(var(--components-card-blur));
+    border-radius: var(--rounded-xl);
+}
+
+.cyber-pod {
+    @apply relative overflow-hidden transition-all duration-500;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(16px);
+}
+
+.cyber-pod:hover {
+    border-color: var(--colors-brand-primary);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(255,255,255,0.02) 100%);
 }
 
 .pb-safe {

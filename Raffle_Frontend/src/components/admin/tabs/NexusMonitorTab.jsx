@@ -123,23 +123,23 @@ export const NexusMonitorTab = () => {
     };
 
     const AgentCard = ({ id, name, icon: Icon, color, status }) => (
-        <div className={`p-6 rounded-3xl border transition-all duration-500 bg-[#080808]/40 ${status === 'active'
-            ? `border-${color}-500/30 bg-${color}-500/5`
-            : 'border-white/5 opacity-60'
+        <div className={`cyber-pod p-6 rounded-[2rem] ${status === 'active'
+            ? 'border-indigo-500/30'
+            : 'opacity-60'
             }`}>
             <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-2xl bg-${color}-500/10 border border-${color}-500/20`}>
+                <div className={`p-3 rounded-2xl bg-${color}-500/10 border border-${color}-500/20 shadow-[0_0_15px_rgba(0,0,0,0.5)]`}>
                     <Icon className={`w-6 h-6 text-${color}-400 ${status === 'active' ? 'animate-pulse' : ''}`} />
                 </div>
                 <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${status === 'active' ? `bg-${color}-400 animate-ping` : 'bg-slate-700'}`} />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
                         {status}
                     </span>
                 </div>
             </div>
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">{name}</h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Ready for Tasks</p>
+            <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{name}</h3>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Neural Link: Active</p>
         </div>
     );
 
@@ -153,17 +153,17 @@ export const NexusMonitorTab = () => {
             </div>
 
             {/* Quick Dispatch Form */}
-            <div className="bg-[#080808]/60 border border-white/5 rounded-[2.5rem] p-8 backdrop-blur-xl relative overflow-hidden group">
+            <div className="glass-card p-10 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
                     <Sparkles className="w-24 h-24 text-indigo-500" />
                 </div>
 
                 <div className="relative">
-                    <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-3 mb-1">
+                    <h2 className="text-xl font-black text-white tracking-[0.1em] flex items-center gap-3 mb-1 uppercase">
                         <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20" />
-                        QUICK DISPATCH
+                        NEXUS DISPATCH
                     </h2>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mb-8">Deploy Autonomous Task to Nexus</p>
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mb-8">Deploy Autonomous Task to Ecosystem</p>
 
                     <form onSubmit={handleDispatch} className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2 space-y-4">
@@ -208,8 +208,8 @@ export const NexusMonitorTab = () => {
             </div>
 
             {/* Task Feed */}
-            <div className="bg-[#080808]/60 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
-                <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <div className="glass-card overflow-hidden">
+                <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
                     <div>
                         <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-3">
                             <Terminal className="w-5 h-5 text-indigo-400" />
