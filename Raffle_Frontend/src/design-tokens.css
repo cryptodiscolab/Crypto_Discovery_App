@@ -1,0 +1,57 @@
+/*
+ * 🎨 DESIGN TOKENS — Midnight Cyber Spec (v3.44.0)
+ * Source of Truth: /DESIGN.md
+ * Auto-generated from YAML frontmatter in DESIGN.md
+ *
+ * MANDATE: Do NOT hardcode these values elsewhere.
+ * Always reference via var(--token-name).
+ */
+
+:root {
+  /* ━━━ Colors: Background ━━━ */
+  --colors-background-primary: #050505;
+  --colors-background-secondary: #0a0a0a;
+  --colors-background-accent: rgba(59, 130, 246, 0.1);
+
+  /* ━━━ Colors: Text ━━━ */
+  --colors-text-primary: #f1f5f9;
+  --colors-text-secondary: #94a3b8;
+  --colors-text-accent: #3b82f6;
+
+  /* ━━━ Colors: Brand ━━━ */
+  --colors-brand-primary: #3b82f6;
+  --colors-brand-secondary: #0ea5e9;
+  --colors-brand-success: #10b981;
+  --colors-brand-error: #ef4444;
+  --colors-brand-warning: #f59e0b;
+
+  /* ━━━ Typography ━━━ */
+  --typography-family-sans: 'Inter', system-ui, sans-serif;
+  --typography-family-mono: 'Fira Code', monospace;
+  --typography-family-heading: 'Orbitron', sans-serif;
+  --typography-size-base: 16px;
+  --typography-size-h1: 2.5rem;
+  --typography-size-h2: 2rem;
+  --typography-size-h3: 1.5rem;
+
+  /* ━━━ Border Radius ━━━ */
+  --rounded-sm: 4px;
+  --rounded-md: 8px;
+  --rounded-lg: 12px;
+  --rounded-xl: 24px;
+
+  /* ━━━ Spacing ━━━ */
+  --spacing-unit: 4px;
+  --spacing-base: 16px;
+
+  /* ━━━ Components: Card ━━━ */
+  --components-card-background: rgba(255, 255, 255, 0.03);
+  --components-card-border: 1px solid rgba(255, 255, 255, 0.08);
+  --components-card-blur: 12px;
+
+  /* ━━━ Components: Button ━━━ */
+  --components-button-primary-bg: #3b82f6;
+  --components-button-primary-text: #ffffff;
+  --components-button-glass-bg: rgba(255, 255, 255, 0.05);
+  --components-button-glass-border: 1px solid rgba(255, 255, 255, 0.1);
+}
