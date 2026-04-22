@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins, Mail, Twitter
+  RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins, Mail, Twitter, Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useSignMessage, useDisconnect, useWriteContract, useReadContract, usePublicClient, useWaitForTransactionReceipt } from 'wagmi';
@@ -16,7 +16,7 @@ import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI, MASTER_X_ADDRESS } from '../lib/contracts';
 import ActivityLogSection from '../components/ActivityLogSection';
-import { useWriteContracts } from 'wagmi/experimental';
+import { useWriteContracts, useCallsStatus } from 'wagmi/experimental';
 import { usePriceOracle } from '../hooks/usePriceOracle';
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 
@@ -1070,7 +1070,16 @@ function CreateTaskModal({ onClose }) {
             </div>
             
             <div className="space-y-2">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Determine Reward Pool (ETH)</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-1.5">
+                Determine Reward Pool (ETH)
+                <span className="relative group cursor-help">
+                  <Info size={12} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 border border-white/10 rounded-xl text-[10px] font-bold text-slate-300 normal-case tracking-normal whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-xl z-50">
+                    Reward pool is paid in ETH (Native).
+                    <br />USDC value is real-time conversion.
+                  </span>
+                </span>
+              </label>
               <div className="relative">
                 <input
                   type="number"
@@ -1511,15 +1520,36 @@ function RevenueClaimModal({ onClose, claimable, onSuccess }) {
   );
 }
 function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, rewardTokenAddr, onSuccess }) {
-  const { writeContracts, data: bundleId, isPending } = useWriteContracts();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: bundleId });
-  const { signMessageAsync } = useSignMessage();
+  const { writeContracts, data: bundleId, isPending, error: writeError } = useWriteContracts();
+
+  // FIX: useCallsStatus is the correct companion for useWriteContracts (EIP-5792 batch calls).
+  // useWaitForTransactionReceipt expects a standard tx hash, but useWriteContracts returns a bundleId.
+  const { data: callsStatus } = useCallsStatus({
+    id: bundleId,
+    query: {
+      enabled: !!bundleId,
+      refetchInterval: (query) =>
+        query.state.data?.status === 'CONFIRMED' ? false : 2000,
+    },
+  });
+
+  const isConfirming = !!bundleId && callsStatus?.status !== 'CONFIRMED';
+  const isSuccess = callsStatus?.status === 'CONFIRMED';
 
   useEffect(() => {
     if (isSuccess && bundleId) {
-      onSuccess(bundleId);
+      // Extract actual tx hash from the first receipt, fallback to bundleId
+      const txHash = callsStatus?.receipts?.[0]?.transactionHash || bundleId;
+      onSuccess(txHash);
     }
-  }, [isSuccess, bundleId, onSuccess]);
+  }, [isSuccess, bundleId]);
+
+  useEffect(() => {
+    if (writeError) {
+      console.error('[PayAndCreateMission] Error:', writeError);
+      toast.error(writeError.shortMessage || writeError.message || 'Transaction failed');
+    }
+  }, [writeError]);
 
   const handleClick = async () => {
     if (calls.length === 0) return toast.error("No valid tasks in batch");
@@ -1539,9 +1569,9 @@ function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, rewa
     <button
       onClick={handleClick}
       disabled={isPending || isConfirming}
-      className={`w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-widest transition-all ${isPending || isConfirming ? 'opacity-50' : ''}`}
+      className={`w-fit mx-auto px-12 block bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-widest transition-all ${isPending || isConfirming ? 'opacity-50' : ''}`}
     >
-      {isPending ? "SIGNING..." : isConfirming ? "WAITING..." : "PAY & CREATE MISSION"}
+      {isPending ? "SIGNING..." : isConfirming ? "CONFIRMING..." : "CREATE"}
     </button>
   );
 }
