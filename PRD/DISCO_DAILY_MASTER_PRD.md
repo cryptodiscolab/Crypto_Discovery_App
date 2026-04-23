@@ -1,27 +1,19 @@
-# CRYPTO DISCO MASTER PRD (v3.45.0)
-**Version**: `v3.45.0` (Mission Creation UX & Batch Transaction Resilience)
-**Last Updated**: `23 April 2026 00:25`
-**Status**: 🛡️ RE-HARDENED, SYNCHRONIZED & LOCKED 💎
-**Audit Status**: `✅ 100% OPERATIONAL (Ecosystem Parity Locked)`
+---
+
+## 11. Work Report v3.46.0 (Current)
+**Date:** 2026-04-23
+**Subject:** Task Master ABI Parity & Function Signature Alignment.
+**Implementation:**
+- **ABI Synchronization**: Membangun ulang porsi `DAILY_APP` di `abis_data.txt` (108 → 157 entri) menggunakan data dari `daily_app_abi.json`. Menghilangkan error "addTaskBatch not found".
+- **Signature Alignment**: Memperbaiki `setSponsorshipParams` untuk mengirimkan 4 parameter `(rewardPerClaim, tasksRequired, minPool, platformFee)` sesuai kontrak V12 Secures (sebelumnya hanya 3 parameter).
+- **Type Correction**: Mengubah `buySponsorshipWithToken` untuk menggunakan `string[]` (arrays) untuk title/link, bukan single strings.
+- **Oracle Refactor**: Menghapus fitur timelock price scheduling (`scheduleTokenPriceUpdate`/`executePriceChange`) yang sudah legacy. Menggantinya dengan direct update `setTokenPriceUSD` sesuai V12.
+- **UI Consistency**: Menyederhanakan `EconomyConfigSection` menjadi satu tombol "Update Price" dan memperbaiki variabel phantom (`minRewardPoolUSD` → `minRewardPoolValue`).
+**Result:** 100% ABI compliance antara Frontend dan Deployed Contract. Seluruh alur pembuatan misi batch dan konfigurasi ekonomi kembali operasional tanpa Revert atau FunctionNotFound errors.
 
 ---
 
-## 📋 Table of Contents
-1. [Visi & Tujuan](#1-visi--tujuan)
-2. [Ecosystem Core Architecture (High-Level)](#2-ecosystem-core-architecture-high-level)
-3. [User & Reward Lifecycle (End-to-End)](#3-user--reward-lifecycle-end-to-end)
-4. [Admin & Sponsorship Workflow](#4-admin--sponsorship-workflow)
-5. [Work Report v3.45.0 (Current)](#11-work-report--v3450-current)
-6. [Work Report v3.44.0 (Legacy)](#11.1-work-report--v3440-legacy)
-7. [Work Report v3.43.0 (Legacy)](#11.2-work-report--v3430-legacy)
-8. [Historical Analysis & Changelog](#7-historical-analysis--changelog)
-9. [Audit & Security Mandates](#8-audit-security-mandates)
-10. [Current Ecosystem Status (v3.28.0 Audit Report)](#9-current-ecosystem-status-v3280-audit-report)
-11. [Workspace Architecture & Data Flow (v3.28.0)](#10-workspace-architecture--data-flow-v3280)
-
----
-
-## 11. Work Report v3.45.0 (Current)
+## 11.1 Work Report v3.45.0 (Legacy)
 **Date:** 2026-04-23
 **Subject:** Mission Creation UX Refinement & Batch Transaction Resilience.
 **Implementation:**
@@ -32,11 +24,13 @@
 
 ---
 
-## 11.1 Work Report v3.44.0 (Legacy)
+## 11.2 Work Report v3.44.0 (Legacy)
+**Subject:** Maintenance Sync & Legacy Cleanup.
+**Implementation:** Sinkronisasi berkala terhadap struktur repository pasca integrasi Base.
 
 ---
 
-## 11.1 Work Report  v3.43.0 (Legacy)
+## 11.3 Work Report v3.43.0 (Legacy)
 **Date:** 2026-04-22
 **Subject:** Base Ecosystem Integration: Builder Code & Gasless Paymaster.
 **Implementation:** Pendaftaran aplikasi "Crypto Discovery" (ID: 697ca52ec0622780c63f6665) secara sukses ke base.dev menggunakan verifikasi Domain Meta Tag (base:app_id). Integrasi Coinbase Developer Platform (CDP) API SDK dengan mengamankan CDP_API_SECRET dan Builder Code (ERC-8021) ke dalam Zero-Leak Vercel Env Pipeline.

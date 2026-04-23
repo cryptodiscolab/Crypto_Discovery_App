@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.45.0` | **Last Updated**: `2026-04-23T00:35:00+07:00`
+**Version**: `v3.46.0` | **Last Updated**: `2026-04-23T11:45:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -154,8 +154,11 @@ flowchart LR
 | `claimRewards` | `write` | `()` | Klaim akumulasi reward |
 | `lastActivityTime` | `view` | `(address user) → uint256` | Timestamp aktivitas terakhir |
 | `addTask` | `write` | `(baseReward, isActive, cooldown, minTier, title, link, requiresVerification, sponsorshipId)` | Admin: Tambah tugas |
+| `setSponsorshipParams` | `write` | `(rewardPerClaim, tasksRequired, minPool, platformFee)` | Admin: Config sponsorship parameters |
+| `setTokenPriceUSD` | `write` | `(uint256 newPrice)` | Admin: Direct update token price |
 | `approveSponsorship` | `write` | `(uint256 requestId)` | Admin: Setujui sponsorship |
 | `rejectSponsorship` | `write` | `(uint256 requestId, string reason)` | Admin: Tolak sponsorship |
+| `buySponsorshipWithToken` | `write` | `(sponsorshipId, titles[], links[], email, rewardPerClaim, paymentToken)` | Sponsor: Buy sponsorship mission |
 
 ### 3.3 ABI Source of Truth
 
@@ -705,12 +708,14 @@ Pipeline Backend (`admin-bundle.js`) sekarang memproses field berikut secara ato
 - `is_base_social_required`: Toggle Identity Guard.
 
 ### 13.2 On-Chain Task Creation
-
 Admin Dashboard → Contract call → `DailyApp.addTask()`
 - Parameters: baseReward, isActive, cooldown, minTier, title, link, requiresVerification, sponsorshipId
-- Sponsorship: Sponsor pays fee → Admin approves via `approveSponsorship(requestId)`
+- Sponsorship: Sponsor pays fee via `buySponsorshipWithToken` (passing string arrays for titles/links) → Admin approves via `approveSponsorship(requestId)`
 
-### 13.3 UGC Moderation (v3.38.3)
+### 13.3 Economy & Price Management (v3.46.0)
+- **Direct Price Update**: Menggunakan `setTokenPriceUSD(uint256)` untuk memperbarui harga token secara instan (tanpa timelock).
+- **Sponsorship Config**: `setSponsorshipParams` sekarang menerima 4 parameter wajib: `(rewardPerClaim, tasksRequired, minPool, platformFee)`.
+- **UI Logic**: Seluruh variabel phantom (`minRewardPoolUSD`, etc) telah dimigrasi ke `minRewardPoolValue` dan `rewardPerClaim`.
 
 All User Generated Content (Missions, Raffles) default to `is_active: false` and require explicit admin approval before becoming visible to users.
 
@@ -775,10 +780,10 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
 - [x] **30s Anti-Fraud**: Timer aktif sebelum social verification.
 - [x] **Batch Resilience**: Create Mission menggunakan `useCallsStatus` (EIP-5792) untuk mencegah UI hang pada batch transactions.
-- [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract.
+- [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract (157 entries).
 - [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
 
 ---
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
-*Antigravity — Nexus Master Architect. Protocol v3.42.8 Locked.*
+*Antigravity — Nexus Master Architect. Protocol v3.46.0 Locked.*

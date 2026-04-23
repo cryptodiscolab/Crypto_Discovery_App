@@ -1,5 +1,5 @@
-<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.42.7)</h1>
-<p><strong>Last Updated</strong>: 2026-04-05T14:48+07:00 — Mobile UI Standard &amp; Task Integrity (v3.42.7)
+<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.46.0)</h1>
+<p><strong>Last Updated</strong>: 2026-04-23T11:45:00+07:00 — ABI Parity &amp; Signature Alignment (v3.46.0)
 <strong>Status</strong>: 🛡️ MAINNET PHASED ROLLOUT LOCKED</p>
 <p>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. <strong>JANGAN berhalusinasi atau menebak</strong>. Jika ada yang error, rujuk dokumen ini.</p>
 <hr>
@@ -62,7 +62,8 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 <ul>
 <li><strong>Tujuan</strong>: Autentikasi wallet ke ekosistem Base Sepolia.</li>
 <li><strong>Workflow</strong>:<ol>
-<li>User klik &quot;Connect Wallet&quot; (Metamask / AppKit).</li>
+<li>(A) <strong>Auto-Login via Platform</strong>: Jika <code>useEnvironment</code> mendeteksi <code>isFarcaster</code> atau <code>isBaseApp</code>, Wagmi akan melakukan <code>connect</code> otomatis ke connector spesifik (<code>injected</code> untuk Farcaster, <code>coinbaseWalletSDK</code> untuk Base App) dan langsung menembak <code>signIn()</code> ke Backend (SIWE).</li>
+<li>(B) <strong>Manual Login</strong>: Jika browser Web biasa, user harus klik &quot;Connect Wallet&quot;.</li>
 <li><code>Web3Provider.jsx</code> memastikan <code>window.ethereum</code> tidak crash oleh konflik ekstensi.</li>
 <li>Frontend membaca <code>chainId</code>. Jika salah jaringan, memunculkan prompt pindah ke Base Sepolia (84532).</li>
 <li>Jika dompet terhubung + social terhubung = Akun siap menerima XP dan tier.</li>
@@ -243,17 +244,23 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 </ol>
 </li>
 </ul>
+<h3>5.3 UGC Mission Creation Flow (Sponsor Side)</h3>
+<ol>
+<li><strong>Input Reward Pool</strong>: Sponsor menentukan jumlah reward dalam nominal ETH. UI secara otomatis mengonversi ke estimasi USDC.</li>
+<li><strong>UX Safeguard</strong>: Tooltip info menjelaskan bahwa pembayaran aktual dilakukan dalam ETH (Native).</li>
+<li><strong>Batch Execution (EIP-5792)</strong>: Tombol &quot;CREATE&quot; mengeksekusi batch call (Listing Fee USDC + Reward Pool ETH).</li>
+<li><strong>Resilient Tracking</strong>: Sistem menggunakan <code>useCallsStatus</code> untuk memantau status bundle transaksi batch, mencegah UI hang saat menunggu konfirmasi dari provider (v3.45.0).</li>
+</ol>
 <h3>5.2 Unified Activity Logs Tracking</h3>
 <ul>
-<li>Semua transaksi yang memengaruhi poin atau ekuitas user <strong>WAJIB</strong> terpusat di fungsi <code>logActivity</code> (di backend APIs). Frontend <em>ProfilePage</em> =&gt; <code>ActivityLogSection</code> mem-parse data log secara realtime dengan pembagian:<ol>
+<li>Semua transaksi yang memengaruhi poin atau ekuitas user <strong>WAJIB</strong> terpusat di fungsi <code>logActivity</code> (di backend APIs). Frontend <em>ProfilePage</em> =&gt; <code>ActivityLogSection</code> mem-parse data log secara realtime dengan pembagian:</li>
 <li><strong>XP Gains (ZAP)</strong>: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.</li>
 <li><strong>Purchases (SHOPPING CART)</strong>: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan <code>raffle_buy_</code>.</li>
 <li><strong>Rewards (ACCOMPLISHMENT)</strong>: Pemenang undian Raffle / Airdrop khusus.</li>
-</ol>
-</li>
 <li>Ini menggantikan metode pengecekan history frontend di <code>TaskList.jsx</code> (yang kini bersifat absolute &quot;One-Time Claim&quot; per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate <em>Task ID</em> spesifik baru tiap harinya.</li>
 </ul>
 <hr>
+<p><em>End of Source of Truth Document - Nexus v3.46.0 Locked.</em></p>
 <h2>🏛️ 9. XP Reward Lifecycle &amp; Anti-Whale Economic Model (v3.41.2)</h2>
 <p>Untuk menjaga nilai kelangkaan XP dan keadilan ekosistem jangka panjang, Crypto Disco menggunakan <strong>The Nexus Hybrid Formula</strong>. Semua perhitungan dilakukan secara <strong>atomic</strong> di level database dalam fungsi RPC <code>public.fn_increment_xp</code>.</p>
 <h3>9.1 Rumus Perhitungan Utama</h3>
@@ -388,4 +395,4 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 </ol>
 <p><strong>Semua modifikasi terhadap fitur Task WAJIB mematuhi alur yang tertera di dokumen tersebut.</strong></p>
 <hr>
-<p><em>End of Source of Truth Document - Nexus v3.42.7 Locked.</em></p>
+<p><em>End of Source of Truth Document - Nexus v3.42.8 Locked.</em></p>

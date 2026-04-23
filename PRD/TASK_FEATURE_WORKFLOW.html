@@ -1,5 +1,5 @@
 <h1>🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT</h1>
-<p><strong>Version</strong>: <code>v3.42.8</code> | <strong>Last Updated</strong>: <code>2026-04-08T12:45:00+07:00</code>
+<p><strong>Version</strong>: <code>v3.46.0</code> | <strong>Last Updated</strong>: <code>2026-04-23T11:45:00+07:00</code>
 <strong>Status</strong>: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH</p>
 <hr>
 <h2>📋 Table of Contents</h2>
@@ -286,6 +286,18 @@ Mainnet addresses are <code>[RESERVED]</code> — NEVER use Sepolia addresses on
 <td>Admin: Tambah tugas</td>
 </tr>
 <tr>
+<td><code>setSponsorshipParams</code></td>
+<td><code>write</code></td>
+<td><code>(rewardPerClaim, tasksRequired, minPool, platformFee)</code></td>
+<td>Admin: Config sponsorship parameters</td>
+</tr>
+<tr>
+<td><code>setTokenPriceUSD</code></td>
+<td><code>write</code></td>
+<td><code>(uint256 newPrice)</code></td>
+<td>Admin: Direct update token price</td>
+</tr>
+<tr>
 <td><code>approveSponsorship</code></td>
 <td><code>write</code></td>
 <td><code>(uint256 requestId)</code></td>
@@ -296,6 +308,12 @@ Mainnet addresses are <code>[RESERVED]</code> — NEVER use Sepolia addresses on
 <td><code>write</code></td>
 <td><code>(uint256 requestId, string reason)</code></td>
 <td>Admin: Tolak sponsorship</td>
+</tr>
+<tr>
+<td><code>buySponsorshipWithToken</code></td>
+<td><code>write</code></td>
+<td><code>(sponsorshipId, titles[], links[], email, rewardPerClaim, paymentToken)</code></td>
+<td>Sponsor: Buy sponsorship mission</td>
 </tr>
 </tbody></table>
 <h3>3.3 ABI Source of Truth</h3>
@@ -1111,9 +1129,14 @@ Pipeline Backend (<code>admin-bundle.js</code>) sekarang memproses field berikut
 <p>Admin Dashboard → Contract call → <code>DailyApp.addTask()</code></p>
 <ul>
 <li>Parameters: baseReward, isActive, cooldown, minTier, title, link, requiresVerification, sponsorshipId</li>
-<li>Sponsorship: Sponsor pays fee → Admin approves via <code>approveSponsorship(requestId)</code></li>
+<li>Sponsorship: Sponsor pays fee via <code>buySponsorshipWithToken</code> (passing string arrays for titles/links) → Admin approves via <code>approveSponsorship(requestId)</code></li>
 </ul>
-<h3>13.3 UGC Moderation (v3.38.3)</h3>
+<h3>13.3 Economy &amp; Price Management (v3.46.0)</h3>
+<ul>
+<li><strong>Direct Price Update</strong>: Menggunakan <code>setTokenPriceUSD(uint256)</code> untuk memperbarui harga token secara instan (tanpa timelock).</li>
+<li><strong>Sponsorship Config</strong>: <code>setSponsorshipParams</code> sekarang menerima 4 parameter wajib: <code>(rewardPerClaim, tasksRequired, minPool, platformFee)</code>.</li>
+<li><strong>UI Logic</strong>: Seluruh variabel phantom (<code>minRewardPoolUSD</code>, etc) telah dimigrasi ke <code>minRewardPoolValue</code> dan <code>rewardPerClaim</code>.</li>
+</ul>
 <p>All User Generated Content (Missions, Raffles) default to <code>is_active: false</code> and require explicit admin approval before becoming visible to users.</p>
 <hr>
 <h2>14. File Reference Map</h2>
@@ -1241,23 +1264,24 @@ Pipeline Backend (<code>admin-bundle.js</code>) sekarang memproses field berikut
 <h2>15. Healthy State Checklist</h2>
 <p>Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:</p>
 <ul>
-<li><input disabled="" type="checkbox"> <strong>Zero-Hardcode XP</strong>: Tidak ada literal XP value di kode (e.g., <code>reward: 100</code>). Semua dari <code>point_settings</code>.</li>
-<li><input disabled="" type="checkbox"> <strong>Dual Task Sync</strong>: On-chain tasks via contract + Off-chain tasks via Supabase keduanya menghasilkan <code>fn_increment_xp</code> call.</li>
-<li><input disabled="" type="checkbox"> <strong>Disappearing Tasks</strong>: Completed tasks return <code>null</code> (not &quot;DONE&quot; badge) — verified di kedua jalur.</li>
-<li><input disabled="" type="checkbox"> <strong>Type-Safe Comparison</strong>: <code>String()</code> conversion pada semua ID comparison (Contract Integer vs Supabase UUID).</li>
-<li><input disabled="" type="checkbox"> <strong>Signature Verification</strong>: Semua write operations melewati EIP-191 signature verification di backend.</li>
-<li><input disabled="" type="checkbox"> <strong>Already Claimed Handling</strong>: Frontend mendeteksi <code>already_claimed: true</code> flag untuk mencegah toast misleading saat task menghilang.</li>
-<li><input disabled="" type="checkbox"> <strong>Anti-Sybil</strong>: <code>target_id</code> uniqueness + global <code>(wallet, task_id)</code> uniqueness enforced.</li>
-<li><input disabled="" type="checkbox"> <strong>Expiry Logic</strong>: Task creation menyertakan <code>expires_at</code> dan frontend memfilter task yang sudah lewat waktu.</li>
-<li><input disabled="" type="checkbox"> <strong>Identity Guard</strong>: <code>is_base_social_required</code> tasks locked untuk user non-verified.</li>
-<li><input disabled="" type="checkbox"> <strong>Tier Gating</strong>: <code>minTier</code> on-chain check aktif dan UI menampilkan lock badge.</li>
-<li><input disabled="" type="checkbox"> <strong>Feature Guard</strong>: Mainnet kill switch via <code>system_settings.active_features</code> operational.</li>
-<li><input disabled="" type="checkbox"> <strong>Activity Logging</strong>: Setiap klaim menghasilkan entry di <code>user_activity_logs</code>.</li>
-<li><input disabled="" type="checkbox"> <strong>Reactive Sync</strong>: &quot;Already completed&quot; error forces <code>fetchData()</code> re-sync.</li>
-<li><input disabled="" type="checkbox"> <strong>30s Anti-Fraud</strong>: Timer aktif sebelum social verification.</li>
-<li><input disabled="" type="checkbox"> <strong>ABI Parity</strong>: <code>abis_data.txt</code> sinkron dengan deployed contract.</li>
-<li><input disabled="" type="checkbox"> <strong>Vercel &lt; 12</strong>: Total serverless functions under Hobby Plan limit.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Zero-Hardcode XP</strong>: Tidak ada literal XP value di kode (e.g., <code>reward: 100</code>). Semua dari <code>point_settings</code>.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Dual Task Sync</strong>: On-chain tasks via contract + Off-chain tasks via Supabase keduanya menghasilkan <code>fn_increment_xp</code> call.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Disappearing Tasks</strong>: Completed tasks return <code>null</code> (not &quot;DONE&quot; badge) — verified di kedua jalur.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Type-Safe Comparison</strong>: <code>String()</code> conversion pada semua ID comparison (Contract Integer vs Supabase UUID).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Signature Verification</strong>: Semua write operations melewati EIP-191 signature verification di backend.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Already Claimed Handling</strong>: Frontend mendeteksi <code>already_claimed: true</code> flag untuk mencegah toast misleading saat task menghilang.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Anti-Sybil</strong>: <code>target_id</code> uniqueness + global <code>(wallet, task_id)</code> uniqueness enforced.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Expiry Logic</strong>: Task creation menyertakan <code>expires_at</code> dan frontend memfilter task yang sudah lewat waktu.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Identity Guard</strong>: <code>is_base_social_required</code> tasks locked untuk user non-verified.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Tier Gating</strong>: <code>minTier</code> on-chain check aktif dan UI menampilkan lock badge.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Feature Guard</strong>: Mainnet kill switch via <code>system_settings.active_features</code> operational.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Activity Logging</strong>: Setiap klaim menghasilkan entry di <code>user_activity_logs</code>.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Reactive Sync</strong>: &quot;Already completed&quot; error forces <code>fetchData()</code> re-sync.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>30s Anti-Fraud</strong>: Timer aktif sebelum social verification.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Batch Resilience</strong>: Create Mission menggunakan <code>useCallsStatus</code> (EIP-5792) untuk mencegah UI hang pada batch transactions.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>ABI Parity</strong>: <code>abis_data.txt</code> sinkron dengan deployed contract (157 entries).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Vercel &lt; 12</strong>: Total serverless functions under Hobby Plan limit (8/12).</li>
 </ul>
 <hr>
 <p><em>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.</em>
-<em>Antigravity — Nexus Master Architect. Protocol v3.42.7 Locked.</em></p>
+<em>Antigravity — Nexus Master Architect. Protocol v3.46.0 Locked.</em></p>

@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.45.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.46.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -124,7 +124,7 @@ graph TD
 
 ---
 
-## 6. Contract & Governance Registry (v3.38.25)
+## 6. Contract & Governance Registry (v3.46.0)
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Governance |
 |----------|---------------------|----------------------|------------|
@@ -156,4 +156,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-23T00:35:00+07:00 | Mission Creation UX & Batch Resilience. v3.45.0 LOCKED.*
+*Last Updated: 2026-04-23T11:45:00+07:00 | ABI Parity & Signature Alignment. v3.46.0 LOCKED.*

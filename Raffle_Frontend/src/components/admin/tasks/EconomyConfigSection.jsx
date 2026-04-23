@@ -84,18 +84,10 @@ export function EconomyConfigSection({
                                 className="w-full bg-black border border-white/10 p-4 rounded-xl text-white font-mono outline-none focus:border-emerald-500"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={onSchedulePrice} className="bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/30 py-4 rounded-2xl text-[10px] font-black uppercase text-white transition-all">
-                                <Clock className="w-4 h-4 mx-auto mb-1" />
-                                Schedule (24h)
-                            </button>
-                            <button
-                                onClick={onExecutePrice}
-                                disabled={!pendingPrice?.[2]}
-                                className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 disabled:opacity-30 py-4 rounded-2xl text-[10px] font-black uppercase text-white transition-all"
-                            >
+                        <div className="flex gap-3">
+                            <button onClick={onSchedulePrice} className="flex-1 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/30 py-4 rounded-2xl text-[10px] font-black uppercase text-white transition-all">
                                 <Zap className="w-4 h-4 mx-auto mb-1" />
-                                Execute Update
+                                Update Price
                             </button>
                         </div>
                         {pendingPrice?.[2] && (

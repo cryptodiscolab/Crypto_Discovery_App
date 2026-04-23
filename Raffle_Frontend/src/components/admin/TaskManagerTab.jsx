@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Clock, RefreshCw, Send, List, Share2 } from 'lucide-react';
 import { useWriteContract, useReadContract, useAccount, useWaitForTransactionReceipt, useSignMessage } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../lib/contracts';
+const { CREATOR_TOKEN: CREATOR_TOKEN_ADDR } = CONTRACTS;
 import { supabase } from '../../lib/supabaseClient';
 import { useDailyAppAdmin } from '../../hooks/useContract';
 import { EconomyMetrics } from './EconomyMetrics';
@@ -43,8 +44,7 @@ export function TaskManagerTab() {
     // On-Chain Data
     const { data: currentPlatformFee } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
     const { data: currentTokenPrice } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'tokenPriceUSD' });
-    const { data: nextSponsorId, refetch: refetchSponsors } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'nextSponsorId' });
-    const { data: pendingPrice, refetch: refetchPendingPrice } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'pendingPriceChange' });
+    const { data: nextSponsorId, refetch: refetchSponsors } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'totalSponsorRequests' });
     const { data: nextTaskId, refetch: refetchCount } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'nextTaskId' });
 
     // Tasks Batch State
@@ -160,7 +160,7 @@ export function TaskManagerTab() {
     const handleBatchSave = async () => {
         const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
         if (validTasks.length === 0) return toast.error("Enter Task Names");
-        if (chainId !== 84532) return toast.error("Connect to Base Sepolia");
+        if (chainId !== 84532 && chainId !== 8453) return toast.error("Connect to Base Network");
 
         setIsSaving(true);
         const tid = toast.loading("Deploying batch...");
@@ -197,30 +197,24 @@ export function TaskManagerTab() {
     const handleUpdateEconomy = async () => {
         const tid = toast.loading("Updating economy...");
         try {
-            const fee = newPlatformFee ? BigInt(parseFloat(newPlatformFee) * 1e6) : (currentPlatformFee || BigInt(1e6));
+            // Contract: setSponsorshipParams(rewardPerClaim, tasksRequired, minPool, platformFee)
+            const rewardPerClaimVal = newMinRewardUSD ? BigInt(parseFloat(newMinRewardUSD) * 1e18) : BigInt(0.01e18);
+            const tasksRequired = BigInt(3); // Default: 3 tasks for reward
             const pool = newMinPoolUSD ? BigInt(parseFloat(newMinPoolUSD) * 1e18) : BigInt(5e18);
-            const reward = newMinRewardUSD ? BigInt(parseFloat(newMinRewardUSD) * 1e18) : BigInt(0.01e18);
-            await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams', args: [fee, pool, reward] });
+            const fee = newPlatformFee ? BigInt(parseFloat(newPlatformFee) * 1e6) : (currentPlatformFee || BigInt(1e6));
+            await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams', args: [rewardPerClaimVal, tasksRequired, pool, fee] });
             toast.success("Updated!", { id: tid });
         } catch (e) { toast.error(e.shortMessage || "Failed", { id: tid }); }
     };
 
-    const handleSchedulePrice = async () => {
+    const handleUpdatePrice = async () => {
         if (!newTokenPriceUSD) return toast.error("Enter price");
-        const tid = toast.loading("Scheduling...");
+        const tid = toast.loading("Updating token price...");
         try {
             const price = BigInt(parseFloat(newTokenPriceUSD) * 1e18);
-            const hash = await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'scheduleTokenPriceUpdate', args: [price] });
-            if (hash) { toast.success("Scheduled (24h wait)", { id: tid }); syncAuditAction(hash, 'SCHEDULE_PRICE_CHANGE', { new_price: newTokenPriceUSD }); refetchPendingPrice(); }
-        } catch (e) { toast.error(e.shortMessage, { id: tid }); }
-    };
-
-    const handleExecutePrice = async () => {
-        const tid = toast.loading("Executing...");
-        try {
-            const hash = await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'executePriceChange' });
+            const hash = await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'setTokenPriceUSD', args: [price] });
             if (hash) {
-                const newPriceVal = Number(pendingPrice[0]) / 1e18;
+                const newPriceVal = Number(price) / 1e18;
                 const message = `Sync Economy Price\nTX: ${hash}\nAdmin: ${address}\nPrice: ${newPriceVal}\nTime: ${new Date().toISOString()}`;
                 const signature = await signMessageAsync({ message });
                 await fetch('/api/admin/tasks/sync', {
@@ -228,10 +222,10 @@ export function TaskManagerTab() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ wallet_address: address, signature, message, action: 'SYNC_ECONOMY', token_price_usd: newPriceVal, tx_hash: hash })
                 });
-                toast.success("Synced!", { id: tid });
-                refetchPendingPrice();
+                toast.success("Price Updated & Synced!", { id: tid });
+                syncAuditAction(hash, 'UPDATE_TOKEN_PRICE', { new_price: newTokenPriceUSD });
             }
-        } catch (err) { toast.error(err.shortMessage, { id: tid }); }
+        } catch (e) { toast.error(e.shortMessage || "Failed", { id: tid }); }
     };
 
     const handleCreateSponsorship = async () => {
@@ -243,7 +237,7 @@ export function TaskManagerTab() {
                 address: DAILY_APP_ADDRESS,
                 abi: DAILY_APP_ABI,
                 functionName: 'buySponsorshipWithToken',
-                args: [0, sponsorTitle, sponsorLink, sponsorEmail, BigInt(parseFloat(rewardPerUserUSD) * 1e18), BigInt(targetClaims)]
+                args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, BigInt(parseFloat(rewardPerUserUSD) * 1e18), CREATOR_TOKEN_ADDR || '0x0000000000000000000000000000000000000000']
             });
 
             if (hash) {
@@ -349,10 +343,10 @@ export function TaskManagerTab() {
                     newTokenPriceUSD={newTokenPriceUSD} onNewTokenPriceUSDChange={setNewTokenPriceUSD}
                     currentPlatformFee={currentPlatformFee}
                     currentTokenPrice={currentTokenPrice}
-                    pendingPrice={pendingPrice}
+                    pendingPrice={null}
                     onUpdateEconomy={handleUpdateEconomy}
-                    onSchedulePrice={handleSchedulePrice}
-                    onExecutePrice={handleExecutePrice}
+                    onSchedulePrice={handleUpdatePrice}
+                    onExecutePrice={handleUpdatePrice}
                 />
             )}
             {viewMode === 'VIEW_TASKS' && (

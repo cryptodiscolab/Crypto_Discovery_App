@@ -141,8 +141,8 @@ export function TaskManager() {
     const { data: receipt, isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
 
     const { data: platformFee } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
-    const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'minRewardPoolUSD' });
-    const { data: minRewardUSD } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'minRewardPerUserUSD' });
+    const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
+    const { data: minRewardUSD } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
     const { data: tokenPrice } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'tokenPriceUSD' });
 
     const totalPoolUSD = Number(sponsorRewardPerUser || 0) * Number(sponsorTotalClaims || 0);
@@ -232,7 +232,7 @@ export function TaskManager() {
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
                 abi: DAILY_APP_ABI, functionName: 'buySponsorshipWithToken',
-                args: [0, sponsorTitle, sponsorLink, sponsorEmail, parseUnits(sponsorRewardPerUser, 18), BigInt(sponsorTotalClaims)]
+                args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, parseUnits(sponsorRewardPerUser, 18), CONTRACTS.CREATOR_TOKEN || '0x0000000000000000000000000000000000000000']
             }),
         }];
     };
@@ -242,7 +242,8 @@ export function TaskManager() {
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
                 abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams',
-                args: [parseUnits(configPlatformFee, 6), parseUnits(configMinPool, 18), parseUnits(configMinReward, 18)]
+                // Contract: setSponsorshipParams(rewardPerClaim, tasksRequired, minPool, platformFee)
+                args: [parseUnits(configMinReward || '0.01', 18), BigInt(3), parseUnits(configMinPool || '5', 18), parseUnits(configPlatformFee || '1', 6)]
             }),
         }];
     };

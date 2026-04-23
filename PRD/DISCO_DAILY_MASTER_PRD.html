@@ -1,31 +1,39 @@
-<h1>CRYPTO DISCO MASTER PRD (v3.42.13)</h1>
-<p><strong>Version</strong>: <code>v3.42.13</code> (Seamless Auto-Login &amp; Environment Contexts)
-<strong>Last Updated</strong>: <code>12 April 2026 18:40</code>
-<strong>Status</strong>: 🛡️ RE-HARDENED, GROWTH-OPTIMIZED &amp; LOCKED 💎
-<strong>Audit Status</strong>: <code>✅ 100% OPERATIONAL (Identity Safeguards Active)</code></p>
 <hr>
-<h2>📋 Table of Contents</h2>
-<ol>
-<li><a href="#1-visi--tujuan">Visi &amp; Tujuan</a></li>
-<li><a href="#2-ecosystem-core-architecture-high-level">Ecosystem Core Architecture (High-Level)</a></li>
-<li><a href="#3-user--reward-lifecycle-end-to-end">User &amp; Reward Lifecycle (End-to-End)</a></li>
-<li><a href="#4-admin--sponsorship-workflow">Admin &amp; Sponsorship Workflow</a></li>
-<li><a href="#11-work-report--v34210-current">Work Report v3.42.10 (Current)</a></li>
-<li><a href="#111-work-report--v3429-legacy">Work Report v3.42.9 (Legacy)</a></li>
-<li><a href="#112-work-report--v3428-legacy">Work Report v3.42.8 (Legacy)</a></li>
-<li><a href="#7-historical-analysis--changelog">Historical Analysis &amp; Changelog</a></li>
-<li><a href="#8-audit-security-mandates">Audit &amp; Security Mandates</a></li>
-<li><a href="#9-current-ecosystem-status-v3280-audit-report">Current Ecosystem Status (v3.28.0 Audit Report)</a></li>
-<li><a href="#10-workspace-architecture--data-flow-v3280">Workspace Architecture &amp; Data Flow (v3.28.0)</a></li>
-</ol>
+<h2>11. Work Report v3.46.0 (Current)</h2>
+<p><strong>Date:</strong> 2026-04-23
+<strong>Subject:</strong> Task Master ABI Parity &amp; Function Signature Alignment.
+<strong>Implementation:</strong></p>
+<ul>
+<li><strong>ABI Synchronization</strong>: Membangun ulang porsi <code>DAILY_APP</code> di <code>abis_data.txt</code> (108 → 157 entri) menggunakan data dari <code>daily_app_abi.json</code>. Menghilangkan error &quot;addTaskBatch not found&quot;.</li>
+<li><strong>Signature Alignment</strong>: Memperbaiki <code>setSponsorshipParams</code> untuk mengirimkan 4 parameter <code>(rewardPerClaim, tasksRequired, minPool, platformFee)</code> sesuai kontrak V12 Secures (sebelumnya hanya 3 parameter).</li>
+<li><strong>Type Correction</strong>: Mengubah <code>buySponsorshipWithToken</code> untuk menggunakan <code>string[]</code> (arrays) untuk title/link, bukan single strings.</li>
+<li><strong>Oracle Refactor</strong>: Menghapus fitur timelock price scheduling (<code>scheduleTokenPriceUpdate</code>/<code>executePriceChange</code>) yang sudah legacy. Menggantinya dengan direct update <code>setTokenPriceUSD</code> sesuai V12.</li>
+<li><strong>UI Consistency</strong>: Menyederhanakan <code>EconomyConfigSection</code> menjadi satu tombol &quot;Update Price&quot; dan memperbaiki variabel phantom (<code>minRewardPoolUSD</code> → <code>minRewardPoolValue</code>).
+<strong>Result:</strong> 100% ABI compliance antara Frontend dan Deployed Contract. Seluruh alur pembuatan misi batch dan konfigurasi ekonomi kembali operasional tanpa Revert atau FunctionNotFound errors.</li>
+</ul>
 <hr>
-<h2>11. Work Report  v3.42.13 (Current)</h2>
+<h2>11.1 Work Report v3.45.0 (Legacy)</h2>
+<p><strong>Date:</strong> 2026-04-23
+<strong>Subject:</strong> Mission Creation UX Refinement &amp; Batch Transaction Resilience.
+<strong>Implementation:</strong></p>
+<ul>
+<li><strong>UX Reward Pool</strong>: Menambahkan tooltip informasi pada input Reward Pool untuk memperjelas bahwa pembayaran dilakukan dalam ETH (Native), sedangkan nilai USDC yang tampil adalah konversi real-time.</li>
+<li><strong>Batch Transaction Fix</strong>: Mengganti logic <code>useWaitForTransactionReceipt</code> dengan <code>useCallsStatus</code> (wagmi/experimental) pada tombol &quot;Create Mission&quot; untuk mendukung penanganan status transaksi batch (EIP-5792) yang sebelumnya menyebabkan UI hang.</li>
+<li><strong>UI Refinement</strong>: Standarisasi tombol &quot;CREATE mission&quot; dengan ukuran proporsional (<code>w-fit</code>) dan label yang lebih ringkas.
+<strong>Result:</strong> Alur pembuatan misi (UGC Mission) kini jauh lebih responsif, informatif, dan tahan terhadap konflik provider wallet saat melakukan batch calls.</li>
+</ul>
+<hr>
+<h2>11.2 Work Report v3.44.0 (Legacy)</h2>
+<p><strong>Subject:</strong> Maintenance Sync &amp; Legacy Cleanup.
+<strong>Implementation:</strong> Sinkronisasi berkala terhadap struktur repository pasca integrasi Base.</p>
+<hr>
+<h2>11.3 Work Report v3.43.0 (Legacy)</h2>
 <p><strong>Date:</strong> 2026-04-22
 <strong>Subject:</strong> Base Ecosystem Integration: Builder Code &amp; Gasless Paymaster.
 <strong>Implementation:</strong> Pendaftaran aplikasi &quot;Crypto Discovery&quot; (ID: 697ca52ec0622780c63f6665) secara sukses ke base.dev menggunakan verifikasi Domain Meta Tag (base:app_id). Integrasi Coinbase Developer Platform (CDP) API SDK dengan mengamankan CDP_API_SECRET dan Builder Code (ERC-8021) ke dalam Zero-Leak Vercel Env Pipeline.
 <strong>Result:</strong> App berhasil terverifikasi on-chain. Kesiapan operasional penuh untuk mengeksekusi Gasless Transactions (Paymaster) dan pelacakan atribusi Referral/Builder di jaringan Base.</p>
 <hr>
-<h2>11.1 Work Report  v3.42.12 (Legacy)</h2>
+<h2>11.2 Work Report  v3.42.12 (Legacy)</h2>
 <p><strong>Date:</strong> 2026-04-21
 <strong>Subject:</strong> Vercel Security Breach Remediation &amp; Env Rotation.
 <strong>Implementation:</strong> Melakukan rotasi total terhadap compromised secrets pasca breach (Global Vercel Token, Supabase Keys, Alchemy, Pinata, Neynar, JWT, GitHub PAT). Seluruh file environment (.env, .env.local, .env.vercel, verification-server/.env) telah tersinkronisasi kembali dengan keys baru. Sisa fund di compromised deployer script diselamatkan otomatis menggunakan bypass sweep.

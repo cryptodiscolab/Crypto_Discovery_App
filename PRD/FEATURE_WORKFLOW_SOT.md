@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.45.0)
-**Last Updated**: 2026-04-23T00:30:00+07:00 — Mission Creation UX & Resilience (v3.45.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.46.0)
+**Last Updated**: 2026-04-23T11:45:00+07:00 — ABI Parity & Signature Alignment (v3.46.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -195,14 +195,14 @@ Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berpu
  4. **Resilient Tracking**: Sistem menggunakan `useCallsStatus` untuk memantau status bundle transaksi batch, mencegah UI hang saat menunggu konfirmasi dari provider (v3.45.0).
  
  ### 5.2 Unified Activity Logs Tracking
-
 - Semua transaksi yang memengaruhi poin atau ekuitas user **WAJIB** terpusat di fungsi `logActivity` (di backend APIs). Frontend *ProfilePage* => `ActivityLogSection` mem-parse data log secara realtime dengan pembagian:
-  1. **XP Gains (ZAP)**: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.
-  2. **Purchases (SHOPPING CART)**: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan `raffle_buy_`.
-  3. **Rewards (ACCOMPLISHMENT)**: Pemenang undian Raffle / Airdrop khusus.
+- **XP Gains (ZAP)**: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.
+- **Purchases (SHOPPING CART)**: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan `raffle_buy_`.
+- **Rewards (ACCOMPLISHMENT)**: Pemenang undian Raffle / Airdrop khusus.
 - Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.
 
 ---
+*End of Source of Truth Document - Nexus v3.46.0 Locked.*
 
 ## 🏛️ 9. XP Reward Lifecycle & Anti-Whale Economic Model (v3.41.2)
 

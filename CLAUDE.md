@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.44.0)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.46.0)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -21,7 +21,7 @@ Before responding to ANY request, read these files IN ORDER:
 6. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 7. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.44.0)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.46.0)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
