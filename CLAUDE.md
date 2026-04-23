@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.46.0)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.47.0)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -21,7 +21,7 @@ Before responding to ANY request, read these files IN ORDER:
 6. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 7. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.46.0)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.47.0)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
 
 ---
 
@@ -64,8 +64,7 @@ Before responding to ANY request, read these files IN ORDER:
 58. **FAIL-SAFE UI SYNC**: UI `handleClaim` logic MUST explicitly handle `already_claimed: true` and force a data refetch to resolve state race conditions (v3.42.8).
 60. **ECOSYSTEM SECURITY REMEDIATION MANDATE**: Strictly enforce **Clean-Pipe Sync Protocol** via `robust_sync.cjs`. Multi-project parity is mandatory for all env changes (v3.43.0).
 61. **DESIGN PROTOCOL MANDATE**: Agents MUST read `DESIGN.md` and use the `.agents/skills/design-protocol/SKILL.md` before any frontend changes. Aesthetic: "Midnight Cyber" (v3.44.0).
-
-
+62. **SDK-FIRST SWAP ENGINE**: NEVER use `@lifi/widget` or other heavy monolithic UI libraries that crash Rollup AST parsers on Vercel. Always build custom lightweight interfaces using `@lifi/sdk` directly (v3.47.0).
 ---
 
 ## ⚡ THE FIX CYCLE (Mandatory v3.26.0)

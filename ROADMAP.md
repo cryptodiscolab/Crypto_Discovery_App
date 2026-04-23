@@ -54,7 +54,7 @@ All identified drifts have been synchronized with `DailyAppV12Secured.json`.
 ## Phase 3: Swap & Profit Engine (v3.47.0) [x]
 - [x] Integrate Li.Fi Widget/SDK for multi-chain bridging and swaps.
 - [x] Implement Integrator Fee (0.5%) sent to `MASTER_X_ADDRESS`.
-- [ ] Support Gasless swaps via CDP Paymaster for Smart Wallets.
+- [x] Refactored to SDK-First custom UI to bypass Vercel Rollup build crash.
 - [x] Add "Insufficient Balance" triggers in Profile and Raffle flows.
 
 ## Phase 4: Ecosystem Growth & Advanced Governance [ ]

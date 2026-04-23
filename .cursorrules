@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.46.0)
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.47.0)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -41,7 +41,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.46.0 (ABI Parity & Signature Alignment)**
+**Protocol Version: 3.47.0 (Swap & Profit Engine - SDK Pivot)**
 
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
@@ -564,5 +564,9 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **AUDIT**: Run `node scripts/audits/design_lint.cjs` before every frontend PR to ensure token integrity.
 - **AESTHETIC**: Enforce "Midnight Cyber" (Dark #050505, Glassmorphism, 11px/13px balanced typography).
 
-- **Current Protocol Version**: v3.46.0 (ABI Parity & Signature Alignment)
-*Antigravity: Integrity Restored. Privacy Guarded. ABI PARITY LOCKED. v3.46.0 Locked.*
+## 46. SDK-FIRST SWAP ENGINE (v3.47.0)
+- **BUILD STABILITY**: NEVER use `@lifi/widget` or massive monolithic UI libraries that crash Rollup AST parsers during production builds on Vercel.
+- **MANDATE**: Always implement custom, lightweight swap interfaces using `@lifi/sdk` directly to maintain "Native+" aesthetics and build integrity.
+
+- **Current Protocol Version**: v3.47.0 (Swap & Profit Engine - SDK Pivot)
+*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. v3.47.0 Locked.*

@@ -4,6 +4,12 @@
 
 ## 📝 Changelog
 
+### v3.47.0 — 2026-04-24 (Swap & Profit Engine - SDK Pivot)
+- **SDK-First Architecture**: Deprecated `@lifi/widget` in favor of `@lifi/sdk` to resolve catastrophic Rollup AST parsing crashes during production builds.
+- **Custom Native UI**: Built a lightweight, custom Swap Modal (`SwapModal.jsx`) featuring "Midnight Cyber" styling and direct `lifi.getQuote()` / `executeRoute()` integration for Base ETH ↔ USDC.
+- **Profit Engine Enforcement**: Integrated the 0.5% Integrator Fee directly into the SDK configuration, routing revenue to `MASTER_X_ADDRESS`.
+- **Auto-Trigger Workflows**: Implemented automatic fallback to the Swap Modal when users encounter "Insufficient Balance" errors during UGC task creation or NFT Raffle purchases.
+
 ### v3.46.1 — 2026-04-23 (Create Mission Wallet Compatibility Fix)
 - **Wallet Compatibility Fix**: Replaced the experimental `useWriteContracts` (EIP-5792) from `wagmi/experimental` with standard sequential `useWriteContract` calls in `ProfilePage.jsx`. This ensures that creating UGC missions works across all standard EOAs (MetaMask, Rabby, etc.) instead of failing silently on non-Smart Wallets.
 - **Payload Standardization**: Updated `buildCalls` to output standard contract configuration objects (`abi`, `functionName`, `args`) instead of pre-encoded raw data strings, eliminating Wagmi RPC format errors during execution.
