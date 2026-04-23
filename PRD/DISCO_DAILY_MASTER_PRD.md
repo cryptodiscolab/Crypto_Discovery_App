@@ -1,6 +1,18 @@
 ---
 
-## 11. Work Report v3.46.0 (Current)
+## 11. Work Report v3.47.0 (Current)
+**Date:** 2026-04-24
+**Subject:** Swap & Profit Engine - Li.Fi SDK Integration & Pivot.
+**Implementation:**
+- **Li.Fi SDK Pivot**: Melakukan migrasi dari `@lifi/widget` ke `@lifi/sdk` untuk mengatasi error "AST parsing" pada saat production build di Vercel. 
+- **Custom Swap UI**: Membangun komponen `SwapModal.jsx` yang ringan dan elegan (Midnight Cyber style) menggunakan Li.Fi SDK secara langsung untuk fungsionalitas swap ETH/USDC di jaringan Base.
+- **Integrator Fee**: Mengonfigurasi biaya integrator sebesar 0.5% yang otomatis masuk ke `MASTER_X_ADDRESS` sebagai sumber pendapatan ekosistem.
+- **UX Fallback**: Mengintegrasikan trigger "Insufficient Balance" pada alur pembuatan misi (UGC) dan pembelian tiket Raffle, yang secara otomatis memunculkan modal swap jika saldo user tidak mencukupi.
+**Result:** Sistem swap fungsional, build produksi stabil, dan ekosistem memiliki aliran pendapatan (revenue stream) baru dari fee swap.
+
+---
+
+## 11.1 Work Report v3.46.0 (Legacy)
 **Date:** 2026-04-23
 **Subject:** Task Master ABI Parity & Function Signature Alignment.
 **Implementation:**

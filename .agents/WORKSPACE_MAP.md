@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.46.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.47.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -22,6 +22,7 @@ e:\Disco Gacha\Disco_DailyApp
 │   ├── api/                 # Serverless Backend Bundles (Vercel)
 │   ├── src/                 # Frontend Source
 │   │   ├── components/      # Modular UI Components
+│   │   │   └── SwapModal.jsx # 🆕 Disco Quick Swap UI (SDK-First)
 │   │   ├── hooks/           # Business Logic & State Hooks
 │   │   ├── lib/             # Core Configs (Supabase, Contracts)
 │   │   ├── pages/           # Route-level Page Components
@@ -156,4 +157,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-23T11:45:00+07:00 | ABI Parity & Signature Alignment. v3.46.0 LOCKED.*
+*Last Updated: 2026-04-24T05:30:00+07:00 | Swap & Profit Engine - SDK Pivot. v3.47.0 LOCKED.*

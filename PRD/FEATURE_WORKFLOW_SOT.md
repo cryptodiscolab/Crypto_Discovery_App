@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.46.0)
-**Last Updated**: 2026-04-23T11:45:00+07:00 — ABI Parity & Signature Alignment (v3.46.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.47.0)
+**Last Updated**: 2026-04-24T05:30:00+07:00 — Swap & Profit Engine - SDK Pivot (v3.47.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -202,7 +202,7 @@ Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berpu
 - Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.
 
 ---
-*End of Source of Truth Document - Nexus v3.46.0 Locked.*
+*End of Source of Truth Document - Nexus v3.47.0 Locked.*
 
 ## 🏛️ 9. XP Reward Lifecycle & Anti-Whale Economic Model (v3.41.2)
 

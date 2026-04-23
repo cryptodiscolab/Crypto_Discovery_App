@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.46.0` | **Last Updated**: `2026-04-23T11:45:00+07:00`
+**Version**: `v3.47.0` | **Last Updated**: `2026-04-24T05:30:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -35,6 +35,7 @@ graph TB
         TR["TaskRow Component<br/>(On-Chain Tasks)"]
         STC["SponsoredTaskCard<br/>(Grouped Missions)"]
         OL["OffersList.jsx<br/>(Partner Campaigns)"]
+        SM["SwapModal.jsx<br/>(Quick Swap Engine)"]
     end
 
     subgraph "🔗 Hooks & Logic"
@@ -71,6 +72,9 @@ graph TB
     STC -->|claimRewards| DA
     STC -->|XP Sync| UB
     OL -->|Join| CB
+    SM -->|Swap Quote| LS[Li.Fi SDK]
+    STC -->|Low Balance| SM
+    TL -->|Low Balance| SM
 
     TB -->|Insert| UTC
     TB -->|RPC| FN
@@ -786,4 +790,4 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 ---
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
-*Antigravity — Nexus Master Architect. Protocol v3.46.0 Locked.*
+*Antigravity — Nexus Master Architect. Protocol v3.47.0 Locked.*
