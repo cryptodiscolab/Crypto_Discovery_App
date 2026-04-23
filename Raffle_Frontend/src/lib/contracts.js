@@ -77,7 +77,11 @@ const getAddr = (key, envKey, envKeySepolia) => {
       || _get().ABIS[key + '_SEPOLIA'] 
       || _get()[key + '_SEPOLIA']
       || _get()[key + '_ADDRESS_SEPOLIA']
-      || _get()[key + '_CONTRACT_ADDRESS_SEPOLIA'];
+      || _get()[key + '_CONTRACT_ADDRESS_SEPOLIA']
+      || import.meta.env[envKey] 
+      || _get()[key] 
+      || _get()[key + '_ADDRESS'] 
+      || _get()[key + '_CONTRACT_ADDRESS'];
   } else {
     addr = import.meta.env[envKey] 
       || _get()[key] 

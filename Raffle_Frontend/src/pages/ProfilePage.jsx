@@ -862,6 +862,7 @@ function CreateTaskModal({ onClose }) {
 
     // 1. Approve USDC for platform fee
     if (platformFee > 0n) {
+      if (!CONTRACTS.USDC) throw new Error("Critical: USDC contract address is undefined. Please verify environment variables.");
       calls.push({
         address: CONTRACTS.USDC,
         abi: ERC20_ABI,
