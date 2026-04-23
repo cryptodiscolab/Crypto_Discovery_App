@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useSocialGuard } from '../hooks/useSocialGuard';
 import { formatEther } from 'viem';
 import { CONTRACTS, MASTER_X_ABI } from '../lib/contracts';
+import { SwapModal } from '../components/SwapModal';
 
 function RaffleRow({ raffleId, filter = 'all' }) {
   const { address } = useAccount();
@@ -133,6 +134,7 @@ function RaffleRow({ raffleId, filter = 'all' }) {
 
 export function RafflesPage() {
   const [filter, setFilter] = useState('all');
+  const [isSwapOpen, setIsSwapOpen] = useState(false);
   const { raffleIds } = useRaffleList();
 
   // Filter is applied via the RaffleRow's raffle data — we pass the active filter down
@@ -152,9 +154,17 @@ export function RafflesPage() {
                   <GaslessBadge />
                 </div>
             </div>
-            <Link to="/create-raffle" className="p-2 rounded-full bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 active:scale-95 transition-transform">
-              <Gift size={20} />
-            </Link>
+            <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setIsSwapOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-indigo-600/10 border border-indigo-500/30 text-indigo-400 label-native hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
+                >
+                  GET USDC
+                </button>
+                <Link to="/create-raffle" className="p-2 rounded-full bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 active:scale-95 transition-transform">
+                  <Gift size={20} />
+                </Link>
+            </div>
           </div>
 
           {/* Filter Pills */}
@@ -187,6 +197,7 @@ export function RafflesPage() {
           )}
         </div>
       </div>
+      <SwapModal isOpen={isSwapOpen} onClose={() => setIsSwapOpen(false)} />
     </div>
   );
 }

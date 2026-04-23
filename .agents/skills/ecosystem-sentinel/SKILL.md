@@ -432,6 +432,29 @@ Output re-audit WAJIB disertakan dalam pesan ke user:
 
 ---
 
+## 📜 THE SYSTEMATIC DOCUMENTATION & AUDIT MANDATE (v3.47.0)
+
+> [!IMPORTANT]
+> **Kepatuhan Sistematis**: Agent **WAJIB** menjaga integritas dokumentasi proyek sebagai bentuk "Long-term Memory" ekosistem. Kegagalan memperbarui dokumen setelah perubahan kode adalah pelanggaran protokol tingkat tinggi.
+
+### 1. Siklus Dokumentasi Wajib
+Setiap kali Agent melakukan aksi berikut, dokumen terkait **WAJIB** diperbarui seketika:
+- **Coding / New Feature**: Update `PRD`, `ROADMAP.md`, dan `task.md`.
+- **Find Bug / Error**: Catat temuan di `task.md` dan `IMPLEMENTATION_SUMMARY.md` jika signifikan.
+- **Fix Bug / Error**: Update `IMPLEMENTATION_SUMMARY.md` dengan detail perbaikan dan jalankan audit.
+- **Upgrade Feature**: Update versi di `PRD` dan `ROADMAP.md`.
+
+### 2. Protokol Auto-Test & Audit
+- **Pre-Fix Audit**: Jalankan `node scripts/audits/check_sync_status.cjs` sebelum menyentuh kode.
+- **Post-Fix Audit**: Jalankan `node scripts/audits/check_sync_status.cjs` DAN `npm run lint` DAN `npm run build` setelah fix.
+- **Verification Proof**: Sertakan bukti "ALL SYSTEMS SYNCHRONIZED" dalam setiap laporan ke user.
+
+### 3. Kontrol Halusinasi (Long Memory)
+- **Task List (`task.md`)**: Selalu gunakan `task.md` sebagai kompas pengerjaan. Centang `[x]` hanya jika benar-benar selesai dan terverifikasi.
+- **Implementation Plan**: Untuk fitur besar, **WAJIB** membuat `implementation_plan.md` dan menunggu persetujuan user sebelum menulis baris kode pertama.
+
+---
+
 ## 🎯 SECTION 12: TASK WORKFLOW AUDIT PROTOCOL (v3.42.8)
 
 ### 12.1 Canonical Reference

@@ -43,7 +43,7 @@ export default defineConfig({
     sourcemap: false,
     cssCodeSplit: true,
     rollupOptions: {
-      treeshake: true, // Re-enabled: root cause (invalid viem import) fixed
+      treeshake: false, // Disabled to fix Li.Fi AST parsing error (even with lazy loading)
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
@@ -54,6 +54,7 @@ export default defineConfig({
       onwarn(warning, warn) {
         if (warning.code === 'CIRCULAR_DEPENDENCY') return;
         if (warning.code === 'EVAL') return;
+        if (warning.message?.includes('/*#__PURE__*/')) return;
         warn(warning);
       }
     },
@@ -78,7 +79,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['wagmi', 'viem', '@rainbow-me/rainbowkit', '@pigment-css/react'],
+    include: ['wagmi', 'viem', '@rainbow-me/rainbowkit', '@pigment-css/react', '@lifi/sdk'],
     esbuildOptions: {
       target: 'esnext',
     }

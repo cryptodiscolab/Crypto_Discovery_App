@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI, MASTER_X_ADDRESS } from '../lib/contracts';
 import ActivityLogSection from '../components/ActivityLogSection';
 import { usePriceOracle } from '../hooks/usePriceOracle';
+import { SwapModal } from '../components/SwapModal';
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 
 export default function ProfilePage() {
@@ -57,7 +58,7 @@ export default function ProfilePage() {
   });
 
   const [copied, setCopied] = useState(false);
-  const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle', 'revenue'
+  const [activeModal, setActiveModal] = useState(null); // 'claim', 'task', 'raffle', 'revenue', 'swap'
   const [claimCountdown, setClaimCountdown] = useState('');
   const [claimReady, setClaimReady] = useState(true);
 
@@ -605,11 +606,19 @@ export default function ProfilePage() {
                 )}
               </button>
             )}
+
+            <button
+              onClick={() => setActiveModal('swap')}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 transition-all group shadow-lg shadow-indigo-500/5"
+            >
+              <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+              <span className="label-native mb-0">GET USDC / SWAP</span>
+            </button>
           </div>
         </div>
 
         {/* MODALS */}
-        {activeModal === 'task' && <CreateTaskModal onClose={() => setActiveModal(null)} />}
+        {activeModal === 'task' && <CreateTaskModal onClose={() => setActiveModal(null)} onRequestSwap={() => setActiveModal('swap')} />}
         {activeModal === 'claim' && (
           <DailyClaimModal 
             onClose={() => setActiveModal(null)}
@@ -808,11 +817,16 @@ export default function ProfilePage() {
 
         <div className="pb-safe" />
       </div>
+
+      <SwapModal 
+        isOpen={activeModal === 'swap'} 
+        onClose={() => setActiveModal(null)} 
+      />
     </div>
   );
 }
 
-function CreateTaskModal({ onClose }) {
+function CreateTaskModal({ onClose, onRequestSwap }) {
   const [tasksBatch, setTasksBatch] = useState([
     { platform: 'farcaster', action_type: 'follow', title: '', link: '' },
     { platform: 'x', action_type: 'follow', title: '', link: '' },
@@ -1118,6 +1132,7 @@ function CreateTaskModal({ onClose }) {
             address={address}
             tasksBatch={tasksBatch}
             rewardTokenAddr={rewardTokenAddr}
+            onInsufficientBalance={onRequestSwap}
             onSuccess={async (hash) => {
                toast.success("Missions Created Successfully! Syncing... 🚀");
                // ... (existing sync logic)
@@ -1517,7 +1532,7 @@ function RevenueClaimModal({ onClose, claimable, onSuccess }) {
     </div>
   );
 }
-function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, rewardTokenAddr, onSuccess }) {
+function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, rewardTokenAddr, onSuccess, onInsufficientBalance }) {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1550,7 +1565,12 @@ function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, rewa
       
     } catch (err) {
       console.error('[PayAndCreateMission] Error:', err);
-      toast.error(err.shortMessage || err.message || "Transaction failed", { id: tid });
+      if (err.message?.toLowerCase().includes('insufficient funds') || err.message?.toLowerCase().includes('exceeds balance')) {
+        toast.error("Insufficient balance. Redirecting to Swap...", { id: tid });
+        if (onInsufficientBalance) onInsufficientBalance();
+      } else {
+        toast.error(err.shortMessage || err.message || "Transaction failed", { id: tid });
+      }
     } finally {
       setIsProcessing(false);
     }
