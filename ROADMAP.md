@@ -33,6 +33,7 @@
 - [x] **Database Hardening & Clean Sweep UX (v3.42.2)**: Systematic `.maybeSingle()` migration for PGRST116 resilience and "Disappearing Task" interface implementation.
 - [x] **Admin System Hardening & ABI Synchronization (v3.42.8)**: Corrected ABI phantom function calls, removed dead React states in System Configs, and replaced browser alerts with standard toasts.
 - [x] **Task Master ABI Parity & Signature Alignment (v3.46.0)**: Rebuilt `abis_data.txt` (157 entries), fixed `setSponsorshipParams` (4 args), `buySponsorshipWithToken` (string arrays), and migrated to direct `setTokenPriceUSD` oracle flow.
+- [x] **Create Mission Wallet Compatibility Fix (v3.46.1)**: Refactored `PayAndCreateMissionButton` in Profile to use sequential transactions, removing dependency on experimental `EIP-5792` batch protocols to support standard wallets (MetaMask/Rabby).
 
 ## Identified ABI Drift (DAILY_APP) - [REPAIRED v3.38.25]
 All identified drifts have been synchronized with `DailyAppV12Secured.json`.

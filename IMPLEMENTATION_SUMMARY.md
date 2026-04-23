@@ -4,6 +4,10 @@
 
 ## 📝 Changelog
 
+### v3.46.1 — 2026-04-23 (Create Mission Wallet Compatibility Fix)
+- **Wallet Compatibility Fix**: Replaced the experimental `useWriteContracts` (EIP-5792) from `wagmi/experimental` with standard sequential `useWriteContract` calls in `ProfilePage.jsx`. This ensures that creating UGC missions works across all standard EOAs (MetaMask, Rabby, etc.) instead of failing silently on non-Smart Wallets.
+- **Payload Standardization**: Updated `buildCalls` to output standard contract configuration objects (`abi`, `functionName`, `args`) instead of pre-encoded raw data strings, eliminating Wagmi RPC format errors during execution.
+
 ### v3.42.8 — 2026-04-11 (Admin System Hardening & ABI Synchronization)
 - **ABI Synchronization**: Corrected `SponsorshipConfigSection` to use strictly active ABI functions from `abis_data.txt` (`rewardPerClaim`, `tasksForReward`, `minRewardPoolValue`, `setSettings`), eliminating silent failures and wagmi RPC errors.
 - **State Hardening**: Resolved dead `isDistributing` state in `BlockchainConfigSection` to properly mitigate double-transactions by enforcing `isSaving` block logic.

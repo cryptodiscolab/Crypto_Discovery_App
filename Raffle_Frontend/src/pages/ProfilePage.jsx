@@ -16,8 +16,6 @@ import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI, MASTER_X_ADDRESS } from '../lib/contracts';
 import ActivityLogSection from '../components/ActivityLogSection';
-import { useWriteContracts, useCallsStatus } from 'wagmi/experimental';
-import { usePriceOracle } from '../hooks/usePriceOracle';
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 
 export default function ProfilePage() {
@@ -859,33 +857,31 @@ function CreateTaskModal({ onClose }) {
 
     if (titles.length === 0) return [];
 
-    const calls = [
-      // 1. Approve USDC for platform fee
-      {
-        to: CONTRACTS.USDC,
-        data: encodeFunctionData({
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [CONTRACTS.DAILY_APP, platformFee],
-        }),
-      }
-    ];
+    const calls = [];
+
+    // 1. Approve USDC for platform fee
+    if (platformFee > 0n) {
+      calls.push({
+        address: CONTRACTS.USDC,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [CONTRACTS.DAILY_APP, platformFee],
+      });
+    }
 
     // 2. The main call
     calls.push({
-      to: CONTRACTS.DAILY_APP,
-      data: encodeFunctionData({
-        abi: DAILY_APP_ABI,
-        functionName: 'buySponsorshipWithToken',
-        args: [
-          0, // SponsorLevel.BRONZE
-          titles,
-          links,
-          email,
-          0n, // ETH uses value: field, rewardAmount arg is for ERC20
-          rewardTokenAddr
-        ],
-      }),
+      address: CONTRACTS.DAILY_APP,
+      abi: DAILY_APP_ABI,
+      functionName: 'buySponsorshipWithToken',
+      args: [
+        0, // SponsorLevel.BRONZE
+        titles,
+        links,
+        email,
+        0n, // ETH uses value: field, rewardAmount arg is for ERC20
+        rewardTokenAddr
+      ],
       value: rewardAmount, // Using native ETH for rewards
     });
 
@@ -1520,58 +1516,51 @@ function RevenueClaimModal({ onClose, claimable, onSuccess }) {
   );
 }
 function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, rewardTokenAddr, onSuccess }) {
-  const { writeContracts, data: bundleId, isPending, error: writeError } = useWriteContracts();
-
-  // FIX: useCallsStatus is the correct companion for useWriteContracts (EIP-5792 batch calls).
-  // useWaitForTransactionReceipt expects a standard tx hash, but useWriteContracts returns a bundleId.
-  const { data: callsStatus } = useCallsStatus({
-    id: bundleId,
-    query: {
-      enabled: !!bundleId,
-      refetchInterval: (query) =>
-        query.state.data?.status === 'CONFIRMED' ? false : 2000,
-    },
-  });
-
-  const isConfirming = !!bundleId && callsStatus?.status !== 'CONFIRMED';
-  const isSuccess = callsStatus?.status === 'CONFIRMED';
-
-  useEffect(() => {
-    if (isSuccess && bundleId) {
-      // Extract actual tx hash from the first receipt, fallback to bundleId
-      const txHash = callsStatus?.receipts?.[0]?.transactionHash || bundleId;
-      onSuccess(txHash);
-    }
-  }, [isSuccess, bundleId]);
-
-  useEffect(() => {
-    if (writeError) {
-      console.error('[PayAndCreateMission] Error:', writeError);
-      toast.error(writeError.shortMessage || writeError.message || 'Transaction failed');
-    }
-  }, [writeError]);
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleClick = async () => {
     if (calls.length === 0) return toast.error("No valid tasks in batch");
     
-    // We pass 'data' directly to Smart Wallet batch providers which many support, 
-    // or expand if the provider is restrictive.
-    writeContracts({
-      contracts: calls.map(c => ({
-        address: c.to,
-        data: c.data,
-        value: c.value || 0n
-      }))
-    });
+    setIsProcessing(true);
+    const tid = toast.loading("Processing transaction...");
+    
+    try {
+      let lastHash;
+      for (let i = 0; i < calls.length; i++) {
+        const isApprove = calls[i].functionName === 'approve';
+        toast.loading(isApprove ? "Please sign Approve USDC..." : "Please sign Create Mission...", { id: tid });
+        
+        const hash = await writeContractAsync(calls[i]);
+        lastHash = hash;
+        
+        toast.loading(
+          `Waiting for confirmation (${i + 1}/${calls.length})...`, 
+          { id: tid }
+        );
+        
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
+      
+      toast.success("Mission Created Successfully!", { id: tid });
+      if (lastHash && onSuccess) onSuccess(lastHash);
+      
+    } catch (err) {
+      console.error('[PayAndCreateMission] Error:', err);
+      toast.error(err.shortMessage || err.message || "Transaction failed", { id: tid });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <button
       onClick={handleClick}
-      disabled={isPending || isConfirming}
-      className={`w-fit mx-auto px-12 block bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-widest transition-all ${isPending || isConfirming ? 'opacity-50' : ''}`}
+      disabled={isProcessing}
+      className={`w-fit mx-auto px-12 block bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl text-white text-[11px] font-black uppercase tracking-widest transition-all ${isProcessing ? 'opacity-50' : ''}`}
     >
-      {isPending ? "SIGNING..." : isConfirming ? "CONFIRMING..." : "CREATE"}
+      {isProcessing ? "PROCESSING..." : "CREATE"}
     </button>
   );
 }
