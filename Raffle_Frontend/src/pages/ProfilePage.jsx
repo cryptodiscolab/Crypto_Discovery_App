@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { DAILY_APP_ABI, CONTRACTS, ERC20_ABI, MASTER_X_ADDRESS } from '../lib/contracts';
 import ActivityLogSection from '../components/ActivityLogSection';
+import { usePriceOracle } from '../hooks/usePriceOracle';
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 
 export default function ProfilePage() {
