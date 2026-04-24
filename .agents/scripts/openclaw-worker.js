@@ -58,7 +58,7 @@ async function pollTasks() {
         const { data: tasks, error } = await supabase
             .from('agents_vault')
             .select('*')
-            .eq('target_agent', 'openclaw')
+            .in('target_agent', ['openclaw', 'claw'])
             .eq('status', 'pending')
             .order('created_at', { ascending: true })
             .limit(1);

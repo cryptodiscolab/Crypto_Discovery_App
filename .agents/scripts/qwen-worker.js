@@ -25,6 +25,22 @@ const qwenEntry = config.routing_config.priority_order.find(m => m.model.include
 const POLLING_INTERVAL = 30000; // 30 seconds (Hardware Optimized)
 let isProcessing = false;
 
+async function sendHeartbeat() {
+    try {
+        await supabase.from('system_settings')
+            .upsert({ 
+                key: 'heartbeat_qwen', 
+                value: new Date().toISOString() 
+            }, { onConflict: 'key' });
+    } catch (err) {
+        console.error('❌ [Heartbeat] Fail:', err.message);
+    }
+}
+
+// Initial heartbeat and interval
+sendHeartbeat();
+setInterval(sendHeartbeat, 45000); // Every 45s
+
 console.log('🤖 [Qwen Worker] Starting in OLLAMA mode...');
 console.log(`🎯 Target Model: ${qwenEntry.model}`);
 console.log(`⏱️  Polling interval: ${POLLING_INTERVAL / 1000}s`);
