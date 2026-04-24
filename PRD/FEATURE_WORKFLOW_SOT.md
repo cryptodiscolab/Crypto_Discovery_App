@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.47.0)
-**Last Updated**: 2026-04-24T05:30:00+07:00 — Swap & Profit Engine - SDK Pivot (v3.47.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.47.1)
+**Last Updated**: 2026-04-24T14:00:00+07:00 — Triple Bug Remediation (v3.47.1)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -115,21 +115,27 @@ Setelah XP didapat dari Daily Claim atau Social Tasks, sistem harus menentukan a
 
 ---
 
-## 🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint)
+## 🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint) — v3.47.1
 
 Status SBT/NFT ini adalah tiket representasi permanen dari Tier user.
 
 ### 5.1 The Upgrade Execution
 - **Triggers**: UI memunculkan tombol "Mint / Upgrade" jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.
 - **Workflow**:
-  1. **Supply Check**: Frontend mengecek supply maksimum untuk tier tersebut dari tabel `sbt_thresholds`. Jika Sold Out, tombol di-disable.
-  2. **Minting**: Frontend memanggil `MasterX.upgradeSBT()` atau `MasterX.mintSBT()`.
-  3. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
-  4. **State Sync**: UI menampilkan banner "SBT Upgraded" dan menghapus tombol upgrade.
+  1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 4 syarat: `hasTotalXP` (DB), `hasOnChainXP` (MASTER_X), `hasEnoughETH` (balance), dan `!isSoldOut` (DAILY_APP nftConfigs).
+  2. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet (v3.47.1).
+  3. **Minting (FIXED v3.47.1)**: Frontend memanggil `mintNFT(tierId, mintPrice)` dari `useNFTTiers` hook — yang memanggil `DAILY_APP.mintNFT()`. **BUKAN** `upgradeTier()` dari `useSBT` (yang memanggil `MASTER_X.upgradeTier()` — contract berbeda, menyebabkan gas error).
+  4. **Contract Call Parity Rule**: Data tier (`mintPrice`, `currentSupply`, `maxSupply`) dibaca dari `DAILY_APP.nftConfigs` via `useNFTTiers`. Oleh karena itu write function WAJIB juga ke `DAILY_APP` (bukan `MASTER_X`).
+  5. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
+  6. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
+  7. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas.
+
+> [!WARNING]
+> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Gunakan `useNFTTiers.mintNFT(id, price)` yang memanggil `DAILY_APP.mintNFT()`.
 
 ---
 
-## 📡 6. Definisi "Healthy State" Ekosistem (CHECKLIST)
+## 🚦 6. Definisi "Healthy State" Ekosistem (CHECKLIST)
 
 Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi seluruh kriteria berikut:
 1. [ ] **Zero Hardcode**: Tidak ada Contract Address statis di `.js` atau `.jsx` Frontend. Semuanya dibaca lewat Proxy ABI dari import `.env`.
@@ -138,6 +144,9 @@ Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi selu
 4. [ ] **Optimistic Sync**: XP dapat dikreditkan asalkan ada bukti `tx_hash` transaksi komplit, meskipun RPC provider (seperti Alchemy/Infura) belum up-to-date.
 5. [ ] **No Secrets Leak**: Proses git push lolos audit `gitleaks`.
 6. [ ] **Off-Chain XP Sync**: `tasks-bundle.js` memanggil `fn_increment_xp` setelah setiap off-chain task claim agar `total_xp` di `user_profiles` sinkron dengan leaderboard.
+7. [ ] **Two-Step Task Flow**: Off-chain tasks dengan `task_link` HARUS menampilkan "GO TO TASK" sebelum "CLAIM REWARD" dapat diaktifkan (v3.47.1).
+8. [ ] **Contract Call Parity**: Setiap contract write call HARUS menggunakan contract yang SAMA dengan sumber data read-nya. Mint data dari DAILY_APP → write ke DAILY_APP (v3.47.1).
+9. [ ] **SDK Error Visibility**: Setiap async SDK call (Li.Fi, Neynar, etc.) HARUS memiliki visible error state di UI jika gagal, bukan hanya console.error (v3.47.1).
 
 ---
 

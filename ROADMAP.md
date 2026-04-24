@@ -57,6 +57,11 @@ All identified drifts have been synchronized with `DailyAppV12Secured.json`.
 - [x] Refactored to SDK-First custom UI to bypass Vercel Rollup build crash.
 - [x] Add "Insufficient Balance" triggers in Profile and Raffle flows.
 
+## Phase 3 Hotfix: Triple Bug Remediation (v3.47.1) [x]
+- [x] **Task Two-Step Flow**: `TaskList.jsx` — GO TO TASK → 15s timer → CLAIM REWARD. Tasks must open external link before XP claim is allowed.
+- [x] **Swap Quote Fix**: `SwapModal.jsx` — Fixed SDK re-init loop via `useRef`, added `toAddress` param (LiFi SDK v2 requirement), added visible error state + Jumper fallback.
+- [x] **NFT Mint Contract Fix**: `SBTUpgradeCard.jsx` — Fixed wrong contract call (was `MASTER_X.upgradeTier`, now `DAILY_APP.mintNFT`). Contract call parity = data source must match write target.
+
 ## Phase 4: Ecosystem Growth & Advanced Governance [ ]
 - [ ] Tiered NFT Staking (Non-Riba based Utility).
 - [ ] Community Treasury DAO (Revenue sharing logic - *Contract Implemented*).
@@ -65,3 +70,9 @@ All identified drifts have been synchronized with `DailyAppV12Secured.json`.
 ## Immediate Protocol Constraints
 - **Immutable Architect Protocol**: `viaIR: true`, `runs: 200`.
 - **Pre-Flight Check**: Manual verification of state transitions before public release.
+
+## Agent Self-Improvement Mandates (Added v3.47.1)
+- **BP-001 — Contract Call Parity**: Always trace data lineage. Read from DAILY_APP → Write to DAILY_APP.
+- **BP-002 — SDK Single Init**: SDK `createConfig` must be called once per app lifecycle (useRef guard).
+- **BP-003 — No Silent Errors**: All async SDK calls must surface visible UI error state, not just console.error.
+- **BP-004 — Two-Step Task Gate**: Off-chain tasks with task_link require GO_TO_TASK → timer → CLAIM flow.

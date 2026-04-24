@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-23*
-*PRD Version: v3.46.0 (ABI Parity & Signature Alignment)*
+*Last Updated: 2026-04-24*
+*PRD Version: v3.47.1 (Triple Bug Remediation — Task Flow / Swap / NFT Mint)*
 
 ---
 
@@ -100,6 +100,22 @@ Before responding to ANY request, read these files IN ORDER:
 - **DILARANG KERAS** menghapus seluruh kode saat memperbaiki error.
 - **Wajib** melakukan "Surgical Fix": hanya hapus dan ganti baris/blok yang error saja.
 
+### Section 27: BUG PATTERN LIBRARY (Self-Improving Agent Registry)
+
+> ❗ Setiap bug yang ditemukan dan diperbaiki WAJIB dicatat di sini sebagai learning entry. Ini adalah mekanisme **self-improvement** agent: belajar dari error masa lalu agar tidak terulang di sesi berikutnya.
+
+| ID | Bug Pattern | Root Cause | File(s) | Fix Strategy | Version |
+|----|------------|------------|---------|-------------|--------|
+| **BP-001** | **Wrong Contract Call on Mint** | `SBTUpgradeCard` memanggil `upgradeTier()` dari `useSBT` (MASTER_X), padahal data tier dari `useNFTTiers` (DAILY_APP). Two different contracts = gas estimation fail. | `SBTUpgradeCard.jsx`, `useSBT.js`, `useNFTTiers.js` | Selalu trace hook asal data `mintPrice` & `tierId` dan pastikan write contract yang dipanggil SAMA dengan sumber data. Di sini fix: `mintNFT(id, price)` dari `useNFTTiers`. | v3.47.1 |
+| **BP-002** | **SDK Config Re-init Loop** | `createConfig` dipanggil dalam `useEffect` tanpa guard, sehingga dipanggil ulang setiap render. Menyebabkan race condition pada quote fetch. | `SwapModal.jsx` | Gunakan `useRef` flag atau module-level `let _initialized` untuk memastikan SDK hanya di-init satu kali per lifecycle. | v3.47.1 |
+| **BP-003** | **Missing Required SDK Param** | Li.Fi SDK v2+ mewajibkan `toAddress` pada `getQuote()`. Tanpanya, quote selalu return 0 atau error. Error di-swallow (`console.error` saja) sehingga user tidak tahu. | `SwapModal.jsx` | Selalu periksa SDK changelog saat upgrade versi. Tambahkan visible error state untuk setiap async operation. Gunakan fallback redirect jika primary SDK gagal. | v3.47.1 |
+| **BP-004** | **Missing Task Link Step** | TaskList off-chain tasks tidak membuka link task sebelum claim. User bisa langsung claim XP tanpa mengerjakan task. | `TaskList.jsx` | Implementasikan dua-step flow: Step 1 = buka link, Step 2 = claim setelah timer. Anti-fraud timer wajib ada antara klik link dan klik claim. | v3.47.1 |
+| **BP-005** | **ABI Drift Hook Mismatch** | Saat contract diupgrade, index-based access (e.g., `userRawData[1]`) bisa bergeser. Named property fallback wajib ada. | `useSBT.js`, `useNFTTiers.js` | Gunakan pola: `data.namedProp !== undefined ? data.namedProp : data[fallbackIndex]`. | v3.38.8 |
+
+> 💡 **Agent Self-Check**: Sebelum menulis kode yang menyentuh contract write, selalu tanyakan: *"Apakah contract address yang di-call SAMA dengan sumber data yang digunakan?"*
+
+---
+
 ### Standard Reporting Format (Nexus v3.35.0):
 ```
 ✅ VERDICT: [STATUS] (Operational / Degraded)
@@ -187,6 +203,10 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Referral Anti-Sybil Breach**: Dilarang melepaskan reward referral secara instan. Wajib melalui logic vesting **500 XP Milestone**.
 - 🚫 **Identity Guard Bypass**: Dilarang mengizinkan claim mission yang memiliki flag `is_base_social_required` jika profil user belum terverifikasi Basename.
 - 🚫 **Type-Mismatch Comparison**: Dilarang membandingkan ID task (Supabase UUID vs Contract Integer) tanpa konversi `String()`. Selalu gunakan `String(a) === String(b)` untuk ID filtering (v3.42.7).
+- 🚫 **Cross-Contract Data Mismatch (BP-001)**: DILARANG KERAS memanggil contract write function yang berbeda dari sumber data read. Jika `mintPrice` dibaca dari `DAILY_APP.nftConfigs`, maka write function WAJIB juga ke `DAILY_APP` (bukan `MASTER_X`). Selalu trace data lineage sebelum menulis contract call (v3.47.1).
+- 🚫 **SDK Re-Init Loop (BP-002)**: DILARANG memanggil SDK `createConfig` atau `init` function di dalam komponen React tanpa guard (`useRef` atau module-level flag). Harus dipanggil sekali saja per app lifecycle (v3.47.1).
+- 🚫 **Silent Error Swallow (BP-003)**: DILARANG menggunakan `try/catch` yang hanya `console.error` tanpa memberikan feedback visible ke user. Semua async operation yang dapat gagal WAJIB memiliki error state yang ditampilkan di UI (v3.47.1).
+- 🚫 **One-Step Task Claim (BP-004)**: DILARANG mengizinkan user klaim XP dari task yang memiliki `task_link` tanpa terlebih dahulu membuka link tersebut. Wajib implementasikan two-step flow dengan anti-fraud timer (v3.47.1).
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

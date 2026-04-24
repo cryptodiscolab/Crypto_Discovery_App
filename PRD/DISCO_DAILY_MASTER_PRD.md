@@ -1,6 +1,19 @@
 ---
 
-## 11. Work Report v3.47.0 (Current)
+## 11. Work Report v3.47.1 (Current)
+**Date:** 2026-04-24
+**Subject:** Triple Bug Remediation — Task Redirect Flow, Swap Quote Engine, NFT Mint Contract Mismatch.
+**Implementation:**
+- **[BUG #1 — TaskList.jsx] Two-Step Task Flow**: Mengimplementasikan alur dua-langkah untuk off-chain tasks. Sebelumnya `handleClaim` dipanggil langsung tanpa user membuka link task. Kini terdapat button **"GO TO TASK"** yang membuka `task_link` di tab baru, kemudian countdown 15 detik anti-fraud sebelum button **"CLAIM REWARD"** aktif. State visual: `indigo` (belum mulai) → `amber/countdown` (menunggu) → `hijau` (siap claim). Mendukung field `task_link`, `action_url`, atau `link` dari DB.
+- **[BUG #2 — SwapModal.jsx] Li.Fi SDK Quote Fix**: Memperbaiki `createConfig` yang dipanggil ulang setiap render (racing condition via `useRef` flag). Menambahkan `toAddress: address` pada `getQuote()` params (required untuk Li.Fi SDK v2+). Menambahkan error state visible ketika quote gagal (sebelumnya error di-swallow). Menambahkan fallback button **"Swap on Jumper"** yang redirect ke `jumper.exchange` jika SDK tidak bisa load quote.
+- **[BUG #3 — SBTUpgradeCard.jsx] NFT Mint Wrong Contract**: Menemukan dan memperbaiki bug kritis — `handleUpgrade` memanggil `upgradeTier()` dari `useSBT` (yang call `MASTER_X.upgradeTier()`), padahal price dan supply data berasal dari `useNFTTiers` (yang baca `DAILY_APP.nftConfigs`). Mismatch contract ini menyebabkan gas estimation fail. Fix: ganti ke `mintNFT(tierId, mintPrice)` dari `useNFTTiers` (call `DAILY_APP.mintNFT()`). Tambah pre-check `hasEnoughETH` sebelum open wallet, dan error messages spesifik untuk `insufficient funds`, `user rejected`, dan `gas estimation failed`.
+**Build Status:** ✅ `vite build` exit code 0 — 7240 modules transformed.
+**Deploy:** ✅ Pushed ke GitHub → Vercel auto-deploy triggered (`903ba02..8f7dce6`).
+**Files Modified:** `TaskList.jsx`, `SwapModal.jsx`, `SBTUpgradeCard.jsx`
+
+---
+
+## 11. Work Report v3.47.0 (Legacy)
 **Date:** 2026-04-24
 **Subject:** Swap & Profit Engine - Li.Fi SDK Integration & Pivot.
 **Implementation:**

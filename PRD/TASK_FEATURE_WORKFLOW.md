@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.47.0` | **Last Updated**: `2026-04-24T05:30:00+07:00`
+**Version**: `v3.47.1` | **Last Updated**: `2026-04-24T14:00:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -118,11 +118,13 @@ flowchart LR
         A5 --> A6[Insert user_task_claims + fn_increment_xp]
     end
 
-    subgraph "Off-Chain Path"
-        B1[User Sees TaskList Card] --> B2[Click CLAIM REWARD]
-        B2 --> B3[EIP-191 Sign via useVerifiedAction]
-        B3 --> B4[POST /api/tasks-bundle action=claim]
-        B4 --> B5[Insert user_task_claims + fn_increment_xp]
+    subgraph "Off-Chain Path (v3.47.1 Two-Step Flow)"
+        B1[User Sees TaskList Card] --> B2["Step 1: Click 'GO TO TASK' → window.open(task_link)"]
+        B2 --> B3[15s Anti-Fraud Countdown]
+        B3 --> B4["Step 2: Click 'CLAIM REWARD' (green, enabled)"]
+        B4 --> B5[EIP-191 Sign via useVerifiedAction]
+        B5 --> B6[POST /api/tasks-bundle action=claim]
+        B6 --> B7[Insert user_task_claims + fn_increment_xp]
     end
 ```
 
@@ -447,8 +449,15 @@ sequenceDiagram
 
     TL->>TL: Filter: activeTasks = tasks.filter(not claimed)
 
-    Note over U: User Clicks "CLAIM REWARD"
-    U->>TL: handleClaim(task)
+    Note over U: STEP 1 — User Clicks "GO TO TASK" (v3.47.1)
+    U->>TL: handleGoToTask(task)
+    TL->>TL: window.open(task.task_link, '_blank')
+    TL->>TL: setStartedTasks({task_id: Date.now()})
+    TL->>TL: start 15s countdown
+    Note over TL: Card turns amber (countdown state)
+
+    Note over U: STEP 2 — After 15s, User Clicks "CLAIM REWARD"
+    U->>TL: handleClaim(task) [only enabled when countdown=0]
 
     alt Neynar Score too low
         TL-->>U: Toast: "Low Reputation"
@@ -782,7 +791,11 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Feature Guard**: Mainnet kill switch via `system_settings.active_features` operational.
 - [x] **Activity Logging**: Setiap klaim menghasilkan entry di `user_activity_logs`.
 - [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
-- [x] **30s Anti-Fraud**: Timer aktif sebelum social verification.
+- [x] **30s Anti-Fraud (On-Chain)**: Timer aktif sebelum social verification (TaskRow).
+- [x] **15s Anti-Fraud (Off-Chain)**: `startedTasks` countdown setelah "GO TO TASK" klik sebelum CLAIM REWARD aktif (v3.47.1).
+- [x] **Two-Step Task Flow (Off-Chain)**: User HARUS buka link dulu via "GO TO TASK" sebelum bisa klaim XP (v3.47.1).
+- [x] **Swap Quote Error Visibility**: SwapModal menampilkan error visible + Jumper fallback jika Li.Fi SDK gagal quote (v3.47.1).
+- [x] **NFT Mint Contract Parity**: SBTUpgradeCard memanggil `mintNFT` (DAILY_APP) bukan `upgradeTier` (MASTER_X) (v3.47.1).
 - [x] **Batch Resilience**: Create Mission menggunakan `useCallsStatus` (EIP-5792) untuk mencegah UI hang pada batch transactions.
 - [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract (157 entries).
 - [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
