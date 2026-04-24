@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, ArrowDown, ExternalLink, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, ArrowDown, ExternalLink, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAccount, useWalletClient, useConfig } from 'wagmi';
 import { createConfig, getQuote, executeRoute } from '@lifi/sdk';
 import { parseUnits, formatUnits } from 'viem';
@@ -10,6 +10,9 @@ const TOKENS = {
   USDC: { address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6, symbol: 'USDC' }
 };
 
+// Li.Fi SDK init flag — only configure once per module lifetime
+let _lifiConfigured = false;
+
 export function SwapModal({ isOpen, onClose }) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -18,21 +21,31 @@ export function SwapModal({ isOpen, onClose }) {
   const [quote, setQuote] = useState(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [quoteError, setQuoteError] = useState(null);
   const [direction, setDirection] = useState('ETH_TO_USDC'); // or USDC_TO_ETH
+  const configuredRef = useRef(false);
 
   const fromToken = direction === 'ETH_TO_USDC' ? TOKENS.ETH : TOKENS.USDC;
   const toToken = direction === 'ETH_TO_USDC' ? TOKENS.USDC : TOKENS.ETH;
 
-  // Initialize Li.Fi SDK with wagmi config
+  // Initialize Li.Fi SDK exactly ONCE with wagmi config
   useEffect(() => {
-    createConfig({
-      integrator: 'crypto-disco-app',
-      wagmi: wagmiConfig
-    });
+    if (configuredRef.current) return;
+    try {
+      createConfig({
+        integrator: 'crypto-disco-app',
+        wagmi: wagmiConfig
+      });
+      configuredRef.current = true;
+    } catch (e) {
+      console.warn('[SwapModal] Li.Fi SDK already configured or init failed:', e.message);
+      configuredRef.current = true; // Prevent retry loop
+    }
   }, [wagmiConfig]);
 
   useEffect(() => {
     const fetchQuote = async () => {
+      setQuoteError(null);
       if (!amountIn || isNaN(amountIn) || parseFloat(amountIn) <= 0 || !address) {
         setQuote(null);
         return;
@@ -48,18 +61,28 @@ export function SwapModal({ isOpen, onClose }) {
           toToken: toToken.address,
           fromAmount: amountWei,
           fromAddress: address,
-          feeConfig: { fee: 0.005, integrator: 'crypto-disco-app' } // 0.5% fee
+          toAddress: address,  // Required by LiFi SDK v2+
+          feeConfig: { fee: 0.005, integrator: 'crypto-disco-app' }
         });
         setQuote(result);
       } catch (error) {
         console.error("Quote Error:", error);
         setQuote(null);
+        // Show user-friendly error message
+        const errMsg = error?.message || '';
+        if (errMsg.includes('No route found') || errMsg.includes('no route')) {
+          setQuoteError('No swap route found for this amount. Try a different amount.');
+        } else if (errMsg.includes('amount') || errMsg.includes('too small')) {
+          setQuoteError('Amount too small. Try a larger amount.');
+        } else {
+          setQuoteError('Quote unavailable. Use Jumper Exchange for manual swap.');
+        }
       } finally {
         setIsLoadingQuote(false);
       }
     };
 
-    const delay = setTimeout(fetchQuote, 500);
+    const delay = setTimeout(fetchQuote, 600);
     return () => clearTimeout(delay);
   }, [amountIn, direction, address, fromToken, toToken]);
 
@@ -70,7 +93,6 @@ export function SwapModal({ isOpen, onClose }) {
     const tid = toast.loading("Executing Swap via Li.Fi...");
     
     try {
-      // Execute route using the SDK
       await executeRoute(quote, {
         updateRouteHook: (route) => {
           console.log('Route updated:', route);
@@ -78,6 +100,7 @@ export function SwapModal({ isOpen, onClose }) {
       });
       toast.success("Swap Successful!", { id: tid });
       setAmountIn('');
+      setQuote(null);
       onClose();
     } catch (error) {
       console.error("Swap Error:", error);
@@ -87,7 +110,24 @@ export function SwapModal({ isOpen, onClose }) {
     }
   };
 
+  // Redirect to Jumper with pre-filled params as fallback
+  const handleJumperFallback = () => {
+    const fromSymbol = fromToken.symbol;
+    const toSymbol = toToken.symbol;
+    const jumperUrl = `https://jumper.exchange/?integrator=crypto-disco-app&fromChain=8453&toChain=8453&fromToken=${fromToken.address}&toToken=${toToken.address}`;
+    window.open(jumperUrl, '_blank', 'noopener,noreferrer');
+    onClose();
+  };
+
   if (!isOpen) return null;
+
+  const estimatedOut = quote
+    ? formatUnits(BigInt(quote.estimate.toAmount), toToken.decimals)
+    : null;
+
+  const rateDisplay = estimatedOut && amountIn
+    ? (parseFloat(estimatedOut) / parseFloat(amountIn)).toFixed(6)
+    : null;
 
   return (
     <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
@@ -113,6 +153,8 @@ export function SwapModal({ isOpen, onClose }) {
                 value={amountIn}
                 onChange={(e) => setAmountIn(e.target.value)}
                 placeholder="0.0"
+                min="0"
+                step="0.001"
                 className="bg-transparent text-2xl font-black text-white outline-none w-full placeholder:text-white/20"
               />
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full shrink-0 border border-white/10">
@@ -127,6 +169,8 @@ export function SwapModal({ isOpen, onClose }) {
               onClick={() => {
                 setDirection(prev => prev === 'ETH_TO_USDC' ? 'USDC_TO_ETH' : 'ETH_TO_USDC');
                 setAmountIn('');
+                setQuote(null);
+                setQuoteError(null);
               }}
               className="p-2.5 bg-[#161B22] rounded-xl border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors text-slate-400 hover:text-indigo-400"
             >
@@ -141,20 +185,28 @@ export function SwapModal({ isOpen, onClose }) {
               <div className="text-2xl font-black text-white/50 w-full truncate">
                 {isLoadingQuote ? (
                   <Loader2 size={24} className="animate-spin text-indigo-500 mt-1" />
-                ) : quote ? (
-                  formatUnits(BigInt(quote.estimate.toAmount), toToken.decimals)
+                ) : estimatedOut ? (
+                  parseFloat(estimatedOut).toFixed(6)
                 ) : '0.0'}
               </div>
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full shrink-0 border border-white/10">
                 <span className="text-[11px] font-black tracking-widest">{toToken.symbol}</span>
               </div>
             </div>
-            {quote && (
+            {rateDisplay && (
               <div className="mt-2 text-[9px] text-emerald-400 font-mono tracking-wider">
-                1 {fromToken.symbol} = {parseFloat(formatUnits(BigInt(quote.estimate.toAmount), toToken.decimals)) / parseFloat(amountIn || 1)} {toToken.symbol}
+                1 {fromToken.symbol} ≈ {rateDisplay} {toToken.symbol}
               </div>
             )}
           </div>
+
+          {/* Quote Error Banner */}
+          {quoteError && amountIn && !isLoadingQuote && (
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+              <AlertCircle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wide leading-snug">{quoteError}</p>
+            </div>
+          )}
 
           <button
             onClick={handleSwap}
@@ -164,17 +216,28 @@ export function SwapModal({ isOpen, onClose }) {
                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}
             `}
           >
-            {isSwapping ? "SWAPPING..." : !amountIn ? "ENTER AMOUNT" : "SWAP NOW"}
+            {isSwapping ? "SWAPPING..." : !amountIn ? "ENTER AMOUNT" : isLoadingQuote ? "FETCHING QUOTE..." : !quote ? "NO ROUTE FOUND" : "SWAP NOW"}
           </button>
-          
-          <a 
-            href="https://jumper.exchange/?integrator=crypto-disco-app" 
-            target="_blank" 
-            rel="noreferrer"
-            className="flex items-center justify-center gap-1.5 mt-4 text-[9px] text-indigo-400/70 hover:text-indigo-400 uppercase tracking-widest font-black transition-colors"
-          >
-            Bridge from other chains <ExternalLink size={10} />
-          </a>
+
+          {/* Jumper Fallback / Bridge */}
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <a 
+              href="https://jumper.exchange/?integrator=crypto-disco-app" 
+              target="_blank" 
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-[9px] text-indigo-400/70 hover:text-indigo-400 uppercase tracking-widest font-black transition-colors"
+            >
+              Bridge from other chains <ExternalLink size={10} />
+            </a>
+            {(quoteError || (!quote && amountIn && !isLoadingQuote)) && (
+              <button
+                onClick={handleJumperFallback}
+                className="flex items-center gap-1 text-[9px] text-emerald-400/70 hover:text-emerald-400 uppercase tracking-widest font-black transition-colors"
+              >
+                <ExternalLink size={10} /> Swap on Jumper
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

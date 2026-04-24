@@ -3,15 +3,15 @@ import { useNFTTiers } from '../hooks/useNFTTiers';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
 import { formatEther } from 'viem';
-import { Sparkles, ArrowUpCircle, Lock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowUpCircle, Lock, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function SBTUpgradeCard() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings } = usePoints();
-    const { tiers, refetch: refetchTiers } = useNFTTiers();
-    const { upgradeTier, userOnChainXP, currentSeasonId, refetchAll } = useSBT();
+    const { tiers, mintNFT, refetch: refetchTiers } = useNFTTiers();
+    const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { data: balanceData } = useBalance({ address });
 
     // Feature Flags Check
@@ -62,7 +62,7 @@ export function SBTUpgradeCard() {
         if (!isSbtFeatureEnabled) return toast.error("SBT Minting is currently disabled for this phase.");
         if (!hasOnChainXP) {
             if (hasTotalXP) {
-                return toast.error("Points detected in DB but not yet synced to contract. Please wait for the periodic sync or perform a task to trigger it.");
+                return toast.error("Points detected in DB but not yet synced to contract. Please perform a daily claim to trigger sync.");
             }
             return toast.error(`You need ${xpShortfall.toLocaleString()} more XP to upgrade!`);
         }
@@ -71,17 +71,21 @@ export function SBTUpgradeCard() {
             return toast.error("This tier is currently sold out!");
         }
 
-        const tid = toast.loading(`Ascending to ${nextTier.name}...`);
+        if (!hasEnoughETH) {
+            return toast.error(`Insufficient ETH. You need ${formatEther(nextTier.mintPrice)} ETH to mint.`);
+        }
+
+        const tid = toast.loading(`Minting ${nextTier.name} NFT...`);
         try {
-            const hash = await upgradeTier(nextTier.mintPrice.toString());
-            toast.success(`Ascension Success! Welcome to ${nextTier.name} Tier!`, { id: tid });
+            // FIX v3.47.1: Use mintNFT from useNFTTiers (calls DAILY_APP.mintNFT)
+            // NOT upgradeTier from useSBT (which calls MASTER_X.upgradeTier — wrong contract!)
+            const hash = await mintNFT(nextTier.id, nextTier.mintPrice);
+            toast.success(`NFT Minted! Welcome to ${nextTier.name} Tier! 🎉`, { id: tid });
 
             // Sync to DB Log
             try {
                 const timestamp = new Date().toISOString();
                 const message = `Log activity for ${address}\nAction: SBT Tier Ascension\nTimestamp: ${timestamp}`;
-                
-                // Use EIP-6963 compliant signMessageAsync
                 const signature = await signMessageAsync({ message });
 
                 await fetch('/api/user-bundle', {
@@ -100,15 +104,25 @@ export function SBTUpgradeCard() {
                     })
                 });
             } catch (syncErr) {
-                console.warn('SBT Sync failed:', syncErr);
+                console.warn('SBT Sync failed (non-critical):', syncErr);
             }
 
             refetchPoints();
             refetchTiers();
             refetchAll();
         } catch (err) {
-            console.error(err);
-            toast.error(err.shortMessage || "Ascension failed. Check balance or gas.", { id: tid });
+            console.error('[SBTUpgradeCard] Mint error:', err);
+            // Provide specific error messages based on error type
+            const errMsg = err?.shortMessage || err?.message || '';
+            if (errMsg.includes('insufficient funds') || errMsg.includes('exceeds balance')) {
+                toast.error(`Insufficient ETH balance. Need ${formatEther(nextTier.mintPrice)} ETH + gas.`, { id: tid });
+            } else if (errMsg.includes('user rejected') || err?.code === 4001) {
+                toast.error('Transaction cancelled by user.', { id: tid });
+            } else if (errMsg.includes('gas')) {
+                toast.error('Gas estimation failed. Ensure you have enough ETH for the fee and gas.', { id: tid });
+            } else {
+                toast.error(errMsg || 'Mint failed. Check your balance and try again.', { id: tid });
+            }
         }
     };
 
