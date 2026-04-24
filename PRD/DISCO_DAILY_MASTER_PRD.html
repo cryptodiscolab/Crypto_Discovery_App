@@ -1,5 +1,41 @@
 <hr>
-<h2>11. Work Report v3.46.0 (Current)</h2>
+<h2>11. Work Report v3.47.2 (Current)</h2>
+<p><strong>Date:</strong> 2026-04-24
+<strong>Subject:</strong> Wallet Provider Proxy Conflict Fix
+<strong>Implementation:</strong></p>
+<ul>
+<li><strong>[BUG — Wallet Login] &quot;Get Rabby Wallet&quot; Modal Override</strong>: Identified and resolved a Provider Proxy Conflict (EIP-6963) occurring when Rabby Wallet proxies <code>window.ethereum</code>.</li>
+<li><strong>Protocol Enforcement</strong>: Corrected <code>wagmiConfig.js</code> to place <code>coinbaseWallet</code> at the absolute top of the <code>connectorsForWallets</code> list as mandated by the Master Architect Protocol. Moving <code>metaMaskWallet</code> down prevents it from eagerly overriding the proxied Rabby connection, allowing RainbowKit to accurately identify installed wallets without triggering erroneous &quot;Get Wallet&quot; installation modals.
+<strong>Build Status:</strong> ✅ Ecosystem Audit Passed.
+<strong>Files Modified:</strong> <code>Raffle_Frontend/src/wagmiConfig.js</code></li>
+</ul>
+<hr>
+<h2>11. Work Report v3.47.1 (Legacy)</h2>
+<p><strong>Date:</strong> 2026-04-24
+<strong>Subject:</strong> Triple Bug Remediation — Task Redirect Flow, Swap Quote Engine, NFT Mint Contract Mismatch.
+<strong>Implementation:</strong></p>
+<ul>
+<li><strong>[BUG #1 — TaskList.jsx] Two-Step Task Flow</strong>: Mengimplementasikan alur dua-langkah untuk off-chain tasks. Sebelumnya <code>handleClaim</code> dipanggil langsung tanpa user membuka link task. Kini terdapat button <strong>&quot;GO TO TASK&quot;</strong> yang membuka <code>task_link</code> di tab baru, kemudian countdown 15 detik anti-fraud sebelum button <strong>&quot;CLAIM REWARD&quot;</strong> aktif. State visual: <code>indigo</code> (belum mulai) → <code>amber/countdown</code> (menunggu) → <code>hijau</code> (siap claim). Mendukung field <code>task_link</code>, <code>action_url</code>, atau <code>link</code> dari DB.</li>
+<li><strong>[BUG #2 — SwapModal.jsx] Li.Fi SDK Quote Fix</strong>: Memperbaiki <code>createConfig</code> yang dipanggil ulang setiap render (racing condition via <code>useRef</code> flag). Menambahkan <code>toAddress: address</code> pada <code>getQuote()</code> params (required untuk Li.Fi SDK v2+). Menambahkan error state visible ketika quote gagal (sebelumnya error di-swallow). Menambahkan fallback button <strong>&quot;Swap on Jumper&quot;</strong> yang redirect ke <code>jumper.exchange</code> jika SDK tidak bisa load quote.</li>
+<li><strong>[BUG #3 — SBTUpgradeCard.jsx] NFT Mint Wrong Contract</strong>: Menemukan dan memperbaiki bug kritis — <code>handleUpgrade</code> memanggil <code>upgradeTier()</code> dari <code>useSBT</code> (yang call <code>MASTER_X.upgradeTier()</code>), padahal price dan supply data berasal dari <code>useNFTTiers</code> (yang baca <code>DAILY_APP.nftConfigs</code>). Mismatch contract ini menyebabkan gas estimation fail. Fix: ganti ke <code>mintNFT(tierId, mintPrice)</code> dari <code>useNFTTiers</code> (call <code>DAILY_APP.mintNFT()</code>). Tambah pre-check <code>hasEnoughETH</code> sebelum open wallet, dan error messages spesifik untuk <code>insufficient funds</code>, <code>user rejected</code>, dan <code>gas estimation failed</code>.
+<strong>Build Status:</strong> ✅ <code>vite build</code> exit code 0 — 7240 modules transformed.
+<strong>Deploy:</strong> ✅ Pushed ke GitHub → Vercel auto-deploy triggered (<code>903ba02..8f7dce6</code>).
+<strong>Files Modified:</strong> <code>TaskList.jsx</code>, <code>SwapModal.jsx</code>, <code>SBTUpgradeCard.jsx</code></li>
+</ul>
+<hr>
+<h2>11. Work Report v3.47.0 (Legacy)</h2>
+<p><strong>Date:</strong> 2026-04-24
+<strong>Subject:</strong> Swap &amp; Profit Engine - Li.Fi SDK Integration &amp; Pivot.
+<strong>Implementation:</strong></p>
+<ul>
+<li><strong>Li.Fi SDK Pivot</strong>: Melakukan migrasi dari <code>@lifi/widget</code> ke <code>@lifi/sdk</code> untuk mengatasi error &quot;AST parsing&quot; pada saat production build di Vercel. </li>
+<li><strong>Custom Swap UI</strong>: Membangun komponen <code>SwapModal.jsx</code> yang ringan dan elegan (Midnight Cyber style) menggunakan Li.Fi SDK secara langsung untuk fungsionalitas swap ETH/USDC di jaringan Base.</li>
+<li><strong>Integrator Fee</strong>: Mengonfigurasi biaya integrator sebesar 0.5% yang otomatis masuk ke <code>MASTER_X_ADDRESS</code> sebagai sumber pendapatan ekosistem.</li>
+<li><strong>UX Fallback</strong>: Mengintegrasikan trigger &quot;Insufficient Balance&quot; pada alur pembuatan misi (UGC) dan pembelian tiket Raffle, yang secara otomatis memunculkan modal swap jika saldo user tidak mencukupi.
+<strong>Result:</strong> Sistem swap fungsional, build produksi stabil, dan ekosistem memiliki aliran pendapatan (revenue stream) baru dari fee swap.</li>
+</ul>
+<hr>
+<h2>11.1 Work Report v3.46.0 (Legacy)</h2>
 <p><strong>Date:</strong> 2026-04-23
 <strong>Subject:</strong> Task Master ABI Parity &amp; Function Signature Alignment.
 <strong>Implementation:</strong></p>

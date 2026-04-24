@@ -4,6 +4,10 @@
 
 ## 📝 Changelog
 
+### v3.47.2 — 2026-04-24 (Wallet Provider Proxy Conflict Fix)
+- **Protocol Enforced Wallet Order**: Standardized `wagmiConfig.js` to strictly place `coinbaseWallet` at the top of the connection list, followed by `metaMaskWallet` and others, satisfying the "Base Smart Wallet is King" mandate.
+- **Proxy Conflict Resolution**: Addressed a critical provider proxy conflict where EIP-6963 and RainbowKit misidentified Rabby Wallet's proxied `window.ethereum` due to improper connector precedence, resulting in erroneous "Get Rabby Wallet" prompts during login attempts.
+
 ### v3.47.0 — 2026-04-24 (Swap & Profit Engine - SDK Pivot)
 - **SDK-First Architecture**: Deprecated `@lifi/widget` in favor of `@lifi/sdk` to resolve catastrophic Rollup AST parsing crashes during production builds.
 - **Custom Native UI**: Built a lightweight, custom Swap Modal (`SwapModal.jsx`) featuring "Midnight Cyber" styling and direct `lifi.getQuote()` / `executeRoute()` integration for Base ETH ↔ USDC.

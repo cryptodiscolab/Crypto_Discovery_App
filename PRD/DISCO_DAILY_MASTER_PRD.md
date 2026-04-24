@@ -1,6 +1,17 @@
 ---
 
-## 11. Work Report v3.47.1 (Current)
+## 11. Work Report v3.47.2 (Current)
+**Date:** 2026-04-24
+**Subject:** Wallet Provider Proxy Conflict Fix
+**Implementation:**
+- **[BUG — Wallet Login] "Get Rabby Wallet" Modal Override**: Identified and resolved a Provider Proxy Conflict (EIP-6963) occurring when Rabby Wallet proxies `window.ethereum`.
+- **Protocol Enforcement**: Corrected `wagmiConfig.js` to place `coinbaseWallet` at the absolute top of the `connectorsForWallets` list as mandated by the Master Architect Protocol. Moving `metaMaskWallet` down prevents it from eagerly overriding the proxied Rabby connection, allowing RainbowKit to accurately identify installed wallets without triggering erroneous "Get Wallet" installation modals.
+**Build Status:** ✅ Ecosystem Audit Passed.
+**Files Modified:** `Raffle_Frontend/src/wagmiConfig.js`
+
+---
+
+## 11. Work Report v3.47.1 (Legacy)
 **Date:** 2026-04-24
 **Subject:** Triple Bug Remediation — Task Redirect Flow, Swap Quote Engine, NFT Mint Contract Mismatch.
 **Implementation:**

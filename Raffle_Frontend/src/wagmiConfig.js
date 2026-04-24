@@ -20,11 +20,11 @@ const connectors = connectorsForWallets(
         {
             groupName: 'Recommended',
             wallets: [
-                metaMaskWallet,
                 (opts) => coinbaseWallet({
                     ...opts,
                     preference: 'smartWalletOnly'
                 }),
+                metaMaskWallet,
                 rainbowWallet,
                 walletConnectWallet,
                 rabbyWallet,
