@@ -116,6 +116,28 @@ Before responding to ANY request, read these files IN ORDER:
 
 ---
 
+### Section 28: ERROR CONTEXT MAP (Context-Aware Mandatory Reading)
+
+> ❗ Ketika menerima laporan error, agent WAJIB mencocokkan kata kunci error dengan tabel berikut dan **membaca semua file yang terdaftar SEBELUM menulis satu baris kode pun**. Ini adalah mekanisme anti-halusinasi berbasis konteks.
+
+| Kata Kunci Error | File WAJIB Dibaca | Dokumen SOT |
+|----|------|------|
+| `gas`, `revert`, `transaction failed`, `execution reverted` | `useNFTTiers.js`, `useSBT.js`, `contracts.js` | `FEATURE_WORKFLOW_SOT.md §5` |
+| `NFT`, `mint`, `SBT`, `tier`, `upgrade` | `useNFTTiers.js`, `useSBT.js`, `SBTUpgradeCard.jsx` | `FEATURE_WORKFLOW_SOT.md §5` |
+| `swap`, `quote`, `0.0`, `lifi`, `bridge`, `jumper` | `SwapModal.jsx` (full), Li.Fi SDK v3 changelog | `PRD_SWAP_PROFIT_ENGINE_V3.47.0.md` |
+| `task`, `claim`, `XP`, `reward`, `mission` | `TaskList.jsx`, `useVerifiedAction.js`, `tasks-bundle.js` | `TASK_FEATURE_WORKFLOW.md §7` |
+| `contract`, `ABI`, `function not found`, `function selector` | `contracts.js`, `abis_data.txt`, `.env` | `WORKSPACE_MAP.md §6` |
+| `auth`, `signature`, `EIP-191`, `wallet`, `SIWE` | `useVerification.js`, `.cursorrules §8.2` | `FEATURE_WORKFLOW_SOT.md §1` |
+| `database`, `Supabase`, `sync`, `XP tidak muncul`, `leaderboard` | `user-bundle.js`, `tasks-bundle.js` | `FEATURE_WORKFLOW_SOT.md §3` |
+| `hardcode`, `static value`, `reward`, `fee`, `XP` | `point_settings` (Supabase), `system_settings` | `TASK_FEATURE_WORKFLOW.md §9` |
+| `admin`, `dashboard`, `task creation`, `ABI parity` | `admin-bundle.js`, `abis_data.txt` | `TASK_FEATURE_WORKFLOW.md §13` |
+| `raffle`, `ticket`, `gacha`, `sponsor` | `raffle-bundle.js`, `.agents/skills/raffle-integration/SKILL.md` | `FEATURE_WORKFLOW_SOT.md §5.3` |
+
+> 🔹 **Cara Kerja**: Sebelum membuka editor, baca tabel ini → identifikasi semua kata kunci yang cocok → buka dan baca SEMUA file yang tertera → baru tulis kode.
+> 🔹 **Self-Verification**: Tulis dalam reasoning: *"Saya sudah membaca: [daftar file]"* sebelum `view_file` atau `replace_file_content`.
+
+---
+
 ### Standard Reporting Format (Nexus v3.35.0):
 ```
 ✅ VERDICT: [STATUS] (Operational / Degraded)

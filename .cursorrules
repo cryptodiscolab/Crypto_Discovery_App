@@ -348,7 +348,44 @@ node -c api/tasks-bundle.js
 ```
 Jika audit menemukan **kesalahan lebih dari yang dilaporkan user**, Agent WAJIB melaporkan *semua* temuan ke user sebelum melanjutkan fix.
 
-### 29.2 Root Cause Analysis (MANDATORY Before Code Change)
+### 29.2 Step 1.5 — Context-Aware Reading (MANDATORY, Between Audit & Fix)
+
+> Setelah Pre-Fix Audit, SEBELUM menulis kode apapun, agent WAJIB mengidentifikasi error keywords dan membaca file terkait:
+
+```
+CONTEXT-AWARE READING TRIGGER MAP:
+
+ Keyword Error          │ Files WAJIB Dibaca Sebelum Fix
+────────────────────────┼────────────────────────────────────────────────────
+ gas / revert / mint    │ useNFTTiers.js, useSBT.js, contracts.js,
+ NFT / SBT / tier       │   FEATURE_WORKFLOW_SOT.md §5 (Tier Mint Workflow)
+────────────────────────┼────────────────────────────────────────────────────
+ swap / quote / lifi    │ SwapModal.jsx (full), PRD_SWAP_PROFIT_ENGINE.md,
+ bridge / jumper        │   Li.Fi SDK v3 changelog
+────────────────────────┼────────────────────────────────────────────────────
+ task / claim / XP      │ TASK_FEATURE_WORKFLOW.md §7 (Off-Chain Flow),
+ reward / mission       │   TaskList.jsx, useVerifiedAction.js,
+                        │   tasks-bundle.js handleClaim
+────────────────────────┼────────────────────────────────────────────────────
+ contract / ABI         │ contracts.js, abis_data.txt,
+ function not found     │   WORKSPACE_MAP.md §6 (Contract Registry)
+────────────────────────┼────────────────────────────────────────────────────
+ auth / signature       │ useVerification.js, .cursorrules §8.2
+ EIP-191 / wallet       │   (Zero-Trust Frontend Policy)
+────────────────────────┼────────────────────────────────────────────────────
+ database / Supabase    │ user-bundle.js, tasks-bundle.js,
+ XP sync / leaderboard  │   FEATURE_WORKFLOW_SOT.md §3 (XP Sync Flows)
+────────────────────────┼────────────────────────────────────────────────────
+
+Agent SELF-CHECK (sebelum menulis kode):
+  □ Sudah baca semua file sumber data yang terdampak?
+  □ Apakah contract yang akan di-WRITE sama dengan sumber data READ? (BP-001)
+  □ Apakah SDK init hanya dipanggil sekali? (BP-002)
+  □ Apakah semua error akan terlihat di UI? (BP-003)
+  □ Apakah task dengan link butuh two-step flow? (BP-004)
+```
+
+### 29.3 Root Cause Analysis (MANDATORY Before Code Change)
 - **DILARANG KERAS** langsung menulis kode perbaikan sebelum membaca file yang relevan dan memahami root cause.
 - Gunakan `grep_search` dan `view_file` untuk melacak seluruh entry point yang berkaitan dengan bug.
 - Jika bug melibatkan XP/Fee/Reward, **WAJIB** periksa apakah nilai tersebut sudah diambil dari `point_settings` atau `system_settings`.
@@ -568,5 +605,30 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 - **BUILD STABILITY**: NEVER use `@lifi/widget` or massive monolithic UI libraries that crash Rollup AST parsers during production builds on Vercel.
 - **MANDATE**: Always implement custom, lightweight swap interfaces using `@lifi/sdk` directly to maintain "Native+" aesthetics and build integrity.
 
-- **Current Protocol Version**: v3.47.0 (Swap & Profit Engine - SDK Pivot)
-*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. v3.47.0 Locked.*
+## 47. FILE-LEVEL MANDATORY READ PROTOCOL (v3.47.1)
+
+> [!IMPORTANT]
+> Sebelum mengedit file manapun dalam tabel ini, Agent WAJIB membaca dokumen yang tertera di kolom "Wajib Baca Pertama". Tidak ada pengecualian.
+
+| File yang Akan Diedit | Wajib Baca Pertama | Alasan |
+|---|---|---|
+| `SBTUpgradeCard.jsx` | `useNFTTiers.js` + `useSBT.js` + `FEATURE_WORKFLOW_SOT.md §5` | Pastikan contract yang di-call SAMA dengan sumber data (BP-001) |
+| `SwapModal.jsx` | `PRD/PRD_SWAP_PROFIT_ENGINE_V3.47.0.md` + Li.Fi SDK v3 changelog | Pastikan SDK params lengkap dan init hanya sekali (BP-002, BP-003) |
+| `TaskList.jsx` | `TASK_FEATURE_WORKFLOW.md §7` (Off-Chain Workflow) | Pastikan two-step flow dan anti-fraud timer aktif (BP-004) |
+| `TasksPage.jsx` | `TASK_FEATURE_WORKFLOW.md §6` (On-Chain Workflow) | Dual pipeline awareness |
+| `contracts.js` | `WORKSPACE_MAP.md §6` + `.cursorrules §10` | Zero-trust address registry |
+| `abis_data.txt` | `WORKSPACE_MAP.md §6` + `daily_app_abi.json` | ABI drift prevention |
+| `useSBT.js` | `useNFTTiers.js` (baca KEDUANYA) | Contract split: MASTER_X vs DAILY_APP |
+| `useNFTTiers.js` | `useSBT.js` (baca KEDUANYA) | Contract split: DAILY_APP vs MASTER_X |
+| `tasks-bundle.js` | `TASK_FEATURE_WORKFLOW.md §5` + fn_increment_xp docs | XP pipeline parity |
+| `user-bundle.js` | `FEATURE_WORKFLOW_SOT.md §2` (Daily Claim Flow) | Optimistic trust fallback |
+| `admin-bundle.js` | `TASK_FEATURE_WORKFLOW.md §13` (Admin Management) | ABI parity mandate |
+| `ProfilePage.jsx` | `FEATURE_WORKFLOW_SOT.md §5` (NFT Mint) + `WORKSPACE_MAP.md §6` | Contract parity |
+| `useVerification.js` | `TASK_FEATURE_WORKFLOW.md §8` (Social Verification Flow) | EIP-191 + anti-fraud mandates |
+| `SponsoredTaskCard` | `TASK_FEATURE_WORKFLOW.md §6.2` (Sponsored Mission) | Grouped verification flow |
+
+> **Enforcement**: Jika agent melewati langkah ini dan langsung menulis kode, itu adalah **Protocol Breach v3.47.1**.
+> Penanda: "Sudah baca [filename]" harus muncul di reasoning agent sebelum menulis kode.
+
+- **Current Protocol Version**: v3.47.1 (Triple Bug Remediation — Task / Swap / NFT Mint)
+*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. v3.47.1 Locked.*
