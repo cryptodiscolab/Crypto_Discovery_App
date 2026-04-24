@@ -10,7 +10,7 @@ export function SBTUpgradeCard() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings } = usePoints();
-    const { tiers, mintNFT, refetch: refetchTiers } = useNFTTiers();
+    const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { data: balanceData } = useBalance({ address });
 
@@ -79,7 +79,7 @@ export function SBTUpgradeCard() {
         try {
             // FIX v3.47.1: Use mintNFT from useNFTTiers (calls DAILY_APP.mintNFT)
             // NOT upgradeTier from useSBT (which calls MASTER_X.upgradeTier — wrong contract!)
-            const hash = await mintNFT(nextTier.id, nextTier.mintPrice);
+            const hash = await mintTier(nextTier.id, nextTier.mintPrice);
             toast.success(`NFT Minted! Welcome to ${nextTier.name} Tier! 🎉`, { id: tid });
 
             // Sync to DB Log

@@ -94,9 +94,16 @@ export function TaskList() {
                 ]);
 
                 if (claimsResult.data) {
-                    setUserClaims(claimsResult.data); // Store full objects with claimed_at
+                    setUserClaims(prev => {
+                        const dbClaimIds = new Set(claimsResult.data.map(c => String(c.task_id)));
+                        const recentOptimistic = prev.filter(c => 
+                            !dbClaimIds.has(String(c.task_id)) && 
+                            (Date.now() - new Date(c.claimed_at).getTime() < 15000)
+                        );
+                        return [...claimsResult.data, ...recentOptimistic];
+                    });
                 } else {
-                    setUserClaims([]); // Clear claims if no data
+                    setUserClaims(prev => prev.filter(c => (Date.now() - new Date(c.claimed_at).getTime() < 15000)));
                 }
 
                 if (profileResult.data) {
