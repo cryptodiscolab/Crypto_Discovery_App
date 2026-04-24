@@ -1,4 +1,5 @@
-import { useAccount, useBalance, useSignMessage } from 'wagmi';
+import { useAccount, useBalance, useSignMessage, useConfig } from 'wagmi';
+import { waitForTransactionReceipt } from '@wagmi/core';
 import { useNFTTiers } from '../hooks/useNFTTiers';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
@@ -8,6 +9,7 @@ import toast from 'react-hot-toast';
 
 export function SBTUpgradeCard() {
     const { address } = useAccount();
+    const config = useConfig();
     const { signMessageAsync } = useSignMessage();
     const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings } = usePoints();
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
@@ -80,6 +82,19 @@ export function SBTUpgradeCard() {
             // FIX v3.47.1: Use mintNFT from useNFTTiers (calls DAILY_APP.mintNFT)
             // NOT upgradeTier from useSBT (which calls MASTER_X.upgradeTier — wrong contract!)
             const hash = await mintTier(nextTier.id, nextTier.mintPrice);
+            
+            toast.loading(`Waiting for confirmation...`, { id: tid });
+            
+            // FIX v3.47.4: Wait for the transaction receipt to avoid optimistic UI state when tx reverts
+            const receipt = await waitForTransactionReceipt(config, { 
+                hash,
+                confirmations: 1
+            });
+            
+            if (receipt.status !== 'success') {
+                throw new Error("Transaction reverted on-chain");
+            }
+            
             toast.success(`NFT Minted! Welcome to ${nextTier.name} Tier! 🎉`, { id: tid });
 
             // Sync to DB Log

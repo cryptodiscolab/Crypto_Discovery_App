@@ -1,6 +1,26 @@
 ---
 
-## 11. Work Report v3.47.2 (Current)
+## 11. Work Report v3.47.4 (Current)
+**Date:** 2026-04-24
+**Subject:** Production Sync & State Hardening
+**Author:** Antigravity (Advanced Agentic Coding Staff Engineer)
+
+### Executive Summary
+Resolusi regresi kritis pada sistem SBT Minting dan Task XP Accrual di lingkungan Mainnet. Patch ini menjamin integritas data on-chain melalui sinkronisasi state transaksional yang lebih ketat dan pemulihan fitur guard yang terblokir.
+
+### Technical Changes
+1. **SBT Upgrade Lifecycle Hardening**: Mengintegrasikan `waitForTransactionReceipt` pada `SBTUpgradeCard.jsx`. Ini memastikan UI tidak melakukan *optimistic upgrade* ke tier Platinum jika transaksi sebenarnya gagal (*revert*) di blockchain.
+2. **Feature Guard Restoration**: Mengidentifikasi dan memperbaiki kegagalan claim task yang disebabkan oleh hilangnya key `active_features` pada `system_settings` di database produksi. Key ini kini telah di-inject kembali untuk mengizinkan operasi `daily_claim`.
+3. **Transaction Parity**: Memastikan sinkronisasi antara database Supabase dan status kontrak pintar berjalan secara deterministik setelah konfirmasi blok pertama.
+
+### Verification Results
+- ✅ **SBT Minting**: Menunggu receipt sebelum success toast.
+- ✅ **Task Claiming**: Bypass feature guard 403 sukses setelah DB injection.
+- ✅ **Build Integrity**: Produksi build (Vite) sukses tanpa error AST.
+
+---
+
+## 12. Work Report v3.47.2
 **Date:** 2026-04-24
 **Subject:** Wallet Provider Proxy Conflict Fix
 **Implementation:**

@@ -6,7 +6,11 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
-## 🟢 v3.47.3 (Bug Fixes & Swap Overhaul)
+## 🟢 v3.47.4 (Production Sync & State Hardening)
+- **SBT Mismatch Fix**: Implemented `waitForTransactionReceipt` in `SBTUpgradeCard.jsx` to prevent the UI from optimistically upgrading user tiers when the on-chain transaction reverts.
+- **Task Claim XP Sync**: Resolved the issue where completed tasks remained in the UI without granting XP by dynamically injecting `active_features` into `system_settings` to bypass a false-positive 403 Forbidden Feature Guard on Mainnet.
+
+## 🟡 v3.47.3 (Bug Fixes & Swap Overhaul)
 - **Daily Task UI Fix**: Fixed optimistic UI race conditions in `TaskList.jsx` to ensure tasks do not reappear immediately after claiming.
 - **Swap Engine Overhaul**: Upgraded `SwapModal.jsx` with dynamic Network (Mainnet/Sepolia) & Token selectors. Implemented UI elements for Final Rate and Fee information.
 - **SBT Mint Hotfix**: Resolved production minification error (`M is not a function`) in `SBTUpgradeCard.jsx` by correctly referencing the `mintTier` function.
