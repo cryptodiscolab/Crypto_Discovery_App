@@ -630,5 +630,44 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 > **Enforcement**: Jika agent melewati langkah ini dan langsung menulis kode, itu adalah **Protocol Breach v3.47.1**.
 > Penanda: "Sudah baca [filename]" harus muncul di reasoning agent sebelum menulis kode.
 
-- **Current Protocol Version**: v3.47.1 (Triple Bug Remediation — Task / Swap / NFT Mint)
-*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. v3.47.1 Locked.*
+## 48. FLASH-TURBO COGNITIVE PROTOCOL (v1.0) 🧠⚡
+
+> **Berlaku untuk SEMUA model AI** (Gemini Flash/Pro, Claude Sonnet/Opus/Haiku, GPT, DeepSeek, Qwen) — tanpa pengecualian.
+> Filosofi: "Oprek ECU, bukan ganti mesin" — paksa penalaran terstruktur sebelum eksekusi.
+
+### 48.1 4-PHASE REASONING PIPELINE (MANDATORY)
+Setiap request yang melibatkan perubahan kode WAJIB melewati pipeline ini:
+
+1. **🔍 ANALYZE**: Pecah masalah → sub-komponen. Identifikasi ambiguitas, edge case, asumsi. Map file yang terdampak.
+2. **🧠 REASON**: Step-by-step reasoning eksplisit. Evaluasi minimal 2 strategi solusi. Pertimbangkan: performance, security, UX.
+3. **✅ VALIDATE**: Self-correction — cek bias dan logical fallacy. Cross-reference dengan `.cursorrules`, PRD, `WORKSPACE_MAP.md`. Security scan: JWT, env, RLS.
+4. **🚀 EXECUTE**: Tulis kode concise dan high-performance. Surgical fix only — minimal blast radius. Sertakan verification checklist.
+
+### 48.2 MODULAR MENTAL SKILLS (Context-Triggered)
+Aktivasi "mental tool" berdasarkan konteks:
+
+| Trigger | Mental Skill | Focus |
+|---|---|---|
+| Bug, error log | **[Debugging]** | Rubber ducking, edge case, stack trace |
+| Contract, env, auth | **[Security]** | JWT, env leak, RLS, EIP-191 |
+| UI/UX, layout | **[UI/UX]** | Native+ compliance, glassmorphism, micro-animations |
+| Database, XP, sync | **[Data Integrity]** | fn_increment_xp, point_settings, view sync |
+| Deploy, git | **[DevOps]** | Clean tree, gitleaks, bundle guard |
+| Refactor, architecture | **[Architect]** | Composition patterns, hook extraction, SoC |
+
+### 48.3 QUALITY ANCHORING & ANTI-LAZY GUARD
+- Standar output: **SOTA** — "Apakah ini layak ditulis Staff Engineer di Google/Meta?"
+- 🚫 DILARANG memberikan jawaban template/placeholder tanpa implementasi nyata.
+- 🚫 DILARANG mengirim kode tanpa melalui Phase 1-3.
+- 🚫 DILARANG "buru-buru jawab" — kedalaman penalaran > kecepatan respons.
+- ✅ WAJIB menunjukkan reasoning trace (bahkan singkat) sebelum kode.
+
+### 48.4 MCP-AS-SENSORY-EXTENSION
+- DILARANG menebak state repositori atau database. Gunakan MCP (GitHub, Supabase) untuk membaca state aktual.
+- Context window besar = kekuatan. Inject dokumentasi lengkap ke context saat diperlukan.
+- RAG-like behavior: **cari tahu dulu, baru jawab**.
+
+---
+
+- **Current Protocol Version**: v3.48.0 (Flash-Turbo Cognitive Protocol — Reasoning Loop + Mental Skills)
+*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. **Flash-Turbo Protocol v1.0: ENGAGED** — Reasoning Loop. Self-Correction. Mental Skills. Quality Anchoring. v3.48.0 Locked.*
