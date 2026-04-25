@@ -74,12 +74,14 @@ async function validateAndCalculateXP(wallet_address, signature, message, task_i
         targetId = task?.target_id;
     }
 
+    // [FIX] Anti-Cheat: Check if this user has already claimed THIS target_id
     if (targetId) {
         const { count } = await supabaseAdmin
             .from('user_task_claims')
             .select('id', { count: 'exact', head: true })
+            .eq('wallet_address', wallet_address.toLowerCase())
             .eq('target_id', targetId);
-        if (count > 0) throw new Error('[Security] Target account already claimed');
+        if (count > 0) throw new Error('[Security] Target account already claimed by this user');
     }
 
     // [Hardening v3.40.12] Global Uniqueness Check

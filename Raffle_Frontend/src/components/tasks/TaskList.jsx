@@ -17,6 +17,7 @@ export function TaskList() {
     const [hasProfile, setHasProfile] = useState(false);
     const [isBaseVerified, setIsBaseVerified] = useState(false); // v3.42.0
     const [claimingTask, setClaimingTask] = useState(null); 
+    const [userSocials, setUserSocials] = useState(null); 
     // Two-Step Task Flow: track which tasks have been started (link opened)
     const [startedTasks, setStartedTasks] = useState({}); // { task_id: timestamp }
     const [countdowns, setCountdowns] = useState({}); // { task_id: secondsLeft }
@@ -88,7 +89,7 @@ export function TaskList() {
 
                     supabase
                         .from('user_profiles')
-                        .select('neynar_score, is_base_social_verified')
+                        .select('neynar_score, is_base_social_verified, fid, twitter_id, twitter_username, tiktok_username, instagram_username')
                         .eq('wallet_address', address.toLowerCase())
                         .maybeSingle()
                 ]);
@@ -110,10 +111,12 @@ export function TaskList() {
                     setUserScore(profileResult.data.neynar_score || 0);
                     setIsBaseVerified(!!profileResult.data.is_base_social_verified);
                     setHasProfile(true);
+                    setUserSocials(profileResult.data);
                 } else {
                     setUserScore(0);
                     setIsBaseVerified(false);
                     setHasProfile(false);
+                    setUserSocials(null);
                 }
             } else {
                 // If not connected, clear user-specific states
@@ -161,7 +164,19 @@ export function TaskList() {
             // Using unified secure API route via custom hook
             const result = await executeClaim('claim_task', {
                 task_id: task.id,
-                xp_earned: task.xp_reward
+                xp_earned: task.xp_reward,
+                platform: task.platform,
+                action_type: task.action_type,
+                target_id: task.target_id,
+                // Social Identity for Robust Verification
+                fid: userSocials?.fid,
+                twitterId: userSocials?.twitter_id,
+                tiktokHandle: userSocials?.tiktok_username,
+                instagramHandle: userSocials?.instagram_username,
+                // Action Params (if any)
+                targetFid: task.target_fid || task.target_id,
+                tweetId: task.tweet_id || task.target_id,
+                targetUserId: task.target_twitter_id || task.target_id
             });
 
             // Handle already_claimed flag from backend (returns success:true but no new XP)

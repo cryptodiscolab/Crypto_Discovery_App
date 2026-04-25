@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.47.1)
-**Last Updated**: 2026-04-24T14:00:00+07:00 — Triple Bug Remediation (v3.47.1)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.49.0)
+**Last Updated**: 2026-04-26T01:45:00+07:00 — Daily Task Pipeline Restoration (v3.49.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -91,7 +91,7 @@ Ada **dua jalur berbeda** yang mengupdate `user_profiles.total_xp`. Agen HARUS m
 | Jalur | Sumber XP | Trigger Backend | Cara Update DB |
 |-------|-----------|-----------------|----------------|
 | **On-Chain** | `claimDailyBonus()` di DailyApp contract | `/api/user-bundle?action=xp` | Baca `readContract(userStats)` → upsert `total_xp` |
-| **Off-Chain** | Task dari tabel `daily_tasks` (Supabase) | `/api/tasks-bundle?action=claim` | `fn_increment_xp(wallet, xp)` RPC langsung |
+| **Off-Chain** | Task dari tabel `daily_tasks` (Supabase) | `Verification-Server` → `tasks-bundle.js` | `fn_increment_xp(wallet, xp)` RPC langsung |
 
 > [!IMPORTANT]
 > **`tasks-bundle.js` (`handleClaim`, `handleSocialVerify`)** WAJIB memanggil `supabaseAdmin.rpc('fn_increment_xp', ...)` setelah setiap successful insert ke `user_task_claims`. Tanpa ini, XP tidak akan pernah muncul di leaderboard untuk off-chain tasks.

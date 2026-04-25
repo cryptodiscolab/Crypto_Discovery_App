@@ -37,6 +37,11 @@ paths = [
     path = '''(?i)\.(?:png|jpg|jpeg|webp|gif|mp4|mov|avi)$'''
 
 [[rules]]
+    id = "agent-scripts-leak"
+    description = "Detected forbidden agent orchestration scripts (ag.py / sdk). These files are strictly for local use and must never be pushed to the repository."
+    path = '''(?i)(?:ag\.py|antigravity_sdk\.py)'''
+
+[[rules]]
     id = "agent-brain-leak"
     description = "Detected agent brain metadata or browser session leak. These files contain sensitive interaction history."
     path = '''(?i)(?:brain/|browser_recordings/|scratchpad_.*\.md\.resolved)'''

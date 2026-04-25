@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.47.1` | **Last Updated**: `2026-04-24T14:00:00+07:00`
+**Version**: `v3.49.0` | **Last Updated**: `2026-04-26T01:47:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -51,6 +51,10 @@ graph TB
         CB["campaigns.js<br/>handleJoin"]
     end
 
+    subgraph "🔐 Security Layer"
+        VS["Verification Server<br/>(External Bridge)"]
+    end
+
     subgraph "🗄️ Database (Supabase)"
         DT["daily_tasks"]
         UTC["user_task_claims"]
@@ -66,9 +70,9 @@ graph TB
     end
 
     TP --> TL & TR & STC & OL
-    TL -->|Claim| UVA -->|POST| TB
+    TL -->|Claim| UVA -->|POST| VS
     TR -->|doTask| UC -->|Write| DA
-    TR -->|Verify| UV -->|POST| TB
+    TR -->|Verify| UV -->|POST| VS
     STC -->|claimRewards| DA
     STC -->|XP Sync| UB
     OL -->|Join| CB
@@ -76,6 +80,7 @@ graph TB
     STC -->|Low Balance| SM
     TL -->|Low Balance| SM
 
+    VS -->|Reroute| TB
     TB -->|Insert| UTC
     TB -->|RPC| FN
     TB -->|Read| PS & DT
@@ -798,6 +803,8 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **NFT Mint Contract Parity**: SBTUpgradeCard memanggil `mintNFT` (DAILY_APP) bukan `upgradeTier` (MASTER_X) (v3.47.1).
 - [x] **Batch Resilience**: Create Mission menggunakan `useCallsStatus` (EIP-5792) untuk mencegah UI hang pada batch transactions.
 - [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract (157 entries).
+- [x] **Verification Server Sync**: `VITE_VERIFY_SERVER_URL` & `VITE_VERIFY_API_SECRET` disinkronkan di ekosistem Vercel (v3.49.0).
+- [x] **Global Lockout Fix**: Target ID uniqueness sekarang berbasis per-user (`wallet_address` + `target_id`) (v3.49.0).
 - [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
 
 ---

@@ -38,6 +38,8 @@ hardhat.config.js.backup
 .agents/**/secrets*
 .agents/**/*.key
 .agents/**/.env*
+ag.py
+antigravity_sdk.py
 
 # === VERCEL LOCAL STATE ===
 .vercel/
@@ -56,6 +58,8 @@ yarn-error.log*
 # Any file prefixed with tmp_ is considered a transient scratch file.
 tmp/
 tools/nexus-monitor/
+scratch/
+__pycache__/
 tmp_*.cjs
 tmp_*.js
 tmp_*.mjs
