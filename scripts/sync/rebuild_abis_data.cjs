@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const LIB = path.join(__dirname, '..', 'src', 'lib');
+const LIB = path.join(__dirname, '..', '..', 'Raffle_Frontend', 'src', 'lib');
 
 // Read files (handle both UTF-8 and UTF-16LE)
 function readFileAuto(filePath) {

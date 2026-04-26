@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.48.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.51.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -157,4 +157,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-24T05:30:00+07:00 | Swap & Profit Engine - SDK Pivot. v3.47.0 LOCKED.*
+*Last Updated: 2026-04-26T12:00:00+07:00 | Gas Tracker Hardening & Global UI. v3.51.0 LOCKED.*

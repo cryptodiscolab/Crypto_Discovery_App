@@ -1,4 +1,4 @@
-import { Shield, Clock, Ticket, Loader2, Trophy } from 'lucide-react';
+import { Shield, Clock, Ticket, Loader2, Trophy, AlertCircle } from 'lucide-react';
 import { GridCard } from './GridCard';
 import { useRaffle, useRaffleList, useRaffleInfo } from '../../hooks/useRaffle';
 import { useAccount } from 'wagmi';
@@ -9,7 +9,8 @@ import { useSocialGuard } from '../../hooks/useSocialGuard';
 
 export function RaffleCard() {
     const { isConnected, address } = useAccount();
-    const { ecosystemSettings } = usePoints();
+    const { ecosystemSettings, gasTracker } = usePoints();
+    const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { raffleIds } = useRaffleList();
     const latestId = raffleIds.length > 0 ? raffleIds[raffleIds.length - 1] : null;
     const { raffle, isLoading } = useRaffleInfo(latestId || 0);
@@ -23,6 +24,7 @@ export function RaffleCard() {
     const alreadyFinalized = raffle?.isFinalized;
 
     const handleBuy = async () => {
+        if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high. Please wait.", { icon: '⛽' });
         if (!isConnected) return toast.error("Please connect wallet first");
         if (!raffle || !raffle.isActive) return toast.error("No active raffle");
 
@@ -51,6 +53,7 @@ export function RaffleCard() {
     };
 
     const handleClaim = async () => {
+        if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high. Please wait.", { icon: '⛽' });
         if (!isConnected) return toast.error("Please connect wallet first");
         if (!isWinner) return toast.error("You are not a winner of this raffle");
         setIsClaiming(true);
@@ -160,42 +163,63 @@ export function RaffleCard() {
                 </div>
             )}
 
+            {/* Warning Banner for High Gas */}
+            {isGasHigh && !isGasExpensive && displayedRaffle.isActive && timeLeft > 0 && (
+                <div className="flex items-center justify-center gap-2 mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-widest text-center shadow-inner">
+                    ⚠️ Network is busy, fee might be high
+                </div>
+            )}
+
             {/* Action Buttons */}
             {isWinner && alreadyFinalized ? (
                 <button
                     onClick={handleClaim}
-                    disabled={isClaiming}
-                    className={`w-full py-4 rounded-xl label-native transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
-                        ${isClaiming
+                    disabled={isClaiming || isGasExpensive}
+                    className={`w-full min-h-[56px] py-3 rounded-xl label-native transition-all border flex flex-col items-center justify-center gap-1 mt-auto shadow-lg px-2 text-center
+                        ${isGasExpensive
+                            ? 'bg-red-900/20 text-red-500 border-red-500/30 cursor-not-allowed'
+                            : isClaiming
                             ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
                             : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400 shadow-yellow-500/20'
                         }`}
                 >
-                    {isClaiming ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> CLAIMING...</>
+                    {isGasExpensive ? (
+                        <>
+                            <span className="flex items-center gap-2"><AlertCircle className="w-4 h-4" /> ⛔ GAS TOO HIGH</span>
+                            <span className="text-[9px] opacity-70 normal-case font-medium tracking-normal">Please wait until network fees drop</span>
+                        </>
+                    ) : isClaiming ? (
+                        <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> CLAIMING...</div>
                     ) : (
-                        <><Trophy className="w-4 h-4" /> CLAIM YOUR PRIZE</>
+                        <div className="flex items-center gap-2"><Trophy className="w-4 h-4" /> CLAIM YOUR PRIZE</div>
                     )}
                 </button>
             ) : (
                 <button
                     onClick={handleBuy}
-                    disabled={isBuying || !displayedRaffle.isActive || timeLeft <= 0}
-                    className={`w-full py-4 rounded-xl label-native transition-all border flex items-center justify-center gap-2 mt-auto shadow-lg
-                        ${isBuying
+                    disabled={isBuying || !displayedRaffle.isActive || timeLeft <= 0 || isGasExpensive}
+                    className={`w-full min-h-[56px] py-3 rounded-xl label-native transition-all border flex flex-col items-center justify-center gap-1 mt-auto shadow-lg px-2 text-center
+                        ${isGasExpensive && displayedRaffle.isActive && timeLeft > 0
+                            ? 'bg-red-900/20 text-red-500 border-red-500/30 cursor-not-allowed'
+                            : isBuying
                             ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
                             : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
                         }`}
                 >
-                    {isBuying ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> PROCESSING...</>
-                    ) : (
+                    {isGasExpensive && displayedRaffle.isActive && timeLeft > 0 ? (
                         <>
+                            <span className="flex items-center gap-2"><AlertCircle className="w-4 h-4" /> ⛔ GAS TOO HIGH</span>
+                            <span className="text-[9px] opacity-70 normal-case font-medium tracking-normal">Please wait until network fees drop</span>
+                        </>
+                    ) : isBuying ? (
+                        <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> PROCESSING...</div>
+                    ) : (
+                        <div className="flex items-center gap-2">
                             {isGaslessSupported && <span className="text-xs">⛽</span>}
                             {isGaslessSupported
                                 ? "BUY FREE TICKET"
                                 : `BUY TICKET (${ecosystemSettings?.raffle_ticket_price_usdc || 0.15} USDC)`}
-                        </>
+                        </div>
                     )}
                 </button>
             )}

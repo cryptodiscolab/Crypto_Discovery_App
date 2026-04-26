@@ -6,6 +6,17 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.51.0 (Gas Tracker Hardening & Global Visibility)
+- **Gas Threshold Hardening**: Refactored `useGasTracker.js` to use an explicit descending threshold chain (Expensive > 0.5, Very High >= 0.2, High >= 0.05, Normal >= 0.005, Cheap < 0.005), eliminating categorization gaps.
+- **Defense-in-Depth UI**: Added early-return handler guards to `RaffleCard.jsx` and `SBTUpgradeCard.jsx` to prevent transaction execution during "Expensive" gas states, even if UI buttons are bypassed.
+- **Global Gas Indicator**: Implemented a real-time, color-coded gas indicator pill in the global `Header.jsx` for instant network fee visibilty.
+- **Ecosystem Sync Expansion**: Added 8 missing critical keys (`VITE_ALCHEMY_API_KEY`, `VITE_LIFI_INTEGRATOR_ID`, `VITE_TREASURY_ADDRESS`, `MCP_SUPABASE_PROJECT_REF`, `MCP_SUPABASE_URL`, `VITE_RAFFLE_ADDRESS`, `VITE_CMS_CONTRACT_ADDRESS`, `DAILY_APP_ADDRESS`) to `global-sync-env.js`.
+
+## 🟢 v3.50.0 (Ecosystem Environment Automation & Parity Hardening)
+- **Global Sync Script (v4.1.0)**: Implementasi `scripts/sync/sync-all-envs.cjs` untuk sinkronisasi otomatis 16 file `.env` di seluruh ekosistem (Root & Raffle_Frontend).
+- **Automation Trigger**: Integrasi perintah `sync env` dan `sinkronkan env` di Section 49 `.cursorrules` sebagai mandat eksekusi otomatis bagi Antigravity.
+- **Key Mapping & Sanitization**: Penanganan otomatis pemetaan key (e.g., `POSTGRES_PASSWORD`) dan pembersihan tanda kutip ganda/literal newline pada snapshot Vercel.
+
 ## 🟢 v3.47.4 (Production Sync & State Hardening)
 - **SBT Mismatch Fix**: Implemented `waitForTransactionReceipt` in `SBTUpgradeCard.jsx` to prevent the UI from optimistically upgrading user tiers when the on-chain transaction reverts.
 - **Task Claim XP Sync**: Resolved the issue where completed tasks remained in the UI without granting XP by dynamically injecting `active_features` into `system_settings` to bypass a false-positive 403 Forbidden Feature Guard on Mainnet.

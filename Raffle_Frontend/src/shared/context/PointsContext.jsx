@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useAccount } from 'wagmi';
 import { getSBTThresholds } from '../../dailyAppLogic';
 import { supabase } from '../../lib/supabaseClient';
+import { useGasTracker } from '../../hooks/useGasTracker';
 
 const PointsContext = createContext(null);
 
@@ -35,6 +36,11 @@ export function PointsProvider({ children }) {
     const [fid, setFid] = useState(null);
     const [offChainPoints, setOffChainPoints] = useState(0);
     const [offChainLevel, setOffChainLevel] = useState(0);
+
+    // ==========================================
+    // GAS TRACKER INTEGRATION
+    // ==========================================
+    const gasTracker = useGasTracker();
 
     // ==========================================
     // SYNC LOGS (For Admin/Debug)
@@ -244,6 +250,7 @@ export function PointsProvider({ children }) {
         fid,
         offChainPoints,
         offChainLevel,
+        gasTracker, // Mengekspos sistem kategori gas ke seluruh komponen UI
         syncLogs,
         clearLogs: () => {
             setSyncLogs([]);

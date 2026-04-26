@@ -23,7 +23,8 @@ export function TaskList() {
     const [countdowns, setCountdowns] = useState({}); // { task_id: secondsLeft }
     const countdownRefs = useRef({});
     const { execute: executeClaim } = useVerifiedAction();
-    const { refetch } = usePoints();
+    const { refetch, gasTracker } = usePoints();
+    const { isGasExpensive, isGasHigh } = gasTracker || {};
 
     // Countdown ticker for started tasks
     useEffect(() => {
@@ -256,6 +257,12 @@ export function TaskList() {
                 <h3 className="text-[11px] font-black text-white uppercase tracking-widest">QUICK MISSIONS</h3>
             </div>
 
+            {isGasHigh && !isGasExpensive && (
+                <div className="flex items-center justify-center gap-2 mb-4 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-widest text-center shadow-inner">
+                    ⚠️ Network is busy, claim fee might be high
+                </div>
+            )}
+
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {activeTasks.map(task => {
                     const isClaimed = isTaskCompletedForInterval(task);
@@ -358,29 +365,36 @@ export function TaskList() {
                                 {/* STEP 2: Claim reward */}
                                 <div className="relative group/btn">
                                     <button
-                                        onClick={() => canClaim && !isScoreLow && !isBaseLocked && !isClaiming && handleClaim(task)}
-                                        disabled={isClaimed || isClaiming || !isConnected || isScoreLow || isBaseLocked || (!canClaim && !!taskLink)}
-                                        className={`w-full py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                                        onClick={() => canClaim && !isScoreLow && !isBaseLocked && !isClaiming && !isGasExpensive && handleClaim(task)}
+                                        disabled={isClaimed || isClaiming || !isConnected || isScoreLow || isBaseLocked || isGasExpensive || (!canClaim && !!taskLink)}
+                                        className={`w-full min-h-[44px] py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-1 ${
                                             isClaimed
                                                 ? 'bg-transparent text-green-500 cursor-default'
                                                 : isScoreLow
                                                     ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
                                                     : isBaseLocked
                                                         ? 'bg-blue-900/20 text-blue-400 border border-blue-500/30'
-                                                        : !hasStarted && taskLink
-                                                            ? 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
-                                                            : countdown > 0
-                                                                ? 'bg-amber-900/20 text-amber-400 border border-amber-500/20'
-                                                                : 'bg-green-600/20 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white active:scale-95'
+                                                        : isGasExpensive
+                                                            ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
+                                                            : !hasStarted && taskLink
+                                                                ? 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
+                                                                : countdown > 0
+                                                                    ? 'bg-amber-900/20 text-amber-400 border border-amber-500/20'
+                                                                    : 'bg-green-600/20 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white active:scale-95'
                                         }`}
                                     >
-                                        {isClaiming ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : isClaimed ? (
+                                        {isGasExpensive && !isClaimed ? (
                                             <>
+                                                <div className="flex items-center gap-1.5"><AlertCircle size={14} /> ⛔ GAS TOO HIGH</div>
+                                                <span className="text-[9px] opacity-70 normal-case font-medium tracking-normal leading-none">Wait for fees to drop</span>
+                                            </>
+                                        ) : isClaiming ? (
+                                            <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /></div>
+                                        ) : isClaimed ? (
+                                            <div className="flex items-center gap-2">
                                                 <CheckCircle2 className="w-4 h-4" />
                                                 CLAIMED
-                                            </>
+                                            </div>
                                         ) : isScoreLow ? (
                                             <div className="flex items-center gap-2">
                                                 <AlertCircle size={14} className="text-red-400" />
@@ -392,17 +406,17 @@ export function TaskList() {
                                                 <span>IDENTITY REQUIRED</span>
                                             </div>
                                         ) : !hasStarted && taskLink ? (
-                                            <span className="text-slate-600">COMPLETE TASK FIRST</span>
+                                            <div className="flex items-center gap-2"><span className="text-slate-600">COMPLETE TASK FIRST</span></div>
                                         ) : countdown > 0 ? (
-                                            <>
+                                            <div className="flex items-center gap-2">
                                                 <Clock size={12} className="animate-pulse" />
                                                 WAIT {countdown}s THEN CLAIM
-                                            </>
+                                            </div>
                                         ) : (
-                                            <>
+                                            <div className="flex items-center gap-2">
                                                 <Zap size={12} />
                                                 CLAIM REWARD
-                                            </>
+                                            </div>
                                         )}
                                     </button>
 

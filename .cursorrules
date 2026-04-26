@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.47.4)
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.51.0)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -41,7 +41,7 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 
 ---
-**Protocol Version: 3.47.0 (Swap & Profit Engine - SDK Pivot)**
+**Protocol Version: 3.51.0 (Gas Tracker Hardening & Global UI)**
 
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
@@ -669,5 +669,24 @@ Aktivasi "mental tool" berdasarkan konteks:
 
 ---
 
-- **Current Protocol Version**: v3.48.0 (Flash-Turbo Cognitive Protocol — Reasoning Loop + Mental Skills)
-*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. **Flash-Turbo Protocol v1.0: ENGAGED** — Reasoning Loop. Self-Correction. Mental Skills. Quality Anchoring. v3.48.0 Locked.*
+## 49. ECOSYSTEM ENVIRONMENT SYNC AUTOMATION (v3.49.0)
+- **TRIGGER**: Whenever the user provides commands like `sync env` or `sinkronkan env`.
+- **MANDATE**: Antigravity MUST immediately execute the global synchronization script:
+  ```bash
+  node scripts/sync/sync-all-envs.cjs
+  ```
+- **PURPOSE**: Ensure 1-to-1 parity across all 16 environment files in the root and `Raffle_Frontend` directories, maintaining source-of-truth integrity from the root `.env`.
+- **VERIFICATION**: After execution, report the number of updated keys per file and confirm if any "Needs Attention" warnings in Vercel should be addressed.
+
+---
+
+- **Current Protocol Version**: v3.51.0 (Gas Tracker Hardening)
+*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. Flash-Turbo Protocol v1.0: ENGAGED. **Gas Tracker Hardening v3.51.0: LOCKED** — Trigger: expensive gas. v3.51.0 Locked.*
+
+---
+
+## 50. GAS TRACKER HARDENING & GLOBAL UI (v3.51.0)
+- **GATE MANDATE**: All high-value on-chain interactions (NFT Raffle Purchase, SBT Minting, UGC Creation) MUST be gated by the `Expensive` gas threshold (> 0.5 Gwei).
+- **HANDLER PROTECTION**: Implementation MUST include early-return guards inside the function handlers, not just `disabled` button properties, to prevent DevTools bypass.
+- **VISIBILITY**: Real-time gas indicators (Pill UI) MUST be present in the Global Header to provide users with instant feedback on network costs.
+- **THRESHOLDS**: Use strictly descending logic: `Expensive (>0.5)`, `Very High (>=0.2)`, `High (>=0.05)`, `Normal (>=0.005)`, `Cheap (<0.005)`.

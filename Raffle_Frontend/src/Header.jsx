@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, Shield, Wallet } from 'lucide-react';
+import { Sparkles, Shield, Wallet, Fuel } from 'lucide-react';
 import { baseSepolia } from 'wagmi/chains';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
@@ -17,8 +17,23 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { disconnect } = useDisconnect();
-  const { isAdmin: isSBTAdmin } = usePoints();
+  const { isAdmin: isSBTAdmin, gasTracker } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
+
+  // Gas indicator color mapping
+  const gasIndicator = useMemo(() => {
+    if (!gasTracker || gasTracker.isLoadingGas || gasTracker.gasCategory === 'Unknown') return null;
+    const cat = gasTracker.gasCategory;
+    const gwei = gasTracker.gasPriceGwei;
+    const colorMap = {
+      'Cheap':     { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-400', dot: 'bg-emerald-500' },
+      'Normal':    { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', dot: 'bg-emerald-400' },
+      'High':      { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', dot: 'bg-amber-400' },
+      'Very High': { bg: 'bg-orange-500/10', border: 'border-orange-500/20', text: 'text-orange-400', dot: 'bg-orange-400' },
+      'Expensive': { bg: 'bg-red-500/15', border: 'border-red-500/30', text: 'text-red-400', dot: 'bg-red-500' },
+    };
+    return { colors: colorMap[cat] || colorMap['Normal'], category: cat, gwei: gwei.toFixed(4) };
+  }, [gasTracker]);
 
   const isAdmin = useMemo(() => {
     return Boolean(isSBTAdmin || isCMSAdmin || canEditCMS);
@@ -64,6 +79,19 @@ export function Header() {
               </p>
             )}
           </div>
+
+          {/* Gas Indicator Pill */}
+          {gasIndicator && (
+            <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${gasIndicator.colors.bg} ${gasIndicator.colors.border} transition-all duration-500 shrink-0`}
+              title={`Gas: ${gasIndicator.gwei} Gwei (${gasIndicator.category})`}
+            >
+              <Fuel className={`w-3 h-3 ${gasIndicator.colors.text}`} />
+              <span className={`text-[9px] font-black uppercase tracking-widest ${gasIndicator.colors.text}`}>
+                {gasIndicator.gwei}
+              </span>
+              <div className={`w-1.5 h-1.5 rounded-full ${gasIndicator.colors.dot} ${gasIndicator.category === 'Expensive' ? 'animate-pulse' : ''}`} />
+            </div>
+          )}
 
           {/* Center: Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-x-1 bg-white/5 p-1 rounded-xl">

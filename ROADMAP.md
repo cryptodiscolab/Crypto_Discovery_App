@@ -34,6 +34,8 @@
 - [x] **Admin System Hardening & ABI Synchronization (v3.42.8)**: Corrected ABI phantom function calls, removed dead React states in System Configs, and replaced browser alerts with standard toasts.
 - [x] **Task Master ABI Parity & Signature Alignment (v3.46.0)**: Rebuilt `abis_data.txt` (157 entries), fixed `setSponsorshipParams` (4 args), `buySponsorshipWithToken` (string arrays), and migrated to direct `setTokenPriceUSD` oracle flow.
 - [x] **Create Mission Wallet Compatibility Fix (v3.46.1)**: Refactored `PayAndCreateMissionButton` in Profile to use sequential transactions, removing dependency on experimental `EIP-5792` batch protocols to support standard wallets (MetaMask/Rabby).
+- [x] **Ecosystem Environment Sync & Automation (v3.50.0)**: Built a global `sync-all-envs.cjs` script to automate synchronization across 16 `.env` files. Integrated `sync env` as a mandatory agent trigger in `.cursorrules` to ensure absolute parity.
+- [x] **Gas Tracker Hardening & Global Visibility (v3.51.0)**: Implemented explicit descending threshold chain in `useGasTracker`, defense-in-depth handler guards, SBT mint protection, and a real-time color-coded gas indicator pill in the global header. Expanded `global-sync-env.js` to include 8 missing critical keys.
 
 ## Identified ABI Drift (DAILY_APP) - [REPAIRED v3.38.25]
 All identified drifts have been synchronized with `DailyAppV12Secured.json`.

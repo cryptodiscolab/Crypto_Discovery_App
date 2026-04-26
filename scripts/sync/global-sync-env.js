@@ -2,8 +2,9 @@ import fs from 'fs';
 import { execSync, spawnSync } from 'child_process';
 
 /**
- * Global Ecosystem Synchronization Script (v3.17.0)
+ * Global Ecosystem Synchronization Script (v3.18.0)
  * Adheres to: Multi-Project Sync Mandate & Clean-Pipe Sync Protocol
+ * Feature: Automatic 'Sensitive' type upgrade for secrets.
  */
 
 function parseEnv(filePath) {
@@ -49,13 +50,15 @@ const projects = [
 ];
 
 const keysToSync = [
-    // Blockchain
+    // Blockchain & Contracts
     'USDC_ADDRESS', 'CREATOR_TOKEN_ADDRESS', 'BASE_SEPOLIA_RPC_URL', 'BASESCAN_API_KEY',
-    'OPERATIONS_WALLET', 'TREASURY_WALLET', 
+    'OPERATIONS_WALLET', 'TREASURY_WALLET', 'VITE_TREASURY_ADDRESS',
+    'VITE_ALCHEMY_API_KEY', 'VITE_LIFI_INTEGRATOR_ID',
     'VITE_V12_CONTRACT_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA',
     'MASTER_X_ADDRESS', 'VITE_MASTER_X_ADDRESS_SEPOLIA', 
-    'RAFFLE_ADDRESS_SEPOLIA', 'VITE_RAFFLE_ADDRESS_SEPOLIA',
-    'VITE_CMS_CONTRACT_ADDRESS_SEPOLIA', 'DAILY_APP_ADDRESS_SEPOLIA', 
+    'RAFFLE_ADDRESS_SEPOLIA', 'VITE_RAFFLE_ADDRESS_SEPOLIA', 'VITE_RAFFLE_ADDRESS',
+    'VITE_CMS_CONTRACT_ADDRESS_SEPOLIA', 'VITE_CMS_CONTRACT_ADDRESS',
+    'DAILY_APP_ADDRESS_SEPOLIA', 'DAILY_APP_ADDRESS',
     'MASTER_X_ADDRESS_SEPOLIA', 'PRICE_FEED_ETH_USD',
     'PRIVATE_KEY',
     
@@ -63,10 +66,11 @@ const keysToSync = [
     'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_SECRET_KEY',
     'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY',
-    'SUPABASE_ACCESS_TOKEN',
+    'SUPABASE_ACCESS_TOKEN', 'DATABASE_URL', 'DATABASE_PASSWORD',
+    'MCP_SUPABASE_PROJECT_REF', 'MCP_SUPABASE_URL',
     
     // Telegram / AI
-    'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'GEMINI_API_KEY', 'CHAT_ID',
+    'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'GEMINI_API_KEY', 'GEMINI_API_KEY_2', 'GEMINI_API_KEY_3', 'CHAT_ID',
     
     // Pinata
     'PINATA_API_KEY', 'PINATA_API_SECRET', 'PINATA_JWT',
@@ -80,6 +84,14 @@ const keysToSync = [
     
     // Security / Cron (Verification Server)
     'JWT_SECRET', 'API_SECRET', 'CRON_SECRET'
+];
+
+const SENSITIVE_KEYS = [
+    'PRIVATE_KEY', 'VERIFIER_PRIVATE_KEY', 'BASESCAN_API_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY', 'SERVICE_ROLE_KEY',
+    'DATABASE_URL', 'DATABASE_PASSWORD', 'PINATA_JWT', 'PINATA_API_SECRET',
+    'TELEGRAM_BOT_TOKEN', 'GEMINI_API_KEY', 'GEMINI_API_KEY_2', 'GEMINI_API_KEY_3',
+    'JWT_SECRET', 'API_SECRET', 'CRON_SECRET', 'API_TOKEN', 'SECRET_KEY'
 ];
 
 async function sync() {
@@ -102,9 +114,11 @@ async function sync() {
 
             const { key, val } = project.mapping(rootKey, rootValue);
             
-            console.log(`  🔄 Syncing ${key} (${rootKey})...`);
+            const isSensitive = SENSITIVE_KEYS.includes(key) || SENSITIVE_KEYS.includes(rootKey);
+            console.log(`  🔄 Syncing ${key} (${rootKey}) [${isSensitive ? 'SENSITIVE' : 'PLAIN'}]...`);
             
-            const envs = ['production', 'preview'];
+            // Note: 'preview' is currently skipped due to a CLI bug requiring interactive branch selection even with --yes
+            const envs = ['production']; 
             for (const env of envs) {
                 try {
                     // Remove existing key to ensure update
@@ -113,7 +127,10 @@ async function sync() {
                     } catch (e) {}
                     
                     // Adheres to Clean-Pipe Sync Protocol v3.16.0
-                    const result = spawnSync('vercel', ['env', 'add', key, env, '--yes'], {
+                    const args = ['env', 'add', key, env, '--yes'];
+                    if (isSensitive) args.push('--sensitive');
+
+                    const result = spawnSync('vercel', args, {
                         input: val,
                         encoding: 'utf-8',
                         shell: true,
@@ -133,6 +150,7 @@ async function sync() {
     }
     
     console.log('\n✅ Global Ecosystem Sync Complete!');
+    console.log('💡 Note: Preview environments were skipped due to CLI branch requirements. Please update them manually if needed.');
 }
 
 sync();

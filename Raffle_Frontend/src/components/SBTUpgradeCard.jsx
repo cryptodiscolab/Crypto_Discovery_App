@@ -11,7 +11,8 @@ export function SBTUpgradeCard() {
     const { address } = useAccount();
     const config = useConfig();
     const { signMessageAsync } = useSignMessage();
-    const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings } = usePoints();
+    const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
+    const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { data: balanceData } = useBalance({ address });
@@ -61,6 +62,7 @@ export function SBTUpgradeCard() {
     const isReady = isSbtFeatureEnabled && hasTotalXP && hasOnChainXP && !isSoldOut && hasEnoughETH;
 
     const handleUpgrade = async () => {
+        if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high. Please wait.", { icon: '⛽' });
         if (!isSbtFeatureEnabled) return toast.error("SBT Minting is currently disabled for this phase.");
         if (!hasOnChainXP) {
             if (hasTotalXP) {
@@ -229,26 +231,40 @@ export function SBTUpgradeCard() {
                     </div>
                 </div>
 
+                {/* Gas Warning Banner */}
+                {isGasHigh && !isGasExpensive && (
+                    <div className="flex items-center justify-center gap-2 mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-widest text-center shadow-inner">
+                        ⚠️ Network is busy, mint fee might be high
+                    </div>
+                )}
+
                 <button
                     onClick={handleUpgrade}
-                    disabled={!hasOnChainXP || isSoldOut || !isSbtFeatureEnabled}
-                    className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-2
-                        ${isReady
+                    disabled={!hasOnChainXP || isSoldOut || !isSbtFeatureEnabled || isGasExpensive}
+                    className={`w-full min-h-[56px] py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-1
+                        ${isGasExpensive
+                            ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
+                            : isReady
                             ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/30'
                             : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                         }`}
                 >
-                    {!isSbtFeatureEnabled ? (
+                    {isGasExpensive ? (
+                        <>
+                            <span className="flex items-center gap-2"><AlertCircle size={14} /> ⛔ GAS TOO HIGH</span>
+                            <span className="text-[9px] opacity-70 normal-case font-medium tracking-normal">Please wait until network fees drop</span>
+                        </>
+                    ) : !isSbtFeatureEnabled ? (
                         'LOCKED: PHASE 3 FEATURE'
                     ) : isSoldOut ? (
                         'TIER SOLD OUT'
                     ) : !hasOnChainXP ? (
                         hasTotalXP ? 'AWAITING ON-CHAIN SYNC' : `NEED ${xpShortfall.toLocaleString()} MORE XP`
                     ) : (
-                        <>
+                        <div className="flex items-center gap-2">
                             <Sparkles size={14} />
                             MINT {nextTier.name.toUpperCase()} NOW
-                        </>
+                        </div>
                     )}
                 </button>
 

@@ -2346,7 +2346,7 @@
         ],
         "name": "adminCreateSponsorship",
         "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
       },
       {
@@ -2414,7 +2414,7 @@
         ],
         "name": "approveSponsorship",
         "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
       },
       {
@@ -2629,7 +2629,7 @@
         ],
         "name": "doBatchTasks",
         "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
       },
       {
@@ -3191,7 +3191,7 @@
         ],
         "name": "rejectSponsorship",
         "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
       },
       {
@@ -3204,7 +3204,7 @@
         ],
         "name": "renewSponsorship",
         "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
       },
       {
