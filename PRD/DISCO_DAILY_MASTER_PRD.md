@@ -1,6 +1,27 @@
 ---
 
-## 11. Work Report v3.51.1 (Current)
+## 11. Work Report v3.51.2 (Current)
+**Date:** 2026-04-26
+**Subject:** Ghost Claim Recovery & Activity Log Hardening
+**Author:** Antigravity (Elite Senior Software Engineer)
+
+### Executive Summary
+Implementasi *Self-Healing Claim Pipeline* untuk mengatasi edge-case "Ghost Claims" (kondisi race/timeout di mana record `user_task_claims` tercipta namun XP dan Log Activity gagal terdistribusi). 
+
+### Technical Changes
+1. **Idempotent Recovery (`tasks-bundle.js`)**: Backend kini menangkap error `23505 (Unique Violation)` pada `user_task_claims`. Alih-alih gagal, sistem mengecek `user_activity_logs` menggunakan `task_id` di metadata. Jika log tidak ada, backend otomatis mengeksekusi `fn_increment_xp` dan memulihkan reward yang hilang (Self-Healing).
+2. **Metadata Hardening**: Menambahkan mandat wajib `metadata: { task_id, source }` pada seluruh penulisan `user_activity_logs` dari backend untuk menjamin traceability.
+3. **Reactive UI Sync (`TaskList.jsx`)**: Frontend diperkuat untuk menangkap pesan error *"already completed"* sebagai sinyal re-sync. Task yang stuck kini langsung disembunyikan secara visual (`setLocalClaims`) sambil menjalankan sinkronisasi background.
+4. **Documentation Parity**: Memperbarui `TASK_FEATURE_WORKFLOW.md` dengan Section 16 (Self-Healing Claim Pipeline) dan menyinkronkan seluruh master protocol ke **v3.51.2**.
+
+### Verification Results
+- ✅ **Ghost Claim Auto-Recovery**: Simulasi unique constraint violation berhasil memicu pemulihan XP.
+- ✅ **UI Resilience**: Error "already completed" memicu disappearing UI tanpa hard refresh.
+- ✅ **Ecosystem Audit**: `check_sync_status.cjs` — ALL SECURITY CHECKS PASSED.
+
+---
+
+## 11. Work Report v3.51.1 (Legacy)
 **Date:** 2026-04-26
 **Subject:** Dual Pipeline Routing Fix — Task Claim "Endpoint not found"
 **Author:** Antigravity (Elite Senior Software Engineer)
