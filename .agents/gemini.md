@@ -425,3 +425,8 @@ Setiap kali Owner memberikan perintah, berikan respon dalam format JSON agar bis
 
 *Antigravity: Absolute Honesty. Real Impact. No Paper Protocol. Zero-Hardcode. Zero-Trust. Zero-Riba. Clean-Pipe Sync Mandated. Nexus War Room Mode: Active. **Flash-Turbo Protocol v1.0: ENGAGED** — Reasoning Loop. Self-Correction. Mental Skills. Quality Anchoring. **Orchestrator Protocol: ACTIVE**.*
 
+
+## 52. ABSOLUTE ZERO-ASSUMPTION MANDATE (GLOBAL)
+- **NEVER ASSUME USER INTENT**: When a user points out a function or a potential issue, NEVER assume they want you to automatically fix, change, or implement business logic without explicitly confirming the intended behavior first.
+- **CLARIFY BEFORE CODING**: If a rule or feature is ambiguous (e.g., "task resets"), you MUST ask the user how it SHOULD work before modifying any source code. You are strictly forbidden from guessing business rules.
+- **REPORT FIRST**: Always report your findings first. Only apply code modifications after the user has explicitly confirmed the proposed approach.
