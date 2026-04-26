@@ -10,8 +10,9 @@ import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
 import { OffersList } from '../components/tasks/OffersList';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
 
-function TaskRow({ taskId, userStats, refetchStats }) {
+function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
     const { task, isLoading } = useTaskInfo(taskId);
     const { doTask, isLoading: isDoing } = useDoTask();
     const { address } = useAccount();
@@ -58,9 +59,10 @@ function TaskRow({ taskId, userStats, refetchStats }) {
 
     const isBaseLocked = task?.isBaseSocialRequired && !profileData?.is_base_social_verified;
     const isTierLocked = Number(userTier) < Number(task?.minTier);
-    const canDo = !isTierLocked && !isCompleted && !isBaseLocked;
+    const isOffChainCompleted = offChainClaims?.has(String(taskId));
+    const canDo = !isTierLocked && !isCompleted && !isBaseLocked && !isOffChainCompleted;
 
-    if (isLoading || !task || !task.isActive || isCompleted) return null;
+    if (isLoading || !task || !task.isActive || isCompleted || isOffChainCompleted) return null;
 
     const handleAction = async () => {
         if (!address) {
@@ -274,6 +276,23 @@ export function TasksPage() {
     const { userPoints, userTier, rankName } = usePoints();
     const { refetch } = useUserV12Stats(address);
     const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'offers'
+    const [offChainClaims, setOffChainClaims] = useState(new Set());
+
+    useEffect(() => {
+        if (address) {
+            supabase
+                .from('user_task_claims')
+                .select('task_id')
+                .eq('wallet_address', address.toLowerCase())
+                .then(({ data, error }) => {
+                    if (data && !error) {
+                        setOffChainClaims(new Set(data.map(d => String(d.task_id))));
+                    }
+                });
+        } else {
+            setOffChainClaims(new Set());
+        }
+    }, [address]);
 
     // Fetch all task data in one batch
     const { data: allTasksRaw, isLoading: isTasksLoading } = useReadContract({
@@ -383,6 +402,7 @@ export function TasksPage() {
                                         taskId={task.id}
                                         userStats={null}
                                         refetchStats={refetch}
+                                        offChainClaims={offChainClaims}
                                     />
                                 ))}
                             </div>
@@ -395,6 +415,7 @@ export function TasksPage() {
                                 sponsorshipId={sId}
                                 tasks={tasks}
                                 refetchStats={refetch}
+                                offChainClaims={offChainClaims}
                             />
                         ))}
 
@@ -424,7 +445,7 @@ export function TasksPage() {
     );
 }
 
-function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
+function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims }) {
     const navigate = useNavigate();
     const { profileData } = useFarcaster();
     const { address } = useAccount();
@@ -527,6 +548,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
                         task={task}
                         address={address}
                         onAction={() => registerTaskStart(task.id)}
+                        offChainClaims={offChainClaims}
                     />
                 ))}
             </div>
@@ -619,7 +641,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats }) {
     );
 }
 
-function IndividualTaskRow({ task, address, onAction }) {
+function IndividualTaskRow({ task, address, onAction, offChainClaims }) {
     const { data: isVerified } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
@@ -636,7 +658,9 @@ function IndividualTaskRow({ task, address, onAction }) {
         query: { enabled: !!address }
     });
 
-    if (isCompleted) return null;
+    const isCompletedOffChain = offChainClaims?.has(String(task.id));
+
+    if (isCompleted || isCompletedOffChain) return null;
 
     return (
         <div className="flex items-center justify-between px-4 py-4 hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">

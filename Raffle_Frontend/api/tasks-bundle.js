@@ -177,38 +177,8 @@ async function handleClaim(req, res) {
 
     if (error) {
         if (error.code === '23505') {
-            // [v3.51.2] Self-Healing: Check if XP/Logs were missed in previous attempt
-            try {
-                const { data: existingLog } = await supabaseAdmin
-                    .from('user_activity_logs')
-                    .select('id')
-                    .eq('wallet_address', wallet_address.toLowerCase())
-                    .eq('activity_type', 'Task Claim')
-                    .filter('metadata->task_id', 'eq', task_id)
-                    .maybeSingle();
-
-                if (!existingLog) {
-                    console.log(`[Self-Healing] Missing log for ${task_id}. Recovering XP...`);
-                    if (xp > 0) {
-                        await supabaseAdmin.rpc('fn_increment_xp', {
-                            p_wallet: wallet_address.toLowerCase(),
-                            p_amount: xp
-                        });
-                    }
-                    await logActivity({
-                        wallet: wallet_address,
-                        category: 'XP',
-                        type: 'Task Claim',
-                        description: `[Recovered] Claimed ${xp} XP for ${task_id}`,
-                        amount: xp,
-                        symbol: 'XP',
-                        metadata: { task_id, recovered: true }
-                    });
-                    return res.status(200).json({ success: true, xp, message: "Claim recovered!", already_claimed: false });
-                }
-            } catch (recoveryErr) {
-                console.error('[Self-Healing Failure]', recoveryErr.message);
-            }
+            // Duplicate claim detected. Race conditions during spam clicking 
+            // should safely return already_claimed without attempting to grant XP again.
             return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
         }
         throw error;
