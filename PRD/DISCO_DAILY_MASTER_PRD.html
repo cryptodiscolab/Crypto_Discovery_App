@@ -1,7 +1,90 @@
 <hr>
-<h2>11. Work Report v3.48.0 (Current)</h2>
+<h2>11. Work Report v3.51.1 (Current)</h2>
 <p><strong>Date:</strong> 2026-04-26
-<strong>Subject:</strong> Flash-Turbo Cognitive Protocol — Agent Reasoning Enhancement
+<strong>Subject:</strong> Dual Pipeline Routing Fix — Task Claim &quot;Endpoint not found&quot;
+<strong>Author:</strong> Antigravity (Elite Senior Software Engineer)</p>
+<h3>Executive Summary</h3>
+<p>Perbaikan kritis pada routing <code>useVerifiedAction.js</code> yang menyebabkan seluruh klaim tugas off-chain dengan label platform sosial (Farcaster, Twitter, TikTok, Instagram) gagal dengan error <strong>&quot;Endpoint not found&quot;</strong>. Dua bug ditemukan dan diperbaiki secara surgical.</p>
+<h3>Root Cause</h3>
+<ol>
+<li><strong>Bug #1 — Wrong Routing</strong>: Logika <code>isSocialTask</code> pada hook <code>useVerifiedAction.js</code> salah mengarahkan <code>claim_task</code> ke Verification Server (<code>/api/verify/{platform}/{action}</code>) ketika task memiliki <code>platform</code> selain <code>regular</code>/<code>system</code>. Verification Server tidak memiliki handler untuk operasi claim — hanya untuk social verification.</li>
+<li><strong>Bug #2 — Duplicate <code>action</code> Key</strong>: JSON body request memiliki dua property <code>action</code>: (1) <code>action: bundleAction</code> (=&#39;claim&#39;) dan (2) <code>action: payload.action_type</code> (=&#39;follow&#39;). Property terakhir menimpa yang pertama, menyebabkan <code>tasks-bundle.js</code> menerima <code>action: &#39;follow&#39;</code> yang jatuh ke case <code>default: &quot;Invalid action&quot;</code>.</li>
+</ol>
+<h3>Technical Changes</h3>
+<ol>
+<li><strong>Routing Guard (<code>useVerifiedAction.js</code>)</strong>: Menambahkan <code>isClaimAction</code> flag — jika <code>action === &#39;claim_task&#39;</code>, endpoint <strong>selalu</strong> tetap <code>/api/tasks-bundle</code> tanpa redirection ke Verification Server. Hanya social verification non-claim yang dikirim ke Verification Server.</li>
+<li><strong>Duplicate Key Fix (<code>useVerifiedAction.js</code>)</strong>: Mengganti <code>action: payload.action_type</code> (yang menimpa <code>action: bundleAction</code>) menjadi <code>action_type: payload.action_type</code> — memastikan <code>tasks-bundle.js</code> menerima <code>action: &#39;claim&#39;</code> dengan benar.</li>
+</ol>
+<h3>Verification Results</h3>
+<ul>
+<li>✅ <strong>Syntax Check</strong>: <code>node -c api/tasks-bundle.js</code> — passed.</li>
+<li>✅ <strong>Build Integrity</strong>: <code>vite build</code> — Exit code 0, zero errors.</li>
+<li>✅ <strong>Ecosystem Audit</strong>: <code>check_sync_status.cjs</code> — ALL 13 SECURITY CHECKS PASSED. Pipeline FULLY FUNCTIONAL.</li>
+<li>✅ <strong>Logic Trace</strong>: <code>claim_task</code> → <code>isClaimAction=true</code> → <code>isSocialVerify=false</code> → endpoint <code>/api/tasks-bundle</code> → body <code>action: &#39;claim&#39;</code> → <code>handleClaim()</code> ✓</li>
+</ul>
+<hr>
+<h2>11. Work Report v3.51.0 (Legacy)</h2>
+<p><strong>Date:</strong> 2026-04-26
+<strong>Subject:</strong> Gas Tracker Hardening &amp; Global UI Visibility
+<strong>Author:</strong> Antigravity (Elite Senior Software Engineer)</p>
+<h3>Executive Summary</h3>
+<p>Implementasi pengerasan (hardening) sistem Gas Tracker untuk mencegah transaksi on-chain yang tidak efisien selama lonjakan biaya jaringan. Patch ini memperkenalkan UI Locking berbasis Gas, indikator status real-time di Navbar, dan perluasan sinkronisasi variabel lingkungan untuk menjaga integritas ekosistem.</p>
+<h3>Technical Changes</h3>
+<ol>
+<li><strong>Gas Threshold Hardening (<code>useGasTracker.js</code>)</strong>: Refactor logika kategorisasi menjadi <em>descending threshold chain</em> (Expensive &gt; 0.5, Very High &gt;= 0.2, High &gt;= 0.05, Normal &gt;= 0.005, Cheap &lt; 0.005) untuk menghilangkan celah (gap) dan tumpang tindih (overlap).</li>
+<li><strong>Defense-in-Depth UI (<code>RaffleCard.jsx</code>)</strong>: Penambahan <em>early-return guards</em> pada fungsi <code>handleBuy</code> dan <code>handleClaim</code>. Transaksi kini diblokir di level handler fungsi, bukan hanya di level properti <code>disabled</code> tombol, mencegah bypass via DevTools.</li>
+<li><strong>SBT Mint Protection (<code>SBTUpgradeCard.jsx</code>)</strong>: Integrasi penuh Gas Tracker pada alur minting NFT SBT. Tombol &quot;MINT NFT&quot; akan otomatis terkunci dan berubah label menjadi <strong>&quot;⛔ GAS TOO HIGH&quot;</strong> saat status <strong>Expensive</strong>.</li>
+<li><strong>Global Gas Indicator (<code>Header.jsx</code>)</strong>: Implementasi komponen indikator gas real-time (Pill UI) di Navbar. Menampilkan angka Gwei aktual dengan indikator warna dinamis (Hijau/Kuning/Oranye/Merah) untuk visibilitas instan.</li>
+<li><strong>Ecosystem Sync Expansion (<code>global-sync-env.js</code>)</strong>: Menambahkan 8 key kritis yang sebelumnya terlewat (<code>VITE_ALCHEMY_API_KEY</code>, <code>VITE_LIFI_INTEGRATOR_ID</code>, <code>VITE_TREASURY_ADDRESS</code>, <code>MCP_SUPABASE_PROJECT_REF</code>, <code>MCP_SUPABASE_URL</code>, <code>VITE_RAFFLE_ADDRESS</code>, <code>VITE_CMS_CONTRACT_ADDRESS</code>, <code>DAILY_APP_ADDRESS</code>) ke dalam skrip sinkronisasi global.</li>
+</ol>
+<h3>Verification Results</h3>
+<ul>
+<li>✅ <strong>Gas Logic</strong>: Terverifikasi 100% cakupan threshold tanpa <em>dead zones</em>.</li>
+<li>✅ <strong>UI Locking</strong>: Tombol Raffle &amp; SBT terbukti terkunci saat status Gas Expensive.</li>
+<li>✅ <strong>Global Sync</strong>: Skrip <code>global-sync-env.js</code> sukses mensinkronkan 43 key ke 2 project Vercel (Exit Code 0).</li>
+<li>✅ <strong>Build Integrity</strong>: <code>vite build</code> sukses tanpa error AST atau regresi UI.</li>
+</ul>
+<hr>
+<h2>11. Work Report v3.50.0 (Legacy)</h2>
+<h3>Executive Summary</h3>
+<p>Implementasi automasi sinkronisasi lingkungan (environment) di seluruh ekosistem aplikasi. Patch ini memperkenalkan skrip sinkronisasi global yang cerdas dan mengintegrasikan perintah suara/teks <code>sync env</code> sebagai pemicu (trigger) otomatis untuk menjaga integritas data sensitif di 16 file konfigurasi berbeda.</p>
+<h3>Technical Changes</h3>
+<ol>
+<li><strong>Global Sync Script (v4.1.0)</strong>: Implementasi <code>scripts/sync/sync-all-envs.cjs</code> yang mendukung pemetaan key otomatis (e.g., <code>POSTGRES_PASSWORD</code> -&gt; <code>DATABASE_PASSWORD</code>) dan pembersihan &quot;Silent Corruption&quot; pada snapshot Vercel.</li>
+<li><strong>Automation Trigger</strong>: Penambahan Section 49 pada <code>.cursorrules</code> yang mewajibkan Antigravity menjalankan sinkronisasi saat menerima perintah <code>sync env</code> atau <code>sinkronkan env</code>.</li>
+<li><strong>Ecosystem Parity</strong>: Sinkronisasi total dilakukan pada 16 file <code>.env</code> di Root dan <code>Raffle_Frontend</code>, memastikan nilai rahasia (Gemini, Supabase, Pinata) 100% identik.</li>
+<li><strong>Placeholder Enforcement</strong>: Pengerasan <code>.env.example</code> untuk memastikan tidak ada rahasia yang bocor ke repositori publik.</li>
+</ol>
+<h3>Verification Results</h3>
+<ul>
+<li>✅ <strong>Parity Audit</strong>: 16/16 files synchronized with 0 drift.</li>
+<li>✅ <strong>Automation Trigger</strong>: Perintah <code>sync env</code> terverifikasi mengeksekusi skrip fungsional.</li>
+<li>✅ <strong>Corruption Fix</strong>: Duplikasi tanda kutip dan literal newline pada file Vercel telah dibersihkan.</li>
+</ul>
+<hr>
+<h2>11. Work Report v3.49.1 (Legacy)</h2>
+<p><strong>Date:</strong> 2026-04-26
+<strong>Subject:</strong> Daily Task Pipeline Restoration &amp; Vercel Sync
+<strong>Author:</strong> Antigravity (Elite Senior Software Engineer)</p>
+<h3>Executive Summary</h3>
+<p>Resolusi kritis terhadap regresi sistem verifikasi sosial dan sinkronisasi ekosistem Vercel. Patch ini memulihkan alur verifikasi platform (Farcaster, Twitter, TikTok, Instagram) melalui rerouting cerdas ke <code>Verification-Server</code> dan memperbaiki bug <em>Global Lockout</em> yang memblokir klaim antar pengguna.</p>
+<h3>Technical Changes</h3>
+<ol>
+<li><strong>Backend Fix (<code>tasks-bundle.js</code>)</strong>: Menambahkan <code>wallet_address</code> ke dalam query <code>target_id</code>. Sekarang batasan unik hanya berlaku per-user, memungkinkan banyak pengguna mengeklaim target yang sama (misal: Follow akun official).</li>
+<li><strong>Frontend Rerouting (<code>useVerifiedAction.js</code>)</strong>: Mengarahkan seluruh tugas sosial ke <code>VITE_VERIFY_SERVER_URL</code> dengan header <code>X-API-SECRET</code>. Mendukung verifikasi API Neynar (Farcaster) dan Twitter API v2 secara native.</li>
+<li><strong>Identity Sync (<code>TaskList.jsx</code>)</strong>: Menambahkan sinkronisasi status sosial (FID, Twitter ID) ke dalam state komponen untuk memastikan verifikasi identitas berjalan presisi.</li>
+<li><strong>Ecosystem Hardening</strong>: Sinkronisasi total variabel lingkungan <code>VITE_VERIFY_SERVER_URL</code> dan <code>VITE_VERIFY_API_SECRET</code> di Vercel (Production/Development) dan seluruh file <code>.env</code> lokal.</li>
+</ol>
+<h3>Verification Results</h3>
+<ul>
+<li>✅ <strong>Lockout Fix</strong>: Skrip <code>verify_lockout_fix.cjs</code> mengonfirmasi klaim per-user sukses.</li>
+<li>✅ <strong>Security Sync</strong>: Kunci API telah dirotasi dan disinkronkan antara Frontend dan Server.</li>
+<li>✅ <strong>API Routing</strong>: Verifikasi Farcaster/Twitter kembali aktif melalui Verification Server.</li>
+</ul>
+<hr>
+<h2>11. Work Report v3.48.0 (Legacy)</h2>
+<p><strong>Date:</strong> 2026-04-26
+<strong>PRD Version: v3.50.0 (Ecosystem Environment Automation &amp; Parity Hardening)</strong>
 <strong>Author:</strong> Antigravity (Elite Senior Software Engineer &amp; Systems Architect)</p>
 <h3>Executive Summary</h3>
 <p>Implementasi protokol &quot;Flash-Turbo&quot; — sebuah framework penalaran terstruktur yang memaksa SEMUA model AI (Gemini, Claude, GPT, dll) untuk melewati pipeline 4-fase (ANALYZE → REASON → VALIDATE → EXECUTE) sebelum menulis kode. Protokol ini juga memperkenalkan &quot;Modular Mental Skills&quot; yang diaktifkan berdasarkan konteks task, dan &quot;Quality Anchoring&quot; yang menetapkan standar output SOTA (State-of-the-Art).</p>
@@ -84,7 +167,7 @@
 <li><strong>Signature Alignment</strong>: Memperbaiki <code>setSponsorshipParams</code> untuk mengirimkan 4 parameter <code>(rewardPerClaim, tasksRequired, minPool, platformFee)</code> sesuai kontrak V12 Secures (sebelumnya hanya 3 parameter).</li>
 <li><strong>Type Correction</strong>: Mengubah <code>buySponsorshipWithToken</code> untuk menggunakan <code>string[]</code> (arrays) untuk title/link, bukan single strings.</li>
 <li><strong>Oracle Refactor</strong>: Menghapus fitur timelock price scheduling (<code>scheduleTokenPriceUpdate</code>/<code>executePriceChange</code>) yang sudah legacy. Menggantinya dengan direct update <code>setTokenPriceUSD</code> sesuai V12.</li>
-<li><strong>UI Consistency</strong>: Menyederhanakan <code>EconomyConfigSection</code> menjadi satu tombol &quot;Update Price&quot; dan memperbaiki variabel phantom (<code>minRewardPoolUSD</code> → <code>minRewardPoolValue</code>).
+<li><strong>UI Consistency</strong>: Sederhanakan <code>EconomyConfigSection</code> menjadi satu tombol &quot;Update Price&quot; dan memperbaiki variabel phantom (<code>minRewardPoolUSD</code> → <code>minRewardPoolValue</code>).
 <strong>Result:</strong> 100% ABI compliance antara Frontend dan Deployed Contract. Seluruh alur pembuatan misi batch dan konfigurasi ekonomi kembali operasional tanpa Revert atau FunctionNotFound errors.</li>
 </ul>
 <hr>

@@ -806,8 +806,10 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Verification Server Sync**: `VITE_VERIFY_SERVER_URL` & `VITE_VERIFY_API_SECRET` disinkronkan di ekosistem Vercel (v3.49.0).
 - [x] **Global Lockout Fix**: Target ID uniqueness sekarang berbasis per-user (`wallet_address` + `target_id`) (v3.49.0).
 - [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
+- [x] **Dual Pipeline Routing Fix**: `useVerifiedAction.js` — `claim_task` actions ALWAYS route to `/api/tasks-bundle`, never to Verification Server. `isSocialVerify` only true for non-claim social verification actions (v3.51.1).
+- [x] **Duplicate Action Key Fix**: JSON body property `action: payload.action_type` renamed to `action_type: payload.action_type` to prevent silent override of `action: bundleAction` (v3.51.1).
 
 ---
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
-*Antigravity — Nexus Master Architect. Protocol v3.47.0 Locked.*
+*Antigravity — Nexus Master Architect. Protocol v3.51.1 Locked.*

@@ -25,17 +25,20 @@ export function useVerifiedAction() {
         // Sign the message via wagmi
         const signature = await signMessageAsync({ message });
 
-        // [v3.43.0] Robust Routing Logic
-        // Determine if we should use the Vercel API or the dedicated Verification Server
-        const isSocialTask = payload.platform && payload.platform !== 'regular' && payload.platform !== 'system';
+        // [v3.51.1] Fixed Routing Logic — Dual Pipeline Awareness
+        // claim_task actions ALWAYS go to /api/tasks-bundle (off-chain Supabase tasks)
+        // Only actual social verification actions route to Verification Server
+        const bundleAction = (action === 'claim_task') ? 'claim' : action;
+        const isClaimAction = (action === 'claim_task');
+        const isSocialVerify = !isClaimAction && payload.platform && payload.platform !== 'regular' && payload.platform !== 'system';
         const verifyServerUrl = import.meta.env.VITE_VERIFY_SERVER_URL;
         
         // Final endpoint selection
         let endpoint = '/api/tasks-bundle';
         let headers = { 'Content-Type': 'application/json' };
 
-        if (isSocialTask && verifyServerUrl) {
-            // Social tasks go to the Robust Verification Server
+        if (isSocialVerify && verifyServerUrl) {
+            // Only real social verification (NOT claim) goes to the Verification Server
             // Endpoint format: /api/verify/[platform]/[action]
             const platform = payload.platform.toLowerCase();
             const actionType = payload.action_type || 'task';
@@ -45,8 +48,6 @@ export function useVerifiedAction() {
             const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET || 'disco-secure-api-key';
             headers['X-API-SECRET'] = apiSecret;
         }
-
-        const bundleAction = (action === 'claim_task') ? 'claim' : action;
 
         const res = await fetch(endpoint, {
             method: 'POST',
@@ -59,7 +60,7 @@ export function useVerifiedAction() {
                 message,
                 // Enhanced payload for Verification Server
                 platform: payload.platform,
-                action: payload.action_type,
+                action_type: payload.action_type,
                 userAddress: address.toLowerCase(),
                 taskId: payload.task_id,
                 socialId: payload.socialId || payload.fid || payload.twitterId, // Unified social ID

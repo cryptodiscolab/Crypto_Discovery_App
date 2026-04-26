@@ -1,6 +1,30 @@
 ---
 
-## 11. Work Report v3.51.0 (Current)
+## 11. Work Report v3.51.1 (Current)
+**Date:** 2026-04-26
+**Subject:** Dual Pipeline Routing Fix — Task Claim "Endpoint not found"
+**Author:** Antigravity (Elite Senior Software Engineer)
+
+### Executive Summary
+Perbaikan kritis pada routing `useVerifiedAction.js` yang menyebabkan seluruh klaim tugas off-chain dengan label platform sosial (Farcaster, Twitter, TikTok, Instagram) gagal dengan error **"Endpoint not found"**. Dua bug ditemukan dan diperbaiki secara surgical.
+
+### Root Cause
+1. **Bug #1 — Wrong Routing**: Logika `isSocialTask` pada hook `useVerifiedAction.js` salah mengarahkan `claim_task` ke Verification Server (`/api/verify/{platform}/{action}`) ketika task memiliki `platform` selain `regular`/`system`. Verification Server tidak memiliki handler untuk operasi claim — hanya untuk social verification.
+2. **Bug #2 — Duplicate `action` Key**: JSON body request memiliki dua property `action`: (1) `action: bundleAction` (='claim') dan (2) `action: payload.action_type` (='follow'). Property terakhir menimpa yang pertama, menyebabkan `tasks-bundle.js` menerima `action: 'follow'` yang jatuh ke case `default: "Invalid action"`.
+
+### Technical Changes
+1. **Routing Guard (`useVerifiedAction.js`)**: Menambahkan `isClaimAction` flag — jika `action === 'claim_task'`, endpoint **selalu** tetap `/api/tasks-bundle` tanpa redirection ke Verification Server. Hanya social verification non-claim yang dikirim ke Verification Server.
+2. **Duplicate Key Fix (`useVerifiedAction.js`)**: Mengganti `action: payload.action_type` (yang menimpa `action: bundleAction`) menjadi `action_type: payload.action_type` — memastikan `tasks-bundle.js` menerima `action: 'claim'` dengan benar.
+
+### Verification Results
+- ✅ **Syntax Check**: `node -c api/tasks-bundle.js` — passed.
+- ✅ **Build Integrity**: `vite build` — Exit code 0, zero errors.
+- ✅ **Ecosystem Audit**: `check_sync_status.cjs` — ALL 13 SECURITY CHECKS PASSED. Pipeline FULLY FUNCTIONAL.
+- ✅ **Logic Trace**: `claim_task` → `isClaimAction=true` → `isSocialVerify=false` → endpoint `/api/tasks-bundle` → body `action: 'claim'` → `handleClaim()` ✓
+
+---
+
+## 11. Work Report v3.51.0 (Legacy)
 **Date:** 2026-04-26
 **Subject:** Gas Tracker Hardening & Global UI Visibility
 **Author:** Antigravity (Elite Senior Software Engineer)

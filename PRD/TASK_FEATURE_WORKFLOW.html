@@ -1,5 +1,5 @@
 <h1>🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT</h1>
-<p><strong>Version</strong>: <code>v3.46.0</code> | <strong>Last Updated</strong>: <code>2026-04-23T11:45:00+07:00</code>
+<p><strong>Version</strong>: <code>v3.49.0</code> | <strong>Last Updated</strong>: <code>2026-04-26T01:47:00+07:00</code>
 <strong>Status</strong>: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH</p>
 <hr>
 <h2>📋 Table of Contents</h2>
@@ -30,6 +30,7 @@
         TR[&quot;TaskRow Component&lt;br/&gt;(On-Chain Tasks)&quot;]
         STC[&quot;SponsoredTaskCard&lt;br/&gt;(Grouped Missions)&quot;]
         OL[&quot;OffersList.jsx&lt;br/&gt;(Partner Campaigns)&quot;]
+        SM[&quot;SwapModal.jsx&lt;br/&gt;(Quick Swap Engine)&quot;]
     end
 
     subgraph &quot;🔗 Hooks &amp; Logic&quot;
@@ -43,6 +44,10 @@
         TB[&quot;tasks-bundle.js&lt;br/&gt;handleClaim | handleVerify | handleSocialVerify&quot;]
         UB[&quot;user-bundle.js&lt;br/&gt;handleXpSync (On-Chain)&quot;]
         CB[&quot;campaigns.js&lt;br/&gt;handleJoin&quot;]
+    end
+
+    subgraph &quot;🔐 Security Layer&quot;
+        VS[&quot;Verification Server&lt;br/&gt;(External Bridge)&quot;]
     end
 
     subgraph &quot;🗄️ Database (Supabase)&quot;
@@ -60,13 +65,17 @@
     end
 
     TP --&gt; TL &amp; TR &amp; STC &amp; OL
-    TL --&gt;|Claim| UVA --&gt;|POST| TB
+    TL --&gt;|Claim| UVA --&gt;|POST| VS
     TR --&gt;|doTask| UC --&gt;|Write| DA
-    TR --&gt;|Verify| UV --&gt;|POST| TB
+    TR --&gt;|Verify| UV --&gt;|POST| VS
     STC --&gt;|claimRewards| DA
     STC --&gt;|XP Sync| UB
     OL --&gt;|Join| CB
+    SM --&gt;|Swap Quote| LS[Li.Fi SDK]
+    STC --&gt;|Low Balance| SM
+    TL --&gt;|Low Balance| SM
 
+    VS --&gt;|Reroute| TB
     TB --&gt;|Insert| UTC
     TB --&gt;|RPC| FN
     TB --&gt;|Read| PS &amp; DT
@@ -160,11 +169,13 @@ Crypto Disco memiliki <strong>DUA jalur tugas yang sangat berbeda</strong>. Agen
         A5 --&gt; A6[Insert user_task_claims + fn_increment_xp]
     end
 
-    subgraph &quot;Off-Chain Path&quot;
-        B1[User Sees TaskList Card] --&gt; B2[Click CLAIM REWARD]
-        B2 --&gt; B3[EIP-191 Sign via useVerifiedAction]
-        B3 --&gt; B4[POST /api/tasks-bundle action=claim]
-        B4 --&gt; B5[Insert user_task_claims + fn_increment_xp]
+    subgraph &quot;Off-Chain Path (v3.47.1 Two-Step Flow)&quot;
+        B1[User Sees TaskList Card] --&gt; B2[&quot;Step 1: Click &#39;GO TO TASK&#39; → window.open(task_link)&quot;]
+        B2 --&gt; B3[15s Anti-Fraud Countdown]
+        B3 --&gt; B4[&quot;Step 2: Click &#39;CLAIM REWARD&#39; (green, enabled)&quot;]
+        B4 --&gt; B5[EIP-191 Sign via useVerifiedAction]
+        B5 --&gt; B6[POST /api/tasks-bundle action=claim]
+        B6 --&gt; B7[Insert user_task_claims + fn_increment_xp]
     end
 </code></pre>
 <hr>
@@ -808,8 +819,15 @@ if ([&#39;claim&#39;, &#39;verify&#39;].includes(action)) {
 
     TL-&gt;&gt;TL: Filter: activeTasks = tasks.filter(not claimed)
 
-    Note over U: User Clicks &quot;CLAIM REWARD&quot;
-    U-&gt;&gt;TL: handleClaim(task)
+    Note over U: STEP 1 — User Clicks &quot;GO TO TASK&quot; (v3.47.1)
+    U-&gt;&gt;TL: handleGoToTask(task)
+    TL-&gt;&gt;TL: window.open(task.task_link, &#39;_blank&#39;)
+    TL-&gt;&gt;TL: setStartedTasks({task_id: Date.now()})
+    TL-&gt;&gt;TL: start 15s countdown
+    Note over TL: Card turns amber (countdown state)
+
+    Note over U: STEP 2 — After 15s, User Clicks &quot;CLAIM REWARD&quot;
+    U-&gt;&gt;TL: handleClaim(task) [only enabled when countdown=0]
 
     alt Neynar Score too low
         TL--&gt;&gt;U: Toast: &quot;Low Reputation&quot;
@@ -1277,11 +1295,19 @@ Pipeline Backend (<code>admin-bundle.js</code>) sekarang memproses field berikut
 <li><input checked="" disabled="" type="checkbox"> <strong>Feature Guard</strong>: Mainnet kill switch via <code>system_settings.active_features</code> operational.</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>Activity Logging</strong>: Setiap klaim menghasilkan entry di <code>user_activity_logs</code>.</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>Reactive Sync</strong>: &quot;Already completed&quot; error forces <code>fetchData()</code> re-sync.</li>
-<li><input checked="" disabled="" type="checkbox"> <strong>30s Anti-Fraud</strong>: Timer aktif sebelum social verification.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>30s Anti-Fraud (On-Chain)</strong>: Timer aktif sebelum social verification (TaskRow).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>15s Anti-Fraud (Off-Chain)</strong>: <code>startedTasks</code> countdown setelah &quot;GO TO TASK&quot; klik sebelum CLAIM REWARD aktif (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Two-Step Task Flow (Off-Chain)</strong>: User HARUS buka link dulu via &quot;GO TO TASK&quot; sebelum bisa klaim XP (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Swap Quote Error Visibility</strong>: SwapModal menampilkan error visible + Jumper fallback jika Li.Fi SDK gagal quote (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>NFT Mint Contract Parity</strong>: SBTUpgradeCard memanggil <code>mintNFT</code> (DAILY_APP) bukan <code>upgradeTier</code> (MASTER_X) (v3.47.1).</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>Batch Resilience</strong>: Create Mission menggunakan <code>useCallsStatus</code> (EIP-5792) untuk mencegah UI hang pada batch transactions.</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>ABI Parity</strong>: <code>abis_data.txt</code> sinkron dengan deployed contract (157 entries).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Verification Server Sync</strong>: <code>VITE_VERIFY_SERVER_URL</code> &amp; <code>VITE_VERIFY_API_SECRET</code> disinkronkan di ekosistem Vercel (v3.49.0).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Global Lockout Fix</strong>: Target ID uniqueness sekarang berbasis per-user (<code>wallet_address</code> + <code>target_id</code>) (v3.49.0).</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>Vercel &lt; 12</strong>: Total serverless functions under Hobby Plan limit (8/12).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Dual Pipeline Routing Fix</strong>: <code>useVerifiedAction.js</code> — <code>claim_task</code> actions ALWAYS route to <code>/api/tasks-bundle</code>, never to Verification Server. <code>isSocialVerify</code> only true for non-claim social verification actions (v3.51.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Duplicate Action Key Fix</strong>: JSON body property <code>action: payload.action_type</code> renamed to <code>action_type: payload.action_type</code> to prevent silent override of <code>action: bundleAction</code> (v3.51.1).</li>
 </ul>
 <hr>
 <p><em>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.</em>
-<em>Antigravity — Nexus Master Architect. Protocol v3.46.0 Locked.</em></p>
+<em>Antigravity — Nexus Master Architect. Protocol v3.51.1 Locked.</em></p>
