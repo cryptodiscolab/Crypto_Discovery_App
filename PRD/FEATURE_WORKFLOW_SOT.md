@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.49.0)
-**Last Updated**: 2026-04-26T01:45:00+07:00 — Daily Task Pipeline Restoration (v3.49.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.53.0)
+**Last Updated**: 2026-04-26T19:40:00+07:00 — Nexus UI & Metadata Parity (v3.53.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -286,11 +286,16 @@ Integrasi Basename untuk eliminasi bot dan standardisasi identitas on-chain.
    - Status visual: `BASE REQ`.
 
 ---
-### 11.3 Task Visibility Mandate (v3.42.8)
+### 11.3 Task Visibility & Nexus Metadata Mandate (v3.53.0)
 1. **Immediate Hiding**: Tasks that are `hasCompletedTask` or `hasClaimed` MUST be filtered out from the `TasksPage` UI.
-2. **Type-Safe Filtering**: When comparing task IDs (e.g., in `activeTasks.filter`), ALWAYS use `String()` conversion (e.g., `String(task.id) === String(claim.task_id)`). This prevents silence failures caused by the mismatch between Contract IDs (Integer) and Supabase IDs (UUID).
-3. **Sponsorship Card Closure**: Cards (Sponsored/Organic) MUST be hidden if 100% of internal tasks are complete.
-4. **Verified Badge Branding**: All verified identities MUST display the **Base Blue** shield icon for premium signaling.
+2. **Authoritative Expiry**: Tasks with an `expires_at` timestamp in the past MUST be filtered out from the UI. Daily tasks default to a 24-hour expiration from `created_at`.
+3. **Type-Safe Filtering**: When comparing task IDs (e.g., in `activeTasks.filter`), ALWAYS use `String()` conversion.
+4. **Nexus Parity Mandate**: Task and Raffle cards MUST display consistent metadata stamps:
+    - **Unique ID**: System traceability via `Hash` icon.
+    - **Creator Attribute**: Distinguish between ADMIN, USER (Address), or SYSTEM via `ShieldCheck` icon.
+    - **Created At & Expires At**: Explicit timestamps for urgency and historical transparency via `Clock` icon.
+    - **Dual Rewards**: Clear distinction between XP (Coins) and Token/USDC (Gift) rewards.
+5. **Verified Badge Branding**: All verified identities MUST display the **Base Blue** shield icon for premium signaling.
 
 ---
 

@@ -225,6 +225,7 @@ export default async function handler(req, res) {
                     is_base_social_required: !!task_data.is_base_social_required,
                     min_neynar_score: task_data.min_neynar_score || 0,
                     expires_at: task_data.expires_at || null,
+                    task_type: 'daily',
                     created_at: new Date().toISOString()
                 }).select().maybeSingle();
                 if (error) throw error;
@@ -313,6 +314,7 @@ export default async function handler(req, res) {
                         is_base_social_required: !!task.is_base_social_required,
                         min_neynar_score: task.min_neynar_score || 0,
                         expires_at: task.expires_at || null,
+                        task_type: 'daily',
                         created_at: new Date().toISOString(),
                         is_active: true
                     }]);

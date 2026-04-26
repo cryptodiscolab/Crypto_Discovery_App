@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Trophy, Ticket, ArrowRight, Timer, RefreshCw, Zap, Gift, ExternalLink, Loader2 } from 'lucide-react';
+import { Trophy, Ticket, ArrowRight, Timer, RefreshCw, Zap, Gift, ExternalLink, Loader2, Share2, Clock, Hash, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAccount, useReadContract } from 'wagmi';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
@@ -65,17 +65,20 @@ function RaffleRow({ raffleId, filter = 'all' }) {
   const progress = Math.min((currentTickets / maxTickets) * 100, 100);
 
   return (
-    <div className="flex flex-col p-4 border-b border-white/5 active:bg-white/5 transition-colors">
+    <div className="flex flex-col p-4 border-b border-white/5 active:bg-white/5 transition-colors group">
       {/* Header Row */}
       <div className="flex justify-between items-start mb-2">
         <div className="flex gap-3">
-          <div className="w-12 h-12 rounded-lg bg-[#080808] flex items-center justify-center flex-shrink-0 border border-white/10 shadow-xl">
+          <div className="w-12 h-12 rounded-lg bg-[#080808] flex items-center justify-center flex-shrink-0 border border-white/10 shadow-xl group-hover:border-indigo-500/50 transition-colors">
             <Trophy size={20} className="text-indigo-400" />
           </div>
           <div className="flex flex-col justify-center">
-            <h3 className="label-native !mb-1 !tracking-widest">
-              {raffle.metadataURI?.includes('ipfs') ? "COMMUNITY PRIZE" : `ELITE RAFFLE #${raffle.id}`}
-            </h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="label-native !mb-0 !tracking-widest">
+                {raffle.metadataURI?.includes('ipfs') ? "COMMUNITY PRIZE" : `ELITE RAFFLE #${raffle.id}`}
+              </h3>
+              <span className="text-[9px] font-mono text-slate-600">ID: #{raffle.id}</span>
+            </div>
             <div className="flex items-center gap-2">
               <span className={`label-native px-2 py-0.5 rounded border leading-none ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
                 {raffle.isActive ? 'LIVE' : 'CLOSED'}
@@ -87,15 +90,43 @@ function RaffleRow({ raffleId, filter = 'all' }) {
           </div>
         </div>
 
-        <div className="text-right">
+        <div className="text-right flex flex-col items-end gap-1">
           <div className="flex items-center gap-1 label-native font-mono text-slate-400 justify-end">
             <Timer size={10} /> {isFinalized ? "FINALIZED" : timeLeft.toUpperCase()}
           </div>
         </div>
       </div>
 
+      {/* Meta Info */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 px-1">
+        <div className="flex items-center gap-1.5">
+          <Hash className="w-3 h-3 text-purple-400/50" />
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            ID: <span className="text-white">#{raffle.id}</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Share2 className="w-3 h-3 text-purple-400/50" />
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            CREATOR: <span className="text-purple-400">{raffle.sponsor ? `${raffle.sponsor.slice(0, 6)}...${raffle.sponsor.slice(-4)}` : 'ADMIN'}</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Clock className="w-3 h-3 text-purple-400/50" />
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            CREATED: <span className="text-slate-400">{raffle.created_at ? new Date(raffle.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'LEGACY'}</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck className="w-3 h-3 text-purple-400/50" />
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            EXPIRES: <span className="text-slate-400">{raffle.endTime ? new Date(raffle.endTime * 1000).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}</span>
+          </span>
+        </div>
+      </div>
+
       {/* Progress Bar (Subtle) */}
-      <div className="mt-4 mb-3 px-1">
+      <div className="mt-1 mb-3 px-1">
         <div className="flex justify-between items-center mb-2">
           <span className="label-native !mb-0 !text-slate-600">TICKETS SOLD</span>
           <span className="value-native !text-slate-400">{currentTickets} / {maxTickets}</span>

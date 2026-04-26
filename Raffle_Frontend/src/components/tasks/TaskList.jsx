@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { supabase } from '../../lib/supabaseClient';
-import { Loader2, CheckCircle2, Zap, Clock, AlertCircle, Coins, ExternalLink, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle2, Zap, Clock, AlertCircle, Coins, ExternalLink, ArrowRight, Gift, Share2, Hash, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePoints } from '../../shared/context/PointsContext';
 import { useVerifiedAction } from '../../hooks/useVerifiedAction';
@@ -16,8 +16,8 @@ export function TaskList() {
     const [isLoading, setIsLoading] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
     const [isBaseVerified, setIsBaseVerified] = useState(false); // v3.42.0
-    const [claimingTask, setClaimingTask] = useState(null); 
-    const [userSocials, setUserSocials] = useState(null); 
+    const [claimingTask, setClaimingTask] = useState(null);
+    const [userSocials, setUserSocials] = useState(null);
     // Two-Step Task Flow: track which tasks have been started (link opened)
     const [startedTasks, setStartedTasks] = useState({}); // { task_id: timestamp }
     const [countdowns, setCountdowns] = useState({}); // { task_id: secondsLeft }
@@ -98,8 +98,8 @@ export function TaskList() {
                 if (claimsResult.data) {
                     setUserClaims(prev => {
                         const dbClaimIds = new Set(claimsResult.data.map(c => String(c.task_id).toLowerCase()));
-                        const recentOptimistic = prev.filter(c => 
-                            !dbClaimIds.has(String(c.task_id).toLowerCase()) && 
+                        const recentOptimistic = prev.filter(c =>
+                            !dbClaimIds.has(String(c.task_id).toLowerCase()) &&
                             (Date.now() - new Date(c.claimed_at).getTime() < 15000)
                         );
                         return [...claimsResult.data, ...recentOptimistic];
@@ -197,9 +197,9 @@ export function TaskList() {
             const errMsg = err.message || "Unknown error";
             if (err.code === 4001 || errMsg.toLowerCase().includes("rejected")) {
                 toast.error("Signature rejected", { id: toastId });
-            } else if (errMsg.toLowerCase().includes("already completed") || 
-                       errMsg.toLowerCase().includes("already claimed") || 
-                       errMsg.toLowerCase().includes("task already completed")) {
+            } else if (errMsg.toLowerCase().includes("already completed") ||
+                errMsg.toLowerCase().includes("already claimed") ||
+                errMsg.toLowerCase().includes("task already completed")) {
                 // Task was already claimed in DB but not reflected in UI — sync immediately
                 toast.success("Mission already done! Syncing...", { id: toastId });
                 // Force sync: add to local claims so task disappears instantly
@@ -217,41 +217,43 @@ export function TaskList() {
         }
     };
 
-
+    // Filter Tasks (Zero-Assumption Mandate Applied)
     const activeTasks = tasks.filter(task => {
         const taskIdStr = String(task.id).toLowerCase();
-        const history = userClaims.filter(c => String(c.task_id).toLowerCase() === taskIdStr);
-        const hasAnyClaim = history.length > 0;
+        
+        // 1. Hide if claimed (One-time logic per interval/task)
+        const hasClaimed = userClaims.some(c => String(c.task_id).toLowerCase() === taskIdStr);
+        if (hasClaimed) return false;
 
-        // All tasks are treated as one-time per unique task ID now to match backend rules
-        if (hasAnyClaim) return false;
-
-        // System tasks are handled separately, but we exclude them here too
-        if (task.task_type === 'system') return false;
+        // 2. Hide if expired (Autoritative field from DB)
+        if (task.expires_at) {
+            if (new Date(task.expires_at) < new Date()) return false;
+        } else if (task.task_type === 'daily' && task.created_at) {
+            // Fallback for legacy daily tasks
+            const createdTime = new Date(task.created_at).getTime();
+            if (Date.now() - createdTime > 24 * 60 * 60 * 1000) return false;
+        }
 
         return true;
     });
 
-    const isTaskCompletedForInterval = (task) => {
-        return userClaims.some(c => String(c.task_id).toLowerCase() === String(task.id).toLowerCase());
-    };
-
-    if (isLoading && tasks.length === 0) {
+    if (isLoading) {
         return (
-            <div className="flex justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            <div className="py-20 text-center">
+                <Loader2 className="w-10 h-10 text-indigo-500 mx-auto animate-spin mb-4" />
+                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">LOADING MISSIONS...</p>
             </div>
         );
     }
 
-    if (activeTasks.length === 0 && !isLoading) {
+    if (activeTasks.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="py-16 glass-card border-dashed flex flex-col items-center justify-center gap-4 bg-green-500/5 animate-fade-in">
                 <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
                     <CheckCircle2 className="w-7 h-7 text-green-500" />
                 </div>
                 <p className="text-[11px] font-black uppercase tracking-widest text-green-400">ALL MISSIONS COMPLETED</p>
-                <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">Check back tomorrow for new tasks</p>
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">Check back later for new tasks</p>
             </div>
         );
     }
@@ -271,8 +273,6 @@ export function TaskList() {
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {activeTasks.map(task => {
-                    const isClaimed = isTaskCompletedForInterval(task);
-                    const isClaiming = claimingTask === task.id;
                     const hasStarted = !!startedTasks[task.id];
                     const countdown = countdowns[task.id] ?? (hasStarted ? 0 : null);
                     const canClaim = hasStarted && countdown === 0;
@@ -284,77 +284,96 @@ export function TaskList() {
 
                     // Task link (support multiple field names from DB)
                     const taskLink = task.task_link || task.action_url || task.link;
-
+                    
+                    // Metadata helpers
+                    const creator = task.task_type === 'daily' ? 'ADMIN' : (task.creator_address ? `${task.creator_address.slice(0, 6)}...${task.creator_address.slice(-4)}` : task.platform?.toUpperCase() || 'SYSTEM');
+                    const createdAt = new Date(task.created_at);
+                    const expiresAt = task.expires_at ? new Date(task.expires_at) : new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
+                    
                     return (
                         <div
                             key={task.id}
                             className={`relative group p-4 rounded-xl border transition-all duration-300 ${
-                                isClaimed
-                                    ? 'bg-slate-900/40 border-slate-800'
-                                    : hasStarted && !canClaim
-                                        ? 'glass-card border-amber-500/20 bg-amber-500/5'
-                                        : canClaim
-                                            ? 'glass-card border-green-500/20 bg-green-500/5'
-                                            : 'glass-card border-white/10 hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10'
+                                hasStarted && !canClaim
+                                    ? 'glass-card border-amber-500/20 bg-amber-500/5'
+                                    : canClaim
+                                        ? 'glass-card border-green-500/20 bg-green-500/5'
+                                        : 'glass-card border-white/10 hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10'
                             }`}
                         >
+                            {/* Card Header: Rewards & ID */}
                             <div className="flex justify-between items-start mb-3">
                                 <div className={`p-2 rounded-lg ${
-                                    isClaimed ? 'bg-slate-800' :
                                     isBaseLocked ? 'bg-blue-500/10' :
                                     canClaim ? 'bg-green-500/20' :
                                     hasStarted ? 'bg-amber-500/10' :
                                     'bg-indigo-500/20'
                                 }`}>
-                                    {isClaimed
-                                        ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                        : isBaseLocked
-                                            ? <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                            : canClaim
-                                                ? <CheckCircle2 className="w-5 h-5 text-green-400" />
-                                                : hasStarted
-                                                    ? <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
-                                                    : taskLink
-                                                        ? <ExternalLink className="w-5 h-5 text-indigo-400" />
-                                                        : <Zap className="w-5 h-5 text-indigo-400" />
+                                    {isBaseLocked
+                                        ? <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                                        : canClaim
+                                            ? <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                            : hasStarted
+                                                ? <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+                                                : taskLink
+                                                    ? <ExternalLink className="w-5 h-5 text-indigo-400" />
+                                                    : <Zap className="w-5 h-5 text-indigo-400" />
                                     }
                                 </div>
-                                <div className="flex flex-col items-end gap-1">
-                                    <div className={`px-2 py-1 rounded-md text-[11px] font-black uppercase tracking-widest flex items-center gap-1.5 ${isClaimed ? 'bg-slate-800 text-slate-500' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                        <Coins size={12} />
-                                        <span>+{task.xp_reward} XP</span>
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-yellow-500/5">
+                                            <Coins size={10} />
+                                            <span>+{task.xp_reward} XP</span>
+                                        </div>
+                                        {task.token_reward_amount > 0 && (
+                                            <div className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-emerald-500/5">
+                                                <Gift size={10} />
+                                                <span>${task.token_reward_amount} {task.token_reward_symbol || 'USDC'}</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    {requiresScore && (
-                                        <div className={`text-[11px] font-black uppercase tracking-widest ${isScoreLow ? 'text-red-400' : 'text-slate-500'}`}>
-                                            MIN SCORE: {task.min_neynar_score}
-                                        </div>
-                                    )}
-                                    {isClaimed && (
-                                        <div className="text-[11px] font-black text-green-400 uppercase tracking-widest flex items-center gap-1 bg-green-400/10 px-2 py-1 rounded-lg border border-green-400/20 mt-1">
-                                            <CheckCircle2 size={12} />
-                                            DONE
-                                        </div>
-                                    )}
+                            </div>
+
+                            {/* Task Info */}
+                            <h4 className="text-[11px] font-black uppercase tracking-widest leading-relaxed mb-1 text-white">
+                                {task.description?.toUpperCase()}
+                            </h4>
+                            
+                            {/* Task Metadata Stamps */}
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
+                                <div className="flex items-center gap-1.5">
+                                    <Hash className="w-3 h-3 text-indigo-400/50" />
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                        ID: <span className="text-white">#{String(task.id).slice(0, 8)}</span>
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Share2 className="w-3 h-3 text-indigo-400/50" />
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                        CREATOR: <span className="text-indigo-400">{creator}</span>
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="w-3 h-3 text-purple-400/50" />
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                        CREATED: <span className="text-slate-400">{createdAt.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <ShieldCheck className="w-3 h-3 text-red-400/50" />
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                        EXPIRES: <span className="text-red-400/70">{expiresAt.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                    </span>
                                 </div>
                             </div>
 
-                            <h4 className={`text-[11px] font-black uppercase tracking-widest leading-relaxed mb-1 ${isClaimed ? 'text-slate-500 line-through' : 'text-white'}`}>
-                                {task.description.toUpperCase()}
-                            </h4>
-
-                            {/* Task link preview */}
-                            {taskLink && !isClaimed && (
-                                <p className="text-[9px] font-mono text-indigo-400/50 mb-3 truncate">
-                                    {taskLink.replace(/^https?:\/\//, '').slice(0, 50)}
-                                </p>
-                            )}
-
+                            {/* Action Buttons */}
                             <div className="space-y-2">
                                 {/* STEP 1: Go to task */}
-                                {!isClaimed && taskLink && (
+                                {taskLink && (
                                     <button
                                         onClick={() => handleGoToTask(task)}
-                                        disabled={isClaiming || isScoreLow || isBaseLocked}
+                                        disabled={claimingTask === task.id || isScoreLow || isBaseLocked}
                                         className={`w-full py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                                             isScoreLow || isBaseLocked
                                                 ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
@@ -371,36 +390,29 @@ export function TaskList() {
                                 {/* STEP 2: Claim reward */}
                                 <div className="relative group/btn">
                                     <button
-                                        onClick={() => canClaim && !isScoreLow && !isBaseLocked && !isClaiming && !isGasExpensive && handleClaim(task)}
-                                        disabled={isClaimed || isClaiming || !isConnected || isScoreLow || isBaseLocked || isGasExpensive || (!canClaim && !!taskLink)}
+                                        onClick={() => canClaim && !isScoreLow && !isBaseLocked && claimingTask !== task.id && !isGasExpensive && handleClaim(task)}
+                                        disabled={claimingTask === task.id || !isConnected || isScoreLow || isBaseLocked || isGasExpensive || (!canClaim && !!taskLink)}
                                         className={`w-full min-h-[44px] py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-1 ${
-                                            isClaimed
-                                                ? 'bg-transparent text-green-500 cursor-default'
-                                                : isScoreLow
-                                                    ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
-                                                    : isBaseLocked
-                                                        ? 'bg-blue-900/20 text-blue-400 border border-blue-500/30'
-                                                        : isGasExpensive
-                                                            ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
-                                                            : !hasStarted && taskLink
-                                                                ? 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
-                                                                : countdown > 0
-                                                                    ? 'bg-amber-900/20 text-amber-400 border border-amber-500/20'
-                                                                    : 'bg-green-600/20 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white active:scale-95'
+                                            isScoreLow
+                                                ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
+                                                : isBaseLocked
+                                                    ? 'bg-blue-900/20 text-blue-400 border border-blue-500/30'
+                                                    : isGasExpensive
+                                                        ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
+                                                        : !hasStarted && taskLink
+                                                            ? 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
+                                                            : countdown > 0
+                                                                ? 'bg-amber-900/20 text-amber-400 border border-amber-500/20'
+                                                                : 'bg-green-600/20 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white active:scale-95'
                                         }`}
                                     >
-                                        {isGasExpensive && !isClaimed ? (
+                                        {isGasExpensive ? (
                                             <>
                                                 <div className="flex items-center gap-1.5"><AlertCircle size={14} /> ⛔ GAS TOO HIGH</div>
                                                 <span className="text-[9px] opacity-70 normal-case font-medium tracking-normal leading-none">Wait for fees to drop</span>
                                             </>
-                                        ) : isClaiming ? (
+                                        ) : claimingTask === task.id ? (
                                             <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /></div>
-                                        ) : isClaimed ? (
-                                            <div className="flex items-center gap-2">
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                CLAIMED
-                                            </div>
                                         ) : isScoreLow ? (
                                             <div className="flex items-center gap-2">
                                                 <AlertCircle size={14} className="text-red-400" />
@@ -408,7 +420,7 @@ export function TaskList() {
                                             </div>
                                         ) : isBaseLocked ? (
                                             <div className="flex items-center gap-2 text-blue-400">
-                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                                                 <span>IDENTITY REQUIRED</span>
                                             </div>
                                         ) : !hasStarted && taskLink ? (

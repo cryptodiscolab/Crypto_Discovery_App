@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls } from 'wagmi';
 import { encodeFunctionData, formatEther, decodeEventLog } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
@@ -351,6 +352,25 @@ export function useRaffleInfo(raffleId) {
         args: [BigInt(raffleId)],
     });
 
+    const [dbData, setDbData] = useState(null);
+
+    useEffect(() => {
+        if (!raffleId) return;
+        const fetchDb = async () => {
+            try {
+                const { data: supabaseData } = await supabase
+                    .from('raffles')
+                    .select('created_at')
+                    .eq('id', raffleId)
+                    .maybeSingle();
+                if (supabaseData) setDbData(supabaseData);
+            } catch (err) {
+                console.warn('[useRaffleInfo] Supabase fetch error:', err);
+            }
+        };
+        fetchDb();
+    }, [raffleId]);
+
     if (!data || isLoading) return { raffle: null, isLoading };
 
     const r = data;
@@ -371,7 +391,8 @@ export function useRaffleInfo(raffleId) {
             sponsor: r.sponsor,
             metadataURI: r.metadataURI,
             endTime: Number(r.endTime),
-            prizePerWinner: r.prizePerWinner
+            prizePerWinner: r.prizePerWinner,
+            created_at: dbData?.created_at || null
         },
         isLoading,
         refetch

@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.51.2` | **Last Updated**: `2026-04-26T05:40:00+07:00`
+**Version**: `v3.53.0` | **Last Updated**: `2026-04-26T19:30:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -798,6 +798,8 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Activity Logging**: Setiap klaim menghasilkan entry di `user_activity_logs`.
 - [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
 - [x] **30s Anti-Fraud (On-Chain)**: Timer aktif sebelum social verification (TaskRow).
+- [x] **Nexus UI Parity (v3.53.0)**: Metadata stamps (ID, Creator, Created At, Expires At) transparan dan konsisten di seluruh kartu.
+- [x] **Dynamic Summary**: Home Page summary (`TaskCard.jsx`) menggunakan real-time Supabase stats (bukan placeholder).
 - [x] **15s Anti-Fraud (Off-Chain)**: `startedTasks` countdown setelah "GO TO TASK" klik sebelum CLAIM REWARD aktif (v3.47.1).
 - [x] **Self-Healing v3.51.2**: Backend otomatis memulihkan XP/Log jika record claim sudah ada tapi data reward hilang.
 

@@ -34,7 +34,6 @@ function AdminRaffleCreateForm() {
 
     const handleSuccess = async () => {
         try {
-            // real-time read to confirm new ID
             const currentId = await publicClient.readContract({
                 address: RAFFLE_ADDRESS,
                 abi: RAFFLE_ABI,
@@ -42,7 +41,6 @@ function AdminRaffleCreateForm() {
             });
             const actualId = Number(currentId);
 
-            // Sync to Supabase for Real-Time UX
             if (address) {
                 try {
                     const timestamp = new Date().toISOString();
@@ -81,53 +79,66 @@ function AdminRaffleCreateForm() {
     };
 
     return (
-        <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-                {/* ... fields stay the same ... */}
-                <div>
-                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Winners</label>
-                    <input type="number" min="1" max="10"
-                        value={form.winnerCount}
-                        onChange={e => setForm({ ...form, winnerCount: e.target.value })}
-                        className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-indigo-400 font-black outline-none focus:border-indigo-500/50"
-                    />
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Winner Distribution</label>
+                    <div className="relative group">
+                        <Trophy className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500/50 group-focus-within:text-indigo-400 transition-colors" />
+                        <input type="number" min="1" max="50"
+                            value={form.winnerCount}
+                            onChange={e => setForm({ ...form, winnerCount: e.target.value })}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white font-black outline-none focus:border-indigo-500/50 transition-all"
+                            placeholder="Count"
+                        />
+                    </div>
                 </div>
-                <div>
-                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Max Tickets</label>
-                    <input type="number" min="1" max="10000"
-                        value={form.maxTickets}
-                        onChange={e => setForm({ ...form, maxTickets: e.target.value })}
-                        className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500/50"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Ticket Capacity</label>
+                    <div className="relative group">
+                        <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
+                        <input type="number" min="1" max="100000"
+                            value={form.maxTickets}
+                            onChange={e => setForm({ ...form, maxTickets: e.target.value })}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white font-black outline-none focus:border-emerald-500/50 transition-all"
+                            placeholder="Capacity"
+                        />
+                    </div>
                 </div>
-                <div>
-                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Duration (Days)</label>
-                    <select
-                        value={form.durationDays}
-                        onChange={e => setForm({ ...form, durationDays: e.target.value })}
-                        className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none"
-                    >
-                        {[1, 2, 3, 5, 7, 14, 25].map(d => (
-                            <option key={d} value={d}>{d} Day{d > 1 ? 's' : ''}</option>
-                        ))}
-                    </select>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Campaign Duration</label>
+                    <div className="relative group">
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500/50 group-focus-within:text-amber-400 transition-colors" />
+                        <select
+                            value={form.durationDays}
+                            onChange={e => setForm({ ...form, durationDays: e.target.value })}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white font-black outline-none appearance-none focus:border-amber-500/50 transition-all cursor-pointer"
+                        >
+                            {[1, 2, 3, 5, 7, 14, 25, 30].map(d => (
+                                <option key={d} value={d} className="bg-[#0a0a0c]">{d} Day{d > 1 ? 's' : ''}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Metadata URI</label>
-                    <input type="text"
-                        value={form.metadataURI}
-                        onChange={e => setForm({ ...form, metadataURI: e.target.value })}
-                        placeholder="ipfs://... or https://..."
-                        className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500/50"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Prize Metadata (JSON)</label>
+                    <div className="relative group">
+                        <AlertCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-white transition-colors" />
+                        <input type="text"
+                            value={form.metadataURI}
+                            onChange={e => setForm({ ...form, metadataURI: e.target.value })}
+                            placeholder="ipfs://... (Prize details)"
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white font-mono focus:border-white/20 outline-none transition-all"
+                        />
+                    </div>
                 </div>
             </div>
 
             <AdminTransactionButton 
                 calls={calls} 
                 onSuccess={handleSuccess}
-                text="DEPLOY ADMIN RAFFLE (FREE)"
-                className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+                text="INITIALIZE ON-CHAIN RAFFLE"
+                className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 py-5 rounded-[2rem] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all"
             />
         </div>
     );
@@ -154,76 +165,105 @@ export function RaffleManagerTab() {
     useEffect(() => { fetchWinners(); }, []);
 
     return (
-        <div className="space-y-6">
-            {/* Create Raffle */}
-            <div className="bg-[#121214] p-5 rounded-2xl border border-white/5 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                    <Plus className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="text-[10px] font-black text-white uppercase tracking-tighter">Create Admin Raffle (Free)</span>
-                </div>
-                <p className="text-[9px] text-slate-500 px-1">Create free raffles without an ETH deposit. Rewards come from ticket revenue.</p>
-                <AdminRaffleCreateForm />
-            </div>
-
-            {/* Raffle List */}
-            <div className="bg-[#121214] p-5 rounded-2xl border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Trophy className="w-3.5 h-3.5 text-yellow-500" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-tighter">On-Chain Raffles</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+                {/* Create Raffle */}
+                <div className="glass-card p-8 bg-indigo-950/10 border-indigo-500/10 rounded-[2.5rem] relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
+                        <Plus className="w-48 h-48 text-indigo-500" />
                     </div>
-                    <span className="text-[8px] text-slate-600 font-mono">
-                        Total: {raffleIds?.length ?? 0}
-                    </span>
+                    
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 flex items-center justify-center border border-indigo-500/30">
+                            <Plus className="w-6 h-6 text-indigo-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">CREATE <span className="text-indigo-500">ADMIN RAFFLE</span></h3>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Free deployment • No ETH required</p>
+                        </div>
+                    </div>
+                    
+                    <AdminRaffleCreateForm />
                 </div>
 
-                {!raffleIds || raffleIds.length === 0 ? (
-                    <div className="py-8 text-center">
-                        <Ticket className="w-6 h-6 text-slate-800 mx-auto mb-2" />
-                        <p className="text-[9px] text-slate-600">No raffles found.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        {[...raffleIds].reverse().map(id => (
-                            <AdminRaffleRow key={id.toString()} raffleId={id} />
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* 🏆 Top Raffle Winners Leaderboard */}
-            <div className="bg-[#121214] p-5 rounded-2xl border border-yellow-500/10 space-y-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Medal className="w-3.5 h-3.5 text-yellow-400" />
-                        <span className="text-[10px] font-black text-yellow-300 uppercase tracking-tighter">Top Raffle Winners</span>
-                    </div>
-                    <button onClick={fetchWinners} className="p-1 hover:bg-white/5 rounded-full text-slate-500 hover:text-white transition-all">
-                        <RefreshCw className={`w-3 h-3 ${loadingWinners ? 'animate-spin' : ''}`} />
-                    </button>
-                </div>
-                {loadingWinners ? (
-                    <div className="py-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-slate-600" /></div>
-                ) : winners.length === 0 ? (
-                    <p className="text-[9px] text-slate-600 text-center py-4">No winners yet.</p>
-                ) : (
-                    <div className="space-y-1.5">
-                        {winners.map((w, i) => (
-                            <div key={w.wallet_address} className="flex items-center justify-between p-2 bg-[#0a0a0c] border border-white/5 rounded-xl">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-slate-500 w-4">{i + 1}</span>
-                                    <span className="text-[9px] font-mono text-white">
-                                        {w.wallet_address.slice(0, 6)}...{w.wallet_address.slice(-4)}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-[8px] text-yellow-400 font-black">🎟️ {w.raffle_wins}W</span>
-                                    <span className="text-[8px] text-indigo-400 font-mono">{(w.total_xp || 0).toLocaleString()} XP</span>
-                                </div>
+                {/* Raffle List */}
+                <div className="glass-card p-8 bg-slate-900/10 border-white/5 rounded-[2.5rem]">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-600/20 flex items-center justify-center border border-amber-500/30">
+                                <Trophy className="w-6 h-6 text-amber-400" />
                             </div>
-                        ))}
+                            <div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">ON-CHAIN <span className="text-amber-500">RAFFLES</span></h3>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Live management & Winners</p>
+                            </div>
+                        </div>
+                        <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL: {raffleIds?.length ?? 0}</span>
+                        </div>
                     </div>
-                )}
+
+                    {!raffleIds || raffleIds.length === 0 ? (
+                        <div className="py-20 text-center glass-card bg-white/2 border-white/5 rounded-3xl">
+                            <Ticket className="w-12 h-12 text-slate-800 mx-auto mb-4 opacity-20" />
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">No raffles found in contract.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                            {[...raffleIds].reverse().map(id => (
+                                <AdminRaffleRow key={id.toString()} raffleId={id} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Leaderboard Sidebar */}
+            <div className="space-y-8">
+                <div className="glass-card p-8 bg-yellow-500/5 border-yellow-500/10 rounded-[2.5rem] sticky top-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                            <Medal className="w-5 h-5 text-yellow-400" />
+                            <h3 className="text-sm font-black text-yellow-300 uppercase tracking-widest">TOP WINNERS</h3>
+                        </div>
+                        <button onClick={fetchWinners} className={`p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all ${loadingWinners ? 'animate-spin' : ''}`}>
+                            <RefreshCw className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {loadingWinners ? (
+                        <div className="py-12 flex flex-col items-center gap-4">
+                            <Loader2 className="w-8 h-8 animate-spin text-yellow-500/20" />
+                            <span className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Querying Indexer...</span>
+                        </div>
+                    ) : winners.length === 0 ? (
+                        <div className="py-12 text-center opacity-30">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">No winners recorded.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {winners.map((w, i) => (
+                                <div key={w.wallet_address} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-yellow-500/20 transition-all group">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-slate-900 text-slate-500'}`}>
+                                            {i + 1}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-mono text-white group-hover:text-yellow-400 transition-colors">
+                                                {w.wallet_address.slice(0, 6)}...{w.wallet_address.slice(-4)}
+                                            </span>
+                                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter">WIN STREAK: {w.streak_count || 0}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[10px] text-yellow-400 font-black">🏆 {w.raffle_wins} WINS</span>
+                                        <span className="text-[9px] text-indigo-400 font-mono">{(w.total_xp || 0).toLocaleString()} XP</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -237,51 +277,71 @@ function AdminRaffleRow({ raffleId }) {
         try {
             await drawRaffle(raffleId);
             refetch();
-        } catch (e) {
-            // Error handled in hook
-        }
+        } catch (e) { }
     };
 
     if (isLoading || !raffle) return (
-        <div className="p-3 bg-[#0a0a0c] border border-white/5 rounded-xl animate-pulse">
-            <div className="h-3 w-32 bg-white/5 rounded" />
+        <div className="p-6 bg-white/2 border border-white/5 rounded-3xl animate-pulse">
+            <div className="h-4 w-32 bg-white/5 rounded-full mb-3" />
+            <div className="h-3 w-48 bg-white/5 rounded-full" />
         </div>
     );
 
     const canDraw = raffle.isActive && (raffle.totalTickets >= raffle.maxTickets || Date.now() / 1000 >= raffle.endTime);
+    const timeLeft = Math.max(0, Number(raffle.endTime) - Date.now() / 1000);
+    const hoursLeft = Math.floor(timeLeft / 3600);
 
     return (
-        <div className="flex items-center justify-between p-3 bg-[#0a0a0c] border border-white/5 rounded-xl">
-            <div className="flex-1">
-                <div className="flex items-center gap-2">
-                    <p className="text-[10px] font-black text-white uppercase flex items-center gap-1.5">
-                        <Ticket size={10} className="text-indigo-400" />
-                        Raffle #{raffle.id}
-                    </p>
-                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
-                        {raffle.isActive ? 'LIVE' : raffle.isFinalized ? 'DONE' : 'CLOSED'}
-                    </span>
+        <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-black/40 border border-white/5 rounded-[2rem] hover:border-indigo-500/20 transition-all gap-4">
+            <div className="flex items-center gap-5 flex-1 w-full">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 flex items-center justify-center border border-indigo-500/20 relative">
+                    <Ticket className="w-6 h-6 text-indigo-400" />
+                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded-lg shadow-lg">
+                        #{raffle.id}
+                    </div>
                 </div>
-                <p className="text-[8px] text-slate-500 font-mono mt-1">
-                    {Number(raffle.totalTickets || 0)}/{Number(raffle.maxTickets || 0)} tickets • {raffle.winnerCount} Winners
-                </p>
+
+                <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-3">
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest">PRIZE RAFFLE</h4>
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${raffle.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                            {raffle.isActive ? 'ACTIVE' : raffle.isFinalized ? 'FINALIZED' : 'CLOSED'}
+                        </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-slate-500 font-bold uppercase tracking-tight">
+                        <span className="flex items-center gap-1.5"><Users size={12} className="text-slate-700" /> {Number(raffle.totalTickets || 0)} / {Number(raffle.maxTickets || 0)} PARTICIPANTS</span>
+                        <span className="flex items-center gap-1.5"><Trophy size={12} className="text-slate-700" /> {raffle.winnerCount} WINNERS SELECTED</span>
+                        {raffle.isActive && (
+                            <span className="flex items-center gap-1.5 text-amber-500/60"><Clock size={12} /> {hoursLeft}H REMAINING</span>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            <div className="flex items-center gap-2">
-                {raffle.isActive && (
+            <div className="w-full md:w-auto">
+                {raffle.isActive ? (
                     <button
                         onClick={handleDraw}
-                        disabled={isDrawing}
-                        className={`text-[9px] font-black px-3 py-1.5 rounded uppercase transition-all ${canDraw
-                            ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20'
-                            : 'bg-slate-800/50 text-slate-600 cursor-not-allowed opacity-50'
-                            }`}
+                        disabled={isDrawing || !canDraw}
+                        className={`w-full md:w-auto px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
+                            canDraw
+                            ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20 hover:scale-105'
+                            : 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                        }`}
                     >
-                        {isDrawing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Draw Winner'}
+                        {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                            <>DRAW WINNERS <ArrowRight className="w-4 h-4" /></>
+                        )}
+                        {canDraw && !isDrawing && <div className="absolute inset-0 rounded-2xl border-2 border-amber-400 animate-ping opacity-20 pointer-events-none" />}
                     </button>
-                )}
-                {raffle.isFinalized && (
-                    <Trophy size={14} className="text-yellow-500 mr-2" />
+                ) : raffle.isFinalized ? (
+                    <div className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                        <Trophy size={14} /> REWARDS DISTRIBUTED
+                    </div>
+                ) : (
+                    <div className="px-6 py-3 bg-slate-800/30 border border-white/5 rounded-2xl text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                        CLOSED
+                    </div>
                 )}
             </div>
         </div>

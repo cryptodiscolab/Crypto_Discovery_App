@@ -52,6 +52,7 @@ router.post('/sync', async (req, res) => {
         const normalizedTasks = tasks.map(task => ({
             platform: task.platform,
             action_type: task.action_type,
+            task_type: task.task_type || 'daily',
             title: task.title,
             description: task.title, // Backup for legacy
             link: task.link,
@@ -59,7 +60,11 @@ router.post('/sync', async (req, res) => {
             xp_reward: task.reward_points || task.xp_reward, // Support both
             min_tier: task.min_tier,
             requires_verification: task.requires_verification,
-            is_active: true
+            is_active: true,
+            expires_at: task.expires_at,
+            creator_address: task.creator_address || wallet_address,
+            token_reward_amount: task.token_reward_amount || task.reward_amount_per_user || task.amount || 0,
+            token_reward_symbol: task.token_reward_symbol || task.reward_symbol || task.symbol || 'USDC'
         }));
 
         console.log(`[AdminSync] Syncing ${normalizedTasks.length} tasks from TX: ${tx_hash}`);

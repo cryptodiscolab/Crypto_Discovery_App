@@ -1,4 +1,4 @@
-import { Shield, Clock, Ticket, Loader2, Trophy, AlertCircle } from 'lucide-react';
+import { Shield, Clock, Ticket, Loader2, Trophy, AlertCircle, Share2, Hash, ShieldCheck } from 'lucide-react';
 import { GridCard } from './GridCard';
 import { useRaffle, useRaffleList, useRaffleInfo } from '../../hooks/useRaffle';
 import { useAccount } from 'wagmi';
@@ -116,7 +116,35 @@ export function RaffleCard() {
             <h3 className="text-xl font-black text-white mb-1 uppercase tracking-tighter italic leading-none">
                 {displayedRaffle.id ? `EXCLUSIVE RAFFLE #${displayedRaffle.id}` : "UPCOMING RAFFLE"}
             </h3>
-            <p className="label-native opacity-60 mb-6">WIN BLUE-CHIP NFTS. FAIR RANDOMNESS POWERED BY QUANTUM RNG.</p>
+            <p className="label-native opacity-60 mb-3">WIN BLUE-CHIP NFTS. FAIR RANDOMNESS POWERED BY QUANTUM RNG.</p>
+
+            {/* Metadata Stamps */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mb-6">
+                <div className="flex items-center gap-1.5">
+                    <Hash className="w-3 h-3 text-purple-400/50" />
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        ID: <span className="text-white">#{displayedRaffle.id}</span>
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Share2 className="w-3 h-3 text-purple-400/50" />
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        CREATOR: <span className="text-purple-400">{displayedRaffle.sponsor ? `${displayedRaffle.sponsor.slice(0, 6)}...${displayedRaffle.sponsor.slice(-4)}` : 'ADMIN'}</span>
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Clock className="w-3 h-3 text-purple-400/50" />
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        CREATED: <span className="text-slate-400">{displayedRaffle.created_at ? new Date(displayedRaffle.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'LEGACY'}</span>
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3 h-3 text-purple-400/50" />
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        EXPIRES: <span className="text-slate-400">{displayedRaffle.endTime ? new Date(displayedRaffle.endTime * 1000).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}</span>
+                    </span>
+                </div>
+            </div>
 
             {/* Live Raffle Details */}
             <div className="bg-zinc-950/40 rounded-2xl p-4 border border-white/5 mb-6">

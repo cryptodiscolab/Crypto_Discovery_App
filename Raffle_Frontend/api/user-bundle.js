@@ -709,8 +709,11 @@ async function handleSyncUgcMission(req, res) {
                 is_active: false, // v3.20.0: Default to false for admin moderation
                 task_type: 'ugc',
                 onchain_id: campaign.id,
+                token_reward_amount: parseFloat(reward_amount_per_user || 0),
+                token_reward_symbol: reward_symbol || 'TOKEN',
                 creator_address: wallet.toLowerCase(),
                 is_base_social_required: !!is_base_social_required, // v3.41.2 Hardening
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
                 created_at: new Date().toISOString()
             }));
 

@@ -117,6 +117,7 @@ export function TaskManagerTab() {
                     const tasksToSync = validTasks.map(task => ({
                         platform: task.platform.toLowerCase(),
                         action_type: task.action.toLowerCase(),
+                        task_type: 'daily',
                         title: task.title,
                         link: task.link || 'https://warpcast.com/CryptoDisco',
                         target_id: task.target_id,
@@ -128,7 +129,9 @@ export function TaskManagerTab() {
                         min_followers: task.minFollowers,
                         account_age_requirement: task.accountAgeLimit,
                         power_badge_required: task.powerBadgeRequired,
-                        no_spam_filter: task.noSpamFilter
+                        no_spam_filter: task.noSpamFilter,
+                        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                        creator_address: address
                     }));
 
                     const response = await fetch('/api/admin/tasks/sync', {
@@ -305,60 +308,96 @@ export function TaskManagerTab() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-10">
             <EconomyMetrics />
-            <div className="flex flex-wrap gap-2 p-1 bg-slate-900/50 rounded-2xl border border-white/5 w-fit">
-                {[
-                    { id: 'BATCH_CREATOR', label: 'Daily Tasks', icon: <Plus className="w-4 h-4" /> },
-                    { id: 'SPONSOR_PORTAL', label: 'Sponsor Portal', icon: <Share2 className="w-4 h-4" /> },
-                    { id: 'ADMIN_CONFIG', label: 'Configuration', icon: <Clock className="w-4 h-4" /> },
-                    { id: 'VIEW_TASKS', label: 'Active Campaigns', icon: <List className="w-4 h-4" /> },
-                ].map(tab => (
-                    <button key={tab.id} onClick={() => setViewMode(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === tab.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}>
-                        {tab.icon} {tab.label}
-                    </button>
-                ))}
+
+            {/* Premium Navigation */}
+            <div className="flex justify-center">
+                <div className="flex items-center gap-1 p-1.5 bg-black/40 backdrop-blur-2xl rounded-[2rem] border border-white/5 shadow-2xl">
+                    {[
+                        { id: 'BATCH_CREATOR', label: 'Daily Ops', icon: <Plus className="w-4 h-4" />, color: 'purple' },
+                        { id: 'SPONSOR_PORTAL', label: 'Sponsor Hub', icon: <Share2 className="w-4 h-4" />, color: 'emerald' },
+                        { id: 'ADMIN_CONFIG', label: 'Economy', icon: <Clock className="w-4 h-4" />, color: 'amber' },
+                        { id: 'VIEW_TASKS', label: 'Campaigns', icon: <List className="w-4 h-4" />, color: 'indigo' },
+                    ].map(tab => {
+                        const isActive = viewMode === tab.id;
+                        const colorMap = {
+                            purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20 shadow-purple-500/10',
+                            emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shadow-emerald-500/10',
+                            amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20 shadow-amber-500/10',
+                            indigo: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20 shadow-indigo-500/10'
+                        };
+                        
+                        return (
+                            <button 
+                                key={tab.id} 
+                                onClick={() => setViewMode(tab.id)} 
+                                className={`flex items-center gap-3 px-6 py-3.5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500 relative group ${
+                                    isActive 
+                                    ? `${colorMap[tab.color]} border shadow-xl scale-105 z-10` 
+                                    : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 border-transparent'
+                                }`}
+                            >
+                                <span className={`${isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100 transition-opacity'}`}>{tab.icon}</span>
+                                {tab.label}
+                                {isActive && (
+                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-current shadow-[0_0_10px_current]" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            {viewMode === 'BATCH_CREATOR' && <TaskBatchCreatorSection tasksBatch={tasksBatch} onUpdateTask={updateTaskLine} onDeploy={handleBatchSave} isSaving={isSaving} />}
-            {viewMode === 'SPONSOR_PORTAL' && (
-                <SponsorshipPortalSection
-                    sponsorTitle={sponsorTitle} onSponsorTitleChange={setSponsorTitle}
-                    sponsorLink={sponsorLink} onSponsorLinkChange={setSponsorLink}
-                    sponsorEmail={sponsorEmail} onSponsorEmailChange={setSponsorEmail}
-                    rewardPerUserUSD={rewardPerUserUSD} onRewardPerUserUSDChange={setRewardPerUserUSD}
-                    targetClaims={targetClaims} onTargetClaimsChange={setTargetClaims}
-                    isBaseSocialRequired={isBaseSocialRequired} onIsBaseSocialRequiredChange={setIsBaseSocialRequired}
-                    currentTokenPrice={currentTokenPrice}
-                    currentPlatformFee={currentPlatformFee}
-                    onCreateSponsorship={handleCreateSponsorship}
-                    isSponsorSaving={isSponsorSaving}
-                />
-            )}
-            {viewMode === 'ADMIN_CONFIG' && (
-                <EconomyConfigSection
-                    newPlatformFee={newPlatformFee} onNewPlatformFeeChange={setNewPlatformFee}
-                    newMinPoolUSD={newMinPoolUSD} onNewMinPoolUSDChange={setNewMinPoolUSD}
-                    newMinRewardUSD={newMinRewardUSD} onNewMinRewardUSDChange={setNewMinRewardUSD}
-                    newTokenPriceUSD={newTokenPriceUSD} onNewTokenPriceUSDChange={setNewTokenPriceUSD}
-                    currentPlatformFee={currentPlatformFee}
-                    currentTokenPrice={currentTokenPrice}
-                    pendingPrice={null}
-                    onUpdateEconomy={handleUpdateEconomy}
-                    onSchedulePrice={handleUpdatePrice}
-                    onExecutePrice={handleUpdatePrice}
-                />
-            )}
-            {viewMode === 'VIEW_TASKS' && (
-                <ActiveCampaignsSection
-                    nextSponsorId={nextSponsorId}
-                    nextTaskId={nextTaskId}
-                    onToggleTaskStatus={handleToggleTaskStatus}
-                    onApproveSponsor={handleApprove}
-                    onRejectSponsor={handleReject}
-                    onRefetchSponsors={refetchSponsors}
-                />
-            )}
+            {/* Dynamic Content Sections */}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                {viewMode === 'BATCH_CREATOR' && (
+                    <TaskBatchCreatorSection 
+                        tasksBatch={tasksBatch} 
+                        onUpdateTask={updateTaskLine} 
+                        onDeploy={handleBatchSave} 
+                        isSaving={isSaving} 
+                    />
+                )}
+                {viewMode === 'SPONSOR_PORTAL' && (
+                    <SponsorshipPortalSection
+                        sponsorTitle={sponsorTitle} onSponsorTitleChange={setSponsorTitle}
+                        sponsorLink={sponsorLink} onSponsorLinkChange={setSponsorLink}
+                        sponsorEmail={sponsorEmail} onSponsorEmailChange={setSponsorEmail}
+                        rewardPerUserUSD={rewardPerUserUSD} onRewardPerUserUSDChange={setRewardPerUserUSD}
+                        targetClaims={targetClaims} onTargetClaimsChange={setTargetClaims}
+                        isBaseSocialRequired={isBaseSocialRequired} onIsBaseSocialRequiredChange={setIsBaseSocialRequired}
+                        currentTokenPrice={currentTokenPrice}
+                        currentPlatformFee={currentPlatformFee}
+                        onCreateSponsorship={handleCreateSponsorship}
+                        isSponsorSaving={isSponsorSaving}
+                    />
+                )}
+                {viewMode === 'ADMIN_CONFIG' && (
+                    <EconomyConfigSection
+                        newPlatformFee={newPlatformFee} onNewPlatformFeeChange={setNewPlatformFee}
+                        newMinPoolUSD={newMinPoolUSD} onNewMinPoolUSDChange={setNewMinPoolUSD}
+                        newMinRewardUSD={newMinRewardUSD} onNewMinRewardUSDChange={setNewMinRewardUSD}
+                        newTokenPriceUSD={newTokenPriceUSD} onNewTokenPriceUSDChange={setNewTokenPriceUSD}
+                        currentPlatformFee={currentPlatformFee}
+                        currentTokenPrice={currentTokenPrice}
+                        pendingPrice={null}
+                        onUpdateEconomy={handleUpdateEconomy}
+                        onSchedulePrice={handleUpdatePrice}
+                        onExecutePrice={handleUpdatePrice}
+                    />
+                )}
+                {viewMode === 'VIEW_TASKS' && (
+                    <ActiveCampaignsSection
+                        nextSponsorId={nextSponsorId}
+                        nextTaskId={nextTaskId}
+                        onToggleTaskStatus={handleToggleTaskStatus}
+                        onApproveSponsor={handleApprove}
+                        onRejectSponsor={handleReject}
+                        onRefetchSponsors={refetchSponsors}
+                    />
+                )}
+            </div>
         </div>
     );
 }

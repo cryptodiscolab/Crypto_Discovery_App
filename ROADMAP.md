@@ -36,6 +36,9 @@
 - [x] **Create Mission Wallet Compatibility Fix (v3.46.1)**: Refactored `PayAndCreateMissionButton` in Profile to use sequential transactions, removing dependency on experimental `EIP-5792` batch protocols to support standard wallets (MetaMask/Rabby).
 - [x] **Ecosystem Environment Sync & Automation (v3.50.0)**: Built a global `sync-all-envs.cjs` script to automate synchronization across 16 `.env` files. Integrated `sync env` as a mandatory agent trigger in `.cursorrules` to ensure absolute parity.
 - [x] **Gas Tracker Hardening & Global Visibility (v3.51.0)**: Implemented explicit descending threshold chain in `useGasTracker`, defense-in-depth handler guards, SBT mint protection, and a real-time color-coded gas indicator pill in the global header. Expanded `global-sync-env.js` to include 8 missing critical keys.
+- [x] **Ghost Claim Recovery & Activity Log Hardening (v3.51.2)**: Automated self-healing for missing activity logs and hardened XP reward lifecycle.
+- [x] **Premium Task & Raffle Logic Hardening (v3.52.0)**: Hardened 24h reset logic, 7-day UGC expiry, and initial premium metadata stamps.
+- [x] **Nexus UI & Metadata Parity Overhaul (v3.53.0)**: 100% parity between Task and Raffle interfaces. Dynamic Home Page stats from Supabase, standardized Cyberpunk stamps (ID, Creator, Created, Expires), and structural hardening of countdown layouts.
 
 ## Identified ABI Drift (DAILY_APP) - [REPAIRED v3.38.25]
 All identified drifts have been synchronized with `DailyAppV12Secured.json`.
