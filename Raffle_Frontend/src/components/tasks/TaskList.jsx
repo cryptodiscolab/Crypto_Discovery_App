@@ -97,9 +97,9 @@ export function TaskList() {
 
                 if (claimsResult.data) {
                     setUserClaims(prev => {
-                        const dbClaimIds = new Set(claimsResult.data.map(c => String(c.task_id)));
+                        const dbClaimIds = new Set(claimsResult.data.map(c => String(c.task_id).toLowerCase()));
                         const recentOptimistic = prev.filter(c => 
-                            !dbClaimIds.has(String(c.task_id)) && 
+                            !dbClaimIds.has(String(c.task_id).toLowerCase()) && 
                             (Date.now() - new Date(c.claimed_at).getTime() < 15000)
                         );
                         return [...claimsResult.data, ...recentOptimistic];
@@ -219,7 +219,8 @@ export function TaskList() {
 
 
     const activeTasks = tasks.filter(task => {
-        const history = userClaims.filter(c => String(c.task_id) === String(task.id));
+        const taskIdStr = String(task.id).toLowerCase();
+        const history = userClaims.filter(c => String(c.task_id).toLowerCase() === taskIdStr);
         const hasAnyClaim = history.length > 0;
 
         // All tasks are treated as one-time per unique task ID now to match backend rules
@@ -232,7 +233,7 @@ export function TaskList() {
     });
 
     const isTaskCompletedForInterval = (task) => {
-        return userClaims.some(c => String(c.task_id) === String(task.id));
+        return userClaims.some(c => String(c.task_id).toLowerCase() === String(task.id).toLowerCase());
     };
 
     if (isLoading && tasks.length === 0) {

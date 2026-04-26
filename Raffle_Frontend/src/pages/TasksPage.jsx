@@ -59,7 +59,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
 
     const isBaseLocked = task?.isBaseSocialRequired && !profileData?.is_base_social_verified;
     const isTierLocked = Number(userTier) < Number(task?.minTier);
-    const isOffChainCompleted = offChainClaims?.has(String(taskId));
+    const isOffChainCompleted = offChainClaims?.has(String(taskId).toLowerCase());
     const canDo = !isTierLocked && !isCompleted && !isBaseLocked && !isOffChainCompleted;
 
     if (isLoading || !task || !task.isActive || isCompleted || isOffChainCompleted) return null;
@@ -286,7 +286,7 @@ export function TasksPage() {
                 .eq('wallet_address', address.toLowerCase())
                 .then(({ data, error }) => {
                     if (data && !error) {
-                        setOffChainClaims(new Set(data.map(d => String(d.task_id))));
+                        setOffChainClaims(new Set(data.map(d => String(d.task_id).toLowerCase())));
                     }
                 });
         } else {
@@ -658,7 +658,7 @@ function IndividualTaskRow({ task, address, onAction, offChainClaims }) {
         query: { enabled: !!address }
     });
 
-    const isCompletedOffChain = offChainClaims?.has(String(task.id));
+    const isCompletedOffChain = offChainClaims?.has(String(task.id).toLowerCase());
 
     if (isCompleted || isCompletedOffChain) return null;
 
