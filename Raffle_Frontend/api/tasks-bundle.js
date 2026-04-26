@@ -84,16 +84,9 @@ async function validateAndCalculateXP(wallet_address, signature, message, task_i
         if (count > 0) throw new Error('[Security] Target account already claimed by this user');
     }
 
-    // [Hardening v3.40.12] Global Uniqueness Check
-    // Ensuring user cannot claim the SAME task ID twice ever, unless a new task is created.
-    const { count: globalClaimCount } = await supabaseAdmin
-        .from('user_task_claims')
-        .select('id', { count: 'exact', head: true })
-        .eq('wallet_address', wallet_address.toLowerCase())
-        .eq('task_id', task_id);
-    
-    if (globalClaimCount > 0) throw new Error('Task already completed. Look for new missions!');
-
+    // [Hardening v3.51.2] Removed strict throw to prevent State Lockout.
+    // Database UNIQUE constraint in handleClaim will handle the 'already claimed' state
+    // and return a proper response that allows the UI to sync and hide the task.
     return { xp, targetId };
 }
 
@@ -184,6 +177,38 @@ async function handleClaim(req, res) {
 
     if (error) {
         if (error.code === '23505') {
+            // [v3.51.2] Self-Healing: Check if XP/Logs were missed in previous attempt
+            try {
+                const { data: existingLog } = await supabaseAdmin
+                    .from('user_activity_logs')
+                    .select('id')
+                    .eq('wallet_address', wallet_address.toLowerCase())
+                    .eq('activity_type', 'Task Claim')
+                    .filter('metadata->task_id', 'eq', task_id)
+                    .maybeSingle();
+
+                if (!existingLog) {
+                    console.log(`[Self-Healing] Missing log for ${task_id}. Recovering XP...`);
+                    if (xp > 0) {
+                        await supabaseAdmin.rpc('fn_increment_xp', {
+                            p_wallet: wallet_address.toLowerCase(),
+                            p_amount: xp
+                        });
+                    }
+                    await logActivity({
+                        wallet: wallet_address,
+                        category: 'XP',
+                        type: 'Task Claim',
+                        description: `[Recovered] Claimed ${xp} XP for ${task_id}`,
+                        amount: xp,
+                        symbol: 'XP',
+                        metadata: { task_id, recovered: true }
+                    });
+                    return res.status(200).json({ success: true, xp, message: "Claim recovered!", already_claimed: false });
+                }
+            } catch (recoveryErr) {
+                console.error('[Self-Healing Failure]', recoveryErr.message);
+            }
             return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
         }
         throw error;
@@ -225,7 +250,8 @@ async function handleClaim(req, res) {
             type: 'Task Claim',
             description: `Claimed ${xp} XP for ${task_id}`,
             amount: xp,
-            symbol: 'XP'
+            symbol: 'XP',
+            metadata: { task_id }
         });
     }
 
@@ -270,7 +296,8 @@ async function handleVerify(req, res) {
         type: 'Task Verify',
         description: `Verified ${task_id} on ${platform}`,
         amount: xp,
-        symbol: 'XP'
+        symbol: 'XP',
+        metadata: { task_id, platform, action_type }
     });
 
     return res.status(200).json({ success: true, xp });
@@ -312,7 +339,8 @@ async function handleSocialVerify(req, res) {
         type: 'Social Verify',
         description: `Verified ${action_type} on ${platform}`,
         amount: xp,
-        symbol: 'XP'
+        symbol: 'XP',
+        metadata: { task_id, platform, action_type }
     });
 
     return res.status(200).json({ success: true, xp, message: `Task verified.` });

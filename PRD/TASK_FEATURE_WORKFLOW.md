@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.49.0` | **Last Updated**: `2026-04-26T01:47:00+07:00`
+**Version**: `v3.51.2` | **Last Updated**: `2026-04-26T05:40:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -20,6 +20,7 @@
 13. [Admin Task Management](#13-admin-task-management)
 14. [File Reference Map](#14-file-reference-map)
 15. [Healthy State Checklist](#15-healthy-state-checklist)
+16. [Self-Healing Claim Pipeline](#16-self-healing-claim-pipeline)
 
 ---
 
@@ -798,6 +799,29 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
 - [x] **30s Anti-Fraud (On-Chain)**: Timer aktif sebelum social verification (TaskRow).
 - [x] **15s Anti-Fraud (Off-Chain)**: `startedTasks` countdown setelah "GO TO TASK" klik sebelum CLAIM REWARD aktif (v3.47.1).
+- [x] **Self-Healing v3.51.2**: Backend otomatis memulihkan XP/Log jika record claim sudah ada tapi data reward hilang.
+
+---
+
+## 16. Self-Healing Claim Pipeline (v3.51.2)
+
+Protokol Self-Healing dirancang untuk mengatasi "Ghost Claims" (kondisi di mana record di `user_task_claims` ada, tetapi penambahan XP atau penulisan Activity Log gagal karena timeout atau crash).
+
+### 16.1 Ghost Claim Recovery Logic
+Saat backend menerima error **23505 (Unique Violation)** pada tabel `user_task_claims`, sistem tidak lagi langsung melempar error. Sebaliknya, sistem menjalankan:
+1. **Log Audit**: Mengecek `user_activity_logs` menggunakan `metadata->task_id`.
+2. **State Restoration**: Jika log tidak ditemukan, sistem secara otomatis mengeksekusi `fn_increment_xp()` dan menulis log baru.
+3. **Idempotency**: Jika log sudah ada, sistem mengonfirmasi klaim tersebut sukses tanpa duplikasi XP.
+
+### 16.2 UI Resiliency Mandate
+Frontend `TaskList.jsx` wajib menangkap error "already completed" dan melakukan sinkronisasi lokal instan:
+```javascript
+if (error.message.includes("already completed")) {
+    setLocalClaims(prev => [...prev, taskId]); // Instant hide
+    fetchData(); // Background sync
+}
+```
+
 - [x] **Two-Step Task Flow (Off-Chain)**: User HARUS buka link dulu via "GO TO TASK" sebelum bisa klaim XP (v3.47.1).
 - [x] **Swap Quote Error Visibility**: SwapModal menampilkan error visible + Jumper fallback jika Li.Fi SDK gagal quote (v3.47.1).
 - [x] **NFT Mint Contract Parity**: SBTUpgradeCard memanggil `mintNFT` (DAILY_APP) bukan `upgradeTier` (MASTER_X) (v3.47.1).

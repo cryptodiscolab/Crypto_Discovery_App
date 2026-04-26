@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.51.1)
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.51.2)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -39,9 +39,27 @@ After reading, internally confirm:
 - **Ollama Model**: `OpenClaw:3.38.0` (Powered by `qwen2.5-coder`)
 - **Worker Script**: `node .agents/scripts/openclaw-worker.js`
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
+- v3.51.1: Fixed Dual Pipeline Routing (Social vs Claim).
+- v3.51.2: Implemented Self-Healing Claim Pipeline (Ghost Claim Recovery).
 
 ---
-**Protocol Version: 3.51.1 (Dual Pipeline Routing Fix)**
+
+## 🟢 Work Report v3.51.2: Ghost Claim & State Lockout Fix
+**Status**: ✅ IMPLEMENTED
+**Root Cause**: 
+1. **State Lockout**: A strict pre-check in `tasks-bundle.js` threw an error if a claim record existed, even if the previous attempt failed to award XP or log activity. This prevented retries from ever finishing the job.
+2. **Sync Desync**: Missing RLS on `user_task_claims` (likely) caused the frontend to see the task as available, while the backend saw it as claimed, causing an infinite error loop.
+3. **Incomplete Logs**: `logActivity` lacked `task_id` in metadata, making it impossible to programmatically verify if a specific task was processed.
+
+**Technical Changes**:
+1. **Self-Healing Pipeline**: `tasks-bundle.js` now detects if a claim insert fails due to a pre-existing record. It then checks for missing logs/XP and performs an automatic recovery (idempotent XP award).
+2. **Removed Strict Pre-Check**: Shifted uniqueness enforcement to the DB UNIQUE constraint to allow the healing logic to trigger.
+3. **Enhanced Logging**: All task logs now include `task_id` in the `metadata` field for reliable auditing.
+4. **UI Resiliency**: `TaskList.jsx` now catches "already completed" errors and performs an immediate local sync/hide.
+
+---
+
+## 🟢 Work Report v3.51.1: Dual Pipeline Routing Fix
 
 > The user may say `> re-read skills` to force a reset (MANDATORY: read both Skills and [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md)).
 
@@ -542,7 +560,7 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 
 ---
 
-### SECTION 31: TASK FEATURE INTEGRITY MANDATE (v3.42.8) 🎯
+### SECTION 51: TASK FEATURE INTEGRITY MANDATE (v3.51.2) 🎯
 
 > **CANONICAL REFERENCE**: `PRD/TASK_FEATURE_WORKFLOW.md`
 > This document is the ABSOLUTE Source of Truth for all Task feature logic.
@@ -680,8 +698,8 @@ Aktivasi "mental tool" berdasarkan konteks:
 
 ---
 
-- **Current Protocol Version**: v3.51.1 (Dual Pipeline Routing Fix)
-*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. Flash-Turbo Protocol v1.0: ENGAGED. **Dual Pipeline Routing Fix v3.51.1: LOCKED** — claim_task ALWAYS to tasks-bundle. v3.51.1 Locked.*
+- **Current Protocol Version**: v3.51.2 (Self-Healing Claim Pipeline)
+*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. Flash-Turbo Protocol v1.0: ENGAGED. **Self-Healing Claim Pipeline v3.51.2: LOCKED** — ghost claim recovery enabled. v3.51.2 Locked.*
 
 ---
 
@@ -691,8 +709,15 @@ Aktivasi "mental tool" berdasarkan konteks:
 - **VISIBILITY**: Real-time gas indicators (Pill UI) MUST be present in the Global Header to provide users with instant feedback on network costs.
 - **THRESHOLDS**: Use strictly descending logic: `Expensive (>0.5)`, `Very High (>=0.2)`, `High (>=0.05)`, `Normal (>=0.005)`, `Cheap (<0.005)`.
 
-## 51. DUAL PIPELINE ROUTING MANDATE (v3.51.1)
+## 51. DUAL PIPELINE ROUTING & SELF-HEALING MANDATE (v3.51.2)
 - **ABSOLUTE LAW**: `useVerifiedAction.js` hook MUST route `claim_task` actions exclusively to `/api/tasks-bundle`. NEVER redirect claim operations to the Verification Server.
 - **ROUTING LOGIC**: `isSocialVerify` flag must ONLY be `true` when `action !== 'claim_task'` AND `platform` is a social platform. This prevents off-chain task claims with social platform labels from being mis-routed.
 - **BODY INTEGRITY**: The JSON request body MUST NOT contain duplicate property keys. The `action` key is reserved for `bundleAction` (e.g., 'claim'). Social metadata must use `action_type` instead.
 - **ANTI-PATTERN (BP-005)**: Do NOT use `isSocialTask` as the sole routing decision. Always check `isClaimAction` first to prevent Verification Server mis-routing.
+
+### 51.2 Self-Healing Mandate (v3.51.2)
+All claim/verify handlers MUST implement a self-healing block. If a UNIQUE constraint violation (23505) occurs, the handler MUST check for missing activity logs and attempt to recover the XP/Log state before returning a success response.
+
+### 51.3 Metadata Logging Mandate
+Every `logActivity` call for a task MUST include `task_id` (and `platform` if applicable) in the `metadata` object. String-only descriptions are insufficient for automated recovery or self-healing audits.
+

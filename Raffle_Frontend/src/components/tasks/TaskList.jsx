@@ -197,13 +197,18 @@ export function TaskList() {
             const errMsg = err.message || "Unknown error";
             if (err.code === 4001 || errMsg.toLowerCase().includes("rejected")) {
                 toast.error("Signature rejected", { id: toastId });
-            } else if (errMsg.toLowerCase().includes("already completed") || errMsg.toLowerCase().includes("already claimed")) {
+            } else if (errMsg.toLowerCase().includes("already completed") || 
+                       errMsg.toLowerCase().includes("already claimed") || 
+                       errMsg.toLowerCase().includes("task already completed")) {
                 // Task was already claimed in DB but not reflected in UI — sync immediately
                 toast.success("Mission already done! Syncing...", { id: toastId });
                 // Force sync: add to local claims so task disappears instantly
                 setUserClaims(prev => [...prev, { task_id: task.id, claimed_at: new Date().toISOString() }]);
-                // Then do a full server sync to be accurate
-                setTimeout(() => fetchData(), 500);
+                // Then do a full server sync after a short delay to ensure everything is consistent
+                setTimeout(() => {
+                    fetchData();
+                    if (refetch) refetch();
+                }, 1000);
             } else {
                 toast.error("Claim failed: " + errMsg, { id: toastId });
             }
