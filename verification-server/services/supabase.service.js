@@ -364,11 +364,23 @@ class SupabaseService {
                     .from('point_settings')
                     .select('points_value')
                     .eq('activity_key', activityName)
-                    .maybeSingle(); // v3.42.2: safe if activity key not found
+                    .maybeSingle();
 
                 if (setting) {
-                    finalXp = setting.points_value;
-                    console.log(`[Supabase] Overriding XP with Ground Truth for ${activityName}: ${finalXp}`);
+                    // [Special Case] Raffle Buy: Support multiples of base XP for bulk tickets
+                    if (activityName === 'raffle_buy') {
+                        const base = setting.points_value;
+                        const requested = parseInt(xpReward);
+                        // Allow if it's a multiple and within reasonable bounds (max 1000 tickets)
+                        if (requested > base && requested % base === 0 && requested <= base * 1000) {
+                            finalXp = requested;
+                        } else {
+                            finalXp = base;
+                        }
+                    } else {
+                        finalXp = setting.points_value;
+                    }
+                    console.log(`[Supabase] XP Ground Truth for ${activityName}: ${finalXp} (Base: ${setting.points_value})`);
                 }
             }
 

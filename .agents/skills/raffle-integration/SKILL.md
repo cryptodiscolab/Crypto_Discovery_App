@@ -18,10 +18,10 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 ### 2. Verified Infrastructure Reference (v3.25.0)
 | Key | Value |
 |---|---|
-| Raffle (Latest) | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
+| Raffle (Latest) | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` |
 | MasterX (XP) | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
-| PRD Version | `v3.42.8` (Admin System Hardening) |
+| PRD Version | `v3.55.0` (Raffle Refund Protocol V2.1) |
 
 ### 3. Bahasa & Komunikasi
 - **Teknis/Chat**: **Bahasa Indonesia**.
@@ -58,6 +58,7 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 ### 5. Activity Logging Standard (Zero-Trust)
 - **Purchase Tracking**: /api/tasks-bundle?action=social-verify dengan `task_id` unik per transaksi.
 - **Winner Awarding**: Increment `raffle_wins` via backend setelah verifikasi on-chain.
+- **Refund Protocol (v3.55.0)**: Seluruh aksi penolakan raffle (Admin Rejection) WAJIB didahului oleh eksekusi `cancelRaffle()` on-chain untuk mengembalikan dana sponsor. Status database hanya boleh di-update setelah `txHash` pembatalan diterima.
 - **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
 ## ⛽ Paymaster Integration (Gasless)
@@ -77,6 +78,7 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
     - [x] Apakah raffle pembelian berkontribusi pada dividends? 
     - [x] Apakah gating Base Social sudah diterapkan pada tombol Beli?
     - [x] **v3.42.8**: Apakah `Buy Ticket` button menggunakan Indigo transparent/border baseline dan NO icons? **WAJIB.**
+    - [x] **v3.55.0**: Apakah moderasi "Reject" sudah menyertakan `cancelRaffle()` on-chain? **WAJIB.**
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Labels**: `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { verifyMessage } from 'viem';
+import { verifyMessage, createPublicClient, http, decodeEventLog } from 'viem';
+import { baseSepolia, base } from 'viem/chains';
 
 const supabaseAdmin = createClient(
     (process.env.VITE_SUPABASE_URL || '').trim(),
@@ -9,6 +10,36 @@ const supabaseAdmin = createClient(
 // 1. DYNAMIC NETWORK SWITCHER (MAINNET SECURE)
 const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
 const isMainnet = CHAIN_ID === '8453';
+const RPC_URL = (isMainnet ? process.env.VITE_RPC_URL : process.env.VITE_BASE_SEPOLIA_RPC_URL) || 'https://sepolia.base.org';
+
+const publicClient = createPublicClient({
+    chain: isMainnet ? base : baseSepolia,
+    transport: http(RPC_URL)
+});
+
+// ABIs for Verification
+const RAFFLE_EVENT_ABI = [
+    {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": true, "name": "user", "type": "address" },
+            { "indexed": true, "name": "raffleId", "type": "uint256" },
+            { "indexed": false, "name": "count", "type": "uint256" }
+        ],
+        "name": "TicketPurchased",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": true, "name": "raffleId", "type": "uint256" },
+            { "indexed": true, "name": "winner", "type": "address" },
+            { "indexed": false, "name": "prize", "type": "uint256" }
+        ],
+        "name": "RaffleWinner",
+        "type": "event"
+    }
+];
 
 
 // 🛡️ REFACTORED HELPERS 🛡️
@@ -35,7 +66,6 @@ async function getPointValue(activityKey) {
 async function getTaskReward(taskId) {
     if (taskId?.startsWith('raffle_buy_')) return await getPointValue('raffle_buy');
     if (taskId?.startsWith('raffle_win_')) return await getPointValue('raffle_win');
-    if (taskId?.startsWith('raffle_draw_')) return await getPointValue('raffle_ticket');
     try {
         const { data: task } = await supabaseAdmin
             .from('daily_tasks')
@@ -49,9 +79,86 @@ async function getTaskReward(taskId) {
     } catch (e) { return 0; }
 }
 
+/**
+ * 🛡️ ON-CHAIN VERIFIER 🛡️
+ * Verifies that the transaction actually happened and matches the claim.
+ */
+async function verifyRaffleOnChain(taskId, wallet_address, message) {
+    // 1. Verification for Raffle Ticket Purchase
+    if (taskId.startsWith('raffle_buy_')) {
+        const parts = taskId.split('_');
+        const txHash = parts[parts.length - 1];
+        if (!txHash || !txHash.startsWith('0x')) throw new Error('Missing transaction hash in task ID');
+
+        const amountMatch = message.match(/Amount:\s*(\d+)/i);
+        const expectedAmount = amountMatch ? parseInt(amountMatch[1], 10) : 0;
+        if (expectedAmount <= 0) throw new Error('Invalid amount in message');
+
+        try {
+            const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+            if (!receipt || receipt.status !== 'success') throw new Error('Transaction failed or not found');
+
+            let confirmedAmount = 0;
+            for (const log of receipt.logs) {
+                try {
+                    const decoded = decodeEventLog({
+                        abi: RAFFLE_EVENT_ABI,
+                        data: log.data,
+                        topics: log.topics,
+                    });
+                    if (decoded.eventName === 'TicketPurchased') {
+                        if (decoded.args.user.toLowerCase() === wallet_address.toLowerCase()) {
+                            confirmedAmount += Number(decoded.args.count);
+                        }
+                    }
+                } catch (e) { /* skip logs from other contracts */ }
+            }
+
+            if (confirmedAmount < expectedAmount) {
+                throw new Error(`On-chain mismatch: Claimed ${expectedAmount} but found ${confirmedAmount} tickets in logs.`);
+            }
+            return true;
+        } catch (err) {
+            console.error('[verifyRaffleOnChain] Purchase verification failed:', err.message);
+            throw new Error(`Blockchain verification failed: ${err.message}`);
+        }
+    }
+
+    // 2. Verification for Raffle Winner
+    if (taskId.startsWith('raffle_win_')) {
+        const raffleId = taskId.split('_')[2]; // raffle_win_{id}
+        if (!raffleId) throw new Error('Missing raffle ID in task ID');
+
+        try {
+            // Check RaffleWinner events in the contract for this raffleId
+            const logs = await publicClient.getLogs({
+                address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA, // Fallback to env
+                event: RAFFLE_EVENT_ABI[1],
+                args: { raffleId: BigInt(raffleId) },
+                fromBlock: 'earliest'
+            });
+
+            const isWinner = logs.some(log => log.args.winner.toLowerCase() === wallet_address.toLowerCase());
+            if (!isWinner) throw new Error(`User ${wallet_address} is not a winner of Raffle #${raffleId}`);
+            
+            return true;
+        } catch (err) {
+            console.error('[verifyRaffleOnChain] Win verification failed:', err.message);
+            throw new Error(`Winner verification failed: ${err.message}`);
+        }
+    }
+
+    return true; // Not a raffle task
+}
+
 async function validateAndCalculateXP(wallet_address, signature, message, task_id) {
     const valid = await verifyMessage({ address: wallet_address, message, signature });
     if (!valid) throw new Error('Invalid signature');
+
+    // [Hardening v3.55.0] On-chain verification for Raffle activities
+    if (task_id && task_id.startsWith('raffle_')) {
+        await verifyRaffleOnChain(task_id, wallet_address, message);
+    }
 
     let xp = await getTaskReward(task_id);
     // [Refactor v3.41.2] Scaling is now handled via database RPC fn_increment_xp 

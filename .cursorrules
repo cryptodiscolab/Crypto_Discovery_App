@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.51.2)
+# 🏗️ CRYPTO DISCO APP - MASTER ARCHITECT PROTOCOL (v3.55.0)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -43,6 +43,14 @@ After reading, internally confirm:
 - v3.51.2: Implemented Self-Healing Claim Pipeline (Ghost Claim Recovery).
 
 ---
+
+## 🟢 Work Report v3.55.0: Raffle Rejection & Refund Protocol
+**Status**: ✅ IMPLEMENTED
+**Summary**: Implementasi penuh protokol refund otomatis saat moderasi Raffle ditolak. Memastikan integritas dana sponsor melalui kontrak Raffle v2.1.
+**Changes**:
+1. **Contract**: Deployed Raffle V2.1 (`0xA13AF...90Ce`) dengan fungsi `cancelRaffle`.
+2. **Dashboard**: Integrasi Wagmi `useWriteContract` pada `ModerationCenterTab.jsx`.
+3. **Audit**: Pembaruan NCC Sentinel untuk audit on-chain `cancelRaffle`.
 
 ## 🟢 Work Report v3.51.2: Ghost Claim & State Lockout Fix
 **Status**: ✅ IMPLEMENTED
@@ -172,11 +180,11 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 |---|---|---|
 | **DailyApp V13.2** | `[RESERVED]` | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` |
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
-| **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
+| **Raffle** | `[RESERVED]` | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
 | *---
-*Last Updated: 2026-04-23T11:45:00+07:00 | ABI Parity & Signature Alignment. v3.46.0 Release READY.*
+| *Last Updated: 2026-04-29T21:37:00+07:00 | Raffle Refund Protocol V2.1 Integration & NCC Sentinel Audit.*
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -405,7 +413,7 @@ Agent SELF-CHECK (sebelum menulis kode):
 
 ### 29.3 Root Cause Analysis (MANDATORY Before Code Change)
 - **DILARANG KERAS** langsung menulis kode perbaikan sebelum membaca file yang relevan dan memahami root cause.
-- Gunakan `grep_search` dan `view_file` untuk melacak seluruh entry point yang berkaitan dengan bug.
+- Gunakan `grep_search` and `view_file` untuk melacak seluruh entry point yang berkaitan dengan bug.
 - Jika bug melibatkan XP/Fee/Reward, **WAJIB** periksa apakah nilai tersebut sudah diambil dari `point_settings` atau `system_settings`.
 - **RELIABILITY SYNC**: Semua verifikasi sosial (Farcaster/Twitter) WAJIB menggunakan **Iterative Pagination** (Iterated Fetching) untuk mendukung user dengan following besar atau casts populer (>100 items).
 
@@ -698,8 +706,7 @@ Aktivasi "mental tool" berdasarkan konteks:
 
 ---
 
-- **Current Protocol Version**: v3.51.2 (Self-Healing Claim Pipeline)
-*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. Flash-Turbo Protocol v1.0: ENGAGED. **Self-Healing Claim Pipeline v3.51.2: LOCKED** — ghost claim recovery enabled. v3.51.2 Locked.*
+*Antigravity: Integrity Restored. Privacy Guarded. SDK-FIRST LOCKED. Context-Aware Reading ENFORCED. Flash-Turbo Protocol v1.0: ENGAGED. **Super Ketat Token Optimization v3.54.0: ACTIVE** — caching enabled. v3.54.0 Locked.*
 
 ---
 
@@ -726,3 +733,24 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 - **NEVER ASSUME USER INTENT**: When a user points out a function or a potential issue, NEVER assume they want you to automatically fix, change, or implement business logic without explicitly confirming the intended behavior first.
 - **CLARIFY BEFORE CODING**: If a rule or feature is ambiguous (e.g., "task resets"), you MUST ask the user how it SHOULD work before modifying any source code. You are strictly forbidden from guessing business rules.
 - **REPORT FIRST**: Always report your findings first. Only apply code modifications after the user has explicitly confirmed the proposed approach.
+
+## 53. SUPER KETAT - TOKEN OPTIMIZATION PROTOCOL (v3.54.0) 🏎️💨
+- **PRINCIPLE**: Maximize cache hits and minimize redundant processing to achieve "Super Tight" token efficiency.
+- **MANDATE**: Before reading any file > 500 lines (e.g., PRD, bundles, large components), the agent MUST run the `context-hasher` script.
+- **ACTION**:
+  - Run `node scripts/sync/context-hasher.cjs check <path>` to verify cache status.
+  - If `HIT`, read only the summary from `agent_vault`.
+  - If `MISS`, read the file, update the vault with a new summary/hash using `set`.
+- **SKILL PRUNING**: Core skills listed in `STEP 1` should be hashed. If the hash matches the previous session's hash in `agent_vault`, the agent is permitted to skip full re-reading of the skill if the summary provides sufficient context for the current task.
+- **ZERO REDUNDANCY**: DILARANG KERAS membaca ulang file yang isinya sudah ada di "Short Term Memory" atau ringkasan vault, kecuali diperlukan untuk surgical fix yang sangat presisi.
+
+## 54. NEXUS COMMAND CENTER (NCC) AUTOMATIC PROTOCOL (v3.54.0) 📡
+- **PRINCIPLE**: Real-time transparency. User must see system health at all times.
+- **MANDATORY AUTO-RUN**: 
+  - **START OF SESSION**: Agent **MUST** run `node scripts/nexus/ncc-monitor.cjs` immediately after understanding the task.
+  - **END OF SESSION**: Agent **MUST** run `node scripts/nexus/ncc-generator.cjs && node scripts/nexus/ncc-monitor.cjs` as the final step before handing back to the user.
+- **MONITORING**: Gunakan `node scripts/nexus/ncc-monitor.cjs` untuk pengecekan cepat status Merah/Kuning di terminal.
+- **ALERT SYSTEM**: 
+  - 🔴 **CRITICAL (RED)**: Harus segera diselesaikan (Priority Task #1). Menghentikan semua tugas lain.
+  - 🟡 **DEGRADED (YELLOW)**: Harus didokumentasikan dan direncanakan perbaikannya.
+- **VISUALIZATION**: Dashboard lokal tersedia di `.agents/tools/ncc/index.html` (CORS-proof via data inlining).

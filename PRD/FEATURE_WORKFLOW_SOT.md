@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.53.0)
-**Last Updated**: 2026-04-26T19:40:00+07:00 — Nexus UI & Metadata Parity (v3.53.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.55.0)
+**Last Updated**: 2026-04-29T21:38:00+07:00 — Raffle Refund Protocol V2.1 (v3.55.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -13,7 +13,7 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 | :--- | :--- | :--- | :--- |
 | **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
 | **DailyApp V13.2** | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
-| **Raffle Manager** | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | Maret 2026 | Tiket Gacha, Undian Sponsor, Prizing distribution. |
+| **Raffle Manager** | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
 
 > [!WARNING]
@@ -324,5 +324,17 @@ Dokumen tersebut mencakup (15 section):
 
 **Semua modifikasi terhadap fitur Task WAJIB mematuhi alur yang tertera di dokumen tersebut.**
 
+## 🏛️ 13. Raffle Moderation & Refund Workflow (Protocol V2.1)
+Mekanisme pengamanan dana sponsor saat konten UGC tidak disetujui.
+
+### 13.1 Administrative Rejection
+- **Triggers**: Admin klik tombol "REJECT" pada `ModerationCenterTab.jsx`.
+- **Workflow**:
+  1. **On-Chain Refund**: Dashboard memanggil `cancelRaffle(raffleId)` di kontrak Raffle V2.1.
+  2. **Fund Recovery**: Kontrak memverifikasi `totalTickets == 0` dan mengirimkan kembali deposit ETH ke `sponsor`.
+  3. **Event**: Blockchain memancarkan `RaffleCancelled`.
+  4. **API Sync**: Setelah `tx_hash` didapat, Frontend memanggil `/api/user-bundle?action=reject-raffle`.
+  5. **DB Update**: Backend mencatat `cancellation_tx`, mengubah status raffle di Supabase, dan merekam aksi di `admin_audit_logs`.
+
 ---
-*End of Source of Truth Document - Nexus v3.42.8 Locked.*
+*End of Source of Truth Document - Nexus v3.55.0 Locked.*

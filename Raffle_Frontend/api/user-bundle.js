@@ -13,6 +13,45 @@ const neynar = new NeynarAPIClient({ apiKey: neynarApiKey || '' });
 // 1. DYNAMIC NETWORK SWITCHER (MAINNET SECURE)
 const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
 const isMainnet = CHAIN_ID === '8453';
+const RPC_URL = (isMainnet ? process.env.VITE_RPC_URL : process.env.VITE_BASE_SEPOLIA_RPC_URL) || 'https://sepolia.base.org';
+
+const publicClient = createPublicClient({
+    chain: isMainnet ? base : baseSepolia,
+    transport: http(RPC_URL)
+});
+
+const RAFFLE_ABI = [
+    {
+        "inputs": [{ "internalType": "uint256", "name": "raffleId", "type": "uint256" }],
+        "name": "getRaffleInfo",
+        "outputs": [
+            {
+                "components": [
+                    { "internalType": "uint256", "name": "raffleId", "type": "uint256" },
+                    { "internalType": "uint256", "name": "totalTickets", "type": "uint256" },
+                    { "internalType": "uint256", "name": "maxTickets", "type": "uint256" },
+                    { "internalType": "uint256", "name": "targetPrizePool", "type": "uint256" },
+                    { "internalType": "uint256", "name": "prizePool", "type": "uint256" },
+                    { "internalType": "address[]", "name": "participants", "type": "address[]" },
+                    { "internalType": "address[]", "name": "winners", "type": "address[]" },
+                    { "internalType": "uint256", "name": "winnerCount", "type": "uint256" },
+                    { "internalType": "uint256", "name": "randomNumber", "type": "uint256" },
+                    { "internalType": "bool", "name": "isActive", "type": "bool" },
+                    { "internalType": "bool", "name": "isFinalized", "type": "bool" },
+                    { "internalType": "address", "name": "sponsor", "type": "address" },
+                    { "internalType": "string", "name": "metadataURI", "type": "string" },
+                    { "internalType": "uint256", "name": "endTime", "type": "uint256" },
+                    { "internalType": "uint256", "name": "prizePerWinner", "type": "uint256" }
+                ],
+                "internalType": "struct NFT_Raffle_V2.RaffleInfo",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
 
 const activeChain = isMainnet ? base : baseSepolia;
 const activeRpcUrl = isMainnet 
@@ -187,6 +226,7 @@ export default async function handler(req, res) {
         case 'sync-base-social': await handleSyncBaseSocial(req, res); break;
         case 'approve-mission': await handleApproveMission(req, res); break;
         case 'approve-raffle': await handleApproveRaffle(req, res); break;
+        case 'reject-raffle': await handleRejectRaffle(req, res); break;
         case 'check-admin': await handleCheckAdmin(req, res); break;
         case 'pending-missions': await handleFetchPendingMissions(req, res); break;
         case 'pending-raffles': await handleFetchPendingRaffles(req, res); break;
@@ -799,6 +839,24 @@ async function handleSyncUgcRaffle(req, res) {
 
         const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount, txHash } = payload;
 
+        // 🛡️ ON-CHAIN VERIFICATION (Hardening v3.55.0)
+        try {
+            const raffleInfo = await publicClient.readContract({
+                address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA,
+                abi: RAFFLE_ABI,
+                functionName: 'getRaffleInfo',
+                args: [BigInt(raffle_id)]
+            });
+            
+            if (raffleInfo.sponsor.toLowerCase() !== wallet.toLowerCase()) {
+                return res.status(403).json({ error: `[Security] User ${wallet} is not the sponsor of Raffle #${raffle_id} on-chain.` });
+            }
+        } catch (onChainErr) {
+             console.error('[handleSyncUgcRaffle] On-chain check failed:', onChainErr.message);
+             // Skip error if it's just a newly created raffle that hasn't indexed yet, 
+             // but for XP awarding we need it.
+        }
+
         const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
         const platformFeePercent = sysSetting?.value ? parseFloat(sysSetting.value) : 5;
         const feeMultiplier = 1 + (platformFeePercent / 100);
@@ -1120,6 +1178,53 @@ async function handleApproveRaffle(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+async function handleRejectRaffle(req, res) {
+    const { wallet, signature, message, raffle_id, reason, txHash } = req.body;
+    if (!wallet || !signature || !message || !raffle_id) return res.status(400).json({ error: 'Missing rejection data' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const cleanAddress = wallet.toLowerCase();
+        const isAdmin = await isAuthorizedAdmin(cleanAddress);
+        if (!isAdmin) {
+            return res.status(403).json({ error: 'Unauthorized: Admin only' });
+        }
+
+        const { error } = await supabaseAdmin
+            .from('raffles')
+            .update({ 
+                is_active: false, 
+                rejection_reason: reason || 'Violation of terms',
+                cancellation_tx: txHash || null,
+                updated_at: new Date().toISOString() 
+            })
+            .eq('id', raffle_id);
+
+        if (error) throw error;
+
+        // Log Admin Action
+        await supabaseAdmin.from('admin_audit_logs').insert({
+            admin_address: cleanAddress,
+            action: 'UGC_REJECT_RAFFLE',
+            details: { raffle_id, reason, txHash, rejected_at: new Date().toISOString() }
+        });
+
+        await logActivity({
+            wallet: cleanAddress,
+            category: 'ADMIN',
+            type: 'Raffle Rejection',
+            description: `Rejected and cancelled raffle ID: ${raffle_id}`,
+            metadata: { raffle_id, reason, txHash }
+        });
+
+        return res.status(200).json({ success: true, message: 'Raffle rejected and cancelled' });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
 async function handleCheckAdmin(req, res) {
     const { wallet } = req.query;
     if (!wallet) return res.status(400).json({ isAdmin: false });
@@ -1197,7 +1302,8 @@ async function handleResetHealth(req, res) {
 }
 
 async function handleFetchPendingRaffles(req, res) {
-    const { wallet, signature, message } = req.query;
+    const body = req.method === 'POST' ? req.body : req.query;
+    const { wallet, signature, message } = body;
     if (!wallet || !signature || !message) return res.status(401).json({ error: 'Missing auth for admin fetch' });
 
     try {
@@ -1210,7 +1316,8 @@ async function handleFetchPendingRaffles(req, res) {
         const { data, error } = await supabaseAdmin
             .from('raffles')
             .select('*')
-            .eq('is_active', false);
+            .eq('is_active', false)
+            .is('rejection_reason', null);
 
         if (error) throw error;
         return res.status(200).json(data);

@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.53.0)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.54.0)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -67,6 +67,7 @@ Before responding to ANY request, read these files IN ORDER:
 62. **SDK-FIRST SWAP ENGINE**: NEVER use `@lifi/widget` or other heavy monolithic UI libraries that crash Rollup AST parsers on Vercel. Always build custom lightweight interfaces using `@lifi/sdk` directly (v3.47.0).
 63. **GAS TRACKER HARDENING**: All high-value on-chain interactions (Raffle, SBT Mint) MUST be gated by the `Expensive` gas threshold (> 0.5 Gwei). Handler-level guards are mandatory to prevent DevTools bypass and ensure user financial safety (v3.51.0).
 64. **NEXUS UI PARITY**: ALL mission and raffle cards MUST display transparent metadata stamps: Unique ID (`Hash`), Creator (`ShieldCheck`), and Created/Expires timestamps (`Clock`). Home summary MUST be dynamic (Supabase-sourced) to eliminate placeholder drift (v3.53.0).
+65. **SUPER KETAT TOKEN OPTIMIZATION**: Agents MUST execute `context-hasher` check before reading files >500 lines. Maximize cache hits via SHA-256 persistent memory in `agent_vault` (v3.54.0).
 
 ---
 

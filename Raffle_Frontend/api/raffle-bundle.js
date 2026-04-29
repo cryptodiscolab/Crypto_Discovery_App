@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { verifyMessage } from 'viem';
+import { verifyMessage, createPublicClient, http } from 'viem';
+import { baseSepolia, base } from 'viem/chains';
 
 const supabaseAdmin = createClient(
     (process.env.VITE_SUPABASE_URL || '').trim(),
@@ -12,6 +13,45 @@ const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '').trim();
 // 1. DYNAMIC NETWORK SWITCHER (MAINNET SECURE)
 const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
 const isMainnet = CHAIN_ID === '8453';
+const RPC_URL = (isMainnet ? process.env.VITE_RPC_URL : process.env.VITE_BASE_SEPOLIA_RPC_URL) || 'https://sepolia.base.org';
+
+const publicClient = createPublicClient({
+    chain: isMainnet ? base : baseSepolia,
+    transport: http(RPC_URL)
+});
+
+const RAFFLE_ABI = [
+    {
+        "inputs": [{ "internalType": "uint256", "name": "raffleId", "type": "uint256" }],
+        "name": "getRaffleInfo",
+        "outputs": [
+            {
+                "components": [
+                    { "internalType": "uint256", "name": "raffleId", "type": "uint256" },
+                    { "internalType": "uint256", "name": "totalTickets", "type": "uint256" },
+                    { "internalType": "uint256", "name": "maxTickets", "type": "uint256" },
+                    { "internalType": "uint256", "name": "targetPrizePool", "type": "uint256" },
+                    { "internalType": "uint256", "name": "prizePool", "type": "uint256" },
+                    { "internalType": "address[]", "name": "participants", "type": "address[]" },
+                    { "internalType": "address[]", "name": "winners", "type": "address[]" },
+                    { "internalType": "uint256", "name": "winnerCount", "type": "uint256" },
+                    { "internalType": "uint256", "name": "randomNumber", "type": "uint256" },
+                    { "internalType": "bool", "name": "isActive", "type": "bool" },
+                    { "internalType": "bool", "name": "isFinalized", "type": "bool" },
+                    { "internalType": "address", "name": "sponsor", "type": "address" },
+                    { "internalType": "string", "name": "metadataURI", "type": "string" },
+                    { "internalType": "uint256", "name": "endTime", "type": "uint256" },
+                    { "internalType": "uint256", "name": "prizePerWinner", "type": "uint256" }
+                ],
+                "internalType": "struct NFT_Raffle_V2.RaffleInfo",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
 
 
 // ─── Telegram Notification Helper ────────────────────────────────────────────
@@ -110,6 +150,24 @@ async function handleClaimPrize(req, res) {
         if (!valid) return res.status(401).json({ error: '[Security] Signature verification failed.' });
 
         const normalizedWallet = wallet_address.toLowerCase();
+
+        // ─── 1.1 On-Chain Winner Verification (Hardening v3.55.0) ──────────────
+        try {
+            const raffleInfo = await publicClient.readContract({
+                address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA,
+                abi: RAFFLE_ABI,
+                functionName: 'getRaffleInfo',
+                args: [BigInt(raffle_id)]
+            });
+
+            const winners = (raffleInfo.winners || []).map(w => w.toLowerCase());
+            if (!winners.includes(normalizedWallet)) {
+                return res.status(403).json({ error: `[Security] User ${normalizedWallet} is not a registered winner for Raffle #${raffle_id} on-chain.` });
+            }
+        } catch (onChainErr) {
+            console.error('[handleClaimPrize] On-chain verification failed:', onChainErr.message);
+            return res.status(500).json({ error: `Blockchain verification failed: ${onChainErr.message}` });
+        }
 
         // ─── 2. Anti-Cheat: Prevent claiming same raffle twice ────────────────
         const { count } = await supabaseAdmin

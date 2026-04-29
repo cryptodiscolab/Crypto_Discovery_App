@@ -6,6 +6,12 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.54.0 (Super Ketat Token Optimization — Context-Hashing)
+- **Context-Hasher Script**: Implemented `scripts/sync/context-hasher.cjs` for automated file hashing (SHA-256) and summary synchronization.
+- **Persistent Cognitive Memory**: Integrated `agent_vault` in Supabase with `hash` and `summary` columns to store file context.
+- **Protocol Enforcement**: Updated `.cursorrules` to mandate context-checking for large files (>500 lines), reducing token redundant processing.
+- **Sanitization & Recovery**: Cleaned up protocol file corruption and restored integrity of self-healing claim rules.
+
 ## 🟢 v3.51.0 (Gas Tracker Hardening & Global Visibility)
 - **Gas Threshold Hardening**: Refactored `useGasTracker.js` to use an explicit descending threshold chain (Expensive > 0.5, Very High >= 0.2, High >= 0.05, Normal >= 0.005, Cheap < 0.005), eliminating categorization gaps.
 - **Defense-in-Depth UI**: Added early-return handler guards to `RaffleCard.jsx` and `SBTUpgradeCard.jsx` to prevent transaction execution during "Expensive" gas states, even if UI buttons are bypassed.

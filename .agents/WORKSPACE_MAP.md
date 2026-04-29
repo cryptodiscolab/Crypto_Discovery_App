@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.51.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.55.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -130,7 +130,7 @@ graph TD
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Governance |
 |----------|---------------------|----------------------|------------|
 | **MasterX** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` ✅ |
-| **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` ✅ |
+| **Raffle** | `[RESERVED]` | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` | `Ownable` ✅ |
 | **DailyApp** | `[RESERVED]` | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` | `AccessControl` ✅ |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
 
@@ -157,4 +157,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-26T12:00:00+07:00 | Gas Tracker Hardening & Global UI. v3.51.0 LOCKED.*
+*Last Updated: 2026-04-29T21:40:00+07:00 | Raffle Refund Protocol V2.1 Integration & Global Sync. v3.55.0 LOCKED.*

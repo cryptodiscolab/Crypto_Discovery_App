@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-26*
-*PRD Version: v3.48.0 (Flash-Turbo Cognitive Protocol — Reasoning Loop + Mental Skills)*
+*Last Updated: 2026-04-29*
+*PRD Version: v3.55.0 (Raffle Refund Protocol V2.1 Integration — Security & Parity Lock)*
 
 ---
 
@@ -96,6 +96,7 @@ Before responding to ANY request, read these files IN ORDER:
     │
     ├─ ✅ PASS → Notify User dengan Standard Reporting
     └─ ❌ FAIL → Kembali ke STEP 1 (jangan notify user dulu)
+```
 
 ### SURGICAL FIX MANDATE:
 - **DILARANG KERAS** menghapus seluruh kode saat memperbaiki error.
@@ -112,6 +113,7 @@ Before responding to ANY request, read these files IN ORDER:
 | **BP-003** | **Missing Required SDK Param** | Li.Fi SDK v2+ mewajibkan `toAddress` pada `getQuote()`. Tanpanya, quote selalu return 0 atau error. Error di-swallow (`console.error` saja) sehingga user tidak tahu. | `SwapModal.jsx` | Selalu periksa SDK changelog saat upgrade versi. Tambahkan visible error state untuk setiap async operation. Gunakan fallback redirect jika primary SDK gagal. | v3.47.1 |
 | **BP-004** | **Missing Task Link Step** | TaskList off-chain tasks tidak membuka link task sebelum claim. User bisa langsung claim XP tanpa mengerjakan task. | `TaskList.jsx` | Implementasikan dua-step flow: Step 1 = buka link, Step 2 = claim setelah timer. Anti-fraud timer wajib ada antara klik link dan klik claim. | v3.47.1 |
 | **BP-005** | **ABI Drift Hook Mismatch** | Saat contract diupgrade, index-based access (e.g., `userRawData[1]`) bisa bergeser. Named property fallback wajib ada. | `useSBT.js`, `useNFTTiers.js` | Gunakan pola: `data.namedProp !== undefined ? data.namedProp : data[fallbackIndex]`. | v3.38.8 |
+| **BP-006** | **Raffle Rejection Sync Fail** | Admin menolak raffle di database tanpa melakukan refund on-chain, menyebabkan dana sponsor tersangkut. | `ModerationCenterTab.jsx`, `user-bundle.js` | **Refund-First Policy**: Selalu panggil `cancelRaffle()` on-chain sebelum memanggil API `reject-raffle`. Pastikan hash transaksi refund tersimpan di database. | v3.55.0 |
 
 > 💡 **Agent Self-Check**: Sebelum menulis kode yang menyentuh contract write, selalu tanyakan: *"Apakah contract address yang di-call SAMA dengan sumber data yang digunakan?"*
 
@@ -257,9 +259,9 @@ State sharing via `agents_vault` table di Supabase.
 ### Section 4.4: TASK FEATURE INTEGRITY HARDENING (v3.42.8)
 - **Native+ Button Baseline**: Semua tombol aksi utama wajib menggunakan `bg-indigo-600/20`, `border-indigo-500/30`, dan `text-indigo-400`.
 - **Zero-Icon Action Mandate**: Tombol "Daily Tasks", "Partner Offers", dan "Buy Ticket" dilarang menggunakan ikon dekoratif (Zap, Megaphone, dll).
-- **Viewport Containment**: Layout utama wajib menggunakan `overflow-x-hidden` dan `max-w-[100vw]` untuk menjamin visibilitas BottomNav dan mencegah clipping horizontal.
+- **Viewport Containment**: Layout utama wajib menggunakan `overflow-x-hidden` and `max-w-[100vw]` untuk menjamin visibilitas BottomNav dan mencegah clipping horizontal.
 - **Improved Claim Sync**: `handleClaim` wajib mendeteksi flag `already_claimed: true` dari backend untuk memberikan feedback akurat dan mencegah race condition UI.
-- **Pipeline Metadata**: Seluruh task baru wajib menyertakan `title`, `target_id`, dan `expires_at` (v3.42.8).
+- **Pipeline Metadata**: Seluruh task baru wajib menyertakan `title`, `target_id`, and `expires_at` (v3.42.8).
 
 ### Section 4.5: ECOSYSTEM SECURITY REMEDIATION MANDATE (v3.43.0)
 - **Clean-Pipe Sync Protocol**: DILARANG KERAS melakukan verifikasi environment tanpa menggunakan skrip `robust_sync.cjs` atau yang setara (spawnSync + stdin).

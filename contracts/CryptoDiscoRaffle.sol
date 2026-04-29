@@ -86,6 +86,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     event QRNGRequested(bytes32 indexed requestId, uint256 indexed raffleId);
     event QRNGFulfilled(bytes32 indexed requestId, uint256 randomNumber);
     event RaffleWinner(uint256 indexed raffleId, address indexed winner, uint256 prize);
+    event RaffleCancelled(uint256 indexed raffleId, address indexed sponsor, uint256 refundedAmount);
 
     // ============ Constructor ============
     
@@ -344,6 +345,31 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         require(s, "Transfer failed");
 
         emit RaffleWinner(raffleId, msg.sender, prize);
+    }
+
+    /**
+     * @notice Admin cancels a raffle and refunds the sponsor's deposit.
+     * Only possible if no tickets have been sold yet.
+     */
+    function cancelRaffle(uint256 raffleId) external onlyOwner nonReentrant {
+        RaffleData storage raffle = raffles[raffleId];
+        require(raffle.raffleId != 0, "Raffle does not exist");
+        require(raffle.isActive, "Raffle not active");
+        require(!raffle.isFinalized, "Raffle already finalized");
+        require(raffle.totalTickets == 0, "Cannot cancel: tickets sold");
+
+        address sponsor = raffle.sponsor;
+        uint256 refundAmount = raffle.prizePool;
+
+        raffle.isActive = false;
+        raffle.prizePool = 0;
+
+        if (refundAmount > 0 && sponsor != address(0)) {
+            (bool success, ) = payable(sponsor).call{value: refundAmount}("");
+            require(success, "Refund failed");
+        }
+
+        emit RaffleCancelled(raffleId, sponsor, refundAmount);
     }
 
     /**
