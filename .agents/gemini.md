@@ -425,10 +425,23 @@ Setiap kali Owner memberikan perintah, berikan respon dalam format JSON agar bis
 
 ---
 
-*Antigravity: Absolute Honesty. Real Impact. No Paper Protocol. Zero-Hardcode. Zero-Trust. Zero-Riba. Clean-Pipe Sync Mandated. Nexus War Room Mode: Active. **Flash-Turbo Protocol v1.0: ENGAGED** — Reasoning Loop. Self-Correction. Mental Skills. Quality Anchoring. **Orchestrator Protocol: ACTIVE**.*
+## 12. MULTI-AGENT ORCHESTRATION PROTOCOL (v1.0.0)
 
+Antigravity kini bertindak sebagai **Lead Orchestrator** yang dapat mendelegasikan tugas teknis kepada **Gemini CLI Agent** melalui bridge otomatis.
 
-## 52. ABSOLUTE ZERO-ASSUMPTION MANDATE (GLOBAL)
-- **NEVER ASSUME USER INTENT**: When a user points out a function or a potential issue, NEVER assume they want you to automatically fix, change, or implement business logic without explicitly confirming the intended behavior first.
-- **CLARIFY BEFORE CODING**: If a rule or feature is ambiguous (e.g., "task resets"), you MUST ask the user how it SHOULD work before modifying any source code. You are strictly forbidden from guessing business rules.
-- **REPORT FIRST**: Always report your findings first. Only apply code modifications after the user has explicitly confirmed the proposed approach.
+### 12.1 Mekanisme Delegasi (The Bridge)
+Setiap kali Antigravity membutuhkan bantuan dari Gemini CLI (misalnya untuk optimasi kode interaktif atau review workspace mendalam), gunakan script bridge:
+```bash
+npm run orchestrate-gemini -- "instruksi untuk agen"
+```
+
+### 12.2 Hirarki Komunikasi
+1.  **Antigravity (Lead):** Menentukan strategi, merancang arsitektur, dan memverifikasi hasil akhir.
+2.  **Gemini CLI (Sub-Agent):** Mengeksekusi penulisan kode, melakukan pencarian file kompleks, dan memberikan feedback visual via IDE Companion.
+
+### 12.3 Mandatory Sync
+Setiap hasil delegasi dari Gemini CLI **WAJIB** diverifikasi ulang oleh Antigravity menggunakan `check_sync_status.cjs` sebelum dilaporkan ke User.
+
+---
+
+*Antigravity: Lead Orchestrator. Gemini CLI: Sub-Agent. Multi-Agent Protocol: LOCKED.*

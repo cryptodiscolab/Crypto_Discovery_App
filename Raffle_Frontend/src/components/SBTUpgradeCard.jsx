@@ -16,7 +16,7 @@ export function SBTUpgradeCard() {
     const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
-    const { stats: userOnChainStats } = useUserInfo(address);
+    const { stats: userOnChainStats, refetch: refetchUserInfo } = useUserInfo(address);
     const { data: balanceData } = useBalance({ address });
 
     // Feature Flags Check
@@ -24,8 +24,10 @@ export function SBTUpgradeCard() {
     const isSbtFeatureEnabled = !isMainnet || ecosystemSettings?.active_features?.sbt_minting === true;
 
 
-    // Find current and next tier
-    const currentTierIndex = parseInt(userTier);
+    // Find current and next tier (Sync on-chain tier to bypass DB delay)
+    const dbTier = parseInt(userTier) || 0;
+    const chainTier = userOnChainStats?.currentTier || 0;
+    const currentTierIndex = Math.max(dbTier, chainTier);
     const nextTier = tiers.find(t => t.id === currentTierIndex + 1);
 
     // Safety check for Max Level
@@ -131,6 +133,7 @@ export function SBTUpgradeCard() {
             refetchPoints();
             refetchTiers();
             refetchAll();
+            refetchUserInfo?.(); // FIX v3.56.1: Force update on-chain user stats for instant UI feedback
         } catch (err) {
             console.error('[SBTUpgradeCard] Mint error:', err);
             // Provide specific error messages based on error type
