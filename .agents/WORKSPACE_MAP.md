@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.55.0)
+# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.56.0)
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -157,4 +157,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-29T21:40:00+07:00 | Raffle Refund Protocol V2.1 Integration & Global Sync. v3.55.0 LOCKED.*
+*Last Updated: 2026-04-30T19:35:00+07:00 | Performance Optimization: Modal INP Fix — Concurrent UI Mandate. v3.56.0 LOCKED.*

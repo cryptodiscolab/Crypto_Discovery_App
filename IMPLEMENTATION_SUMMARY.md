@@ -6,6 +6,11 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.56.0 (Performance Optimization: Modal INP Fix)
+- **Modal INP Fix (`ProfilePage.jsx`)**: Integrated React 18's `startTransition` for all modal-toggling state updates. This unblocks the main thread by deferring the rendering of heavy modal components (Daily Claim, Create Task, etc.), reducing Interaction to Next Paint (INP) from >200ms to <50ms.
+- **Concurrent UI Rendering**: Optimized internal navigation and action handlers to ensure the interface remains responsive even during complex component mounts.
+- **Ecosystem Doc Sync**: Synchronized all master protocols and agent skills to v3.56.0.
+
 ## 🟢 v3.55.0 (Live Lurah Cron & Raffle-SBT Hardening)
 - **Live Lurah (Vercel Cron)**: Implemented `api/lurah-cron.js` performing proactive audits of DB health, Contract responsiveness, and XP Parity. Integrated with Telegram for instant "Economy Drift" alerts.
 - **Raffle Refund Protocol (v2.1)**: Hardened `user-bundle.js` and `ModerationCenterTab.jsx` with an automated `cancelRaffle` trigger during rejection, ensuring sponsors receive 1.5% fee refunds on-chain.

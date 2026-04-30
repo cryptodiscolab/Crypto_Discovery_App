@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-29*
-*PRD Version: v3.55.0 (Raffle Refund Protocol V2.1 Integration — Security & Parity Lock)*
+*Last Updated: 2026-04-30*
+*PRD Version: v3.56.0 (Performance Optimization: Modal INP Fix — Concurrent UI Mandate)*
 
 ---
 
