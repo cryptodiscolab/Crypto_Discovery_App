@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabaseClient';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls } from 'wagmi';
 import { encodeFunctionData, formatEther, decodeEventLog } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
