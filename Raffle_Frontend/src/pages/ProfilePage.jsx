@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, startTransition } from 'react';
 import {
   RefreshCw, Star, Crown, Edit, X, Save, Loader2, Users, ShieldCheck, Sparkles, Award, LogOut, Copy, Check, ExternalLink, Calendar, Plus, Ticket, Share2, Globe, Flame, Zap, Shield, ArrowUpCircle, Video, Instagram, Heart, Repeat, MessageCircle, Coins, Mail, Twitter, Info
 } from 'lucide-react';
@@ -444,7 +444,7 @@ export default function ProfilePage() {
                   </div>
                   <span className="label-native text-slate-400 whitespace-nowrap">@{profileData.username || 'USERNAME'}</span>
                   <div 
-                    onClick={() => onChainUserData?.currentTier < potentialTier && setActiveModal('upgrade')}
+                    onClick={() => onChainUserData?.currentTier < potentialTier && startTransition(() => setActiveModal('upgrade'))}
                     className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all cursor-pointer
                       ${onChainUserData?.currentTier < potentialTier 
                         ? 'bg-indigo-500/20 border-indigo-500/40 animate-pulse' 
@@ -541,7 +541,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <button 
-              onClick={() => setActiveModal('upgrade')}
+              onClick={() => startTransition(() => setActiveModal('upgrade'))}
               className="px-4 py-2 rounded-xl bg-yellow-500 text-black text-[11px] font-black uppercase tracking-[0.2em] hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] active:scale-95"
             >
               Mint Status
@@ -553,7 +553,7 @@ export default function ProfilePage() {
         <div className="px-4 py-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
-              onClick={() => setActiveModal('claim')}
+              onClick={() => startTransition(() => setActiveModal('claim'))}
               className={`flex flex-col items-center justify-center gap-1 p-4 rounded-xl transition-colors
                 ${claimReady ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-900 text-zinc-600 opacity-50'}`}
             >
@@ -563,7 +563,7 @@ export default function ProfilePage() {
             </button>
 
             <button
-              onClick={() => setActiveModal('task')}
+              onClick={() => startTransition(() => setActiveModal('task'))}
               className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#080808] border border-white/5 text-zinc-400 hover:bg-zinc-800 transition-all hover:border-white/10 group"
             >
               <Plus size={18} className="group-hover:text-white transition-colors" />
@@ -571,7 +571,7 @@ export default function ProfilePage() {
             </button>
 
             <button
-              onClick={() => navigate('/create-raffle')}
+              onClick={() => startTransition(() => navigate('/create-raffle'))}
               className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#080808] border border-white/5 text-zinc-400 hover:bg-zinc-800 transition-all hover:border-white/10 group"
             >
               <Ticket size={18} className="group-hover:text-white transition-colors" />
@@ -579,7 +579,7 @@ export default function ProfilePage() {
             </button>
 
             <button
-              onClick={() => setActiveModal('renew')}
+              onClick={() => startTransition(() => setActiveModal('renew'))}
               className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#080808] border border-white/5 text-zinc-400 hover:bg-zinc-800 transition-all hover:border-white/10 group"
             >
               <RefreshCw size={18} className="group-hover:text-white transition-colors" />
@@ -588,7 +588,7 @@ export default function ProfilePage() {
 
             {onChainUserData?.currentTier > 0 && (
               <button
-                onClick={() => setActiveModal('revenue')}
+                onClick={() => startTransition(() => setActiveModal('revenue'))}
                 className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all relative overflow-hidden group border
                   ${claimableAmount > 0n 
                     ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/30 shadow-lg shadow-indigo-500/10' 
@@ -608,7 +608,7 @@ export default function ProfilePage() {
             )}
 
             <button
-              onClick={() => setActiveModal('swap')}
+              onClick={() => startTransition(() => setActiveModal('swap'))}
               className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 transition-all group shadow-lg shadow-indigo-500/5"
             >
               <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
