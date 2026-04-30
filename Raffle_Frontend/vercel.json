@@ -83,11 +83,11 @@
     "crons": [
         {
             "path": "/api/cron/sync-events",
-            "schedule": "*/10 * * * *"
+            "schedule": "0 0 * * *"
         },
         {
             "path": "/api/lurah-cron",
-            "schedule": "0 * * * *"
+            "schedule": "0 1 * * *"
         }
     ]
 }
