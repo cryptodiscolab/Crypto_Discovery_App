@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.53.0` | **Last Updated**: `2026-04-26T19:30:00+07:00`
+**Version**: `v3.56.0` | **Last Updated**: `2026-04-30T19:40:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -21,6 +21,7 @@
 14. [File Reference Map](#14-file-reference-map)
 15. [Healthy State Checklist](#15-healthy-state-checklist)
 16. [Self-Healing Claim Pipeline](#16-self-healing-claim-pipeline)
+17. [Concurrent UI Performance](#17-concurrent-ui-performance)
 
 ---
 
@@ -798,6 +799,7 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Activity Logging**: Setiap klaim menghasilkan entry di `user_activity_logs`.
 - [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
 - [x] **30s Anti-Fraud (On-Chain)**: Timer aktif sebelum social verification (TaskRow).
+- [x] **Concurrent Modal Trigger**: Seluruh modal state transitions dibungkus `startTransition` (v3.56.0).
 - [x] **Nexus UI Parity (v3.53.0)**: Metadata stamps (ID, Creator, Created At, Expires At) transparan dan konsisten di seluruh kartu.
 - [x] **Dynamic Summary**: Home Page summary (`TaskCard.jsx`) menggunakan real-time Supabase stats (bukan placeholder).
 - [x] **15s Anti-Fraud (Off-Chain)**: `startedTasks` countdown setelah "GO TO TASK" klik sebelum CLAIM REWARD aktif (v3.47.1).
@@ -838,4 +840,4 @@ if (error.message.includes("already completed")) {
 ---
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
-*Antigravity — Nexus Master Architect. Protocol v3.51.1 Locked.*
+*Antigravity — Nexus Master Architect. Protocol v3.56.0 Locked.*

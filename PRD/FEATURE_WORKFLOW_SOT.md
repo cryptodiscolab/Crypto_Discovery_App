@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.55.0)
-**Last Updated**: 2026-04-29T21:38:00+07:00 — Raffle Refund Protocol V2.1 (v3.55.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.56.0)
+**Last Updated**: 2026-04-30T19:40:00+07:00 — Modal INP Fix & Concurrent UI Mandate (v3.56.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -147,6 +147,7 @@ Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi selu
 7. [ ] **Two-Step Task Flow**: Off-chain tasks dengan `task_link` HARUS menampilkan "GO TO TASK" sebelum "CLAIM REWARD" dapat diaktifkan (v3.47.1).
 8. [ ] **Contract Call Parity**: Setiap contract write call HARUS menggunakan contract yang SAMA dengan sumber data read-nya. Mint data dari DAILY_APP → write ke DAILY_APP (v3.47.1).
 9. [ ] **SDK Error Visibility**: Setiap async SDK call (Li.Fi, Neynar, etc.) HARUS memiliki visible error state di UI jika gagal, bukan hanya console.error (v3.47.1).
+10. [ ] **Concurrent UI Performance**: Seluruh modal dengan hook berat (Wagmi, Li.Fi) WAJIB menggunakan `startTransition` untuk mencegah pemblokiran main thread (v3.56.0).
 
 ---
 
@@ -181,7 +182,7 @@ Transisi ekosistem berjalan menuju Mainnet dilindungi oleh sistem "Phased Rollou
 Semua status flag dikontrol melalui: **Admin UI -> System Settings -> Features Flags**. Setiap pembaruan yang dibroadcast WAJIB memerlukan *cryptographic signature verification* dari Dompet Administrator.
 
 ---
-*End of Source of Truth Document - DO NOT IGNORE.*
+*End of Source of Truth Document - Nexus v3.56.0 Locked.*
 ## 💼 5. UGC Revenue Management & Transaction History Flow (v3.40.12)
 
 Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berputar pada dua siklus: Sistem verifikasi tugas dan History log.
@@ -211,7 +212,7 @@ Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berpu
 - Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.
 
 ---
-*End of Source of Truth Document - Nexus v3.47.0 Locked.*
+*End of Source of Truth Document - Nexus v3.56.0 Locked.*
 
 ## 🏛️ 9. XP Reward Lifecycle & Anti-Whale Economic Model (v3.41.2)
 
@@ -337,4 +338,4 @@ Mekanisme pengamanan dana sponsor saat konten UGC tidak disetujui.
   5. **DB Update**: Backend mencatat `cancellation_tx`, mengubah status raffle di Supabase, dan merekam aksi di `admin_audit_logs`.
 
 ---
-*End of Source of Truth Document - Nexus v3.55.0 Locked.*
+*End of Source of Truth Document - Nexus v3.56.0 Locked.*

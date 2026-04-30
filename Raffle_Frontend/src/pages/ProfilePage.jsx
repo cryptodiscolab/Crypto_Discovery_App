@@ -626,6 +626,8 @@ export default function ProfilePage() {
               // BUG-FIX 3: Refetch profile data setelah daily claim berhasil agar XP realtime update
               fetchProfile();
               refetchPoints();
+              refetchSBT();
+              refetchOnChainStats();
             }}
             pointSettings={ecosystemSettings} 
             streakCount={profileData.streakCount}

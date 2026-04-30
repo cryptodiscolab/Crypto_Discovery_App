@@ -38,3 +38,23 @@ function ScrollTracker() {
   }, [])
 }
 ```
+
+**Correct (Heavy Modal Triggers - Maintaining INP):**
+
+```tsx
+import { startTransition } from 'react'
+
+function Dashboard() {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleOpenModal = () => {
+    // Heavy modals with Wagmi hooks or Li.Fi SDKs block the main thread during mount.
+    // startTransition keeps the click interaction responsive (<50ms INP).
+    startTransition(() => {
+      setIsModalOpen(true)
+    })
+  }
+
+  return <button onClick={handleOpenModal}>Open Heavy Modal</button>
+}
+```

@@ -86,7 +86,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.43.0 (Ecosystem Security Remediation & Parity Sync).
+- **Versi Terakhir:** v3.56.0 (Modal INP Fix & Concurrent UI Mandate).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -368,6 +368,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **🧹 DISAPPEARING TASK AUDIT (v3.42.2)**: Verifikasi bahwa task yang sudah DONE/CLAIMED menghilang dari UI. Pastikan filter `null` aktif di model frontend. **WAJIB.**
 - [ ] **💎 PREMIUM IDENTITY BRANDING AUDIT (v3.42.2)**: Verifikasi penggunaan shield badge lencana "Verified" (Base Blue) untuk user valid. **WAJIB.**
 - [ ] **🛡️ ECOSYSTEM SECURITY REMEDIATION AUDIT (v3.43.0)**: Verifikasi 100% parity lintas proyek Vercel menggunakan **Clean-Pipe Sync Protocol**. Pastikan `robust_sync.cjs` dijalankan untuk setiap perubahan environment. **WAJIB.**
+- [ ] **🏎️ CONCURRENT UI RESPONSIVENESS AUDIT (v3.56.0)**: Verifikasi bahwa seluruh modal dengan heavy hooks (Wagmi/Li.Fi) dipicu menggunakan `startTransition`. **WAJIB.**
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).
