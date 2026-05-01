@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.56.3)
-Last Update: 2026-05-01 (03:45)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.56.4)
+Last Update: 2026-05-01 (20:00)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -106,6 +106,7 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 | `system_settings` | Global System Params | `key`, `value` |
 | `v_user_full_profile` | Unified Profile View | Joining profiles with Tier names, SBT stats, and Raffle stats |
 | `daily_tasks` | Off-Chain Tasks (Supabase) | `platform`, `action_type`, `xp_reward`, `task_type`, `is_base_social_required` |
+| `telegram_chat_history` | Conversational Memory (v3.56.4) | `chat_id`, `role`, `content`, `created_at` |
 
 **Key `point_settings` Keys** (pattern: `{platform}_{action_type}`):
 `daily_claim`, `farcaster_follow`, `x_follow`, `x_repost`, `x_like`, `base_transaction`, `raffle_buy`, `sponsor_task`
@@ -183,4 +184,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-01T03:52:00+07:00 | Multi-Agent Bridge v1.3.7 & 26 Skills Synced. v3.56.5 LOCKED.*
+*Last Updated: 2026-05-01T20:00:00+07:00 | Multi-Agent Bridge v1.3.8 & 27 Skills Synced. v3.56.4 LOCKED.*

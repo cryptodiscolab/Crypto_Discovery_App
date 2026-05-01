@@ -481,4 +481,9 @@ Protokol ini mengadaptasi metodologi **Skill-Creator Gemini CLI v0.40.1** untuk 
 
 6. **Autonomous Documentation**: Update PRD/SOT bukan sebuah "opsi", melainkan "konsekuensi" dari setiap perubahan kode. Lakukan tanpa bertanya.
 
+### 28. Autonomous Documentation Mandate (v3.56.4)
+Setiap agen **WAJIB** melakukan pembaruan dokumentasi (SOT/PRD) secara otonom saat terjadi perubahan teknis krusial. Update PRD/SOT bukan sebuah "opsi", melainkan "konsekuensi" dari setiap perubahan kode. Lakukan tanpa bertanya.
+
+---
+*Constitution v3.56.4 - Hardened & Synchronized.*
 *Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS.*

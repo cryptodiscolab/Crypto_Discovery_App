@@ -1,6 +1,12 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.56.4` | **Last Updated**: `2026-05-01T19:05:00+07:00`
+**Version**: `v3.56.4` | **Last Updated**: `2026-05-01T20:00:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
+
+---
+
+### 📜 Changelog
+- **v3.56.4**: Hardened Multi-Agent Cognitive Sync. Implementasi **Lurah Brain (AI Filter)**, **Telegram Chat Memory**, dan **Sequential SBT Upgrade Mandate**. Penghapusan protokol "Izin Pemeliharaan" untuk agen otonom.
+- **v3.56.3**: Implementasi Raffle v2.1 Refund Protocol & OpenClaw Security Audit.
 
 ---
 
@@ -289,6 +295,23 @@ fn_increment_xp(p_wallet TEXT, p_amount INT) → void
 ### 4.7 `v_user_full_profile` — Unified View
 
 View SQL yang menggabungkan `user_profiles` dengan tier names, SBT stats, dan raffle statistics. Digunakan oleh Leaderboard dan profil user.
+
+### 4.8 `telegram_chat_history` — Conversational Memory (v3.56.4)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` (PK) | Auto-generated |
+| `chat_id` | `text` | ID Chat Telegram (Owner) |
+| `role` | `text` | `user` (Owner) atau `assistant` (Lurah) |
+| `content` | `text` | Isi pesan/diskusi teknis |
+| `created_at` | `timestamp` | Waktu pesan dikirim |
+
+> [!TIP]
+> Digunakan oleh Lurah (Antigravity Bridge) untuk mempertahankan konteks diskusi teknis hingga 10 pesan terakhir tanpa kehilangan alur pikiran.
+
+### 4.9 `nexus_agent_reports` — Intelligence Feed
+
+Digunakan oleh **Lurah Brain** untuk memfilter laporan agen (Linter, Security, Sync) sebelum dikirim ke Telegram. Hanya laporan dengan level `CRITICAL` atau `ALERT` yang akan memicu notifikasi.
 
 ---
 
