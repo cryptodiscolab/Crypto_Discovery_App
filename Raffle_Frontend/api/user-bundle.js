@@ -265,7 +265,7 @@ async function handleGenerateSyncSignature(req, res) {
         const deadline = Math.floor(Date.now() / 1000) + (10 * 60);
 
         // 3. Load Bot Signer PK
-        const privateKeyHex = process.env.WALLET_PRIVATE_KEY || process.env.ADMIN_PRIVATE_KEY;
+        const privateKeyHex = process.env.WALLET_BOT_SIGNER || process.env.WALLET_PRIVATE_KEY || process.env.ADMIN_PRIVATE_KEY;
         if (!privateKeyHex) return res.status(500).json({ error: 'Signer wallet not configured' });
         
         const formattedKey = privateKeyHex.startsWith('0x') ? privateKeyHex : `0x${privateKeyHex}`;
