@@ -17,7 +17,7 @@ export function SBTUpgradeCard() {
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { stats: userOnChainStats, refetch: refetchUserInfo } = useUserInfo(address);
-    const { syncXP, isLoading: isSyncing } = useSyncXP();
+    const { syncXP, syncOffchainXP, isLoading: isSyncing } = useSyncXP();
     const { data: balanceData } = useBalance({ address });
 
     // Feature Flags Check
@@ -154,9 +154,33 @@ export function SBTUpgradeCard() {
     const handleSync = async () => {
         if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high.", { icon: '⛽' });
         
-        const tid = toast.loading("Requesting Sync Transaction...");
+        const tid = toast.loading("Requesting Sync Signature from server...");
         try {
-            const hash = await syncXP();
+            // 1. Request signature from user to authenticate
+            const timestamp = Date.now().toString();
+            const message = `Sync request for DailyApp at ${timestamp}`;
+            const userSig = await signMessageAsync({ message });
+
+            // 2. Fetch ECDSA signature from backend
+            const res = await fetch('/api/user-bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'generate-sync-signature',
+                    wallet_address: address,
+                    signature: userSig,
+                    message
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to generate sync signature");
+
+            toast.loading("Broadcasting sync transaction to network...", { id: tid });
+            
+            // 3. Call Contract with signature payload
+            const hash = await syncOffchainXP(data.total_xp, data.deadline, data.signature);
+            
             toast.loading("Waiting for confirmation...", { id: tid });
             
             const receipt = await waitForTransactionReceipt(config, { 

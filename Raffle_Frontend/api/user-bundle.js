@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
-import { createPublicClient, http, verifyMessage } from 'viem';
+import { createPublicClient, http, verifyMessage, keccak256, encodePacked } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import { base, baseSepolia } from 'viem/chains';
 
 const supabaseUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
@@ -232,11 +233,68 @@ export default async function handler(req, res) {
         case 'pending-raffles': await handleFetchPendingRaffles(req, res); break;
         case 'get-health': await handleGetHealth(req, res); break;
         case 'reset-health': await handleResetHealth(req, res); break;
+        case 'generate-sync-signature': await handleGenerateSyncSignature(req, res); break;
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
 }
 
+
+async function handleGenerateSyncSignature(req, res) {
+    const { wallet_address, signature, message } = req.body;
+    if (!wallet_address || !signature || !message) return res.status(400).json({ error: 'Missing fields' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet_address, message, signature });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const cleanAddress = wallet_address.toLowerCase();
+
+        // 1. Fetch exact total_xp from DB
+        const { data: profile, error } = await supabaseAdmin
+            .from('users')
+            .select('total_xp')
+            .eq('wallet_address', cleanAddress)
+            .single();
+
+        if (error || !profile) return res.status(404).json({ error: 'User not found' });
+
+        const totalXp = profile.total_xp || 0;
+        
+        // 2. Generate deadline (valid for 10 minutes)
+        const deadline = Math.floor(Date.now() / 1000) + (10 * 60);
+
+        // 3. Load Bot Signer PK
+        const privateKeyHex = process.env.WALLET_PRIVATE_KEY || process.env.ADMIN_PRIVATE_KEY;
+        if (!privateKeyHex) return res.status(500).json({ error: 'Signer wallet not configured' });
+        
+        const formattedKey = privateKeyHex.startsWith('0x') ? privateKeyHex : `0x${privateKeyHex}`;
+        const account = privateKeyToAccount(formattedKey);
+
+        // 4. Generate payload hash: keccak256(abi.encodePacked(wallet, total_xp, deadline))
+        const messageHash = keccak256(
+            encodePacked(
+                ['address', 'uint256', 'uint256'],
+                [wallet_address, BigInt(totalXp), BigInt(deadline)]
+            )
+        );
+
+        // 5. Sign the hash
+        const signedSignature = await account.signMessage({ message: { raw: messageHash } });
+
+        return res.json({
+            ok: true,
+            total_xp: totalXp,
+            deadline: deadline,
+            signature: signedSignature,
+            signer: account.address
+        });
+
+    } catch (e) {
+        console.error('[Sign Sync]', e);
+        res.status(500).json({ error: e.message });
+    }
+}
 
 async function handleLoginSync(req, res) {
     const { wallet_address, signature, message, fid, metadata, referred_by } = req.body;
