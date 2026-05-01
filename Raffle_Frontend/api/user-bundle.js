@@ -441,17 +441,32 @@ async function handleXpSync(req, res) {
             }
         }
 
+        const isDailyClaim = (xpDelta > 0 && xpDelta === standardDailyReward) || (tx_hash && skipSignature);
+
         // 8. Update User Profile explicitly (By-passing flaky triggers)
+        // FIX v3.56.6: Non-Destructive XP Sync
+        // Prevents social points (DB-only) from being wiped by the lower on-chain total.
+        // If this is a verified daily claim, we ADD the reward to the current DB total.
+        let finalXpUpdate = onChainXP;
+        if (dbLastPoints > onChainXP) {
+            if (isDailyClaim) {
+                finalXpUpdate = dbLastPoints + standardDailyReward;
+                console.log(`[XP Sync] Additive update: ${dbLastPoints} + ${standardDailyReward} = ${finalXpUpdate}`);
+            } else {
+                finalXpUpdate = dbLastPoints; // Prevent downgrade during routine sync
+                console.log(`[XP Sync] Preserving DB XP: ${dbLastPoints} (Contract: ${onChainXP})`);
+            }
+        }
+
         const profileUpdate = {
             wallet_address: cleanAddress,
-            total_xp: onChainXP,
+            total_xp: finalXpUpdate,
             manual_xp_bonus: (profile?.manual_xp_bonus || 0) + appliedBonusXP,
             tier: calculatedTier, // FIX: use DB-recalculated tier, not stale on-chain tier
             last_seen_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
 
-        const isDailyClaim = xpDelta > 0 && xpDelta === standardDailyReward;
         const taskId = isDailyClaim ? TASK_IDS.DAILY_CLAIM_STREAK : TASK_IDS.DAILY_CLAIM_REWARD;
 
         if (isDailyClaim) {

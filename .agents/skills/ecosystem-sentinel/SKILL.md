@@ -86,7 +86,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.56.0 (Modal INP Fix & Concurrent UI Mandate).
+- **Versi Terakhir:** v3.56.3 (Multi-Agent Bridge v1.3.7 — Resilience Mandate).
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -263,6 +263,13 @@ Agent kini memiliki kemampuan untuk bekerja secara otonom melalui Telegram saat 
 - **Remote Audit & Identity Check**: Mampu menjalankan audit identitas user lengkap via perintah `/user <wallet>` di Telegram bot, menampilkan seluruh link sosial yang terkunci (Identity Lock).
 - **The Traceability Guard**: Protokol wajib untuk melakukan audit silang antara **Bot Telegram** dan **Admin Dashboard** untuk setiap fitur baru. Dilarang menutup task sebelum backend API, database trigger, dan UI dashboard terverifikasi sinkron 100%.
 - **Self-Managed Auditor Mode**: Agent secara mandiri mengaudit seluruh fitur aplikasi tanpa instruksi spesifik, membuat daftar backlog di `task.md`, dan meminta konfirmasi manual user untuk lingkungan eksternal (SQL GUI/Vercel Env).
+
+### 10. NEXUS ORCHESTRATION & MULTI-AGENT PROTOCOL (v1.3.7) 🧠📡
+- **Autonomous Delegation**: Sentinel WAJIB menggunakan `scripts/orchestrator/gemini_agent_bridge.js` untuk mendelegasikan tugas audit mendalam atau refactoring masif guna menjaga performa context window utama.
+- **Resilience Mandate**: Bridge harus dikonfigurasi untuk menggunakan **Stability-First Fallback** (Gemini 2.5 -> Gemini 3.1) dan rotasi otomatis 9 API Key.
+- **Headless Execution**: Seluruh delegasi harus menyertakan flag `--skip-trust` untuk menjamin otomatisasi tanpa interupsi UI.
+- **Context Integrity**: Sentinel WAJIB menginjeksi `.agents/WORKSPACE_MAP.md` ke setiap sub-agent agar "prajurit" orkestrasi tidak kehilangan orientasi arsitektur.
+- **Verification Loop**: Hasil kerja sub-agent harus diaudit ulang secara atomis menggunakan `check_sync_status.cjs` sebelum diintegrasikan ke codebase utama.
 
 ## 🏗️ Build Pipeline Guard
 

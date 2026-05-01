@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.56.0)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.56.3)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -69,6 +69,7 @@ Before responding to ANY request, read these files IN ORDER:
 64. **NEXUS UI PARITY**: ALL mission and raffle cards MUST display transparent metadata stamps: Unique ID (`Hash`), Creator (`ShieldCheck`), and Created/Expires timestamps (`Clock`). Home summary MUST be dynamic (Supabase-sourced) to eliminate placeholder drift (v3.53.0).
 65. **SUPER KETAT TOKEN OPTIMIZATION**: Agents MUST execute `context-hasher` check before reading files >500 lines. Maximize cache hits via SHA-256 persistent memory in `agent_vault` (v3.54.0).
 66. **CONCURRENT UI RESPONSIVENESS MANDATE**: High-load components (Modals with heavy hooks) MUST be triggered using React `startTransition` to prevent main-thread blocking and maintain < 50ms INP responsiveness (v3.56.0).
+67. **MULTI-AGENT ORCHESTRATION MANDATE**: All heavy-duty sub-agent delegations (audits, mass refactoring) MUST use `scripts/orchestrator/gemini_agent_bridge.js` (v1.3.7). This ensures automatic 9-key rotation and model fallback (2.5 -> 3.1) resilience (v3.56.3).
 
 ---
 

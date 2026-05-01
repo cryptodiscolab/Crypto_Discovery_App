@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-04-30*
-*PRD Version: v3.56.0 (Performance Optimization: Modal INP Fix — Concurrent UI Mandate)*
+*PRD Version: v3.56.3 (Multi-Agent Bridge v1.3.7 — Stability-First Mandate)*
 
 ---
 
@@ -425,23 +425,28 @@ Setiap kali Owner memberikan perintah, berikan respon dalam format JSON agar bis
 
 ---
 
-## 12. MULTI-AGENT ORCHESTRATION PROTOCOL (v1.0.0)
+## 12. MULTI-AGENT ORCHESTRATION BRIDGE (v1.3.7) 🧠📡
 
-Antigravity kini bertindak sebagai **Lead Orchestrator** yang dapat mendelegasikan tugas teknis kepada **Gemini CLI Agent** melalui bridge otomatis.
+Antigravity kini bertindak sebagai **Lead Orchestrator** yang mengendalikan **Gemini CLI Agent** melalui Bridge Resilience v1.3.7 yang mendukung rotasi kuota dan pemulihan otomatis.
 
-### 12.1 Mekanisme Delegasi (The Bridge)
-Setiap kali Antigravity membutuhkan bantuan dari Gemini CLI (misalnya untuk optimasi kode interaktif atau review workspace mendalam), gunakan script bridge:
+### 12.1 Mekanisme Delegasi Stability-First
+Setiap kali Antigravity membutuhkan bantuan sub-agent untuk tugas intensif (audit, refactoring masif), gunakan script bridge:
 ```bash
+# Otomatis menggunakan rotasi 9 API Key & Model Fallback (2.5 -> 3.1 -> 3.0)
 npm run orchestrate-gemini -- "instruksi untuk agen"
 ```
 
-### 12.2 Hirarki Komunikasi
-1.  **Antigravity (Lead):** Menentukan strategi, merancang arsitektur, dan memverifikasi hasil akhir.
-2.  **Gemini CLI (Sub-Agent):** Mengeksekusi penulisan kode, melakukan pencarian file kompleks, dan memberikan feedback visual via IDE Companion.
+### 12.2 Model Priority & Quota Resilience
+1.  **Stable Daily (Gemini 2.5 Flash):** Prioritas utama untuk 180 RPD stabil.
+2.  **High-Volume (Gemini 3.1 Flash Lite):** Digunakan saat kuota 2.5 habis (500 RPD).
+3.  **Key Rotation:** Sistem secara otomatis merotasi `GEMINI_API_KEY_1` s/d `9` saat mendeteksi Error 429.
 
-### 12.3 Mandatory Sync
-Setiap hasil delegasi dari Gemini CLI **WAJIB** diverifikasi ulang oleh Antigravity menggunakan `check_sync_status.cjs` sebelum dilaporkan ke User.
+### 12.3 Context Piping Mandate
+Setiap delegasi **WAJIB** menyertakan `.agents/WORKSPACE_MAP.md` via `context.tmp` untuk menjamin sub-agent memiliki kesadaran arsitektur penuh tanpa batasan token shell.
+
+### 12.4 Mandatory Verification
+Setiap kode yang dihasilkan sub-agent **WAJIB** diaudit ulang oleh Antigravity menggunakan `scripts/audits/check_sync_status.cjs` sebelum di-merge ke main branch.
 
 ---
 
-*Antigravity: Lead Orchestrator. Gemini CLI: Sub-Agent. Multi-Agent Protocol: LOCKED.*
+*Antigravity: Lead Orchestrator. Bridge v1.3.7: Operational. Stability-First Protocol: LOCKED.*

@@ -1,4 +1,7 @@
-# 🗺️ CRYPTO DISCO — CANONICAL WORKSPACE MAP (v3.56.0)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.56.3)
+Last Update: 2026-05-01 (03:45)
+Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
+Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
 Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di seluruh ekosistem. **Agent dilarang menebak lokasi file; gunakan map ini.**
 
@@ -10,9 +13,32 @@ Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di se
 e:\Disco Gacha\Disco_DailyApp
 ├── .agents/                 # 🧠 Intelligence & Protocols (The "Brain")
 │   ├── skills/              # Agent skillsets (SKILL.md)
-│   │   ├── 30-seconds-of-code # JS/CSS/HTML utilities
-│   │   ├── agent-customization # Agent personalization protocols
-│   │   └── meteora-agent      # Meteora LP analysis workflow
+│   │   ├── 30-seconds-of-code        # JS/CSS/HTML utilities
+│   │   ├── admin-stability           # Admin dashboard reliability
+│   │   ├── agent-customization       # Agent personalization protocols
+│   │   ├── ai-evolution-pnl-optimizer # 🧠 AI Yield & Profit Logic
+│   │   ├── deepseek-specialist       # High-logic & Security (v3.56.3)
+│   │   ├── deploy-to-vercel          # CI/CD deployment workflows
+│   │   ├── design-protocol           # UI/UX "Midnight Cyber" standards
+│   │   ├── economy-profitability-manager # PnL & Zero-Riba Logic
+│   │   ├── ecosystem-sentinel        # Audit & Nexus Orchestration
+│   │   ├── git-hygiene               # Clean Git Tree Mandate
+│   │   ├── lurah-orchestron          # Passive ecosystem monitoring
+│   │   ├── meteora-agent             # Meteora LP analysis workflow
+│   │   ├── openclaw-specialist       # Security & Architecture Review
+│   │   ├── qwen-specialist           # Local Refactoring & Build Check
+│   │   ├── raffle-integration        # NFT Raffle frontend logic
+│   │   ├── secure-infrastructure-manager # Security & Contract Lifecycle
+│   │   ├── supabase                  # DB & Auth integration
+│   │   ├── supabase-audit            # Deep DB security checks
+│   │   ├── supabase-postgres-best-practices # DB Performance
+│   │   ├── vercel-cli-with-tokens    # Vercel environment sync
+│   │   ├── vercel-composition-patterns # React Scalability
+│   │   ├── vercel-react-best-practices # Performance optimization
+│   │   ├── vercel-react-native-skills # Mobile app standards
+│   │   ├── vercel-react-view-transitions # Smooth UI animations
+│   │   ├── web-design-guidelines     # UI/UX Accessibility
+│   │   └── xp-reward-lifecycle       # XP Accrual & Sync logic
 │   ├── workflows/           # Automated workflow definitions (.md)
 │   ├── gemini.md            # operational constitution for Gemini
 │   ├── VERCEL_ECOSYSTEM_SOT.md # Vercel UI & CLI standards
@@ -157,4 +183,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-04-30T19:35:00+07:00 | Performance Optimization: Modal INP Fix — Concurrent UI Mandate. v3.56.0 LOCKED.*
+*Last Updated: 2026-05-01T03:52:00+07:00 | Multi-Agent Bridge v1.3.7 & 26 Skills Synced. v3.56.5 LOCKED.*

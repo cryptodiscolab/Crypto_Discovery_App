@@ -192,3 +192,20 @@ export function useDailyAppAdmin() {
 
     return { grantRole, revokeRole, approveSponsorship, rejectSponsorship };
 }
+
+export function useSyncXP() {
+    const { writeContractAsync, isPending: isConfirming } = useWriteContract();
+    
+    const syncXP = async () => {
+        return await writeContractAsync({
+            address: V12_ADDRESS,
+            abi: ABIS.DAILY_APP,
+            functionName: 'syncMasterXPoints',
+        });
+    };
+
+    return {
+        syncXP,
+        isLoading: isConfirming
+    };
+}

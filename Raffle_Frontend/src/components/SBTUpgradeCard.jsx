@@ -3,7 +3,7 @@ import { waitForTransactionReceipt } from '@wagmi/core';
 import { useNFTTiers } from '../hooks/useNFTTiers';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
-import { useUserInfo } from '../hooks/useContract';
+import { useUserInfo, useSyncXP } from '../hooks/useContract';
 import { formatEther } from 'viem';
 import { Sparkles, ArrowUpCircle, Lock, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -17,6 +17,7 @@ export function SBTUpgradeCard() {
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { stats: userOnChainStats, refetch: refetchUserInfo } = useUserInfo(address);
+    const { syncXP, isLoading: isSyncing } = useSyncXP();
     const { data: balanceData } = useBalance({ address });
 
     // Feature Flags Check
@@ -150,6 +151,37 @@ export function SBTUpgradeCard() {
         }
     };
 
+    const handleSync = async () => {
+        if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high.", { icon: '⛽' });
+        
+        const tid = toast.loading("Requesting Sync Transaction...");
+        try {
+            const hash = await syncXP();
+            toast.loading("Waiting for confirmation...", { id: tid });
+            
+            const receipt = await waitForTransactionReceipt(config, { 
+                hash,
+                confirmations: 1
+            });
+            
+            if (receipt.status !== 'success') {
+                throw new Error("Transaction reverted on-chain");
+            }
+            
+            toast.success("XP Synced to Blockchain Successfully! 🎉", { id: tid });
+            refetchUserInfo?.();
+            refetchPoints();
+        } catch (err) {
+            console.error('[SBTUpgradeCard] Sync error:', err);
+            const errMsg = err?.shortMessage || err?.message || '';
+            if (errMsg.includes('user rejected') || err?.code === 4001) {
+                toast.error('Sync cancelled by user.', { id: tid });
+            } else {
+                toast.error(errMsg || 'Sync failed. Please try again.', { id: tid });
+            }
+        }
+    };
+
     return (
         <div className={`glass-card relative overflow-hidden transition-all duration-500 border ${isReady ? 'border-indigo-500/40 bg-indigo-500/5 shadow-lg shadow-indigo-500/10' : 'border-white/10 bg-slate-900/40'}`}>
             {/* Background Glow for Ready State */}
@@ -183,16 +215,21 @@ export function SBTUpgradeCard() {
                     <div className="space-y-2">
                         <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
                             <span className="text-slate-500">XP Requirement</span>
-                            <span className={hasTotalXP ? "text-green-400" : "text-yellow-400"}>
-                                {Number(userPoints).toLocaleString()} / {nextTier.pointsRequired.toLocaleString()}
+                            <span className={hasOnChainXP ? "text-green-400" : "text-yellow-400"}>
+                                {Number(dailyAppXP).toLocaleString()} / {nextTier.pointsRequired.toLocaleString()}
                             </span>
                         </div>
                         <div className="h-2 bg-black/40 rounded-full border border-white/5 overflow-hidden">
                             <div
-                                className={`h-full transition-all duration-1000 ${hasTotalXP ? 'bg-green-500' : 'bg-indigo-600'}`}
-                                style={{ width: `${Math.min((Number(userPoints) / nextTier.pointsRequired) * 100, 100)}%` }}
+                                className={`h-full transition-all duration-1000 ${hasOnChainXP ? 'bg-green-500' : 'bg-yellow-600'}`}
+                                style={{ width: `${Math.min((Number(dailyAppXP) / nextTier.pointsRequired) * 100, 100)}%` }}
                             />
                         </div>
+                        {hasTotalXP && !hasOnChainXP && (
+                            <p className="text-[9px] font-bold text-yellow-500/80 uppercase tracking-widest animate-pulse">
+                                ⚠️ {Number(userPoints).toLocaleString()} Total XP detected (DB) but not yet synced to contract.
+                            </p>
+                        )}
                     </div>
 
                     {/* Cost & Supply Indicator */}
@@ -245,17 +282,40 @@ export function SBTUpgradeCard() {
                     </div>
                 )}
 
-                <button
-                    onClick={handleUpgrade}
-                    disabled={!hasOnChainXP || isSoldOut || !isSbtFeatureEnabled || isGasExpensive}
-                    className={`w-full min-h-[56px] py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-1
-                        ${isGasExpensive
-                            ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
-                            : isReady
-                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/30'
-                            : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                        }`}
-                >
+                {hasTotalXP && !hasOnChainXP ? (
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing || isGasExpensive}
+                        className={`w-full min-h-[56px] py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-1
+                            ${isGasExpensive || isSyncing
+                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                                : 'bg-green-600 hover:bg-green-500 text-white shadow-xl shadow-green-900/30'
+                            }`}
+                    >
+                        {isSyncing ? (
+                            <div className="flex items-center gap-2">
+                                <Loader2 size={14} className="animate-spin" />
+                                SYNCING XP...
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <ArrowUpCircle size={14} />
+                                FORCE SYNC {syncShortfall.toLocaleString()} XP
+                            </div>
+                        )}
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleUpgrade}
+                        disabled={!hasOnChainXP || isSoldOut || !isSbtFeatureEnabled || isGasExpensive}
+                        className={`w-full min-h-[56px] py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-1
+                            ${isGasExpensive
+                                ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'
+                                : isReady
+                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/30'
+                                : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                            }`}
+                    >
                     {isGasExpensive ? (
                         <>
                             <span className="flex items-center gap-2"><AlertCircle size={14} /> ⛔ GAS TOO HIGH</span>
@@ -273,13 +333,18 @@ export function SBTUpgradeCard() {
                             MINT {nextTier.name.toUpperCase()} NOW
                         </div>
                     )}
-                </button>
+                    </button>
+                )}
 
                 {hasTotalXP && !hasOnChainXP && (
-                    <div className="mt-4 p-3 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
-                        <p className="text-[11px] text-yellow-400 font-black uppercase leading-tight text-center tracking-widest">
-                            ⚠️ Points Synced to DB but not Contract.
-                            <br/>Sync will happen on next daily claim.
+                    <div className="mt-4 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 space-y-2">
+                        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
+                            <AlertCircle size={14} />
+                            Awaiting On-Chain Sync
+                        </div>
+                        <p className="text-[10px] font-bold opacity-80 leading-relaxed uppercase">
+                            Your social XP is recorded in our database but not yet committed to the blockchain. 
+                            Click "FORCE SYNC" above to push your points on-chain immediately.
                         </p>
                     </div>
                 )}
