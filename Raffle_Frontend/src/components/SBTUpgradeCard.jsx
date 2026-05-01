@@ -1,6 +1,7 @@
 import { useAccount, useBalance, useSignMessage, useConfig } from 'wagmi';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import { useNFTTiers } from '../hooks/useNFTTiers';
+import { useCMS } from '../hooks/useCMS';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
 import { useUserInfo, useSyncXP } from '../hooks/useContract';
@@ -15,6 +16,7 @@ export function SBTUpgradeCard() {
     const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
     const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
+    const { ethPrice } = useCMS();
     const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
     const { stats: userOnChainStats, refetch: refetchUserInfo } = useUserInfo(address);
     const { syncXP, syncOffchainXP, isLoading: isSyncing } = useSyncXP();
@@ -262,7 +264,8 @@ export function SBTUpgradeCard() {
                             <div className="flex flex-col">
                                 <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Fee</span>
                                 <span className="text-[11px] font-black text-white uppercase tracking-widest">
-                                    {formatEther(nextTier.mintPrice)} ETH
+                                    {formatEther(nextTier.mintPrice)} ETH 
+                                    {ethPrice > 0 && <span className="ml-1 text-slate-500 text-[9px] normal-case">(${(parseFloat(formatEther(nextTier.mintPrice)) * ethPrice).toFixed(2)})</span>}
                                 </span>
                             </div>
                         </div>
@@ -352,9 +355,16 @@ export function SBTUpgradeCard() {
                     ) : !hasOnChainXP ? (
                         hasTotalXP ? 'AWAITING ON-CHAIN SYNC' : `NEED ${xpShortfall.toLocaleString()} MORE XP`
                     ) : (
-                        <div className="flex items-center gap-2">
-                            <Sparkles size={14} />
-                            MINT {nextTier.name.toUpperCase()} NOW
+                        <div className="flex flex-col items-center gap-0.5">
+                            <div className="flex items-center gap-2">
+                                <Sparkles size={14} />
+                                MINT {nextTier.name.toUpperCase()} NOW — {formatEther(nextTier.mintPrice)} ETH
+                            </div>
+                            {ethPrice > 0 && (
+                                <span className="text-[9px] opacity-70 font-bold tracking-widest">
+                                    EST. COST: ${(parseFloat(formatEther(nextTier.mintPrice)) * ethPrice).toFixed(2)} USDC
+                                </span>
+                            )}
                         </div>
                     )}
                     </button>

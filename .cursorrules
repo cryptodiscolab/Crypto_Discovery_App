@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.56.3)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.56.4)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -321,11 +321,22 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - **ENV TOGGLE**: Use `VITE_CHAIN_ID` in `.env` to switch between production and test environments globally.
 - **SBT MINTING UI**: Avoid intrusive full-screen popups for tier upgrades. Use the subtle indicators defined in Section 26.
 
-## 26. MINIMALIST TIER ASCENSION (SBT MINTING UI)
-- **DESIGN**: Avoid intrusive full-screen popups for tier upgrades.
-- **INDICATOR**: Use a subtle pulsing border and `ArrowUpCircle` icon on the rank badge to signal eligibility.
-- **PROMPT**: Display a small, elegant notification bar with a "Mint Status" button only when an on-chain upgrade is available.
-- **SYNC**: When an SBT is minted, the API MUST immediately update the `tier` in `user_profiles` for instant feedback.
+- 324.4 **SBT TIER PROGRESSION RULES (v3.56.4)**:
+-   - **SEQUENTIAL UPGRADE MANDATE**: User **DILARANG KERAS** melompat tier (misal: Rookie -> Gold). Upgrade harus dilakukan satu per satu (Rookie -> Bronze -> Silver -> Gold dst) untuk menjaga integritas XP burn.
+-   - 🚫 **SBT Transfer Assumption (v3.56.4)**: DILARANG KERAS berasumsi SBT bisa dipindahkan. NFT Tier adalah **Non-Transferable**.
+-   - 🚫 **Isolated Reasoning (v3.56.4)**: DILARANG KERAS bagi agen manapun (Lead atau Sub-agent) untuk bekerja tanpa merujuk pada **Global Skill Registry** di `.agents/skills/`.
+
+### 11. COGNITIVE SYNC & SKILL-CREATOR MANDATE (v3.56.4)
+
+Seluruh agen aktif (Antigravity, OpenClaw, Qwen, DeepSeek) wajib beroperasi sebagai satu kesatuan sistem saraf:
+
+1. **Shared Brain Access**: Setiap tugas wajib dimulai dengan memindai folder `.agents/skills/` untuk mencari modul instruksi yang relevan.
+2. **Skill-Creator Methodology**: Jika agen menemukan pola pengerjaan baru atau solusi atas bug kompleks, agen wajib memperbarui atau membuat file `SKILL.md` baru untuk mencegah "amnesia" sistem di sesi mendatang.
+3. **Multi-Agent Memory Sync**: Gunakan `agents_vault` (Supabase) atau `.gemini/context.tmp` untuk membagikan state audit dan reasoning antar agen.
+4. **Anti-Hallucination Tiering**: Selalu prioritaskan `SKILL.md` (Tier 2) di atas asumsi model internal. Jika terjadi konflik antara "pengetahuan model" dan "instruksi skill", instruksi skill adalah pemenang mutlak.
+-   - **SOULBOUND (SBT) MANDATE**: Seluruh NFT Tier adalah Soulbound (Non-Transferable). Kontrak `DailyAppV13` akan me-revert setiap upaya transfer antar wallet.
+-   - **ON-CHAIN SOT**: Tier status di database hanya valid jika sinkron dengan event `NFTMinted` di blockchain.
+-   - **UI TRANSPARENCY**: Tampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini sebelum user melakukan minting.
 
 ## 23. PRE-FLIGHT CHECK & DEPLOYMENT GUARD (STRICT MANDATE)
 - **THE SYNC BAN**: NEVER push code (`git push`) without first verifying entire ecosystem health.

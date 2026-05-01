@@ -21,7 +21,7 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 | Raffle (Latest) | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` |
 | MasterX (XP) | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
-| PRD Version | `v3.55.0` (Raffle Refund Protocol V2.1) |
+| PRD Version | `v3.56.4` (SBT Tier Hardening & Sequential Mandate) |
 
 ### 3. Bahasa & Komunikasi
 - **Teknis/Chat**: **Bahasa Indonesia**.
@@ -53,6 +53,10 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 ### 4. Tier-Based Entry Gating (v3.39.1)
 - **Percentile-Based Tiers**: Tampilkan Tier user (Diamond-Bronze) berdasarkan `PERCENT_RANK()` XP global dari `v_user_full_profile`.
 - **Gated Raffle Access**: Validasi `min_sbt_level` sebelum transaksi. Jika tier user < syarat, blokir tombol `Buy Ticket` dengan pesan edukatif. v3.41.0 supports full indexing for all 6 tiers.
+- **SBT Tier Ascension Rules (v3.56.4)**:
+    - **SEQUENTIAL UPGRADE**: User **WAJIB** upgrade tier secara berurutan (Rookie -> Bronze -> Silver -> Gold dst). Kontrak `DailyAppV13` menolak lompatan tier.
+    - **SOULBOUND (NON-TRANSFERABLE)**: Seluruh NFT Tier terkunci di wallet (tidak bisa di-transfer).
+    - **FINANCIAL TRANSPARENCY**: Tampilkan estimasi biaya USDC real-time pada UI `SBTUpgradeCard` sebelum user melakukan konfirmasi transaksi.
 - **Social Identity Gate (v3.42.0)**: Raffles tertentu (Partner Base) dapat mewajibkan `is_base_social_verified`. Frontend harus menampilkan status "BASE REQ" dan mengunci pembelian jika identitas belum terverifikasi.
 
 ### 5. Activity Logging Standard (Zero-Trust)

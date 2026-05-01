@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-04-30*
-*PRD Version: v3.56.3 (Multi-Agent Bridge v1.3.7 — Stability-First Mandate)*
+*Last Updated: 2026-05-01*
+*PRD Version: v3.56.4 (SBT Tier Hardening & Sequential Mandate — Anti-Hallucination v1.0)*
 
 ---
 
@@ -114,6 +114,7 @@ Before responding to ANY request, read these files IN ORDER:
 | **BP-004** | **Missing Task Link Step** | TaskList off-chain tasks tidak membuka link task sebelum claim. User bisa langsung claim XP tanpa mengerjakan task. | `TaskList.jsx` | Implementasikan dua-step flow: Step 1 = buka link, Step 2 = claim setelah timer. Anti-fraud timer wajib ada antara klik link dan klik claim. | v3.47.1 |
 | **BP-005** | **ABI Drift Hook Mismatch** | Saat contract diupgrade, index-based access (e.g., `userRawData[1]`) bisa bergeser. Named property fallback wajib ada. | `useSBT.js`, `useNFTTiers.js` | Gunakan pola: `data.namedProp !== undefined ? data.namedProp : data[fallbackIndex]`. | v3.38.8 |
 | **BP-006** | **Raffle Rejection Sync Fail** | Admin menolak raffle di database tanpa melakukan refund on-chain, menyebabkan dana sponsor tersangkut. | `ModerationCenterTab.jsx`, `user-bundle.js` | **Refund-First Policy**: Selalu panggil `cancelRaffle()` on-chain sebelum memanggil API `reject-raffle`. Pastikan hash transaksi refund tersimpan di database. | v3.55.0 |
+| **BP-007** | **SBT Tier Jumping Assumption** | Agent berasumsi user bisa upgrade langsung ke Gold dari Rookie jika XP cukup. Padahal kontrak `DailyAppV13` mewajibkan sequential upgrade (N+1). | `SBTUpgradeCard.jsx`, `DailyAppV13.sol` | **Sequential-Only Policy**: Selalu verifikasi bahwa `tier == currentTier + 1`. Tampilkan pesan edukatif di UI jika user mencoba melompati tier. | v3.56.4 |
 
 > 💡 **Agent Self-Check**: Sebelum menulis kode yang menyentuh contract write, selalu tanyakan: *"Apakah contract address yang di-call SAMA dengan sumber data yang digunakan?"*
 
@@ -135,6 +136,7 @@ Before responding to ANY request, read these files IN ORDER:
 | `hardcode`, `static value`, `reward`, `fee`, `XP` | `point_settings` (Supabase), `system_settings` | `TASK_FEATURE_WORKFLOW.md §9` |
 | `admin`, `dashboard`, `task creation`, `ABI parity` | `admin-bundle.js`, `abis_data.txt` | `TASK_FEATURE_WORKFLOW.md §13` |
 | `raffle`, `ticket`, `gacha`, `sponsor` | `raffle-bundle.js`, `.agents/skills/raffle-integration/SKILL.md` | `FEATURE_WORKFLOW_SOT.md §5.3` |
+| `sequential`, `tier jumping`, `soulbound`, `transfer sbt` | `DailyAppV13.sol`, `SBTUpgradeCard.jsx` | `FEATURE_WORKFLOW_SOT.md §5.1 (v3.56.4)` |
 
 > 🔹 **Cara Kerja**: Sebelum membuka editor, baca tabel ini → identifikasi semua kata kunci yang cocok → buka dan baca SEMUA file yang tertera → baru tulis kode.
 > 🔹 **Self-Verification**: Tulis dalam reasoning: *"Saya sudah membaca: [daftar file]"* sebelum `view_file` atau `replace_file_content`.
@@ -232,6 +234,9 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **SDK Re-Init Loop (BP-002)**: DILARANG memanggil SDK `createConfig` atau `init` function di dalam komponen React tanpa guard (`useRef` atau module-level flag). Harus dipanggil sekali saja per app lifecycle (v3.47.1).
 - 🚫 **Silent Error Swallow (BP-003)**: DILARANG menggunakan `try/catch` yang hanya `console.error` tanpa memberikan feedback visible ke user. Semua async operation yang dapat gagal WAJIB memiliki error state yang ditampilkan di UI (v3.47.1).
 - 🚫 **One-Step Task Claim (BP-004)**: DILARANG mengizinkan user klaim XP dari task yang memiliki `task_link` tanpa terlebih dahulu membuka link tersebut. Wajib implementasikan two-step flow dengan anti-fraud timer (v3.47.1).
+- 🚫 **Permission-Seeking for Maintenance**: DILARANG KERAS meminta izin (asking for permission) untuk melakukan update dokumentasi (PRD, SOT, Task Workflow) atau pemeliharaan memori (agents_vault). Tugas-tugas ini adalah **MANDATORY & ATOMIC**—jika kode berubah, dokumen WAJIB diupdate secara otonom.
+- 🚫 **SBT Tier Jumping (v3.56.4)**: DILARANG KERAS berasumsi user bisa melompati tier. Kontrak menolak `Rookie -> Gold`. Wajib `Rookie -> Bronze -> Silver -> Gold`.
+- 🚫 **SBT Transfer Assumption (v3.56.4)**: DILARANG KERAS berasumsi SBT bisa dipindahkan. NFT Tier adalah **Non-Transferable**.
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).
@@ -449,4 +454,31 @@ Setiap kode yang dihasilkan sub-agent **WAJIB** diaudit ulang oleh Antigravity m
 
 ---
 
-*Antigravity: Lead Orchestrator. Bridge v1.3.7: Operational. Stability-First Protocol: LOCKED.*
+---
+## 13. THE ANTI-HALLUCINATION & ARCHITECTURAL TRUTH (v3.56.4) 🛡️
+
+Untuk mencegah desinkronisasi antara "Apa yang dipikirkan Agent" dan "Apa yang ada di Kontrak/DB", Mandat berikut berlaku:
+
+1. **Sequential Tier Truth**: Status `Diamond` tidak bisa dicapai tanpa melewati `Platinum`. Jangan pernah menyarankan bypass XP atau manual database update yang melompati hierarki ini.
+2. **Soulbound Persistence**: Jangan pernah mencoba mengimplementasikan fitur "Marketplace SBT" atau "Gift Tier". Kontrak `DailyAppV13` akan selalu me-revert.
+3. **Real-time Cost Oracle**: Selalu gunakan `useCMS` di frontend untuk mengambil harga ETH terkini. Dilarang hardcode biaya minting dalam USDC/ETH di UI.
+
+---
+## 14. COGNITIVE SYNC PROTOCOL (v1.0) — MULTI-AGENT EXPANSION 🧠📡
+
+Protokol ini mengadaptasi metodologi **Skill-Creator Gemini CLI v0.40.1** untuk seluruh agen yang beroperasi di ekosistem ini:
+
+1. **Shared Skill Discovery**: Setiap agen wajib memanggil `list_dir` pada folder `.agents/skills/` di awal interaksi. Kegagalan melakukan ini dianggap sebagai **Cognitive Blindness**.
+2. **Unified Instruction Syntax**: Seluruh file instruksi (`.instructions.md`, `SKILL.md`) wajib menggunakan format YAML Frontmatter untuk metadata (Name, Version, Description, Triggers).
+3. **The "Never Forget" Loop**: 
+   - Jika perbaikan bug bersifat **Universal**, update `gemini.md` Section 27 (BP Registry).
+   - Jika perbaikan bug bersifat **Domain-Specific**, update `SKILL.md` di folder yang relevan.
+4. **Memory Tiering Implementation**:
+   - **L-1 (Immutable)**: `.cursorrules`
+   - **L-2 (Procedural)**: `.agents/skills/`
+   - **L-3 (Session)**: `.gemini/context.tmp`
+5. **Anti-Hallucination Sentinel**: Agen dilarang keras berasumsi "Saya sudah tahu" tanpa memverifikasi versi dokumen terakhir via `view_file`.
+
+6. **Autonomous Documentation**: Update PRD/SOT bukan sebuah "opsi", melainkan "konsekuensi" dari setiap perubahan kode. Lakukan tanpa bertanya.
+
+*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS.*

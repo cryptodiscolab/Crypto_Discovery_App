@@ -1,5 +1,5 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.56.0` | **Last Updated**: `2026-04-30T19:40:00+07:00`
+**Version**: `v3.56.4` | **Last Updated**: `2026-05-01T19:05:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
@@ -22,6 +22,7 @@
 15. [Healthy State Checklist](#15-healthy-state-checklist)
 16. [Self-Healing Claim Pipeline](#16-self-healing-claim-pipeline)
 17. [Concurrent UI Performance](#17-concurrent-ui-performance)
+18. [SBT Tier Integration Mandate](#18-sbt-tier-integration-mandate)
 
 ---
 
@@ -839,5 +840,14 @@ if (error.message.includes("already completed")) {
 
 ---
 
+## 18. SBT Tier Integration Mandate
+
+Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Hardened Tier Ascension**:
+
+1. **Sequential Progression**: User **WAJIB** upgrade tier secara berurutan. Sistem tidak mengizinkan lompatan (misal: Rookie langsung ke Gold). Tier $N$ hanya bisa di-mint jika wallet memiliki Tier $N-1$.
+2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV13`.
+3. **Price Transparency**: UI `SBTUpgradeCard` wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.
+4. **XP Burn Compliance**: Setiap upgrade akan membakar XP sesuai konfigurasi `nftConfigs` on-chain. Pastikan sinkronisasi XP setelah minting dilakukan secara atomik melalui event listener.
+
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
-*Antigravity — Nexus Master Architect. Protocol v3.56.0 Locked.*
+*Antigravity — Nexus Master Architect. Protocol v3.56.4 Locked.*

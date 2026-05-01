@@ -6,6 +6,12 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.56.4 (SBT Tier Architecture Hardening: Sequential Upgrade & Soulbound Mandate)
+- **SBT Logic Audit (`DailyAppV13.sol`)**: Konfirmasi logika `_mintOrUpgrade` yang mewajibkan upgrade secara berurutan (Sequential) tanpa celah untuk melompat tier.
+- **Soulbound Enforcement**: Verifikasi properti non-transferable pada NFT SBT melalui override `_update` yang me-revert transfer antar alamat non-zero.
+- **Frontend Cost Transparency**: Integrasi estimasi biaya USDC real-time pada `SBTUpgradeCard.jsx` untuk memberikan kejelasan finansial sebelum user melakukan minting.
+- **Ecosystem Doc Sync**: Sinkronisasi seluruh protokol (`.cursorrules`, `PRD`, `SKILL.md`) ke standar v3.56.4.
+
 ## 🟢 v3.56.2 (Infrastructure Resilience: Multi-Agent Orchestration & Gemini API Fallback)
 - **Dynamic API Fallback**: Implementasi rotasi kunci otomatis untuk 9+ API Key Gemini di seluruh stack (Python SDK & Node.js Bridge).
 - **Multi-Agent Orchestration**: Pembangunan `gemini_agent_bridge.js` yang memungkinkan delegasi otonom tugas berat dari Antigravity ke Gemini CLI.

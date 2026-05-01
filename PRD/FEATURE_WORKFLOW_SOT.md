@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.56.0)
-**Last Updated**: 2026-04-30T19:40:00+07:00 — Modal INP Fix & Concurrent UI Mandate (v3.56.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.56.4)
+**Last Updated**: 2026-05-01T19:00:00+07:00 — SBT Tier Hardening & Sequential Mandate (v3.56.4)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -115,20 +115,23 @@ Setelah XP didapat dari Daily Claim atau Social Tasks, sistem harus menentukan a
 
 ---
 
-## 🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint) — v3.47.1
-
-Status SBT/NFT ini adalah tiket representasi permanen dari Tier user.
+## 🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint) — v3.56.4
+Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersifat **Soulbound** dan **Sequential**.
 
 ### 5.1 The Upgrade Execution
 - **Triggers**: UI memunculkan tombol "Mint / Upgrade" jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.
+- **Rules (Mandatory)**:
+    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV13` akan me-revert transaksi jika `tier != currentTier + 1`.
+    2. **Soulbound Mandate**: NFT SBT bersifat **Non-Transferable**. Setiap upaya transfer antar wallet (kecuali mint/burn) akan di-revert oleh kontrak.
 - **Workflow**:
-  1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 4 syarat: `hasTotalXP` (DB), `hasOnChainXP` (MASTER_X), `hasEnoughETH` (balance), dan `!isSoldOut` (DAILY_APP nftConfigs).
-  2. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet (v3.47.1).
-  3. **Minting (FIXED v3.47.1)**: Frontend memanggil `mintNFT(tierId, mintPrice)` dari `useNFTTiers` hook — yang memanggil `DAILY_APP.mintNFT()`. **BUKAN** `upgradeTier()` dari `useSBT` (yang memanggil `MASTER_X.upgradeTier()` — contract berbeda, menyebabkan gas error).
-  4. **Contract Call Parity Rule**: Data tier (`mintPrice`, `currentSupply`, `maxSupply`) dibaca dari `DAILY_APP.nftConfigs` via `useNFTTiers`. Oleh karena itu write function WAJIB juga ke `DAILY_APP` (bukan `MASTER_X`).
-  5. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
-  6. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
-  7. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas.
+    1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 4 syarat: `hasTotalXP` (DB), `hasOnChainXP` (MASTER_X), `hasEnoughETH` (balance), dan `!isSoldOut` (DAILY_APP nftConfigs).
+    2. **Cost Transparency**: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.
+    3. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.
+    4. **Minting**: Frontend memanggil `mintNFT(tierId, mintPrice)` dari `useNFTTiers` hook — yang memanggil `DAILY_APP.mintNFT()`. 
+    5. **On-Chain Enforcement**: Kontrak memvalidasi urutan tier dan membakar XP yang sesuai.
+    6. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
+    7. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
+    8. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas.
 
 > [!WARNING]
 > Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Gunakan `useNFTTiers.mintNFT(id, price)` yang memanggil `DAILY_APP.mintNFT()`.

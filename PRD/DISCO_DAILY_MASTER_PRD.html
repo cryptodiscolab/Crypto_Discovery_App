@@ -1,5 +1,73 @@
 <hr>
-<h2>12. Work Report v3.56.0 (Current)</h2>
+<h2>14. Work Report v3.56.4</h2>
+<p><strong>Date:</strong> 2026-05-01
+<strong>Subject:</strong> SBT Tier Architecture Hardening: Sequential Upgrade &amp; Soulbound Mandate
+<strong>Author:</strong> Antigravity (Elite Systems Architect)</p>
+<h3>Executive Summary</h3>
+<p>Audit dan pengerasan arsitektur Tier SBT (Soulbound Token) pada kontrak <code>DailyAppV13</code>. Patch ini mengonfirmasi dan mendokumentasikan batasan operasional yang ketat: larangan lompat tier (Sequential Upgrade) dan sifat non-transferable (Soulbound) untuk menjaga integritas ekonomi dan hierarki pengguna.</p>
+<h3>Technical Changes</h3>
+<ol>
+<li><strong>Sequential Upgrade Enforcement (<code>DailyAppV13.sol</code>)</strong>:<ul>
+<li>Verifikasi logika <code>_mintOrUpgrade</code> yang mewajibkan <code>uint256(_tier) == uint256(currentTier) + 1</code>.</li>
+<li>User tidak dapat melompat dari Rookie langsung ke Gold; harus melewati Bronze dan Silver secara berurutan.</li>
+</ul>
+</li>
+<li><strong>Soulbound Mandate (<code>DailyAppV13.sol</code>)</strong>:<ul>
+<li>Verifikasi override <code>_update</code> yang me-revert setiap upaya transfer antar alamat non-zero (<code>Unauthorized()</code>).</li>
+<li>NFT SBT terkunci secara permanen pada wallet pengguna.</li>
+</ul>
+</li>
+<li><strong>Frontend Financial Transparency (<code>SBTUpgradeCard.jsx</code>)</strong>:<ul>
+<li>Integrasi real-time ETH-to-USDC conversion untuk biaya minting.</li>
+<li>Penambahan estimasi biaya USDC pada tombol minting untuk kejelasan finansial user.</li>
+</ul>
+</li>
+</ol>
+<h3>Verification Results</h3>
+<ul>
+<li>✅ <strong>Sequential Logic</strong>: Kontrak menolak upaya minting tier non-sequential (InvalidParameters).</li>
+<li>✅ <strong>Soulbound Status</strong>: Upaya transfer NFT via <code>transferFrom</code> terverifikasi gagal (Unauthorized).</li>
+<li>✅ <strong>UI Accuracy</strong>: Modal upgrade menampilkan biaya ETH yang akurat sesuai konversi real-time.</li>
+</ul>
+<hr>
+<h2>13. Work Report v3.56.3</h2>
+<p><strong>Date:</strong> 2026-05-01
+<strong>Subject:</strong> Infrastructure Resilience: Multi-Agent Orchestration &amp; Gemini API Fallback
+<strong>Author:</strong> Antigravity (Elite Systems Architect)</p>
+<h3>Executive Summary</h3>
+<p>Implementasi infrastruktur <strong>Multi-Agent Orchestration</strong> untuk meningkatkan ketahanan otonom ekosistem Crypto Disco. Patch ini memperkenalkan sistem <strong>Dynamic API Key Rotation</strong> yang mendukung hingga 9+ kunci cadangan untuk eliminasi bottleneck kuota (429) dan membangun jembatan delegasi otonom ke Gemini CLI.</p>
+<h3>Technical Changes</h3>
+<ol>
+<li><strong>Multi-Agent Bridge (<code>gemini_agent_bridge.js</code>)</strong>:<ul>
+<li>Pembangunan skrip delegasi yang memungkinkan Antigravity mendelegasikan tugas komputasi berat atau audit mendalam ke Gemini CLI.</li>
+<li>Injeksi konteks otomatis dan rotasi API Key dinamis (Fallback 1-20).</li>
+</ul>
+</li>
+<li><strong>Dynamic Key Rotation Engine</strong>:<ul>
+<li>Pembaruan <code>antigravity_sdk.py</code> dan <code>gemini_agent_bridge.js</code> untuk memuat seluruh tersedia <code>GEMINI_API_KEY</code> dari <code>.env</code> secara otomatis.</li>
+<li>Peningkatan kapasitas <em>failover</em> dari 3 kunci menjadi 9+ kunci aktif.</li>
+</ul>
+</li>
+<li><strong>Ecosystem Sync Automation</strong>:<ul>
+<li>Pembaruan <code>sync-all-envs.cjs</code> dan <code>global-sync-env.js</code> untuk mendukung sinkronisasi otomatis seluruh kunci cadangan ke 16+ file <code>.env</code> lokal dan Vercel (Production/Preview).</li>
+<li>Penandaan label <strong>SENSITIVE</strong> pada seluruh API Key selama sinkronisasi Vercel untuk keamanan data.</li>
+</ul>
+</li>
+</ol>
+<h3>Verification Results</h3>
+<ul>
+<li>✅ <strong>API Fallback</strong>: Terverifikasi transisi otomatis antar kunci saat terjadi rate limit.</li>
+<li>✅ <strong>Global Sync</strong>: 9/9 kunci berhasil tersinkronisasi ke Vercel (crypto-discovery-app &amp; verification-server).</li>
+<li>✅ <strong>Orchestration</strong>: <code>npm run orchestrate-gemini</code> sukses menjalankan delegasi tugas dengan injeksi konteks penuh.</li>
+</ul>
+<hr>
+<h1>CRYPTO DISCO DAILY - MASTER PRD (v3.56.3)</h1>
+<p><strong>Last Audit:</strong> 2026-05-01
+<strong>Status:</strong> [🟢] DEPLOYED &amp; SYNCED
+<strong>Core Stack:</strong> Next.js 15, Tailwind, Supabase, Hardhat, Base Mainnet.
+<strong>Orchestration:</strong> Bridge v1.3.7 (Gemini 2.5/3.1 Resilient Fallback)</p>
+<hr>
+<h2>12. Work Report v3.56.0 (Legacy)</h2>
 <p><strong>Date:</strong> 2026-04-30
 <strong>Subject:</strong> Performance Optimization: Modal Interaction Responsiveness (INP Fix)
 <strong>Author:</strong> Antigravity (Elite Senior Software Engineer)</p>
@@ -531,7 +599,7 @@
     DB --&gt; UI[UI: Refresh Ticket Count]
 </code></pre>
 <h3>5.3 XP Sync &amp; Tier Ascension (SBT)</h3>
-<p>Proses otomatisasi kenaikan tier berdasarkan akumulasi XP.</p>
+<p>Proses otomatisasi kenaikan tier berdasarkan akumulasi XP dengan aturan <strong>Sequential Upgrade</strong> dan <strong>Soulbound</strong>.</p>
 <pre><code class="language-mermaid">flowchart TD
     Task[Task Completed / Reward Claimed] --&gt; XP_Update[DB: Increment User XP]
     XP_Update --&gt; Rank[Cron: Re-calculate Percentile Rank]
@@ -541,161 +609,182 @@
     Eligible --&gt; UI_Notif[UI: Show Rank Upgrade Pulse]
     UI_Notif --&gt; Mint[User Clicks: &#39;Mint New Rank&#39;]
     Mint --&gt; Chain{Contract: MintSBT}
-    Chain --&gt; Success[On-chain Tier Upgraded]
+    Chain --&gt; Check{tier == current + 1?}
+    Check -- No --&gt; Revert[Revert: InvalidParameters]
+    Check -- Yes --&gt; Success[On-chain Tier Upgraded]
     Success --&gt; Sync[API: Sync New Tier to user_profiles]
-
----
-
-## 5. Referral Growth Loop v2 (v3.42.0)
-
-Untuk menjamin kualitas pertumbuhan dan mencegah eksploitasi, sistem referral Crypto Disco telah ditingkatkan dari model &quot;Instant Reward&quot; menjadi model &quot;Vesting &amp; Dividend&quot;.
-
-### 5.1 Referral Reward Vesting
-Hadiah pendaftaran (50 XP) untuk penarik (Tier 1 Referrer) tidak lagi diberikan secara instan. Hadiah ini **hanya** akan cair (vested) secara otomatis saat user yang diajak berhasil mencapai threshold **500 XP**.
-- **Mekanisme**: Dicek secara otomatis dalam fungsi `fn_increment_xp` saat user yang diajak mendapatkan XP.
-- **Validasi**: Kolom `referral_bonus_paid` di `user_profiles` mencegah klaim ganda.
-
-### 5.2 Nexus Growth Dividend (10%)
-Referrer (Tier 1 saja) berhak mendapatkan **Passive Dividend sebesar 10%** dari setiap XP yang dihasilkan oleh user yang mereka ajak selamanya.
-- **Mekanisme**: Setiap kali user yang diajak mendapatkan XP (via `fn_increment_xp`), fungsi tersebut secara rekursif memanggil dirinya sendiri untuk menambah 10% porsi ke referrer.
-- **Transparency**: Dividen ini dicatat secara detail di `user_activity_logs` dengan kategori `REFERRAL_DIVIDEND`.
-
----
-
-## 6. Base Social Verification (Identity Hardening)
-
-Integrasi on-chain dengan **Base.org Names (Basenames)** untuk memverifikasi identitas sosial user secara terdesentralisasi.
-
-### 6.1 Basename Reverse Resolution
-- **Proses**: Sistem menggunakan resolver on-chain (`0xC697...`) untuk menerjemahkan `wallet_address` menjadi Basename.
-- **Manual Link**: User dapat mengklik &quot;Link Base Social&quot; di halaman Profil untuk memicu sinkronisasi identitas.
-
-### 6.2 Social Guard (Task Prerequisites)
-- **Gating**: Tugas-tugas tertentu (misalnya yang disponsori oleh partner Base) dapat mewajibkan status `is_base_social_verified = true`.
-- **UI Lock**: Tombol claim pada tugas yang mewajibkan identitas akan terkunci secara visual dengan label `BASE REQ` jika user belum terverifikasi.
-
----
-
----
-
-## 7. Technical Deep-Dive: Data Handling &amp; Feature Flows
-
-### 7.1 Page-Level Data Architecture
-
-#### 7.1.1 Login &amp; Onboarding (Auth Flow)
-- **Data Source**: Metamask/Web3 &amp; Farcaster (SIWE).
-- **Process**: 
-  1. Wallet Signature verify on client.
-  2. POST to `/api/user-bundle` with signature.
-  3. Backend verifies signature via `ethers.verifyMessage`.
-  4. Upsert `user_profiles` with `wallet_address`.
-- **E2E Flow**:
-  `Wallet Connect` → `EIP-191 Sign` → `Supabase Upsert` → `Identity Lock v2`
-
-#### 7.1.2 Dashboard Admin &amp; Governance
-- **Data Source**: `daily_tasks`, `system_settings`, `point_settings`.
-- **Process**:
-  1. Admin verify via `isAdmin` guard (Wallet check).
-  2. Real-time fetch of P&amp;L metrics from `agent_vault`.
-  3. CRUD operations on Task/Point thresholds.
-- **E2E Flow**:
-  `Admin Login` → `Vault Sync` → `Setting Update` → `On-chain Sync (if needed)`
-
-#### 7.1.3 Task &amp; Verification Page
-- **Data Source**: `user_task_claims`, `daily_tasks`.
-- **Process**:
-  1. User selects task.
-  2. Perform action (e.g., Farcaster Like).
-  3. Client POST to `/api/tasks-bundle`.
-  4. Backend verifies via Social API (Neynar).
-- **E2E Flow**:
-  `User Action` → `VS-Backend Verification` → `XP Increment` → `Activity Log Write`
-
-#### 7.1.4 Leaderboard &amp; Ranking
-- **Data Source**: `v_user_full_profile` (SQL View).
-- **Process**:
-  1. Pre-computed rankings in Supabase.
-  2. Tier determination via percentile SQL logic.
-  3. Fetch top N users with associated SBT levels.
-- **E2E Flow**:
-  `Daily XP Sync` → `Percentile Rank Refresh` → `Leaderboard Display`
-
----
-
----
-
-## 9. Resilience &amp; Architecture Hardening (v3.26.0)
-
-Berdasarkan audit ekosistem v3.26.0, Section ini mendefinisikan standar pemulihan dan tata kelola untuk mencegah kegagalan sistematis.
-
-### 9.1 Recovery &amp; Fallback Mandates
-| System | Potential Risk | Mitigation / Fallback Standard |
-|---|---|---|
-| **Cron Sync** | Sync loop failure / Missed events | **Recursive Recovery Loop**: Script wajib mencatat `last_synced_id` di DB. Jika gagal, coba lagi dari offset terakhir. |
-| **Daily XP Sync** | RPC Indexing Lag | **Transaction Fallback**: API `/handleXpSync` kini menerima `tx_hash` dan memverifikasi langsung ke RPC jika indexing belum selesai (v3.26.0). |
-| **Verification** | Rate Limit / API Bottleneck | **Circuit Breaker**: Implementasi exponential backoff pada request ke Neynar/Twitter. |
-| **Identity Visibility** | Missing Social Badges | **SQL View Synchronization**: View `v_user_full_profile` wajib di-update saat penambahan kolom identitas baru untuk mencegah `undefined` UI bugs (v3.26.0). |
-
-### 9.2 Precision Governance
-- **Underdog Bonus**: Didefinisikan ulang sebagai **Bottom 20% by World XP Index**. Bonus +10% dihitung saat snapshot harian (daily_ranking_snapshot) untuk akurasi data.
-- **Task &amp; Raffle Moderation**: Seluruh UGC Mission / Sponsored Task DAN UGC Raffle memiliki status awal `is_active = false` (PENDING_REVIEW). Konten hanya muncul secara publik setelah mendapatkan approval dari Master Admin (v3.38.3).
-
----
-
-## 10. Historical Analysis &amp; Changelog
-
-### 10.1 Evolution Summary
-| Milestone | Version | Focus | Legacy Status |
-| **Mobile UI &amp; Task Fix** | 3.42.7 | Mobile UI Standardization (Native+) &amp; Type-Safe Task Claims | CURRENT |
-| **Identity UI Hardening** | 3.42.2 | Create Mission/Raffle Native+ Identity Guard | RESOLVED |
-| **Referral &amp; Identity Core** | 3.42.0 | Base Social Sync &amp; Referral Growth Loop v2 | RESOLVED |
-| **Critical Bug Fix** | 3.26.1 | Fixed user-bundle SyntaxError (Claims/Logs/Leaderboard) | RESOLVED |
-| **Identity &amp; Resilience** | 3.26.0 | SQL View fix, RPC Lag Fallback, UGC Modal TDZ fixes | RESOLVED |
-| **Ecosystem Polish** | 3.25.0 | Zero Lint Errors, undefined variable fixes, UI prop validations | RESOLVED |
-| **Nexus Alignment** | 3.24.0 | Full Ecosystem Visibility &amp; Skill Sync | RESOLVED |
-| **Fueling the Indexer** | 3.24.0 | Fixed SBTPool Event &amp; Platinum Tier | RESOLVED |
-| **Identity Lock** | 3.24.0 | Secure Social Linking via VS-Backend | RESOLVED |
-
----
-
-## 6. Audit &amp; Security Mandates
-
-### 6.1 The &quot;Audit-First&quot; Mandate (Section 27)
-Dilarang melakukan deployment sebelum `node scripts/audits/check_sync_status.cjs` memberikan skor 10/10.
-
-### 6.2 Zero Hardcode Secret Mandate
-Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables (.env). Mapping global ditangani oleh `global-sync-env.js`.
-
----
-
-## 7. Current Ecosystem Status (v3.38.9)
-
-### 7.1 Security Audit Findings (v3.39.0)
-- **[RESOLVED] LoginPage.jsx Critical Logic Breach**: Fixed missing `&lt;/div&gt;` tags that caused a frontend parsing error.
-- **[RESOLVED] CreateRafflePage.jsx Hook Drift**: Synchronized `useMemo` dependencies (`ethPrice`, `maintenanceFeeBP`, `surchargeBP`) for accurate on-chain calculations.
-- **[RESOLVED] AdminPage.jsx Variable Cleanup**: Removed unused `address` variable to maintain a clean-audit state.
-- **[RESOLVED] Contract Address Parity**: Confirmed 100% alignment between `.env` and `.cursorrules` for all core contracts.
-- **[RESOLVED] DAILY_APP ABI Drift**: Synchronized 15+ missing/mismatched functions in `abis_data.txt` with canonical contract artifacts.
-- **[RESOLVED] UGC Raffle Moderation**: Fixed bypass where raffles were auto-active; now requires admin approval (v3.38.3).
-- **[RESOLVED] RLS Header Spoofing**: Hardened `get_auth_wallet()` to ignore vulnerable client-side headers for public users.
-- **[RESOLVED] Unified Admin Auditing**: All administrative actions now log to `admin_audit_logs` (v3.38.3).
-- **[RESOLVED] CRITICAL BUG (SyntaxError)**: Fixed duplicate `const` declarations in `user-bundle.js`.
-
-### 7.2 Connection Matrix
-- **Main App**: `crypto-discovery-app.vercel.app`
-- **Verification**: `dailyapp-verification-server.vercel.app`
-- **Database**: Supabase Project (ID: rbgz...)
-- **Core Contract**: `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` (V13.2 Fixed)
-
----
-
-## 8. Workspace Architecture &amp; Data Flow (v3.27.0)
-
-Untuk koordinasi multi-agent (Antigravity, OpenClaw, Qwen, DeepSeek), struktur workspace didefinisikan secara kaku sebagai berikut:
-
-### 8.1 Unified Ecosystem Workflow Diagram
-```mermaid
-graph TD
+</code></pre>
+<p><strong>Aturan Emas SBT Tier (Mandatory):</strong></p>
+<ol>
+<li><strong>Sequential Upgrade Mandate</strong>: User <strong>WAJIB</strong> upgrade secara berurutan (Rookie -&gt; Bronze -&gt; Silver -&gt; Gold -&gt; Platinum -&gt; Diamond). Larangan keras terhadap &quot;Tier Jumping&quot; untuk menjaga alur ekonomi pembakaran XP (XP Burn) yang adil.</li>
+<li><strong>Soulbound Mandate</strong>: Seluruh NFT SBT bersifat <strong>Non-Transferable</strong>. Kontrak akan me-revert setiap upaya transfer untuk mencegah jual-beli status tier di pasar sekunder.</li>
+<li><strong>On-Chain Truth</strong>: Status tier user di Database (Supabase) hanyalah refleksi (mirror) dari status On-Chain. Perubahan tier hanya valid jika dipicu oleh event <code>NFTMinted</code> dari blockchain.</li>
+</ol>
+<hr>
+<h2>5. Referral Growth Loop v2 (v3.42.0)</h2>
+<p>Untuk menjamin kualitas pertumbuhan dan mencegah eksploitasi, sistem referral Crypto Disco telah ditingkatkan dari model &quot;Instant Reward&quot; menjadi model &quot;Vesting &amp; Dividend&quot;.</p>
+<h3>5.1 Referral Reward Vesting</h3>
+<p>Hadiah pendaftaran (50 XP) untuk penarik (Tier 1 Referrer) tidak lagi diberikan secara instan. Hadiah ini <strong>hanya</strong> akan cair (vested) secara otomatis saat user yang diajak berhasil mencapai threshold <strong>500 XP</strong>.</p>
+<ul>
+<li><strong>Mekanisme</strong>: Dicek secara otomatis dalam fungsi <code>fn_increment_xp</code> saat user yang diajak mendapatkan XP.</li>
+<li><strong>Validasi</strong>: Kolom <code>referral_bonus_paid</code> di <code>user_profiles</code> mencegah klaim ganda.</li>
+</ul>
+<h3>5.2 Nexus Growth Dividend (10%)</h3>
+<p>Referrer (Tier 1 saja) berhak mendapatkan <strong>Passive Dividend sebesar 10%</strong> dari setiap XP yang dihasilkan oleh user yang mereka ajak selamanya.</p>
+<ul>
+<li><strong>Mekanisme</strong>: Setiap kali user yang diajak mendapatkan XP (via <code>fn_increment_xp</code>), fungsi tersebut secara rekursif memanggil dirinya sendiri untuk menambah 10% porsi ke referrer.</li>
+<li><strong>Transparency</strong>: Dividen ini dicatat secara detail di <code>user_activity_logs</code> dengan kategori <code>REFERRAL_DIVIDEND</code>.</li>
+</ul>
+<hr>
+<h2>6. Base Social Verification (Identity Hardening)</h2>
+<p>Integrasi on-chain dengan <strong>Base.org Names (Basenames)</strong> untuk memverifikasi identitas sosial user secara terdesentralisasi.</p>
+<h3>6.1 Basename Reverse Resolution</h3>
+<ul>
+<li><strong>Proses</strong>: Sistem menggunakan resolver on-chain (<code>0xC697...</code>) untuk menerjemahkan <code>wallet_address</code> menjadi Basename.</li>
+<li><strong>Manual Link</strong>: User dapat mengklik &quot;Link Base Social&quot; di halaman Profil untuk memicu sinkronisasi identitas.</li>
+</ul>
+<h3>6.2 Social Guard (Task Prerequisites)</h3>
+<ul>
+<li><strong>Gating</strong>: Tugas-tugas tertentu (misalnya yang disponsori oleh partner Base) dapat mewajibkan status <code>is_base_social_verified = true</code>.</li>
+<li><strong>UI Lock</strong>: Tombol claim pada tugas yang mewajibkan identitas akan terkunci secara visual dengan label <code>BASE REQ</code> jika user belum terverifikasi.</li>
+</ul>
+<hr>
+<hr>
+<h2>7. Technical Deep-Dive: Data Handling &amp; Feature Flows</h2>
+<h3>7.1 Page-Level Data Architecture</h3>
+<h4>7.1.1 Login &amp; Onboarding (Auth Flow)</h4>
+<ul>
+<li><strong>Data Source</strong>: Metamask/Web3 &amp; Farcaster (SIWE).</li>
+<li><strong>Process</strong>: <ol>
+<li>Wallet Signature verify on client.</li>
+<li>POST to <code>/api/user-bundle</code> with signature.</li>
+<li>Backend verifies signature via <code>ethers.verifyMessage</code>.</li>
+<li>Upsert <code>user_profiles</code> with <code>wallet_address</code>.</li>
+</ol>
+</li>
+<li><strong>E2E Flow</strong>:
+<code>Wallet Connect</code> → <code>EIP-191 Sign</code> → <code>Supabase Upsert</code> → <code>Identity Lock v2</code></li>
+</ul>
+<h4>7.1.2 Dashboard Admin &amp; Governance</h4>
+<ul>
+<li><strong>Data Source</strong>: <code>daily_tasks</code>, <code>system_settings</code>, <code>point_settings</code>.</li>
+<li><strong>Process</strong>:<ol>
+<li>Admin verify via <code>isAdmin</code> guard (Wallet check).</li>
+<li>Real-time fetch of P&amp;L metrics from <code>agent_vault</code>.</li>
+<li>CRUD operations on Task/Point thresholds.</li>
+</ol>
+</li>
+<li><strong>E2E Flow</strong>:
+<code>Admin Login</code> → <code>Vault Sync</code> → <code>Setting Update</code> → <code>On-chain Sync (if needed)</code></li>
+</ul>
+<h4>7.1.3 Task &amp; Verification Page</h4>
+<ul>
+<li><strong>Data Source</strong>: <code>user_task_claims</code>, <code>daily_tasks</code>.</li>
+<li><strong>Process</strong>:<ol>
+<li>User selects task.</li>
+<li>Perform action (e.g., Farcaster Like).</li>
+<li>Client POST to <code>/api/tasks-bundle</code>.</li>
+<li>Backend verifies via Social API (Neynar).</li>
+</ol>
+</li>
+<li><strong>E2E Flow</strong>:
+<code>User Action</code> → <code>VS-Backend Verification</code> → <code>XP Increment</code> → <code>Activity Log Write</code></li>
+</ul>
+<h4>7.1.4 Leaderboard &amp; Ranking</h4>
+<ul>
+<li><strong>Data Source</strong>: <code>v_user_full_profile</code> (SQL View).</li>
+<li><strong>Process</strong>:<ol>
+<li>Pre-computed rankings in Supabase.</li>
+<li>Tier determination via percentile SQL logic.</li>
+<li>Fetch top N users with associated SBT levels.</li>
+</ol>
+</li>
+<li><strong>E2E Flow</strong>:
+<code>Daily XP Sync</code> → <code>Percentile Rank Refresh</code> → <code>Leaderboard Display</code></li>
+</ul>
+<hr>
+<hr>
+<h2>9. Resilience &amp; Architecture Hardening (v3.26.0)</h2>
+<p>Berdasarkan audit ekosistem v3.26.0, Section ini mendefinisikan standar pemulihan dan tata kelola untuk mencegah kegagalan sistematis.</p>
+<h3>9.1 Recovery &amp; Fallback Mandates</h3>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Potential Risk</th>
+<th>Mitigation / Fallback Standard</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Cron Sync</strong></td>
+<td>Sync loop failure / Missed events</td>
+<td><strong>Recursive Recovery Loop</strong>: Script wajib mencatat <code>last_synced_id</code> di DB. Jika gagal, coba lagi dari offset terakhir.</td>
+</tr>
+<tr>
+<td><strong>Daily XP Sync</strong></td>
+<td>RPC Indexing Lag</td>
+<td><strong>Transaction Fallback</strong>: API <code>/handleXpSync</code> kini menerima <code>tx_hash</code> dan memverifikasi langsung ke RPC jika indexing belum selesai (v3.26.0).</td>
+</tr>
+<tr>
+<td><strong>Verification</strong></td>
+<td>Rate Limit / API Bottleneck</td>
+<td><strong>Circuit Breaker</strong>: Implementasi exponential backoff pada request ke Neynar/Twitter.</td>
+</tr>
+<tr>
+<td><strong>Identity Visibility</strong></td>
+<td>Missing Social Badges</td>
+<td><strong>SQL View Synchronization</strong>: View <code>v_user_full_profile</code> wajib di-update saat penambahan kolom identitas baru untuk mencegah <code>undefined</code> UI bugs (v3.26.0).</td>
+</tr>
+</tbody></table>
+<h3>9.2 Precision Governance</h3>
+<ul>
+<li><strong>Underdog Bonus</strong>: Didefinisikan ulang sebagai <strong>Bottom 20% by World XP Index</strong>. Bonus +10% dihitung saat snapshot harian (daily_ranking_snapshot) untuk akurasi data.</li>
+<li><strong>Task &amp; Raffle Moderation</strong>: Seluruh UGC Mission / Sponsored Task DAN UGC Raffle memiliki status awal <code>is_active = false</code> (PENDING_REVIEW). Konten hanya muncul secara publik setelah mendapatkan approval dari Master Admin (v3.38.3).</li>
+</ul>
+<hr>
+<h2>10. Historical Analysis &amp; Changelog</h2>
+<h3>10.1 Evolution Summary</h3>
+<p>| Milestone | Version | Focus | Legacy Status |
+| <strong>Mobile UI &amp; Task Fix</strong> | 3.42.7 | Mobile UI Standardization (Native+) &amp; Type-Safe Task Claims | CURRENT |
+| <strong>Identity UI Hardening</strong> | 3.42.2 | Create Mission/Raffle Native+ Identity Guard | RESOLVED |
+| <strong>Referral &amp; Identity Core</strong> | 3.42.0 | Base Social Sync &amp; Referral Growth Loop v2 | RESOLVED |
+| <strong>Critical Bug Fix</strong> | 3.26.1 | Fixed user-bundle SyntaxError (Claims/Logs/Leaderboard) | RESOLVED |
+| <strong>Identity &amp; Resilience</strong> | 3.26.0 | SQL View fix, RPC Lag Fallback, UGC Modal TDZ fixes | RESOLVED |
+| <strong>Ecosystem Polish</strong> | 3.25.0 | Zero Lint Errors, undefined variable fixes, UI prop validations | RESOLVED |
+| <strong>Nexus Alignment</strong> | 3.24.0 | Full Ecosystem Visibility &amp; Skill Sync | RESOLVED |
+| <strong>Fueling the Indexer</strong> | 3.24.0 | Fixed SBTPool Event &amp; Platinum Tier | RESOLVED |
+| <strong>Identity Lock</strong> | 3.24.0 | Secure Social Linking via VS-Backend | RESOLVED |</p>
+<hr>
+<h2>6. Audit &amp; Security Mandates</h2>
+<h3>6.1 The &quot;Audit-First&quot; Mandate (Section 27)</h3>
+<p>Dilarang melakukan deployment sebelum <code>node scripts/audits/check_sync_status.cjs</code> memberikan skor 10/10.</p>
+<h3>6.2 Zero Hardcode Secret Mandate</h3>
+<p>Seluruh API Keys dan Contract Addresses HARUS berasal dari environment variables (.env). Mapping global ditangani oleh <code>global-sync-env.js</code>.</p>
+<hr>
+<h2>7. Current Ecosystem Status (v3.56.3)</h2>
+<h3>7.1 Security &amp; Performance Audit (v3.56.3)</h3>
+<ul>
+<li><strong>[RESOLVED] Concurrent UI Responsiveness (Mandate Law 55)</strong>: Integrated <code>React.startTransition</code> for all heavy modal triggers to maintain &lt;50ms INP.</li>
+<li><strong>[RESOLVED] Raffle Refund Protocol (v2.1)</strong>: Hardened on-chain refund logic for rejected UGC raffles.</li>
+<li><strong>[RESOLVED] Multi-Agent Bridge (v1.3.7)</strong>: Introduced Dynamic API Key Rotation for resilient Gemini CLI orchestration.</li>
+<li><strong>[RESOLVED] Zero-Trust Env Sync</strong>: Global synchronization across 16 <code>.env</code> files with clean-pipe verification.</li>
+<li><strong>[RESOLVED] Identity Hardening</strong>: Base Social (Basenames) verification integrated into core task flows.</li>
+</ul>
+<h3>7.2 Connection Matrix</h3>
+<ul>
+<li><strong>Main App</strong>: <code>crypto-discovery-app.vercel.app</code></li>
+<li><strong>Verification</strong>: <code>dailyapp-verification-server.vercel.app</code></li>
+<li><strong>Database</strong>: Supabase Project (ID: rbgz...)</li>
+<li><strong>DailyApp V13.2</strong>: <code>0x369aBcD44d3D510f4a20788BBa6F47C99e57d267</code></li>
+<li><strong>MasterX (XP)</strong>: <code>0x980770dAcE8f13E10632D3EC1410FAA4c707076c</code></li>
+<li><strong>Raffle (v2.1)</strong>: <code>0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB</code></li>
+<li><strong>CMS V2</strong>: <code>0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC</code></li>
+</ul>
+<hr>
+<h2>8. Workspace Architecture &amp; Data Flow (v3.27.0)</h2>
+<p>Untuk koordinasi multi-agent (Antigravity, OpenClaw, Qwen, DeepSeek), struktur workspace didefinisikan secara kaku sebagai berikut:</p>
+<h3>8.1 Unified Ecosystem Workflow Diagram</h3>
+<pre><code class="language-mermaid">graph TD
     User((User)) --&gt;|TX/Interaction| FE[Raffle_Frontend]
     FE --&gt;|Requests + TxHash| API[Vercel Serverless Bundles]
     API --&gt;|Auth/Data| DB[(Supabase DB)]
@@ -1360,3 +1449,7 @@ system documents.
 <hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
 <em>Integrity First. Nexus Synchronized.</em></p>
+<p># #   A r c h i t e c t u r e   U p d a t e   v 3 . 4 7 . 1 + 
+ S B T   M i n t i n g   l o g i c   a n d   O n - C h a i n   X P   V e r i f i c a t i o n   h a v e   b e e n   p e r m a n e n t l y   m i g r a t e d   f r o m   t h e   M A S T E R _ X   c o n t r a c t   t o   t h e   D A I L Y _ A P P   c o n t r a c t .   T h e   f r o n t e n d   c o m p o n e n t   S B T U p g r a d e C a r d . j s x   m u s t   r e a d   X P   p o i n t s   v i a   u s e U s e r I n f o   ( D A I L Y _ A P P )   i n s t e a d   o f   u s e S B T   ( M A S T E R _ X )   t o   e n s u r e   i m m e d i a t e   U I   s y n c   a n d   u n l o c k   S B T   M i n t i n g   i n s t a n t l y   a f t e r   a   d a i l y   c l a i m . 
+ 
+ </p>

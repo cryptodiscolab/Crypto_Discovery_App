@@ -586,48 +586,52 @@ Contoh:
             }
         }
         else {
-            // Conversational Mode: Talk like Local Agent (Antigravity/Lurah)
+            // Conversational Mode: Interactive Agent (Antigravity/Lurah) with Memory
             await sendTelegram(chatId, "⏳ Memproses pemikiran...");
 
-            // 1. Fetch knowledge & Settings from Vault
+            // 1. Fetch Chat History (Last 10 messages)
+            const { data: history } = await supabase
+                .from('telegram_chat_history')
+                .select('role, content')
+                .eq('chat_id', String(chatId))
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            const formattedHistory = (history || []).reverse().map(h => `${h.role === 'user' ? 'Owner' : 'Lurah'}: ${h.content}`).join('\n');
+
+            // 2. Fetch knowledge & Settings from Vault
             const { data: vault } = await supabase.from('agent_vault').select('content, category, file_path');
             const protocols = vault?.filter(v => v.category === 'protocol').map(v => v.content).join('\n\n');
-            const skills = vault?.filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
+            const { data: recentReports } = await supabase.from('nexus_agent_reports').select('message, error_type').eq('status', 'OPEN').limit(5);
 
-            // Get preferred model from settings
+            // Get preferred model
             const modelSetting = vault?.find(v => v.file_path === 'settings/preferred_model');
             let modelId = modelSetting ? modelSetting.content : "gemini-2.5-flash";
 
-            // Manual override detection
-            if (text.toLowerCase().includes("pakai pro")) modelId = "gemini-2.5-pro";
-            else if (text.toLowerCase().includes("pakai 3")) modelId = "gemini-3.1-flash-lite-preview";
-
             const prompt = `
-                Kamu adalah "Lurah Ekosistem" (atau Antigravity), Agen Otonom Tingkat Senior (Senior Web3 Staff Engineer) untuk proyek Crypto Disco App.
-                Pengguna saat ini sedang bekerja secara remote melalui Telegram, jauh dari PC lokal.
+                Kamu adalah "Lurah Ekosistem" (v3.56.4), Agen Otonom Senior untuk Crypto Disco App.
                 
-                Gaya Bicaramu:
-                - Profesional, sangat cerdas, responsif, dan langsung ke intinya (seperti saat kamu bekerja di Cursor IDE).
-                - Gunakan Bahasa Indonesia.
-                - Jika diminta untuk melakukan tugas, tulislah pemikiranmu, lalu berikan blok kode (code blocks) persis apa yang harus dirubah (diff/patch) atau panduan eksekusi "copy-paste" untuk pengguna.
-                - Sertakan jaminan keamanan (Bytecode Impact, Gas Impact, Zero Trust).
+                RIWAYAT PERCAKAPAN (Memory):
+                ${formattedHistory || 'Belum ada percakapan sebelumnya.'}
 
-                [PERTANYAAN/PERINTAH DARI OWNER]:
+                KONTEKS SISTEM SAAT INI:
+                - Laporan Open: ${JSON.stringify(recentReports || [])}
+                - Protokol Arsitektur: ${protocols?.substring(0, 500)}...
+
+                MANDAT v3.56.4:
+                1. Sequential SBT Upgrade (Rookie -> Bronze -> Silver -> Gold).
+                2. Soulbound Enforcement (NFT Non-Transferable).
+                3. Autonomous Documentation & Memory Sync (Dilarang bertanya untuk pemeliharaan).
+
+                [PERTANYAAN OWNER BARU]:
                 ${text}
 
-                PROTOKOL ARSITEKTUR REPOSITORY INI (.cursorrules):
-                ${protocols || 'Tidak tersedia'}
-
-                KEAHLIAN AUTOMATION DAN SENTINEL (SKILLS):
-                ${skills || 'Tidak tersedia'}
-                
-                Pastikan respons formatnya rapi menggunakan Markdown Telegram.
+                Tugasmu: Balas Owner dengan cerdas, gunakan riwayat percakapan jika relevan. JANGAN kaku. Jadilah asisten yang proaktif.
             `;
 
             let chatResponse = "Gagal menghubungi AI Service.";
             if (geminiApiKey) {
                 try {
-                    // Use v1beta for 2026 models
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -636,18 +640,20 @@ Contoh:
                         })
                     });
                     const result = await response.json();
-                    if (result.error) {
-                        chatResponse = `ℹ️ Analisa AI tertunda: ${result.error.message}`;
-                    } else {
-                        chatResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak merespons.";
-                    }
+                    chatResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak merespons.";
+                    
+                    // 3. Save to History (User & Assistant)
+                    await supabase.from('telegram_chat_history').insert([
+                        { chat_id: String(chatId), role: 'user', content: text },
+                        { chat_id: String(chatId), role: 'assistant', content: chatResponse }
+                    ]);
                 } catch (aiErr) {
-                    console.error('❌ AI Fetch Error:', aiErr.message);
+                    console.error('❌ AI Error:', aiErr.message);
                 }
             }
 
             if (chatResponse.length > 4000) {
-                chatResponse = chatResponse.substring(0, 4000) + '\n... (Pesan terlalu panjang untuk Telegram)';
+                chatResponse = chatResponse.substring(0, 4000) + '\n... (Pesan terlalu panjang)';
             }
             await sendTelegram(chatId, chatResponse);
         }

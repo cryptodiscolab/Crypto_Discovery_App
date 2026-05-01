@@ -68,6 +68,11 @@ async function runSentinel() {
             await sendTelegram(msg);
         }
 
+        // 3. Run AI Intelligence Digest (Lurah Brain)
+        console.log(`🧠 [NCC] Invoking Lurah Brain for Intelligence Digest...`);
+        const { spawnSync } = require('child_process');
+        spawnSync('node', ['scripts/orchestrator/lurah_brain.cjs'], { shell: true });
+
         // Update State
         fs.writeFileSync(STATE_FILE, JSON.stringify({
             lastStatus: data.status,

@@ -1,5 +1,31 @@
 ---
 
+## 14. Work Report v3.56.4
+**Date:** 2026-05-01
+**Subject:** SBT Tier Architecture Hardening: Sequential Upgrade & Soulbound Mandate
+**Author:** Antigravity (Elite Systems Architect)
+
+### Executive Summary
+Audit dan pengerasan arsitektur Tier SBT (Soulbound Token) pada kontrak `DailyAppV13`. Patch ini mengonfirmasi dan mendokumentasikan batasan operasional yang ketat: larangan lompat tier (Sequential Upgrade) dan sifat non-transferable (Soulbound) untuk menjaga integritas ekonomi dan hierarki pengguna.
+
+### Technical Changes
+1. **Sequential Upgrade Enforcement (`DailyAppV13.sol`)**:
+   - Verifikasi logika `_mintOrUpgrade` yang mewajibkan `uint256(_tier) == uint256(currentTier) + 1`.
+   - User tidak dapat melompat dari Rookie langsung ke Gold; harus melewati Bronze dan Silver secara berurutan.
+2. **Soulbound Mandate (`DailyAppV13.sol`)**:
+   - Verifikasi override `_update` yang me-revert setiap upaya transfer antar alamat non-zero (`Unauthorized()`).
+   - NFT SBT terkunci secara permanen pada wallet pengguna.
+3. **Frontend Financial Transparency (`SBTUpgradeCard.jsx`)**:
+   - Integrasi real-time ETH-to-USDC conversion untuk biaya minting.
+   - Penambahan estimasi biaya USDC pada tombol minting untuk kejelasan finansial user.
+
+### Verification Results
+- ✅ **Sequential Logic**: Kontrak menolak upaya minting tier non-sequential (InvalidParameters).
+- ✅ **Soulbound Status**: Upaya transfer NFT via `transferFrom` terverifikasi gagal (Unauthorized).
+- ✅ **UI Accuracy**: Modal upgrade menampilkan biaya ETH yang akurat sesuai konversi real-time.
+
+---
+
 ## 13. Work Report v3.56.3
 **Date:** 2026-05-01
 **Subject:** Infrastructure Resilience: Multi-Agent Orchestration & Gemini API Fallback
@@ -592,7 +618,7 @@ flowchart TD
 ```
 
 ### 5.3 XP Sync & Tier Ascension (SBT)
-Proses otomatisasi kenaikan tier berdasarkan akumulasi XP.
+Proses otomatisasi kenaikan tier berdasarkan akumulasi XP dengan aturan **Sequential Upgrade** dan **Soulbound**.
 
 ```mermaid
 flowchart TD
@@ -604,8 +630,16 @@ flowchart TD
     Eligible --> UI_Notif[UI: Show Rank Upgrade Pulse]
     UI_Notif --> Mint[User Clicks: 'Mint New Rank']
     Mint --> Chain{Contract: MintSBT}
-    Chain --> Success[On-chain Tier Upgraded]
+    Chain --> Check{tier == current + 1?}
+    Check -- No --> Revert[Revert: InvalidParameters]
+    Check -- Yes --> Success[On-chain Tier Upgraded]
     Success --> Sync[API: Sync New Tier to user_profiles]
+```
+
+**Aturan Emas SBT Tier (Mandatory):**
+1.  **Sequential Upgrade Mandate**: User **WAJIB** upgrade secara berurutan (Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond). Larangan keras terhadap "Tier Jumping" untuk menjaga alur ekonomi pembakaran XP (XP Burn) yang adil.
+2.  **Soulbound Mandate**: Seluruh NFT SBT bersifat **Non-Transferable**. Kontrak akan me-revert setiap upaya transfer untuk mencegah jual-beli status tier di pasar sekunder.
+3.  **On-Chain Truth**: Status tier user di Database (Supabase) hanyalah refleksi (mirror) dari status On-Chain. Perubahan tier hanya valid jika dipicu oleh event `NFTMinted` dari blockchain.
 
 ---
 
