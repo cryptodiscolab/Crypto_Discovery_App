@@ -38,12 +38,14 @@ export function SBTRewardsDashboard() {
         return () => clearInterval(interval);
     }, [publicClient]);
 
-    const tierNames = ["None", "Bronze", "Silver", "Gold"];
+    const tierNames = ["None", "Bronze", "Silver", "Gold", "Platinum", "Diamond"];
     const tierColors = [
         "text-slate-500",
         "text-[#CD7F32]",
         "text-[#C0C0C0]",
-        "text-[#FFD700]"
+        "text-[#FFD700]",
+        "text-[#E5E4E2]",
+        "text-[#00FFFF]"
     ];
 
     const handleClaim = async () => {
@@ -180,21 +182,24 @@ export function SBTRewardsDashboard() {
                         </h3>
                         <button
                             onClick={handleClaim}
-                            disabled={isClaiming || claimableAmount === 0n || userTier === 0}
-                            className={`px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg border border-white/10 ${claimableAmount > 0n
+                            disabled={isClaiming || claimableAmount === 0n || userTier === 0 || (parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice < (poolSettings?.targetUSDC || 5000))}
+                            className={`px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg border border-white/10 ${(claimableAmount > 0n && (parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice >= (poolSettings?.targetUSDC || 5000)))
                                 ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white hover:scale-105 active:scale-95 shadow-indigo-500/30'
                                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                                 }`}
                         >
-                            {isClaiming ? "PROCESSING..." : "CLAIM REWARDS"}
-                            {!isClaiming && claimableAmount > 0n && <DollarSign className="w-4 h-4" />}
+                            {isClaiming ? "PROCESSING..." : 
+                             (parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice < (poolSettings?.targetUSDC || 5000)) 
+                             ? "POOL FUNDING..." 
+                             : "CLAIM REWARDS"}
+                            {!isClaiming && claimableAmount > 0n && (parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice >= (poolSettings?.targetUSDC || 5000)) && <DollarSign className="w-4 h-4" />}
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* 3. NEW: Community Tier Breakdown from sbt_pool_stats */}
-            <SBTTierBreakdown />
+            <SBTTierBreakdown ethPrice={ethPrice} totalPoolBalance={totalPoolBalance} />
 
             {/* 4. Nexus Economy Transparency (v3.41.2) */}
             <NexusEconomyPanel multipliers={multis} totalUsers={totalUsers} />
@@ -221,7 +226,7 @@ export function SBTRewardsDashboard() {
 // ============================================================
 // SBTTierBreakdown — reads from sbt_pool_stats (Supabase, READ-only)
 // ============================================================
-function SBTTierBreakdown() {
+function SBTTierBreakdown({ ethPrice, totalPoolBalance }) {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -246,11 +251,11 @@ function SBTTierBreakdown() {
     }, []);
 
     const TIERS = [
-        { key: 'diamond_holders', label: 'Diamond', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20', emoji: '💎' },
-        { key: 'platinum_holders', label: 'Platinum', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20', emoji: '🔮' },
-        { key: 'gold_holders', label: 'Gold', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', emoji: '🥇' },
-        { key: 'silver_holders', label: 'Silver', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20', emoji: '🥈' },
-        { key: 'bronze_holders', label: 'Bronze', color: 'text-amber-600', bg: 'bg-amber-600/10', border: 'border-amber-600/20', emoji: '🥉' },
+        { key: 'diamond_holders', label: 'Diamond', shareKey: 'share_legendary', rank: 'Rank 1-5', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20', emoji: '💎' },
+        { key: 'platinum_holders', label: 'Platinum', shareKey: 'share_epic', rank: 'Rank 6-20', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20', emoji: '🔮' },
+        { key: 'gold_holders', label: 'Gold', shareKey: 'share_rare', rank: 'Rank 21-50', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', emoji: '🥇' },
+        { key: 'silver_holders', label: 'Silver', shareKey: 'share_common', rank: 'Rank 51-100', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20', emoji: '🥈' },
+        { key: 'bronze_holders', label: 'Bronze', shareKey: 'share_participation', rank: 'Holders', color: 'text-amber-600', bg: 'bg-amber-600/10', border: 'border-amber-600/20', emoji: '🥉' },
     ];
 
     const totalHolders = stats ? TIERS.reduce((sum, t) => sum + (stats[t.key] || 0), 0) : 0;
@@ -276,16 +281,22 @@ function SBTTierBreakdown() {
                     {TIERS.map(t => <div key={t.key} className="h-20 bg-slate-800/50 rounded-xl animate-pulse" />)}
                 </div>
             ) : (
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {TIERS.map((t) => {
                         const count = stats?.[t.key] || 0;
-                        const pct = totalHolders > 0 ? ((count / totalHolders) * 100).toFixed(0) : 0;
+                        const sharePct = stats?.[t.shareKey] || 0;
+                        const poolShare = ((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) * (sharePct / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 });
+                        
                         return (
-                            <div key={t.key} className={`flex flex-col items-center justify-center gap-1 p-3 rounded-xl border ${t.bg} ${t.border}`}>
-                                <span className="text-lg">{t.emoji}</span>
+                            <div key={t.key} className={`flex flex-col items-center justify-center gap-1 p-3 rounded-xl border relative overflow-hidden ${t.bg} ${t.border}`}>
+                                <div className="absolute top-1 right-2 text-[8px] font-black uppercase opacity-40">{t.rank}</div>
+                                <span className="text-xl mb-1">{t.emoji}</span>
                                 <p className={`text-base font-black ${t.color}`}>{count}</p>
                                 <p className={`label-native ${t.color} opacity-80`}>{t.label}</p>
-                                <p className="label-native text-slate-600">{pct}%</p>
+                                <div className="mt-2 w-full pt-2 border-t border-white/5 text-center">
+                                    <p className="text-[10px] font-black text-white italic">${poolShare}</p>
+                                    <p className="text-[8px] uppercase font-bold text-slate-500">{sharePct}% POOL</p>
+                                </div>
                             </div>
                         );
                     })}

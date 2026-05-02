@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal } from 'lucide-react';
+import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal, Users, Clock, ArrowRight } from 'lucide-react';
 import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
 import { AdminTransactionButton } from './AdminTransactionButton';
 import { encodeFunctionData } from 'viem';
@@ -277,7 +277,9 @@ function AdminRaffleRow({ raffleId }) {
         try {
             await drawRaffle(raffleId);
             refetch();
-        } catch (e) { }
+        } catch (e) {
+            console.error("Draw error:", e);
+        }
     };
 
     if (isLoading || !raffle) return (

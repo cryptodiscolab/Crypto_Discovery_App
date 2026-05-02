@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { 
     Zap, Users, DollarSign, Calculator, Info, 
     CheckCircle2, ArrowRight, Loader2, 
-    Link as LinkIcon, Shield, Wallet, ChevronDown, Lock
+    Link as LinkIcon, Shield, Wallet, ChevronDown, Lock, Clock
 } from 'lucide-react';
 import { useAccount, useWriteContract, usePublicClient, useSignMessage } from 'wagmi';
 import { parseUnits, erc20Abi } from 'viem';

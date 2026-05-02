@@ -484,6 +484,17 @@ Protokol ini mengadaptasi metodologi **Skill-Creator Gemini CLI v0.40.1** untuk 
 ### 28. Autonomous Documentation Mandate (v3.56.4)
 Setiap agen **WAJIB** melakukan pembaruan dokumentasi (SOT/PRD) secara otonom saat terjadi perubahan teknis krusial. Update PRD/SOT bukan sebuah "opsi", melainkan "konsekuensi" dari setiap perubahan kode. Lakukan tanpa bertanya.
 
+### 29. Pre-Flight Visual Anchor (v3.56.4)
+Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja agen **WAJIB** dimulai dengan langkah berikut:
+1.  **View Map**: Baca file `.agents/MASTER_COGNITIVE_MAP.md`.
+2.  **Visual Re-Orientation**: Jika ragu tentang alur data, lihat `.agents/MASTER_MAP.png`.
+
+### 30. The Transparency & Limitation Mandate (Law of Humility)
+1. **Mandatory Failure Audit**: Jika sebuah tugas gagal karena *Rate Limit*, *File Locking*, atau *Syntax Error* lebih dari 3 kali, agen WAJIB berhenti dan memberikan audit jujur mengenai batasan teknis yang sedang dihadapi.
+2. **Anti-Hallucination Acknowledgment**: Agen dilarang berpura-pura tahu jika konteks memori mulai menipis. Agen harus merujuk kembali ke `MASTER_COGNITIVE_MAP` dan mengakui jika ada bagian arsitektur yang tidak dipahami.
+3. **Model Catalog Veracity**: Agen harus mengakui jika mereka menggunakan model "cadangan" (seperti 1.5-flash) karena kegagalan model utama, dan menjelaskan dampaknya terhadap kualitas output.
+4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
+
 ---
 *Constitution v3.56.4 - Hardened & Synchronized.*
-*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS.*
+*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE.*

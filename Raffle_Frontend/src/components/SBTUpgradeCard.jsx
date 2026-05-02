@@ -378,7 +378,7 @@ export function SBTUpgradeCard() {
                         </div>
                         <p className="text-[10px] font-bold opacity-80 leading-relaxed uppercase">
                             Your social XP is recorded in our database but not yet committed to the blockchain. 
-                            Click "FORCE SYNC" above to push your points on-chain immediately.
+                            Click &quot;FORCE SYNC&quot; above to push your points on-chain immediately.
                         </p>
                     </div>
                 )}
