@@ -13,9 +13,10 @@ import { SwapModal } from '../components/SwapModal';
 function RaffleRow({ raffleId, filter = 'all' }) {
   const { address } = useAccount();
   const { raffle, isLoading } = useRaffleInfo(raffleId);
-  const { buyTicketsGasless, claimPrize, isGaslessSupported } = useRaffle();
+  const { buyTickets, buyTicketsGasless, claimPrize, isGaslessSupported } = useRaffle();
   const { data: socialProfile } = useSocialGuard(address);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [ticketAmount, setTicketAmount] = useState(1);
 
   const { data: ticketPriceETH } = useReadContract({
     address: CONTRACTS.MASTER_X,
@@ -50,7 +51,11 @@ function RaffleRow({ raffleId, filter = 'all' }) {
         toast.success("Prize claimed!", { id: tid });
       } else {
         // Gunakan gasless jika Smart Wallet terdeteksi, fallback ke normal jika tidak
-        await buyTicketsGasless(raffleId, 1);
+        if (isGaslessSupported) {
+          await buyTicketsGasless(raffleId, ticketAmount);
+        } else {
+          await buyTickets(raffleId, ticketAmount);
+        }
         toast.dismiss(tid);
       }
     } catch (e) {
@@ -150,14 +155,23 @@ function RaffleRow({ raffleId, filter = 'all' }) {
           CLAIM PRIZE
         </button>
       ) : (
-        <button
-          onClick={handleAction}
-          disabled={isProcessing || isFinalized || !raffle.isActive}
-          className={`w-full py-2.5 rounded-xl label-native flex items-center justify-center gap-2 active:scale-95 transition-all ${isFinalized || !raffle.isActive ? 'bg-zinc-800 text-zinc-500 border border-zinc-700/50' : 'bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-400 hover:text-white'}`}
-        >
-          {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : null}
-          {isFinalized ? 'RESULTS OUT' : isGaslessSupported ? '⛽ BUY FREE' : 'BUY TICKET'}
-        </button>
+        <div className="flex items-center gap-2 w-full">
+           {!isFinalized && raffle.isActive && (
+             <div className="flex items-center bg-zinc-900 rounded-xl border border-white/10 p-1 shrink-0">
+                 <button onClick={(e) => { e.stopPropagation(); setTicketAmount(p => Math.max(1, p - 1))}} className="w-8 h-8 flex items-center justify-center text-white hover:bg-white/10 rounded-lg disabled:opacity-50 transition-colors" disabled={ticketAmount <= 1 || isProcessing}>-</button>
+                 <span className="w-6 text-center font-mono font-bold text-sm text-white">{ticketAmount}</span>
+                 <button onClick={(e) => { e.stopPropagation(); setTicketAmount(p => p + 1)}} className="w-8 h-8 flex items-center justify-center text-white hover:bg-white/10 rounded-lg disabled:opacity-50 transition-colors" disabled={isProcessing || ticketAmount >= (maxTickets - currentTickets)}>+</button>
+             </div>
+           )}
+          <button
+            onClick={handleAction}
+            disabled={isProcessing || isFinalized || !raffle.isActive}
+            className={`flex-1 py-2.5 rounded-xl label-native flex items-center justify-center gap-2 active:scale-95 transition-all ${isFinalized || !raffle.isActive ? 'bg-zinc-800 text-zinc-500 border border-zinc-700/50' : 'bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-400 hover:text-white'}`}
+          >
+            {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : null}
+            {isFinalized ? 'RESULTS OUT' : isGaslessSupported ? `⛽ BUY FREE` : 'BUY TICKET'}
+          </button>
+        </div>
       )}
     </div>
   );

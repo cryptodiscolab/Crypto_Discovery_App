@@ -18,6 +18,7 @@ export function RaffleCard() {
     const { data: socialProfile, isLoading: isSocialLoading } = useSocialGuard(address);
     const [isBuying, setIsBuying] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
+    const [ticketAmount, setTicketAmount] = useState(1);
 
     // Check if connected address is a winner
     const isWinner = address && raffle?.winners?.map(w => w.toLowerCase()).includes(address.toLowerCase());
@@ -39,11 +40,10 @@ export function RaffleCard() {
 
         setIsBuying(true);
         try {
-            const amount = 1; // Default buy 1 ticket
             if (isGaslessSupported) {
-                await buyTicketsGasless(raffle.id, amount);
+                await buyTicketsGasless(raffle.id, ticketAmount);
             } else {
-                await buyTickets(raffle.id, amount);
+                await buyTickets(raffle.id, ticketAmount);
             }
         } catch (err) {
             console.error("Purchase error", err);
@@ -223,33 +223,52 @@ export function RaffleCard() {
                     )}
                 </button>
             ) : (
-                <button
-                    onClick={handleBuy}
-                    disabled={isBuying || !displayedRaffle.isActive || timeLeft <= 0 || isGasExpensive}
-                    className={`w-full min-h-[56px] py-3 rounded-xl label-native transition-all border flex flex-col items-center justify-center gap-1 mt-auto shadow-lg px-2 text-center
-                        ${isGasExpensive && displayedRaffle.isActive && timeLeft > 0
-                            ? 'bg-red-900/20 text-red-500 border-red-500/30 cursor-not-allowed'
-                            : isBuying
-                            ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
-                            : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
-                        }`}
-                >
-                    {isGasExpensive && displayedRaffle.isActive && timeLeft > 0 ? (
-                        <>
-                            <span className="flex items-center gap-2"><AlertCircle className="w-4 h-4" /> ⛔ GAS TOO HIGH</span>
-                            <span className="text-[9px] opacity-70 normal-case font-medium tracking-normal">Please wait until network fees drop</span>
-                        </>
-                    ) : isBuying ? (
-                        <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> PROCESSING...</div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            {isGaslessSupported && <span className="text-xs">⛽</span>}
-                            {isGaslessSupported
-                                ? "BUY FREE TICKET"
-                                : `BUY TICKET (${ecosystemSettings?.raffle_ticket_price_usdc || 0.15} USDC)`}
+                <div className="mt-auto">
+                    {displayedRaffle.isActive && timeLeft > 0 && (
+                        <div className="flex items-center gap-3 mb-3 bg-white/5 rounded-xl p-1.5 border border-white/10">
+                            <button 
+                                onClick={() => setTicketAmount(prev => Math.max(1, prev - 1))}
+                                className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-white font-bold transition-colors"
+                                disabled={ticketAmount <= 1 || isBuying}
+                            >-</button>
+                            <div className="flex-1 text-center font-mono font-bold text-white text-lg">
+                                {ticketAmount} <span className="text-xs text-slate-400 font-sans">TICKET{ticketAmount > 1 ? 'S' : ''}</span>
+                            </div>
+                            <button 
+                                onClick={() => setTicketAmount(prev => prev + 1)}
+                                className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-white font-bold transition-colors"
+                                disabled={isBuying || ticketAmount >= (displayedRaffle.maxTickets - displayedRaffle.totalTickets)}
+                            >+</button>
                         </div>
                     )}
-                </button>
+                    <button
+                        onClick={handleBuy}
+                        disabled={isBuying || !displayedRaffle.isActive || timeLeft <= 0 || isGasExpensive}
+                        className={`w-full min-h-[56px] py-3 rounded-xl label-native transition-all border flex flex-col items-center justify-center gap-1 shadow-lg px-2 text-center
+                            ${isGasExpensive && displayedRaffle.isActive && timeLeft > 0
+                                ? 'bg-red-900/20 text-red-500 border-red-500/30 cursor-not-allowed'
+                                : isBuying
+                                ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed'
+                                : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
+                            }`}
+                    >
+                        {isGasExpensive && displayedRaffle.isActive && timeLeft > 0 ? (
+                            <>
+                                <span className="flex items-center gap-2"><AlertCircle className="w-4 h-4" /> ⛔ GAS TOO HIGH</span>
+                                <span className="text-[9px] opacity-70 normal-case font-medium tracking-normal">Please wait until network fees drop</span>
+                            </>
+                        ) : isBuying ? (
+                            <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> PROCESSING...</div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                {isGaslessSupported && <span className="text-xs">⛽</span>}
+                                {isGaslessSupported
+                                    ? `BUY ${ticketAmount} TICKET${ticketAmount > 1 ? 'S' : ''} (FREE)`
+                                    : `BUY ${ticketAmount} TICKET${ticketAmount > 1 ? 'S' : ''} (${(ecosystemSettings?.raffle_ticket_price_usdc || 0.15) * ticketAmount} USDC)`}
+                            </div>
+                        )}
+                    </button>
+                </div>
             )}
         </GridCard>
     );
