@@ -148,6 +148,7 @@ export function CreateRafflePage() {
         if (!formData.title) return toast.error("Please enter a title");
 
         setIsSubmitting(true);
+        const tid = toast.loading("Uploading metadata to IPFS...");
         try {
             const fullMetadata = {
                 title: formData.title,
@@ -160,9 +161,36 @@ export function CreateRafflePage() {
                 created_at: new Date().toISOString()
             };
 
-            const metadataStr = JSON.stringify(fullMetadata);
-            const metadataURI = `data:application/json;base64,${btoa(unescape(encodeURIComponent(metadataStr)))}`;
+            // [FIX] Upload to IPFS via Pinata instead of inline base64
+            const pinataJWT = import.meta.env.VITE_PINATA_JWT;
+            let metadataURI = '';
+            
+            if (pinataJWT) {
+                const res = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${pinataJWT}`
+                    },
+                    body: JSON.stringify({
+                        pinataOptions: { cidVersion: 1 },
+                        pinataMetadata: { name: `Raffle_${formData.title.replace(/\s+/g, '_')}.json` },
+                        pinataContent: fullMetadata
+                    })
+                });
+                
+                if (!res.ok) throw new Error("Failed to pin to IPFS");
+                const data = await res.json();
+                metadataURI = `ipfs://${data.IpfsHash}`;
+                toast.success("Metadata pinned to IPFS!", { id: tid });
+            } else {
+                console.warn("No Pinata JWT found. Falling back to inline base64.");
+                const metadataStr = JSON.stringify(fullMetadata);
+                metadataURI = `data:application/json;base64,${btoa(unescape(encodeURIComponent(metadataStr)))}`;
+                toast.success("Using inline metadata.", { id: tid });
+            }
 
+            toast.loading("Sending on-chain transaction...", { id: tid });
             await createSponsorshipRaffle({
                 winnerCount: formData.winnerCount,
                 maxTickets: formData.maxTickets,
@@ -171,10 +199,10 @@ export function CreateRafflePage() {
                 depositETH: parseEther(formData.prizeDeposit || '0'),
                 extraMetadata: { ...fullMetadata, is_base_social_required: formData.isBaseSocialRequired }
             });
-            toast.success("Raffle Event Sponsored!");
+            toast.success("Raffle Event Sponsored! 🎲", { id: tid });
             navigate('/raffles');
         } catch (err) {
-            toast.error(err.shortMessage || "Creation failed");
+            toast.error(err.shortMessage || err.message || "Creation failed", { id: tid });
         } finally {
             setIsSubmitting(false);
         }

@@ -71,7 +71,7 @@ export default async function handler(req, res) {
             try {
                 const masterStats = await publicClient.readContract({
                     address: MASTER_X_ADDRESS,
-                    abi: [{ name: 'users', type: 'function', inputs: [{ name: '', type: 'address' }], outputs: [{ name: 'points', type: 'uint256' }, { name: 't1', type: 'uint64' }, { name: 't2', type: 'uint32' }, { name: 'tier', type: 'uint8' }] }],
+                    abi: [{ name: 'users', type: 'function', inputs: [{ name: '', type: 'address' }], outputs: [{ name: 'points', type: 'uint256' }, { name: 'lastClaimTimestamp', type: 'uint64' }, { name: 'referralCount', type: 'uint32' }, { name: 'tier', type: 'uint8' }, { name: 'isVerified', type: 'bool' }, { name: 'referrer', type: 'address' }, { name: 'lastUpdateSeasonId', type: 'uint32' }] }],
                     functionName: 'users',
                     args: [topUser.wallet_address]
                 });

@@ -234,6 +234,8 @@ export default async function handler(req, res) {
         case 'get-health': await handleGetHealth(req, res); break;
         case 'reset-health': await handleResetHealth(req, res); break;
         case 'generate-sync-signature': await handleGenerateSyncSignature(req, res); break;
+        // [FIX v3.56.5] Unified social verification status endpoint
+        case 'social-status': await handleSocialStatus(req, res); break;
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -913,21 +915,31 @@ async function handleSyncUgcRaffle(req, res) {
         const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount, txHash } = payload;
 
         // 🛡️ ON-CHAIN VERIFICATION (Hardening v3.55.0)
-        try {
-            const raffleInfo = await publicClient.readContract({
-                address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA,
-                abi: RAFFLE_ABI,
-                functionName: 'getRaffleInfo',
-                args: [BigInt(raffle_id)]
-            });
-            
-            if (raffleInfo.sponsor.toLowerCase() !== wallet.toLowerCase()) {
-                return res.status(403).json({ error: `[Security] User ${wallet} is not the sponsor of Raffle #${raffle_id} on-chain.` });
+        // [FIX v3.56.5] Admin wallets bypass the sponsor check — adminCreateRaffle sets the
+        // contract itself as sponsor (not the admin wallet). We still verify signature above.
+        const adminList = [
+            process.env.ADMIN_ADDRESS,
+            process.env.VITE_ADMIN_ADDRESS,
+            process.env.VITE_ADMIN_WALLETS
+        ].join(',').split(',').map(a => a?.trim().toLowerCase()).filter(Boolean);
+        const isAdminWallet = adminList.includes(wallet.toLowerCase());
+
+        if (!isAdminWallet) {
+            try {
+                const raffleInfo = await publicClient.readContract({
+                    address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA,
+                    abi: RAFFLE_ABI,
+                    functionName: 'getRaffleInfo',
+                    args: [BigInt(raffle_id)]
+                });
+
+                if (raffleInfo.sponsor.toLowerCase() !== wallet.toLowerCase()) {
+                    return res.status(403).json({ error: `[Security] User ${wallet} is not the sponsor of Raffle #${raffle_id} on-chain.` });
+                }
+            } catch (onChainErr) {
+                console.error('[handleSyncUgcRaffle] On-chain check failed:', onChainErr.message);
+                // Non-fatal: newly created raffles may not be indexed yet.
             }
-        } catch (onChainErr) {
-             console.error('[handleSyncUgcRaffle] On-chain check failed:', onChainErr.message);
-             // Skip error if it's just a newly created raffle that hasn't indexed yet, 
-             // but for XP awarding we need it.
         }
 
         const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
@@ -1453,5 +1465,48 @@ async function handleSyncBaseSocial(req, res) {
         return res.status(200).json({ success: true, basename });
     } catch (error) {
         return res.status(500).json({ error: error.message });
+    }
+}
+
+// -----------------------------------------------------------------------------
+// [FIX v3.56.5] SOCIAL STATUS API
+// -----------------------------------------------------------------------------
+async function handleSocialStatus(req, res) {
+    const { address } = req.query;
+    if (!address) return res.status(400).json({ error: 'Missing address' });
+
+    try {
+        const cleanAddress = address.toLowerCase();
+
+        // 1. Check DEV-MODE BYPASS
+        if (process.env.NODE_ENV !== 'production' && cleanAddress === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266') {
+            return res.status(200).json({
+                farcaster: { username: 'nexus_admin', fid: 1, verified: true },
+                twitter: { username: 'nexus_dev', verified: true },
+                isVerified: true
+            });
+        }
+
+        // 2. Fetch from DB
+        const { data: profile, error } = await supabaseAdmin
+            .from('user_profiles')
+            .select('fid, twitter_username, twitter_id, is_base_social_verified')
+            .eq('wallet_address', cleanAddress)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        const hasFarcaster = !!profile?.fid;
+        const hasTwitter = !!profile?.twitter_id;
+        const isVerified = hasFarcaster || hasTwitter || profile?.is_base_social_verified;
+
+        return res.status(200).json({
+            farcaster: hasFarcaster ? { fid: profile.fid, verified: true } : null,
+            twitter: hasTwitter ? { username: profile.twitter_username, id: profile.twitter_id, verified: true } : null,
+            isVerified: !!isVerified
+        });
+    } catch (e) {
+        console.error('[handleSocialStatus] Error:', e.message);
+        return res.status(500).json({ error: 'Internal Server Error', isVerified: false });
     }
 }

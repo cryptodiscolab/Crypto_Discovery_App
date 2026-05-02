@@ -318,7 +318,8 @@ async function handleClaim(req, res) {
             type: 'Raffle Ticket Buy',
             description: `Claimed ${xp} XP for ${task_id}`,
             amount: xp,
-            symbol: 'XP'
+            symbol: 'XP',
+            metadata: { task_id, tickets_bought: ticketCount }
         });
     } else {
         await logActivity({

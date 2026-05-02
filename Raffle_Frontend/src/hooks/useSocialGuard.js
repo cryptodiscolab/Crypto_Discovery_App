@@ -19,20 +19,13 @@ export function useSocialGuard(address) {
                 };
             }
 
-            // Parallel check for both platforms
-            const [farRes, twitRes] = await Promise.all([
-                fetch(`/api/verify/farcaster/check?address=${address.toLowerCase()}`),
-                fetch(`/api/verify/twitter/check?address=${address.toLowerCase()}`)
-            ]);
-
-            const farData = farRes.ok ? await farRes.json() : null;
-            const twitData = twitRes.ok ? await twitRes.json() : null;
-
-            return {
-                farcaster: farData,
-                twitter: twitData,
-                isVerified: !!(farData?.verified || twitData?.verified)
-            };
+            // [FIX v3.56.5] Call the new unified endpoint in user-bundle.js
+            const res = await fetch(`/api/user/social-status?address=${address.toLowerCase()}`);
+            if (!res.ok) {
+                console.warn('[useSocialGuard] Failed to fetch social status');
+                return { isVerified: false };
+            }
+            return await res.json();
         },
         enabled: !!address,
         staleTime: 1000 * 60 * 5,   // 5 min cache
