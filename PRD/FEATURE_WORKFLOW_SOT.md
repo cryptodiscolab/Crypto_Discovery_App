@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.56.4)
-**Last Updated**: 2026-05-01T19:00:00+07:00 — SBT Tier Hardening & Sequential Mandate (v3.56.4)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.56.5)
+**Last Updated**: 2026-05-02T19:00:00+07:00 — Daily Mojo Hardening & Lurah Vercel Protocol (v3.56.5)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -341,4 +341,17 @@ Mekanisme pengamanan dana sponsor saat konten UGC tidak disetujui.
   5. **DB Update**: Backend mencatat `cancellation_tx`, mengubah status raffle di Supabase, dan merekam aksi di `admin_audit_logs`.
 
 ---
-*End of Source of Truth Document - Nexus v3.56.0 Locked.*
+
+## 👁️ 14. Lurah Sentinel & Sync State Architecture (v3.56.5)
+Arsitektur pemantauan ekosistem sekarang eksklusif berada di jaringan Vercel Serverless.
+
+### 14.1 Vercel Cron Override
+- **Lurah Cron**: Dijalankan via `/api/lurah-cron` (berdasarkan `vercel.json`). Menyimpan health check di tabel `system_health` dengan `service_key: lurah_ekosistem`.
+- **Legacy Ban**: Script PM2/Hardhat lokal seperti `sync-sbt.cjs` dan `sync-underdog.cjs` DILARANG digunakan lagi. Entry health lama mereka WAJIB dihapus dari `system_health`.
+
+### 14.2 Sync Events Staleness Protection
+- **Sync State**: Endpoint `/api/cron/sync-events` memantau jarak block on-chain dan off-chain di tabel `sync_state`.
+- **Catch-Up Mechanism**: Cron akan melakukan iterasi 2000 blocks per eksekusi. Jika `last_synced_block` tertinggal sangat jauh (mis. 14 hari), dilarang memaksa `sync_state` dengan limit ekstrem. Biarkan catch-up harian otomatis atau lakukan block reset terukur.
+
+---
+*End of Source of Truth Document - Nexus v3.56.5 Locked.*

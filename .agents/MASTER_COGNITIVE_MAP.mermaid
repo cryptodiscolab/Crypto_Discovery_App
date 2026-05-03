@@ -1,0 +1,107 @@
+%% 🧠 MASTER COGNITIVE MAP DIAGRAMS
+%% Version: 3.56.4
+%% Project: Crypto Disco
+
+%% 1. THE WORLD MAP (High-Level Ecosystem)
+graph TD
+    subgraph Client_Layer [CLIENT LAYER]
+        User((User))
+        FE[Raffle_Frontend]
+        NCC[Nexus Command Center]
+    end
+
+    subgraph Logic_Layer [LOGIC LAYER - Vercel]
+        API[Serverless Bundles]
+        VS[Verification Server]
+    end
+
+    subgraph Data_Layer [DATA LAYER]
+        DB[(Supabase DB)]
+        S3[Supabase Storage]
+    end
+
+    subgraph Blockchain_Layer [BLOCKCHAIN LAYER - Base]
+        DA[DailyApp V13.2]
+        MX[MasterX XP]
+        RF[Raffle v2.1]
+        CMS[CMS Contract]
+        ASSETS{Digital Assets}
+        ASSETS -->|SBT| SBT((Soulbound NFT))
+        ASSETS -->|TKT| TKT((Raffle Tickets))
+    end
+
+    subgraph Sentinel_Layer [SENTINEL & AUDIT]
+        LR[Lurah Brain / AI Monitor]
+        ORC[Nexus Orchestron]
+    end
+
+    %% Interactions
+    User -->|Interact| FE
+    FE -->|Auth/Data| API
+    FE -->|Verify Social| VS
+    FE -->|On-Chain TX| DA
+    FE -->|On-Chain TX| RF
+
+    API -->|Read/Write| DB
+    VS -->|Verify API| Neynar[Neynar/Farcaster]
+    VS -->|Verify API| X[Twitter/X API]
+
+    DB <-->|Sync| MX
+    DB <-->|Sync| DA
+    
+    %% Monitoring
+    LR -.->|Audit| Logic_Layer
+    LR -.->|Audit| Blockchain_Layer
+    ORC -.->|Sync Audit| DB
+
+%% ---
+
+%% 2. DATA FLOW & SYNC PIPELINE
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant API as Vercel API
+    participant DB as Supabase
+    participant BC as Base Blockchain
+    participant AG as Antigravity (Cron)
+
+    U->>FE: Complete Task
+    FE->>API: handleClaim(task_id)
+    API->>DB: Check Eligibility & Limits
+    API->>API: Execute Social Verification
+    API->>DB: Increment XP (fn_increment_xp)
+    API->>BC: Record TaskCompletion (if on-chain)
+    
+    Note over DB,BC: Daily Sync Loop
+    AG->>BC: Read Tier Configs
+    AG->>DB: Update user_profiles (Tier Parity)
+    DB-->>FE: UI Refresh (Pulse Effect)
+
+%% ---
+
+%% 3. AGENT ORCHESTRATION MATRIX
+graph LR
+    Owner((OWNER)) --> AG[Antigravity / Lead]
+    
+    subgraph Bridge [Multi-Agent Bridge v1.3.7]
+        AG -->|Delegates| SENTINEL[Lurah Sentinel]
+        AG -->|Delegates| DEV[Dev Agent]
+        AG -->|Delegates| AUDIT[Security Audit Agent]
+    end
+
+    SENTINEL -->|Monitors| SYSTEM[Ecosystem Health]
+    DEV -->|Updates| CODE[Codebase / UI]
+    AUDIT -->|Verifies| SECURITY[13-Point Matrix]
+
+%% ---
+
+%% 4. THE NEXUS (Ecosystem Overview)
+graph TD
+    A[Antigravity / Gemini Agent] -->|Orchestrates| B[Nexus Sentinel / Lurah]
+    B -->|Monitors| C[Contract States]
+    B -->|Logs| D[Supabase: nexus_agent_reports]
+    A -->|Maintains| E[SOT: PRD & MASTER_MAP]
+    F[Users] -->|Interact| G[Frontend: Next.js]
+    G -->|Triggers| H[Edge Functions]
+    H -->|SBT/XP Logic| C
+
