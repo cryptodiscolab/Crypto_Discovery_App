@@ -149,6 +149,11 @@ async function handleClaimPrize(req, res) {
         });
         if (!valid) return res.status(401).json({ error: '[Security] Signature verification failed.' });
 
+        // [Hardening v3.56.7] Message Integrity Check
+        if (!message.includes(`Raffle ID: ${raffle_id}`)) {
+            throw new Error(`[Security] Message mismatch. Expected Raffle ID: ${raffle_id}`);
+        }
+
         const normalizedWallet = wallet_address.toLowerCase();
 
         // ─── 1.1 On-Chain Winner Verification (Hardening v3.55.0) ──────────────

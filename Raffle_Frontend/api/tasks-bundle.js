@@ -157,7 +157,18 @@ async function validateAndCalculateXP(wallet_address, signature, message, task_i
 
     // [Hardening v3.55.0] On-chain verification for Raffle activities
     if (task_id && task_id.startsWith('raffle_')) {
+        // [Hardening v3.56.7] Message Integrity Check
+        const parts = task_id.split('_');
+        const raffleId = parts[2];
+        if (!message.includes(`Raffle ID: ${raffleId}`)) {
+            throw new Error(`[Security] Message mismatch. Expected Raffle ID: ${raffleId}`);
+        }
         await verifyRaffleOnChain(task_id, wallet_address, message);
+    } else if (task_id) {
+        // [Hardening v3.56.7] Social Task Message Integrity Check
+        if (!message.includes(`ID: ${task_id}`)) {
+            throw new Error(`[Security] Message mismatch. Expected Task ID: ${task_id}`);
+        }
     }
 
     let xp = await getTaskReward(task_id);
@@ -291,16 +302,15 @@ async function handleClaim(req, res) {
         throw error;
     }
 
-    // FIX v3.40.6: Atomically update total_xp in user_profiles for off-chain tasks
-    // (On-chain tasks use the 'xp' action in user-bundle which reads contract state)
+    // FIX v3.40.6: Atomically update total_xp in user_profiles
     if (xp > 0) {
-        try {
-            await supabaseAdmin.rpc('fn_increment_xp', {
-                p_wallet: wallet_address.toLowerCase(),
-                p_amount: xp
-            });
-        } catch (xpErr) {
+        const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
+            p_wallet: wallet_address.toLowerCase(),
+            p_amount: xp
+        });
+        if (xpErr) {
             console.error('[handleClaim] fn_increment_xp failed:', xpErr.message);
+            return res.status(500).json({ error: "Failed to update XP. Please try again." });
         }
     }
 
@@ -316,7 +326,7 @@ async function handleClaim(req, res) {
             wallet: wallet_address,
             category: 'PURCHASE',
             type: 'Raffle Ticket Buy',
-            description: `Claimed ${xp} XP for ${task_id}`,
+            description: `Purchased ${ticketCount} Tickets for Raffle`,
             amount: xp,
             symbol: 'XP',
             metadata: { task_id, tickets_bought: ticketCount }
@@ -356,27 +366,52 @@ async function handleVerify(req, res) {
         throw error;
     }
 
-    // [Fix v3.41.2 Hardening] Award XP atomically using the Hybrid Formula
+    // FIX v3.40.6: Atomically update total_xp in user_profiles
     if (xp > 0) {
-        try {
-            await supabaseAdmin.rpc('fn_increment_xp', {
-                p_wallet: wallet_address.toLowerCase(),
-                p_amount: xp
-            });
-        } catch (xpErr) {
+        const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
+            p_wallet: wallet_address.toLowerCase(),
+            p_amount: xp
+        });
+        if (xpErr) {
             console.error('[handleVerify] fn_increment_xp failed:', xpErr.message);
+            return res.status(500).json({ error: "Failed to update XP. Please try again." });
         }
     }
 
-    await logActivity({
-        wallet: wallet_address,
-        category: 'XP',
-        type: 'Task Verify',
-        description: `Verified ${task_id} on ${platform}`,
-        amount: xp,
-        symbol: 'XP',
-        metadata: { task_id, platform, action_type }
-    });
+    if (task_id.startsWith('raffle_buy_')) {
+        const amountMatch = message.match(/Amount:\s*(\d+)/i);
+        const ticketCount = amountMatch ? parseInt(amountMatch[1], 10) : 1;
+        
+        const { error: ticketErr } = await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
+            p_wallet: wallet_address.toLowerCase(),
+            p_amount: ticketCount
+        });
+        
+        if (ticketErr) {
+            console.error('[handleVerify] fn_increment_raffle_tickets failed:', ticketErr.message);
+            // We don't return error here because XP was already added, but we log it
+        }
+
+        await logActivity({
+            wallet: wallet_address,
+            category: 'PURCHASE',
+            type: 'Raffle Ticket Buy',
+            description: `Purchased ${ticketCount} Tickets for Raffle`,
+            amount: xp,
+            symbol: 'XP',
+            metadata: { task_id, tickets_bought: ticketCount }
+        });
+    } else {
+        await logActivity({
+            wallet: wallet_address,
+            category: 'XP',
+            type: 'Task Verify',
+            description: `Verified ${task_id} on ${platform}`,
+            amount: xp,
+            symbol: 'XP',
+            metadata: { task_id, platform, action_type }
+        });
+    }
 
     return res.status(200).json({ success: true, xp });
 }
@@ -399,15 +434,15 @@ async function handleSocialVerify(req, res) {
         throw error;
     }
 
-    // FIX v3.40.6: Atomically update total_xp in user_profiles for off-chain tasks
+    // FIX v3.40.6: Atomically update total_xp in user_profiles
     if (xp > 0) {
-        try {
-            await supabaseAdmin.rpc('fn_increment_xp', {
-                p_wallet: wallet_address.toLowerCase(),
-                p_amount: xp
-            });
-        } catch (xpErr) {
+        const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
+            p_wallet: wallet_address.toLowerCase(),
+            p_amount: xp
+        });
+        if (xpErr) {
             console.error('[handleSocialVerify] fn_increment_xp failed:', xpErr.message);
+            return res.status(500).json({ error: "Failed to update XP. Please try again." });
         }
     }
 
