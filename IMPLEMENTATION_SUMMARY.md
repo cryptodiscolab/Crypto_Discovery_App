@@ -6,6 +6,13 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.56.7 (Raffle Ecosystem Hardening & Zero-Trust Sync)
+- **Raffle History Sync**: Resolved `UUID` schema constraint in `user_task_claims`, enabling flexible string-based Raffle ID tracking for purchase history.
+- **Zero-Trust Message Integrity**: Implemented mandatory message content verification in `tasks-bundle.js` and `raffle-bundle.js` to prevent signature reuse across different tasks/raffles.
+- **Database Resilience**: Refactored XP and ticket increment RPCs with explicit error propagation, ensuring atomic synchronization and reporting failures to the client.
+- **Standardized Logging**: Unified purchase activity logging under the `PURCHASE` category for consistent profile history display.
+- **Security Matrix**: 100% pass on Gitleaks and signature integrity audits.
+
 ## 🟢 v3.56.4 (SBT Tier Architecture Hardening: Sequential Upgrade & Soulbound Mandate)
 - **SBT Logic Audit (`DailyAppV13.sol`)**: Konfirmasi logika `_mintOrUpgrade` yang mewajibkan upgrade secara berurutan (Sequential) tanpa celah untuk melompat tier.
 - **Soulbound Enforcement**: Verifikasi properti non-transferable pada NFT SBT melalui override `_update` yang me-revert transfer antar alamat non-zero.

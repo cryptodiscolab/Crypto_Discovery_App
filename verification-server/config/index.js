@@ -14,6 +14,10 @@ module.exports = {
     bearerToken: process.env.TWITTER_BEARER_TOKEN?.trim(),
   },
 
+  google: {
+    apiKey: process.env.GOOGLE_API_KEY?.trim(),
+  },
+
   // Blockchain
   blockchain: {
     contractAddress: process.env.CONTRACT_ADDRESS?.trim(),

@@ -2,6 +2,7 @@ const { ethers } = require('ethers');
 const config = require('../config');
 const neynarService = require('./neynar.service');
 const twitterService = require('./twitter.service');
+const googleService = require('./google.service');
 const supabaseService = require('./supabase.service');
 
 // Smart contract ABI (only the functions we need)
@@ -223,6 +224,35 @@ class VerificationService {
     }
 
     /**
+     * Verify Google task (YouTube)
+     * @param {string} action - 'subscribe', 'like'
+     * @param {string} userId - User's Google ID or Email
+     * @param {Object} params - Action-specific parameters
+     * @returns {Promise<boolean>}
+     */
+    async verifyGoogleTask(action, userId, params) {
+        try {
+            let verified = false;
+
+            switch (action) {
+                case 'subscribe':
+                    verified = await googleService.verifyYouTubeSubscribe(userId, params.channelId);
+                    break;
+                case 'like':
+                    verified = await googleService.verifyYouTubeLike(userId, params.videoId);
+                    break;
+                default:
+                    throw new Error(`Unknown Google action: ${action}`);
+            }
+
+            return verified;
+        } catch (error) {
+            console.error('Error verifying Google task:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Mark task as verified on smart contract
      * @param {string} userAddress - User's wallet address
      * @param {number} taskId - Task ID
@@ -379,6 +409,26 @@ class VerificationService {
                     };
                 }
                 verified = await this.verifyInstagramTask(action, socialId, actionParams);
+            } else if (platform === 'google') {
+                // Identity Lock Check: Google
+                const { data: profile } = await supabaseService.client
+                    .from('user_profiles')
+                    .select('google_id, google_email')
+                    .eq('wallet_address', userAddress.toLowerCase())
+                    .maybeSingle();
+
+                if (!profile?.google_id && !profile?.google_email) {
+                    return {
+                        success: false,
+                        error: `Security Error: Wallet ${userAddress} is not linked to Google/YouTube.`,
+                        requiresLinkage: true,
+                        linkagePlatform: 'google'
+                    };
+                }
+                
+                // Use email or ID as socialId
+                const identifier = profile.google_id || profile.google_email;
+                verified = await this.verifyGoogleTask(action, identifier, actionParams);
             } else {
                 throw new Error(`Unknown platform: ${platform}`);
             }
