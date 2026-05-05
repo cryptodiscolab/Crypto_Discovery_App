@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal, Users, Clock, ArrowRight } from 'lucide-react';
+import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal, Users, Clock, ArrowRight, Megaphone } from 'lucide-react';
 import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
 import { AdminTransactionButton } from './AdminTransactionButton';
 import { encodeFunctionData } from 'viem';
@@ -270,16 +270,49 @@ export function RaffleManagerTab() {
 }
 
 function WinnersPanel({ winners, raffleId }) {
+    const [announcing, setAnnouncing] = useState(false);
     if (!winners || winners.length === 0) return null;
     const zeroAddr = '0x0000000000000000000000000000000000000000';
     const realWinners = winners.filter(w => w && w !== zeroAddr);
     if (realWinners.length === 0) return null;
 
+    const handleAnnounce = async () => {
+        setAnnouncing(true);
+        const tid = toast.loading("Sending announcement...");
+        try {
+            const res = await fetch('/api/raffle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'announce-winner', raffle_id: raffleId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success("Announcement sent to Telegram!", { id: tid });
+            } else {
+                throw new Error(data.error || "Announcement failed");
+            }
+        } catch (e) {
+            toast.error(e.message, { id: tid });
+        } finally {
+            setAnnouncing(false);
+        }
+    };
+
     return (
         <div className="mt-4 p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-2xl space-y-2">
-            <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                <Trophy size={12} /> RAFFLE #{raffleId} WINNERS
-            </p>
+            <div className="flex items-center justify-between mb-3 px-1">
+                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Trophy size={12} /> RAFFLE #{raffleId} WINNERS
+                </p>
+                <button
+                    onClick={handleAnnounce}
+                    disabled={announcing}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600 border border-emerald-500/30 text-emerald-400 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                >
+                    {announcing ? <Loader2 size={10} className="animate-spin" /> : <Megaphone size={10} />}
+                    Announce
+                </button>
+            </div>
             {realWinners.map((w, i) => (
                 <div key={w} className="flex items-center gap-3 p-2.5 bg-black/40 rounded-xl border border-emerald-500/10">
                     <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black shrink-0 ${

@@ -9,6 +9,7 @@ import { useSocialGuard } from '../hooks/useSocialGuard';
 import { formatEther } from 'viem';
 import { CONTRACTS, MASTER_X_ABI } from '../lib/contracts';
 import { SwapModal } from '../components/SwapModal';
+import { RaffleWinnersSection } from '../components/home/RaffleWinnersSection';
 
 function RaffleRow({ raffleId, filter = 'all' }) {
   const { address } = useAccount();
@@ -240,6 +241,11 @@ export function RafflesPage() {
               ))}
             </>
           )}
+        </div>
+
+        {/* Hall of Fame / Past Winners Section */}
+        <div className="px-4">
+           <RaffleWinnersSection />
         </div>
       </div>
       <SwapModal isOpen={isSwapOpen} onClose={() => setIsSwapOpen(false)} />

@@ -123,8 +123,64 @@ export default async function handler(req, res) {
         case 'leaderboard':
             await handleLeaderboard(req, res);
             break;
+        case 'announce-winner':
+            await handleAnnounceWinner(req, res);
+            break;
         default:
             return res.status(400).json({ error: `Invalid raffle action: ${action}` });
+    }
+}
+
+/**
+ * POST /api/raffle/announce-winner
+ * Public Announcement for Raffle Winners (Triggered by Admin/System)
+ */
+async function handleAnnounceWinner(req, res) {
+    const { raffle_id } = req.body;
+    if (!raffle_id) return res.status(400).json({ error: 'Missing raffle_id' });
+
+    try {
+        // ─── 1. Fetch Raffle Info from On-Chain ──────────────────────────────
+        const raffleInfo = await publicClient.readContract({
+            address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA,
+            abi: RAFFLE_ABI,
+            functionName: 'getRaffleInfo',
+            args: [BigInt(raffle_id)]
+        });
+
+        if (!raffleInfo.isFinalized) {
+            return res.status(400).json({ error: 'Raffle is not finalized yet' });
+        }
+
+        const winners = (raffleInfo.winners || []).filter(w => w !== '0x0000000000000000000000000000000000000000');
+        if (winners.length === 0) return res.status(400).json({ error: 'No winners found for this raffle' });
+
+        // ─── 2. Send Telegram Announcement ───────────────────────────────────
+        if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+            const winnersList = winners.map(w => `• \`${w.slice(0, 6)}...${w.slice(-4)}\``).join('\n');
+            const prizeETH = (Number(raffleInfo.prizePool) / 1e18).toFixed(4);
+            
+            const text = `🎉 *RAFFLE #${raffle_id} FINALIZED!* 🎉\n\n` +
+                `The quantum dice have been thrown and winners are selected! \n\n` +
+                `💰 *Total Prize:* ${prizeETH} ETH\n` +
+                `🏆 *Winners:*\n${winnersList}\n\n` +
+                `🔗 Check your status and claim on: \nhttps://disco-daily.vercel.app/raffles`;
+
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text,
+                    parse_mode: 'Markdown'
+                })
+            });
+        }
+
+        return res.status(200).json({ success: true, message: 'Announcement sent' });
+    } catch (error) {
+        console.error('[Announce Winner API Error]', error);
+        return res.status(500).json({ error: error.message });
     }
 }
 
