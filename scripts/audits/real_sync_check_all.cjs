@@ -9,8 +9,16 @@ async function checkRealStatus() {
     const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     
     // 2. Provider for Base Sepolia
-    const provider = new ethers.JsonRpcProvider("https://sepolia.base.org");
-    const contractAddress = "0x369aBcD44d3D510f4a20788BBa6F47C99e57d267";
+    const rpcUrl = process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    
+    // Dynamic Contract Address to prevent Drift
+    const contractAddress = process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA;
+    if (!contractAddress) {
+        console.error("❌ ERROR: Contract address not found in environment variables.");
+        process.exit(1);
+    }
+
     const abi = [
         "function userStats(address) view returns (uint256 points, uint256 totalTasksCompleted, uint256 referralCount, uint8 currentTier, uint256 tasksForReferralProgress, uint256 lastDailyBonusClaim, bool isBlacklisted)"
     ];
@@ -40,7 +48,19 @@ async function checkRealStatus() {
         const dbXp = user.total_xp;
         
         try {
-            const stats = await contract.userStats(wallet);
+            let stats;
+            // Auto-Retry Logic (Maksimal 3 percobaan) untuk menangani RPC Timeout
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    stats = await contract.userStats(wallet);
+                    break; // Sukses, keluar dari loop retry
+                } catch (err) {
+                    if (attempt === 3) throw err; // Gagal total di percobaan ke-3
+                    console.log(`  - ⚠️ RPC lambat/error untuk ${wallet}. Mencoba ulang (${attempt}/3)...`);
+                    await new Promise(res => setTimeout(res, 1500)); // Tunggu 1.5 detik sebelum retry
+                }
+            }
+
             const contractXp = Number(stats.points);
             const gap = dbXp - contractXp;
 

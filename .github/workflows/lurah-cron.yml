@@ -1,0 +1,29 @@
+name: Lurah Live Sentinel (Cron Fallback)
+
+on:
+  schedule:
+    # Jalan setiap jam di menit ke-15 untuk menghindari tabrakan dengan cron lain yang jalan di menit 0
+    - cron: '15 * * * *' 
+  workflow_dispatch: # Memungkinkan eksekusi manual dari tab Actions
+
+jobs:
+  ping-lurah-api:
+    name: Trigger Lurah Vercel API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger API with Auto-Retry
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 2
+          max_attempts: 3
+          retry_wait_seconds: 60
+          command: |
+            echo "Memanggil Endpoint Lurah..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" ${{ secrets.VERCEL_LURAH_API_URL }})
+            
+            if [ "$HTTP_STATUS" -ne 200 ]; then
+              echo "❌ Lurah API gagal dengan status $HTTP_STATUS"
+              exit 1
+            else
+              echo "✅ Lurah Audit berhasil dieksekusi!"
+            fi

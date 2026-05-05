@@ -27,37 +27,40 @@ async function main() {
     try {
         // Read Data from Contract
         // ✅ DEPLOYED CONTRACT baru: sudah ada diamond, platinum, dan lastDistributeTimestamp
+        // Read Data from Contract with Auto-Retry
+        let contractData;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                contractData = await Promise.all([
+                    CryptoDiscoMasterX.totalSBTPoolBalance(),
+                    CryptoDiscoMasterX.accRewardPerShare(0),
+                    CryptoDiscoMasterX.accRewardPerShare(1),
+                    CryptoDiscoMasterX.accRewardPerShare(2),
+                    CryptoDiscoMasterX.accRewardPerShare(3),
+                    CryptoDiscoMasterX.accRewardPerShare(4),
+                    CryptoDiscoMasterX.accRewardPerShare(5),
+                    CryptoDiscoMasterX.lastDistributeTimestamp(),
+                    CryptoDiscoMasterX.totalLockedRewards(),
+                    CryptoDiscoMasterX.diamondHolders(),
+                    CryptoDiscoMasterX.platinumHolders(),
+                    CryptoDiscoMasterX.goldHolders(),
+                    CryptoDiscoMasterX.silverHolders(),
+                    CryptoDiscoMasterX.bronzeHolders(),
+                ]);
+                break;
+            } catch (err) {
+                if (attempt === 3) throw err;
+                console.log(`⚠️  [SBT Sync] Contract call failed. Retrying (${attempt}/3)...`);
+                await new Promise(res => setTimeout(res, 2000));
+            }
+        }
+
         const [
             totalSBTPoolBalance,
-            noneAcc, // Index 0
-            bronzeAcc, // Index 1
-            silverAcc, // Index 2
-            goldAcc, // Index 3
-            platinumAcc, // Index 4
-            diamondAcc, // Index 5
-            lastDist,
-            totalLocked,
-            diamondHolders,
-            platinumHolders,
-            goldHolders,
-            silverHolders,
-            bronzeHolders
-        ] = await Promise.all([
-            CryptoDiscoMasterX.totalSBTPoolBalance(),
-            CryptoDiscoMasterX.accRewardPerShare(0),
-            CryptoDiscoMasterX.accRewardPerShare(1),
-            CryptoDiscoMasterX.accRewardPerShare(2),
-            CryptoDiscoMasterX.accRewardPerShare(3),
-            CryptoDiscoMasterX.accRewardPerShare(4),
-            CryptoDiscoMasterX.accRewardPerShare(5),
-            CryptoDiscoMasterX.lastDistributeTimestamp(),
-            CryptoDiscoMasterX.totalLockedRewards(),
-            CryptoDiscoMasterX.diamondHolders(),
-            CryptoDiscoMasterX.platinumHolders(),
-            CryptoDiscoMasterX.goldHolders(),
-            CryptoDiscoMasterX.silverHolders(),
-            CryptoDiscoMasterX.bronzeHolders(),
-        ]);
+            noneAcc, bronzeAcc, silverAcc, goldAcc, platinumAcc, diamondAcc,
+            lastDist, totalLocked,
+            diamondHolders, platinumHolders, goldHolders, silverHolders, bronzeHolders
+        ] = contractData;
 
         const stats = {
             id: 1,

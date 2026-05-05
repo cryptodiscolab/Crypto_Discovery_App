@@ -9,7 +9,7 @@ const BASESCAN_API_URL = 'https://api.etherscan.io/v2/api?chainid=84532';
 
 const contract = {
     name: 'DailyAppV13',
-    address: '0x369aBcD44d3D510f4a20788BBa6F47C99e57d267',
+    address: process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA,
     contractFile: 'contracts/DailyAppV13.sol',
     constructorArgs: [
         '0x8bcf8b1959aaed2c33e55edc9d0b2633f7c7c35c', // creatorToken

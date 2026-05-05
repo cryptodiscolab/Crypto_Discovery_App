@@ -81,9 +81,9 @@ paths = [
 
 [[rules]]
     id = "mcp-github-token"
-    description = "Detected MCP GitHub Personal Access Token (ghp_ prefix). High risk of compromising repository access."
-    regex = '''ghp_[a-zA-Z0-9]{36,40}'''
-    keywords = ["ghp_"]
+    description = "Detected GitHub Personal Access Token (ghp_ or github_pat_ prefix). High risk of compromising repository access."
+    regex = '''(?:ghp_|github_pat_)[a-zA-Z0-9]{36,255}'''
+    keywords = ["ghp_", "github_pat_"]
 
 [[rules]]
     id = "mcp-config-secret"

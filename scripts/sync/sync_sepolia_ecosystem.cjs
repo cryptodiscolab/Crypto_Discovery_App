@@ -2,8 +2,12 @@ const { ethers } = require("hardhat");
 require("dotenv").config();
 
 async function main() {
-    const masterXAddress = "0x980770dAcE8f13E10632D3EC1410FAA4c707076c";
-    const dailyAppAddress = "0x369aBcD44d3D510f4a20788BBa6F47C99e57d267"; // New V13.2 Sepolia Fixed
+    const masterXAddress = process.env.MASTER_X_ADDRESS || process.env.VITE_MASTER_X_ADDRESS_SEPOLIA;
+    const dailyAppAddress = process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA;
+    if (!masterXAddress || !dailyAppAddress) {
+        console.error("❌ ERROR: Missing MasterX or DailyApp contract address in .env");
+        process.exit(1);
+    }
 
     console.log("🚀 Syncing Ecosystem on Base Sepolia...");
     console.log("MasterX :", masterXAddress);

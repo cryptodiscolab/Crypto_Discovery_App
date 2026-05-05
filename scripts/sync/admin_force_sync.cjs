@@ -5,14 +5,19 @@ require("dotenv").config();
 async function main() {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const dailyAppAddress = "0x369aBcD44d3D510f4a20788BBa6F47C99e57d267";
+    const dailyAppAddress = process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA;
+    if (!dailyAppAddress) {
+        console.error("❌ ERROR: Contract address not found in environment variables.");
+        process.exit(1);
+    }
 
     if (!supabaseUrl || !supabaseKey) {
         throw new Error("Missing Supabase credentials");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const provider = new ethers.JsonRpcProvider("https://sepolia.base.org");
+    const rpcUrl = process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
     const privateKey = process.env.PRIVATE_KEY;
     if (!privateKey) throw new Error("Missing PRIVATE_KEY");
     const adminWallet = new ethers.Wallet(privateKey, provider);

@@ -32,8 +32,21 @@ async function main() {
             const fromBlock = Math.max(0, latestBlock - i - CHUNK_SIZE);
             const toBlock = Math.max(0, latestBlock - i);
             if (toBlock === 0) break;
-            console.log(`📡 Fetching ${eventName} events from block ${fromBlock} to ${toBlock}...`);
-            const events = await contract.queryFilter(filter, fromBlock, toBlock);
+            
+            // Auto-Retry Logic (Maksimal 3 percobaan)
+            let events = [];
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    console.log(`📡 Fetching ${eventName} events from block ${fromBlock} to ${toBlock} (Attempt ${attempt})...`);
+                    events = await contract.queryFilter(filter, fromBlock, toBlock);
+                    break;
+                } catch (e) {
+                    if (attempt === 3) throw e;
+                    console.warn(`⚠️ Retry ${attempt}/3 for ${eventName} fetching due to: ${e.message}`);
+                    await new Promise(res => setTimeout(res, 2000));
+                }
+            }
+            
             allEvents = allEvents.concat(events);
             if (fromBlock === 0) break;
         }

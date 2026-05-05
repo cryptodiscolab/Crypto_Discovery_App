@@ -16,9 +16,9 @@ const { createClient } = require("@supabase/supabase-js");
 
 // --- CONFIG ---
 const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
-// ✅ Address baru pasca-redeploy (punya PLATINUM + DIAMOND tier)
-const MASTER_X_ADDR = process.env.MASTER_X_ADDRESS || "0x980770dAcE8f13E10632D3EC1410FAA4c707076c";
-const DAILY_APP_ADDR = process.env.DAILY_APP_ADDRESS || "0xfc12f4FEFf825860c5145680bde38BF222cC669A";
+// ✅ Address dinamis dari .env (untuk PLATINUM + DIAMOND tier)
+const MASTER_X_ADDR = process.env.MASTER_X_ADDRESS || process.env.VITE_MASTER_X_ADDRESS_SEPOLIA;
+const DAILY_APP_ADDR = process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

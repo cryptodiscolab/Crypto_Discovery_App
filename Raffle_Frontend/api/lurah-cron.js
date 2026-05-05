@@ -57,7 +57,16 @@ export default async function handler(req, res) {
                 continue;
             }
             try {
-                await publicClient.getBytecode({ address: contract.address });
+                // Auto-Retry Logic
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        await publicClient.getBytecode({ address: contract.address });
+                        break;
+                    } catch (err) {
+                        if (attempt === 3) throw err;
+                        await new Promise(res => setTimeout(res, 1500));
+                    }
+                }
             } catch (e) {
                 auditResults.status = "CRITICAL";
                 auditResults.alerts.push(`Blockchain Error: ${contract.name} (${contract.address.substring(0,6)}) unreachable.`);
@@ -69,19 +78,28 @@ export default async function handler(req, res) {
         const { data: topUser } = await supabase.from('user_profiles').select('wallet_address, total_xp').order('total_xp', { ascending: false }).limit(1).single();
         if (topUser) {
             try {
-                const masterStats = await publicClient.readContract({
-                    address: MASTER_X_ADDRESS,
-                    abi: [{ name: 'users', type: 'function', inputs: [{ name: '', type: 'address' }], outputs: [{ name: 'points', type: 'uint256' }, { name: 'lastClaimTimestamp', type: 'uint64' }, { name: 'referralCount', type: 'uint32' }, { name: 'tier', type: 'uint8' }, { name: 'isVerified', type: 'bool' }, { name: 'referrer', type: 'address' }, { name: 'lastUpdateSeasonId', type: 'uint32' }] }],
-                    functionName: 'users',
-                    args: [topUser.wallet_address]
-                });
+                let masterStats;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        masterStats = await publicClient.readContract({
+                            address: MASTER_X_ADDRESS,
+                            abi: [{ name: 'users', type: 'function', inputs: [{ name: '', type: 'address' }], outputs: [{ name: 'points', type: 'uint256' }, { name: 'lastClaimTimestamp', type: 'uint64' }, { name: 'referralCount', type: 'uint32' }, { name: 'tier', type: 'uint8' }, { name: 'isVerified', type: 'bool' }, { name: 'referrer', type: 'address' }, { name: 'lastUpdateSeasonId', type: 'uint32' }] }],
+                            functionName: 'users',
+                            args: [topUser.wallet_address]
+                        });
+                        break;
+                    } catch (err) {
+                        if (attempt === 3) throw err;
+                        await new Promise(res => setTimeout(res, 1500));
+                    }
+                }
                 const onChainXP = Number(masterStats[0]);
                 if (Math.abs(onChainXP - topUser.total_xp) > 5000) { // Threshold for "Critical Drift"
                     auditResults.status = "DEGRADED";
                     auditResults.alerts.push(`Parity Drift Detected: User ${topUser.wallet_address.substring(0,6)} has high XP mismatch.`);
                 }
             } catch (e) {
-                console.warn("Parity check skipped:", e.message);
+                console.warn("Parity check skipped (RPC Failure):", e.message);
             }
         }
 

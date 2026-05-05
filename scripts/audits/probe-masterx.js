@@ -1,7 +1,12 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-    const MASTER_X = "0xf074b0457d5c092bb67e62734B13C5f4cBC69e89";
+    // Dynamic Contract Address to prevent Drift
+    const MASTER_X = process.env.MASTER_X_ADDRESS || process.env.VITE_MASTER_X_ADDRESS_SEPOLIA;
+    if (!MASTER_X) {
+        console.error("❌ ERROR: MASTER_X_ADDRESS not found in environment variables.");
+        process.exit(1);
+    }
 
     // ABI minimal hanya fungsi yang PASTI ada di kontrak lama
     const ABI_PROBE = [
