@@ -392,67 +392,68 @@ function AdminRaffleRow({ raffleId }) {
     const hoursLeft = Math.floor(timeLeft / 3600);
 
     return (
-        <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-black/40 border border-white/5 rounded-[2rem] hover:border-indigo-500/20 transition-all gap-4">
-            <div className="flex items-center gap-5 flex-1 w-full">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 flex items-center justify-center border border-indigo-500/20 relative">
-                    <Ticket className="w-6 h-6 text-indigo-400" />
-                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded-lg shadow-lg">
-                        #{raffle.id}
+        <div className="space-y-4">
+            <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-black/40 border border-white/5 rounded-[2rem] hover:border-indigo-500/20 transition-all gap-4">
+                <div className="flex items-center gap-5 flex-1 w-full">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 flex items-center justify-center border border-indigo-500/20 relative">
+                        <Ticket className="w-6 h-6 text-indigo-400" />
+                        <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded-lg shadow-lg">
+                            #{raffle.id}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-3">
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest">PRIZE RAFFLE</h4>
+                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${raffle.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                                {raffle.isActive ? 'ACTIVE' : raffle.isFinalized ? 'FINALIZED' : 'CLOSED'}
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-slate-500 font-bold uppercase tracking-tight">
+                            <span className="flex items-center gap-1.5"><Users size={12} className="text-slate-700" /> {Number(raffle.totalTickets || 0)} / {Number(raffle.maxTickets || 0)} PARTICIPANTS</span>
+                            <span className="flex items-center gap-1.5"><Trophy size={12} className="text-slate-700" /> {raffle.winnerCount} WINNERS SELECTED</span>
+                            {raffle.isActive && (
+                                <span className="flex items-center gap-1.5 text-amber-500/60"><Clock size={12} /> {hoursLeft}H REMAINING</span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-3">
-                        <h4 className="text-sm font-black text-white uppercase tracking-widest">PRIZE RAFFLE</h4>
-                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${raffle.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
-                            {raffle.isActive ? 'ACTIVE' : raffle.isFinalized ? 'FINALIZED' : 'CLOSED'}
-                        </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                        <span className="flex items-center gap-1.5"><Users size={12} className="text-slate-700" /> {Number(raffle.totalTickets || 0)} / {Number(raffle.maxTickets || 0)} PARTICIPANTS</span>
-                        <span className="flex items-center gap-1.5"><Trophy size={12} className="text-slate-700" /> {raffle.winnerCount} WINNERS SELECTED</span>
-                        {raffle.isActive && (
-                            <span className="flex items-center gap-1.5 text-amber-500/60"><Clock size={12} /> {hoursLeft}H REMAINING</span>
-                        )}
-                    </div>
+                <div className="w-full md:w-auto">
+                    {raffle.isActive ? (
+                        <button
+                            onClick={handleDraw}
+                            disabled={isDrawing || drawPending || !canDraw}
+                            className={`relative w-full md:w-auto px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
+                                canDraw && !drawPending
+                                ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20 hover:scale-105'
+                                : 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                            }`}
+                        >
+                            {(isDrawing || drawPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                <>DRAW WINNERS <ArrowRight className="w-4 h-4" /></>
+                            )}
+                            {canDraw && !isDrawing && !drawPending && <div className="absolute inset-0 rounded-2xl border-2 border-amber-400 animate-ping opacity-20 pointer-events-none" />}
+                        </button>
+                    ) : isQrngPending || drawPending ? (
+                        <div className="flex items-center gap-2 px-6 py-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                            <Loader2 size={14} className="animate-spin" /> QRNG PENDING...
+                        </div>
+                    ) : raffle.isFinalized ? (
+                        <div className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                            <Trophy size={14} /> FINALIZED
+                        </div>
+                    ) : (
+                        <div className="px-6 py-3 bg-slate-800/30 border border-white/5 rounded-2xl text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                            CLOSED
+                        </div>
+                    )}
                 </div>
             </div>
-
-            <div className="w-full md:w-auto">
-                {raffle.isActive ? (
-                    <button
-                        onClick={handleDraw}
-                        disabled={isDrawing || drawPending || !canDraw}
-                        className={`relative w-full md:w-auto px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
-                            canDraw && !drawPending
-                            ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20 hover:scale-105'
-                            : 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
-                        }`}
-                    >
-                        {(isDrawing || drawPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                            <>DRAW WINNERS <ArrowRight className="w-4 h-4" /></>
-                        )}
-                        {canDraw && !isDrawing && !drawPending && <div className="absolute inset-0 rounded-2xl border-2 border-amber-400 animate-ping opacity-20 pointer-events-none" />}
-                    </button>
-                ) : isQrngPending || drawPending ? (
-                    <div className="flex items-center gap-2 px-6 py-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
-                        <Loader2 size={14} className="animate-spin" /> QRNG PENDING...
-                    </div>
-                ) : raffle.isFinalized ? (
-                    <div className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-                        <Trophy size={14} /> FINALIZED
-                    </div>
-                ) : (
-                    <div className="px-6 py-3 bg-slate-800/30 border border-white/5 rounded-2xl text-slate-500 text-[10px] font-black uppercase tracking-widest">
-                        CLOSED
-                    </div>
-                )}
-            </div>
+            {/* Winners Panel — tampil setelah QRNG callback selesai */}
+            {raffle.isFinalized && raffle.winners && raffle.winners.length > 0 && (
+                <WinnersPanel winners={raffle.winners} raffleId={raffle.id} />
+            )}
         </div>
-        {/* Winners Panel — tampil setelah QRNG callback selesai */}
-        {raffle.isFinalized && raffle.winners && raffle.winners.length > 0 && (
-            <WinnersPanel winners={raffle.winners} raffleId={raffle.id} />
-        )}
-    </div>
     );
 }
