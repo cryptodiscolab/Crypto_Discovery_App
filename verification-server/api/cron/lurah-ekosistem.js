@@ -260,6 +260,8 @@ async function callGeminiWithFallback(initialModelId, promptText) {
                     usedModel: model
                 };
             } catch (err) {
+                // Catches Network Errors (Timeout, DNS, Connection Reset) or JSON parse failures.
+                // Does NOT catch HTTP 429 (Quota) or 404 (Not Found) which are handled in the try block above.
                 console.error(`❌ [Fetch Error] Key ${i+1} pada model ${model}:`, err.message);
                 lastError = err.message;
             }
