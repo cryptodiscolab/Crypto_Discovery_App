@@ -378,32 +378,41 @@ export default async function handler(req, res) {
                         .insert([missionData])
                         .select()
                         .maybeSingle();
-                    
                     if (cErr) throw cErr;
 
-                    // 2. Create matching Daily Task (Inactive until verified)
+                    // 2. Batch Insert Daily Tasks — one per action_type
+                    const actionTypes = Array.isArray(payload.action_types) && payload.action_types.length > 0
+                        ? payload.action_types
+                        : ['follow'];
+
+                    const taskRows = actionTypes.map(action => ({
+                        title: `${missionData.title} (${action.toUpperCase()})`,
+                        description: missionData.title,
+                        xp_reward: 0,
+                        platform: missionData.platform_code || 'farcaster',
+                        action_type: action,
+                        link: missionData.link || '',
+                        is_active: false,
+                        task_type: 'ugc',
+                        onchain_id: campaign.id,
+                        creator_address: missionData.sponsor_address,
+                        is_base_social_required: !!missionData.is_base_social_required,
+                        min_neynar_score: missionData.min_neynar_score || 0,
+                        created_at: new Date().toISOString()
+                    }));
+
                     const { error: tErr } = await supabaseAdmin
                         .from('daily_tasks')
-                        .insert([{
-                            description: missionData.title,
-                            xp_reward: 0, // UGC tasks use dynamic point_settings 'ugc_task_completion'
-                            platform: missionData.platform_code || 'farcaster',
-                            action_type: payload.action_type || 'follow',
-                            link: missionData.link,
-                            is_active: false,
-                            task_type: 'ugc',
-                            onchain_id: campaign.id,
-                            creator_address: missionData.sponsor_address
-                        }]);
-
+                        .insert(taskRows);
                     if (tErr) throw tErr;
 
-                    await logAdminAction(targetAddress, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, ...missionData });
+                    await logAdminAction(targetAddress, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, action_count: taskRows.length, ...missionData });
                     return res.status(200).json({ success: true, data: campaign });
                 } catch (e) {
                     return res.status(500).json({ error: e.message });
                 }
             }
+
             case 'VERIFY_UGC_PAYMENT_ONCHAIN':
                 await handleVerifyUgcPaymentOnchain(req, res);
                 break;

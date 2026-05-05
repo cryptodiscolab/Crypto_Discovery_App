@@ -66,6 +66,7 @@ tmp_*.mjs
 tmp_*.ts
 *.tmp
 *.scratch.*
+lint_output.txt
 
 # === LEGACY & ARCHIVE FOLDERS (Source of truth is /contracts, not archives) ===
 # _archive/ folder contains old contract versions - not needed in clean tree

@@ -274,6 +274,7 @@ export default async function handler(req, res) {
             case 'claim': await handleClaim(req, res); break;
             case 'verify': await handleVerify(req, res); break;
             case 'social-verify': await handleSocialVerify(req, res); break;
+            case 'claim-ugc-campaign': await handleClaimUgcCampaign(req, res); break;
             default: res.status(400).json({ error: 'Invalid action' }); break;
         }
     } catch (error) {
@@ -457,4 +458,126 @@ async function handleSocialVerify(req, res) {
     });
 
     return res.status(200).json({ success: true, xp, message: `Task verified.` });
+}
+
+/**
+ * 🏆 ALL-OR-NOTHING UGC CAMPAIGN CLAIM
+ * Validates all sub-tasks are verified for a campaign, then grants total XP + USDC reward.
+ */
+async function handleClaimUgcCampaign(req, res) {
+    const { wallet_address, signature, message, campaign_id } = req.body;
+
+    if (!wallet_address || !signature || !message || !campaign_id) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const valid = await verifyMessage({ address: wallet_address, message, signature });
+    if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+    try {
+        // 1. Fetch all sub-tasks for this campaign
+        const { data: subTasks, error: stErr } = await supabaseAdmin
+            .from('daily_tasks')
+            .select('id, action_type, xp_reward, platform')
+            .eq('onchain_id', campaign_id)
+            .eq('task_type', 'ugc')
+            .eq('is_active', true);
+
+        if (stErr) throw stErr;
+        if (!subTasks || subTasks.length === 0) {
+            return res.status(404).json({ error: 'Campaign sub-tasks not found or not yet activated.' });
+        }
+
+        // 2. Check if already claimed this campaign
+        const { data: existingClaim } = await supabaseAdmin
+            .from('user_task_claims')
+            .select('id')
+            .eq('wallet_address', wallet_address.toLowerCase())
+            .eq('task_id', `ugc_campaign_${campaign_id}`)
+            .maybeSingle();
+
+        if (existingClaim) {
+            return res.status(200).json({ success: true, already_claimed: true, message: 'Campaign reward already claimed.' });
+        }
+
+        // 3. Verify user has completed ALL sub-tasks
+        const subTaskIds = subTasks.map(t => t.id);
+        const { data: userClaims, error: clErr } = await supabaseAdmin
+            .from('user_task_claims')
+            .select('task_id')
+            .eq('wallet_address', wallet_address.toLowerCase())
+            .in('task_id', subTaskIds);
+
+        if (clErr) throw clErr;
+
+        const completedIds = new Set((userClaims || []).map(c => c.task_id));
+        const allDone = subTaskIds.every(id => completedIds.has(id));
+
+        if (!allDone) {
+            const remaining = subTaskIds.filter(id => !completedIds.has(id)).length;
+            return res.status(400).json({
+                error: `Belum semua tugas selesai. Sisa: ${remaining} tugas.`,
+                completed: completedIds.size,
+                total: subTaskIds.length
+            });
+        }
+
+        // 4. Calculate total XP from all sub-tasks dynamically
+        let totalXp = 0;
+        for (const task of subTasks) {
+            const dynamicKey = `${task.platform}_${task.action_type}`.toLowerCase();
+            const xpVal = await getPointValue(dynamicKey);
+            totalXp += xpVal > 0 ? xpVal : (task.xp_reward || 0);
+        }
+        // Add UGC campaign completion bonus
+        const ugcBonus = await getPointValue('ugc_task_completion');
+        totalXp += ugcBonus;
+
+        // 5. Fetch campaign for USDC reward amount
+        const { data: campaign } = await supabaseAdmin
+            .from('campaigns')
+            .select('reward_amount_per_user, reward_symbol, title')
+            .eq('id', campaign_id)
+            .maybeSingle();
+
+        // 6. Insert master campaign claim record (prevents double claim)
+        await supabaseAdmin.from('user_task_claims').insert({
+            wallet_address: wallet_address.toLowerCase(),
+            task_id: `ugc_campaign_${campaign_id}`,
+            xp_earned: totalXp,
+            platform: 'ugc',
+            action_type: 'campaign_complete'
+        });
+
+        // 7. Grant XP atomically
+        if (totalXp > 0) {
+            const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: wallet_address.toLowerCase(),
+                p_amount: totalXp
+            });
+            if (xpErr) console.error('[handleClaimUgcCampaign] fn_increment_xp failed:', xpErr.message);
+        }
+
+        // 8. Log activity
+        await logActivity({
+            wallet: wallet_address,
+            category: 'XP',
+            type: 'UGC Campaign Complete',
+            description: `Completed UGC Campaign: ${campaign?.title || campaign_id}`,
+            amount: totalXp,
+            symbol: 'XP',
+            metadata: { campaign_id, sub_task_count: subTasks.length, usdc_reward: campaign?.reward_amount_per_user }
+        });
+
+        return res.status(200).json({
+            success: true,
+            xp: totalXp,
+            usdc_reward: campaign?.reward_amount_per_user || '0',
+            reward_symbol: campaign?.reward_symbol || 'USDC',
+            message: 'Campaign reward claimed successfully!'
+        });
+    } catch (err) {
+        console.error('[handleClaimUgcCampaign]', err);
+        return res.status(500).json({ error: err.message });
+    }
 }

@@ -1,10 +1,11 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.56.4` | **Last Updated**: `2026-05-01T20:00:00+07:00`
+**Version**: `v3.57.0` | **Last Updated**: `2026-05-05T23:45:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
 
 ### 📜 Changelog
+- **v3.57.0**: Hardening UGC Mission Pipeline. Implementasi **Multi-Action Campaign selector**, **All-or-Nothing Reward Claiming**, dan **Grouped UI Components** (`UGCCampaignCard`). Validasi URL platform-aware.
 - **v3.56.4**: Hardened Multi-Agent Cognitive Sync. Implementasi **Lurah Brain (AI Filter)**, **Telegram Chat Memory**, dan **Sequential SBT Upgrade Mandate**. Penghapusan protokol "Izin Pemeliharaan" untuk agen otonom.
 - **v3.56.3**: Implementasi Raffle v2.1 Refund Protocol & OpenClaw Security Audit.
 
@@ -29,6 +30,7 @@
 16. [Self-Healing Claim Pipeline](#16-self-healing-claim-pipeline)
 17. [Concurrent UI Performance](#17-concurrent-ui-performance)
 18. [SBT Tier Integration Mandate](#18-sbt-tier-integration-mandate)
+19. [UGC Multi-Action & All-or-Nothing Campaign Workflow](#19-ugc-multi-action--all-or-nothing-campaign-workflow)
 
 ---
 
@@ -874,3 +876,49 @@ Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Har
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
 *Antigravity — Nexus Master Architect. Protocol v3.56.4 Locked.*
+
+---
+
+## 19. UGC Multi-Action & All-or-Nothing Campaign Workflow
+
+Sistem ini berevolusi dari tugas tunggal menjadi kampanye terstruktur guna meningkatkan retensi dan kualitas engagement.
+
+### 19.1 Arsitektur Data Kampanye
+- **Tabel `campaigns`**: Bertindak sebagai entitas parent yang menyimpan `title`, `reward_amount`, dan metadata global.
+- **Tabel `daily_tasks`**: Menyimpan sub-tugas individu. Kunci penghubungnya adalah `onchain_id` yang diisi dengan ID Kampanye.
+- **Tabel `user_task_claims`**: 
+  - Mencatat verifikasi individual sub-tugas (reward 0).
+  - Mencatat klaim final kampanye (ID Kampanye) untuk memicu reward XP/USDC.
+
+### 19.2 Alur Pembuatan (Batching)
+```javascript
+// admin-bundle.js
+const { data: tasks, error: taskError } = await supabaseAdmin
+    .from('daily_tasks')
+    .insert(action_types.map(act => ({
+        title: `${title} (${act})`,
+        action_type: act,
+        onchain_id: campaignId,
+        task_type: 'ugc',
+        // ... metadata lainnya
+    })));
+```
+
+### 19.3 Alur Klaim (Atomic All-or-Nothing)
+1. **Frontend**: Menghitung `completedCount` dari sub-tugas yang ada di `offChainClaims`.
+2. **Logic**: Jika `completedCount === subTasks.length`, tampilkan tombol klaim.
+3. **Backend (`claim-ugc-campaign`)**:
+   - Query seluruh sub-tugas kampanye X.
+   - Query seluruh claim user untuk sub-tugas kampanye X.
+   - Bandingkan: `count(subTasks) == count(userClaims)`.
+   - Jika `true`, eksekusi `fn_increment_xp` dan increment saldo USDC.
+   - Tandai kampanye sebagai `claimed` untuk user tersebut.
+
+### 19.4 Checklist Kesehatan UGC v3.57.0
+1. [ ] **Regex Link Guard**: Link harus valid sesuai platform (Warpcast/X/TikTok).
+2. [ ] **Multi-Action Bound**: Maksimal 3 aksi per kampanye untuk menjaga UX.
+3. [ ] **Atomic Claims**: Reward tidak boleh bocor per sub-tugas, hanya di level parent kampanye.
+4. [ ] **Referral Loop**: Setiap klaim sukses harus memicu CTA sharing sosial.
+
+---
+*End of Task Feature Workflow - Nexus v3.57.0 Locked.*

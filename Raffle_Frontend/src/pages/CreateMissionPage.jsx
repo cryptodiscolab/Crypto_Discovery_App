@@ -9,11 +9,55 @@ import { parseUnits, erc20Abi } from 'viem';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { CONTRACTS } from '../lib/contracts';
 
-// USDC Address (Base Sepolia for testing, Base Mainnet for production)
-const USDC_ADDRESS = import.meta.env.VITE_CHAIN_ID === '8453' 
-    ? '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' 
-    : '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+// Platform-specific action terms
+const PLATFORM_ACTIONS = {
+    farcaster: [
+        { value: 'follow',  label: 'Follow' },
+        { value: 'like',    label: 'Like' },
+        { value: 'recast',  label: 'Recast' },
+        { value: 'quote',   label: 'Quote Cast' },
+        { value: 'reply',   label: 'Reply' }
+    ],
+    twitter: [
+        { value: 'follow',  label: 'Follow' },
+        { value: 'like',    label: 'Like' },
+        { value: 'repost',  label: 'Repost' },
+        { value: 'quote',   label: 'Quote Tweet' },
+        { value: 'reply',   label: 'Reply' }
+    ],
+    tiktok: [
+        { value: 'follow',  label: 'Follow' },
+        { value: 'like',    label: 'Like' },
+        { value: 'comment', label: 'Comment' },
+        { value: 'duet',    label: 'Duet' }
+    ],
+    instagram: [
+        { value: 'follow',  label: 'Follow' },
+        { value: 'like',    label: 'Like' },
+        { value: 'comment', label: 'Comment' },
+        { value: 'repost',  label: 'Repost' }
+    ],
+    onchain: [
+        { value: 'transaction', label: 'Transaction' }
+    ]
+};
+
+// Platform URL validators
+const PLATFORM_URL_RULES = {
+    farcaster:  { pattern: /warpcast\.com/i,            hint: 'warpcast.com' },
+    twitter:    { pattern: /(twitter\.com|x\.com)/i,   hint: 'x.com or twitter.com' },
+    tiktok:     { pattern: /tiktok\.com/i,              hint: 'tiktok.com' },
+    instagram:  { pattern: /instagram\.com/i,           hint: 'instagram.com' },
+    onchain:    { pattern: /.*/,                        hint: 'any URL' }
+};
+
+function validatePlatformUrl(url, platform) {
+    const rule = PLATFORM_URL_RULES[platform];
+    if (!rule) return true;
+    return rule.pattern.test(url);
+}
 
 export function CreateMissionPage() {
     const { address, isConnected } = useAccount();
@@ -25,16 +69,16 @@ export function CreateMissionPage() {
     // System Config State
     const [ugcConfig, setUgcConfig] = useState({
         listing_fee_usdc: '5',
-        treasury_address: '0x980770dace8f13e10632d3ec1410faa4c707076c',
+        treasury_address: CONTRACTS.MASTER_X,
         is_active: true
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedActions, setSelectedActions] = useState(['follow']);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         platform: 'farcaster',
-        action_type: 'follow',
         link: '',
         reward_amount_per_user: '0.1', // USDC
         max_participants: '100',
@@ -44,6 +88,21 @@ export function CreateMissionPage() {
         minAccountAge: '0',
         minNeynarScore: '0'
     });
+
+    // Reset actions when platform changes
+    const handlePlatformChange = (newPlatform) => {
+        const defaultAction = PLATFORM_ACTIONS[newPlatform]?.[0]?.value || 'follow';
+        setSelectedActions([defaultAction]);
+        setFormData(prev => ({ ...prev, platform: newPlatform, link: '' }));
+    };
+
+    const toggleAction = (value) => {
+        setSelectedActions(prev => {
+            if (prev.includes(value)) return prev.filter(a => a !== value);
+            if (prev.length >= 3) { toast.error('Maksimal 3 aksi per misi.'); return prev; }
+            return [...prev, value];
+        });
+    };
 
     useEffect(() => {
         fetchUgcConfig();
@@ -79,6 +138,11 @@ export function CreateMissionPage() {
         e.preventDefault();
         if (!isConnected) return toast.error("Please connect wallet");
         if (!formData.title || !formData.link) return toast.error("Title and Link are required");
+        if (!validatePlatformUrl(formData.link, formData.platform)) {
+            const rule = PLATFORM_URL_RULES[formData.platform];
+            return toast.error(`Link harus dari ${rule.hint}`);
+        }
+        if (selectedActions.length === 0) return toast.error('Pilih minimal 1 aksi.');
 
         setIsSubmitting(true);
         const tid = toast.loading("Processing USDC Payment...");
@@ -86,7 +150,7 @@ export function CreateMissionPage() {
         try {
             // 1. USDC Payment (Transfer to Treasury)
             const txHash = await writeContractAsync({
-                address: USDC_ADDRESS,
+                address: CONTRACTS.USDC,
                 abi: erc20Abi,
                 functionName: 'transfer',
                 args: [ugcConfig.treasury_address, stats.totalAmountRaw]
@@ -108,12 +172,14 @@ export function CreateMissionPage() {
                 title: formData.title,
                 description: formData.description,
                 platform_code: formData.platform,
+                action_types: selectedActions,
+                link: formData.link,
                 reward_amount_per_user: formData.reward_amount_per_user,
                 total_reward_pool: stats.rewardPool,
                 max_participants: parseInt(formData.max_participants),
                 sponsor_address: address.toLowerCase(),
                 duration_days: parseInt(formData.duration_days),
-                status: 'pending', 
+                status: 'pending',
                 reward_symbol: 'USDC',
                 payment_tx_hash: txHash,
                 is_active: false,
@@ -190,7 +256,7 @@ export function CreateMissionPage() {
                                 
                                 <div className="grid grid-cols-1 gap-6 relative">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <label className="label-native text-slate-500 flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> MISSION TITLE
                                         </label>
                                         <input
@@ -204,7 +270,7 @@ export function CreateMissionPage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <label className="label-native text-slate-500 flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-slate-700" /> DESCRIPTION (OPTIONAL)
                                         </label>
                                         <textarea
@@ -217,14 +283,14 @@ export function CreateMissionPage() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <label className="label-native text-slate-500 flex items-center gap-2">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> PLATFORM
                                             </label>
                                             <div className="relative group">
-                                                <select
+                                                 <select
                                                     className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-blue-500/50 transition-all cursor-pointer"
                                                     value={formData.platform}
-                                                    onChange={e => setFormData(prev => ({ ...prev, platform: e.target.value }))}
+                                                    onChange={e => handlePlatformChange(e.target.value)}
                                                 >
                                                     <option value="farcaster">Farcaster</option>
                                                     <option value="twitter">X / Twitter</option>
@@ -236,7 +302,7 @@ export function CreateMissionPage() {
                                             </div>
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <label className="label-native text-slate-500 flex items-center gap-2">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> TARGET LINK
                                             </label>
                                             <div className="relative group">
@@ -244,14 +310,50 @@ export function CreateMissionPage() {
                                                 <input
                                                     type="url"
                                                     required
-                                                    placeholder="https://..."
-                                                    className="w-full bg-white/5 border border-white/5 p-5 pl-12 rounded-2xl text-white font-mono text-sm focus:border-emerald-500/50 outline-none transition-all placeholder:text-slate-700"
+                                                    placeholder={`https://${PLATFORM_URL_RULES[formData.platform]?.hint || '...'}`}
+                                                    className={`w-full bg-white/5 border p-5 pl-12 rounded-2xl text-white font-mono text-sm outline-none transition-all placeholder:text-slate-700 ${
+                                                        formData.link && !validatePlatformUrl(formData.link, formData.platform)
+                                                            ? 'border-red-500/50 focus:border-red-500'
+                                                            : 'border-white/5 focus:border-emerald-500/50'
+                                                    }`}
                                                     value={formData.link}
                                                     onChange={e => setFormData(prev => ({ ...prev, link: e.target.value }))}
                                                 />
+                                                {formData.link && !validatePlatformUrl(formData.link, formData.platform) && (
+                                                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1 pl-1">Link harus dari {PLATFORM_URL_RULES[formData.platform]?.hint}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Multi-Action Selector */}
+                                <div className="space-y-3">
+                                    <label className="label-native text-slate-500 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-violet-500" /> PILIH AKSI <span className="text-violet-500">({selectedActions.length}/3)</span>
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(PLATFORM_ACTIONS[formData.platform] || []).map(act => {
+                                            const active = selectedActions.includes(act.value);
+                                            return (
+                                                <button
+                                                    key={act.value}
+                                                    type="button"
+                                                    onClick={() => toggleAction(act.value)}
+                                                    className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                                        active
+                                                            ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20'
+                                                            : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
+                                                    }`}
+                                                >
+                                                    {active && <span className="mr-1">✓</span>}{act.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {selectedActions.length === 0 && (
+                                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Pilih minimal 1 aksi.</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -289,7 +391,7 @@ export function CreateMissionPage() {
 
                                     {/* Min Followers */}
                                     <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                        <label className="label-native text-slate-500 flex items-center gap-2">
                                             <Users size={12} className="text-slate-600 group-focus-within:text-indigo-400" /> MIN FOLLOWERS
                                         </label>
                                         <input
@@ -304,7 +406,7 @@ export function CreateMissionPage() {
 
                                     {/* Account Age */}
                                     <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                        <label className="label-native text-slate-500 flex items-center gap-2">
                                             <Calculator size={12} className="text-slate-600 group-focus-within:text-indigo-400" /> MIN AGE (DAYS)
                                         </label>
                                         <input
@@ -319,7 +421,7 @@ export function CreateMissionPage() {
 
                                     {/* Neynar Score */}
                                     <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                        <label className="label-native text-slate-500 flex items-center gap-2">
                                             <Zap size={12} className="text-slate-600 group-focus-within:text-blue-400" /> NEYNAR SCORE (0-100)
                                         </label>
                                         <input

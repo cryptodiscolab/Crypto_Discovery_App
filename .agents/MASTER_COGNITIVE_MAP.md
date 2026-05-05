@@ -1,5 +1,5 @@
-# 🧠 DEEP MASTER COGNITIVE MAP (v1.9.9)
-*Project: Crypto Disco | Ecosystem: Base Mainnet | Security: Hardened v3.56.5 | Last Audit: 2026-05-02*
+# 🧠 DEEP MASTER COGNITIVE MAP (v3.57.0)
+*Project: Crypto Disco | Ecosystem: Base Mainnet | Security: Hardened v3.57.0 | Last Audit: 2026-05-05*
 
 Dokumen ini adalah **Jangkar Kognitif** utama bagi Antigravity dan seluruh sub-agen. Peta ini mendefinisikan bagaimana data mengalir, bagaimana kontrak berinteraksi, dan bagaimana agen beroperasi secara otonom.
 
@@ -86,6 +86,12 @@ sequenceDiagram
     AG->>BC: Read Tier Configs
     AG->>DB: Update user_profiles (Tier Parity)
     DB-->>FE: UI Refresh (Pulse Effect)
+
+    Note over FE,API: UGC Multi-Action Flow
+    FE->>API: claim-ugc-campaign(campaign_id)
+    API->>DB: Verify all sub-tasks completed
+    API->>DB: fn_increment_xp (Atomic Reward)
+    DB-->>FE: Completion Modal (Share CTA)
 ```
 
 ---

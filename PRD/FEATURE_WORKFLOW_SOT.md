@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.56.5)
-**Last Updated**: 2026-05-02T19:00:00+07:00 — Daily Mojo Hardening & Lurah Vercel Protocol (v3.56.5)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.57.0)
+**Last Updated**: 2026-05-05T23:30:00+07:00 — UGC Mission Hardening & All-or-Nothing Claim (v3.57.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -354,4 +354,33 @@ Arsitektur pemantauan ekosistem sekarang eksklusif berada di jaringan Vercel Ser
 - **Catch-Up Mechanism**: Cron akan melakukan iterasi 2000 blocks per eksekusi. Jika `last_synced_block` tertinggal sangat jauh (mis. 14 hari), dilarang memaksa `sync_state` dengan limit ekstrem. Biarkan catch-up harian otomatis atau lakukan block reset terukur.
 
 ---
-*End of Source of Truth Document - Nexus v3.56.5 Locked.*
+---
+
+## 🏛️ 15. UGC Multi-Action & All-or-Nothing Campaign Workflow (v3.57.0)
+
+Evolusi sistem misi UGC untuk mendukung kampanye multi-tugas yang lebih kompleks dan bernilai tinggi.
+
+### 15.1 Campaign Creation (Creator Side)
+1. **Multi-Action Input**: Creator memilih hingga 3 aksi (Follow, Like, Recast, dsb) dalam satu form.
+2. **URL Validation**: Frontend melakukan regex matching terhadap link berdasarkan platform yang dipilih (Warpcast, X, TikTok, IG).
+3. **Atomic Deployment**:
+   - `admin-bundle.js` menerima array `action_types`.
+   - Melakukan batch insert ke `daily_tasks` dimana setiap sub-tugas memiliki `onchain_id` yang sama (ID Kampanye).
+   - Status kampanye diaktifkan setelah verifikasi pembayaran sukses.
+
+### 15.2 Verification & Progress (User Side)
+1. **Grouping Logic**: `TasksPage.jsx` mem-fetch kampanye aktif dan sub-tugasnya, mengelompokkannya menggunakan komponen `UGCCampaignCard`.
+2. **Individual Verification**: User melakukan verifikasi sub-tugas satu per satu. Setiap sukses verifikasi akan mencatat record di `user_task_claims` namun BELUM memberikan reward XP/USDC.
+3. **Progress Tracking**: UI menampilkan indikator (misal: 1/3, 2/3) secara real-time.
+
+### 15.3 All-or-Nothing Reward Claim
+1. **Completion Trigger**: Saat progres mencapai 3/3 (atau N/N), tombol "CLAIM TOTAL REWARD" aktif di Pop-up Modal.
+2. **Final Verification (`claim-ugc-campaign`)**:
+   - Backend mengecek integritas seluruh sub-tugas yang terikat ke kampanye tersebut.
+   - Jika valid, backend mengeksekusi distribusi XP dan USDC secara atomik.
+   - Record `user_task_claims` untuk ID kampanye (sebagai parent) dibuat untuk menandai kampanye selesai secara permanen.
+3. **Social Sharing**: Setelah klaim, user disuguhi opsi sharing referal ke media sosial untuk memperkuat loop pertumbuhan.
+
+---
+*End of Source of Truth Document - Nexus v3.57.0 Locked.*
+

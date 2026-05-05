@@ -113,7 +113,7 @@ const RaffleDetailPage = () => {
             <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
                 <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
                 <h1 className="text-2xl font-bold text-white mb-2">Raffle Not Found</h1>
-                <p className="text-zinc-400 mb-6">The raffle you are looking for doesn't exist or hasn't been synced yet.</p>
+                <p className="text-zinc-400 mb-6">The raffle you are looking for doesn&apos;t exist or hasn&apos;t been synced yet.</p>
                 <button 
                     onClick={() => navigate('/raffles')}
                     className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all"

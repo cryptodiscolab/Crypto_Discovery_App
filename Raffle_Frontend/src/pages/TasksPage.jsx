@@ -9,6 +9,7 @@ import { ABIS, CONTRACTS, APP_CONFIG, DAILY_APP_ABI } from '../lib/contracts';
 import toast from 'react-hot-toast';
 import { TaskList } from '../components/tasks/TaskList';
 import { OffersList } from '../components/tasks/OffersList';
+import { UGCCampaignCard } from '../components/UGCCampaignCard';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
@@ -294,6 +295,48 @@ export function TasksPage() {
         }
     }, [address]);
 
+    // Fetch active UGC campaigns + their sub-tasks
+    const [ugcCampaigns, setUgcCampaigns] = useState([]);
+    useEffect(() => {
+        const fetchUgcCampaigns = async () => {
+            try {
+                // 1. Fetch active campaigns
+                const { data: campaigns } = await supabase
+                    .from('campaigns')
+                    .select('id, title, platform_code, reward_amount_per_user, reward_symbol, is_active, is_verified_payment')
+                    .eq('is_active', true)
+                    .eq('is_verified_payment', true)
+                    .order('created_at', { ascending: false });
+
+                if (!campaigns || campaigns.length === 0) { setUgcCampaigns([]); return; }
+
+                // 2. Fetch sub-tasks for all campaigns
+                const campaignIds = campaigns.map(c => c.id);
+                const { data: subTasks } = await supabase
+                    .from('daily_tasks')
+                    .select('id, title, action_type, platform, link, onchain_id')
+                    .in('onchain_id', campaignIds)
+                    .eq('task_type', 'ugc')
+                    .eq('is_active', true);
+
+                // 3. Group sub-tasks by campaign
+                const tasksByCampaign = {};
+                (subTasks || []).forEach(t => {
+                    if (!tasksByCampaign[t.onchain_id]) tasksByCampaign[t.onchain_id] = [];
+                    tasksByCampaign[t.onchain_id].push(t);
+                });
+
+                setUgcCampaigns(campaigns.map(c => ({
+                    ...c,
+                    subTasks: tasksByCampaign[c.id] || []
+                })));
+            } catch (e) {
+                console.error('[UGC Fetch]', e);
+            }
+        };
+        fetchUgcCampaigns();
+    }, []);
+
     // Fetch all task data in one batch
     const { data: allTasksRaw, isLoading: isTasksLoading } = useReadContract({
         address: CONTRACTS.DAILY_APP,
@@ -390,6 +433,21 @@ export function TasksPage() {
                 {/* Task Content */}
                 {activeTab === 'tasks' ? (
                     <div className="px-4 mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+                    {/* UGC Campaign Cards */}
+                        {ugcCampaigns.length > 0 && (
+                            <div className="space-y-4">
+                                <p className="label-native text-slate-600 px-1">SPONSORED MISSIONS</p>
+                                {ugcCampaigns.map(campaign => (
+                                    <UGCCampaignCard
+                                        key={campaign.id}
+                                        campaign={campaign}
+                                        subTasks={campaign.subTasks}
+                                        userClaimedTaskIds={offChainClaims}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
                         {/* Supabase Tasks Injection Point */}
                         <TaskList />
 
