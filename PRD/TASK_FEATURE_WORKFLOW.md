@@ -1,10 +1,11 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.57.0` | **Last Updated**: `2026-05-05T23:45:00+07:00`
+**Version**: `v3.58.0` | **Last Updated**: `2026-05-06T06:00:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
 
 ### 📜 Changelog
+- **v3.58.0**: Lurah Ecosystem Hardening & Autonomous Agent Resiliency. Implementasi **Auto-Retry logic** pada RPC, heartbeat dinamis di `system_health`, dan eliminasi hardcoded addresses.
 - **v3.57.0**: Hardening UGC Mission Pipeline. Implementasi **Multi-Action Campaign selector**, **All-or-Nothing Reward Claiming**, dan **Grouped UI Components** (`UGCCampaignCard`). Validasi URL platform-aware.
 - **v3.56.4**: Hardened Multi-Agent Cognitive Sync. Implementasi **Lurah Brain (AI Filter)**, **Telegram Chat Memory**, dan **Sequential SBT Upgrade Mandate**. Penghapusan protokol "Izin Pemeliharaan" untuk agen otonom.
 - **v3.56.3**: Implementasi Raffle v2.1 Refund Protocol & OpenClaw Security Audit.
@@ -76,7 +77,7 @@ graph TB
     end
 
     subgraph "⛓️ Blockchain (Base Sepolia)"
-        DA["DailyApp V13.2<br/>0x369a...d267"]
+        DA["DailyApp V13.2<br/>0x81D6...4B5D"]
         MX["MasterX<br/>0x9807...076c"]
     end
 
@@ -152,9 +153,9 @@ flowchart LR
 
 | Contract | Address | Governance |
 |---|---|---|
-| **DailyApp V13.2** | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` | `AccessControl` |
+| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` |
 | **MasterX (XP)** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` |
-| **Raffle** | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `Ownable` |
+| **Raffle** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` |
 | **CMS V2** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` |
 
 > [!WARNING]

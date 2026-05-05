@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.57.0)
-**Last Updated**: 2026-05-05T23:30:00+07:00 — UGC Mission Hardening & All-or-Nothing Claim (v3.57.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.58.0)
+**Last Updated**: 2026-05-06T06:00:00+07:00 — Lurah Ecosystem Hardening & Autonomous Agent Resiliency (v3.58.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -12,8 +12,8 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 | Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
 | :--- | :--- | :--- | :--- |
 | **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
-| **DailyApp V13.2** | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
-| **Raffle Manager** | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
+| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
+| **Raffle Manager** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
 
 > [!WARNING]
@@ -51,7 +51,7 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 ### 2.1 The Claim Execution
 - **Triggers**: User klik "Claim" pada `DailyClaimModal`.
 - **Pre-Check (Frontend)**: `ProfilePage.jsx` membaca **HANYA** dari `userData.lastDailyBonusClaim` (on-chain) untuk menghitung sisa waktu cooldown (Single Source of Truth).
-- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0x369aBcD44d3D510f4a20788BBa6F47C99e57d267`).
+- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D`).
 - **Success**: MetaMask/Wallet mengembalikan `tx_hash`.
 
 ### 2.2 The Backend Synchronization
@@ -184,8 +184,7 @@ Transisi ekosistem berjalan menuju Mainnet dilindungi oleh sistem "Phased Rollou
 ### 8.2 Kill Switch Execution
 Semua status flag dikontrol melalui: **Admin UI -> System Settings -> Features Flags**. Setiap pembaruan yang dibroadcast WAJIB memerlukan *cryptographic signature verification* dari Dompet Administrator.
 
----
-*End of Source of Truth Document - Nexus v3.56.0 Locked.*
+
 ## 💼 5. UGC Revenue Management & Transaction History Flow (v3.40.12)
 
 Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berputar pada dua siklus: Sistem verifikasi tugas dan History log.
@@ -214,8 +213,7 @@ Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berpu
 - **Rewards (ACCOMPLISHMENT)**: Pemenang undian Raffle / Airdrop khusus.
 - Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.
 
----
-*End of Source of Truth Document - Nexus v3.56.0 Locked.*
+
 
 ## 🏛️ 9. XP Reward Lifecycle & Anti-Whale Economic Model (v3.41.2)
 
@@ -382,5 +380,5 @@ Evolusi sistem misi UGC untuk mendukung kampanye multi-tugas yang lebih kompleks
 3. **Social Sharing**: Setelah klaim, user disuguhi opsi sharing referal ke media sosial untuk memperkuat loop pertumbuhan.
 
 ---
-*End of Source of Truth Document - Nexus v3.57.0 Locked.*
+*End of Source of Truth Document - Nexus v3.58.0 Locked.*
 
