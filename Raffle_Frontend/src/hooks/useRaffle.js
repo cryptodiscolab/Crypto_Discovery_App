@@ -441,7 +441,7 @@ export function useRaffleInfo(raffleId) {
             try {
                 const { data: supabaseData } = await supabase
                     .from('raffles')
-                    .select('created_at')
+                    .select('*')
                     .eq('id', raffleId)
                     .maybeSingle();
                 if (supabaseData) setDbData(supabaseData);
@@ -473,7 +473,7 @@ export function useRaffleInfo(raffleId) {
             metadataURI: r.metadataURI,
             endTime: Number(r.endTime),
             prizePerWinner: r.prizePerWinner,
-            created_at: dbData?.created_at || null
+            ...dbData // Spread all DB metadata (title, description, image_url, etc.)
         },
         isLoading,
         refetch

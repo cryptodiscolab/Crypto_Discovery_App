@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal, Users, Clock, ArrowRight, Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
 import { AdminTransactionButton } from './AdminTransactionButton';
 import { encodeFunctionData } from 'viem';
@@ -18,6 +19,13 @@ function AdminRaffleCreateForm() {
         maxTickets: '100',
         durationDays: '3',
         metadataURI: '',
+        title: '',
+        description: '',
+        image_url: '',
+        external_link: '',
+        twitter_link: '',
+        min_sbt_level: '0',
+        is_base_social_required: true
     });
 
     const calls = [{
@@ -60,7 +68,14 @@ function AdminRaffleCreateForm() {
                                 creator: address,
                                 end_time: new Date(Date.now() + Number(form.durationDays) * 86400 * 1000).toISOString(),
                                 max_tickets: Number(form.maxTickets),
-                                metadata_uri: form.metadataURI || 'ipfs://admin-raffle'
+                                metadata_uri: form.metadataURI || 'ipfs://admin-raffle',
+                                title: form.title,
+                                description: form.description,
+                                image_url: form.image_url,
+                                external_link: form.external_link,
+                                twitter_link: form.twitter_link,
+                                min_sbt_level: Number(form.min_sbt_level),
+                                is_base_social_required: form.is_base_social_required
                             }
                         })
                     });
@@ -71,7 +86,19 @@ function AdminRaffleCreateForm() {
             }
 
             toast.success(`Raffle #${actualId} created successfully!`);
-            setForm({ winnerCount: '1', maxTickets: '100', durationDays: '3', metadataURI: '' });
+            setForm({ 
+                winnerCount: '1', 
+                maxTickets: '100', 
+                durationDays: '3', 
+                metadataURI: '',
+                title: '',
+                description: '',
+                image_url: '',
+                external_link: '',
+                twitter_link: '',
+                min_sbt_level: '0',
+                is_base_social_required: true
+            });
         } catch (e) {
             console.error("Read currentId failed:", e);
             toast.success('Raffle created on-chain!');
@@ -80,7 +107,42 @@ function AdminRaffleCreateForm() {
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Title */}
+                <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Campaign Title</label>
+                    <input type="text"
+                        value={form.title}
+                        onChange={e => setForm({ ...form, title: e.target.value })}
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-black outline-none focus:border-indigo-500/50 transition-all"
+                        placeholder="e.g. Genesis Gacha Pass"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">SBT Requirement</label>
+                    <select
+                        value={form.min_sbt_level}
+                        onChange={e => setForm({ ...form, min_sbt_level: e.target.value })}
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-black outline-none focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
+                    >
+                        {[0, 1, 2, 3, 4, 5].map(lv => (
+                            <option key={lv} value={lv} className="bg-zinc-950">Level {lv}+</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Description */}
+                <div className="md:col-span-3 space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Description</label>
+                    <textarea 
+                        value={form.description}
+                        onChange={e => setForm({ ...form, description: e.target.value })}
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-medium outline-none focus:border-indigo-500/50 transition-all h-24 resize-none"
+                        placeholder="Describe the raffle and its prizes..."
+                    />
+                </div>
+
                 <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Winner Distribution</label>
                     <div className="relative group">
@@ -120,17 +182,46 @@ function AdminRaffleCreateForm() {
                         </select>
                     </div>
                 </div>
+
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Prize Metadata (JSON)</label>
-                    <div className="relative group">
-                        <AlertCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-white transition-colors" />
-                        <input type="text"
-                            value={form.metadataURI}
-                            onChange={e => setForm({ ...form, metadataURI: e.target.value })}
-                            placeholder="ipfs://... (Prize details)"
-                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white font-mono focus:border-white/20 outline-none transition-all"
-                        />
-                    </div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Hero Image URL</label>
+                    <input type="text"
+                        value={form.image_url}
+                        onChange={e => setForm({ ...form, image_url: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-mono focus:border-white/20 outline-none transition-all"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Twitter / X Link</label>
+                    <input type="text"
+                        value={form.twitter_link}
+                        onChange={e => setForm({ ...form, twitter_link: e.target.value })}
+                        placeholder="https://x.com/..."
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-mono focus:border-white/20 outline-none transition-all"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Website Link</label>
+                    <input type="text"
+                        value={form.external_link}
+                        onChange={e => setForm({ ...form, external_link: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-mono focus:border-white/20 outline-none transition-all"
+                    />
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4 bg-white/3 border border-white/5 p-4 rounded-2xl">
+                <div 
+                    onClick={() => setForm({ ...form, is_base_social_required: !form.is_base_social_required })}
+                    className={`w-12 h-6 rounded-full transition-all cursor-pointer relative ${form.is_base_social_required ? 'bg-blue-600' : 'bg-slate-700'}`}
+                >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.is_base_social_required ? 'left-7' : 'left-1'}`} />
+                </div>
+                <div className="flex-1">
+                    <p className="text-[10px] font-black text-white uppercase tracking-wider">Identity Guard (Basenames)</p>
+                    <p className="text-[9px] text-slate-500 font-bold uppercase">Require Farcaster/Twitter verification</p>
                 </div>
             </div>
 
@@ -337,8 +428,10 @@ function AdminRaffleRow({ raffleId }) {
     const { drawRaffle, isDrawing } = useRaffle();
     const [drawPending, setDrawPending] = useState(false);
     const publicClient = usePublicClient();
+    const navigate = useNavigate();
 
-    const handleDraw = async () => {
+    const handleDraw = async (e) => {
+        e.stopPropagation();
         try {
             setDrawPending(true);
             const hash = await drawRaffle(raffleId);
@@ -393,10 +486,17 @@ function AdminRaffleRow({ raffleId }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-black/40 border border-white/5 rounded-[2rem] hover:border-indigo-500/20 transition-all gap-4">
+            <div 
+                onClick={() => navigate(`/raffles/${raffle.id}`)}
+                className="flex flex-col md:flex-row items-center justify-between p-6 bg-black/40 border border-white/5 rounded-[2rem] hover:border-indigo-500/20 transition-all gap-4 cursor-pointer group"
+            >
                 <div className="flex items-center gap-5 flex-1 w-full">
-                    <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 flex items-center justify-center border border-indigo-500/20 relative">
-                        <Ticket className="w-6 h-6 text-indigo-400" />
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 flex items-center justify-center border border-indigo-500/20 relative overflow-hidden group-hover:border-indigo-400 transition-colors">
+                        {raffle.image_url ? (
+                            <img src={raffle.image_url} alt={raffle.title} className="w-full h-full object-cover" />
+                        ) : (
+                            <Ticket className="w-6 h-6 text-indigo-400" />
+                        )}
                         <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded-lg shadow-lg">
                             #{raffle.id}
                         </div>
@@ -404,7 +504,9 @@ function AdminRaffleRow({ raffleId }) {
 
                     <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-3">
-                            <h4 className="text-sm font-black text-white uppercase tracking-widest">PRIZE RAFFLE</h4>
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest truncate max-w-[200px]">
+                                {raffle.title || "ADMIN RAFFLE"}
+                            </h4>
                             <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${raffle.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
                                 {raffle.isActive ? 'ACTIVE' : raffle.isFinalized ? 'FINALIZED' : 'CLOSED'}
                             </span>

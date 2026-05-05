@@ -268,6 +268,13 @@ export default async function handler(req, res) {
                     token_id: payload.token_id || 0,
                     end_time: payload.end_time,
                     max_tickets: payload.max_tickets || 100,
+                    title: payload.title || `Raffle #${payload.raffle_id}`,
+                    description: payload.description || '',
+                    image_url: payload.image_url || '',
+                    external_link: payload.external_link || '',
+                    twitter_link: payload.twitter_link || '',
+                    min_sbt_level: payload.min_sbt_level || 0,
+                    is_base_social_required: !!payload.is_base_social_required,
                     is_active: true,
                     updated_at: new Date().toISOString()
                 };

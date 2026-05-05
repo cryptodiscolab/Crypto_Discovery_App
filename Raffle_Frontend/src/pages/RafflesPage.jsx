@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Trophy, Ticket, ArrowRight, Timer, RefreshCw, Zap, Gift, ExternalLink, Loader2, Share2, Clock, Hash, ShieldCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAccount, useReadContract } from 'wagmi';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../hooks/useRaffle';
 import { GaslessBadge } from '../components/GaslessBadge';
@@ -16,6 +16,7 @@ function RaffleRow({ raffleId, filter = 'all' }) {
   const { raffle, isLoading } = useRaffleInfo(raffleId);
   const { buyTickets, buyTicketsGasless, claimPrize, isGaslessSupported } = useRaffle();
   const { data: socialProfile } = useSocialGuard(address);
+  const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [ticketAmount, setTicketAmount] = useState(1);
 
@@ -71,25 +72,31 @@ function RaffleRow({ raffleId, filter = 'all' }) {
   const progress = Math.min((currentTickets / maxTickets) * 100, 100);
 
   return (
-    <div className="flex flex-col p-4 border-b border-white/5 active:bg-white/5 transition-colors group">
+    <div 
+        onClick={() => navigate(`/raffles/${raffle.id}`)}
+        className="flex flex-col p-4 border-b border-white/5 active:bg-white/5 md:border md:rounded-2xl md:mb-4 hover:border-indigo-500/50 transition-all cursor-pointer group bg-zinc-900/20"
+    >
       {/* Header Row */}
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex gap-3">
-          <div className="w-12 h-12 rounded-lg bg-[#080808] flex items-center justify-center flex-shrink-0 border border-white/10 shadow-xl group-hover:border-indigo-500/50 transition-colors">
-            <Trophy size={20} className="text-indigo-400" />
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex gap-4">
+          <div className="w-16 h-16 rounded-xl bg-zinc-950 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-xl overflow-hidden group-hover:border-indigo-500/50 transition-colors">
+            {raffle.image_url ? (
+                <img src={raffle.image_url} alt={raffle.title} className="w-full h-full object-cover" />
+            ) : (
+                <Trophy size={24} className="text-indigo-400" />
+            )}
           </div>
           <div className="flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="label-native !mb-0 !tracking-widest">
-                {raffle.metadataURI?.includes('ipfs') ? "COMMUNITY PRIZE" : `ELITE RAFFLE #${raffle.id}`}
+              <h3 className="text-sm font-black text-white uppercase tracking-wider truncate max-w-[150px]">
+                {raffle.title || (raffle.metadataURI?.includes('ipfs') ? "COMMUNITY PRIZE" : `ELITE RAFFLE #${raffle.id}`)}
               </h3>
-              <span className="text-[9px] font-mono text-slate-600">ID: #{raffle.id}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`label-native px-2 py-0.5 rounded border leading-none ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded border leading-none ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
                 {raffle.isActive ? 'LIVE' : 'CLOSED'}
               </span>
-              <span className="value-native !text-slate-500 font-mono">
+              <span className="text-[11px] text-indigo-400 font-mono font-bold">
                 {ticketPriceETH ? parseFloat(formatEther(ticketPriceETH)).toFixed(6) : '...'} ETH
               </span>
             </div>
@@ -97,49 +104,21 @@ function RaffleRow({ raffleId, filter = 'all' }) {
         </div>
 
         <div className="text-right flex flex-col items-end gap-1">
-          <div className="flex items-center gap-1 label-native font-mono text-slate-400 justify-end">
+          <div className="flex items-center gap-1 text-[10px] font-black font-mono text-slate-500 justify-end uppercase tracking-widest">
             <Timer size={10} /> {isFinalized ? "FINALIZED" : timeLeft.toUpperCase()}
           </div>
         </div>
       </div>
 
-      {/* Meta Info */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 px-1">
-        <div className="flex items-center gap-1.5">
-          <Hash className="w-3 h-3 text-purple-400/50" />
-          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-            ID: <span className="text-white">#{raffle.id}</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Share2 className="w-3 h-3 text-purple-400/50" />
-          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-            CREATOR: <span className="text-purple-400">{raffle.sponsor ? `${raffle.sponsor.slice(0, 6)}...${raffle.sponsor.slice(-4)}` : 'ADMIN'}</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Clock className="w-3 h-3 text-purple-400/50" />
-          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-            CREATED: <span className="text-slate-400">{raffle.created_at ? new Date(raffle.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'LEGACY'}</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <ShieldCheck className="w-3 h-3 text-purple-400/50" />
-          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-            EXPIRES: <span className="text-slate-400">{raffle.endTime ? new Date(raffle.endTime * 1000).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}</span>
-          </span>
-        </div>
-      </div>
-
       {/* Progress Bar (Subtle) */}
-      <div className="mt-1 mb-3 px-1">
+      <div className="mt-1 mb-4 px-1">
         <div className="flex justify-between items-center mb-2">
-          <span className="label-native !mb-0 !text-slate-600">TICKETS SOLD</span>
-          <span className="value-native !text-slate-400">{currentTickets} / {maxTickets}</span>
+          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">TICKETS SOLD</span>
+          <span className="text-[11px] font-bold text-slate-400">{currentTickets} / {maxTickets}</span>
         </div>
-        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
           <div
-            className={`h-full ${isFinalized ? 'bg-slate-600' : 'bg-indigo-500'}`}
+            className={`h-full rounded-full transition-all duration-1000 ${isFinalized ? 'bg-slate-600' : 'bg-gradient-to-r from-indigo-600 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)]'}`}
             style={{ width: `${progress}%` }}
           />
         </div>

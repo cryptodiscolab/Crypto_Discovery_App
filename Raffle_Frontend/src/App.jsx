@@ -20,6 +20,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.default || m.LoginPage })));
 const CreateMissionPage = lazy(() => import('./pages/CreateMissionPage').then(m => ({ default: m.default || m.CreateMissionPage })));
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: m.default || m.OAuthCallbackPage })));
+const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage').then(m => ({ default: m.default || m.RaffleDetailPage })));
 
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard.jsx').then(m => ({ default: m.default || m.AdminDashboard })));
 const AdminGuard = lazy(() => import('./components/admin/AdminGuard.jsx').then(m => ({ default: m.default || m.AdminGuard })));
@@ -114,6 +115,7 @@ function AppContent() {
                 <Route element={<ProtectedLayout />}>
                   <Route path="/tasks" element={<TasksPage />} />
                   <Route path="/raffles" element={<RafflesPage />} />
+                  <Route path="/raffles/:id" element={<RaffleDetailPage />} />
                   <Route path="/leaderboard" element={<LeaderboardPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/profile/:userAddress" element={<ProfilePage />} />

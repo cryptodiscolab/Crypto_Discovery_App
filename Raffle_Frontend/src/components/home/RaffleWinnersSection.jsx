@@ -1,12 +1,14 @@
 import { useRaffleList, useRaffleInfo } from '../../hooks/useRaffle';
-import { Trophy, ExternalLink, Loader2, RefreshCw, Hash } from 'lucide-react';
+import { Trophy, ExternalLink, Loader2, RefreshCw, Hash, Ticket } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const EXPLORER = import.meta.env.VITE_EXPLORER_URL || 'https://sepolia.basescan.org';
 
 // ─── Single finalized raffle row ─────────────────────────────────────────────
 function FinalizedRaffleRow({ raffleId }) {
     const { raffle, isLoading } = useRaffleInfo(raffleId);
+    const navigate = useNavigate();
 
     if (isLoading) return (
         <div className="flex items-center gap-3 p-3 rounded-xl bg-white/3 border border-white/5 animate-pulse">
@@ -25,34 +27,48 @@ function FinalizedRaffleRow({ raffleId }) {
     const prizeETH = raffle.prizePool ? (Number(raffle.prizePool) / 1e18).toFixed(4) : '?';
 
     return (
-        <div className="rounded-2xl border border-white/8 bg-zinc-950/60 overflow-hidden">
+        <div 
+            onClick={() => navigate(`/raffles/${raffleId}`)}
+            className="rounded-2xl border border-white/8 bg-zinc-950/60 overflow-hidden cursor-pointer hover:border-yellow-500/30 transition-all group/row"
+        >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 bg-white/3 border-b border-white/5">
-                <div className="flex items-center gap-2">
-                    <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-                    <span className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.2em]">
-                        Raffle #{raffleId}
-                    </span>
+                <div className="flex items-center gap-2 overflow-hidden flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                        {raffle.image_url ? (
+                            <img src={raffle.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                        ) : (
+                            <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+                        )}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest truncate group-hover/row:text-yellow-400 transition-colors">
+                            {raffle.title || `Raffle #${raffleId}`}
+                        </span>
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">
+                            #{raffleId}
+                        </span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                         Prize: <span className="text-emerald-400">{prizeETH} ETH</span>
                     </span>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-wider">
-                        FINALIZED
+                        WINNERS DRAWN
                     </span>
                 </div>
             </div>
 
             {/* Winners list */}
             <div className="divide-y divide-white/5">
-                {realWinners.map((addr, i) => (
-                    <div key={addr} className="flex items-center justify-between px-4 py-2.5 hover:bg-white/3 transition-colors group">
+                {realWinners.slice(0, 3).map((addr, i) => (
+                    <div key={addr} className="flex items-center justify-between px-4 py-2 hover:bg-white/3 transition-colors group">
                         <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-[9px] font-black text-yellow-400">
+                            <span className="w-5 h-5 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-[8px] font-black text-yellow-400">
                                 #{i + 1}
                             </span>
-                            <span className="font-mono text-[11px] text-slate-300 tracking-tight">
+                            <span className="font-mono text-[10px] text-slate-300 tracking-tight">
                                 <span className="text-white">{addr.slice(0, 6)}</span>
                                 <span className="text-slate-600">···</span>
                                 <span className="text-white">{addr.slice(-6)}</span>
@@ -62,12 +78,20 @@ function FinalizedRaffleRow({ raffleId }) {
                             href={`${EXPLORER}/address/${addr}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[9px] font-black text-purple-400 uppercase tracking-widest hover:text-purple-300"
+                            onClick={(e) => e.stopPropagation()}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[8px] font-black text-purple-400 uppercase tracking-widest hover:text-purple-300"
                         >
-                            View <ExternalLink className="w-3 h-3" />
+                            View <ExternalLink className="w-2.5 h-2.5" />
                         </a>
                     </div>
                 ))}
+                {realWinners.length > 3 && (
+                    <div className="px-4 py-2 text-center">
+                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">
+                            + {realWinners.length - 3} more winners
+                        </span>
+                    </div>
+                )}
             </div>
         </div>
     );
