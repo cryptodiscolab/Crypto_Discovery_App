@@ -269,16 +269,80 @@ export function RaffleManagerTab() {
     );
 }
 
+function WinnersPanel({ winners, raffleId }) {
+    if (!winners || winners.length === 0) return null;
+    const zeroAddr = '0x0000000000000000000000000000000000000000';
+    const realWinners = winners.filter(w => w && w !== zeroAddr);
+    if (realWinners.length === 0) return null;
+
+    return (
+        <div className="mt-4 p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-2xl space-y-2">
+            <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                <Trophy size={12} /> RAFFLE #{raffleId} WINNERS
+            </p>
+            {realWinners.map((w, i) => (
+                <div key={w} className="flex items-center gap-3 p-2.5 bg-black/40 rounded-xl border border-emerald-500/10">
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black shrink-0 ${
+                        i === 0 ? 'bg-yellow-500 text-black' : 'bg-slate-800 text-slate-400'
+                    }`}>{i === 0 ? '🏆' : `#${i + 1}`}</div>
+                    <a
+                        href={`https://sepolia.basescan.org/address/${w}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-mono text-emerald-300 hover:text-emerald-200 transition-colors truncate"
+                    >
+                        {w.slice(0, 10)}...{w.slice(-8)}
+                    </a>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 function AdminRaffleRow({ raffleId }) {
     const { raffle, isLoading, refetch } = useRaffleInfo(raffleId);
     const { drawRaffle, isDrawing } = useRaffle();
+    const [drawPending, setDrawPending] = useState(false);
+    const publicClient = usePublicClient();
 
     const handleDraw = async () => {
         try {
-            await drawRaffle(raffleId);
-            refetch();
+            setDrawPending(true);
+            const hash = await drawRaffle(raffleId);
+
+            // Wait for tx confirmation
+            if (hash && publicClient) {
+                toast.loading('Menunggu konfirmasi on-chain...', { id: 'draw-confirm' });
+                await publicClient.waitForTransactionReceipt({ hash });
+                toast.success('Draw request confirmed! Menunggu QRNG callback...', { id: 'draw-confirm' });
+            }
+
+            // Poll until raffle is finalized (Airnode callback can take 30-120s)
+            let attempts = 0;
+            const poll = setInterval(async () => {
+                await refetch();
+                attempts++;
+                if (attempts >= 30) {
+                    clearInterval(poll);
+                    setDrawPending(false);
+                    toast('QRNG masih diproses. Refresh manual jika perlu.', { icon: '⏳' });
+                }
+            }, 4000);
+
+            // Watch raffle.isFinalized via refetch
+            const stopWhenDone = setInterval(async () => {
+                const result = await refetch();
+                if (result?.data?.isFinalized) {
+                    clearInterval(stopWhenDone);
+                    clearInterval(poll);
+                    setDrawPending(false);
+                    toast.success('🏆 Pemenang telah ditentukan!', { duration: 6000 });
+                }
+            }, 4000);
+
         } catch (e) {
             console.error("Draw error:", e);
+            setDrawPending(false);
         }
     };
 
@@ -290,6 +354,7 @@ function AdminRaffleRow({ raffleId }) {
     );
 
     const canDraw = raffle.isActive && (raffle.totalTickets >= raffle.maxTickets || Date.now() / 1000 >= raffle.endTime);
+    const isQrngPending = !raffle.isActive && !raffle.isFinalized;
     const timeLeft = Math.max(0, Number(raffle.endTime) - Date.now() / 1000);
     const hoursLeft = Math.floor(timeLeft / 3600);
 
@@ -324,21 +389,25 @@ function AdminRaffleRow({ raffleId }) {
                 {raffle.isActive ? (
                     <button
                         onClick={handleDraw}
-                        disabled={isDrawing || !canDraw}
-                        className={`w-full md:w-auto px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
-                            canDraw
+                        disabled={isDrawing || drawPending || !canDraw}
+                        className={`relative w-full md:w-auto px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
+                            canDraw && !drawPending
                             ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20 hover:scale-105'
                             : 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
                         }`}
                     >
-                        {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                        {(isDrawing || drawPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                             <>DRAW WINNERS <ArrowRight className="w-4 h-4" /></>
                         )}
-                        {canDraw && !isDrawing && <div className="absolute inset-0 rounded-2xl border-2 border-amber-400 animate-ping opacity-20 pointer-events-none" />}
+                        {canDraw && !isDrawing && !drawPending && <div className="absolute inset-0 rounded-2xl border-2 border-amber-400 animate-ping opacity-20 pointer-events-none" />}
                     </button>
+                ) : isQrngPending || drawPending ? (
+                    <div className="flex items-center gap-2 px-6 py-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                        <Loader2 size={14} className="animate-spin" /> QRNG PENDING...
+                    </div>
                 ) : raffle.isFinalized ? (
                     <div className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-                        <Trophy size={14} /> REWARDS DISTRIBUTED
+                        <Trophy size={14} /> FINALIZED
                     </div>
                 ) : (
                     <div className="px-6 py-3 bg-slate-800/30 border border-white/5 rounded-2xl text-slate-500 text-[10px] font-black uppercase tracking-widest">
@@ -347,5 +416,10 @@ function AdminRaffleRow({ raffleId }) {
                 )}
             </div>
         </div>
+        {/* Winners Panel — tampil setelah QRNG callback selesai */}
+        {raffle.isFinalized && raffle.winners && raffle.winners.length > 0 && (
+            <WinnersPanel winners={raffle.winners} raffleId={raffle.id} />
+        )}
+    </div>
     );
 }
