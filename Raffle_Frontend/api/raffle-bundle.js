@@ -213,7 +213,19 @@ async function handleClaimPrize(req, res) {
 
         if (claimError && claimError.code !== '23505') throw claimError;
 
-        // ─── 5. Increment `raffle_wins` counter ───────────────────────────────
+        // ─── 5. Award XP to user_profiles atomically ──────────────────────────
+        if (xpAwarded > 0) {
+            const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: normalizedWallet,
+                p_amount: xpAwarded
+            });
+            if (xpErr) {
+                console.error('[handleClaimPrize] fn_increment_xp failed:', xpErr.message);
+                // Non-fatal: claim was already recorded, log the error and continue
+            }
+        }
+
+        // ─── 6. Increment `raffle_wins` counter ───────────────────────────────
         await supabaseAdmin.rpc('fn_increment_raffle_wins', {
             p_wallet: normalizedWallet
         });
@@ -221,7 +233,7 @@ async function handleClaimPrize(req, res) {
         // ─── 6. Notify Telegram Bot ───────────────────────────────────────────
         await notifyTelegramWinner(normalizedWallet, raffle_id, xpAwarded);
 
-        // ─── 7. Log Activity (New Feature) ───────────────────────────────────
+        // ─── 8. Log Activity ───────────────────────────────────────────────────
         await logActivity({
             wallet: normalizedWallet,
             category: 'REWARD',

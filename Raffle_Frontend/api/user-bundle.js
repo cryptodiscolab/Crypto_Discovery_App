@@ -1003,7 +1003,7 @@ async function handleSyncUgcRaffle(req, res) {
                     await logActivity({
                         wallet,
                         category: 'XP',
-                        type: 'Task Verify',
+                        type: 'UGC Raffle Creation',
                         description: `Awarded ${creatorXp} XP for Creating Raffle #${raffle_id}`,
                         amount: creatorXp,
                         symbol: 'XP',
