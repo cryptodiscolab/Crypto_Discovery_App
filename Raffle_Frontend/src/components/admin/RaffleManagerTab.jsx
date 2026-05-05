@@ -7,7 +7,7 @@ import { RAFFLE_ABI, CONTRACTS } from '../../lib/contracts';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../../hooks/useRaffle';
 import toast from 'react-hot-toast';
 
-const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE || "0x012FAdd087540e1B51a587f420e77D007fED2a84";
+const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE || "0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3";
 
 function AdminRaffleCreateForm() {
     const { address } = useAccount();

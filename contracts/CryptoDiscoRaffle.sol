@@ -211,18 +211,13 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         require(raffle.isActive, "Not active");
         require(raffle.totalTickets > 0, "No tickets");
         
-        // Authorization: Owner or the Sponsor can request if conditions met
+        // Authorization: Owner or the Sponsor can request anytime if conditions met,
+        // or anyone can request if the raffle is sold out or time has expired.
         bool isSponsor = (msg.sender == raffle.sponsor && raffle.sponsor != address(0));
         bool isAdmin = (msg.sender == owner());
-        require(isAdmin || isSponsor, "Not authorized");
-
-        // Allow request if Sold Out or Time Expired
-        require(
-            raffle.totalTickets >= raffle.maxTickets || 
-            block.timestamp >= raffle.endTime || 
-            isAdmin, 
-            "Conditions not met"
-        );
+        bool conditionsMet = raffle.totalTickets >= raffle.maxTickets || block.timestamp >= raffle.endTime;
+        
+        require(isAdmin || isSponsor || conditionsMet, "Not authorized or conditions not met");
         
         require(airnode != address(0), "QRNG not set");
         

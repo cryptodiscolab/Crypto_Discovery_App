@@ -3,7 +3,7 @@ require("dotenv").config();
 
 async function main() {
     const masterXAddress = ethers.getAddress((process.env.VITE_MASTER_X_ADDRESS_SEPOLIA || process.env.MASTER_X_ADDRESS_SEPOLIA).toLowerCase());
-    const raffleAddress = ethers.getAddress("0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB".toLowerCase());
+    const raffleAddress = ethers.getAddress("0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3".toLowerCase());
 
     console.log("🔗 Linking & Initializing Raffle...");
     console.log("📍 MasterX:", masterXAddress);
