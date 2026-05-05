@@ -147,29 +147,15 @@ module.exports = async (req, res) => {
             Gunakan blok kode (backticks) untuk tabel agar terlihat rapi di Telegram (monospaced).
         `;
 
-        let aiResponse = "AI Analysis not available (Missing API Key).";
-        if (geminiApiKey) {
-            try {
-                // Gunakan model dinamis atau fallback stable
-                const modelId = auditSettings.ai_model || "gemini-2.0-flash";
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
-                const result = await response.json();
-                if (result.error) {
-                    console.error('❌ [Lurah Ekosistem] Gemini API Error:', result.error.message);
-                    aiResponse = `Analisa AI tertunda (Quota/Limit reached).`;
-                } else {
-                    aiResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI Gagal memberikan respon.";
-                }
-            } catch (aiErr) {
-                console.error('❌ [Lurah Ekosistem] AI Fetch Error:', aiErr.message);
-                aiResponse = "Gagal menghubungi AI Service.";
-            }
+        let aiResponse = "AI Analysis not available.";
+        const modelId = auditSettings.ai_model || "gemini-2.0-flash";
+        const geminiResult = await callGeminiWithFallback(modelId, prompt);
+        
+        if (geminiResult.error) {
+            console.error('❌ [Lurah Ekosistem] Gemini API Error:', geminiResult.error);
+            aiResponse = `Analisa AI tertunda (Error: ${geminiResult.error})`;
+        } else if (geminiResult.success) {
+            aiResponse = geminiResult.text;
         }
 
         // 4. Kirim Notifikasi Telegram (Jika diizinkan)
@@ -211,3 +197,74 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+async function callGeminiWithFallback(initialModelId, promptText) {
+    const apiKeys = [
+        process.env.GEMINI_API_KEY,
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY_3,
+        process.env.GEMINI_API_KEY_4,
+        process.env.GEMINI_API_KEY_5,
+        process.env.GEMINI_API_KEY_6,
+        process.env.GEMINI_API_KEY_7,
+        process.env.GEMINI_API_KEY_8,
+        process.env.GEMINI_API_KEY_9
+    ].filter(Boolean);
+
+    if (apiKeys.length === 0) {
+        return { error: "API Key Gemini tidak dikonfigurasi." };
+    }
+
+    // Definisi Model Fallback (2026 Edition)
+    const fallbackModels = [
+        "gemini-2.0-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "gemini-3.0-flash",
+        "gemini-3.1-pro",
+        "gemma-4"
+    ];
+
+    const modelsToTry = [initialModelId, ...fallbackModels.filter(m => m !== initialModelId)];
+    let lastError = null;
+
+    for (const model of modelsToTry) {
+        for (let i = 0; i < apiKeys.length; i++) {
+            const key = apiKeys[i];
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }]
+                    })
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    lastError = result.error.message;
+                    if (result.error.code === 404 || result.error.message.toLowerCase().includes('not found')) {
+                        console.warn(`⚠️ [Model Fallback] Model ${model} tidak tersedia, ganti model...`);
+                        break; // Model tidak ada, lanjut ke model berikutnya
+                    }
+                    if (result.error.code === 429 || result.error.message.toLowerCase().includes('quota') || result.error.message.toLowerCase().includes('exhausted')) {
+                        console.warn(`⚠️ [API Key Fallback] Key ${i+1} limit pada ${model}, coba key berikutnya...`);
+                        continue; 
+                    }
+                    continue; 
+                }
+                
+                return {
+                    text: result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak memberikan respon.",
+                    success: true,
+                    usedModel: model
+                };
+            } catch (err) {
+                console.error(`❌ [Fetch Error] Key ${i+1} pada model ${model}:`, err.message);
+                lastError = err.message;
+            }
+        }
+    }
+
+    return { error: `Semua API Key dan Model gagal. Error terakhir: ${lastError}` };
+}

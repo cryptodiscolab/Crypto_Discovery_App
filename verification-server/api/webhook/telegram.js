@@ -529,28 +529,11 @@ Contoh:
             `;
 
             let fixResponse = "Gagal menghubungi AI Service.";
-            if (geminiApiKey) {
-                try {
-                    // Use v1beta for most 2.5/3.x models in 2026
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }]
-                        })
-                    });
-                    const result = await response.json();
-                    if (result.error) {
-                        console.error('❌ [Lurah Ekosistem] Gemini API Error:', result.error.message);
-                        fixResponse = `ℹ️ Analisa AI tertunda: ${result.error.message}`;
-                    } else {
-                        fixResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak memberikan solusi.";
-                    }
-                } catch (aiErr) {
-                    console.error('❌ AI Fetch Error:', aiErr.message);
-                }
-            } else {
-                fixResponse = "API Key Gemini tidak dikonfigurasi.";
+            const geminiResult = await callGeminiWithFallback(modelId, prompt);
+            if (geminiResult.error) {
+                fixResponse = `ℹ️ Analisa AI tertunda: ${geminiResult.error}`;
+            } else if (geminiResult.success) {
+                fixResponse = geminiResult.text;
             }
 
             if (fixResponse.length > 4000) {
@@ -630,26 +613,17 @@ Contoh:
             `;
 
             let chatResponse = "Gagal menghubungi AI Service.";
-            if (geminiApiKey) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }]
-                        })
-                    });
-                    const result = await response.json();
-                    chatResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak merespons.";
-                    
-                    // 3. Save to History (User & Assistant)
-                    await supabase.from('telegram_chat_history').insert([
-                        { chat_id: String(chatId), role: 'user', content: text },
-                        { chat_id: String(chatId), role: 'assistant', content: chatResponse }
-                    ]);
-                } catch (aiErr) {
-                    console.error('❌ AI Error:', aiErr.message);
-                }
+            const geminiResult = await callGeminiWithFallback(modelId, prompt);
+            if (geminiResult.error) {
+                chatResponse = `ℹ️ Sistem tertunda: ${geminiResult.error}`;
+            } else if (geminiResult.success) {
+                chatResponse = geminiResult.text;
+                
+                // 3. Save to History (User & Assistant)
+                await supabase.from('telegram_chat_history').insert([
+                    { chat_id: String(chatId), role: 'user', content: text },
+                    { chat_id: String(chatId), role: 'assistant', content: chatResponse }
+                ]);
             }
 
             if (chatResponse.length > 4000) {
@@ -693,4 +667,75 @@ async function sendTelegram(chatId, text) {
             })
         });
     }
+}
+
+async function callGeminiWithFallback(initialModelId, promptText) {
+    const apiKeys = [
+        process.env.GEMINI_API_KEY,
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY_3,
+        process.env.GEMINI_API_KEY_4,
+        process.env.GEMINI_API_KEY_5,
+        process.env.GEMINI_API_KEY_6,
+        process.env.GEMINI_API_KEY_7,
+        process.env.GEMINI_API_KEY_8,
+        process.env.GEMINI_API_KEY_9
+    ].filter(Boolean);
+
+    if (apiKeys.length === 0) {
+        return { error: "API Key Gemini tidak dikonfigurasi." };
+    }
+
+    // Definisi Model Fallback (2026 Edition)
+    const fallbackModels = [
+        "gemini-2.0-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "gemini-3.0-flash",
+        "gemini-3.1-pro",
+        "gemma-4"
+    ];
+
+    const modelsToTry = [initialModelId, ...fallbackModels.filter(m => m !== initialModelId)];
+    let lastError = null;
+
+    for (const model of modelsToTry) {
+        for (let i = 0; i < apiKeys.length; i++) {
+            const key = apiKeys[i];
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }]
+                    })
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    lastError = result.error.message;
+                    if (result.error.code === 404 || result.error.message.toLowerCase().includes('not found')) {
+                        console.warn(`⚠️ [Model Fallback] Model ${model} tidak tersedia, ganti model...`);
+                        break; // Model tidak ada, lanjut ke model berikutnya
+                    }
+                    if (result.error.code === 429 || result.error.message.toLowerCase().includes('quota') || result.error.message.toLowerCase().includes('exhausted')) {
+                        console.warn(`⚠️ [API Key Fallback] Key ${i+1} limit pada ${model}, coba key berikutnya...`);
+                        continue; 
+                    }
+                    continue; 
+                }
+                
+                return {
+                    text: result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak memberikan respon.",
+                    success: true,
+                    usedModel: model
+                };
+            } catch (err) {
+                console.error(`❌ [Fetch Error] Key ${i+1} pada model ${model}:`, err.message);
+                lastError = err.message;
+            }
+        }
+    }
+
+    return { error: `Semua API Key dan Model gagal. Error terakhir: ${lastError}` };
 }
