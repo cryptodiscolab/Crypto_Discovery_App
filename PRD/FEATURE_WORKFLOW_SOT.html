@@ -1,5 +1,5 @@
-<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.58.0)</h1>
-<p><strong>Last Updated</strong>: 2026-05-06T06:00:00+07:00 — Lurah Ecosystem Hardening &amp; Autonomous Agent Resiliency (v3.58.0)
+<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.0)</h1>
+<p><strong>Last Updated</strong>: 2026-05-06T18:00:00+07:00 — Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Sync (v3.59.0)
 <strong>Status</strong>: 🛡️ MAINNET PHASED ROLLOUT LOCKED</p>
 <p>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. <strong>JANGAN berhalusinasi atau menebak</strong>. Jika ada yang error, rujuk dokumen ini.</p>
 <hr>
@@ -29,8 +29,8 @@
 <tr>
 <td align="left"><strong>Raffle Manager</strong></td>
 <td align="left"><code>0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3</code></td>
-<td align="left">Maret 2026</td>
-<td align="left">Tiket Gacha, Undian Sponsor, Prizing distribution.</td>
+<td align="left">29 April 2026</td>
+<td align="left">Tiket Gacha, Undian Sponsor, Refund Protocol V2.1.</td>
 </tr>
 <tr>
 <td align="left"><strong>Content CMS</strong></td>
@@ -77,7 +77,7 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 <ul>
 <li><strong>Triggers</strong>: User klik &quot;Claim&quot; pada <code>DailyClaimModal</code>.</li>
 <li><strong>Pre-Check (Frontend)</strong>: <code>ProfilePage.jsx</code> membaca <strong>HANYA</strong> dari <code>userData.lastDailyBonusClaim</code> (on-chain) untuk menghitung sisa waktu cooldown (Single Source of Truth).</li>
-<li><strong>Execution</strong>: Frontend memanggil fungsi <code>claimDailyBonus()</code> di kontrak <strong>DailyApp V13.2</strong> (<code>0x369aBcD44d3D510f4a20788BBa6F47C99e57d267</code>).</li>
+<li><strong>Execution</strong>: Frontend memanggil fungsi <code>claimDailyBonus()</code> di kontrak <strong>DailyApp V13.2</strong> (<code>0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D</code>).</li>
 <li><strong>Success</strong>: MetaMask/Wallet mengembalikan <code>tx_hash</code>.</li>
 </ul>
 <h3>2.2 The Backend Synchronization</h3>
@@ -136,7 +136,7 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 <tr>
 <td><strong>Off-Chain</strong></td>
 <td>Task dari tabel <code>daily_tasks</code> (Supabase)</td>
-<td><code>/api/tasks-bundle?action=claim</code></td>
+<td><code>Verification-Server</code> → <code>tasks-bundle.js</code></td>
 <td><code>fn_increment_xp(wallet, xp)</code> RPC langsung</td>
 </tr>
 </tbody></table>
@@ -163,21 +163,34 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><strong>Result</strong>: Saat user pindah ke Leaderboard/Profile, Tier mereka langsung &quot;Fan&quot;, tanpa perlu menunggu data dari smart contract.</li>
 </ul>
 <hr>
-<h2>🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint)</h2>
-<p>Status SBT/NFT ini adalah tiket representasi permanen dari Tier user.</p>
+<h2>🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint) — v3.56.4</h2>
+<p>Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersifat <strong>Soulbound</strong> dan <strong>Sequential</strong>.</p>
 <h3>5.1 The Upgrade Execution</h3>
 <ul>
 <li><strong>Triggers</strong>: UI memunculkan tombol &quot;Mint / Upgrade&quot; jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.</li>
+<li><strong>Rules (Mandatory)</strong>:<ol>
+<li><strong>Sequential Upgrade</strong>: User <strong>DILARANG</strong> melompat tier. Upgrade harus mengikuti urutan Rookie -&gt; Bronze -&gt; Silver -&gt; Gold -&gt; Platinum -&gt; Diamond. Kontrak <code>DailyAppV13</code> akan me-revert transaksi jika <code>tier != currentTier + 1</code>.</li>
+<li><strong>Soulbound Mandate</strong>: NFT SBT bersifat <strong>Non-Transferable</strong>. Setiap upaya transfer antar wallet (kecuali mint/burn) akan di-revert oleh kontrak.</li>
+</ol>
+</li>
 <li><strong>Workflow</strong>:<ol>
-<li><strong>Supply Check</strong>: Frontend mengecek supply maksimum untuk tier tersebut dari tabel <code>sbt_thresholds</code>. Jika Sold Out, tombol di-disable.</li>
-<li><strong>Minting</strong>: Frontend memanggil <code>MasterX.upgradeSBT()</code> atau <code>MasterX.mintSBT()</code>.</li>
+<li><strong>Pre-Check UI</strong>: <code>SBTUpgradeCard</code> memverifikasi 4 syarat: <code>hasTotalXP</code> (DB), <code>hasOnChainXP</code> (MASTER_X), <code>hasEnoughETH</code> (balance), dan <code>!isSoldOut</code> (DAILY_APP nftConfigs).</li>
+<li><strong>Cost Transparency</strong>: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.</li>
+<li><strong>ETH Pre-Check</strong>: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.</li>
+<li><strong>Minting</strong>: Frontend memanggil <code>mintNFT(tierId, mintPrice)</code> dari <code>useNFTTiers</code> hook — yang memanggil <code>DAILY_APP.mintNFT()</code>. </li>
+<li><strong>On-Chain Enforcement</strong>: Kontrak memvalidasi urutan tier dan membakar XP yang sesuai.</li>
 <li><strong>Event Emitted</strong>: Blockchain mencatat perubahan kepemilikan NFT.</li>
-<li><strong>State Sync</strong>: UI menampilkan banner &quot;SBT Upgraded&quot; dan menghapus tombol upgrade.</li>
+<li><strong>State Sync</strong>: UI menampilkan banner &quot;NFT Minted!&quot; dan menghapus tombol upgrade.</li>
+<li><strong>DB Log</strong>: Signature request ke <code>/api/user-bundle?action=sync-sbt-upgrade</code> untuk logging aktivitas.</li>
 </ol>
 </li>
 </ul>
+<blockquote>
+<p>[!WARNING]
+Jangan pernah memanggil <code>useSBT.upgradeTier()</code> untuk minting tier NFT dari <code>SBTUpgradeCard</code>. Itu adalah contract yang berbeda (<code>MASTER_X</code>) dengan logika yang berbeda. Gunakan <code>useNFTTiers.mintNFT(id, price)</code> yang memanggil <code>DAILY_APP.mintNFT()</code>.</p>
+</blockquote>
 <hr>
-<h2>📡 6. Definisi &quot;Healthy State&quot; Ekosistem (CHECKLIST)</h2>
+<h2>🚦 6. Definisi &quot;Healthy State&quot; Ekosistem (CHECKLIST)</h2>
 <p>Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi seluruh kriteria berikut:</p>
 <ol>
 <li><input disabled="" type="checkbox"> <strong>Zero Hardcode</strong>: Tidak ada Contract Address statis di <code>.js</code> atau <code>.jsx</code> Frontend. Semuanya dibaca lewat Proxy ABI dari import <code>.env</code>.</li>
@@ -186,6 +199,10 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><input disabled="" type="checkbox"> <strong>Optimistic Sync</strong>: XP dapat dikreditkan asalkan ada bukti <code>tx_hash</code> transaksi komplit, meskipun RPC provider (seperti Alchemy/Infura) belum up-to-date.</li>
 <li><input disabled="" type="checkbox"> <strong>No Secrets Leak</strong>: Proses git push lolos audit <code>gitleaks</code>.</li>
 <li><input disabled="" type="checkbox"> <strong>Off-Chain XP Sync</strong>: <code>tasks-bundle.js</code> memanggil <code>fn_increment_xp</code> setelah setiap off-chain task claim agar <code>total_xp</code> di <code>user_profiles</code> sinkron dengan leaderboard.</li>
+<li><input disabled="" type="checkbox"> <strong>Two-Step Task Flow</strong>: Off-chain tasks dengan <code>task_link</code> HARUS menampilkan &quot;GO TO TASK&quot; sebelum &quot;CLAIM REWARD&quot; dapat diaktifkan (v3.47.1).</li>
+<li><input disabled="" type="checkbox"> <strong>Contract Call Parity</strong>: Setiap contract write call HARUS menggunakan contract yang SAMA dengan sumber data read-nya. Mint data dari DAILY_APP → write ke DAILY_APP (v3.47.1).</li>
+<li><input disabled="" type="checkbox"> <strong>SDK Error Visibility</strong>: Setiap async SDK call (Li.Fi, Neynar, etc.) HARUS memiliki visible error state di UI jika gagal, bukan hanya console.error (v3.47.1).</li>
+<li><input disabled="" type="checkbox"> <strong>Concurrent UI Performance</strong>: Seluruh modal dengan hook berat (Wagmi, Li.Fi) WAJIB menggunakan <code>startTransition</code> untuk mencegah pemblokiran main thread (v3.56.0).</li>
 </ol>
 <hr>
 <h2>🔁 7. End-to-End Synchronization Audit Workflow</h2>
@@ -225,8 +242,6 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 </ol>
 <h3>8.2 Kill Switch Execution</h3>
 <p>Semua status flag dikontrol melalui: <strong>Admin UI -&gt; System Settings -&gt; Features Flags</strong>. Setiap pembaruan yang dibroadcast WAJIB memerlukan <em>cryptographic signature verification</em> dari Dompet Administrator.</p>
-<hr>
-<p><em>End of Source of Truth Document - DO NOT IGNORE.</em></p>
 <h2>💼 5. UGC Revenue Management &amp; Transaction History Flow (v3.40.12)</h2>
 <p>Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berputar pada dua siklus: Sistem verifikasi tugas dan History log.</p>
 <h3>5.1 Admin Revenue Reconciliation (Manual Batching SOT)</h3>
@@ -259,8 +274,6 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><strong>Rewards (ACCOMPLISHMENT)</strong>: Pemenang undian Raffle / Airdrop khusus.</li>
 <li>Ini menggantikan metode pengecekan history frontend di <code>TaskList.jsx</code> (yang kini bersifat absolute &quot;One-Time Claim&quot; per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate <em>Task ID</em> spesifik baru tiap harinya.</li>
 </ul>
-<hr>
-<p><em>End of Source of Truth Document - Nexus v3.46.0 Locked.</em></p>
 <h2>🏛️ 9. XP Reward Lifecycle &amp; Anti-Whale Economic Model (v3.41.2)</h2>
 <p>Untuk menjaga nilai kelangkaan XP dan keadilan ekosistem jangka panjang, Crypto Disco menggunakan <strong>The Nexus Hybrid Formula</strong>. Semua perhitungan dilakukan secara <strong>atomic</strong> di level database dalam fungsi RPC <code>public.fn_increment_xp</code>.</p>
 <h3>9.1 Rumus Perhitungan Utama</h3>
@@ -361,11 +374,18 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 </li>
 </ol>
 <hr>
-<h3>11.3 Task Visibility Mandate (v3.42.8)</h3>
+<h3>11.3 Task Visibility &amp; Nexus Metadata Mandate (v3.53.0)</h3>
 <ol>
 <li><strong>Immediate Hiding</strong>: Tasks that are <code>hasCompletedTask</code> or <code>hasClaimed</code> MUST be filtered out from the <code>TasksPage</code> UI.</li>
-<li><strong>Type-Safe Filtering</strong>: When comparing task IDs (e.g., in <code>activeTasks.filter</code>), ALWAYS use <code>String()</code> conversion (e.g., <code>String(task.id) === String(claim.task_id)</code>). This prevents silence failures caused by the mismatch between Contract IDs (Integer) and Supabase IDs (UUID).</li>
-<li><strong>Sponsorship Card Closure</strong>: Cards (Sponsored/Organic) MUST be hidden if 100% of internal tasks are complete.</li>
+<li><strong>Authoritative Expiry</strong>: Tasks with an <code>expires_at</code> timestamp in the past MUST be filtered out from the UI. Daily tasks default to a 24-hour expiration from <code>created_at</code>.</li>
+<li><strong>Type-Safe Filtering</strong>: When comparing task IDs (e.g., in <code>activeTasks.filter</code>), ALWAYS use <code>String()</code> conversion.</li>
+<li><strong>Nexus Parity Mandate</strong>: Task and Raffle cards MUST display consistent metadata stamps:<ul>
+<li><strong>Unique ID</strong>: System traceability via <code>Hash</code> icon.</li>
+<li><strong>Creator Attribute</strong>: Distinguish between ADMIN, USER (Address), or SYSTEM via <code>ShieldCheck</code> icon.</li>
+<li><strong>Created At &amp; Expires At</strong>: Explicit timestamps for urgency and historical transparency via <code>Clock</code> icon.</li>
+<li><strong>Dual Rewards</strong>: Clear distinction between XP (Coins) and Token/USDC (Gift) rewards.</li>
+</ul>
+</li>
 <li><strong>Verified Badge Branding</strong>: All verified identities MUST display the <strong>Base Blue</strong> shield icon for premium signaling.</li>
 </ol>
 <hr>
@@ -394,5 +414,78 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 <li>Healthy State Checklist (14-point)</li>
 </ol>
 <p><strong>Semua modifikasi terhadap fitur Task WAJIB mematuhi alur yang tertera di dokumen tersebut.</strong></p>
+<h2>🏛️ 13. Raffle Moderation &amp; Refund Workflow (Protocol V2.1)</h2>
+<p>Mekanisme pengamanan dana sponsor saat konten UGC tidak disetujui.</p>
+<h3>13.1 Administrative Rejection</h3>
+<ul>
+<li><strong>Triggers</strong>: Admin klik tombol &quot;REJECT&quot; pada <code>ModerationCenterTab.jsx</code>.</li>
+<li><strong>Workflow</strong>:<ol>
+<li><strong>On-Chain Refund</strong>: Dashboard memanggil <code>cancelRaffle(raffleId)</code> di kontrak Raffle V2.1.</li>
+<li><strong>Fund Recovery</strong>: Kontrak memverifikasi <code>totalTickets == 0</code> dan mengirimkan kembali deposit ETH ke <code>sponsor</code>.</li>
+<li><strong>Event</strong>: Blockchain memancarkan <code>RaffleCancelled</code>.</li>
+<li><strong>API Sync</strong>: Setelah <code>tx_hash</code> didapat, Frontend memanggil <code>/api/user-bundle?action=reject-raffle</code>.</li>
+<li><strong>DB Update</strong>: Backend mencatat <code>cancellation_tx</code>, mengubah status raffle di Supabase, dan merekam aksi di <code>admin_audit_logs</code>.</li>
+</ol>
+</li>
+</ul>
 <hr>
-<p><em>End of Source of Truth Document - Nexus v3.42.8 Locked.</em></p>
+<h2>👁️ 14. Lurah Sentinel &amp; Sync State Architecture (v3.56.5)</h2>
+<p>Arsitektur pemantauan ekosistem sekarang eksklusif berada di jaringan Vercel Serverless.</p>
+<h3>14.1 Vercel Cron Override</h3>
+<ul>
+<li><strong>Lurah Cron</strong>: Dijalankan via <code>/api/lurah-cron</code> (berdasarkan <code>vercel.json</code>). Menyimpan health check di tabel <code>system_health</code> dengan <code>service_key: lurah_ekosistem</code>.</li>
+<li><strong>Legacy Ban</strong>: Script PM2/Hardhat lokal seperti <code>sync-sbt.cjs</code> dan <code>sync-underdog.cjs</code> DILARANG digunakan lagi. Entry health lama mereka WAJIB dihapus dari <code>system_health</code>.</li>
+</ul>
+<h3>14.2 Sync Events Staleness Protection</h3>
+<ul>
+<li><strong>Sync State</strong>: Endpoint <code>/api/cron/sync-events</code> memantau jarak block on-chain dan off-chain di tabel <code>sync_state</code>.</li>
+<li><strong>Catch-Up Mechanism</strong>: Cron akan melakukan iterasi 2000 blocks per eksekusi. Jika <code>last_synced_block</code> tertinggal sangat jauh (mis. 14 hari), dilarang memaksa <code>sync_state</code> dengan limit ekstrem. Biarkan catch-up harian otomatis atau lakukan block reset terukur.</li>
+</ul>
+<hr>
+<hr>
+<h2>🏛️ 15. UGC Multi-Action &amp; All-or-Nothing Campaign Workflow (v3.57.0)</h2>
+<p>Evolusi sistem misi UGC untuk mendukung kampanye multi-tugas yang lebih kompleks dan bernilai tinggi.</p>
+<h3>15.1 Campaign Creation (Creator Side)</h3>
+<ol>
+<li><strong>Multi-Action Input</strong>: Creator memilih hingga 3 aksi (Follow, Like, Recast, dsb) dalam satu form.</li>
+<li><strong>URL Validation</strong>: Frontend melakukan regex matching terhadap link berdasarkan platform yang dipilih (Warpcast, X, TikTok, IG).</li>
+<li><strong>Atomic Deployment</strong>:<ul>
+<li><code>admin-bundle.js</code> menerima array <code>action_types</code>.</li>
+<li>Melakukan batch insert ke <code>daily_tasks</code> dimana setiap sub-tugas memiliki <code>onchain_id</code> yang sama (ID Kampanye).</li>
+<li>Status kampanye diaktifkan setelah verifikasi pembayaran sukses.</li>
+</ul>
+</li>
+</ol>
+<h3>15.2 Verification &amp; Progress (User Side)</h3>
+<ol>
+<li><strong>Grouping Logic</strong>: <code>TasksPage.jsx</code> mem-fetch kampanye aktif dan sub-tugasnya, mengelompokkannya menggunakan komponen <code>UGCCampaignCard</code>.</li>
+<li><strong>Individual Verification</strong>: User melakukan verifikasi sub-tugas satu per satu. Setiap sukses verifikasi akan mencatat record di <code>user_task_claims</code> namun BELUM memberikan reward XP/USDC.</li>
+<li><strong>Progress Tracking</strong>: UI menampilkan indikator (misal: 1/3, 2/3) secara real-time.</li>
+</ol>
+<h3>15.3 All-or-Nothing Reward Claim</h3>
+<ol>
+<li><strong>Completion Trigger</strong>: Saat progres mencapai 3/3 (atau N/N), tombol &quot;CLAIM TOTAL REWARD&quot; aktif di Pop-up Modal.</li>
+<li><strong>Final Verification (<code>claim-ugc-campaign</code>)</strong>:<ul>
+<li>Backend mengecek integritas seluruh sub-tugas yang terikat ke kampanye tersebut.</li>
+<li>Jika valid, backend mengeksekusi distribusi XP dan USDC secara atomik.</li>
+<li>Record <code>user_task_claims</code> untuk ID kampanye (sebagai parent) dibuat untuk menandai kampanye selesai secara permanen.</li>
+</ul>
+</li>
+<li><strong>Social Sharing</strong>: Setelah klaim, user disuguhi opsi sharing referal ke media sosial untuk memperkuat loop pertumbuhan.</li>
+</ol>
+<hr>
+<h2>🏛️ 16. Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Mandate (v3.59.0)</h2>
+<p>Untuk menjamin skalabilitas dan mencegah <em>environmental drift</em> saat transisi antar network (Sepolia -&gt; Mainnet), ekosistem Crypto Disco mewajibkan pemisahan mutlak antara logika aplikasi dan alamat infrastruktur.</p>
+<h3>16.1 Zero-Hardcode ABI Registry</h3>
+<ul>
+<li><strong>Protocol</strong>: File <code>src/lib/abis_data.txt</code> telah direfaktor untuk menghapus seluruh alamat kontrak statis.</li>
+<li><strong>Marker</strong>: Seluruh alamat digantikan dengan placeholder <code>[RESOLVED_VIA_ENV]</code>.</li>
+<li><strong>Enforcement</strong>: Frontend akan secara otomatis mengambil alamat dari <code>.env</code> (<code>VITE_*_ADDRESS</code>) dan me-map-nya ke ABI yang relevan. Jika variabel <code>.env</code> kosong, aplikasi akan gagal secara eksplisit (<em>fail-fast</em>), mencegah interaksi ke kontrak yang salah.</li>
+</ul>
+<h3>16.2 Global Sync Protocol</h3>
+<ul>
+<li><strong>Trigger</strong>: Setiap perubahan kontrak atau environment <strong>WAJIB</strong> diikuti dengan eksekusi <code>node scripts/sync/sync-all-envs.cjs</code>.</li>
+<li><strong>Audit</strong>: Jalankan <code>node scripts/audits/check_sync_status.cjs</code> untuk memastikan seluruh 13 poin integritas (termasuk Zero-Hardcode) terpenuhi.</li>
+</ul>
+<hr>
+<p><em>End of Source of Truth Document - Nexus v3.59.0 LOCKED.</em></p>

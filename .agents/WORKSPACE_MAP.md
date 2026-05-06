@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.57.0)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.59.0)
 Last Update: 2026-05-05 (23:55)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
@@ -151,6 +151,7 @@ graph TD
 2.  **Every UI change** must happen in `Raffle_Frontend/src/components` or `pages`.
 3.  **Every API change** must respect the existing bundle structure in `Raffle_Frontend/api/`.
 4.  **No local script execution** without checking `scripts/` subfolders first to avoid duplication.
+5.  **ZERO-HARDCODE MANDATE (v3.59.0)**: Prohibit use of static contract addresses in any source file or ABI definition. Pull exclusively from `.env`.
 
 ---
 
@@ -159,8 +160,8 @@ graph TD
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Governance |
 |----------|---------------------|----------------------|------------|
 | **MasterX** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` ✅ |
-| **Raffle** | `[RESERVED]` | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` | `Ownable` ✅ |
-| **DailyApp** | `[RESERVED]` | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` | `AccessControl` ✅ |
+| **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` ✅ |
+| **DailyApp** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` ✅ |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`

@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.58.0)
-**Last Updated**: 2026-05-06T06:00:00+07:00 — Lurah Ecosystem Hardening & Autonomous Agent Resiliency (v3.58.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.0)
+**Last Updated**: 2026-05-06T18:00:00+07:00 — Ecosystem Infrastructure Hardening & Zero-Hardcode Sync (v3.59.0)
 **Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -380,5 +380,20 @@ Evolusi sistem misi UGC untuk mendukung kampanye multi-tugas yang lebih kompleks
 3. **Social Sharing**: Setelah klaim, user disuguhi opsi sharing referal ke media sosial untuk memperkuat loop pertumbuhan.
 
 ---
-*End of Source of Truth Document - Nexus v3.58.0 Locked.*
+
+## 🏛️ 16. Ecosystem Infrastructure Hardening & Zero-Hardcode Mandate (v3.59.0)
+
+Untuk menjamin skalabilitas dan mencegah *environmental drift* saat transisi antar network (Sepolia -> Mainnet), ekosistem Crypto Disco mewajibkan pemisahan mutlak antara logika aplikasi dan alamat infrastruktur.
+
+### 16.1 Zero-Hardcode ABI Registry
+- **Protocol**: File `src/lib/abis_data.txt` telah direfaktor untuk menghapus seluruh alamat kontrak statis.
+- **Marker**: Seluruh alamat digantikan dengan placeholder `[RESOLVED_VIA_ENV]`.
+- **Enforcement**: Frontend akan secara otomatis mengambil alamat dari `.env` (`VITE_*_ADDRESS`) dan me-map-nya ke ABI yang relevan. Jika variabel `.env` kosong, aplikasi akan gagal secara eksplisit (*fail-fast*), mencegah interaksi ke kontrak yang salah.
+
+### 16.2 Global Sync Protocol
+- **Trigger**: Setiap perubahan kontrak atau environment **WAJIB** diikuti dengan eksekusi `node scripts/sync/sync-all-envs.cjs`.
+- **Audit**: Jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan seluruh 13 poin integritas (termasuk Zero-Hardcode) terpenuhi.
+
+---
+*End of Source of Truth Document - Nexus v3.59.0 LOCKED.*
 

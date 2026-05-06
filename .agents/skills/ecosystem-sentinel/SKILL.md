@@ -2,9 +2,10 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Anti-Hallucination Mandate (v3.43.0)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
+  - **Anti-Hallucination Mandate (v3.59.0)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
+version: v3.59.0
 ---
 
 ### 🛡️ LOCAL HARDWARE OPTIMIZATION (Mandatory)
@@ -39,6 +40,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
         - [ ] Verify layout uses `overflow-x-hidden` and `max-w-[100vw]` for mobile.
         - [ ] Verify `handleClaim` forces `fetchData()` on "already completed" errors.
     - **UGC Tracking**: Aksi User Generated Content (Mission Creation, Raffle Launch, Sponsorship Renewal) **WAJIB** memicu log dengan kategori `PURCHASE` dan menyertakan `tx_hash` serta metadata lengkap.
+    - **Zero-Hardcode Address Mandate (v3.59.0)**: Seluruh alamat kontrak **WAJIB** ditarik dari `.env`. Dilarang keras menggunakan alamat statis di dalam file `.txt` (seperti `abis_data.txt`) atau komponen React untuk mencegah *drift* infrastruktur.
     - **Frontend Reporting**: Gunakan `ActivityLogSection.jsx` untuk menampilkan riwayat ini di profil user secara real-time.
 
 # Ecosystem Sentinel & Master Architect Enforcer
@@ -86,7 +88,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.56.3 (Multi-Agent Bridge v1.3.7 — Resilience Mandate).
+- **Versi Terakhir:** v3.59.0
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -139,9 +141,9 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V13.2** | `[RESERVED]` | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` |
+| **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` |
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
-| **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` |
+| **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **PRD v3.43.0** | `2026-04-22T14:15:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
@@ -376,6 +378,24 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **💎 PREMIUM IDENTITY BRANDING AUDIT (v3.42.2)**: Verifikasi penggunaan shield badge lencana "Verified" (Base Blue) untuk user valid. **WAJIB.**
 - [ ] **🛡️ ECOSYSTEM SECURITY REMEDIATION AUDIT (v3.43.0)**: Verifikasi 100% parity lintas proyek Vercel menggunakan **Clean-Pipe Sync Protocol**. Pastikan `robust_sync.cjs` dijalankan untuk setiap perubahan environment. **WAJIB.**
 - [ ] **🏎️ CONCURRENT UI RESPONSIVENESS AUDIT (v3.56.0)**: Verifikasi bahwa seluruh modal dengan heavy hooks (Wagmi/Li.Fi) dipicu menggunakan `startTransition`. **WAJIB.**
+- [ ] **📡 END-TO-END SYNC AUDIT (T.E.S)**: Verifikasi bahwa seluruh rantai (Env -> ABIs -> APIs -> Contracts -> Database -> UI) sinkron 100% tanpa drift. **WAJIB jika perintah `sync end to end` dipicu.**
+
+### Section 13: End-to-End Ecosystem Synchronization (T.E.S) Protocol (v3.59.0)
+Mandat ini diaktifkan saat agen menerima perintah `> sync end to end` atau `sinkronisasi total`.
+
+**Alur Eksekusi Wajib:**
+1.  **Phase 1: Environment Integrity**: Jalankan `node scripts/sync/sync-all-envs.cjs`. Verifikasi 16+ file env.
+2.  **Phase 2: Contract & ABI Purge**: Jalankan `node scripts/sync/rebuild_abis_data.cjs`. Pastikan `abis_data.txt` bersih dari hardcode.
+3.  **Phase 3: Core Audit Pipeline**: Jalankan `node scripts/audits/check_sync_status.cjs`. Pastikan 13/13 checks PASSED.
+4.  **Phase 4: Database & XP Parity**: Jalankan `node scripts/audits/verify-db-sync.cjs`. Verifikasi `point_settings` vs logic backend.
+5.  **Phase 5: API & Bundle Guard**: Verifikasi integritas `api/*-bundle.js` terhadap schema DB dan contract ABI terbaru.
+6.  **Phase 6: UI/UX State Verification**: Lakukan pengecekan visual (via browser sub-agent jika perlu) untuk memastikan data blockchain tersaji benar di Profile/Tasks Page.
+7.  **Phase 7: Documentation Lock**: Update `DISCO_DAILY_MASTER_PRD.md`, `CLAUDE.md`, and `.cursorrules` to reflect the new state.
+
+**Status Final**: Laporan ke user wajib mencakup status "✅ ALL SYSTEMS SYNCHRONIZED & OPERATIONAL" dengan rincian per phase.
+
+---
+*Status: ACTIVE. Sentinel Guard: ENABLED. v3.59.0 Locked.*
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

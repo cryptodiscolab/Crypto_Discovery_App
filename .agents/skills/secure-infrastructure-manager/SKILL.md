@@ -23,11 +23,11 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | ENV Key |
 |---|---|---|---|
-| **DailyApp V12 (Mainnet)** | `[RESERVED]` | `0xaC430adE9217e2280b852EA29b91d14b12b3E151` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
-| **Raffle** | `[RESERVED]` | `0xc20DbecD24f83Ca047257B7bdd7767C36260DEbB` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
+| **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
+| **DailyApp** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA` |
-| **PRD v3.43.0** | `[ACTIVE]` | `2026-04-22T14:15:00+07:00` | `DOC_SOT` |
+| **PRD v3.59.0** | `[ACTIVE]` | `2026-05-06T18:00:00+07:00` | `DOC_SOT` |
 
 ## 🏛️ Core Competencies
 
@@ -105,4 +105,4 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan tanpa `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines).
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.43.0*
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.59.0*

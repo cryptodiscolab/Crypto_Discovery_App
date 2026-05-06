@@ -137,12 +137,16 @@ export function CreateMissionPage() {
     const handleCreate = async (e) => {
         e.preventDefault();
         if (!isConnected) return toast.error("Please connect wallet");
-        if (!formData.title || !formData.link) return toast.error("Title and Link are required");
+
+        // [v3.59.0] Client-side pre-flight validation (mirrors server-side rules)
+        if (!formData.title || formData.title.trim().length < 5) return toast.error('Mission title must be at least 5 characters.');
+        if (!formData.link || formData.link.trim().length < 10) return toast.error('Mission link is required.');
         if (!validatePlatformUrl(formData.link, formData.platform)) {
             const rule = PLATFORM_URL_RULES[formData.platform];
-            return toast.error(`Link harus dari ${rule.hint}`);
+            return toast.error(`[Link Guard] Mission link must be from ${rule.hint}`);
         }
         if (selectedActions.length === 0) return toast.error('Pilih minimal 1 aksi.');
+        if (selectedActions.length > 3) return toast.error('[Multi-Action Bound] Maksimal 3 aksi per misi.');
 
         setIsSubmitting(true);
         const tid = toast.loading("Processing USDC Payment...");
@@ -202,7 +206,21 @@ export function CreateMissionPage() {
                 })
             });
 
-            if (!response.ok) throw new Error("Failed to sync with backend");
+            const result = await response.json();
+
+            // [v3.59.0] Parse backend validation errors array
+            if (!response.ok) {
+                if (result?.details && Array.isArray(result.details)) {
+                    // Show each validation error as a separate toast
+                    toast.dismiss(tid);
+                    result.details.forEach((detail, i) => {
+                        setTimeout(() => toast.error(detail, { duration: 6000 }), i * 400);
+                    });
+                } else {
+                    throw new Error(result?.error || 'Failed to sync with backend');
+                }
+                return;
+            }
 
             toast.success("Mission Created & Payment Verified! Pending Admin Approval.", { id: tid });
             navigate('/tasks');
@@ -319,8 +337,25 @@ export function CreateMissionPage() {
                                                     value={formData.link}
                                                     onChange={e => setFormData(prev => ({ ...prev, link: e.target.value }))}
                                                 />
-                                                {formData.link && !validatePlatformUrl(formData.link, formData.platform) && (
-                                                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1 pl-1">Link harus dari {PLATFORM_URL_RULES[formData.platform]?.hint}</p>
+                                                {/* [v3.59.0] Platform-specific validation feedback */}
+                                                {formData.link && !validatePlatformUrl(formData.link, formData.platform) ? (
+                                                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1.5 pl-1">
+                                                        ⚠ [Link Guard] Link harus dari {PLATFORM_URL_RULES[formData.platform]?.hint}
+                                                    </p>
+                                                ) : formData.link && validatePlatformUrl(formData.link, formData.platform) && (
+                                                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1.5 pl-1">
+                                                        ✓ Link valid
+                                                    </p>
+                                                )}
+                                                {/* Pro Tip per platform */}
+                                                {!formData.link && (
+                                                    <p className="text-[9px] font-bold text-slate-700 tracking-wide mt-1.5 pl-1 italic">
+                                                        {formData.platform === 'farcaster' && 'Pro Tip: Gunakan full Warpcast thread URL untuk tugas Quote.'}
+                                                        {formData.platform === 'twitter' && 'Pro Tip: Gunakan link Tweet/profil spesifik, bukan homepage.'}
+                                                        {formData.platform === 'tiktok' && 'Pro Tip: Gunakan link video TikTok untuk tugas Like/Comment.'}
+                                                        {formData.platform === 'instagram' && 'Pro Tip: Pastikan akun/postingan tidak private.'}
+                                                        {formData.platform === 'onchain' && 'Pro Tip: Gunakan link ke dApp atau contract yang relevan.'}
+                                                    </p>
                                                 )}
                                             </div>
                                         </div>
@@ -330,7 +365,11 @@ export function CreateMissionPage() {
                                 {/* Multi-Action Selector */}
                                 <div className="space-y-3">
                                     <label className="label-native text-slate-500 flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-violet-500" /> PILIH AKSI <span className="text-violet-500">({selectedActions.length}/3)</span>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                                        AKSI YANG HARUS DILAKUKAN
+                                        <span className={`font-black text-[10px] px-2 py-0.5 rounded-lg ${
+                                            selectedActions.length >= 3 ? 'bg-amber-500/20 text-amber-400' : 'bg-violet-500/20 text-violet-400'
+                                        }`}>{selectedActions.length}/3 MAX</span>
                                     </label>
                                     <div className="flex flex-wrap gap-2">
                                         {(PLATFORM_ACTIONS[formData.platform] || []).map(act => {

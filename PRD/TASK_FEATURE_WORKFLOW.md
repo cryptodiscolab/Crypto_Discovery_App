@@ -1,10 +1,11 @@
 # 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.58.0` | **Last Updated**: `2026-05-06T06:00:00+07:00`
+**Version**: `v3.59.0` | **Last Updated**: `2026-05-06T18:00:00+07:00`
 **Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
 
 ---
 
 ### 📜 Changelog
+- **v3.59.0**: Ecosystem Infrastructure Hardening & Zero-Hardcode Sync. Refactor `abis_data.txt` untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.
 - **v3.58.0**: Lurah Ecosystem Hardening & Autonomous Agent Resiliency. Implementasi **Auto-Retry logic** pada RPC, heartbeat dinamis di `system_health`, dan eliminasi hardcoded addresses.
 - **v3.57.0**: Hardening UGC Mission Pipeline. Implementasi **Multi-Action Campaign selector**, **All-or-Nothing Reward Claiming**, dan **Grouped UI Components** (`UGCCampaignCard`). Validasi URL platform-aware.
 - **v3.56.4**: Hardened Multi-Agent Cognitive Sync. Implementasi **Lurah Brain (AI Filter)**, **Telegram Chat Memory**, dan **Sequential SBT Upgrade Mandate**. Penghapusan protokol "Izin Pemeliharaan" untuk agen otonom.
@@ -32,6 +33,7 @@
 17. [Concurrent UI Performance](#17-concurrent-ui-performance)
 18. [SBT Tier Integration Mandate](#18-sbt-tier-integration-mandate)
 19. [UGC Multi-Action & All-or-Nothing Campaign Workflow](#19-ugc-multi-action--all-or-nothing-campaign-workflow)
+20. [Zero-Hardcode Infrastructure Mandate](#20-zero-hardcode-infrastructure-mandate)
 
 ---
 
@@ -922,4 +924,20 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 4. [ ] **Referral Loop**: Setiap klaim sukses harus memicu CTA sharing sosial.
 
 ---
-*End of Task Feature Workflow - Nexus v3.57.0 Locked.*
+
+## 20. Zero-Hardcode Infrastructure Mandate (v3.59.0)
+
+Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanpa risiko *manual error*.
+
+### 20.1 Dynamic Address Resolution
+- **Frontend**: Menggunakan helper `getAddr()` dari `src/lib/contracts.js` yang menarik nilai dari `import.meta.env`.
+- **ABI Mapping**: File `abis_data.txt` sekarang bertindak murni sebagai registry fungsi, dengan alamat kontrak yang disuntikkan secara dinamis saat runtime.
+
+### 20.2 Synchronization Triggers
+- Setiap kali alamat kontrak diubah di `.env`, developer **WAJIB** menjalankan:
+  - `node scripts/sync/sync-all-envs.cjs` (Environment Sync)
+  - `node scripts/sync/rebuild_abis_data.cjs` (ABI Placeholder Sync)
+  - `node scripts/audits/check_sync_status.cjs` (Integritas Audit)
+
+---
+*End of Task Feature Workflow - Nexus v3.59.0 Locked.*

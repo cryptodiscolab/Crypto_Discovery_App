@@ -15,7 +15,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 - **Replay Protection**: Gunakan timestamp dalam pesan signature dengan window validasi maksimal 5 menit.
 - **Normalized Mapping**: Pastikan mapping address (Farcaster/Twitter) menggunakan clean lowercase address untuk menghindari 404 pada API Neynar.
 
-### 2. Verified Infrastructure Reference (PRD v3.39.1)
+### 2. Verified Infrastructure Reference (PRD v3.59.0)
 | Key | Value |
 |---|---|
 | Admin FIDs | `1477344` (Farcaster) |
@@ -23,6 +23,7 @@ Skill ini menjamin stabilitas runtime dan integritas Admin Hub dengan berpegang 
 | Master Admin 2 | `0x52260c30697674a7C837FEB2af21bBf3606795C8` |
 | P&L Metrics | `Total Pool`, `Locked Rewards`, `Net Surplus` |
 | SBT Weights | `Proportional Distribution (100% Total)` |
+| Zero-Hardcode | `ENFORCED (v3.59.0)` |
 
 ### 3. Bahasa & Komunikasi
 - **Technical/Chat**: **Bahasa Indonesia**.

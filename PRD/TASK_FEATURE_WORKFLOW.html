@@ -1,6 +1,15 @@
 <h1>🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT</h1>
-<p><strong>Version</strong>: <code>v3.58.0</code> | <strong>Last Updated</strong>: <code>2026-05-06T06:00:00+07:00</code>
+<p><strong>Version</strong>: <code>v3.59.0</code> | <strong>Last Updated</strong>: <code>2026-05-06T18:00:00+07:00</code>
 <strong>Status</strong>: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH</p>
+<hr>
+<h3>📜 Changelog</h3>
+<ul>
+<li><strong>v3.59.0</strong>: Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Sync. Refactor <code>abis_data.txt</code> untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.</li>
+<li><strong>v3.58.0</strong>: Lurah Ecosystem Hardening &amp; Autonomous Agent Resiliency. Implementasi <strong>Auto-Retry logic</strong> pada RPC, heartbeat dinamis di <code>system_health</code>, dan eliminasi hardcoded addresses.</li>
+<li><strong>v3.57.0</strong>: Hardening UGC Mission Pipeline. Implementasi <strong>Multi-Action Campaign selector</strong>, <strong>All-or-Nothing Reward Claiming</strong>, dan <strong>Grouped UI Components</strong> (<code>UGCCampaignCard</code>). Validasi URL platform-aware.</li>
+<li><strong>v3.56.4</strong>: Hardened Multi-Agent Cognitive Sync. Implementasi <strong>Lurah Brain (AI Filter)</strong>, <strong>Telegram Chat Memory</strong>, dan <strong>Sequential SBT Upgrade Mandate</strong>. Penghapusan protokol &quot;Izin Pemeliharaan&quot; untuk agen otonom.</li>
+<li><strong>v3.56.3</strong>: Implementasi Raffle v2.1 Refund Protocol &amp; OpenClaw Security Audit.</li>
+</ul>
 <hr>
 <h2>📋 Table of Contents</h2>
 <ol>
@@ -19,6 +28,11 @@
 <li><a href="#13-admin-task-management">Admin Task Management</a></li>
 <li><a href="#14-file-reference-map">File Reference Map</a></li>
 <li><a href="#15-healthy-state-checklist">Healthy State Checklist</a></li>
+<li><a href="#16-self-healing-claim-pipeline">Self-Healing Claim Pipeline</a></li>
+<li><a href="#17-concurrent-ui-performance">Concurrent UI Performance</a></li>
+<li><a href="#18-sbt-tier-integration-mandate">SBT Tier Integration Mandate</a></li>
+<li><a href="#19-ugc-multi-action--all-or-nothing-campaign-workflow">UGC Multi-Action &amp; All-or-Nothing Campaign Workflow</a></li>
+<li><a href="#20-zero-hardcode-infrastructure-mandate">Zero-Hardcode Infrastructure Mandate</a></li>
 </ol>
 <hr>
 <h2>1. Arsitektur Tingkat Tinggi</h2>
@@ -624,6 +638,47 @@ DILARANG menghitung XP scaling di frontend atau backend JavaScript. Semua scalin
 </blockquote>
 <h3>4.7 <code>v_user_full_profile</code> — Unified View</h3>
 <p>View SQL yang menggabungkan <code>user_profiles</code> dengan tier names, SBT stats, dan raffle statistics. Digunakan oleh Leaderboard dan profil user.</p>
+<h3>4.8 <code>telegram_chat_history</code> — Conversational Memory (v3.56.4)</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td><code>uuid</code> (PK)</td>
+<td>Auto-generated</td>
+</tr>
+<tr>
+<td><code>chat_id</code></td>
+<td><code>text</code></td>
+<td>ID Chat Telegram (Owner)</td>
+</tr>
+<tr>
+<td><code>role</code></td>
+<td><code>text</code></td>
+<td><code>user</code> (Owner) atau <code>assistant</code> (Lurah)</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td><code>text</code></td>
+<td>Isi pesan/diskusi teknis</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>timestamp</code></td>
+<td>Waktu pesan dikirim</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>[!TIP]
+Digunakan oleh Lurah (Antigravity Bridge) untuk mempertahankan konteks diskusi teknis hingga 10 pesan terakhir tanpa kehilangan alur pikiran.</p>
+</blockquote>
+<h3>4.9 <code>nexus_agent_reports</code> — Intelligence Feed</h3>
+<p>Digunakan oleh <strong>Lurah Brain</strong> untuk memfilter laporan agen (Linter, Security, Sync) sebelum dikirim ke Telegram. Hanya laporan dengan level <code>CRITICAL</code> atau <code>ALERT</code> yang akan memicu notifikasi.</p>
 <hr>
 <h2>5. API Routing &amp; Bundle Map</h2>
 <h3>5.1 Vercel Rewrites (vercel.json)</h3>
@@ -1296,7 +1351,30 @@ Pipeline Backend (<code>admin-bundle.js</code>) sekarang memproses field berikut
 <li><input checked="" disabled="" type="checkbox"> <strong>Activity Logging</strong>: Setiap klaim menghasilkan entry di <code>user_activity_logs</code>.</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>Reactive Sync</strong>: &quot;Already completed&quot; error forces <code>fetchData()</code> re-sync.</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>30s Anti-Fraud (On-Chain)</strong>: Timer aktif sebelum social verification (TaskRow).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Concurrent Modal Trigger</strong>: Seluruh modal state transitions dibungkus <code>startTransition</code> (v3.56.0).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Nexus UI Parity (v3.53.0)</strong>: Metadata stamps (ID, Creator, Created At, Expires At) transparan dan konsisten di seluruh kartu.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Dynamic Summary</strong>: Home Page summary (<code>TaskCard.jsx</code>) menggunakan real-time Supabase stats (bukan placeholder).</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>15s Anti-Fraud (Off-Chain)</strong>: <code>startedTasks</code> countdown setelah &quot;GO TO TASK&quot; klik sebelum CLAIM REWARD aktif (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Self-Healing v3.51.2</strong>: Backend otomatis memulihkan XP/Log jika record claim sudah ada tapi data reward hilang.</li>
+</ul>
+<hr>
+<h2>16. Self-Healing Claim Pipeline (v3.51.2)</h2>
+<p>Protokol Self-Healing dirancang untuk mengatasi &quot;Ghost Claims&quot; (kondisi di mana record di <code>user_task_claims</code> ada, tetapi penambahan XP atau penulisan Activity Log gagal karena timeout atau crash).</p>
+<h3>16.1 Ghost Claim Recovery Logic</h3>
+<p>Saat backend menerima error <strong>23505 (Unique Violation)</strong> pada tabel <code>user_task_claims</code>, sistem tidak lagi langsung melempar error. Sebaliknya, sistem menjalankan:</p>
+<ol>
+<li><strong>Log Audit</strong>: Mengecek <code>user_activity_logs</code> menggunakan <code>metadata-&gt;task_id</code>.</li>
+<li><strong>State Restoration</strong>: Jika log tidak ditemukan, sistem secara otomatis mengeksekusi <code>fn_increment_xp()</code> dan menulis log baru.</li>
+<li><strong>Idempotency</strong>: Jika log sudah ada, sistem mengonfirmasi klaim tersebut sukses tanpa duplikasi XP.</li>
+</ol>
+<h3>16.2 UI Resiliency Mandate</h3>
+<p>Frontend <code>TaskList.jsx</code> wajib menangkap error &quot;already completed&quot; dan melakukan sinkronisasi lokal instan:</p>
+<pre><code class="language-javascript">if (error.message.includes(&quot;already completed&quot;)) {
+    setLocalClaims(prev =&gt; [...prev, taskId]); // Instant hide
+    fetchData(); // Background sync
+}
+</code></pre>
+<ul>
 <li><input checked="" disabled="" type="checkbox"> <strong>Two-Step Task Flow (Off-Chain)</strong>: User HARUS buka link dulu via &quot;GO TO TASK&quot; sebelum bisa klaim XP (v3.47.1).</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>Swap Quote Error Visibility</strong>: SwapModal menampilkan error visible + Jumper fallback jika Li.Fi SDK gagal quote (v3.47.1).</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>NFT Mint Contract Parity</strong>: SBTUpgradeCard memanggil <code>mintNFT</code> (DAILY_APP) bukan <code>upgradeTier</code> (MASTER_X) (v3.47.1).</li>
@@ -1309,5 +1387,77 @@ Pipeline Backend (<code>admin-bundle.js</code>) sekarang memproses field berikut
 <li><input checked="" disabled="" type="checkbox"> <strong>Duplicate Action Key Fix</strong>: JSON body property <code>action: payload.action_type</code> renamed to <code>action_type: payload.action_type</code> to prevent silent override of <code>action: bundleAction</code> (v3.51.1).</li>
 </ul>
 <hr>
+<h2>18. SBT Tier Integration Mandate</h2>
+<p>Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan <strong>Hardened Tier Ascension</strong>:</p>
+<ol>
+<li><strong>Sequential Progression</strong>: User <strong>WAJIB</strong> upgrade tier secara berurutan. Sistem tidak mengizinkan lompatan (misal: Rookie langsung ke Gold). Tier $N$ hanya bisa di-mint jika wallet memiliki Tier $N-1$.</li>
+<li><strong>Soulbound (Non-Transferable)</strong>: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak <code>DailyAppV13</code>.</li>
+<li><strong>Price Transparency</strong>: UI <code>SBTUpgradeCard</code> wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.</li>
+<li><strong>XP Burn Compliance</strong>: Setiap upgrade akan membakar XP sesuai konfigurasi <code>nftConfigs</code> on-chain. Pastikan sinkronisasi XP setelah minting dilakukan secara atomik melalui event listener.</li>
+</ol>
 <p><em>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.</em>
-<em>Antigravity — Nexus Master Architect. Protocol v3.51.1 Locked.</em></p>
+<em>Antigravity — Nexus Master Architect. Protocol v3.56.4 Locked.</em></p>
+<hr>
+<h2>19. UGC Multi-Action &amp; All-or-Nothing Campaign Workflow</h2>
+<p>Sistem ini berevolusi dari tugas tunggal menjadi kampanye terstruktur guna meningkatkan retensi dan kualitas engagement.</p>
+<h3>19.1 Arsitektur Data Kampanye</h3>
+<ul>
+<li><strong>Tabel <code>campaigns</code></strong>: Bertindak sebagai entitas parent yang menyimpan <code>title</code>, <code>reward_amount</code>, dan metadata global.</li>
+<li><strong>Tabel <code>daily_tasks</code></strong>: Menyimpan sub-tugas individu. Kunci penghubungnya adalah <code>onchain_id</code> yang diisi dengan ID Kampanye.</li>
+<li><strong>Tabel <code>user_task_claims</code></strong>: <ul>
+<li>Mencatat verifikasi individual sub-tugas (reward 0).</li>
+<li>Mencatat klaim final kampanye (ID Kampanye) untuk memicu reward XP/USDC.</li>
+</ul>
+</li>
+</ul>
+<h3>19.2 Alur Pembuatan (Batching)</h3>
+<pre><code class="language-javascript">// admin-bundle.js
+const { data: tasks, error: taskError } = await supabaseAdmin
+    .from(&#39;daily_tasks&#39;)
+    .insert(action_types.map(act =&gt; ({
+        title: `${title} (${act})`,
+        action_type: act,
+        onchain_id: campaignId,
+        task_type: &#39;ugc&#39;,
+        // ... metadata lainnya
+    })));
+</code></pre>
+<h3>19.3 Alur Klaim (Atomic All-or-Nothing)</h3>
+<ol>
+<li><strong>Frontend</strong>: Menghitung <code>completedCount</code> dari sub-tugas yang ada di <code>offChainClaims</code>.</li>
+<li><strong>Logic</strong>: Jika <code>completedCount === subTasks.length</code>, tampilkan tombol klaim.</li>
+<li><strong>Backend (<code>claim-ugc-campaign</code>)</strong>:<ul>
+<li>Query seluruh sub-tugas kampanye X.</li>
+<li>Query seluruh claim user untuk sub-tugas kampanye X.</li>
+<li>Bandingkan: <code>count(subTasks) == count(userClaims)</code>.</li>
+<li>Jika <code>true</code>, eksekusi <code>fn_increment_xp</code> dan increment saldo USDC.</li>
+<li>Tandai kampanye sebagai <code>claimed</code> untuk user tersebut.</li>
+</ul>
+</li>
+</ol>
+<h3>19.4 Checklist Kesehatan UGC v3.57.0</h3>
+<ol>
+<li><input disabled="" type="checkbox"> <strong>Regex Link Guard</strong>: Link harus valid sesuai platform (Warpcast/X/TikTok).</li>
+<li><input disabled="" type="checkbox"> <strong>Multi-Action Bound</strong>: Maksimal 3 aksi per kampanye untuk menjaga UX.</li>
+<li><input disabled="" type="checkbox"> <strong>Atomic Claims</strong>: Reward tidak boleh bocor per sub-tugas, hanya di level parent kampanye.</li>
+<li><input disabled="" type="checkbox"> <strong>Referral Loop</strong>: Setiap klaim sukses harus memicu CTA sharing sosial.</li>
+</ol>
+<hr>
+<h2>20. Zero-Hardcode Infrastructure Mandate (v3.59.0)</h2>
+<p>Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanpa risiko <em>manual error</em>.</p>
+<h3>20.1 Dynamic Address Resolution</h3>
+<ul>
+<li><strong>Frontend</strong>: Menggunakan helper <code>getAddr()</code> dari <code>src/lib/contracts.js</code> yang menarik nilai dari <code>import.meta.env</code>.</li>
+<li><strong>ABI Mapping</strong>: File <code>abis_data.txt</code> sekarang bertindak murni sebagai registry fungsi, dengan alamat kontrak yang disuntikkan secara dinamis saat runtime.</li>
+</ul>
+<h3>20.2 Synchronization Triggers</h3>
+<ul>
+<li>Setiap kali alamat kontrak diubah di <code>.env</code>, developer <strong>WAJIB</strong> menjalankan:<ul>
+<li><code>node scripts/sync/sync-all-envs.cjs</code> (Environment Sync)</li>
+<li><code>node scripts/sync/rebuild_abis_data.cjs</code> (ABI Placeholder Sync)</li>
+<li><code>node scripts/audits/check_sync_status.cjs</code> (Integritas Audit)</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><em>End of Task Feature Workflow - Nexus v3.59.0 Locked.</em></p>

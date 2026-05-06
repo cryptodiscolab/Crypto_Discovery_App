@@ -69,6 +69,71 @@ async function isAuthorizedAdmin(address) {
     return isAuthorized;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// [v3.59.0] UGC MISSION VALIDATOR — Platform Link Guard + Bounds Enforcement
+// ─────────────────────────────────────────────────────────────────────────────
+const UGC_PLATFORM_LINK_RULES = {
+    farcaster:  { pattern: /warpcast\.com/i,            label: 'warpcast.com' },
+    twitter:    { pattern: /(twitter\.com|x\.com)/i,   label: 'x.com or twitter.com' },
+    tiktok:     { pattern: /tiktok\.com/i,              label: 'tiktok.com' },
+    instagram:  { pattern: /instagram\.com/i,           label: 'instagram.com' },
+    onchain:    { pattern: /.*/,                        label: 'any URL' }
+};
+
+const VALID_ACTION_TYPES = new Set([
+    'follow', 'like', 'recast', 'repost', 'quote', 'reply', 'comment', 'duet', 'transaction'
+]);
+
+function validateUgcMission(payload) {
+    const errors = [];
+
+    // 1. Title & Link are required
+    if (!payload.title || payload.title.trim().length < 5) {
+        errors.push('Mission title must be at least 5 characters.');
+    }
+    if (!payload.link || payload.link.trim().length < 10) {
+        errors.push('Mission link is required.');
+    }
+
+    // 2. Platform Link Guard (Regex)
+    const platform = payload.platform_code || 'farcaster';
+    const rule = UGC_PLATFORM_LINK_RULES[platform];
+    if (rule && payload.link && !rule.pattern.test(payload.link)) {
+        errors.push(`[Link Guard] Mission link must be from ${rule.label} for platform "${platform}".`);
+    }
+
+    // 3. Multi-Action Bound: Max 3 actions
+    const actionTypes = Array.isArray(payload.action_types) ? payload.action_types : [];
+    if (actionTypes.length === 0) {
+        errors.push('At least 1 action type is required.');
+    }
+    if (actionTypes.length > 3) {
+        errors.push(`[Multi-Action Bound] Maximum 3 action types allowed per mission. Received: ${actionTypes.length}.`);
+    }
+    const invalidActions = actionTypes.filter(a => !VALID_ACTION_TYPES.has(a));
+    if (invalidActions.length > 0) {
+        errors.push(`[Action Guard] Invalid action type(s): ${invalidActions.join(', ')}.`);
+    }
+
+    // 4. Reward & Participant sanity checks
+    const rewardPerUser = parseFloat(payload.reward_amount_per_user);
+    if (isNaN(rewardPerUser) || rewardPerUser < 0) {
+        errors.push('Reward per user must be a non-negative number.');
+    }
+    if (rewardPerUser > 1000) {
+        errors.push('[Overflow Guard] Reward per user cannot exceed 1000 USDC.');
+    }
+    const maxParticipants = parseInt(payload.max_participants);
+    if (isNaN(maxParticipants) || maxParticipants < 1) {
+        errors.push('Max participants must be at least 1.');
+    }
+    if (maxParticipants > 100000) {
+        errors.push('[Overflow Guard] Max participants cannot exceed 100,000.');
+    }
+
+    return errors;
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -365,6 +430,15 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true });
             }
             case 'CREATE_UGC_MISSION': {
+                // [v3.59.0] SERVER-SIDE VALIDATION — Run before any DB write
+                const validationErrors = validateUgcMission(payload);
+                if (validationErrors.length > 0) {
+                    return res.status(400).json({ 
+                        error: 'Mission validation failed.',
+                        details: validationErrors
+                    });
+                }
+
                 const missionData = {
                     ...payload,
                     is_active: false,
@@ -380,10 +454,8 @@ export default async function handler(req, res) {
                         .maybeSingle();
                     if (cErr) throw cErr;
 
-                    // 2. Batch Insert Daily Tasks — one per action_type
-                    const actionTypes = Array.isArray(payload.action_types) && payload.action_types.length > 0
-                        ? payload.action_types
-                        : ['follow'];
+                    // 2. Batch Insert Daily Tasks — one per action_type (max 3, validated above)
+                    const actionTypes = payload.action_types; // Already validated: 1-3 items
 
                     const taskRows = actionTypes.map(action => ({
                         title: `${missionData.title} (${action.toUpperCase()})`,
@@ -406,7 +478,13 @@ export default async function handler(req, res) {
                         .insert(taskRows);
                     if (tErr) throw tErr;
 
-                    await logAdminAction(targetAddress, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, action_count: taskRows.length, ...missionData });
+                    await logAdminAction(targetAddress, 'CREATE_UGC_MISSION', { 
+                        campaign_id: campaign.id, 
+                        action_count: taskRows.length,
+                        platform: missionData.platform_code,
+                        link: missionData.link,
+                        ...missionData 
+                    });
                     return res.status(200).json({ success: true, data: campaign });
                 } catch (e) {
                     return res.status(500).json({ error: e.message });

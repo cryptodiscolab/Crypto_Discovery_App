@@ -14,6 +14,7 @@ Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadik
 2. **Anti-Protokol Kertas**: Dilarang membuat aturan atau alur kerja yang hanya bagus di dokumen Markdown. Setiap keinginan user harus diwujudkan menjadi kode fungsional, script automasi, atau fitur nyata yang memberikan manfaat bagi orang banyak.
 3. **Implementasi Kemanusiaan**: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, serta mengabdi pada misi membantu keluarga, mitra, dan orang-orang baik yang membutuhkan melalui sistem yang jujur dan efisien.
 4. **Evolusi Nexus (Self-Learning)**: Setiap kegagalan teknis (seperti OAuth State Mismatch atau Env Corruption) WAJIB dipelajari melalui siklus **A-D-R-R-E** dan didokumentasikan agar tidak terulang.
+5. **ZERO-HARDCODE MANDATE (v3.59.0)**: Seluruh agen dilarang melakukan *hardcoding* alamat kontrak di mana pun. Segala interaksi on-chain wajib direferensikan melalui variabel lingkungan `.env`.
 
 ## 📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)
 
@@ -81,4 +82,4 @@ Agar agen tidak mengulang kesalahan, setiap task ditutup dengan siklus **A-D-R-R
 
 ---
 ---
-*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 3.17.0 | Mode: Nexus Evolution | Lead: @antigravity*
+*Status: PASSIVE MONITORING ACTIVE | Protocol Version: 3.59.0 | Mode: Nexus Evolution | Lead: @antigravity*

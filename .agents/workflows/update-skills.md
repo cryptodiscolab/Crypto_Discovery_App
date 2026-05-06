@@ -35,6 +35,6 @@ This workflow automates the end-to-end synchronization of the Crypto Disco ecosy
    - Check `nexus-routing.json` for any necessary model upgrades.
 
 6. **Verification**
-   - Run `node scripts/check_sync_status.cjs`.
+   - Run `node scripts/audits/check_sync_status.cjs`.
    - Verify build stability via `npm run build`.
    - Commit and push all documentation changes together.

@@ -19,6 +19,8 @@ As the Lead Orchestrator (Antigravity), you should run this command daily, befor
 
 ```bash
 npm run orchestron
+# OR for full End-to-End synchronization (v3.59.0)
+# This is the "Nuclear Option" triggered by "> sync end to end"
 ```
 
 ## 3. The Resolution Loop
@@ -31,4 +33,4 @@ npm run orchestron
 ## 4. Sub-Agent Responsibilities
 - **Qwen**: Validates `node -c` for backend bundles and `npm run lint` for the frontend.
 - **OpenClaw**: Runs `npm run gitleaks-check` to enforce the Zero-Secret Leak guard.
-- **DeepSeek**: Runs `scripts/audits/check_sync_status.cjs` and `verify-db-sync.cjs` to ensure Database, Contracts, and APIs are 100% aligned.
+- **DeepSeek**: Runs `scripts/audits/check_sync_status.cjs` and `verify-db-sync.cjs` to ensure Database, Contracts (Zero-Hardcode), and APIs are 100% aligned.

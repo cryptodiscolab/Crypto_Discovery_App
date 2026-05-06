@@ -11,12 +11,12 @@ Skill ini menangani logika inti pemberian reward dan sinkronisasi XP dengan kepa
 - **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 - **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
 
-### 2. Verified Infrastructure Reference (v3.43.0)
+### 2. Verified Infrastructure Reference (v3.59.0)
 | Key | Value |
 |---|---|
-| DailyApp (Tasks) | `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267` |
+| DailyApp (Tasks) | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` |
 | MasterX (XP) | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
-| PRD Status | `v3.43.0 (Ecosystem Security Remediation LOCKED)` |
+| PRD Status | `v3.59.0 (Ecosystem Infrastructure Hardening LOCKED)` |
 
 ### 3. Bahasa & Komunikasi
 - **Technical/Chat**: **Bahasa Indonesia**.

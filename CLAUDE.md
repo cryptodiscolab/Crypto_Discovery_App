@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.56.7)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.59.0)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -21,7 +21,7 @@ Before responding to ANY request, read these files IN ORDER:
 6. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 7. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.47.0)` User can say `> re-read skills` to reset (MANDATORY: re-read [WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md) alongside skills).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.59.0)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.59.0).
 
 ---
 
@@ -70,6 +70,7 @@ Before responding to ANY request, read these files IN ORDER:
 65. **SUPER KETAT TOKEN OPTIMIZATION**: Agents MUST execute `context-hasher` check before reading files >500 lines. Maximize cache hits via SHA-256 persistent memory in `agent_vault` (v3.54.0).
 66. **CONCURRENT UI RESPONSIVENESS MANDATE**: High-load components (Modals with heavy hooks) MUST be triggered using React `startTransition` to prevent main-thread blocking and maintain < 50ms INP responsiveness (v3.56.0).
 67. **MULTI-AGENT ORCHESTRATION MANDATE**: All heavy-duty sub-agent delegations (audits, mass refactoring) MUST use `scripts/orchestrator/gemini_agent_bridge.js` (v1.3.7). This ensures automatic 9-key rotation and model fallback (2.5 -> 3.1) resilience (v3.56.3).
+68. **ZERO-HARDCODE INFRASTRUCTURE MANDATE**: ALL contract addresses in `abis_data.txt` MUST be placeholders (`[RESOLVED_VIA_ENV]`). Hardcoding static addresses in source code or ABI definitions is strictly FORBIDDEN to ensure mainnet portability (v3.59.0).
 
 ---
 
@@ -98,7 +99,7 @@ Notify user format (Standard Reporting v3.26.0):
 
 -   **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
 -   **DailyAppV12Secured (Mainnet)**: `[RESERVED]`
--   **DailyAppV13.2 (Sepolia)**: `0x369aBcD44d3D510f4a20788BBa6F47C99e57d267`
+-   **DailyAppV13.2 (Sepolia)**: `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D`
 -   **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 -   **Language**: Chat = Bahasa Indonesia | UI/Code = English
 

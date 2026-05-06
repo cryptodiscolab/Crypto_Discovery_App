@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { baseSepolia, base } from 'viem/chains';
 
 // --- CONFIG ---
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
@@ -9,15 +9,27 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const CRON_SECRET = process.env.CRON_SECRET;
 
-const MASTER_X_ADDRESS = process.env.MASTER_X_ADDRESS || process.env.VITE_MASTER_X_ADDRESS_SEPOLIA;
-const DAILY_APP_ADDRESS = process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA;
-const RAFFLE_ADDRESS = process.env.VITE_RAFFLE_ADDRESS_SEPOLIA;
+// [v3.59.0] Dynamic network switcher (mirrors admin-bundle.js pattern)
+const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || '84532').trim();
+const isMainnet = CHAIN_ID === '8453';
 
-const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
+const MASTER_X_ADDRESS = isMainnet
+    ? (process.env.VITE_MASTER_X_ADDRESS || process.env.MASTER_X_ADDRESS)
+    : (process.env.MASTER_X_ADDRESS || process.env.VITE_MASTER_X_ADDRESS_SEPOLIA);
+const DAILY_APP_ADDRESS = isMainnet
+    ? (process.env.VITE_V12_CONTRACT_ADDRESS || process.env.DAILY_APP_ADDRESS)
+    : (process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA);
+const RAFFLE_ADDRESS = isMainnet
+    ? (process.env.VITE_RAFFLE_ADDRESS || process.env.RAFFLE_ADDRESS)
+    : process.env.VITE_RAFFLE_ADDRESS_SEPOLIA;
+
+const RPC_URL = isMainnet
+    ? (process.env.VITE_BASE_MAINNET_RPC_URL || 'https://mainnet.base.org')
+    : (process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org');
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const publicClient = createPublicClient({
-    chain: baseSepolia,
+    chain: isMainnet ? base : baseSepolia,
     transport: http(RPC_URL)
 });
 
@@ -94,13 +106,39 @@ export default async function handler(req, res) {
                     }
                 }
                 const onChainXP = Number(masterStats[0]);
-                if (Math.abs(onChainXP - topUser.total_xp) > 5000) { // Threshold for "Critical Drift"
-                    auditResults.status = "DEGRADED";
-                    auditResults.alerts.push(`Parity Drift Detected: User ${topUser.wallet_address.substring(0,6)} has high XP mismatch.`);
+                const drift = Math.abs(onChainXP - topUser.total_xp);
+
+                // [v3.59.0] Enhanced XP Drift Grading
+                if (drift > 10000) {
+                    auditResults.status = "CRITICAL";
+                    auditResults.alerts.push(`🚨 CRITICAL XP Drift: User ${topUser.wallet_address.substring(0,6)} has ${drift.toLocaleString()} XP mismatch (on-chain: ${onChainXP.toLocaleString()} vs DB: ${topUser.total_xp.toLocaleString()}).`);
+                } else if (drift > 5000) {
+                    if (auditResults.status === "HEALTHY") auditResults.status = "DEGRADED";
+                    auditResults.alerts.push(`⚠️ XP Drift Detected: User ${topUser.wallet_address.substring(0,6)} has ${drift.toLocaleString()} XP mismatch.`);
                 }
             } catch (e) {
                 console.warn("Parity check skipped (RPC Failure):", e.message);
             }
+        }
+
+        // 5. [v3.59.0] Stuck Mission Detector
+        // Missions with is_verified_payment=true but status='pending' for >1 hour
+        try {
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+            const { data: stuckMissions, error: smErr } = await supabase
+                .from('campaigns')
+                .select('id, title, created_at, sponsor_address')
+                .eq('is_verified_payment', true)
+                .eq('status', 'pending')
+                .lt('created_at', oneHourAgo);
+
+            if (!smErr && stuckMissions && stuckMissions.length > 0) {
+                if (auditResults.status === "HEALTHY") auditResults.status = "DEGRADED";
+                const missionList = stuckMissions.map(m => `"${m.title}" (ID: ${String(m.id).substring(0,8)})`).join(', ');
+                auditResults.alerts.push(`🟠 Stuck Missions [${stuckMissions.length}]: Payment verified but still pending >1hr: ${missionList}. Admin action required.`);
+            }
+        } catch (e) {
+            console.warn("Stuck mission check failed:", e.message);
         }
 
         // 5. Update Heartbeat

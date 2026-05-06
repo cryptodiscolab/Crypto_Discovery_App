@@ -15,13 +15,14 @@ Skill ini mendefinisikan standar wajib untuk implementasi fitur NFT Raffle pada 
 - **Pre-Flight Check**: Pastikan `buyTickets` dan `drawWinner` menggunakan nama fungsi terbaru.
 - **Surgical Fix Mandate**: Dilarang menghapus seluruh kode saat perbaikan. Hanya ganti baris yang error saja.
 
-### 2. Verified Infrastructure Reference (v3.25.0)
+### 2. Verified Infrastructure Reference (v3.59.0)
 | Key | Value |
 |---|---|
-| Raffle (Latest) | `0xA13AF0d916E19fF5aE9473c5C5fb1f37cA3D90Ce` |
+| Raffle (Latest) | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` |
 | MasterX (XP) | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
+| DailyApp V13.2 | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` |
 | Ticket Price USD | `$0.15` (150,000 points, 6 decimals) |
-| PRD Version | `v3.56.4` (SBT Tier Hardening & Sequential Mandate) |
+| PRD Version | `v3.59.0` (Ecosystem Infrastructure Hardening) |
 
 ### 3. Bahasa & Komunikasi
 - **Teknis/Chat**: **Bahasa Indonesia**.
@@ -64,6 +65,7 @@ Semua interaksi raffle harus melalui hook `useRaffle`:
 - **Winner Awarding**: Increment `raffle_wins` via backend setelah verifikasi on-chain.
 - **Refund Protocol (v3.55.0)**: Seluruh aksi penolakan raffle (Admin Rejection) WAJIB didahului oleh eksekusi `cancelRaffle()` on-chain untuk mengembalikan dana sponsor. Status database hanya boleh di-update setelah `txHash` pembatalan diterima.
 - **Zero-Hardcode Mandate (Lurah Protocol)**: Prohibit use of static values for XP, Fees, and Rewards. Every system-level parameter must be dynamic. Strictly audit all `api/` and `src/` files for hardcoded reward strings or pricing.
+- **🚨 ZERO-HARDCODE ADDRESSING MANDATE (v3.59.0)**: All contract addresses MUST be pulled from `.env` via `VITE_*` keys. Hardcoded addresses in `abis_data.txt` or component files are strictly forbidden to prevent environment drift.
 
 ## ⛽ Paymaster Integration (Gasless)
 - Gunakan `usePaymaster.js` untuk deteksi infrastruktur gasless (Coinbase Smart Wallet).
