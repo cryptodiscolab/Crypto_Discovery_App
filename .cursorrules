@@ -12,9 +12,10 @@ Before responding to ANY request, you MUST perform these reads IN ORDER:
 1. .agents/skills/ecosystem-sentinel/SKILL.md   ← Audit protocol & fix cycle
 2. .agents/skills/secure-infrastructure-manager/SKILL.md  ← Security & contracts
 3. .agents/skills/git-hygiene/SKILL.md          ← Clean tree mandate
-4. .agents/WORKSPACE_MAP.md                     ← Canonical Nav Map
-5. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
-6. PRD/FEATURE_WORKFLOW_SOT.md                  ← Feature & Sync Source of Truth (Anti-Hallucination)
+4. .agents/skills/wsl-optimization/SKILL.md      ← Performance & WSL First (NEW)
+5. .agents/WORKSPACE_MAP.md                     ← Canonical Nav Map
+6. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
+7. PRD/FEATURE_WORKFLOW_SOT.md                  ← Feature & Sync Source of Truth (Anti-Hallucination)
 ```
 
 ### STEP 2 — Read Situational Skills (baca jika relevan dengan task)
@@ -789,3 +790,12 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 - **MANDATE**: High-load components (Modals with heavy hooks/SDKs like Wagmi, Li.Fi) MUST be triggered using React `startTransition`.
 - **PURPOSE**: To prevent main-thread blocking during expensive component mounting, ensuring Interaction to Next Paint (INP) remains below 100ms (SOTA target: < 50ms).
 - **IMPLEMENTATION**: Wrap `setModalOpen(true)` or similar state updates in `startTransition(() => { ... })`.
+
+## 38. WSL LINUX OPTIMIZATION MANDATE (v1.0.0)
+- **PRINCIPLE**: Maximize performance by offloading I/O intensive tasks to WSL.
+- **MANDATE**: Agents MUST prioritize WSL for `npm`, `hardhat`, and `supabase` operations.
+- **ENVIRONMENT**: Use `wsl-exec.sh` to ensure Node v23.6.0 is active.
+- **PATH MAPPING**: `e:\Disco Gacha\Disco_DailyApp` maps to `/mnt/e/Disco Gacha/Disco_DailyApp`.
+
+---
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved.*
