@@ -150,7 +150,13 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing auth fields' });
         }
 
-        const valid = await verifyMessage({ address: targetAddress, message, signature });
+        let valid = false;
+        try {
+            valid = await rpcClient.verifyMessage({ address: targetAddress, message, signature });
+        } catch (err) {
+            console.error('[Signature Verification Failed]', err.message);
+            valid = false;
+        }
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         // 2. Authorization Check
