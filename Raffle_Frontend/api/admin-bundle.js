@@ -24,9 +24,10 @@ const rpcClient = createPublicClient({
     transport: http(activeRpcUrl),
 });
 
-const USDC_ADDRESS = isMainnet 
-    ? '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' 
-    : '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+// ✅ [v3.59.0] Zero-Hardcode Mandate: USDC address dari env vars, bukan literal
+const USDC_ADDRESS = isMainnet
+    ? (process.env.VITE_USDC_ADDRESS || '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913').trim()
+    : (process.env.VITE_USDC_ADDRESS_SEPOLIA || '0x036CbD53842c5426634e7929541eC2318f3dCF7e').trim();
 
 const ERC20_ABI = [
     {
@@ -137,6 +138,7 @@ function validateUgcMission(payload) {
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+    // ✅ [v3.59.0] Accept both 'action' and 'action_type' (bridge compat)
     const action = req.body.action || req.query.action || req.body.action_type;
 
     try {
@@ -402,6 +404,37 @@ export default async function handler(req, res) {
             case 'REVOKE_PRIVILEGE': {
                 await supabaseAdmin.from('user_privileges').delete().eq('wallet_address', payload.target_address.toLowerCase()).eq('feature_id', payload.feature_id);
                 await logAdminAction(targetAddress, 'REVOKE_PRIVILEGE', payload);
+                return res.status(200).json({ success: true });
+            }
+            case 'BATCH_GRANT_PRIVILEGE': {
+                // Payload: { target_addresses: string[], feature_id: string }
+                const { target_addresses, feature_id } = payload;
+                if (!Array.isArray(target_addresses) || target_addresses.length === 0) {
+                    return res.status(400).json({ error: 'target_addresses must be a non-empty array' });
+                }
+                const now = new Date().toISOString();
+                const rows = target_addresses.map(addr => ({
+                    wallet_address: addr.toLowerCase(),
+                    feature_id,
+                    granted_at: now
+                }));
+                const { error: batchErr } = await supabaseAdmin
+                    .from('user_privileges')
+                    .upsert(rows, { onConflict: 'wallet_address,feature_id' });
+                if (batchErr) throw batchErr;
+                await logAdminAction(targetAddress, 'BATCH_GRANT_PRIVILEGE', { count: rows.length, feature_id });
+                return res.status(200).json({ success: true, granted: rows.length });
+            }
+            case 'GRANT_VERIFIER': {
+                // Payload: { target_address: string }
+                // Records the verifier wallet in admin_audit_logs; on-chain grantRole is done by frontend.
+                const verifierAddr = payload.target_address?.toLowerCase();
+                if (!verifierAddr) return res.status(400).json({ error: 'target_address required' });
+                // Upsert verifier flag — creates profile row if absent, marks as verifier
+                await supabaseAdmin
+                    .from('user_profiles')
+                    .upsert({ wallet_address: verifierAddr, is_verifier: true, updated_at: new Date().toISOString() }, { onConflict: 'wallet_address' });
+                await logAdminAction(targetAddress, 'GRANT_VERIFIER', { target_address: verifierAddr });
                 return res.status(200).json({ success: true });
             }
             case 'ISSUE_ENS': {
