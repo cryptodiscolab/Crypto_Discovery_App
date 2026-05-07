@@ -24,15 +24,19 @@ module.exports = async (req, res) => {
 
     // 0. Trigger Tier Calculation (Dynamic Tiers v3.7.0)
     try {
-        console.log('📈 Recalculating Dynamic Tier Percentiles...');
-        // We run it as a separate process to maintain ESM/CJS compatibility in this environment
+        console.log('📈 [Lurah] Recalculating Dynamic Tier Percentiles...');
         const scriptPath = path.join(process.cwd(), '.agents', 'scripts', 'tier-calculator.js');
-        exec(`node ${scriptPath}`, (error, stdout, stderr) => {
-            if (error) console.error(`❌ Tier Calculation Error: ${error.message}`);
-            if (stdout) console.log(`📊 Tier Calculation Output: ${stdout}`);
+        
+        // Use a 5s timeout for child process to avoid hanging
+        const tierExec = exec(`node ${scriptPath}`, { timeout: 5000 }, (error, stdout, stderr) => {
+            if (error) {
+                if (error.killed) console.warn('⚠️ [Lurah] Tier Calculation timed out (5s).');
+                else console.error(`❌ [Lurah] Tier Calculation Error: ${error.message}`);
+            }
+            if (stdout) console.log(`📊 [Lurah] Tier Calculation Output: ${stdout.trim()}`);
         });
     } catch (tierErr) {
-        console.error('❌ Failed to trigger tier calculation:', tierErr.message);
+        console.error('❌ [Lurah] Failed to trigger tier calculation:', tierErr.message);
     }
 
     try {
@@ -215,42 +219,59 @@ async function callGeminiWithFallback(initialModelId, promptText) {
         return { error: "API Key Gemini tidak dikonfigurasi." };
     }
 
-    // Definisi Model Fallback (2026 Edition)
+    // Valid Gemini Models (as of 2026)
     const fallbackModels = [
         "gemini-2.0-flash",
-        "gemini-2.5-pro",
-        "gemini-2.5-flash",
-        "gemini-3.0-flash",
-        "gemini-3.1-pro",
-        "gemma-4"
+        "gemini-1.5-flash",
+        "gemini-1.5-pro"
     ];
 
     const modelsToTry = [initialModelId, ...fallbackModels.filter(m => m !== initialModelId)];
     let lastError = null;
 
     for (const model of modelsToTry) {
+        console.log(`🤖 [Lurah AI] Trying model: ${model}...`);
         for (let i = 0; i < apiKeys.length; i++) {
             const key = apiKeys[i];
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout per attempt
+
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: promptText }] }]
-                    })
+                    }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 const result = await response.json();
                 
                 if (result.error) {
                     lastError = result.error.message;
-                    if (result.error.code === 404 || result.error.message.toLowerCase().includes('not found')) {
-                        console.warn(`⚠️ [Model Fallback] Model ${model} tidak tersedia, ganti model...`);
-                        break; // Model tidak ada, lanjut ke model berikutnya
+                    const msg = lastError.toLowerCase();
+
+                    // Fatal Model Errors -> Skip to next model
+                    if (result.error.code === 404 || msg.includes('not found') || msg.includes('not available') || msg.includes('invalid model')) {
+                        console.warn(`⚠️ [Lurah AI] Model ${model} invalid/not found. Skipping model.`);
+                        break; 
                     }
-                    if (result.error.code === 429 || result.error.message.toLowerCase().includes('quota') || result.error.message.toLowerCase().includes('exhausted')) {
-                        console.warn(`⚠️ [API Key Fallback] Key ${i+1} limit pada ${model}, coba key berikutnya...`);
+                    
+                    // Auth/Bad Request Errors -> Skip this model entirely (usually key is fine but request/model is not)
+                    if (result.error.code === 400 || result.error.code === 401) {
+                        console.warn(`⚠️ [Lurah AI] Fatal Error ${result.error.code} on ${model}: ${lastError}. Skipping model.`);
+                        break;
+                    }
+
+                    // Quota Errors -> Try next key
+                    if (result.error.code === 429 || msg.includes('quota') || msg.includes('exhausted')) {
+                        console.warn(`⚠️ [Lurah AI] Key ${i+1} limited on ${model}. Trying next key...`);
                         continue; 
                     }
+
+                    console.warn(`⚠️ [Lurah AI] Key ${i+1} error on ${model}: ${lastError}`);
                     continue; 
                 }
                 
@@ -260,13 +281,18 @@ async function callGeminiWithFallback(initialModelId, promptText) {
                     usedModel: model
                 };
             } catch (err) {
-                // Catches Network Errors (Timeout, DNS, Connection Reset) or JSON parse failures.
-                // Does NOT catch HTTP 429 (Quota) or 404 (Not Found) which are handled in the try block above.
-                console.error(`❌ [Fetch Error] Key ${i+1} pada model ${model}:`, err.message);
-                lastError = err.message;
+                clearTimeout(timeoutId);
+                if (err.name === 'AbortError') {
+                    console.error(`❌ [Lurah AI] Timeout (10s) for Key ${i+1} on model ${model}`);
+                    lastError = "Timeout 10s";
+                } else {
+                    console.error(`❌ [Lurah AI] Network Error Key ${i+1} on model ${model}:`, err.message);
+                    lastError = err.message;
+                }
             }
         }
     }
 
     return { error: `Semua API Key dan Model gagal. Error terakhir: ${lastError}` };
 }
+
