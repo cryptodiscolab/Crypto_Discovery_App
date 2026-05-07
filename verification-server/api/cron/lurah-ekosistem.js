@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
             sybil_wallet_threshold: 1,
             audit_interval_hours: 24,
             telegram_notifications: true,
-            ai_model: "gemini-2.0-flash"
+            ai_model: "gemini-2.5-flash"
         };
 
         // 1. Ambil Peraturan (Knowledge) dari Vault
@@ -152,7 +152,7 @@ module.exports = async (req, res) => {
         `;
 
         let aiResponse = "AI Analysis not available.";
-        const modelId = auditSettings.ai_model || "gemini-2.0-flash";
+        const modelId = auditSettings.ai_model || "gemini-3.1-flash";
         const geminiResult = await callGeminiWithFallback(modelId, prompt);
         
         if (geminiResult.error) {
@@ -219,22 +219,32 @@ async function callGeminiWithFallback(initialModelId, promptText) {
         return { error: "API Key Gemini tidak dikonfigurasi." };
     }
 
-    // Valid Gemini Models (as of 2026)
+    // Update v3.59.0: Support for Gemini 3.1 and 2.5 series
     const fallbackModels = [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        "gemini-3.1-flash",
+        "gemini-2.5-flash",
+        "gemini-1.5-flash"
     ];
 
-    const modelsToTry = [initialModelId, ...fallbackModels.filter(m => m !== initialModelId)];
+    const modelsToTry = Array.from(new Set([initialModelId, ...fallbackModels]));
     let lastError = null;
+
+    const globalStartTime = Date.now();
+    const MAX_TOTAL_TIME = 8500; // 8.5s total limit to stay under Vercel 10s Hobby limit
 
     for (const model of modelsToTry) {
         console.log(`🤖 [Lurah AI] Trying model: ${model}...`);
         for (let i = 0; i < apiKeys.length; i++) {
+            // GLOBAL TIMEOUT GUARD: Do not start a new attempt if we have < 4s left
+            const elapsed = Date.now() - globalStartTime;
+            if (elapsed + 4000 > MAX_TOTAL_TIME) {
+                console.warn(`🛑 [Lurah AI] Global Timeout Guard triggered (${elapsed}ms). Stopping to prevent Vercel 504.`);
+                return { error: `Global AI Timeout (${elapsed}ms). Last error: ${lastError || 'None'}` };
+            }
+
             const key = apiKeys[i];
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout per attempt
+            const timeoutId = setTimeout(() => controller.abort(), 4000); // Aggressive 4s timeout per attempt
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
@@ -259,7 +269,7 @@ async function callGeminiWithFallback(initialModelId, promptText) {
                         break; 
                     }
                     
-                    // Auth/Bad Request Errors -> Skip this model entirely (usually key is fine but request/model is not)
+                    // Auth/Bad Request Errors -> Skip this model entirely
                     if (result.error.code === 400 || result.error.code === 401) {
                         console.warn(`⚠️ [Lurah AI] Fatal Error ${result.error.code} on ${model}: ${lastError}. Skipping model.`);
                         break;
@@ -275,16 +285,19 @@ async function callGeminiWithFallback(initialModelId, promptText) {
                     continue; 
                 }
                 
+                const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!responseText) throw new Error("AI response empty.");
+
                 return {
-                    text: result.candidates?.[0]?.content?.parts?.[0]?.text || "AI tidak memberikan respon.",
+                    text: responseText,
                     success: true,
                     usedModel: model
                 };
             } catch (err) {
                 clearTimeout(timeoutId);
                 if (err.name === 'AbortError') {
-                    console.error(`❌ [Lurah AI] Timeout (10s) for Key ${i+1} on model ${model}`);
-                    lastError = "Timeout 10s";
+                    console.error(`❌ [Lurah AI] Timeout (4s) for Key ${i+1} on model ${model}`);
+                    lastError = "Timeout 4s";
                 } else {
                     console.error(`❌ [Lurah AI] Network Error Key ${i+1} on model ${model}:`, err.message);
                     lastError = err.message;
