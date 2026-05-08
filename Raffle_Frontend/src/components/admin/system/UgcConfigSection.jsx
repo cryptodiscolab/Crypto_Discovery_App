@@ -61,7 +61,14 @@ export function UgcConfigSection() {
                 })
             });
 
-            if (!response.ok) throw new Error('Failed to save configuration');
+            if (!response.ok) {
+                let errorMsg = `HTTP ${response.status}: Failed to save`;
+                try {
+                    const errData = await response.json();
+                    if (errData.error) errorMsg = errData.error;
+                } catch(e) {}
+                throw new Error(errorMsg);
+            }
             
             toast.success('UGC Configuration updated!', { id: tid });
         } catch (error) {
