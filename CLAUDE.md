@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.59.0)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.59.1)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -18,10 +18,11 @@ Before responding to ANY request, read these files IN ORDER:
 3. **`.agents/skills/git-hygiene/SKILL.md`** — Clean tree, commit rules
 4. **`.agents/WORKSPACE_MAP.md`** — Canonical Workspace Map (Mandatory Navigation)
 5. **`PRD/DISCO_DAILY_MASTER_PRD.md`** — Master Source of Truth
-6. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
-7. **`.cursorrules`** — Full Master Architect Protocol (all sections)
+6. **`PRD/ACCOUNTANT_LEDGER_SOT.md`** — Accountant Ledger Source of Truth (v3.59.1)
+7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
+8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.59.0)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.59.0).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.59.1)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.59.1).
 
 ---
 
@@ -70,7 +71,7 @@ Before responding to ANY request, read these files IN ORDER:
 65. **SUPER KETAT TOKEN OPTIMIZATION**: Agents MUST execute `context-hasher` check before reading files >500 lines. Maximize cache hits via SHA-256 persistent memory in `agent_vault` (v3.54.0).
 66. **CONCURRENT UI RESPONSIVENESS MANDATE**: High-load components (Modals with heavy hooks) MUST be triggered using React `startTransition` to prevent main-thread blocking and maintain < 50ms INP responsiveness (v3.56.0).
 67. **MULTI-AGENT ORCHESTRATION MANDATE**: All heavy-duty sub-agent delegations (audits, mass refactoring) MUST use `scripts/orchestrator/gemini_agent_bridge.js` (v1.3.7). This ensures automatic 9-key rotation and model fallback (2.5 -> 3.1) resilience (v3.56.3).
-68. **ZERO-HARDCODE INFRASTRUCTURE MANDATE**: ALL contract addresses in `abis_data.txt` MUST be placeholders (`[RESOLVED_VIA_ENV]`). Hardcoding static addresses in source code or ABI definitions is strictly FORBIDDEN to ensure mainnet portability (v3.59.0).
+68. **ZERO-HARDCODE INFRASTRUCTURE MANDATE**: ALL contract addresses in `abis_data.txt` MUST be placeholders (`[RESOLVED_VIA_ENV]`). Hardcoding static addresses in source code or ABI definitions is strictly FORBIDDEN to ensure mainnet portability (v3.59.1).
 
 ---
 

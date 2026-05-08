@@ -2,10 +2,10 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Anti-Hallucination Mandate (v3.59.0)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
+  - **Anti-Hallucination Mandate (v3.59.1)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.59.0
+version: v3.59.1
 ---
 
 ### 🛡️ LOCAL HARDWARE OPTIMIZATION (Mandatory)
@@ -40,7 +40,7 @@ Target System: Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz (Dual-Core) / 16GB RAM.
         - [ ] Verify layout uses `overflow-x-hidden` and `max-w-[100vw]` for mobile.
         - [ ] Verify `handleClaim` forces `fetchData()` on "already completed" errors.
     - **UGC Tracking**: Aksi User Generated Content (Mission Creation, Raffle Launch, Sponsorship Renewal) **WAJIB** memicu log dengan kategori `PURCHASE` dan menyertakan `tx_hash` serta metadata lengkap.
-    - **Zero-Hardcode Address Mandate (v3.59.0)**: Seluruh alamat kontrak **WAJIB** ditarik dari `.env`. Dilarang keras menggunakan alamat statis di dalam file `.txt` (seperti `abis_data.txt`) atau komponen React untuk mencegah *drift* infrastruktur.
+    - **Zero-Hardcode Address Mandate (v3.59.1)**: Seluruh alamat kontrak **WAJIB** ditarik dari `.env`. Dilarang keras menggunakan alamat statis di dalam file `.txt` (seperti `abis_data.txt`) atau komponen React untuk mencegah *drift* infrastruktur.
     - **Frontend Reporting**: Gunakan `ActivityLogSection.jsx` untuk menampilkan riwayat ini di profil user secara real-time.
 
 # Ecosystem Sentinel & Master Architect Enforcer
@@ -88,7 +88,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.59.0
+- **Versi Terakhir:** v3.59.1
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -380,7 +380,7 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **🏎️ CONCURRENT UI RESPONSIVENESS AUDIT (v3.56.0)**: Verifikasi bahwa seluruh modal dengan heavy hooks (Wagmi/Li.Fi) dipicu menggunakan `startTransition`. **WAJIB.**
 - [ ] **📡 END-TO-END SYNC AUDIT (T.E.S)**: Verifikasi bahwa seluruh rantai (Env -> ABIs -> APIs -> Contracts -> Database -> UI) sinkron 100% tanpa drift. **WAJIB jika perintah `sync end to end` dipicu.**
 
-### Section 13: End-to-End Ecosystem Synchronization (T.E.S) Protocol (v3.59.0)
+### Section 13: End-to-End Ecosystem Synchronization (T.E.S) Protocol (v3.59.1)
 Mandat ini diaktifkan saat agen menerima perintah `> sync end to end` atau `sinkronisasi total`.
 
 **Alur Eksekusi Wajib:**
@@ -395,7 +395,7 @@ Mandat ini diaktifkan saat agen menerima perintah `> sync end to end` atau `sink
 **Status Final**: Laporan ke user wajib mencakup status "✅ ALL SYSTEMS SYNCHRONIZED & OPERATIONAL" dengan rincian per phase.
 
 ---
-*Status: ACTIVE. Sentinel Guard: ENABLED. v3.59.0 Locked.*
+*Status: ACTIVE. Sentinel Guard: ENABLED. v3.59.1 Locked.*
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

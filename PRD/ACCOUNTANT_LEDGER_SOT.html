@@ -1,0 +1,101 @@
+<h1>📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.1)</h1>
+<p><strong>Status</strong>: 🛡️ FINANCIAL INTEGRITY LOCKED
+<strong>Description</strong>: Sistem pencatatan keuangan ganda (double-entry audit trail) untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).</p>
+<hr>
+<h2>1. Arsitektur Akuntan Ledger</h2>
+<p>Sistem Ledger bekerja dengan menggabungkan data dari dua sumber utama:</p>
+<ol>
+<li><strong>On-Chain (Blockchain)</strong>: Saldo real-time dari kontrak pintar (Smart Contracts).</li>
+<li><strong>Off-Chain (Database)</strong>: Log aktivitas pengguna (<code>user_activity_logs</code>) yang mencatat kategori transaksi.</li>
+</ol>
+<h3>📍 Komponen Utama</h3>
+<ul>
+<li><strong>Dashboard UI</strong>: <code>AccountantLedgerTab.jsx</code> (Admin Portal).</li>
+<li><strong>Backend Logic</strong>: <code>admin-bundle.js</code> (Endpoint <code>/api/admin/accountant-ledger</code>).</li>
+<li><strong>Hook</strong>: <code>useSBT.js</code> (Fungsi <code>withdrawTreasury</code>).</li>
+<li><strong>Database Table</strong>: <code>user_activity_logs</code>.</li>
+</ul>
+<hr>
+<h2>2. Kategorisasi Transaksi</h2>
+<p>Seluruh aktivitas finansial di dalam ekosistem wajib dipetakan ke dalam salah satu kategori berikut untuk memastikan laporan balancing yang akurat:</p>
+<table>
+<thead>
+<tr>
+<th>Kategori</th>
+<th>Tipe</th>
+<th>Deskripsi</th>
+<th>Contoh Aktivitas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PURCHASE</strong></td>
+<td>Income (🟢)</td>
+<td>Dana masuk ke kas ekosistem.</td>
+<td>UGC Listing Fee, SBT Upgrade/Mint, Raffle Tickets.</td>
+</tr>
+<tr>
+<td><strong>REWARD</strong></td>
+<td>Expense (🔴)</td>
+<td>Pengeluaran untuk hadiah pengguna.</td>
+<td>SBT Pool Reward, Raffle Prize Payouts.</td>
+</tr>
+<tr>
+<td><strong>EXPENSE</strong></td>
+<td>Expense (🔴)</td>
+<td>Biaya operasional atau penarikan manual.</td>
+<td>Server costs, manual treasury rebalancing.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>3. On-Chain Balancing Report</h2>
+<p>Sistem melakukan verifikasi saldo secara langsung pada alamat kontrak berikut untuk dibandingkan dengan catatan Ledger:</p>
+<table>
+<thead>
+<tr>
+<th>Kontrak / Wallet</th>
+<th>Kegunaan</th>
+<th>Asset</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>SAFE_MULTISIG</strong></td>
+<td>Treasury Pusat (End-point Penarikan)</td>
+<td>ETH, USDC</td>
+</tr>
+<tr>
+<td><strong>MASTER_X_ADDRESS</strong></td>
+<td>Smart Contract XP &amp; SBT Pool</td>
+<td>ETH, USDC</td>
+</tr>
+<tr>
+<td><strong>DAILY_APP_ADDRESS</strong></td>
+<td>Smart Contract Core (UGC &amp; Mints)</td>
+<td>ETH, USDC</td>
+</tr>
+<tr>
+<td><strong>RAFFLE_ADDRESS</strong></td>
+<td>Smart Contract Raffle (Ticket Revenue)</td>
+<td>ETH, USDC</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>Zero-Hardcode Compliance</strong>: Seluruh alamat di atas wajib ditarik secara dinamis dari environment variables via <code>lib/contracts.js</code>.</p>
+</blockquote>
+<hr>
+<h2>4. Modul Treasury (ETH Withdrawal)</h2>
+<p>Admin memiliki otoritas untuk menarik akumulasi dana ETH dari kontrak operasional ke Treasury Pusat melalui fungsi <code>withdrawTreasury</code>.</p>
+<ul>
+<li><strong>Alur</strong>: <code>UI (AccountantLedgerTab)</code> -&gt; <code>useSBT (hook)</code> -&gt; <code>Contract (DailyApp/Raffle)</code> -&gt; <code>Transfer to SAFE_MULTISIG</code>.</li>
+<li><strong>Security</strong>: Hanya wallet dengan role Admin/Owner yang dapat mengeksekusi penarikan ini.</li>
+</ul>
+<hr>
+<h2>5. Panduan Integrasi Modul Baru</h2>
+<p>Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang <strong>WAJIB</strong> mengikuti langkah berikut:</p>
+<ol>
+<li><strong>Emit Log di Database</strong>: Gunakan kategori <code>PURCHASE</code> untuk setiap revenue.</li>
+<li><strong>Metadata Lengkap</strong>: Sertakan <code>tx_hash</code>, <code>value_amount</code>, dan <code>value_symbol</code> (&#39;USDC&#39; atau &#39;ETH&#39;).</li>
+<li><strong>Automatic Inclusion</strong>: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.</li>
+</ol>
+<hr>
+<p><em>End of Accountant Ledger SOT - Nexus v3.59.1 Locked.</em></p>

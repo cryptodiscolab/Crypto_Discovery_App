@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.59.0)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.59.1)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -238,6 +238,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 ## 22. POST-FIX DOCUMENTATION SYNC MANDATE (WAJIB)
 **Setiap kali** melakukan perubahan kode, memperbaiki bug/error, menyelesaikan sesi kerja, atau menerima perintah `> update docs`, Antigravity WAJIB memperbarui SEMUA dokumen berikut:
 - `PRD/DISCO_DAILY_MASTER_PRD.md`  Tambah Work Report + naikkan versi
+- `PRD/ACCOUNTANT_LEDGER_SOT.md`  Update log keuangan & balancing status
 - `CLAUDE.md`  Update versi di Absolute Laws
 - `.agents/WORKSPACE_MAP.md`  Update path/route jika ada yang berubah
 - `ROADMAP.md`  Centang item jika feature/fix selesai
@@ -304,8 +305,8 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 - `> claw:` Trigger OpenClaw for deep security audits or high-level architecture review.
 - `> qwen:` Trigger Qwen2.5-Coder for local file refactoring, unit tests, and local build verification.
 - `> deepseek:` Trigger DeepSeek Coder for complex algorithmic optimizations or backend logic.
-- `> update docs:` Force a full ecosystem documentation synchronization (v3.59.0). Trigger checking and updating of all 20+ core documents.
-- `> sync end to end:` Perform a complete ecosystem synchronization (ABIs, APIs, Contracts, Envs, Drift, XPs) from Frontend to Backend (v3.59.0).
+- `> update docs:` Force a full ecosystem documentation synchronization (v3.59.1). Trigger checking and updating of all 20+ core documents.
+- `> sync end to end:` Perform a complete ecosystem synchronization (ABIs, APIs, Contracts, Envs, Drift, XPs) from Frontend to Backend (v3.59.1).
 - **Usage**: Commands can be sent via Admin Dashboard or Telegram. Sub-agents will pick up tasks from the vault.
 
 ## 21. LLM EVOLUTION & INTELLIGENCE MANDATE

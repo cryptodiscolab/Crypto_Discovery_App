@@ -19,7 +19,7 @@ As the Lead Orchestrator (Antigravity), you should run this command daily, befor
 
 ```bash
 npm run orchestron
-# OR for full End-to-End synchronization (v3.59.0)
+# OR for full End-to-End synchronization (v3.59.1)
 # This is the "Nuclear Option" triggered by "> sync end to end"
 ```
 

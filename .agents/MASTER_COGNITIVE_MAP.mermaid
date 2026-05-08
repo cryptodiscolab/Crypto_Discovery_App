@@ -1,5 +1,5 @@
 %% 🧠 MASTER COGNITIVE MAP DIAGRAMS
-%% Version: 3.56.4
+%% Version: 3.59.1
 %% Project: Crypto Disco
 
 %% 1. THE WORLD MAP (High-Level Ecosystem)
@@ -8,6 +8,7 @@ graph TD
         User((User))
         FE[Raffle_Frontend]
         NCC[Nexus Command Center]
+        AL[Accountant Ledger / Audit]
     end
 
     subgraph Logic_Layer [LOGIC LAYER - Vercel]
@@ -53,6 +54,8 @@ graph TD
     LR -.->|Audit| Logic_Layer
     LR -.->|Audit| Blockchain_Layer
     ORC -.->|Sync Audit| DB
+    AL -->|Double-Entry Audit| DB
+    AL -->|On-Chain Balancing| Blockchain_Layer
 
 %% ---
 

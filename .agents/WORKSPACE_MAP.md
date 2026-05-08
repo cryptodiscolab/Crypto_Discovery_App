@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.59.0)
-Last Update: 2026-05-05 (23:55)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.59.1)
+Last Update: 2026-05-08 (12:00)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -151,7 +151,7 @@ graph TD
 2.  **Every UI change** must happen in `Raffle_Frontend/src/components` or `pages`.
 3.  **Every API change** must respect the existing bundle structure in `Raffle_Frontend/api/`.
 4.  **No local script execution** without checking `scripts/` subfolders first to avoid duplication.
-5.  **ZERO-HARDCODE MANDATE (v3.59.0)**: Prohibit use of static contract addresses in any source file or ABI definition. Pull exclusively from `.env`.
+5.  **ZERO-HARDCODE MANDATE (v3.59.1)**: Prohibit use of static contract addresses in any source file or ABI definition. Pull exclusively from `.env`.
 
 ---
 
@@ -180,7 +180,8 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 8. `.agents/skills/30-seconds-of-code/SKILL.md` — JS/CSS Utilities
 9. `PRD/FEATURE_WORKFLOW_SOT.md` — Feature Workflow SOT
 10. `.agents/VERCEL_ECOSYSTEM_SOT.md` — 🌐 Vercel Deploy & UI Guidelines
-11. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
+11. `PRD/ACCOUNTANT_LEDGER_SOT.md` — 📊 **Accountant Ledger SOT (Financial Integrity)**
+12. `PRD/DISCO_DAILY_MASTER_PRD.md` — Master PRD
 12. `.agents/skills/meteora-agent/SKILL.md` — Meteora Data Protocol
 13. `.agents/WORKSPACE_MAP.md` — Navigation Map (this file)
 14. `.agents/gemini.md` — Operational Constitution

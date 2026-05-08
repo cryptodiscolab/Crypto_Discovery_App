@@ -1,6 +1,6 @@
-ï»¿[dotenv@17.3.1] injecting env (77) from .env -- tip: â‰¡Æ’Ã¶Ã‰ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (77) from .env -- tip: =ƒöÉ encrypt with Dotenvx: https://dotenvx.com
 
-[â‰¡Æ’ÂºÃ¡ ORCHESTRATOR] Delegating to Gemini Agent (v1.3.7 - Stable)...
+[=ƒºá ORCHESTRATOR] Delegating to Gemini Agent (v1.3.7 - Stable)...
 [*] Key 1/9 | Model: gemini-2.5-flash
 [*] Key 1/9 | Model: gemini-2.5-pro
 [*] Key 1/9 | Model: gemini-3-flash

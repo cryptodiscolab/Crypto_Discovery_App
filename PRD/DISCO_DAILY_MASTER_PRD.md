@@ -277,11 +277,12 @@ Implementasi infrastruktur **Multi-Agent Orchestration** untuk meningkatkan keta
 
 ---
 
-# CRYPTO DISCO DAILY - MASTER PRD (v3.59.0)
-**Last Audit:** 2026-05-06
+# CRYPTO DISCO DAILY - MASTER PRD (v3.59.1)
+**Last Audit:** 2026-05-08
 **Status:** [🟢] DEPLOYED & SYNCED
 **Core Stack:** Next.js 15, Tailwind, Supabase, Hardhat, Base Mainnet.
-**Orchestration:** Bridge v1.3.8 (Gemini 2.0/3.1/3.5 Flash Resilient Fallback)
+**Orchestration:** Bridge v1.3.8 (Gemini 3.5 Flash Resilient Fallback)
+**Source of Truth:** [ACCOUNTANT_LEDGER_SOT.md](ACCOUNTANT_LEDGER_SOT.md) | [FEATURE_WORKFLOW_SOT.md](FEATURE_WORKFLOW_SOT.md)
 
 ---
 

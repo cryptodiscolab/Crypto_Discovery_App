@@ -6,14 +6,18 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
-## 🟢 v3.59.0 (Ecosystem Infrastructure Hardening & Sync-All Automation)
+## 🟢 v3.59.1 (Ecosystem Infrastructure Hardening & Sync-All Automation)
 - **Zero-Hardcode Contract Addressing**: Refactored `abis_data.txt` to replace static addresses with `[RESOLVED_VIA_ENV]` markers, forcing the frontend to pull exclusively from `.env`.
 - **Global Contract Synchronization**: Synchronized Base Sepolia addresses across all protocols (`DailyApp`: `0x81D65Cc9...`, `Raffle`: `0xE7CB85c3...`).
 - **Autonomous Audit Pass**: 100% success on 13/13 security checks via `check_sync_status.cjs`.
 - **Multi-Project Env Sync**: Executed `sync-all-envs.cjs` across 15+ environment files for full-stack parity.
-- **UGC Mission Hardening**: Implemented link regex guards and multi-action bounds in `admin-bundle.js` and `CreateMissionPage.jsx`.
-- **Lurah Bot Restoration**: Re-registered Telegram webhook to the verification server and verified operational status for `@KutuyBot`.
-- **New Ecosystem Triggers (v3.59.0)**:
+- **Accountant Ledger & Financial Audit System**:
+    - Implemented real-time double-entry audit trail in `AccountantLedgerTab.jsx`.
+    - Integrated live on-chain balancing report (Safe Treasury, MasterX, DailyApp, Raffle).
+    - Built manual treasury withdrawal execution module with ETH-to-Safe routing.
+    - Established full documentation parity via `ACCOUNTANT_LEDGER_SOT.md`.
+- **UGC Mission Hardening & Lurah Proactive Monitoring**: Implemented link regex guards, multi-action bounds, and stuck mission detection. Fixed Telegram webhook routing to correct Verification Server endpoint. Achieved full WSL environment parity with 13/13 audit checks passed.
+- **New Ecosystem Triggers (v3.59.1)**:
     - `> update docs`: Mandat sinkronisasi otomatis untuk 20+ dokumen inti (PRD, Skills, Protocols).
     - `> sync end to end`: Nuclear option untuk sinkronisasi total (Env, ABI, API, DB, UI) dari Frontend ke Backend.
 

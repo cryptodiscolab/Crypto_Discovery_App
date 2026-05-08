@@ -1,7 +1,7 @@
 ---
 name: cognitive-orchestrator
 description: Mengelola sinkronisasi kognitif lintas agen dan memastikan metodologi skill-creator v0.40.1 diterapkan di seluruh ekosistem.
-version: 1.1.0 (v3.59.0 Compatible)
+version: 1.1.0 (v3.59.1 Compatible)
 triggers:
   - "sync agents"
   - "cognitive expansion"
