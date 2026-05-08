@@ -28,12 +28,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: Raffle_Frontend/package-lock.json
-
-      - name: 📦 Install Frontend Dependencies
-        run: npm ci --prefer-offline
-        working-directory: Raffle_Frontend
 
       - name: 🕵️‍♂️ Run Security & UI Audit (Sentinel)
         run: node .agents/skills/ecosystem-sentinel/scripts/sentinel-audit.js

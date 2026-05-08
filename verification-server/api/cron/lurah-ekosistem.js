@@ -20,19 +20,24 @@ const { exec } = require('child_process');
 const path = require('path');
 
 module.exports = async (req, res) => {
+    const startTime = Date.now();
     console.log('🤖 [Lurah Ekosistem] Starting daily audit & tier recalculation...');
+
+    // 0. Security Check (v3.59.2 Hardening)
+    const authHeader = req.headers['authorization'];
+    const expectedSecret = process.env.CRON_SECRET;
+    if (expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+        console.warn('🔐 [Lurah] Unauthorized access attempt.');
+        return res.status(401).json({ error: "Unauthorized" });
+    }
 
     // 0. Trigger Tier Calculation (Dynamic Tiers v3.7.0)
     try {
         console.log('📈 [Lurah] Recalculating Dynamic Tier Percentiles...');
         const scriptPath = path.join(process.cwd(), '.agents', 'scripts', 'tier-calculator.js');
         
-        // Use a 5s timeout for child process to avoid hanging
-        const tierExec = exec(`node ${scriptPath}`, { timeout: 5000 }, (error, stdout, stderr) => {
-            if (error) {
-                if (error.killed) console.warn('⚠️ [Lurah] Tier Calculation timed out (5s).');
-                else console.error(`❌ [Lurah] Tier Calculation Error: ${error.message}`);
-            }
+        exec(`node ${scriptPath}`, { timeout: 8000 }, (error, stdout) => {
+            if (error) console.warn('⚠️ [Lurah] Tier Calculation error/timeout:', error.message);
             if (stdout) console.log(`📊 [Lurah] Tier Calculation Output: ${stdout.trim()}`);
         });
     } catch (tierErr) {
@@ -40,14 +45,13 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // 0. Ambil Audit Settings Dinamis (Centralized Control)
-        const { data: settingsData } = await supabase
-            .from('system_settings')
-            .select('value')
-            .eq('key', 'audit_settings')
-            .maybeSingle(); // v3.42.2: setting row may not exist yet
+        // 1. Parallel Fetching Pipeline (v3.59.2 Performance Optimization)
+        const [settingsRes, vaultRes] = await Promise.all([
+            supabase.from('system_settings').select('value').eq('key', 'audit_settings').maybeSingle(),
+            supabase.from('agent_vault').select('file_path, content, category')
+        ]);
 
-        const auditSettings = settingsData?.value || {
+        const auditSettings = settingsRes.data?.value || {
             xp_anomaly_threshold: 5000,
             sybil_lookback_days: 7,
             sybil_wallet_threshold: 1,
@@ -56,72 +60,47 @@ module.exports = async (req, res) => {
             ai_model: "gemini-2.5-flash"
         };
 
-        // 1. Ambil Peraturan (Knowledge) dari Vault
-        const { data: vault } = await supabase
-            .from('agent_vault')
-            .select('file_path, content, category');
-
-        const protocols = vault.filter(v => v.category === 'protocol').map(v => v.content).join('\n\n');
-        const skills = vault.filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
-
-        // 2. Ambil Data Real-time untuk di-audit
         const intervalMs = (auditSettings.audit_interval_hours || 24) * 60 * 60 * 1000;
         const lookbackDate = new Date(Date.now() - intervalMs).toISOString();
-
-        // A. Cek User baru
-        const { data: newUsers } = await supabase
-            .from('user_profiles')
-            .select('wallet_address, display_name, pfp_url, total_xp, last_seen_at')
-            .gt('last_seen_at', lookbackDate);
-
-        // B. Cek Anomali XP 
-        const { data: anomalies } = await supabase
-            .from('user_task_claims')
-            .select('wallet_address, xp_earned, task_id')
-            .gt('claimed_at', lookbackDate)
-            .gt('xp_earned', auditSettings.xp_anomaly_threshold || 5000);
-
-        // C. Cek Sybil Attacks (Satu akun sosial diklaim banyak wallet)
         const sybilLookbackDate = new Date(Date.now() - (auditSettings.sybil_lookback_days || 7) * 24 * 60 * 60 * 1000).toISOString();
-        const { data: claimsForSybil } = await supabase
-            .from('user_task_claims')
-            .select('wallet_address, target_id, platform')
-            .not('target_id', 'is', 'null')
-            .gt('claimed_at', sybilLookbackDate);
 
+        // 2. Data Audit Pipeline (Parallel)
+        const [newUsersRes, anomaliesRes, sybilRes] = await Promise.all([
+            supabase.from('user_profiles').select('wallet_address, display_name, pfp_url, total_xp, last_seen_at').gt('last_seen_at', lookbackDate),
+            supabase.from('user_task_claims').select('wallet_address, xp_earned, task_id').gt('claimed_at', lookbackDate).gt('xp_earned', auditSettings.xp_anomaly_threshold || 5000),
+            supabase.from('user_task_claims').select('wallet_address, target_id, platform').not('target_id', 'is', 'null').gt('claimed_at', sybilLookbackDate)
+        ]);
+
+        const newUsers = newUsersRes.data || [];
+        const anomalies = anomaliesRes.data || [];
+        const claimsForSybil = sybilRes.data || [];
+
+        // 3. Process Sybil/Multi-Account Data
         const targetMap = {};
-        claimsForSybil?.forEach(c => {
+        const walletPlatformMap = {};
+        
+        claimsForSybil.forEach(c => {
             if (!targetMap[c.target_id]) targetMap[c.target_id] = new Set();
             targetMap[c.target_id].add(c.wallet_address);
-        });
 
-        const sybilSuspects = Object.entries(targetMap)
-            .filter(([_, wallets]) => wallets.size > (auditSettings.sybil_wallet_threshold || 1))
-            .map(([target, wallets]) => ({
-                target_id: target,
-                wallet_count: wallets.size,
-                wallets: Array.from(wallets)
-            }));
-
-        // D. Cek Multi-Account (1 Wallet klaim banyak akun sosial di platform yg sama)
-        const walletPlatformMap = {};
-        claimsForSybil?.forEach(c => {
             const key = `${c.wallet_address}_${c.platform}`;
             if (!walletPlatformMap[key]) walletPlatformMap[key] = new Set();
             walletPlatformMap[key].add(c.target_id);
         });
 
+        const sybilSuspects = Object.entries(targetMap)
+            .filter(([_, wallets]) => wallets.size > (auditSettings.sybil_wallet_threshold || 1))
+            .map(([target, wallets]) => ({ target_id: target, wallet_count: wallets.size, wallets: Array.from(wallets) }));
+
         const multiAccountSuspects = Object.entries(walletPlatformMap)
             .filter(([_, targets]) => targets.size > 1)
             .map(([key, targets]) => {
                 const [wallet, platform] = key.split('_');
-                return {
-                    wallet_address: wallet,
-                    platform: platform,
-                    account_count: targets.size,
-                    target_ids: Array.from(targets)
-                };
+                return { wallet_address: wallet, platform, account_count: targets.size, target_ids: Array.from(targets) };
             });
+
+        const protocols = (vaultRes.data || []).filter(v => v.category === 'protocol').map(v => v.content).join('\n\n');
+        const skills = (vaultRes.data || []).filter(v => v.category === 'skill').map(v => v.content).join('\n\n');
 
         // 3. Gunakan Otak AI untuk Analisa
         const prompt = `

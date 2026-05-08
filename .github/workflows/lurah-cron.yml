@@ -20,7 +20,7 @@ jobs:
           command: |
             echo "Memanggil Endpoint Lurah..."
             RESPONSE_FILE=$(mktemp)
-            HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" ${{ secrets.VERCEL_LURAH_API_URL }})
+            HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" --max-time 15 "https://crypto-discovery-app.vercel.app/api/lurah-cron")
             
             if [ "$HTTP_STATUS" -ne 200 ]; then
               echo "❌ Lurah API gagal dengan status $HTTP_STATUS"

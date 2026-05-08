@@ -200,6 +200,9 @@ async function handleFarcasterCheck(req, res) {
 
 // ── ACTION: Sync Events ───────────────────────────────────────
 async function handleSyncEvents(req, res) {
+    const startTime = Date.now();
+    const TIMEOUT_LIMIT = 9000; // 9 seconds
+
     const authHeader = req.headers['authorization'];
     if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -236,7 +239,6 @@ async function handleSyncEvents(req, res) {
         const toBlock = Math.min(fromBlock + 2000 - 1, latestBlock);
 
         // Fix ENS error: Paksa hilangkan hidden whitespace (\n / \r) dari Vercel Env Vars hasil 'echo'
-        // Jika length != 42, ethers v6 memicu ENS lookup.
         const masterXAddr = MASTER_X.trim().toLowerCase();
         const dailyAppAddr = DAILY_APP.trim().toLowerCase();
 
@@ -266,13 +268,11 @@ async function handleSyncEvents(req, res) {
                 source: `MasterX:${reason}`,
             });
 
-            // Log to Activity (New Feature) - Specifically handle Referral XP
-            const isReferral = reason.toLowerCase().includes('referral');
             await logActivity(supabase, {
                 wallet: wallet,
                 category: 'XP',
-                type: isReferral ? 'Referral Reward' : 'Staking Reward',
-                description: `Received ${xp} XP ${isReferral ? 'for inviting a user' : `for ${reason}`}`,
+                type: reason.toLowerCase().includes('referral') ? 'Referral Reward' : 'Staking Reward',
+                description: `Received ${xp} XP for ${reason}`,
                 amount: xp,
                 symbol: 'XP',
                 txHash: log.transactionHash
@@ -294,7 +294,6 @@ async function handleSyncEvents(req, res) {
                 source: `DailyApp:task_${taskId}`,
             });
 
-            // Log to Activity (New Feature)
             await logActivity(supabase, {
                 wallet: wallet,
                 category: 'XP',
@@ -306,27 +305,24 @@ async function handleSyncEvents(req, res) {
             });
         }
 
-        // SYNC: Self-Upgrade Tiers
         for (const log of upgradeEvents) {
             const [user, oldTier, newTier, xpBurned, feePaid] = log.args;
             const wallet = user.toLowerCase();
-
-            // 1. Log the upgrade activity
             const burn = Number(xpBurned);
+
             rows.push({
                 id: makeId(`UPGRADE_${log.transactionHash}_${log.index}`),
                 wallet_address: wallet,
-                task_id: TASK_IDS.TIER_UPGRADE, // Dedicated Upgrade task ID
-                xp_earned: -burn, // Negative XP to reflect burn in history
+                task_id: TASK_IDS.TIER_UPGRADE,
+                xp_earned: -burn,
                 claimed_at: new Date().toISOString(),
                 tx_hash: log.transactionHash,
                 source: `TierUpgrade:${oldTier}->${newTier}`,
             });
 
-            // Log to Activity (New Feature)
             await logActivity(supabase, {
                 wallet: wallet,
-                category: 'PURCHASE', // Upgrades are a purchase/burn of value
+                category: 'PURCHASE',
                 type: 'Tier Ascension',
                 description: `Upgraded from Tier ${oldTier} to ${newTier}`,
                 amount: -burn,
@@ -334,113 +330,67 @@ async function handleSyncEvents(req, res) {
                 txHash: log.transactionHash
             });
 
-            // 2. Immediate DB update for the tier
-            await supabase
-                .from('user_profiles')
-                .update({
-                    tier: Number(newTier),
-                    updated_at: new Date().toISOString()
-                })
-                .eq('wallet_address', wallet);
-
-            console.log(`[Sync] User ${wallet} upgraded to Tier ${newTier}`);
+            await supabase.from('user_profiles').update({ tier: Number(newTier), updated_at: new Date().toISOString() }).eq('wallet_address', wallet);
         }
 
-        // SYNC: Season Reset
         for (const log of seasonEvents) {
             const [oldSeasonId, newSeasonId] = log.args;
-            const sOld = Number(oldSeasonId);
-            const sNew = Number(newSeasonId);
-
-            console.log(`[Sync] 🔥 Season Reset detected: ${sOld} -> ${sNew}. Archiving and resetting tiers...`);
-
-            // Use the Postgres function for one-step archival and reset (Atomic & Fast)
-            const { error } = await supabase.rpc('fn_archive_and_reset_season', {
-                p_old_season_id: sOld,
-                p_new_season_id: sNew
-            });
-
-            if (error) {
-                console.error(`[Sync] ❌ Season Archival Error:`, error.message);
-            } else {
-                console.log(`[Sync] ✅ Season ${sOld} archived. New Season ${sNew} active in DB.`);
-            }
+            await supabase.rpc('fn_archive_and_reset_season', { p_old_season_id: Number(oldSeasonId), p_new_season_id: Number(newSeasonId) });
         }
 
         if (rows.length > 0) {
             await supabase.from("user_task_claims").upsert(rows, { onConflict: "id" });
         }
 
-        // ── SBT TIER SYNC ─────────────────────────────────────────────
-        // For every unique wallet that had activity in this block range,
-        // read their on-chain tier from MasterX and sync it to Supabase.
-        // This is the fully automated SBT enforcement gate.
+        // ── SBT TIER SYNC (Optimized & Parallelized) ──────────────────
         const activeWallets = [...new Set(rows.map(r => r.wallet_address))];
+        const syncTasks = [];
+
         if (activeWallets.length > 0) {
-            const tierUpdates = [];
-            for (const wallet of activeWallets) {
-                try {
-                    const userData = await masterX.users(wallet);
-                    const onChainTier = Number(userData.tier);
-                    tierUpdates.push({ wallet_address: wallet, on_chain_tier: onChainTier });
-                } catch (e) {
-                    console.warn(`[SBT Sync] Failed to read tier for ${wallet}:`, e.message);
+            syncTasks.push((async () => {
+                const tierUpdates = await Promise.all(activeWallets.map(async (wallet) => {
+                    try {
+                        const userData = await masterX.users(wallet);
+                        return { wallet_address: wallet, on_chain_tier: Number(userData.tier) };
+                    } catch (e) { return null; }
+                }));
+
+                for (const update of tierUpdates.filter(Boolean)) {
+                    await supabase.from('user_profiles').update({ tier: update.on_chain_tier, updated_at: new Date().toISOString() }).eq('wallet_address', update.wallet_address).lt('tier', update.on_chain_tier);
                 }
-            }
-
-            // Batch update DB tiers to match on-chain reality
-            for (const { wallet_address, on_chain_tier } of tierUpdates) {
-                await supabase
-                    .from('user_profiles')
-                    .update({ tier: on_chain_tier, updated_at: new Date().toISOString() })
-                    .eq('wallet_address', wallet_address)
-                    .lt('tier', on_chain_tier); // ONLY UPGRADE, never downgrade (safety)
-            }
-
-            // Also check ALL profiles with tier=0 to pick up any SBT mints
-            // that may have happened outside of the event range (e.g., wallet was
-            // inactive for a while but now has XP in DB)
-            const { data: guestProfiles } = await supabase
-                .from('user_profiles')
-                .select('wallet_address')
-                .eq('tier', 0)
-                .gt('total_xp', 0) // Only bother checking if they have XP
-                .limit(20); // Throttle to avoid rate limits
-
-            for (const profile of (guestProfiles || [])) {
-                try {
-                    const userData = await masterX.users(profile.wallet_address);
-                    const onChainTier = Number(userData.tier);
-                    if (onChainTier > 0) {
-                        await supabase
-                            .from('user_profiles')
-                            .update({ tier: onChainTier, updated_at: new Date().toISOString() })
-                            .eq('wallet_address', profile.wallet_address);
-                        console.log(`[SBT Sync] ✅ Promoted ${profile.wallet_address} to Tier ${onChainTier}`);
-                    }
-                } catch (e) {
-                    console.warn(`[SBT Sync] Failed guest-check for ${profile.wallet_address}:`, e.message);
-                }
-            }
+            })());
         }
 
-        await supabase.from("sync_state").upsert({
-            id: "main",
-            last_synced_block: toBlock,
-            updated_at: new Date().toISOString()
-        });
+        // Parallel Guest Check
+        syncTasks.push((async () => {
+            const { data: guests } = await supabase.from('user_profiles').select('wallet_address').eq('tier', 0) .gt('total_xp', 0).limit(20);
+            if (guests) {
+                await Promise.all(guests.map(async (p) => {
+                    try {
+                        const userData = await masterX.users(p.wallet_address);
+                        const tier = Number(userData.tier);
+                        if (tier > 0) {
+                            await supabase.from('user_profiles').update({ tier, updated_at: new Date().toISOString() }).eq('wallet_address', p.wallet_address);
+                        }
+                    } catch (e) {}
+                }));
+            }
+        })());
 
-        return res.json({
-            status: "ok",
-            scanned: `${fromBlock} → ${toBlock}`,
-            events_found: rows.length,
-            sbt_wallets_checked: activeWallets.length,
-            latestBlock
-        });
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("SYNC_TIMEOUT")), TIMEOUT_LIMIT));
+        await Promise.race([Promise.all(syncTasks), timeoutPromise]);
+
+        await supabase.from("sync_state").upsert({ id: "main", last_synced_block: toBlock, updated_at: new Date().toISOString() });
+
+        return res.json({ status: "ok", scanned: `${fromBlock} → ${toBlock}`, events_found: rows.length, duration: Date.now() - startTime });
     } catch (err) {
+        if (err.message === "SYNC_TIMEOUT") {
+            return res.json({ status: "partial_ok", error: "Sync timed out, but block state may have advanced.", duration: Date.now() - startTime });
+        }
         return res.status(500).json({ error: err.message });
     }
 }
+
 
 /**
  * logActivity: Internal helper to record events in the bundle.
