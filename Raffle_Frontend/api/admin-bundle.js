@@ -16,8 +16,8 @@ const CHAIN_ID = (process.env.VITE_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID 
 const isMainnet = CHAIN_ID === '8453';
 const activeChain = isMainnet ? base : baseSepolia;
 const activeRpcUrl = isMainnet 
-    ? (process.env.VITE_BASE_MAINNET_RPC_URL || 'https://mainnet.base.org').trim()
-    : (process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org').trim();
+    ? (process.env.VITE_BASE_MAINNET_RPC_URL || process.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org').trim()
+    : (process.env.VITE_BASE_SEPOLIA_RPC_URL || process.env.VITE_BASE_RPC_URL || 'https://sepolia.base.org').trim();
 
 const rpcClient = createPublicClient({
     chain: activeChain,
@@ -147,6 +147,7 @@ export default async function handler(req, res) {
 
         // 1. Basic Auth for all admin actions
         if (!targetAddress || !signature || !message) {
+            console.log('[Auth Failed] Missing fields', { targetAddress, signature: !!signature, message: !!message });
             return res.status(400).json({ error: 'Missing auth fields' });
         }
 
@@ -154,14 +155,20 @@ export default async function handler(req, res) {
         try {
             valid = await rpcClient.verifyMessage({ address: targetAddress, message, signature });
         } catch (err) {
-            console.error('[Signature Verification Failed]', err.message);
+            console.error('[Signature Verification Exception]', err.message);
             valid = false;
         }
-        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        if (!valid) {
+            console.log('[Auth Failed] Invalid signature for', targetAddress);
+            return res.status(401).json({ error: 'Invalid signature' });
+        }
 
         // 2. Authorization Check
         const isAuthorized = await isAuthorizedAdmin(targetAddress);
-        if (!isAuthorized) return res.status(403).json({ error: 'Unauthorized: Admin only' });
+        if (!isAuthorized) {
+            console.log('[Auth Failed] Unauthorized admin', targetAddress);
+            return res.status(403).json({ error: 'Unauthorized: Admin only' });
+        }
 
         // 3. Routing
         switch (action) {
@@ -259,6 +266,44 @@ export default async function handler(req, res) {
                         netProfit, 
                         communityXp: totalXp 
                     } 
+                });
+            }
+
+            case 'accountant-ledger': {
+                const { data: logs, error } = await supabaseAdmin
+                    .from('user_activity_logs')
+                    .select('*')
+                    .in('category', ['PURCHASE', 'REWARD', 'EXPENSE'])
+                    .order('created_at', { ascending: false })
+                    .limit(2000); // Fetch up to 2000 latest transactions
+
+                if (error) throw error;
+
+                const now = new Date();
+                const oneDay = 24 * 60 * 60 * 1000;
+                
+                const aggregates = {
+                    daily: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } },
+                    weekly: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } },
+                    monthly: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } }
+                };
+
+                logs?.forEach(log => {
+                    const logDate = new Date(log.created_at);
+                    const diffTime = now - logDate;
+                    const amount = parseFloat(log.value_amount) || 0;
+                    const symbol = log.value_symbol === 'ETH' ? 'ETH' : 'USDC'; // normalize
+                    const type = log.category === 'PURCHASE' ? 'income' : 'expense';
+
+                    if (diffTime <= oneDay) aggregates.daily[type][symbol] += amount;
+                    if (diffTime <= 7 * oneDay) aggregates.weekly[type][symbol] += amount;
+                    if (diffTime <= 30 * oneDay) aggregates.monthly[type][symbol] += amount;
+                });
+
+                return res.status(200).json({ 
+                    success: true, 
+                    aggregates,
+                    logs: logs?.slice(0, 100) || [] // return latest 100 for table
                 });
             }
 
@@ -559,6 +604,7 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true });
             }
             default:
+                console.log('[Action Failed] Invalid action:', action);
                 return res.status(400).json({ error: 'Invalid admin action: ' + action });
         }
     } catch (error) {

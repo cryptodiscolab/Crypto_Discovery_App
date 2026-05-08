@@ -36,6 +36,7 @@ const ContentTab = React.lazy(() => import('../components/admin/tabs/ContentTab'
 const SyncLogTab = React.lazy(() => import('../components/admin/tabs/SyncLogTab').then(m => ({ default: m.SyncLogTab })));
 const NFTConfigTab = React.lazy(() => import('../components/admin/tabs/NFTConfigTab').then(m => ({ default: m.NFTConfigTab })));
 const NexusMonitorTab = React.lazy(() => import('../components/admin/tabs/NexusMonitorTab').then(m => ({ default: m.NexusMonitorTab })));
+const AccountantLedgerTab = React.lazy(() => import('../components/admin/tabs/AccountantLedgerTab').then(m => ({ default: m.AccountantLedgerTab })));
 
 export function AdminPage({ initialTab = 'pool' }) {
     const navigate = useNavigate();
@@ -113,6 +114,7 @@ export function AdminPage({ initialTab = 'pool' }) {
         {
             label: 'Economy & Assets',
             items: [
+                { id: 'ledger', label: 'Accountant Ledger', icon: Landmark, color: 'emerald' },
                 { id: 'raffles', label: 'Raffles On-Chain', icon: Trophy, color: 'blue' },
                 { id: 'ugc-revenue', label: 'UGC Revenue', icon: Landmark, color: 'emerald' },
                 { id: 'nfts', label: 'NFT Economy', icon: Zap, color: 'indigo' },
@@ -311,6 +313,7 @@ export function AdminPage({ initialTab = 'pool' }) {
                                 { activeTab === 'sync-logs' && <SyncLogTab />}
                                 { activeTab === 'moderation' && <ModerationCenterTab /> }
                                 { activeTab === 'ugc-revenue' && <UgcRevenueTab /> }
+                                { activeTab === 'ledger' && <AccountantLedgerTab /> }
                                 { activeTab === 'nfts' && <NFTConfigTab ethPrice={ethPrice} />}
                                 {activeTab === 'nexus' && <NexusMonitorTab />}
                             </div>
