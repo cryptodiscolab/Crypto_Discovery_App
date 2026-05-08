@@ -1,10 +1,6 @@
-<h1>🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT</h1>
-<p><strong>Version</strong>: <code>v3.59.0</code> | <strong>Last Updated</strong>: <code>2026-05-06T18:00:00+07:00</code>
-<strong>Status</strong>: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH</p>
-<hr>
-<h3>📜 Changelog</h3>
 <ul>
-<li><strong>v3.59.0</strong>: Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Sync. Refactor <code>abis_data.txt</code> untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.</li>
+<li><strong>v3.59.2</strong>: Ecosystem Hardening &amp; Parity Audit. Implementasi <strong>Hardening Center</strong> di Accountant Ledger, penegakan <strong>SBT-Gating</strong> pada Leaderboard, dan integrasi <strong>Parity Audit API</strong> dengan Runtime ABI Guards.</li>
+<li><strong>v3.59.1</strong>: Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Sync. Refactor <code>abis_data.txt</code> untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.</li>
 <li><strong>v3.58.0</strong>: Lurah Ecosystem Hardening &amp; Autonomous Agent Resiliency. Implementasi <strong>Auto-Retry logic</strong> pada RPC, heartbeat dinamis di <code>system_health</code>, dan eliminasi hardcoded addresses.</li>
 <li><strong>v3.57.0</strong>: Hardening UGC Mission Pipeline. Implementasi <strong>Multi-Action Campaign selector</strong>, <strong>All-or-Nothing Reward Claiming</strong>, dan <strong>Grouped UI Components</strong> (<code>UGCCampaignCard</code>). Validasi URL platform-aware.</li>
 <li><strong>v3.56.4</strong>: Hardened Multi-Agent Cognitive Sync. Implementasi <strong>Lurah Brain (AI Filter)</strong>, <strong>Telegram Chat Memory</strong>, dan <strong>Sequential SBT Upgrade Mandate</strong>. Penghapusan protokol &quot;Izin Pemeliharaan&quot; untuk agen otonom.</li>
@@ -33,6 +29,7 @@
 <li><a href="#18-sbt-tier-integration-mandate">SBT Tier Integration Mandate</a></li>
 <li><a href="#19-ugc-multi-action--all-or-nothing-campaign-workflow">UGC Multi-Action &amp; All-or-Nothing Campaign Workflow</a></li>
 <li><a href="#20-zero-hardcode-infrastructure-mandate">Zero-Hardcode Infrastructure Mandate</a></li>
+<li><a href="#21-absolute-parity--hardening-audit-protocol">Absolute Parity &amp; Hardening Audit Protocol</a></li>
 </ol>
 <hr>
 <h2>1. Arsitektur Tingkat Tinggi</h2>
@@ -1079,8 +1076,13 @@ if ([&#39;claim&#39;, &#39;verify&#39;].includes(action)) {
 <li>User mengunjungi Profil → Klik &quot;LINK BASE SOCIAL&quot;</li>
 <li>Backend melakukan reverse resolution via on-chain resolver (<code>0xC697...</code>)</li>
 <li>Jika Basename ditemukan: <code>user_profiles.is_base_social_verified = true</code></li>
-<li>Tugas dengan <code>is_base_social_required = true</code> menjadi terbuka</li>
+<li>Tugas dengan <code>is_base_social_required = true</code> menjadi terbuka.</li>
 </ol>
+<h3>10.4 SBT-Gated Leaderboard (v3.59.2)</h3>
+<ul>
+<li><strong>Mandate</strong>: User tidak diizinkan masuk ke Leaderboard SOT (Database View) jika kolom <code>has_minted_sbt</code> bernilai <code>false</code>.</li>
+<li><strong>Enforcement</strong>: Filter ini diterapkan pada level SQL View <code>v_user_full_profile</code> untuk memastikan hadiah reward pool hanya didistribusikan kepada user yang sudah memvalidasi identitas on-chain mereka.</li>
+</ul>
 <hr>
 <h2>11. Disappearing Task Mandate (v3.42.2)</h2>
 <blockquote>
@@ -1443,7 +1445,7 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 <li><input disabled="" type="checkbox"> <strong>Referral Loop</strong>: Setiap klaim sukses harus memicu CTA sharing sosial.</li>
 </ol>
 <hr>
-<h2>20. Zero-Hardcode Infrastructure Mandate (v3.59.0)</h2>
+<h2>20. Zero-Hardcode Infrastructure Mandate (v3.59.1)</h2>
 <p>Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanpa risiko <em>manual error</em>.</p>
 <h3>20.1 Dynamic Address Resolution</h3>
 <ul>
@@ -1460,4 +1462,19 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 </li>
 </ul>
 <hr>
-<p><em>End of Task Feature Workflow - Nexus v3.59.0 Locked.</em></p>
+<h2>21. Absolute Parity &amp; Hardening Audit Protocol (v3.59.2)</h2>
+<p>Setiap agen yang mengelola tugas berantai (Multi-Action) atau distribusi reward wajib menjalankan audit paritas.</p>
+<h3>21.1 Parity Audit Checklist</h3>
+<ol>
+<li><strong>XP Drift</strong>: Pastikan <code>total_xp</code> database sinkron dengan <code>points</code> on-chain.</li>
+<li><strong>Tier Drift</strong>: Pastikan level database sinkron dengan <code>currentTier</code> on-chain.</li>
+<li><strong>Metadata Parity</strong>: Pastikan URL Pinata di database sinkron dengan <code>BaseURI</code> on-chain via <code>setTierURI</code>.</li>
+</ol>
+<h3>21.2 Tools &amp; Endpoints</h3>
+<ul>
+<li><strong>Audit Tool</strong>: Dashboard Hardening Center di Tab Admin.</li>
+<li><strong>API</strong>: <code>/api/admin/parity-audit</code> (High-precision comparison).</li>
+<li><strong>Manual Sync</strong>: Gunakan tombol &quot;Batch Sync&quot; jika terdeteksi drift &gt; 1% pada Top 50 users.</li>
+</ul>
+<hr>
+<p><em>End of Task Feature Workflow - Nexus v3.59.2 Locked.</em></p>

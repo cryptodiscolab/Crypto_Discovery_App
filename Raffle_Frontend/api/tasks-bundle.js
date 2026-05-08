@@ -225,6 +225,60 @@ async function logActivity({ wallet, category, type, description, amount, symbol
     }
 }
 
+/**
+ * 🎁 DAILY GOAL AUTOMATION
+ * Checks if user completed 3 tasks in 24h and grants bonus.
+ */
+async function checkAndGrantDailyBonus(wallet_address) {
+    try {
+        const wallet = wallet_address.toLowerCase();
+        
+        // 1. Check current progress from view
+        const { data: progress } = await supabaseAdmin
+            .from('v_user_daily_progress')
+            .select('*')
+            .eq('wallet_address', wallet)
+            .maybeSingle();
+
+        if (!progress || progress.bonus_claimed || progress.completed_count < 3) return;
+
+        // 2. Grant Bonus
+        const bonusXp = await getPointValue('daily_task_completion') || 50;
+        
+        // 3. Record the claim
+        const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
+            wallet_address: wallet,
+            task_id: 'daily_task_completion',
+            xp_earned: bonusXp,
+            platform: 'system',
+            action_type: 'daily_bonus'
+        });
+
+        if (claimErr) return; // Likely race condition, safety first
+
+        // 4. Update XP
+        await supabaseAdmin.rpc('fn_increment_xp', {
+            p_wallet: wallet,
+            p_amount: bonusXp
+        });
+
+        // 5. Log
+        await logActivity({
+            wallet,
+            category: 'XP',
+            type: 'Daily Goal Reached',
+            description: `Unlocked 3-Task Daily Bonus!`,
+            amount: bonusXp,
+            symbol: 'XP',
+            metadata: { milestone: 3 }
+        });
+
+        console.log(`[DailyBonus] Granted ${bonusXp} XP to ${wallet}`);
+    } catch (e) {
+        console.error('[DailyBonus Error]', e.message);
+    }
+}
+
 // -----------------------------------------------------------------------------
 // FEATURE FLAGS & PHASED ROLLOUT (MAINNET SAFEGUARD)
 // -----------------------------------------------------------------------------
@@ -344,6 +398,7 @@ async function handleClaim(req, res) {
         });
     }
 
+    await checkAndGrantDailyBonus(wallet_address);
     return res.status(200).json({ success: true, xp });
 }
 
@@ -414,6 +469,7 @@ async function handleVerify(req, res) {
         });
     }
 
+    await checkAndGrantDailyBonus(wallet_address);
     return res.status(200).json({ success: true, xp });
 }
 
@@ -457,6 +513,7 @@ async function handleSocialVerify(req, res) {
         metadata: { task_id, platform, action_type }
     });
 
+    await checkAndGrantDailyBonus(wallet_address);
     return res.status(200).json({ success: true, xp, message: `Task verified.` });
 }
 

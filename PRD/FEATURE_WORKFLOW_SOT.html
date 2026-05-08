@@ -1,6 +1,6 @@
-<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.0)</h1>
-<p><strong>Last Updated</strong>: 2026-05-06T18:00:00+07:00 — Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Sync (v3.59.0)
-<strong>Status</strong>: 🛡️ MAINNET PHASED ROLLOUT LOCKED</p>
+<h1>🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.2)</h1>
+<p><strong>Last Updated</strong>: 2026-05-08T22:45:00+07:00 — Ecosystem Hardening &amp; Parity Audit (v3.59.2)
+<strong>Status</strong>: 🛡️ ARCHITECTURALLY HARDENED</p>
 <p>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. <strong>JANGAN berhalusinasi atau menebak</strong>. Jika ada yang error, rujuk dokumen ini.</p>
 <hr>
 <h2>🏛️ 0. Active Contract Index &amp; Network Registry (DO NOT DEVIATE)</h2>
@@ -114,7 +114,11 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 <li>Data yang di-return adalah hasil agregasi <code>user_profiles</code> (untuk Avatar, Bio, XP) yang sudah langsung terupdate setelah Daily Claim selesai.</li>
 </ol>
 </li>
-<li><strong>Rules</strong>: Dilarang me-loop panggil <code>MasterX</code> untuk mengambil ranking user, semuanya harus via database <code>user_profiles.total_xp</code> yang tersinkron.</li>
+<li><strong>Rules</strong>: <ol>
+<li>Dilarang me-loop panggil <code>MasterX</code> untuk mengambil ranking user, semuanya harus via database <code>user_profiles.total_xp</code>.</li>
+<li><strong>SBT-Gating Mandate (v3.59.2)</strong>: User hanya akan ditampilkan di leaderboard jika memiliki NFT SBT di on-chain. Integritas ini dijaga oleh fungsi SQL <code>compute_leaderboard_tiers</code> yang melakukan join terhadap status minting.</li>
+</ol>
+</li>
 </ul>
 <h3>3.2 Dua Jalur XP Sync (PENTING — Jangan Regress!)</h3>
 <p>Ada <strong>dua jalur berbeda</strong> yang mengupdate <code>user_profiles.total_xp</code>. Agen HARUS memahami perbedaannya:</p>
@@ -474,7 +478,7 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 <li><strong>Social Sharing</strong>: Setelah klaim, user disuguhi opsi sharing referal ke media sosial untuk memperkuat loop pertumbuhan.</li>
 </ol>
 <hr>
-<h2>🏛️ 16. Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Mandate (v3.59.0)</h2>
+<h2>🏛️ 16. Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Mandate (v3.59.1)</h2>
 <p>Untuk menjamin skalabilitas dan mencegah <em>environmental drift</em> saat transisi antar network (Sepolia -&gt; Mainnet), ekosistem Crypto Disco mewajibkan pemisahan mutlak antara logika aplikasi dan alamat infrastruktur.</p>
 <h3>16.1 Zero-Hardcode ABI Registry</h3>
 <ul>
@@ -487,5 +491,20 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 <li><strong>Trigger</strong>: Setiap perubahan kontrak atau environment <strong>WAJIB</strong> diikuti dengan eksekusi <code>node scripts/sync/sync-all-envs.cjs</code>.</li>
 <li><strong>Audit</strong>: Jalankan <code>node scripts/audits/check_sync_status.cjs</code> untuk memastikan seluruh 13 poin integritas (termasuk Zero-Hardcode) terpenuhi.</li>
 </ul>
+<h2>🏛️ 17. Ecosystem Hardening &amp; Parity Audit Workflow (v3.59.2)</h2>
+<p>Protokol untuk memastikan database dan blockchain tetap dalam sinkronisasi sempurna (Absolute Parity).</p>
+<h3>17.1 Drift Detection</h3>
+<ul>
+<li><strong>Dashboard</strong>: Akses via <strong>Accountant Ledger -&gt; Hardening Center</strong>.</li>
+<li><strong>Endpoint</strong>: <code>/api/admin/parity-audit</code>.</li>
+<li><strong>Logic</strong>: Backend membandingkan <code>total_xp</code> (DB) vs <code>points</code> (On-chain) dan <code>tier</code> (DB) vs <code>currentTier</code> (On-chain) untuk Top 50 users.</li>
+<li><strong>Threshold</strong>: Deviasi &gt; 1 XP dianggap sebagai <em>Drift</em> dan harus segera disinkronkan.</li>
+</ul>
+<h3>17.2 Synchronization Procedure</h3>
+<ol>
+<li><strong>Sync XP</strong>: Mengirimkan transaksi batch ke <code>MasterX</code> untuk mengupdate poin on-chain sesuai nilai database.</li>
+<li><strong>Sync Tiers</strong>: Memaksa pembaruan tier di blockchain jika status SBT user tidak sesuai dengan rank database.</li>
+<li><strong>NFT Metadata Sync</strong>: Menggunakan <code>setTierURI</code> untuk memastikan Base URI NFT di kontrak DailyApp menunjuk ke link Pinata yang benar.</li>
+</ol>
 <hr>
-<p><em>End of Source of Truth Document - Nexus v3.59.0 LOCKED.</em></p>
+<p><em>End of Source of Truth Document - Nexus v3.59.2 LOCKED.</em></p>

@@ -57,12 +57,26 @@ export function useCMS() {
         }
     });
 
+    const [fallbackPrice, setFallbackPrice] = useState(0);
+
+    useEffect(() => {
+        if (!priceRaw?.[1]) {
+            // Fallback: Fetch from public API if Oracle fails (e.g. local dev)
+            fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDC')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.price) setFallbackPrice(parseFloat(data.price));
+                })
+                .catch(() => {});
+        }
+    }, [priceRaw]);
+
     const ethPrice = useMemo(() => {
         if (priceRaw?.[1]) {
             return Number(priceRaw[1]) / 1e8; // Chainlink USD Feeds have 8 decimals
         }
-        return 0; // Fallback to 0 if Oracle fails
-    }, [priceRaw]);
+        return fallbackPrice; // Use fallback if Oracle fails
+    }, [priceRaw, fallbackPrice]);
 
     const {
         data: newsRaw,

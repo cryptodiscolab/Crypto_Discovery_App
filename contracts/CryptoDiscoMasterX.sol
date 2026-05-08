@@ -142,10 +142,22 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         isSatellite[_satellite] = _status;
     }
 
-    function addPoints(address user, uint256 points, string calldata reason) external {
-        require(msg.sender == raffleContract || isSatellite[msg.sender], "Unauthorized");
+    function addPoints(address user, uint256 points, string calldata reason) public {
+        require(msg.sender == raffleContract || isSatellite[msg.sender] || msg.sender == owner(), "Unauthorized");
         users[user].points += points;
         emit PointsAwarded(user, points, reason);
+    }
+
+    /**
+     * @notice Batch add points for multiple users
+     * @dev Optimized for admin sync
+     */
+    function batchAddPoints(address[] calldata _users, uint256[] calldata _points, string calldata _reason) external onlyOwner {
+        require(_users.length == _points.length, "Array length mismatch");
+        for (uint256 i = 0; i < _users.length; i++) {
+            users[_users[i]].points += _points[i];
+            emit PointsAwarded(_users[i], _points[i], _reason);
+        }
     }
 
     // ============ Revenue Distribution ============

@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { usePriceOracle } from '../../../hooks/usePriceOracle';
 import { formatUnits, parseUnits, parseEther } from 'viem';
+import { supabase } from '@/lib/supabaseClient';
+import { cleanWallet } from '../../../utils/cleanWallet';
 import { useSBT } from '../../../hooks/useSBT';
 import { useCMS } from '../../../hooks/useCMS';
 import { usePoints } from '../../../shared/context/PointsContext';
@@ -21,20 +23,15 @@ export function BlockchainConfigSection() {
     const { poolSettings, updatePoolSettings, ethPrice } = useCMS();
 
     // Form States (Initialized with Zero-Hardcode canonical defaults)
-    const [rewards, setRewards] = useState({
-        daily: String(ecosystemSettings?.daily_claim || '100'),
-        referral: String(ecosystemSettings?.referral_reward || '50')
-    });
-    const [raffleFees, setRaffleFees] = useState({ rake: '2000', surcharge: '500' });
-    const [raffleLimits, setRaffleLimits] = useState({ maxUser: '1000', maxParticipants: '10000' });
-    const [raffleXp, setRaffleXp] = useState({ create: '500', claim: '200', purchase: '50' });
-    const [econShares, setEconShares] = useState({ owner: '4000', ops: '2000', treasury: '2000', sbt: '2000' });
-    const [tierWeights, setTierWeights] = useState({ diamond: '400', platinum: '300', gold: '200', silver: '100', bronze: '50' });
-    const [withdrawFee, setWithdrawFee] = useState('500');
-    const [sponsorSettings, setSponsorSettings] = useState({
-        fee: '1000000', // $1 USDC
-        minPool: '5000000000000000000', // 5 ETH/TOKEN
-        reward: '10000000000000000', // 0.01
+    const [rewards, setRewards] = useState({ daily: '100', referral: '50' });
+    const [raffleFees, setRaffleFees] = useState({ rake: '500', surcharge: '200' });
+    const [raffleLimits, setRaffleLimits] = useState({ maxUser: '10', maxParticipants: '100' });
+    const [raffleXp, setRaffleXp] = useState({ create: '200', claim: '100', purchase: '15' });
+    const [econShares, setEconShares] = useState({ owner: '20', ops: '20', treasury: '50', sbt: '10' });
+    const [tierWeights, setTierWeights] = useState({ diamond: '30', platinum: '25', gold: '20', silver: '15', bronze: '10' });
+    const [auditSettings, setAuditSettings] = useState({
+        minPool: '5', // 5 ETH/TOKEN
+        reward: '0.01', // 0.01
         tasks: '3'
     });
     const [withdrawAmount, setWithdrawAmount] = useState('0.1');
@@ -43,10 +40,17 @@ export function BlockchainConfigSection() {
         claimTimestamp: 0
     });
 
-    // MasterX Protocol Parameters (Previously in SystemSettingsTab)
+    // Drift Detection States
+    const [drift, setDrift] = useState({
+        rewards: false,
+        raffleXp: false,
+        tierWeights: false
+    });
+
+    // MasterX Protocol Parameters (v3.59.2 Hardened)
     const [masterParams, setMasterParams] = useState({
-        tUSDC: '150000',
-        mGas: '100000000000',
+        tUSDC: '0.15',
+        mGas: '100',
         pPerTicket: '15',
         desc: ''
     });
@@ -55,16 +59,13 @@ export function BlockchainConfigSection() {
     const { prices } = usePriceOracle((ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens)?.map(t => t.address) || []);
     
     // Derived USD values for indicators
-    const getUsdValue = (amount, isUsdc = false) => {
-        if (!amount) return 0;
-        if (isUsdc) return parseFloat(amount) / 1000000;
+    const getUsdValue = (humanAmount, isUsdc = false) => {
+        if (!humanAmount) return 0;
+        const amount = parseFloat(humanAmount);
+        if (isUsdc) return amount;
         
-        // For reward tokens, we need to know WHICH token it is. 
-        // In Admin panel, it's a bit tricky because the 'minPool' or 'reward' 
-        // could be in ANY allowed/whitelisted token. We'll show valuation for ETH as a baseline or Creator Token.
         const ethPrice = prices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || prices['0x4200000000000000000000000000000000000006'] || 0;
-        const raw = parseFloat(amount) / 1e18;
-        return raw * ethPrice;
+        return amount * ethPrice;
     };
     const [autoApprove, setAutoApprove] = useState(true);
 
@@ -151,13 +152,46 @@ export function BlockchainConfigSection() {
         if (qPPT) setMasterParams(prev => ({ ...prev, pPerTicket: qPPT.toString() }));
         if (qDesc) setMasterParams(prev => ({ ...prev, desc: qDesc.toString() }));
 
-        if (qWithdrawFee) setWithdrawFee(qWithdrawFee.toString());
-        if (qSponsorFee) setSponsorSettings(prev => ({ ...prev, fee: qSponsorFee.toString() }));
-        if (qMinPool) setSponsorSettings(prev => ({ ...prev, minPool: qMinPool.toString() }));
-        if (qRewardClaim) setSponsorSettings(prev => ({ ...prev, reward: qRewardClaim.toString() }));
-        if (qTasksGoal) setSponsorSettings(prev => ({ ...prev, tasks: qTasksGoal.toString() }));
-        if (qAutoApprove !== undefined) setAutoApprove(!!qAutoApprove);
-    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare, qDWeight, qPWeight, qGWeight, qSWeight, qBWeight, qTUSDC, qMGas, qPPT, qDesc, qWithdrawFee, qSponsorFee, qMinPool, qRewardClaim, qTasksGoal, qAutoApprove]);
+        if (qLastDist) setPoolFormData(prev => ({ ...prev, claimTimestamp: Number(qLastDist) }));
+
+        // [v3.59.2] Drift Detection Logic
+        const checkDrift = async () => {
+            try {
+                const { data: ps } = await supabase.from('point_settings').select('activity_key, points_value');
+                const pMap = new Map(ps?.map(p => [p.activity_key, p.points_value]));
+                
+                // Compare Rewards
+                const dailyMatch = qDaily?.toString() === pMap.get('daily_claim')?.toString();
+                const refMatch = qReferral?.toString() === pMap.get('referral_invite')?.toString();
+                
+                // Compare Raffle XP
+                const cMatch = qXpCreate?.toString() === pMap.get('raffle_create')?.toString();
+                const clMatch = qXpClaim?.toString() === pMap.get('raffle_claim')?.toString();
+                const pMatch = qXpPurchase?.toString() === pMap.get('raffle_buy')?.toString();
+
+                // Compare Weights (from system_settings)
+                const { data: sw } = await supabase.from('system_settings').select('value').eq('key', 'tier_pool_weights').maybeSingle();
+                const wMatch = sw?.value && 
+                    sw.value.diamond === qDWeight?.toString() &&
+                    sw.value.platinum === qPWeight?.toString() &&
+                    sw.value.gold === qGWeight?.toString() &&
+                    sw.value.silver === qSWeight?.toString() &&
+                    sw.value.bronze === qBWeight?.toString();
+
+                setDrift({
+                    rewards: !dailyMatch || !refMatch,
+                    raffleXp: !cMatch || !clMatch || !pMatch,
+                    tierWeights: !wMatch
+                });
+            } catch (e) { console.warn("Drift check failed", e); }
+        };
+        checkDrift();
+    }, [
+        qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, 
+        qXpCreate, qXpClaim, qXpPurchase, qOwner, qOps, qTreasury, qSbtShare,
+        qDWeight, qPWeight, qGWeight, qSWeight, qBWeight,
+        qTUSDC, qMGas, qPPT, qDesc, qLastDist
+    ]);
 
     useEffect(() => {
         if (poolSettings) {
@@ -168,21 +202,34 @@ export function BlockchainConfigSection() {
         }
     }, [poolSettings]);
 
-    const handleSaveGeneral = async () => {
-        setIsSaving(true);
-        const tid = toast.loading("Syncing Rewards to Chain...");
+    const handleSaveRewards = async () => {
+        const tid = toast.loading('Updating Global Rewards on-chain...');
         try {
-            await writeContractAsync({
+            const tx = await writeContractAsync({
                 address: CONTRACTS.DAILY_APP,
                 abi: DAILY_APP_ABI,
                 functionName: 'setGlobalRewards',
                 args: [BigInt(rewards.daily), BigInt(rewards.referral)],
             });
-            toast.success("Rewards Updated!", { id: tid });
-        } catch (e) {
-            toast.error(e.shortMessage || e.message, { id: tid });
-        } finally {
-            setIsSaving(false);
+            
+            toast.loading('Syncing to Database...', { id: tid });
+            const message = `Sync Rewards: Daily=${rewards.daily}, Ref=${rewards.referral}`;
+            const signature = await signMessageAsync({ message });
+
+            await axios.post('/api/admin-bundle', {
+                wallet_address: address,
+                signature,
+                message,
+                action: 'BATCH_UPDATE_POINTS',
+                payload: [
+                    { activity_key: 'daily_claim', points_value: parseInt(rewards.daily) },
+                    { activity_key: 'referral_invite', points_value: parseInt(rewards.referral) }
+                ]
+            });
+
+            toast.success('Rewards updated on-chain & in DB!', { id: tid });
+        } catch (err) {
+            toast.error(err.message, { id: tid });
         }
     };
 
@@ -217,18 +264,35 @@ export function BlockchainConfigSection() {
     };
 
     const handleSaveRaffleXp = async () => {
-        setIsSaving(true);
-        const tid = toast.loading("Syncing Raffle XP Rewards...");
+        const tid = toast.loading('Updating Raffle XP on-chain...');
         try {
             await writeContractAsync({
                 address: CONTRACTS.RAFFLE,
                 abi: RAFFLE_ABI,
-                functionName: 'setRaffleXP',
+                functionName: 'setXpRewards',
                 args: [BigInt(raffleXp.create), BigInt(raffleXp.claim), BigInt(raffleXp.purchase)],
             });
-            toast.success("Raffle XP Rewards Updated!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
-        finally { setIsSaving(false); }
+
+            toast.loading('Syncing to Database...', { id: tid });
+            const message = `Sync Raffle XP: Create=${raffleXp.create}, Claim=${raffleXp.claim}, Buy=${raffleXp.purchase}`;
+            const signature = await signMessageAsync({ message });
+
+            await axios.post('/api/admin-bundle', {
+                wallet_address: address,
+                signature,
+                message,
+                action: 'BATCH_UPDATE_POINTS',
+                payload: [
+                    { activity_key: 'raffle_create', points_value: parseInt(raffleXp.create) },
+                    { activity_key: 'raffle_claim', points_value: parseInt(raffleXp.claim) },
+                    { activity_key: 'raffle_buy', points_value: parseInt(raffleXp.purchase) }
+                ]
+            });
+
+            toast.success('Raffle XP updated on-chain & in DB!', { id: tid });
+        } catch (err) {
+            toast.error(err.message, { id: tid });
+        }
     };
 
     const handleSaveEconShares = async () => {
@@ -247,34 +311,37 @@ export function BlockchainConfigSection() {
     };
 
     const handleSaveTierWeights = async () => {
-        setIsSaving(true);
-        const tid = toast.loading("Syncing SBT Pool Weights...");
+        const tid = toast.loading('Updating Tier Weights on-chain...');
         try {
             await writeContractAsync({
                 address: CONTRACTS.MASTER_X,
                 abi: MASTER_X_ABI,
                 functionName: 'setTierWeights',
-                args: [BigInt(tierWeights.diamond), BigInt(tierWeights.platinum), BigInt(tierWeights.gold), BigInt(tierWeights.silver), BigInt(tierWeights.bronze)],
+                args: [
+                    BigInt(tierWeights.diamond),
+                    BigInt(tierWeights.platinum),
+                    BigInt(tierWeights.gold),
+                    BigInt(tierWeights.silver),
+                    BigInt(tierWeights.bronze)
+                ],
             });
-            toast.success("Tier Weights Updated On-Chain!", { id: tid });
 
-            // 🛡️ Sync to DB for UI consistency
-            try {
-                const message = `Action: SYNC_WEIGHTS\nTimestamp: ${Date.now()}`;
-                const sig = await signMessageAsync({ message });
-                await axios.post('/api/admin-bundle', {
-                    action: 'SYNC_WEIGHTS',
-                    wallet_address: address,
-                    signature: sig,
-                    message: message,
-                    payload: tierWeights
-                });
-                toast.success("Pool Weights Synced to DB!");
-            } catch (syncErr) {
-                console.warn("DB Sync failed, but on-chain update succeeded.");
-            }
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
-        finally { setIsSaving(false); }
+            toast.loading('Syncing to Database...', { id: tid });
+            const message = `Sync Weights: D=${tierWeights.diamond}, P=${tierWeights.platinum}, G=${tierWeights.gold}, S=${tierWeights.silver}, B=${tierWeights.bronze}`;
+            const signature = await signMessageAsync({ message });
+
+            await axios.post('/api/admin-bundle', {
+                wallet_address: address,
+                signature,
+                message,
+                action: 'SYNC_WEIGHTS',
+                payload: tierWeights
+            });
+
+            toast.success('Weights updated on-chain & in DB!', { id: tid });
+        } catch (err) {
+            toast.error(err.message, { id: tid });
+        }
     };
 
     const handleSaveEconomical = async () => {
@@ -294,7 +361,12 @@ export function BlockchainConfigSection() {
                 address: CONTRACTS.DAILY_APP,
                 abi: DAILY_APP_ABI,
                 functionName: 'setSettings',
-                args: [BigInt(sponsorSettings.fee), BigInt(sponsorSettings.minPool), BigInt(sponsorSettings.reward), BigInt(sponsorSettings.tasks)],
+                args: [
+                    BigInt(Math.floor(Number(sponsorSettings.fee) * 1e6)), 
+                    BigInt(Math.floor(Number(sponsorSettings.minPool) * 1e18)), 
+                    BigInt(Math.floor(Number(sponsorSettings.reward) * 1e18)), 
+                    BigInt(sponsorSettings.tasks)
+                ],
             });
 
             // 3. Auto Approve
@@ -409,11 +481,72 @@ export function BlockchainConfigSection() {
 
     return (
         <div className="space-y-6">
+            {/* [v3.59.2] Hardening Overview & Emergency Tools */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="glass-card p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Pool Sustainability</p>
+                    <div className="flex items-end justify-between">
+                        <span className="text-2xl font-black text-white">
+                            {((Number(totalPoolBalance) / 1e18) / (Number(rewards.daily) * 0.0001 || 1)).toFixed(1)} Days
+                        </span>
+                        <span className="text-[10px] text-slate-500 mb-1">at current rate</span>
+                    </div>
+                </div>
+                <div className="glass-card p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">System Health</p>
+                    <div className="flex items-end justify-between">
+                        <span className="text-2xl font-black text-white">
+                            {drift.rewards || drift.raffleXp || drift.tierWeights ? 'WARNING' : 'HEALTHY'}
+                        </span>
+                        <span className={`text-[10px] mb-1 font-bold ${drift.rewards || drift.raffleXp || drift.tierWeights ? 'text-red-400' : 'text-emerald-400'}`}>
+                            {drift.rewards || drift.raffleXp || drift.tierWeights ? 'Drift Detected' : 'Parity Locked'}
+                        </span>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                    <button 
+                        onClick={async () => {
+                            const tid = toast.loading('Force Syncing all settings to DB...');
+                            try {
+                                const message = `Emergency Parity Sync\nTime: ${new Date().toISOString()}`;
+                                const signature = await signMessageAsync({ message });
+                                await axios.post('/api/admin-bundle', {
+                                    wallet_address: address, signature, message,
+                                    action: 'BATCH_UPDATE_POINTS',
+                                    payload: [
+                                        { activity_key: 'daily_claim', points_value: parseInt(rewards.daily) },
+                                        { activity_key: 'referral_invite', points_value: parseInt(rewards.referral) },
+                                        { activity_key: 'raffle_create', points_value: parseInt(raffleXp.create) },
+                                        { activity_key: 'raffle_claim', points_value: parseInt(raffleXp.claim) },
+                                        { activity_key: 'raffle_buy', points_value: parseInt(raffleXp.purchase) }
+                                    ]
+                                });
+                                await axios.post('/api/admin-bundle', {
+                                    wallet_address: address, signature, message,
+                                    action: 'SYNC_WEIGHTS',
+                                    payload: tierWeights
+                                });
+                                toast.success('Full System Parity Restored!', { id: tid });
+                            } catch (e) { toast.error(e.message, { id: tid }); }
+                        }}
+                        className="h-full bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
+                    >
+                        Emergency Parity Sync
+                    </button>
+                </div>
+            </div>
             {/* Rewards Card */}
             <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4 rounded-2xl">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-yellow-400" /> GLOBAL XP REWARDS
+                <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-yellow-400" />
+                    Global Rewards (DailyApp)
+                    {drift.rewards && <span className="ml-2 px-2 py-0.5 text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 rounded-full animate-pulse">DRIFT DETECTED</span>}
                 </h3>
+                <button onClick={handleSaveRewards} className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg shadow-yellow-500/20 active:scale-95">
+                    <Save className="w-4 h-4" /> Save Rewards
+                </button>
+            </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase">Daily Claim XP</label>
@@ -424,16 +557,29 @@ export function BlockchainConfigSection() {
                         <input type="number" value={rewards.referral} onChange={e => setRewards({ ...rewards, referral: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
                     </div>
                 </div>
-                <button onClick={handleSaveGeneral} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
-                    Update XP Rewards
-                </button>
             </div>
 
-            {/* Raffle Fees Card */}
+            {/* Raffle Economics Card */}
             <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4 rounded-2xl">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <BarChart className="w-5 h-5 text-emerald-400" /> RAFFLE ECONOMICS
-                </h3>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-blue-400" />
+                        Raffle Economics
+                        {drift.raffleXp && <span className="ml-2 px-2 py-0.5 text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 rounded-full animate-pulse">XP DRIFT</span>}
+                    </h2>
+                    <div className="flex gap-2">
+                        <button onClick={handleSaveRaffleFees} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-500/20">
+                            Update Fees
+                        </button>
+                        <button onClick={handleSaveRaffleLimits} className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all">
+                            Update Limits
+                        </button>
+                        <button onClick={handleSaveRaffleXp} className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-purple-500/20">
+                            Update XP
+                        </button>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase">Rake BP (2000 = 20%)</label>
@@ -444,9 +590,6 @@ export function BlockchainConfigSection() {
                         <input type="number" value={raffleFees.surcharge} onChange={e => setRaffleFees({ ...raffleFees, surcharge: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
                     </div>
                 </div>
-                <button onClick={handleSaveRaffleFees} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
-                    Update Raffle Fees
-                </button>
 
                 <div className="border-t border-white/5 pt-4 grid grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -458,16 +601,25 @@ export function BlockchainConfigSection() {
                         <input type="number" value={raffleLimits.maxParticipants} onChange={e => setRaffleLimits({ ...raffleLimits, maxParticipants: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
                     </div>
                 </div>
-                <button onClick={handleSaveRaffleLimits} disabled={isSaving} className="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
-                    Update Raffle Limits
-                </button>
             </div>
 
             {/* MasterX Economics & Tier Weights */}
             <div className="glass-card p-6 bg-slate-900/40 border border-white/5 space-y-4 lg:col-span-2 rounded-2xl">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-orange-400" /> MASTER-X REVENUE & POOL
-                </h3>
+                <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-emerald-400" />
+                    Protocol Distribution (MasterX)
+                    {drift.tierWeights && <span className="ml-2 px-2 py-0.5 text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 rounded-full animate-pulse">WEIGHT DRIFT</span>}
+                </h2>
+                <div className="flex gap-2">
+                    <button onClick={handleSaveEconShares} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-emerald-500/20">
+                        Update Revenue Shares
+                    </button>
+                    <button onClick={handleSaveTierWeights} className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all">
+                        Update Tier Weights
+                    </button>
+                </div>
+            </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                     <div className="space-y-4">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Shares (BP - Total 10000)</p>
@@ -489,9 +641,6 @@ export function BlockchainConfigSection() {
                                 <input type="number" value={econShares.sbt} onChange={e => setEconShares({ ...econShares, sbt: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
                             </div>
                         </div>
-                        <button onClick={handleSaveEconShares} disabled={isSaving} className="w-full bg-orange-600 hover:bg-orange-500 py-3 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">
-                            Update Revenue Shares
-                        </button>
                     </div>
 
                     <div className="space-y-4">

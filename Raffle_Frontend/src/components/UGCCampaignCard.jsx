@@ -176,8 +176,15 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                         </div>
                     </div>
                     {/* Progress Badge */}
-                    <div className={`shrink-0 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${allDone ? 'bg-violet-600 text-white' : 'bg-white/5 text-slate-400'}`}>
-                        {completedCount}/{totalTasks}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${allDone ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 text-slate-400 border border-white/5'}`}>
+                            {completedCount}/{totalTasks}
+                        </div>
+                        {!allDone && (
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">
+                                {totalTasks - completedCount} TASK SISA
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -223,21 +230,24 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                         <p className="text-sm font-black text-emerald-400 font-mono">{campaign.reward_amount_per_user} {campaign.reward_symbol || 'USDC'}</p>
                     </div>
                     {alreadyCampaignClaimed ? (
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                        <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
                             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Claimed</span>
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Rewards Claimed</span>
                         </div>
                     ) : allDone ? (
                         <button
                             onClick={() => setShowModal(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-violet-500/20 animate-pulse"
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-violet-500/30 animate-pulse active:scale-95"
                         >
-                            <Trophy className="w-4 h-4" /> CLAIM
+                            <Trophy className="w-4 h-4" /> CLAIM ALL REWARDS
                         </button>
                     ) : (
-                        <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/5 border border-white/5">
-                            <Zap className="w-3.5 h-3.5 text-slate-600" />
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Selesaikan semua tugas</span>
+                        <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/5">
+                                <Zap className="w-3.5 h-3.5 text-slate-600" />
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Selesaikan {totalTasks - completedCount} Lagi</span>
+                            </div>
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter mr-2">ALL-OR-NOTHING REWARD</span>
                         </div>
                     )}
                 </div>

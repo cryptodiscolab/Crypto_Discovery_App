@@ -22,9 +22,9 @@ export function SponsorshipConfigSection() {
     useEffect(() => {
         if (currentFee) setFee((Number(currentFee) / 1e6).toString());
         if (currentAutoApprove !== undefined) setAutoApprove(currentAutoApprove);
-        if (currentReward) setRewardPerClaim(currentReward.toString());
+        if (currentReward) setRewardPerClaim((Number(currentReward) / 1e18).toString());
         if (currentTasks) setTasksForReward(currentTasks.toString());
-        if (currentMinPool) setMinPool((Number(currentMinPool) / 1e18).toFixed(4)); // minRewardPoolValue is in wei
+        if (currentMinPool) setMinPool((Number(currentMinPool) / 1e18).toString()); // minRewardPoolValue is in wei
     }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
     const { writeContractAsync } = useWriteContract();
@@ -41,7 +41,7 @@ export function SponsorshipConfigSection() {
                 args: [
                     BigInt(Math.floor(Number(fee) * 1e6)),           // _feeUSDC
                     BigInt(Math.floor(Number(minPool) * 1e18)),      // _minPool (in wei)
-                    BigInt(rewardPerClaim),                          // _reward
+                    BigInt(Math.floor(Number(rewardPerClaim) * 1e18)), // _reward
                     BigInt(tasksForReward)                           // _tasks
                 ],
             });

@@ -1,7 +1,7 @@
 ---
 name: cognitive-orchestrator
 description: Mengelola sinkronisasi kognitif lintas agen dan memastikan metodologi skill-creator v0.40.1 diterapkan di seluruh ekosistem.
-version: 1.1.0 (v3.59.1 Compatible)
+version: 1.2.0 (v3.59.2 Compatible)
 triggers:
   - "sync agents"
   - "cognitive expansion"
@@ -36,6 +36,7 @@ Setiap agen yang mengaktifkan skill ini wajib mengikuti alur:
 - Dilarang menebak status kontrak tanpa memanggil `scripts/audits/check_sync_status.cjs`.
 - Dilarang berasumsi tier user tanpa memanggil `get_user_nft_tiers`.
 - Dilarang melompati tier sequential (N+1 Mandate).
+- **PARITY AUDIT MANDATE (v3.59.2)**: Wajib memverifikasi status drift XP/Tier via `/api/admin/parity-audit` sebelum menutup task arsitektural.
 - **ZERO-HARDCODE LOCK**: Dilarang menggunakan alamat kontrak statis dalam logika pemikiran. Selalu gunakan placeholder lingkungan.
 
 ## 5. Ecosystem Documentation Synchronization Mandate
@@ -55,11 +56,12 @@ Saat menerima perintah `> update docs` atau `update dokumen`, agen WAJIB:
 Saat menerima perintah `> sync end to end` atau `sinkronisasi total`, agen WAJIB menjalankan alur berikut:
 1. **Environment Sync**: Jalankan `node scripts/sync/sync-all-envs.cjs` untuk paritas `.env`.
 2. **Contract & ABI Audit**: Jalankan `node scripts/audits/check_sync_status.cjs` (13-point audit).
-3. **ABI Rebuild**: Jalankan `node scripts/sync/rebuild_abis_data.cjs` untuk membersihkan hardcode.
-4. **Backend/API Parity**: Verifikasi `*-bundle.js` di Vercel Functions agar sinkron dengan database schema terbaru.
-5. **XP & Settings Audit**: Verifikasi `point_settings` dan `system_settings` di Supabase.
-6. **Frontend UI Audit**: Gunakan `browser_subagent` (jika perlu) untuk memverifikasi tampilan state terbaru.
-7. **Documentation Sync**: Jalankan alur `update docs` sebagai langkah final.
+3. **Hardening Audit**: Verifikasi nol drift via dashboard **Accountant Ledger -> Hardening Center**.
+4. **ABI Rebuild**: Jalankan `node scripts/sync/rebuild_abis_data.cjs` untuk membersihkan hardcode.
+5. **Backend/API Parity**: Verifikasi `*-bundle.js` di Vercel Functions agar sinkron dengan database schema terbaru.
+6. **XP & Settings Audit**: Verifikasi `point_settings` dan `system_settings` di Supabase.
+7. **Frontend UI Audit**: Gunakan `browser_subagent` (jika perlu) untuk memverifikasi tampilan state terbaru.
+8. **Documentation Sync**: Jalankan alur `update docs` sebagai langkah final.
 
 ---
-*Status: ACTIVE. Cognitive Sync: ENABLED. Nexus Matrix 1.0 Ready.*
+*Status: ACTIVE. Cognitive Sync: ENABLED. v3.59.2 Locked.*

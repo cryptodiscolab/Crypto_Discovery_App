@@ -2,10 +2,10 @@
 name: Ecosystem Sentinel & Automation Auditor
 description: >
   - **Nexus Orchestration**: Ability to lead the **Nexus War Room** and delegate sub-tasks to OpenClaw, Qwen, or DeepSeek via the `agents_vault`. Maintains a high-level architectural view while using **Nexus Monitor** for passive ecosystem oversight.
-  - **Anti-Hallucination Mandate (v3.59.1)**: Mandatory **Pre-Flight Env Audit** before ANY task using `node scripts/audits/check_sync_status.cjs`. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
+  - **Anti-Hallucination Mandate (v3.59.2)**: Mandatory **Parity Audit** via `parity-audit` endpoint before closing any architectural task. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.59.1
+version: v3.59.2
 ---
 
 ### 🛡️ LOCAL HARDWARE OPTIMIZATION (Mandatory)
@@ -88,7 +88,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.59.1
+- **Versi Terakhir:** v3.59.2
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -145,7 +145,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
-| **PRD v3.43.0** | `2026-04-22T14:15:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.59.2** | `2026-05-08T22:45:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🧭 Workspace Navigation & Data Flow (MANDATORY)
@@ -377,8 +377,8 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **🧹 DISAPPEARING TASK AUDIT (v3.42.2)**: Verifikasi bahwa task yang sudah DONE/CLAIMED menghilang dari UI. Pastikan filter `null` aktif di model frontend. **WAJIB.**
 - [ ] **💎 PREMIUM IDENTITY BRANDING AUDIT (v3.42.2)**: Verifikasi penggunaan shield badge lencana "Verified" (Base Blue) untuk user valid. **WAJIB.**
 - [ ] **🛡️ ECOSYSTEM SECURITY REMEDIATION AUDIT (v3.43.0)**: Verifikasi 100% parity lintas proyek Vercel menggunakan **Clean-Pipe Sync Protocol**. Pastikan `robust_sync.cjs` dijalankan untuk setiap perubahan environment. **WAJIB.**
-- [ ] **🏎️ CONCURRENT UI RESPONSIVENESS AUDIT (v3.56.0)**: Verifikasi bahwa seluruh modal dengan heavy hooks (Wagmi/Li.Fi) dipicu menggunakan `startTransition`. **WAJIB.**
 - [ ] **📡 END-TO-END SYNC AUDIT (T.E.S)**: Verifikasi bahwa seluruh rantai (Env -> ABIs -> APIs -> Contracts -> Database -> UI) sinkron 100% tanpa drift. **WAJIB jika perintah `sync end to end` dipicu.**
+- [ ] **🛠️ BLOCKCHAIN PARITY AUDIT (v3.59.2)**: Verifikasi keberadaan detektor *drift* di `BlockchainConfigSection.jsx` dan ketersediaan tombol **Emergency Parity Sync**. Pastikan `admin-bundle.js` memiliki aksi `BATCH_UPDATE_POINTS` dan audit paritas sistem aktif. **WAJIB.**
 
 ### Section 13: End-to-End Ecosystem Synchronization (T.E.S) Protocol (v3.59.1)
 Mandat ini diaktifkan saat agen menerima perintah `> sync end to end` atau `sinkronisasi total`.
@@ -395,7 +395,7 @@ Mandat ini diaktifkan saat agen menerima perintah `> sync end to end` atau `sink
 **Status Final**: Laporan ke user wajib mencakup status "✅ ALL SYSTEMS SYNCHRONIZED & OPERATIONAL" dengan rincian per phase.
 
 ---
-*Status: ACTIVE. Sentinel Guard: ENABLED. v3.59.1 Locked.*
+*Status: ACTIVE. Sentinel Guard: ENABLED. v3.59.2 Locked.*
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

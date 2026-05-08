@@ -1,6 +1,6 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.1)
-**Last Updated**: 2026-05-08T18:00:00+07:00 — Ecosystem Infrastructure Hardening & Zero-Hardcode Sync (v3.59.1)
-**Status**: 🛡️ MAINNET PHASED ROLLOUT LOCKED
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.2)
+**Last Updated**: 2026-05-08T22:45:00+07:00 — Ecosystem Hardening & Parity Audit (v3.59.2)
+**Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
 
@@ -82,7 +82,9 @@ Leaderboard bergantung pada kueri database yang efisien, bukan RPC blockchain ag
   1. User mengunjungi halaman `/leaderboard`.
   2. Frontend men-fetch data API rank.
   3. Data yang di-return adalah hasil agregasi `user_profiles` (untuk Avatar, Bio, XP) yang sudah langsung terupdate setelah Daily Claim selesai.
-- **Rules**: Dilarang me-loop panggil `MasterX` untuk mengambil ranking user, semuanya harus via database `user_profiles.total_xp` yang tersinkron.
+- **Rules**: 
+  1. Dilarang me-loop panggil `MasterX` untuk mengambil ranking user, semuanya harus via database `user_profiles.total_xp`.
+  2. **SBT-Gating Mandate (v3.59.2)**: User hanya akan ditampilkan di leaderboard jika memiliki NFT SBT di on-chain. Integritas ini dijaga oleh fungsi SQL `compute_leaderboard_tiers` yang melakukan join terhadap status minting.
 
 ### 3.2 Dua Jalur XP Sync (PENTING — Jangan Regress!)
 
@@ -394,6 +396,29 @@ Untuk menjamin skalabilitas dan mencegah *environmental drift* saat transisi ant
 - **Trigger**: Setiap perubahan kontrak atau environment **WAJIB** diikuti dengan eksekusi `node scripts/sync/sync-all-envs.cjs`.
 - **Audit**: Jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan seluruh 13 poin integritas (termasuk Zero-Hardcode) terpenuhi.
 
+## 🏛️ 17. Ecosystem Hardening & Parity Audit Workflow (v3.59.2)
+
+Protokol untuk memastikan database dan blockchain tetap dalam sinkronisasi sempurna (Absolute Parity).
+
+### 17.1 Drift Detection
+- **Dashboard**: Akses via **Accountant Ledger -> Hardening Center**.
+- **Endpoint**: `/api/admin/parity-audit`.
+- **Logic**: Backend membandingkan `total_xp` (DB) vs `points` (On-chain) dan `tier` (DB) vs `currentTier` (On-chain) untuk Top 50 users.
+- **Threshold**: Deviasi > 1 XP dianggap sebagai *Drift* dan harus segera disinkronkan.
+
+### 17.2 Synchronization Procedure
+1. **Sync XP**: Mengirimkan transaksi batch ke `MasterX` untuk mengupdate poin on-chain sesuai nilai database.
+2. **Sync Tiers**: Memaksa pembaruan tier di blockchain jika status SBT user tidak sesuai dengan rank database.
+3. **NFT Metadata Sync**: Menggunakan `setTierURI` untuk memastikan Base URI NFT di kontrak DailyApp menunjuk ke link Pinata yang benar.
+
+### 17.3 Infrastructure Parity (v3.59.2 Hardening)
+- **Scope**: XP Rewards (Daily/Ref/Raffle), Tier Weights, and Revenue Shares.
+- **Workflow**:
+  1. **Detection**: Frontend `BlockchainConfigSection.jsx` secara otomatis memicu audit saat dimuat.
+  2. **Alerting**: Peringatan visual "DRIFT DETECTED" muncul jika parameter `system_settings` atau `activity_rewards` tidak sesuai dengan state kontrak.
+  3. **Atomic Sync**: Setiap pembaruan parameter wajib menggunakan alur `Chain TX` -> `Admin Signature` -> `DB Sync (BATCH_UPDATE_POINTS / SYNC_WEIGHTS)`.
+  4. **Emergency Recovery**: Tombol **Emergency Parity Sync** disediakan untuk memulihkan seluruh paritas konfigurasi secara massal.
+
 ---
-*End of Source of Truth Document - Nexus v3.59.1 LOCKED.*
+*End of Source of Truth Document - Nexus v3.59.2 LOCKED.*
 

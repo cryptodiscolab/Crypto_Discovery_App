@@ -1,10 +1,4 @@
-# 🎯 TASK FEATURE WORKFLOW — COMPLETE END-TO-END TECHNICAL DOCUMENT
-**Version**: `v3.59.1` | **Last Updated**: `2026-05-08T18:00:00+07:00`
-**Status**: 🛡️ PRODUCTION-GRADE SOURCE OF TRUTH
-
----
-
-### 📜 Changelog
+- **v3.59.2**: Ecosystem Hardening & Parity Audit. Implementasi **Hardening Center** di Accountant Ledger, penegakan **SBT-Gating** pada Leaderboard, dan integrasi **Parity Audit API** dengan Runtime ABI Guards.
 - **v3.59.1**: Ecosystem Infrastructure Hardening & Zero-Hardcode Sync. Refactor `abis_data.txt` untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.
 - **v3.58.0**: Lurah Ecosystem Hardening & Autonomous Agent Resiliency. Implementasi **Auto-Retry logic** pada RPC, heartbeat dinamis di `system_health`, dan eliminasi hardcoded addresses.
 - **v3.57.0**: Hardening UGC Mission Pipeline. Implementasi **Multi-Action Campaign selector**, **All-or-Nothing Reward Claiming**, dan **Grouped UI Components** (`UGCCampaignCard`). Validasi URL platform-aware.
@@ -34,6 +28,7 @@
 18. [SBT Tier Integration Mandate](#18-sbt-tier-integration-mandate)
 19. [UGC Multi-Action & All-or-Nothing Campaign Workflow](#19-ugc-multi-action--all-or-nothing-campaign-workflow)
 20. [Zero-Hardcode Infrastructure Mandate](#20-zero-hardcode-infrastructure-mandate)
+21. [Absolute Parity & Hardening Audit Protocol](#21-absolute-parity--hardening-audit-protocol)
 
 ---
 
@@ -643,7 +638,11 @@ Tugas berbasis Farcaster (`warpcast.com` or `farcaster` in link) memerlukan `pro
 1. User mengunjungi Profil → Klik "LINK BASE SOCIAL"
 2. Backend melakukan reverse resolution via on-chain resolver (`0xC697...`)
 3. Jika Basename ditemukan: `user_profiles.is_base_social_verified = true`
-4. Tugas dengan `is_base_social_required = true` menjadi terbuka
+4. Tugas dengan `is_base_social_required = true` menjadi terbuka.
+
+### 10.4 SBT-Gated Leaderboard (v3.59.2)
+- **Mandate**: User tidak diizinkan masuk ke Leaderboard SOT (Database View) jika kolom `has_minted_sbt` bernilai `false`.
+- **Enforcement**: Filter ini diterapkan pada level SQL View `v_user_full_profile` untuk memastikan hadiah reward pool hanya didistribusikan kepada user yang sudah memvalidasi identitas on-chain mereka.
 
 ---
 
@@ -940,4 +939,20 @@ Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanp
   - `node scripts/audits/check_sync_status.cjs` (Integritas Audit)
 
 ---
-*End of Task Feature Workflow - Nexus v3.59.1 Locked.*
+
+## 21. Absolute Parity & Hardening Audit Protocol (v3.59.2)
+
+Setiap agen yang mengelola tugas berantai (Multi-Action) atau distribusi reward wajib menjalankan audit paritas.
+
+### 21.1 Parity Audit Checklist
+1. **XP Drift**: Pastikan `total_xp` database sinkron dengan `points` on-chain.
+2. **Tier Drift**: Pastikan level database sinkron dengan `currentTier` on-chain.
+3. **Metadata Parity**: Pastikan URL Pinata di database sinkron dengan `BaseURI` on-chain via `setTierURI`.
+
+### 21.2 Tools & Endpoints
+- **Audit Tool**: Dashboard Hardening Center di Tab Admin.
+- **API**: `/api/admin/parity-audit` (High-precision comparison).
+- **Manual Sync**: Gunakan tombol "Batch Sync" jika terdeteksi drift > 1% pada Top 50 users.
+
+---
+*End of Task Feature Workflow - Nexus v3.59.2 Locked.*

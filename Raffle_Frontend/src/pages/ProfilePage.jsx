@@ -845,7 +845,16 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
   const allowedTokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
   const ethToken = allowedTokens.find(t => t.symbol === 'ETH') || allowedTokens[0];
   
-  const [ethReward, setEthReward] = useState(ecosystemSettings?.sponsorship_reward_amount || '0.01');
+  const [ethReward, setEthReward] = useState(() => {
+    const rawValue = ecosystemSettings?.ugc_config?.min_reward_amount || 
+                    ecosystemSettings?.sponsorship_reward_amount || 
+                    '0.1';
+    // If it looks like a BigInt string (large length or contains many zeros), format it.
+    if (typeof rawValue === 'string' && rawValue.length > 12) {
+      try { return formatUnits(BigInt(rawValue), 18); } catch(e) { return rawValue; }
+    }
+    return rawValue;
+  });
   const [sybilFilters, setSybilFilters] = useState({
     minNeynarScore: 0,
     minFollowers: 0,
@@ -856,7 +865,11 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
   });
   
   const rewardTokenAddr = ethToken?.address || "0x0000000000000000000000000000000000000000";
-  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 0);
+  const feeUsd = Number(
+    ecosystemSettings?.ugc_config?.listing_fee_usdc || 
+    ecosystemSettings?.sponsorship_listing_fee_usdc || 
+    0
+  );
 
   const { prices } = usePriceOracle(allowedTokens.map(t => t.address));
   const currentPrice = prices[rewardTokenAddr?.toLowerCase()] || 0;
@@ -866,7 +879,9 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
   // Fix: Use viem parseUnits to handle decimals properly and avoid BigInt exponent errors
   const rewardAmount = parseUnits(ethReward || '0', tokenDecimals);
   
-  const platformFee = BigInt(Math.floor(feeUsd * 1000000)); // USDC 6 decimals
+  const usdcToken = allowedTokens.find(t => t.symbol === 'USDC');
+  const usdcDecimals = usdcToken?.decimals || 6;
+  const platformFee = parseUnits(feeUsd.toString(), usdcDecimals);
 
   const buildCalls = () => {
     const titles = tasksBatch.filter(t => t.title && t.link).map(t => t.title);
@@ -1160,10 +1175,10 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
                       sponsor_address: address,
                       platform_code: firstTask.platform,
                       reward_amount_per_user: ethReward.toString(), 
-                      max_participants: 100,
+                      max_participants: ecosystemSettings?.ugc_config?.default_participants || 100,
                       txHash: hash,
                       payment_token: rewardTokenAddr,
-                      reward_symbol: 'ETH',
+                      reward_symbol: ethToken?.symbol || 'ETH',
                       is_base_social_required: sybilFilters.isBaseSocialRequired,
                       tasks_batch: tasksBatch.filter(t => t.title && t.link)
                     }
@@ -1394,7 +1409,11 @@ function RenewSponsorshipModal({ onClose }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { refetch: refetchStats } = useUserInfo(address);
-  const feeUsd = Number(ecosystemSettings?.sponsorship_listing_fee_usdc || 0);
+  const feeUsd = Number(
+    ecosystemSettings?.ugc_config?.listing_fee_usdc || 
+    ecosystemSettings?.sponsorship_listing_fee_usdc || 
+    0
+  );
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">

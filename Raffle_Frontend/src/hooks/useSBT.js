@@ -260,6 +260,107 @@ export function useSBT() {
         }
     };
 
+    /**
+     * Leaderboard -> Contract Points Sync
+     * Fetches XP from DB and batch updates contract
+     */
+    const syncPointsToContract = async (signMessageAsync) => {
+        const toastId = toast.loading('Fetching points data...');
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Sync XP Points\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin-bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action: 'SYNC_POINTS'
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'API Points Sync failed');
+
+            toast.loading(`Syncing XP for ${result.data.length} users...`, { id: toastId });
+
+            const userAddresses = result.data.map(item => item.wallet_address);
+            const userPoints = result.data.map(item => BigInt(item.total_xp));
+
+            const tx = await writeContractAsync({
+                address: MASTER_X_ADDRESS,
+                abi: ABIS.MASTER_X,
+                functionName: 'batchAddPoints',
+                args: [userAddresses, userPoints, "Mass DB Sync"],
+            });
+
+            toast.success(`Successfully synced ${result.data.length} users' XP!`, { id: toastId });
+            return { success: true, count: result.data.length, tx };
+
+        } catch (error) {
+            console.error('[SyncPoints] Error:', error);
+            toast.error(`Points sync failed: ${error.message}`, { id: toastId });
+            throw error;
+        }
+    };
+
+    /**
+     * setTierURI
+     * Updates the base URI for a specific SBT tier in the DailyApp contract
+     */
+    const setTierURI = async (tier, uri) => {
+        return await writeContractAsync({
+            address: DAILY_APP_ADDRESS,
+            abi: ABIS.DAILY_APP,
+            functionName: 'setTierURI',
+            args: [tier, uri],
+        });
+    };
+
+    /**
+     * syncMetadataToContract
+     * Fetches badge URLs from sbt_thresholds table and updates the contract
+     */
+    const syncMetadataToContract = async () => {
+        const toastId = toast.loading('Fetching NFT metadata from DB...');
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/system-settings`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'GET_SBT_CONFIG' })
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Failed to fetch SBT config');
+
+            toast.loading(`Found ${result.data.length} tiers. Starting on-chain update...`, { id: toastId });
+
+            // We sync them one by one since setTierURI is a single operation
+            // but we can wrap them in a promise all if the user wants, 
+            // though better to do it one by one for clarity in logs.
+            for (const tier of result.data) {
+                if (tier.badge_url) {
+                    toast.loading(`Syncing Tier ${tier.tier_rank}: ${tier.tier_name}...`, { id: toastId });
+                    await setTierURI(tier.tier_rank, tier.badge_url);
+                }
+            }
+
+            toast.success('All NFT Metadata synced to contract!', { id: toastId });
+            return { success: true };
+        } catch (error) {
+            console.error('[SyncMetadata] Error:', error);
+            toast.error(`Metadata sync failed: ${error.message}`, { id: toastId });
+            throw error;
+        }
+    };
+
     // 6. Fetch Seasonal & Upgrade Settings
     const { data: currentSeasonId, refetch: refetchSeason } = useReadContract({
         address: MASTER_X_ADDRESS,
@@ -332,6 +433,9 @@ export function useSBT() {
         setDailyApp,
         setTierWeights,
         syncTiersToContract,
+        syncPointsToContract,
+        syncMetadataToContract,
+        setTierURI,
         refetchAll,
         ticketPriceUSDC: ticketPriceUSDC || 0n,
         pointsPerTicket: pointsPerTicket || 0n,

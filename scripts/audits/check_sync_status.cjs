@@ -68,7 +68,7 @@ async function fullVerification() {
     const socialKeys = (pointKeys || []).filter(k => 
         ['farcaster_follow', 'farcaster_like', 'twitter_follow', 'twitter_like', 
          'tiktok_follow', 'tiktok_like', 'instagram_follow', 'instagram_like',
-         'daily_claim', 'raffle_buy', 'raffle_win'].includes(k.activity_key)
+         'daily_claim', 'raffle_buy', 'raffle_win', 'ugc_task_completion'].includes(k.activity_key)
     );
     console.log(`  ✅ Dynamic Point Settings: ${(pointKeys || []).length} total keys`);
     if (socialKeys.length > 0) {
@@ -76,6 +76,14 @@ async function fullVerification() {
         socialKeys.forEach(k => {
             console.log(`     ${k.is_active ? '🟢' : '🔴'} ${k.activity_key.padEnd(20)} = ${k.points_value} XP`);
         });
+    }
+    
+    // 2d. Check UGC Mission Config
+    const { data: ugcConfig } = await supabase.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
+    if (ugcConfig) {
+        console.log(`  ✅ UGC Protocol Config Found: Listing Fee ${ugcConfig.value.listing_fee_usdc} USDC`);
+    } else {
+        console.log(`  ⚠️  UGC Protocol Config (ugc_config) missing from system_settings`);
     }
 
     // 2c. Orphaned Claims Check

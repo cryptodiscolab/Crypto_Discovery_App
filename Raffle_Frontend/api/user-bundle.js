@@ -355,239 +355,128 @@ async function handleXpSync(req, res) {
         const cleanAddress = wallet_address.toLowerCase();
         let skipSignature = false;
 
-        // 1. "Verification-First" Logic: Use tx_hash as primary proof if available
-        // FIX v3.40.3: Optimistic trust — if tx_hash is provided, do NOT reject on RPC timeout.
-        // The on-chain claim already happened (client confirmed). We trust the tx_hash if it's
-        // well-formed and the wallet matches — RPC verification is best-effort only.
+        // 1. Transaction Proof Verification
         if (tx_hash) {
             try {
-                // Race: wait max 10s for RPC confirmation before falling back to optimistic mode
-                const rpcTimeout = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('RPC_TIMEOUT')), 10000)
-                );
+                const rpcTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('RPC_TIMEOUT')), 10000));
                 const verifyOnChain = rpcClient.waitForTransactionReceipt({ hash: tx_hash });
                 const receipt = await Promise.race([verifyOnChain, rpcTimeout]);
 
                 if (receipt?.status === 'success' && receipt.from.toLowerCase() === cleanAddress) {
                     skipSignature = true;
-                    console.log(`[XP Sync] Proof verified via txHash: ${tx_hash}`);
-                } else {
-                    // TX found but from wrong address — possible spoofing attempt
-                    console.warn(`[XP Sync] TxHash from mismatch. Wallet: ${cleanAddress}, TX.from: ${receipt?.from}`);
                 }
             } catch (hashErr) {
-                if (hashErr.message === 'RPC_TIMEOUT') {
-                    // FIX: RPC timeout is NOT a rejection reason — use optimistic trust
-                    skipSignature = true;
-                    console.warn(`[XP Sync] RPC timeout for txHash ${tx_hash}. Using optimistic trust (daily claim assumed valid).`);
-                } else {
-                    console.warn(`[XP Sync] TxHash verification error:`, hashErr.message);
-                }
+                if (hashErr.message === 'RPC_TIMEOUT') skipSignature = true;
             }
         }
 
-        // 2. Signature Fallback — only enforce if no tx_hash was provided at all
+        // 2. Signature Verification
         if (!skipSignature) {
-            if (!signature || !message) {
-                return res.status(401).json({ error: 'Signature or valid Transaction Hash required' });
-            }
+            if (!signature || !message) return res.status(401).json({ error: 'Signature or valid Transaction Hash required' });
             const valid = await verifyMessage({ address: wallet_address, message, signature });
             if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         }
 
-        // 3. Fetch Profile & Settings
-        const [ { data: profile }, { data: settingsRes } ] = await Promise.all([
-            supabaseAdmin
-                .from('user_profiles')
-                .select('total_xp, manual_xp_bonus, streak_count, last_streak_claim')
-                .eq('wallet_address', cleanAddress)
-                .maybeSingle(),
-            supabaseAdmin
-                .from('system_settings')
-                .select('key, value')
-                .in('key', ['underdog_bonus_multiplier_bp', 'underdog_activity_window_hours', 'underdog_threshold_xp'])
-        ]);
-
-        const settings = settingsRes?.reduce((acc, s) => { acc[s.key] = s.value; return acc; }, {}) || {};
-        const dbLastPoints = profile?.total_xp || 0;
-
-        let onChainXP = 0;
-        let xpDelta = 0;
-        let onChainStats;
-        let rpcFailed = false;
-
-        // 4. Fetch On-Chain State — FIX: wrapped in try-catch to handle RPC failures gracefully
-        try {
-            const stats = await rpcClient.readContract({
-                address: DAILY_APP_ADDRESS,
-                abi: [{
-                    inputs: [{ name: '', type: 'address' }],
-                    name: 'userStats',
-                    outputs: [
-                        { name: 'points', type: 'uint256' },
-                        { name: 'totalTasksCompleted', type: 'uint256' },
-                        { name: 'referralCount', type: 'uint256' },
-                        { name: 'currentTier', type: 'uint8' },
-                        { name: 'tasksForReferralProgress', type: 'uint256' },
-                        { name: 'lastDailyBonusClaim', type: 'uint256' },
-                        { name: 'isBlacklisted', type: 'bool' },
-                    ],
-                    stateMutability: 'view',
-                    type: 'function',
-                }],
-                functionName: 'userStats',
-                args: [cleanAddress],
-            });
-            onChainStats = stats;
-            onChainXP = Number(onChainStats?.[0] || 0);
-            xpDelta = onChainXP - dbLastPoints;
-        } catch (rpcErr) {
-            // FIX: RPC read failure — do not crash the sync. Use DB as baseline.
-            rpcFailed = true;
-            onChainXP = dbLastPoints;
-            xpDelta = 0;
-            console.warn(`[XP Sync] readContract failed (RPC unreachable): ${rpcErr.message}`);
-        }
-
-        // 5. Fetch Dynamic Daily Reward
-        const { data: dailySetting } = await supabaseAdmin
-            .from('point_settings')
-            .select('points_value')
-            .eq('activity_key', 'daily_claim')
+        // 3. Fetch Profile Parity Marker
+        const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('last_onchain_xp, total_xp, streak_count, last_streak_claim')
+            .eq('wallet_address', cleanAddress)
             .maybeSingle();
 
+        const lastOnChainXp = profile?.last_onchain_xp || 0;
+
+        // 4. Fetch Current On-Chain State
+        const contractStats = await rpcClient.readContract({
+            address: DAILY_APP_ADDRESS,
+            abi: [{
+                inputs: [{ name: '', type: 'address' }],
+                name: 'userStats',
+                outputs: [
+                    { name: 'points', type: 'uint256' },
+                    { name: 'totalTasksCompleted', type: 'uint256' },
+                    { name: 'referralCount', type: 'uint256' },
+                    { name: 'currentTier', type: 'uint8' },
+                    { name: 'tasksForReferralProgress', type: 'uint256' },
+                    { name: 'lastDailyBonusClaim', type: 'uint256' },
+                    { name: 'isBlacklisted', type: 'bool' },
+                ],
+                stateMutability: 'view',
+                type: 'function',
+            }],
+            functionName: 'userStats',
+            args: [cleanAddress],
+        });
+
+        const currentOnChainXp = Number(contractStats?.[0] || 0);
+        const currentTierOnChain = Number(contractStats?.[3] || 0);
+        
+        // 5. Delta Calculation
+        let xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
+
+        // Daily Bonus Fallback (Hardened v3.59.2)
+        const { data: dailySetting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'daily_claim').maybeSingle();
         const standardDailyReward = dailySetting?.points_value || 100;
 
-        // FIX v3.40.3: xpDelta fallback now activates whenever tx_hash is present + skipSignature
-        // — regardless of whether RPC read succeeded or failed. This covers all lag scenarios.
         if (xpDelta === 0 && tx_hash && skipSignature) {
             xpDelta = standardDailyReward;
-            onChainXP = dbLastPoints + xpDelta;
-            console.log(`[XP Sync Fallback] Forced +${xpDelta} XP via tx_hash confirmation${rpcFailed ? ' (RPC unavailable)' : ' (RPC lag)'}. New total: ${onChainXP}`);
         }
 
-        const currentTierOnChain = Number(onChainStats?.[3] || 0);
+        let result = { success: true, xp_synced: 0, current_tier: currentTierOnChain };
 
-        // [REMOVED v3.41.2] Underdog and Global Scaling is now handled atomically by Supabase RPC.
-        // On-chain syncs will be adjusted via manual_xp_bonus internally if needed,
-        // but for now we maintain 1:1 parity with the contract for total_xp.
-        let appliedBonusXP = 0;
-
-
-        // 7. FIX v3.40.3: Recalculate tier from sbt_thresholds DB (not on-chain which may be stale)
-        // This ensures tier updates instantly after XP increment, without waiting for cron.
-        let calculatedTier = currentTierOnChain; // Use on-chain as default if RPC succeeded
         if (xpDelta > 0) {
-            try {
-                const newTotalXp = onChainXP + (profile?.manual_xp_bonus || 0);
-                const { data: thresholds } = await supabaseAdmin
-                    .from('sbt_thresholds')
-                    .select('level, min_xp')
-                    .order('min_xp', { ascending: true });
-
-                if (thresholds && thresholds.length > 0) {
-                    let derived = 0;
-                    for (const t of thresholds) {
-                        if (newTotalXp >= (t.min_xp || 0)) derived = t.level;
-                    }
-                    // Only use derived if it's >= on-chain tier (never downgrade)
-                    calculatedTier = Math.max(derived, currentTierOnChain);
-                    if (calculatedTier !== currentTierOnChain) {
-                        console.log(`[XP Sync] Tier recalculated: ${currentTierOnChain} → ${calculatedTier} (XP: ${newTotalXp})`);
-                    }
-                }
-            } catch (tierErr) {
-                console.warn('[XP Sync] Tier recalculation failed, using on-chain value:', tierErr.message);
-            }
-        }
-
-        const isDailyClaim = (xpDelta > 0 && xpDelta === standardDailyReward) || (tx_hash && skipSignature);
-
-        // 8. Update User Profile explicitly (By-passing flaky triggers)
-        // FIX v3.56.6: Non-Destructive XP Sync
-        // Prevents social points (DB-only) from being wiped by the lower on-chain total.
-        // If this is a verified daily claim, we ADD the reward to the current DB total.
-        let finalXpUpdate = onChainXP;
-        if (dbLastPoints > onChainXP) {
-            if (isDailyClaim) {
-                finalXpUpdate = dbLastPoints + standardDailyReward;
-                console.log(`[XP Sync] Additive update: ${dbLastPoints} + ${standardDailyReward} = ${finalXpUpdate}`);
-            } else {
-                finalXpUpdate = dbLastPoints; // Prevent downgrade during routine sync
-                console.log(`[XP Sync] Preserving DB XP: ${dbLastPoints} (Contract: ${onChainXP})`);
-            }
-        }
-
-        const profileUpdate = {
-            wallet_address: cleanAddress,
-            total_xp: finalXpUpdate,
-            manual_xp_bonus: (profile?.manual_xp_bonus || 0) + appliedBonusXP,
-            tier: calculatedTier, // FIX: use DB-recalculated tier, not stale on-chain tier
-            last_seen_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-
-        const taskId = isDailyClaim ? TASK_IDS.DAILY_CLAIM_STREAK : TASK_IDS.DAILY_CLAIM_REWARD;
-
-        if (isDailyClaim) {
-            const now = new Date();
-            const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
-            let currentStreak = profile?.streak_count || 0;
-
-            if (!lastClaimDate) {
-                currentStreak = 1;
-            } else {
-                const diffHours = (now - lastClaimDate) / (1000 * 60 * 60);
-                if (diffHours >= 20 && diffHours <= 48) {
-                    currentStreak += 1;
-                } else if (diffHours > 48) {
-                    currentStreak = 1;
-                }
-            }
-            profileUpdate.streak_count = currentStreak;
-            profileUpdate.last_streak_claim = now.toISOString();
-        }
-
-        await supabaseAdmin
-            .from('user_profiles')
-            .upsert(profileUpdate, { onConflict: 'wallet_address' });
-
-        // 8. Log individual claim for historical record
-        if (xpDelta > 0) {
-            const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
-                wallet_address: cleanAddress,
-                task_id: taskId,
-                xp_earned: xpDelta,
-                claimed_at: new Date().toISOString(),
-                platform: 'blockchain',
-                action_type: tx_hash ? 'verified_claim' : 'polled_sync',
-                target_id: tx_hash || null
+            // [HARDENED] Atomic Multiplier-Aware Increment
+            const { error: rpcErr } = await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: cleanAddress,
+                p_amount: xpDelta
             });
 
-            if (claimErr && claimErr.code !== '23505') throw claimErr;
+            if (rpcErr) throw rpcErr;
+
+            // Update Parity State
+            await supabaseAdmin
+                .from('user_profiles')
+                .update({ 
+                    last_onchain_xp: currentOnChainXp,
+                    tier: currentTierOnChain,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('wallet_address', cleanAddress);
+
+            // Streak Logic
+            if (xpDelta === standardDailyReward || (tx_hash && skipSignature)) {
+                const now = new Date();
+                const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
+                let currentStreak = profile?.streak_count || 0;
+
+                if (!lastClaimDate) {
+                    currentStreak = 1;
+                } else {
+                    const diffHours = (now - lastClaimDate) / (1000 * 60 * 60);
+                    if (diffHours >= 20 && diffHours <= 48) currentStreak += 1;
+                    else if (diffHours > 48) currentStreak = 1;
+                }
+                
+                await supabaseAdmin
+                    .from('user_profiles')
+                    .update({ streak_count: currentStreak, last_streak_claim: now.toISOString() })
+                    .eq('wallet_address', cleanAddress);
+            }
 
             await logActivity({
                 wallet: cleanAddress,
                 category: 'XP',
-                type: isDailyClaim ? 'Daily Claim' : 'Contract Sync',
-                description: `Earned ${xpDelta} XP from ${isDailyClaim ? 'Daily Bonus' : 'On-Chain Activity'}${appliedBonusXP > 0 ? ` + ${appliedBonusXP} Underdog Bonus` : ''}`,
-                amount: xpDelta + appliedBonusXP,
+                type: 'Ledger Sync',
+                description: `Synced ${xpDelta} XP from Base Ledger (Parity: ${currentOnChainXp})`,
+                amount: xpDelta,
                 symbol: 'XP',
                 txHash: tx_hash || null
             });
+
+            result.xp_synced = xpDelta;
         }
 
-        console.log(`[XP Sync Audit] Address: ${cleanAddress} | Contract: ${DAILY_APP_ADDRESS} | Delta: ${xpDelta} | Underdog: ${appliedBonusXP}`);
-
-        return res.status(200).json({ 
-            ok: true, 
-            xp: onChainXP, 
-            total_xp: profileUpdate.total_xp + (profileUpdate.manual_xp_bonus || 0),
-            streak_count: profileUpdate.streak_count,
-            tier: calculatedTier,
-            synced: xpDelta > 0,
-            rpc_ok: !rpcFailed
-        });
+        return res.status(200).json(result);
 
     } catch (error) {
         console.error('[XP Sync Error]', error);
@@ -790,11 +679,17 @@ async function handleSyncUgcMission(req, res) {
         const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks_batch, reward_symbol, payment_token, is_base_social_required } = payload;
 
         // Get dynamic platform fee and XP settings
-        const [{ data: sysSetting }, { data: pointSetting }] = await Promise.all([
+        const [{ data: ugcConfigRes }, { data: sysSetting }, { data: pointSetting }] = await Promise.all([
+            supabaseAdmin.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle(),
             supabaseAdmin.from('system_settings').select('value').eq('key', 'sponsorship_listing_fee_usdc').maybeSingle(),
             supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'ugc_task_completion').maybeSingle()
         ]);
-        const platformFee = sysSetting?.value ? parseFloat(sysSetting.value) : 0;
+        
+        const ugcConfig = ugcConfigRes?.value || {};
+        const platformFee = ugcConfig.listing_fee_usdc 
+            ? parseFloat(ugcConfig.listing_fee_usdc) 
+            : (sysSetting?.value ? parseFloat(sysSetting.value) : 0);
+            
         const taskXpReward = pointSetting?.points_value || 0;
 
         // 1. Mirror to campaigns table
@@ -828,7 +723,7 @@ async function handleSyncUgcMission(req, res) {
                 token_reward_symbol: reward_symbol || 'TOKEN',
                 creator_address: wallet.toLowerCase(),
                 is_base_social_required: !!is_base_social_required, // v3.41.2 Hardening
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                expires_at: new Date(Date.now() + (ugcConfig.mission_duration_days || 7) * 24 * 60 * 60 * 1000).toISOString(),
                 created_at: new Date().toISOString()
             }));
 
@@ -1046,21 +941,43 @@ async function handleSyncSbtUpgrade(req, res) {
         const { tierName, ethSpent, txHash } = payload;
         
         // 1. Fetch dynamic tier mapping from sbt_thresholds
-        const { data: thresholds } = await supabaseAdmin
-            .from('sbt_thresholds')
-            .select('level, tier_name');
-            
-        const tierMap = thresholds?.reduce((acc, t) => {
-            if (t.tier_name) acc[t.tier_name] = t.level;
-            return acc;
-        }, {}) || {};
-
+        const { data: thresholds } = await supabaseAdmin.from('sbt_thresholds').select('level, tier_name');
+        const tierMap = thresholds?.reduce((acc, t) => { if (t.tier_name) acc[t.tier_name] = t.level; return acc; }, {}) || {};
         const tierIndex = tierMap[tierName] || 0;
 
-        if (tierIndex > 0) {
+        // 2. HARDENING v3.59.2: On-Chain Tier Verification
+        const contractStats = await rpcClient.readContract({
+            address: DAILY_APP_ADDRESS,
+            abi: [{
+                inputs: [{ name: '', type: 'address' }],
+                name: 'userStats',
+                outputs: [
+                    { name: 'points', type: 'uint256' },
+                    { name: 'totalTasksCompleted', type: 'uint256' },
+                    { name: 'referralCount', type: 'uint256' },
+                    { name: 'currentTier', type: 'uint8' },
+                    { name: 'tasksForReferralProgress', type: 'uint256' },
+                    { name: 'lastDailyBonusClaim', type: 'uint256' },
+                    { name: 'isBlacklisted', type: 'bool' },
+                ],
+                stateMutability: 'view',
+                type: 'function',
+            }],
+            functionName: 'userStats',
+            args: [wallet.toLowerCase()],
+        });
+
+        const actualTierOnChain = Number(contractStats?.[3] || 0);
+        const actualPointsOnChain = Number(contractStats?.[0] || 0);
+
+        if (actualTierOnChain >= tierIndex && tierIndex > 0) {
             await supabaseAdmin
                 .from('user_profiles')
-                .update({ tier: tierIndex, updated_at: new Date().toISOString() })
+                .update({ 
+                    tier: actualTierOnChain, 
+                    last_onchain_xp: actualPointsOnChain, // Reset Parity Tracking
+                    updated_at: new Date().toISOString()
+                })
                 .eq('wallet_address', wallet.toLowerCase());
         }
 
@@ -1068,14 +985,14 @@ async function handleSyncSbtUpgrade(req, res) {
             wallet,
             category: 'PURCHASE',
             type: 'SBT Tier Ascension',
-            description: `Upgraded to ${tierName} Tier`,
+            description: `Upgraded to ${tierName} Tier (Ledger Verified)`,
             amount: parseFloat(ethSpent),
             symbol: 'ETH',
             txHash,
-            metadata: { tierName }
+            metadata: { tierName, onchain_tier: actualTierOnChain }
         });
 
-        return res.status(200).json({ success: true });
+        return res.status(200).json({ success: true, tier: actualTierOnChain });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }

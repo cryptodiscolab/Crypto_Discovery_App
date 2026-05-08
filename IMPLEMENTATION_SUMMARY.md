@@ -6,6 +6,13 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.59.2 (Ecosystem Hardening & Parity Audit)
+- **Ecosystem Hardening Center**: Built a centralized admin dashboard in `AccountantLedgerTab.jsx` for live data drift monitoring (XP/Tier).
+- **High-Precision Parity Audit API**: Implemented `/api/admin/parity-audit` endpoint comparing Supabase `total_xp` with on-chain `userStats`.
+- **SBT-Gated Leaderboard**: Refactored SQL `compute_leaderboard_tiers` to enforce on-chain SBT ownership for leaderboard eligibility, eliminating "Tier Inflation" from off-chain activities.
+- **NFT Metadata Hardening**: Integrated `setTierURI` in `useSBT.js` to synchronize base URIs from the database to the DailyApp contract.
+- **Runtime ABI Guards**: Added hardcoded ABI fragments with safety checks to `admin-bundle.js` for robust serverless execution.
+
 ## 🟢 v3.59.1 (Ecosystem Infrastructure Hardening & Sync-All Automation)
 - **Zero-Hardcode Contract Addressing**: Refactored `abis_data.txt` to replace static addresses with `[RESOLVED_VIA_ENV]` markers, forcing the frontend to pull exclusively from `.env`.
 - **Global Contract Synchronization**: Synchronized Base Sepolia addresses across all protocols (`DailyApp`: `0x81D65Cc9...`, `Raffle`: `0xE7CB85c3...`).
@@ -427,6 +434,6 @@ GET  /api/verify/health
 
 ---
 
-**Implementation Complete! 🎉**
+**Implementation Complete! 🎉 — Nexus v3.59.2 Locked.**
 
 All code has been created and is ready for deployment. Follow the Next Steps above to deploy and test the system.

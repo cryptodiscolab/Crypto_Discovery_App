@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi';
 import { getSBTThresholds } from '../../dailyAppLogic';
 import { supabase } from '../../lib/supabaseClient';
 import { useGasTracker } from '../../hooks/useGasTracker';
+import { formatUnits } from 'viem';
 
 const PointsContext = createContext(null);
 
@@ -28,6 +29,13 @@ export function PointsProvider({ children }) {
         max_gas_price_gwei: 100,
         raffle_ticket_price_usdc: 0.15,
         sponsorship_listing_fee_usdc: 1.0,
+        ugc_config: {
+            listing_fee_usdc: "1.0",
+            min_reward_amount: "0.1",
+            default_participants: 100,
+            mission_duration_days: 7,
+            is_active: true
+        },
         referral_bonus_percent: 10,
         referral_active_threshold: 500
     });
@@ -134,8 +142,21 @@ export function PointsProvider({ children }) {
         try {
             const response = await fetch('/api/user-bundle?action=get-point-settings');
             const data = await response.json();
-            if (data.success) {
-                setEcosystemSettings(prev => ({ ...prev, ...data.settings }));
+            if (data.success && data.settings) {
+                const settings = { ...data.settings };
+                
+                // Hardening: Normalize UGC config values if they are BigInt strings
+                if (settings.ugc_config) {
+                    const cfg = settings.ugc_config;
+                    if (cfg.min_reward_amount && cfg.min_reward_amount.length > 12) {
+                        try { cfg.min_reward_amount = formatUnits(BigInt(cfg.min_reward_amount), 18); } catch(e) { /* ignore */ }
+                    }
+                    if (cfg.listing_fee_usdc && cfg.listing_fee_usdc.length > 12) {
+                        try { cfg.listing_fee_usdc = formatUnits(BigInt(cfg.listing_fee_usdc), 6); } catch(e) { /* ignore */ }
+                    }
+                }
+
+                setEcosystemSettings(prev => ({ ...prev, ...settings }));
             }
         } catch (err) {
             console.error('[PointsContext] Failed to fetch settings:', err);

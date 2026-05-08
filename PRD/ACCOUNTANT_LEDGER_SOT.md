@@ -1,6 +1,6 @@
-# 📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.1)
-**Status**: 🛡️ FINANCIAL INTEGRITY LOCKED
-**Description**: Sistem pencatatan keuangan ganda (double-entry audit trail) untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).
+# 📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.2)
+**Status**: 🛡️ ARCHITECTURALLY HARDENED
+**Description**: Sistem pencatatan keuangan ganda (double-entry audit trail) dan pusat kendali paritas on-chain untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).
 
 ---
 
@@ -51,7 +51,19 @@ Admin memiliki otoritas untuk menarik akumulasi dana ETH dari kontrak operasiona
 
 ---
 
-## 5. Panduan Integrasi Modul Baru
+## 5. Ecosystem Hardening Center (v3.59.2)
+Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah terjadinya "Data Drift" pada XP dan Tier pengguna.
+
+### 📍 Fitur Utama:
+1.  **Parity Audit**: Membandingkan `total_xp` dan `tier` di Supabase dengan `userStats` di blockchain secara real-time.
+2.  **Batch Synchronization**:
+    *   **Sync XP**: Memperbarui status poin di kontrak MasterX berdasarkan data database.
+    *   **Sync Tiers**: Memaksa pembaruan tier di blockchain jika terdeteksi inkonsistensi.
+    *   **Sync NFT URIs**: Sinkronisasi metadata IPFS (Pinata) dari database ke kontrak on-chain.
+
+---
+
+## 6. Panduan Integrasi Modul Baru
 Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang **WAJIB** mengikuti langkah berikut:
 
 1.  **Emit Log di Database**: Gunakan kategori `PURCHASE` untuk setiap revenue.
@@ -59,4 +71,4 @@ Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi k
 3.  **Automatic Inclusion**: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.
 
 ---
-*End of Accountant Ledger SOT - Nexus v3.59.1 Locked.*
+*End of Accountant Ledger SOT - Nexus v3.59.2 Locked.*

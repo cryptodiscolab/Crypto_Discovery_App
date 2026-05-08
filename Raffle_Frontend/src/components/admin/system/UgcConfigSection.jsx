@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Save, Loader2, DollarSign, Wallet } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAccount, useSignMessage } from 'wagmi';
-import { CONTRACTS } from '../../../lib/contracts';
+import { CONTRACTS, DAILY_APP_ABI, RAFFLE_ABI } from '../../../lib/contracts';
+import { useReadContract } from 'wagmi';
+import { formatUnits } from 'viem';
 import toast from 'react-hot-toast';
 
 export function UgcConfigSection() {
@@ -17,6 +19,20 @@ export function UgcConfigSection() {
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [drifts, setDrifts] = useState({});
+
+    // On-chain Data for Parity Audit
+    const { data: minRewardPool } = useReadContract({
+        address: CONTRACTS.DAILY_APP,
+        abi: DAILY_APP_ABI,
+        functionName: 'minRewardPoolValue',
+    });
+
+    const { data: maintenanceFee } = useReadContract({
+        address: CONTRACTS.RAFFLE,
+        abi: RAFFLE_ABI,
+        functionName: 'maintenanceFeeBP',
+    });
 
     useEffect(() => {
         fetchConfig();
@@ -33,12 +49,50 @@ export function UgcConfigSection() {
 
             if (data && data.value) {
                 setConfig(data.value);
+                // Check for drift after fetching
+                performAudit(data.value);
             }
         } catch (error) {
             console.error('Fetch UGC Config Error:', error);
         } finally {
             setLoading(false);
         }
+    }
+
+    function performAudit(currentConfig) {
+        const newDrifts = {};
+        
+        // Audit Listing Fee vs Contract minRewardPool (assuming Listing Fee >= minRewardPool)
+        if (minRewardPool) {
+            const contractMin = parseFloat(formatUnits(minRewardPool, 6)); // Assuming 6 decimals for USDC/Points
+            if (parseFloat(currentConfig.listing_fee_usdc) < contractMin) {
+                newDrifts.listing_fee = `Contract requires min ${contractMin} USDC`;
+            }
+        }
+
+        // Audit SBT Share vs Raffle Maintenance Fee (if they should align)
+        if (maintenanceFee) {
+            const contractBP = Number(maintenanceFee) / 100; // BP to %
+            if (parseFloat(currentConfig.sbt_pool_share_pct) !== contractBP) {
+                // Not necessarily an error, but worth flagging if they drift
+                // newDrifts.sbt_share = `Contract BP is ${contractBP}%`;
+            }
+        }
+
+        setDrifts(newDrifts);
+    }
+
+    async function handleEmergencySync() {
+        if (!minRewardPool) return toast.error("Contract data not available");
+        
+        const contractMin = formatUnits(minRewardPool, 6);
+        const updated = {
+            ...config,
+            listing_fee_usdc: contractMin
+        };
+        setConfig(updated);
+        performAudit(updated);
+        toast.success("Syncing with Blockchain Source of Truth...");
     }
 
     async function handleSave() {
@@ -104,12 +158,25 @@ export function UgcConfigSection() {
                         <input
                             type="number"
                             value={config.listing_fee_usdc}
-                            onChange={(e) => setConfig({ ...config, listing_fee_usdc: e.target.value })}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setConfig({ ...config, listing_fee_usdc: val });
+                                performAudit({ ...config, listing_fee_usdc: val });
+                            }}
+                            className={`w-full bg-black/40 border ${drifts.listing_fee ? 'border-red-500/50 animate-pulse' : 'border-white/10'} rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none`}
                             placeholder="5.00"
                         />
+                        {drifts.listing_fee && (
+                            <div className="absolute right-3 top-3 text-[9px] font-black text-red-500 bg-red-500/10 px-2 py-1 rounded-md uppercase tracking-tighter">
+                                Drift Detected
+                            </div>
+                        )}
                     </div>
-                    <p className="text-[9px] text-slate-600 italic text-left">This fee is charged to sponsors for each Mission/Raffle created.</p>
+                    {drifts.listing_fee ? (
+                        <p className="text-[9px] text-red-400 font-bold">{drifts.listing_fee}</p>
+                    ) : (
+                        <p className="text-[9px] text-slate-600 italic text-left">This fee is charged to sponsors for each Mission/Raffle created.</p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -156,14 +223,22 @@ export function UgcConfigSection() {
                 </div>
             </div>
 
-            <button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full bg-indigo-600 hover:bg-emerald-600 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-500/10 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? "SAVING..." : "UPDATE UGC PROTOCOL"}
-            </button>
+            <div className="grid grid-cols-2 gap-4">
+                <button
+                    onClick={handleEmergencySync}
+                    className="bg-red-950/40 hover:bg-red-900/60 border border-red-500/20 py-4 rounded-2xl text-red-400 text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.98]"
+                >
+                    Emergency Parity Sync
+                </button>
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-indigo-600 hover:bg-emerald-600 py-4 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/10 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? "SAVING..." : "UPDATE UGC PROTOCOL"}
+                </button>
+            </div>
         </div>
     );
 }

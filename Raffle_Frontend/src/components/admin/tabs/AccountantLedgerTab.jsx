@@ -7,13 +7,24 @@ import toast from 'react-hot-toast';
 import { parseEther, formatEther, formatUnits } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 import { 
-    MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS 
+    MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS, ABIS
 } from '../../../lib/contracts';
+import { useSignMessage } from 'wagmi';
+import { ShieldCheck, HardDrive, DatabaseZap, FileJson } from 'lucide-react';
 
 export function AccountantLedgerTab() {
     const { address } = useAccount();
-    const { withdrawTreasury } = useSBT();
+    const { signMessageAsync } = useSignMessage();
+    const { 
+        withdrawTreasury, 
+        syncPointsToContract, 
+        syncTiersToContract, 
+        syncMetadataToContract 
+    } = useSBT();
+    
     const [loading, setLoading] = useState(true);
+    const [isHardening, setIsHardening] = useState(false);
+    const [parityResults, setParityResults] = useState(null);
     const [aggregates, setAggregates] = useState({
         daily: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } },
         weekly: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } },
@@ -66,6 +77,67 @@ export function AccountantLedgerTab() {
             toast.error(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const runParityAudit = async () => {
+        setIsHardening(true);
+        const toastId = toast.loading("Auditing ecosystem parity...");
+        try {
+            const token = localStorage.getItem('adminToken');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/parity-audit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setParityResults(data.summary);
+                toast.success("Parity audit completed", { id: toastId });
+            } else {
+                throw new Error(data.error || "Audit failed");
+            }
+        } catch (error) {
+            toast.error(error.message, { id: toastId });
+        } finally {
+            setIsHardening(false);
+        }
+    };
+
+    const handleSyncXP = async () => {
+        setIsHardening(true);
+        try {
+            await syncPointsToContract(signMessageAsync);
+            await runParityAudit(); // Re-run audit after sync
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsHardening(false);
+        }
+    };
+
+    const handleSyncTiers = async () => {
+        setIsHardening(true);
+        try {
+            await syncTiersToContract(signMessageAsync);
+            await runParityAudit();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsHardening(false);
+        }
+    };
+
+    const handleSyncMetadata = async () => {
+        setIsHardening(true);
+        try {
+            await syncMetadataToContract();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsHardening(false);
         }
     };
 
@@ -247,40 +319,86 @@ export function AccountantLedgerTab() {
                 </div>
             </div>
 
-            {/* Treasury Execution Section */}
-            <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 rounded-2xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <Wallet className="w-6 h-6 text-indigo-400" />
-                    <h2 className="text-lg font-black text-white uppercase tracking-wider">Treasury Withdrawal (ETH)</h2>
-                </div>
-                <p className="text-sm text-indigo-200/60 mb-6 max-w-2xl">
-                    Execute a manual withdrawal of accumulated ETH (from Raffles and Mints) out of the DailyApp/Raffle smart contracts directly into the central Safe Treasury wallet.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                    <div className="relative w-full sm:w-64">
-                        <input
-                            type="number"
-                            value={withdrawAmount}
-                            onChange={(e) => setWithdrawAmount(e.target.value)}
-                            placeholder="Amount in ETH"
-                            className="w-full bg-black/40 border border-indigo-500/30 rounded-xl px-4 py-3 text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-400">ETH</div>
+            {/* Ecosystem Hardening Center */}
+            <div className="bg-[#0a0a0c] border border-emerald-500/10 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-500/10 rounded-xl">
+                                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                            </div>
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Ecosystem Hardening Center</h2>
+                        </div>
+                        <p className="text-slate-400 text-sm max-w-xl">
+                            Ensure 1:1 parity between the Accountant Ledger (Supabase) and the On-Chain Smart Contracts. 
+                            Use these tools to fix drift and sync metadata URIs.
+                        </p>
                     </div>
-                    <button
-                        onClick={handleWithdraw}
-                        disabled={isWithdrawing || !withdrawAmount}
-                        className="w-full sm:w-auto px-6 py-3 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
-                    >
-                        {isWithdrawing ? (
-                            <RefreshCw className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <>
-                                Execute Transfer <ArrowRight className="w-5 h-5" />
-                            </>
-                        )}
-                    </button>
+
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={runParityAudit}
+                            disabled={isHardening}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all"
+                        >
+                            <HardDrive className={`w-3.5 h-3.5 ${isHardening ? 'animate-pulse' : ''}`} />
+                            Run Parity Audit
+                        </button>
+                        <button
+                            onClick={handleSyncXP}
+                            disabled={isHardening}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-xs font-bold text-indigo-400 transition-all"
+                        >
+                            <DatabaseZap className="w-3.5 h-3.5" />
+                            Sync XP to Contract
+                        </button>
+                        <button
+                            onClick={handleSyncTiers}
+                            disabled={isHardening}
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl text-xs font-bold text-purple-400 transition-all"
+                        >
+                            <Award className="w-3.5 h-3.5" />
+                            Sync Tiers to Contract
+                        </button>
+                        <button
+                            onClick={handleSyncMetadata}
+                            disabled={isHardening}
+                            className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl text-xs font-bold text-amber-400 transition-all"
+                        >
+                            <FileJson className="w-3.5 h-3.5" />
+                            Sync NFT URIs
+                        </button>
+                    </div>
                 </div>
+
+                {parityResults && (
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in relative z-10">
+                        <div className="bg-black/40 border border-white/5 rounded-xl p-4">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Audited</div>
+                            <div className="text-xl font-black text-white font-mono">{parityResults.total_users} Users</div>
+                        </div>
+                        <div className="bg-black/40 border border-white/5 rounded-xl p-4">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">XP Inconsistencies</div>
+                            <div className={`text-xl font-black font-mono ${parityResults.xp_drift > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                {parityResults.xp_drift} {parityResults.xp_drift > 0 ? '⚠️' : '✅'}
+                            </div>
+                        </div>
+                        <div className="bg-black/40 border border-white/5 rounded-xl p-4">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Tier Inconsistencies</div>
+                            <div className={`text-xl font-black font-mono ${parityResults.tier_drift > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                {parityResults.tier_drift} {parityResults.tier_drift > 0 ? '⚠️' : '✅'}
+                            </div>
+                        </div>
+                        <div className="bg-black/40 border border-white/5 rounded-xl p-4">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Last Sync Status</div>
+                            <div className="text-xs font-bold text-slate-400 mt-1">
+                                {parityResults.is_perfect ? "✨ PERFECT PARITY" : "Drift Detected"}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Transaction Log Table */}

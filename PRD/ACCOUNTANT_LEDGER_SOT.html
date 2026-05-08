@@ -1,6 +1,6 @@
-<h1>📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.1)</h1>
-<p><strong>Status</strong>: 🛡️ FINANCIAL INTEGRITY LOCKED
-<strong>Description</strong>: Sistem pencatatan keuangan ganda (double-entry audit trail) untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).</p>
+<h1>📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.2)</h1>
+<p><strong>Status</strong>: 🛡️ ARCHITECTURALLY HARDENED
+<strong>Description</strong>: Sistem pencatatan keuangan ganda (double-entry audit trail) dan pusat kendali paritas on-chain untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).</p>
 <hr>
 <h2>1. Arsitektur Akuntan Ledger</h2>
 <p>Sistem Ledger bekerja dengan menggabungkan data dari dua sumber utama:</p>
@@ -90,7 +90,20 @@
 <li><strong>Security</strong>: Hanya wallet dengan role Admin/Owner yang dapat mengeksekusi penarikan ini.</li>
 </ul>
 <hr>
-<h2>5. Panduan Integrasi Modul Baru</h2>
+<h2>5. Ecosystem Hardening Center (v3.59.2)</h2>
+<p>Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah terjadinya &quot;Data Drift&quot; pada XP dan Tier pengguna.</p>
+<h3>📍 Fitur Utama:</h3>
+<ol>
+<li><strong>Parity Audit</strong>: Membandingkan <code>total_xp</code> dan <code>tier</code> di Supabase dengan <code>userStats</code> di blockchain secara real-time.</li>
+<li><strong>Batch Synchronization</strong>:<ul>
+<li><strong>Sync XP</strong>: Memperbarui status poin di kontrak MasterX berdasarkan data database.</li>
+<li><strong>Sync Tiers</strong>: Memaksa pembaruan tier di blockchain jika terdeteksi inkonsistensi.</li>
+<li><strong>Sync NFT URIs</strong>: Sinkronisasi metadata IPFS (Pinata) dari database ke kontrak on-chain.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2>6. Panduan Integrasi Modul Baru</h2>
 <p>Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang <strong>WAJIB</strong> mengikuti langkah berikut:</p>
 <ol>
 <li><strong>Emit Log di Database</strong>: Gunakan kategori <code>PURCHASE</code> untuk setiap revenue.</li>
@@ -98,4 +111,4 @@
 <li><strong>Automatic Inclusion</strong>: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.</li>
 </ol>
 <hr>
-<p><em>End of Accountant Ledger SOT - Nexus v3.59.1 Locked.</em></p>
+<p><em>End of Accountant Ledger SOT - Nexus v3.59.2 Locked.</em></p>

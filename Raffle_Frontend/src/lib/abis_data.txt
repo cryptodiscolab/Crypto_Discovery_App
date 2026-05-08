@@ -513,6 +513,29 @@
             "type": "address[]"
           },
           {
+            "internalType": "uint256[]",
+            "name": "_points",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "string",
+            "name": "_reason",
+            "type": "string"
+          }
+        ],
+        "name": "batchAddPoints",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address[]",
+            "name": "_users",
+            "type": "address[]"
+          },
+          {
             "internalType": "enum CryptoDiscoMasterX.SBTTier[]",
             "name": "_tiers",
             "type": "uint8[]"

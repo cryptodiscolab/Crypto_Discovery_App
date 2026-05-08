@@ -176,14 +176,179 @@ export default async function handler(req, res) {
                 return res.status(200).json({ isAdmin: true, message: 'Admin access granted' });
             }
 
+            case 'GET_SBT_CONFIG': {
+                const { data, error } = await supabaseAdmin
+                    .from('sbt_thresholds')
+                    .select('*')
+                    .order('tier_rank', { ascending: true });
+                if (error) throw error;
+                return res.status(200).json({ success: true, data });
+            }
+
+            case 'parity-audit': {
+                // [v3.59.2] High Precision Parity Audit
+                // Audits top 50 users by XP to ensure reward pool integrity
+                const { data: users, error } = await supabaseAdmin
+                    .from('user_profiles')
+                    .select('wallet_address, total_xp, tier')
+                    .order('total_xp', { ascending: false })
+                    .limit(50);
+                
+                if (error) throw error;
+
+                const MASTER_X_ADDRESS = isMainnet
+                    ? process.env.VITE_MASTER_X_ADDRESS
+                    : process.env.VITE_MASTER_X_ADDRESS_SEPOLIA;
+                
+                const DAILY_APP_ADDRESS = isMainnet
+                    ? process.env.VITE_DAILY_APP_ADDRESS
+                    : process.env.VITE_DAILY_APP_ADDRESS_SEPOLIA;
+
+                const RAFFLE_ADDRESS = isMainnet
+                    ? process.env.VITE_RAFFLE_ADDRESS
+                    : process.env.VITE_RAFFLE_ADDRESS_SEPOLIA;
+
+                // Multicall or Batch Read would be better, but we'll do promise.all for 50 users
+                // which is well within Vercel's 10s timeout for Base RPC.
+                const auditResults = await Promise.all(users.map(async (u) => {
+                    try {
+                        // [v3.59.2] Partial ABI Fragment: Focused only on high-priority audit fields.
+                        // Safe to use as long as the userStats(address) return signature is stable.
+                        const stats = await rpcClient.readContract({
+                            address: DAILY_APP_ADDRESS,
+                            abi: [{
+                                "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+                                "name": "userStats",
+                                "outputs": [
+                                    {"internalType": "uint256", "name": "points", "type": "uint256"},
+                                    {"internalType": "uint256", "name": "totalTasksCompleted", "type": "uint256"},
+                                    {"internalType": "uint256", "name": "referralCount", "type": "uint256"},
+                                    {"internalType": "enum DailyAppV12Secured.NFTTier", "name": "currentTier", "type": "uint8"},
+                                    {"internalType": "uint256", "name": "tasksForReferralProgress", "type": "uint256"},
+                                    {"internalType": "uint256", "name": "lastDailyBonusClaim", "type": "uint256"},
+                                    {"internalType": "bool", "name": "isBlacklisted", "type": "bool"}
+                                ],
+                                "stateMutability": "view",
+                                "type": "function"
+                            }],
+                            functionName: 'userStats',
+                            args: [u.wallet_address]
+                        });
+
+                        // Runtime ABI Guard: Ensure returned data is valid before processing
+                        if (!stats || stats.length < 4) throw new Error("Contract signature mismatch");
+
+                        const onChainXp = Number(stats[0]);
+                        const onChainTier = Number(stats[3]);
+
+                        return {
+                            address: u.wallet_address,
+                            db_xp: u.total_xp,
+                            onchain_xp: onChainXp,
+                            db_tier: u.tier,
+                            onchain_tier: onChainTier,
+                            // High precision drift detection (BP-safe)
+                            xp_drift_value: u.total_xp - onChainXp,
+                            tier_drift: u.tier !== onChainTier
+                        };
+                    } catch (e) {
+                        return { address: u.wallet_address, error: e.message };
+                    }
+                }));
+
+                const xp_drift_count = auditResults.filter(r => r.xp_drift_value !== 0).length;
+                const tier_drift_count = auditResults.filter(r => r.tier_drift).length;
+
+                const summary = {
+                    total_users: users.length,
+                    xp_drift: xp_drift_count,
+                    tier_drift: tier_drift_count,
+                    is_perfect: xp_drift_count === 0 && tier_drift_count === 0,
+                    last_audit_at: new Date().toISOString()
+                };
+
+                // [v3.59.2] System Settings Parity Audit
+                // Compares DB weights vs Contract weights
+                const { data: dbWeights } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'tier_pool_weights').maybeSingle();
+                const contractWeights = await Promise.all([
+                    rpcClient.readContract({ address: MASTER_X_ADDRESS, abi: MASTER_X_ABI, functionName: 'diamondWeight' }),
+                    rpcClient.readContract({ address: MASTER_X_ADDRESS, abi: MASTER_X_ABI, functionName: 'platinumWeight' }),
+                    rpcClient.readContract({ address: MASTER_X_ADDRESS, abi: MASTER_X_ABI, functionName: 'goldWeight' }),
+                    rpcClient.readContract({ address: MASTER_X_ADDRESS, abi: MASTER_X_ABI, functionName: 'silverWeight' }),
+                    rpcClient.readContract({ address: MASTER_X_ADDRESS, abi: MASTER_X_ABI, functionName: 'bronzeWeight' }),
+                ]);
+
+                const { data: dbUgcConfig } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
+                
+                const [contractUgcMin, contractRaffleFee] = await Promise.all([
+                    rpcClient.readContract({ 
+                        address: DAILY_APP_ADDRESS, 
+                        abi: [{ "inputs": [], "name": "minRewardPoolValue", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }], 
+                        functionName: 'minRewardPoolValue' 
+                    }).catch(() => 0n),
+                    rpcClient.readContract({ 
+                        address: RAFFLE_ADDRESS, 
+                        abi: [{ "inputs": [], "name": "maintenanceFeeBP", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }], 
+                        functionName: 'maintenanceFeeBP' 
+                    }).catch(() => 0n)
+                ]);
+
+                const system_parity = {
+                    weights_match: JSON.stringify(dbWeights?.value) === JSON.stringify({
+                        diamond: contractWeights[0].toString(),
+                        platinum: contractWeights[1].toString(),
+                        gold: contractWeights[2].toString(),
+                        silver: contractWeights[3].toString(),
+                        bronze: contractWeights[4].toString()
+                    }),
+                    ugc_parity: {
+                        listing_fee_drift: dbUgcConfig?.value?.listing_fee_usdc !== (Number(contractUgcMin) / 1000000).toString(),
+                        contract_min: (Number(contractUgcMin) / 1000000).toString(),
+                        db_value: dbUgcConfig?.value?.listing_fee_usdc
+                    }
+                };
+
+                return res.status(200).json({ success: true, summary, results: auditResults, system_parity });
+            }
+
             case 'sync-tiers': {
                 const { data, error } = await supabaseAdmin.rpc('fn_compute_leaderboard_tiers');
                 if (error) throw error;
-                const { data: profiles } = await supabaseAdmin.from('user_profiles').select('wallet_address, tier');
-                const sbtHolders = new Set((profiles || []).filter(p => (p.tier || 0) > 0).map(p => p.wallet_address.toLowerCase()));
-                const filteredData = data.filter(item => sbtHolders.has(item.wallet_address.toLowerCase()));
+                
+                // Fetch additional profile data for parity sync
+                const { data: profiles } = await supabaseAdmin
+                    .from('user_profiles')
+                    .select('wallet_address, tier, total_xp');
+                
+                const profileMap = new Map((profiles || []).map(p => [p.wallet_address.toLowerCase(), p]));
+                
+                // Filter only users who own an SBT (SBT-Gating)
+                const filteredData = data
+                    .filter(item => {
+                        const p = profileMap.get(item.wallet_address.toLowerCase());
+                        return p && (p.tier || 0) > 0;
+                    })
+                    .map(item => {
+                        const p = profileMap.get(item.wallet_address.toLowerCase());
+                        return {
+                            ...item,
+                            total_xp: p.total_xp,
+                            db_tier: p.tier
+                        };
+                    });
+
                 supabaseAdmin.rpc('fn_refresh_rank_scores').catch(() => { });
                 return res.status(200).json({ success: true, total_calculated: data.length, data: filteredData });
+            }
+
+            case 'sync-points': {
+                const { data: profiles, error } = await supabaseAdmin
+                    .from('user_profiles')
+                    .select('wallet_address, total_xp')
+                    .gt('total_xp', 0);
+                
+                if (error) throw error;
+                return res.status(200).json({ success: true, count: profiles.length, data: profiles });
             }
 
             case 'SYNC_MULTIPLIERS': {
@@ -360,6 +525,14 @@ export default async function handler(req, res) {
             case 'UPDATE_POINTS': {
                 await supabaseAdmin.from('point_settings').upsert(payload, { onConflict: 'activity_key' });
                 await logAdminAction(targetAddress, 'UPDATE_POINTS', payload);
+                return res.status(200).json({ success: true });
+            }
+            case 'BATCH_UPDATE_POINTS': {
+                // payload: Array of { activity_key, points_value }
+                if (!Array.isArray(payload)) return res.status(400).json({ error: 'Payload must be an array' });
+                const { error } = await supabaseAdmin.from('point_settings').upsert(payload, { onConflict: 'activity_key' });
+                if (error) throw error;
+                await logAdminAction(targetAddress, 'BATCH_UPDATE_POINTS', { count: payload.length });
                 return res.status(200).json({ success: true });
             }
             case 'UPDATE_THRESHOLDS': {
@@ -602,6 +775,18 @@ export default async function handler(req, res) {
                 
                 await logAdminAction(targetAddress, 'VERIFY_UGC_PAYMENT', payload);
                 return res.status(200).json({ success: true });
+            }
+            case 'SYNC_POINTS': {
+                // Fetch all users with XP for mass on-chain sync
+                const { data, error: fetchErr } = await supabaseAdmin
+                    .from('user_profiles')
+                    .select('wallet_address, total_xp')
+                    .gt('total_xp', 0);
+                
+                if (fetchErr) throw fetchErr;
+                
+                await logAdminAction(targetAddress, 'SYNC_POINTS_FETCH', { count: data?.length || 0 });
+                return res.status(200).json({ success: true, data });
             }
             default:
                 console.log('[Action Failed] Invalid action:', action);

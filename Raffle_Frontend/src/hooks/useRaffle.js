@@ -412,17 +412,42 @@ export function useRaffle() {
 }
 
 export function useRaffleList() {
+    const [raffleIds, setRaffleIds] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRaffles = async () => {
+            try {
+                // Fetch active raffles from DB (primary index)
+                const { data, error } = await supabase
+                    .from('raffles')
+                    .select('id')
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                setRaffleIds(data?.map(r => r.id) || []);
+            } catch (err) {
+                console.warn('[useRaffleList] DB fetch error:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchRaffles();
+    }, []);
+
     const { data: totalRaffles } = useReadContract({
         address: RAFFLE_ADDRESS,
         abi: ABIS.RAFFLE,
         functionName: 'currentRaffleId',
     });
 
-    const count = totalRaffles ? Number(totalRaffles) : 0;
-    // Indexing is 1-based in the contract, so we generate IDs from 1 to count
-    const raffleIds = count > 0 ? Array.from({ length: count }, (_, i) => i + 1) : [];
-
-    return { raffleIds, count };
+    return { 
+        raffleIds, 
+        count: raffleIds.length, 
+        totalOnChain: totalRaffles ? Number(totalRaffles) : 0,
+        isLoading 
+    };
 }
 
 export function useRaffleInfo(raffleId) {

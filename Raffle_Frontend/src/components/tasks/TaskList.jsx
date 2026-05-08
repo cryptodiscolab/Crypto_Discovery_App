@@ -21,6 +21,7 @@ export function TaskList() {
     // Two-Step Task Flow: track which tasks have been started (link opened)
     const [startedTasks, setStartedTasks] = useState({}); // { task_id: timestamp }
     const [countdowns, setCountdowns] = useState({}); // { task_id: secondsLeft }
+    const [dailyProgress, setDailyProgress] = useState({ completed_count: 0, bonus_claimed: false }); // v3.59.5
     const countdownRefs = useRef({});
     const { execute: executeClaim } = useVerifiedAction();
     const { refetch, gasTracker } = usePoints();
@@ -73,6 +74,7 @@ export function TaskList() {
                 .select('*')
                 .eq('is_active', true)
                 .neq('task_type', 'system')
+                .neq('task_type', 'ugc')
                 .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
                 .order('created_at', { ascending: false });
 
@@ -118,6 +120,19 @@ export function TaskList() {
                     setIsBaseVerified(false);
                     setHasProfile(false);
                     setUserSocials(null);
+                }
+
+                // 3. Fetch Daily Progress (v3.59.5)
+                const { data: progressData } = await supabase
+                    .from('v_user_daily_progress')
+                    .select('*')
+                    .eq('wallet_address', address.toLowerCase())
+                    .maybeSingle();
+
+                if (progressData) {
+                    setDailyProgress(progressData);
+                } else {
+                    setDailyProgress({ completed_count: 0, bonus_claimed: false });
                 }
             } else {
                 // If not connected, clear user-specific states
@@ -264,6 +279,45 @@ export function TaskList() {
                 <Zap className="w-4 h-4 text-yellow-400" />
                 <h3 className="text-[11px] font-black text-white uppercase tracking-widest">QUICK MISSIONS</h3>
             </div>
+
+            {/* [v3.59.5] Nexus Daily Goal Progress */}
+            {isConnected && (
+                <div className="mb-8 p-5 glass-card border-white/5 relative overflow-hidden group animate-fade-in">
+                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Gift size={48} className="text-indigo-400" />
+                    </div>
+                    
+                    <div className="flex justify-between items-end mb-3">
+                        <div>
+                            <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] mb-1">Nexus Daily Goal</h3>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                {dailyProgress.bonus_claimed 
+                                    ? "Today's Bonus Unlocked! 🚀" 
+                                    : `Complete 3 tasks for +50 XP Bonus`}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-lg font-black text-white tabular-nums">{Math.min(dailyProgress.completed_count, 3)}/3</span>
+                        </div>
+                    </div>
+
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div 
+                            className={`h-full transition-all duration-1000 ease-out rounded-full ${
+                                dailyProgress.bonus_claimed ? 'bg-gradient-to-r from-green-500 to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_10px_rgba(99,102,241,0.3)]'
+                            }`}
+                            style={{ width: `${(Math.min(dailyProgress.completed_count, 3) / 3) * 100}%` }}
+                        />
+                    </div>
+                    
+                    {dailyProgress.bonus_claimed && (
+                        <div className="mt-3 flex items-center gap-2 text-green-400 animate-pulse">
+                            <CheckCircle2 size={12} />
+                            <span className="text-[9px] font-black uppercase tracking-widest">+50 XP Bonus Awarded</span>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {isGasHigh && !isGasExpensive && (
                 <div className="flex items-center justify-center gap-2 mb-4 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-widest text-center shadow-inner">
