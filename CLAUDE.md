@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.59.1)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.59.5)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -18,11 +18,11 @@ Before responding to ANY request, read these files IN ORDER:
 3. **`.agents/skills/git-hygiene/SKILL.md`** — Clean tree, commit rules
 4. **`.agents/WORKSPACE_MAP.md`** — Canonical Workspace Map (Mandatory Navigation)
 5. **`PRD/DISCO_DAILY_MASTER_PRD.md`** — Master Source of Truth
-6. **`PRD/ACCOUNTANT_LEDGER_SOT.md`** — Accountant Ledger Source of Truth (v3.59.1)
+6. **`PRD/ACCOUNTANT_LEDGER_SOT.md`** — Accountant Ledger Source of Truth (v3.59.5)
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.59.1)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.59.1).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.59.5)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.59.5).
 
 ---
 

@@ -163,6 +163,21 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Invalid signature' });
         }
 
+        // 1.5. Replay Protection: Verify 5-minute timestamp window
+        const isoMatch = message.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/);
+        if (!isoMatch) {
+            console.log('[Auth Failed] No ISO timestamp found in message for replay protection', targetAddress);
+            return res.status(401).json({ error: 'Invalid message format: Missing timestamp' });
+        }
+        const messageTime = new Date(isoMatch[0]).getTime();
+        const currentTime = Date.now();
+        const timeDiffMinutes = Math.abs(currentTime - messageTime) / (1000 * 60);
+        
+        if (timeDiffMinutes > 5) {
+            console.log(`[Auth Failed] Signature expired or replayed. Diff: ${timeDiffMinutes.toFixed(2)} mins`, targetAddress);
+            return res.status(401).json({ error: 'Signature expired (5-minute window)' });
+        }
+
         // 2. Authorization Check
         const isAuthorized = await isAuthorizedAdmin(targetAddress);
         if (!isAuthorized) {
@@ -457,19 +472,78 @@ export default async function handler(req, res) {
                     const logDate = new Date(log.created_at);
                     const diffTime = now - logDate;
                     const amount = parseFloat(log.value_amount) || 0;
-                    const symbol = log.value_symbol === 'ETH' ? 'ETH' : 'USDC'; // normalize
-                    const type = log.category === 'PURCHASE' ? 'income' : 'expense';
+                    
+                    // Support dynamic symbols while defaulting to USDC for aggregation buckets
+                    const rawSymbol = log.value_symbol || 'USDC';
+                    const symbol = (rawSymbol === 'ETH' || rawSymbol === 'USDC') ? rawSymbol : 'USDC'; 
+                    
+                    const type = (log.category === 'PURCHASE') ? 'income' : 'expense';
 
                     if (diffTime <= oneDay) aggregates.daily[type][symbol] += amount;
                     if (diffTime <= 7 * oneDay) aggregates.weekly[type][symbol] += amount;
                     if (diffTime <= 30 * oneDay) aggregates.monthly[type][symbol] += amount;
                 });
 
+                const { data: syncState } = await supabaseAdmin
+                    .from("sync_state")
+                    .select("last_synced_block, updated_at")
+                    .eq("id", "main")
+                    .maybeSingle();
+
                 return res.status(200).json({ 
                     success: true, 
                     aggregates,
+                    syncState,
                     logs: logs?.slice(0, 100) || [] // return latest 100 for table
                 });
+            }
+
+            case 'accountant-sync': {
+                // [v3.59.4] Manual Sync Trigger for Accountant Ledger
+                // This logic mirrors audit-bundle.js but uses viem for consistency
+                const { data: state } = await supabaseAdmin
+                    .from("sync_state")
+                    .select("last_synced_block")
+                    .eq("id", "main")
+                    .maybeSingle();
+
+                const lastBlock = BigInt(state?.last_synced_block ?? 0);
+                const latestBlock = await rpcClient.getBlockNumber();
+
+                if (latestBlock <= lastBlock) {
+                    return res.json({ success: true, status: "no_new_blocks", lastBlock: lastBlock.toString(), latestBlock: latestBlock.toString() });
+                }
+
+                // Call the internal sync endpoint with CRON_SECRET
+                // We use axial/fetch to hit the same URL the GitHub Action hits
+                const CRON_SECRET = (process.env.CRON_SECRET || '').trim();
+                const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+                const host = req.headers.host;
+                const syncUrl = `${protocol}://${host}/api/cron/sync-events`;
+
+                try {
+                    const syncRes = await axios.get(syncUrl, {
+                        headers: { 'Authorization': `Bearer ${CRON_SECRET}` },
+                        timeout: 8000 // 8s timeout for manual trigger
+                    });
+                    
+                    await logAdminAction(targetAddress, 'ACCOUNTANT_SYNC_TRIGGER', { 
+                        sync_response: syncRes.data,
+                        from_block: lastBlock.toString()
+                    });
+
+                    return res.status(200).json({ 
+                        success: true, 
+                        message: 'Blockchain sync triggered successfully',
+                        details: syncRes.data 
+                    });
+                } catch (syncErr) {
+                    console.error('[Accountant Sync Trigger Error]', syncErr.message);
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: 'Failed to trigger sync endpoint: ' + syncErr.message 
+                    });
+                }
             }
 
             case 'NEXUS_DISPATCH': {

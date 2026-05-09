@@ -841,20 +841,36 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
   const { refetch: refetchStats } = useUserInfo(address);
   const { ecosystemSettings } = usePoints(); // Zero Hardcode integration
 
-  // RESTRICTION: ETH ONLY for Reward Pool
+  // Fetch dynamic sponsor configs from on-chain
+  const { data: qSponsorFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
+  const { data: qMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
+  const { data: qRewardClaim } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
+
   const allowedTokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
   const ethToken = allowedTokens.find(t => t.symbol === 'ETH') || allowedTokens[0];
+  const usdcToken = allowedTokens.find(t => t.symbol === 'USDC');
   
+  // Multi-Token Payment Support
+  const [selectedTokenAddr, setSelectedTokenAddr] = useState(ethToken?.address || "0x0000000000000000000000000000000000000000");
+  const selectedToken = allowedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr?.toLowerCase()) || ethToken;
+
   const [ethReward, setEthReward] = useState(() => {
     const rawValue = ecosystemSettings?.ugc_config?.min_reward_amount || 
                     ecosystemSettings?.sponsorship_reward_amount || 
                     '0.1';
-    // If it looks like a BigInt string (large length or contains many zeros), format it.
     if (typeof rawValue === 'string' && rawValue.length > 12) {
       try { return formatUnits(BigInt(rawValue), 18); } catch(e) { return rawValue; }
     }
     return rawValue;
   });
+
+  useEffect(() => {
+      if (qMinPool && ethReward === '0.1') {
+          // V14: minRewardPoolValue is in 6-decimal USDC base
+          setEthReward(formatUnits(qMinPool, 6));
+      }
+  }, [qMinPool]);
+
   const [sybilFilters, setSybilFilters] = useState({
     minNeynarScore: 0,
     minFollowers: 0,
@@ -864,24 +880,22 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
     isBaseSocialRequired: false
   });
   
-  const rewardTokenAddr = ethToken?.address || "0x0000000000000000000000000000000000000000";
-  const feeUsd = Number(
-    ecosystemSettings?.ugc_config?.listing_fee_usdc || 
-    ecosystemSettings?.sponsorship_listing_fee_usdc || 
-    0
-  );
+  // Calculate fee from on-chain, fallback to ecosystemSettings
+  const feeUsd = qSponsorFee ? Number(formatUnits(qSponsorFee, 6)) : Number(ecosystemSettings?.ugc_config?.listing_fee_usdc || 0);
 
   const { prices } = usePriceOracle(allowedTokens.map(t => t.address));
-  const currentPrice = prices[rewardTokenAddr?.toLowerCase()] || 0;
+  const currentPrice = prices[selectedTokenAddr?.toLowerCase()] || 0;
   const rewardUsdValue = currentPrice * parseFloat(ethReward || 0);
   
-  const tokenDecimals = ethToken?.decimals || 18;
-  // Fix: Use viem parseUnits to handle decimals properly and avoid BigInt exponent errors
+  // V14: rewardPerClaim is in 6-decimal USDC base
+  const rewardPerClaimVal = qRewardClaim ? parseFloat(formatUnits(qRewardClaim, 6)) : 0.20; 
+  const targetParticipants = Math.floor(parseFloat(ethReward || '0') / (rewardPerClaimVal || 1));
+  
+  const tokenDecimals = selectedToken?.decimals || 18;
   const rewardAmount = parseUnits(ethReward || '0', tokenDecimals);
   
-  const usdcToken = allowedTokens.find(t => t.symbol === 'USDC');
   const usdcDecimals = usdcToken?.decimals || 6;
-  const platformFee = parseUnits(feeUsd.toString(), usdcDecimals);
+  const platformFee = qSponsorFee ? qSponsorFee : parseUnits(feeUsd.toString(), usdcDecimals);
 
   const buildCalls = () => {
     const titles = tasksBatch.filter(t => t.title && t.link).map(t => t.title);
@@ -902,7 +916,19 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
       });
     }
 
-    // 2. The main call
+    const isNativeETH = selectedTokenAddr === "0x0000000000000000000000000000000000000000";
+
+    // 2. Approve ERC20 Token for reward pool (if not Native ETH)
+    if (!isNativeETH && rewardAmount > 0n) {
+      calls.push({
+        address: selectedTokenAddr,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [CONTRACTS.DAILY_APP, rewardAmount],
+      });
+    }
+
+    // 3. The main call
     calls.push({
       address: CONTRACTS.DAILY_APP,
       abi: DAILY_APP_ABI,
@@ -912,10 +938,10 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
         titles,
         links,
         email,
-        0n, // ETH uses value: field, rewardAmount arg is for ERC20
-        rewardTokenAddr
+        isNativeETH ? 0n : rewardAmount, // ETH uses value: field, rewardAmount arg is for ERC20
+        selectedTokenAddr
       ],
-      value: rewardAmount, // Using native ETH for rewards
+      value: isNativeETH ? rewardAmount : 0n, // Using native ETH for rewards if selected
     });
 
     return calls;
@@ -1079,17 +1105,20 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Sponsorship Asset</label>
               <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/5 rounded-full">
                 <Shield size={10} className="text-slate-400" />
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Protocol Admin</span>
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Payment Token</span>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-zinc-900/50 border border-indigo-500/30 rounded-2xl">
-              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-xl">⟠</div>
-              <div>
-                <p className="text-[11px] font-black text-white uppercase tracking-widest">Ethereum (Native)</p>
-                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Fastest settlement & non-custodial payouts</p>
-              </div>
-              <Check size={16} className="ml-auto text-indigo-400" />
-            </div>
+            <select
+                value={selectedTokenAddr}
+                onChange={(e) => setSelectedTokenAddr(e.target.value)}
+                className="w-full bg-zinc-900/50 border border-indigo-500/30 rounded-2xl px-4 py-4 text-[11px] font-black uppercase tracking-widest text-white outline-none focus:border-indigo-500 appearance-none cursor-pointer"
+            >
+                {allowedTokens.map((t, idx) => (
+                    <option key={idx} value={t.address || "0x0000000000000000000000000000000000000000"} className="bg-zinc-900 text-white">
+                        {t.symbol} - {t.address === "0x0000000000000000000000000000000000000000" ? 'Native' : 'ERC20'}
+                    </option>
+                ))}
+            </select>
           </div>
 
           <div className="space-y-4 pt-4 border-t border-white/5 relative z-10">
@@ -1099,15 +1128,20 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
             </div>
             
             <div className="space-y-2">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-1.5">
-                Determine Reward Pool (ETH)
-                <span className="relative group cursor-help">
-                  <Info size={12} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 border border-white/10 rounded-xl text-[10px] font-bold text-slate-300 normal-case tracking-normal whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-xl z-50">
-                    Reward pool is paid in ETH (Native).
-                    <br />USDC value is real-time conversion.
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  Determine Reward Pool ({selectedToken?.symbol})
+                  <span className="relative group cursor-help">
+                    <Info size={12} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 border border-white/10 rounded-xl text-[10px] font-bold text-slate-300 normal-case tracking-normal whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-xl z-50">
+                      Reward pool is paid in {selectedToken?.symbol}.
+                      <br />USDC value is real-time conversion.
+                    </span>
                   </span>
-                </span>
+                </div>
+                {qMinPool && (
+                  <span className="text-[9px] text-slate-500">Min: {formatUnits(qMinPool, 18)}</span>
+                )}
               </label>
               <div className="relative">
                 <input
@@ -1118,8 +1152,8 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
                   className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-4 text-lg font-mono font-black text-indigo-400 outline-none focus:border-indigo-500 transition-all"
                   placeholder="0.01"
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
-                  <span className="text-[11px] font-black text-white px-2 py-0.5 bg-indigo-500 rounded-md mb-1">ETH</span>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end pointer-events-none">
+                  <span className="text-[11px] font-black text-white px-2 py-0.5 bg-indigo-500 rounded-md mb-1">{selectedToken?.symbol}</span>
                   {rewardUsdValue > 0 && (
                     <span className="text-[11px] font-black text-slate-500 animate-in fade-in slide-in-from-right-1 duration-300 uppercase tracking-widest">
                       ≈ ${rewardUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
@@ -1127,6 +1161,12 @@ function CreateTaskModal({ onClose, onRequestSwap }) {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* NEW TARGET PARTICIPANTS UI */}
+            <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest bg-indigo-500/10 p-3 rounded-xl border border-indigo-500/20">
+              <span className="text-indigo-400 flex items-center gap-2"><Flame size={14}/> Target Participants</span>
+              <span className="text-white text-sm">{targetParticipants} Users</span>
             </div>
           </div>
           

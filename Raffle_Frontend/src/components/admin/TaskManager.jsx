@@ -232,7 +232,7 @@ export function TaskManager() {
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
                 abi: DAILY_APP_ABI, functionName: 'buySponsorshipWithToken',
-                args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, parseUnits(sponsorRewardPerUser, 18), CONTRACTS.CREATOR_TOKEN || '0x0000000000000000000000000000000000000000']
+                args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, parseUnits((Number(sponsorRewardPerUser) * Number(sponsorTotalClaims)).toString(), 6), CONTRACTS.CREATOR_TOKEN || '0x0000000000000000000000000000000000000000']
             }),
         }];
     };
@@ -242,8 +242,8 @@ export function TaskManager() {
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
                 abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams',
-                // Contract: setSponsorshipParams(rewardPerClaim, tasksRequired, minPool, platformFee)
-                args: [parseUnits(configMinReward || '0.01', 18), BigInt(3), parseUnits(configMinPool || '5', 18), parseUnits(configPlatformFee || '1', 6)]
+                // V14: All values in USDC 6-decimal base
+                args: [parseUnits(configMinReward || '0.20', 6), BigInt(3), parseUnits(configMinPool || '2', 6), parseUnits(configPlatformFee || '2', 6)]
             }),
         }];
     };

@@ -89,12 +89,12 @@ export function useNFTTiers() {
         });
     };
 
-    const setPaymentTokenStatus = async (tokenAddr, status) => {
+    const setPaymentTokenStatus = async (tokenAddr, status, decimals = 18, symbol = '') => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setAllowedToken',
-            args: [tokenAddr, status]
+            args: [tokenAddr, status, decimals, symbol]
         });
     };
 
@@ -125,12 +125,12 @@ export function useNFTTiers() {
         });
     };
 
-    const setSponsorshipSettings = async (fee, minPool, rewardClaim, tasksGoal) => {
+    const setSponsorshipSettings = async (rewardClaim, tasksGoal, minPool, fee) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
-            functionName: 'setSettings',
-            args: [BigInt(fee), BigInt(minPool), BigInt(rewardClaim), BigInt(tasksGoal)]
+            functionName: 'setSponsorshipParams',
+            args: [BigInt(rewardClaim), BigInt(tasksGoal), BigInt(minPool), BigInt(fee)]
         });
     };
 

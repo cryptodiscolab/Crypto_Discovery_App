@@ -29,6 +29,7 @@ const MASTER_X_ABI = [
 ];
 const DAILY_APP_ABI = [
     "event TaskCompleted(address indexed user, uint256 taskId, uint256 reward, uint256 timestamp)",
+    "event RewardsClaimed(address indexed user, address indexed token, uint256 amount, uint256 timestamp)"
 ];
 
 function makeId(seed) {
@@ -245,11 +246,12 @@ async function handleSyncEvents(req, res) {
         const masterX = new ethers.Contract(masterXAddr, MASTER_X_ABI, provider);
         const dailyApp = new ethers.Contract(dailyAppAddr, DAILY_APP_ABI, provider);
 
-        const [pointEvents, taskEvents, upgradeEvents, seasonEvents] = await Promise.all([
+        const [pointEvents, taskEvents, upgradeEvents, seasonEvents, rewardEvents] = await Promise.all([
             masterX.queryFilter("PointsAwarded", fromBlock, toBlock),
             dailyApp.queryFilter("TaskCompleted", fromBlock, toBlock),
             masterX.queryFilter("TierUpgraded", fromBlock, toBlock),
             masterX.queryFilter("SeasonReset", fromBlock, toBlock),
+            dailyApp.queryFilter("RewardsClaimed", fromBlock, toBlock),
         ]);
 
         const rows = [];
@@ -336,6 +338,39 @@ async function handleSyncEvents(req, res) {
         for (const log of seasonEvents) {
             const [oldSeasonId, newSeasonId] = log.args;
             await supabase.rpc('fn_archive_and_reset_season', { p_old_season_id: Number(oldSeasonId), p_new_season_id: Number(newSeasonId) });
+        }
+
+        for (const log of rewardEvents) {
+            const [user, token, amount, timestamp] = log.args;
+            const wallet = user.toLowerCase();
+            const tokenAddr = token.toLowerCase();
+            
+            // Decimal Normalization
+            let normalizedAmount = 0;
+            let symbol = "???";
+            
+            if (tokenAddr === "0x0000000000000000000000000000000000000000") {
+                normalizedAmount = parseFloat(ethers.formatEther(amount));
+                symbol = "ETH";
+            } else if (tokenAddr === (process.env.VITE_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e").toLowerCase()) {
+                normalizedAmount = parseFloat(ethers.formatUnits(amount, 6));
+                symbol = "USDC";
+            } else {
+                // Fallback to 18 decimals for unknown tokens (like DISCO)
+                normalizedAmount = parseFloat(ethers.formatEther(amount));
+                symbol = "TOKEN";
+            }
+
+            await logActivity(supabase, {
+                wallet: wallet,
+                category: 'REWARD', // REWARD category is treated as expense/payout in Accountant Ledger
+                type: 'Token Payout',
+                description: `Claimed ${normalizedAmount} ${symbol} rewards on-chain`,
+                amount: normalizedAmount,
+                symbol: symbol,
+                txHash: log.transactionHash,
+                metadata: { token_address: tokenAddr }
+            });
         }
 
         if (rows.length > 0) {

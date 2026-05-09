@@ -200,11 +200,11 @@ export function TaskManagerTab() {
     const handleUpdateEconomy = async () => {
         const tid = toast.loading("Updating economy...");
         try {
-            // Contract: setSponsorshipParams(rewardPerClaim, tasksRequired, minPool, platformFee)
-            const rewardPerClaimVal = newMinRewardUSD ? BigInt(parseFloat(newMinRewardUSD) * 1e18) : BigInt(0.01e18);
-            const tasksRequired = BigInt(3); // Default: 3 tasks for reward
-            const pool = newMinPoolUSD ? BigInt(parseFloat(newMinPoolUSD) * 1e18) : BigInt(5e18);
-            const fee = newPlatformFee ? BigInt(parseFloat(newPlatformFee) * 1e6) : (currentPlatformFee || BigInt(1e6));
+            // V14: All values in USDC 6-decimal base
+            const rewardPerClaimVal = newMinRewardUSD ? BigInt(Math.round(parseFloat(newMinRewardUSD) * 1e6)) : BigInt(200000); // $0.20
+            const tasksRequired = BigInt(3);
+            const pool = newMinPoolUSD ? BigInt(Math.round(parseFloat(newMinPoolUSD) * 1e6)) : BigInt(2000000); // $2.00
+            const fee = newPlatformFee ? BigInt(Math.round(parseFloat(newPlatformFee) * 1e6)) : (currentPlatformFee || BigInt(2000000));
             await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams', args: [rewardPerClaimVal, tasksRequired, pool, fee] });
             toast.success("Updated!", { id: tid });
         } catch (e) { toast.error(e.shortMessage || "Failed", { id: tid }); }
@@ -240,7 +240,7 @@ export function TaskManagerTab() {
                 address: DAILY_APP_ADDRESS,
                 abi: DAILY_APP_ABI,
                 functionName: 'buySponsorshipWithToken',
-                args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, BigInt(parseFloat(rewardPerUserUSD) * 1e18), CREATOR_TOKEN_ADDR || '0x0000000000000000000000000000000000000000']
+                args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, BigInt(Math.round(parseFloat(rewardPerUserUSD) * Number(targetClaims) * 1e6)), CREATOR_TOKEN_ADDR || '0x0000000000000000000000000000000000000000']
             });
 
             if (hash) {

@@ -4,13 +4,14 @@ import {
     Landmark, RefreshCw, Calendar, TrendingUp, AlertTriangle, Wallet, ArrowRight, ExternalLink, Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { parseEther, formatEther, formatUnits } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 import { 
     MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS, ABIS
 } from '../../../lib/contracts';
 import { useSignMessage } from 'wagmi';
-import { ShieldCheck, HardDrive, DatabaseZap, FileJson } from 'lucide-react';
+import { ShieldCheck, HardDrive, DatabaseZap, FileJson, Award } from 'lucide-react';
 
 export function AccountantLedgerTab() {
     const { address } = useAccount();
@@ -31,6 +32,8 @@ export function AccountantLedgerTab() {
         monthly: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } }
     });
     const [logs, setLogs] = useState([]);
+    const [syncState, setSyncState] = useState(null);
+    const [syncLoading, setSyncLoading] = useState(false);
     
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -68,6 +71,7 @@ export function AccountantLedgerTab() {
             if (data.success) {
                 setAggregates(data.aggregates);
                 setLogs(data.logs);
+                setSyncState(data.syncState);
             } else {
                 throw new Error(data.error || 'Failed to fetch ledger');
             }
@@ -77,6 +81,33 @@ export function AccountantLedgerTab() {
             toast.error(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const triggerBlockchainSync = async () => {
+        try {
+            setSyncLoading(true);
+            const message = `Trigger Blockchain Sync at ${new Date().toISOString()}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/admin/accountant-sync`, {
+                address: address.toLowerCase(),
+                signature,
+                message,
+                action: 'accountant-sync'
+            });
+
+            if (response.data.success) {
+                toast.success('Blockchain sync triggered!');
+                fetchLedger(); // Refresh data after sync
+            } else {
+                toast.error(response.data.error || 'Sync failed');
+            }
+        } catch (err) {
+            console.error('Sync Error:', err);
+            toast.error(err.response?.data?.error || err.message);
+        } finally {
+            setSyncLoading(false);
         }
     };
 
@@ -235,9 +266,48 @@ export function AccountantLedgerTab() {
                     className="flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-white transition-all w-full md:w-auto"
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    Sync Ledger
+                    Refresh Data
+                </button>
+
+                <button
+                    onClick={triggerBlockchainSync}
+                    disabled={syncLoading}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-xl text-sm font-bold text-blue-400 transition-all w-full md:w-auto"
+                >
+                    <ShieldCheck className={`w-4 h-4 ${syncLoading ? 'animate-spin' : ''}`} />
+                    Trigger Blockchain Sync
                 </button>
             </div>
+
+            {/* Sync Status Bar */}
+            {syncState && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p className="text-xs text-white/40 uppercase tracking-wider font-bold">Last Synced Block</p>
+                            <p className="text-xl font-mono text-white mt-1">{syncState.last_synced_block}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs text-white/40 uppercase tracking-wider font-bold">Status</p>
+                            <div className="flex items-center gap-2 mt-1">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <p className="text-sm text-green-400 font-bold">Live</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p className="text-xs text-white/40 uppercase tracking-wider font-bold">Sync Freshness</p>
+                            <p className="text-sm text-white/80 mt-1">
+                                {new Date(syncState.updated_at).toLocaleString()}
+                            </p>
+                        </div>
+                        <div className="text-blue-400">
+                            <Database className="w-6 h-6 opacity-40" />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Aggregates Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

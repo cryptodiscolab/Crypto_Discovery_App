@@ -47,6 +47,33 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "ECDSAInvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "length",
+        "type": "uint256"
+      }
+    ],
+    "name": "ECDSAInvalidSignatureLength",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ECDSAInvalidSignatureS",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -265,7 +292,7 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "tier",
         "type": "uint8"
       },
@@ -340,7 +367,7 @@
       },
       {
         "indexed": false,
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "tier",
         "type": "uint8"
       },
@@ -365,13 +392,13 @@
       },
       {
         "indexed": false,
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "fromTier",
         "type": "uint8"
       },
       {
         "indexed": false,
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "toTier",
         "type": "uint8"
       }
@@ -610,7 +637,7 @@
       },
       {
         "indexed": false,
-        "internalType": "enum DailyAppV12Secured.SponsorLevel",
+        "internalType": "enum DailyAppV14.SponsorLevel",
         "name": "level",
         "type": "uint8"
       },
@@ -735,7 +762,7 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "tier",
         "type": "uint8"
       },
@@ -921,6 +948,11 @@
         "internalType": "uint256",
         "name": "_amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
       }
     ],
     "name": "addClaimableReward",
@@ -941,7 +973,7 @@
         "type": "uint256"
       },
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "_minTier",
         "type": "uint8"
       },
@@ -979,7 +1011,7 @@
         "type": "uint256[]"
       },
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier[]",
+        "internalType": "enum DailyAppV14.NFTTier[]",
         "name": "_minTiers",
         "type": "uint8[]"
       },
@@ -1007,7 +1039,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.SponsorLevel",
+        "internalType": "enum DailyAppV14.SponsorLevel",
         "name": "_level",
         "type": "uint8"
       },
@@ -1148,6 +1180,66 @@
   {
     "inputs": [
       {
+        "internalType": "address[]",
+        "name": "_users",
+        "type": "address[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "points",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalTasksCompleted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "referralCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum DailyAppV14.NFTTier",
+            "name": "currentTier",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tasksForReferralProgress",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastDailyBonusClaim",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isBlacklisted",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct DailyAppV14.UserStats[]",
+        "name": "_stats",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_maxSyncedXp",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "batchMigrateUsers",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_user",
         "type": "address"
@@ -1166,7 +1258,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.SponsorLevel",
+        "internalType": "enum DailyAppV14.SponsorLevel",
         "name": "_level",
         "type": "uint8"
       },
@@ -1238,7 +1330,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      }
+    ],
     "name": "claimRewards",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -1246,6 +1344,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
       {
         "internalType": "address",
         "name": "",
@@ -1373,7 +1476,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.SponsorLevel",
+        "internalType": "enum DailyAppV14.SponsorLevel",
         "name": "_level",
         "type": "uint8"
       }
@@ -1436,7 +1539,7 @@
             "type": "uint256"
           },
           {
-            "internalType": "enum DailyAppV12Secured.NFTTier",
+            "internalType": "enum DailyAppV14.NFTTier",
             "name": "minTier",
             "type": "uint8"
           },
@@ -1466,7 +1569,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct DailyAppV12Secured.Task",
+        "internalType": "struct DailyAppV14.Task",
         "name": "",
         "type": "tuple"
       }
@@ -1682,6 +1785,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "maxSyncedDbXp",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "minRewardPoolValue",
     "outputs": [
@@ -1697,7 +1819,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "_tier",
         "type": "uint8"
       }
@@ -1736,7 +1858,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "",
         "type": "uint8"
       }
@@ -2001,6 +2123,16 @@
         "internalType": "bool",
         "name": "_status",
         "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_decimals",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string",
+        "name": "_symbol",
+        "type": "string"
       }
     ],
     "name": "setAllowedToken",
@@ -2099,7 +2231,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier[]",
+        "internalType": "enum DailyAppV14.NFTTier[]",
         "name": "_tiers",
         "type": "uint8[]"
       },
@@ -2250,7 +2382,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "_tier",
         "type": "uint8"
       },
@@ -2268,7 +2400,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "_tier",
         "type": "uint8"
       },
@@ -2348,6 +2480,19 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_verifier",
+        "type": "address"
+      }
+    ],
+    "name": "setVerifierWallet",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_feeBP",
         "type": "uint256"
@@ -2387,7 +2532,7 @@
         "type": "address"
       },
       {
-        "internalType": "enum DailyAppV12Secured.SponsorLevel",
+        "internalType": "enum DailyAppV14.SponsorLevel",
         "name": "level",
         "type": "uint8"
       },
@@ -2402,7 +2547,7 @@
         "type": "uint256"
       },
       {
-        "internalType": "enum DailyAppV12Secured.RequestStatus",
+        "internalType": "enum DailyAppV14.RequestStatus",
         "name": "status",
         "type": "uint8"
       },
@@ -2410,6 +2555,16 @@
         "internalType": "uint256",
         "name": "timestamp",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "rewardToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "rewardDecimals",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -2470,6 +2625,29 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "totalDbXp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      }
+    ],
+    "name": "syncOffchainXP",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -2517,7 +2695,7 @@
         "type": "uint256"
       },
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "minTier",
         "type": "uint8"
       },
@@ -2566,7 +2744,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "",
         "type": "uint8"
       }
@@ -2576,6 +2754,35 @@
       {
         "internalType": "string",
         "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "tokenConfigs",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "allowed",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "decimals",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string",
+        "name": "symbol",
         "type": "string"
       }
     ],
@@ -2679,7 +2886,7 @@
   {
     "inputs": [
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "_tier",
         "type": "uint8"
       },
@@ -2727,7 +2934,7 @@
         "type": "address"
       },
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "_tier",
         "type": "uint8"
       }
@@ -2820,7 +3027,7 @@
         "type": "uint256"
       },
       {
-        "internalType": "enum DailyAppV12Secured.NFTTier",
+        "internalType": "enum DailyAppV14.NFTTier",
         "name": "currentTier",
         "type": "uint8"
       },
@@ -2838,6 +3045,19 @@
         "internalType": "bool",
         "name": "isBlacklisted",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "verifierWallet",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

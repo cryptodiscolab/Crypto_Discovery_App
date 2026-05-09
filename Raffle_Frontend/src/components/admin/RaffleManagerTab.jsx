@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal, Users, Clock, ArrowRight, Megaphone } from 'lucide-react';
+import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal, Users, Clock, ArrowRight, Megaphone, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
 import { AdminTransactionButton } from './AdminTransactionButton';
@@ -8,7 +8,7 @@ import { RAFFLE_ABI, CONTRACTS } from '../../lib/contracts';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../../hooks/useRaffle';
 import toast from 'react-hot-toast';
 
-const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE || "0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3";
+const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE;
 
 function AdminRaffleCreateForm() {
     const { address } = useAccount();
@@ -235,28 +235,197 @@ function AdminRaffleCreateForm() {
     );
 }
 
-export function RaffleManagerTab() {
-    const { raffleIds } = useRaffleList();
-    const [winners, setWinners] = useState([]);
-    const [loadingWinners, setLoadingWinners] = useState(false);
+import { supabase } from '../../lib/supabaseClient';
 
-    const fetchWinners = async () => {
-        setLoadingWinners(true);
+function CreatorEarningsCard() {
+    const { address } = useAccount();
+    const { data: balance, refetch } = useReadContract({
+        address: RAFFLE_ADDRESS,
+        abi: RAFFLE_ABI,
+        functionName: 'sponsorBalances',
+        args: [address],
+        query: { enabled: !!address }
+    });
+
+    const calls = [{
+        to: RAFFLE_ADDRESS,
+        abi: RAFFLE_ABI,
+        functionName: 'withdrawSponsorBalance',
+    }];
+
+    if (!address || !balance || balance === 0n) return null;
+
+    return (
+        <div className="glass-card p-6 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border-emerald-500/20 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-emerald-500/5">
+            <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                    <Trophy className="w-8 h-8 text-emerald-400" />
+                </div>
+                <div>
+                    <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-1">Creator Earnings Available</h3>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-black text-white">{(Number(balance) / 1e18).toFixed(4)}</span>
+                        <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">ETH</span>
+                    </div>
+                    <p className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-wider">Accumulated from 80% Ticket Revenue share</p>
+                </div>
+            </div>
+
+            <AdminTransactionButton 
+                calls={calls}
+                onSuccess={() => {
+                    toast.success("Earnings withdrawn successfully!");
+                    refetch();
+                }}
+                text="WITHDRAW EARNINGS"
+                className="w-full md:w-auto px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-emerald-900/40 active:scale-95 transition-all"
+            />
+        </div>
+    );
+}
+
+function AdminRaffleSettings() {
+    const { address } = useAccount();
+    const [fees, setFees] = useState({ rake: '20', claim: '5', surcharge: '10' });
+    
+    // Fetch current settings
+    const { data: rake } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'maintenanceFeeBP' });
+    const { data: claim } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'claimFeeBP' });
+    const { data: surcharge } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'surchargeBP' });
+
+    useEffect(() => {
+        if (rake !== undefined) setFees(f => ({ ...f, rake: (Number(rake) / 100).toString() }));
+        if (claim !== undefined) setFees(f => ({ ...f, claim: (Number(claim) / 100).toString() }));
+        if (surcharge !== undefined) setFees(f => ({ ...f, surcharge: (Number(surcharge) / 100).toString() }));
+    }, [rake, claim, surcharge]);
+
+    const calls = [{
+        to: RAFFLE_ADDRESS,
+        abi: RAFFLE_ABI,
+        functionName: 'setRaffleFees',
+        args: [
+            BigInt(Number(fees.rake) * 100),
+            BigInt(Number(fees.claim) * 100),
+            BigInt(Number(fees.surcharge) * 100)
+        ]
+    }];
+
+    return (
+        <div className="glass-card p-8 bg-slate-900/40 border-white/5 rounded-[2.5rem] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-6 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000">
+                <ShieldCheck className="w-40 h-40 text-white" />
+            </div>
+            
+            <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-slate-800/50 flex items-center justify-center border border-white/10">
+                    <ShieldCheck className="w-6 h-6 text-slate-400" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">PROTOCOL <span className="text-indigo-500">ECONOMICS</span></h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Platform Fee Configuration</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Project Rake (%)</label>
+                    <div className="relative">
+                        <input type="number" value={fees.rake} onChange={e => setFees({...fees, rake: e.target.value})}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-black focus:border-indigo-500/50 outline-none" />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">BP: {Number(fees.rake)*100}</span>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Claim Fee (%)</label>
+                    <div className="relative">
+                        <input type="number" value={fees.claim} onChange={e => setFees({...fees, claim: e.target.value})}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-black focus:border-emerald-500/50 outline-none" />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">BP: {Number(fees.claim)*100}</span>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Gas Surcharge (%)</label>
+                    <div className="relative">
+                        <input type="number" value={fees.surcharge} onChange={e => setFees({...fees, surcharge: e.target.value})}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-black focus:border-amber-500/50 outline-none" />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">BP: {Number(fees.surcharge)*100}</span>
+                    </div>
+                </div>
+            </div>
+
+            <AdminTransactionButton 
+                calls={calls}
+                onSuccess={() => toast.success("Protocol fees updated!")}
+                text="UPDATE PROTOCOL FEES"
+                className="w-full bg-white/5 hover:bg-white/10 py-5 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.3em] border border-white/10 transition-all active:scale-[0.98]"
+            />
+        </div>
+    );
+}
+
+export function RaffleManagerTab() {
+    const [raffles, setRaffles] = useState([]);
+    const [recentTickets, setRecentTickets] = useState([]);
+    const [winners, setWinners] = useState([]);
+    const [loadingData, setLoadingData] = useState(true);
+    const { address } = useAccount();
+
+    const fetchData = async () => {
+        setLoadingData(true);
         try {
+            // Fetch all raffles from DB
+            const { data: raffleData } = await supabase
+                .from('raffles')
+                .select('*')
+                .order('id', { ascending: false })
+                .limit(50);
+            
+            if (raffleData) setRaffles(raffleData);
+
+            // Fetch recent ticket purchases
+            const { data: ticketData } = await supabase
+                .from('raffle_tickets')
+                .select('raffle_id, wallet_address, ticket_count, created_at')
+                .order('created_at', { ascending: false })
+                .limit(10);
+            
+            if (ticketData) setRecentTickets(ticketData);
+
+            // Fetch winners
             const res = await fetch('/api/raffle/leaderboard');
             const data = await res.json();
             if (data.success) setWinners(data.data || []);
         } catch (e) {
-            console.warn('Winner fetch failed:', e.message);
+            console.warn('Admin fetch failed:', e.message);
         } finally {
-            setLoadingWinners(false);
+            setLoadingData(false);
         }
     };
 
-    useEffect(() => { fetchWinners(); }, []);
+    useEffect(() => { 
+        fetchData(); 
+        
+        // Setup real-time subscription for new tickets
+        const sub = supabase
+            .channel('public:raffle_tickets')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'raffle_tickets' }, payload => {
+                setRecentTickets(prev => [payload.new, ...prev].slice(0, 10));
+                toast(`New Ticket Purchased!`, { icon: '🎟️' });
+            })
+            .subscribe();
+            
+        return () => supabase.removeChannel(sub);
+    }, []);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="space-y-8">
+            <CreatorEarningsCard />
+            
+            {/* Admin Controls - Only visible to admin/owner */}
+            {/* For simplicity we show it, but usually you'd check if (address === CONTRACT_OWNER) */}
+            <AdminRaffleSettings />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
                 {/* Create Raffle */}
                 <div className="glass-card p-8 bg-indigo-950/10 border-indigo-500/10 rounded-[2.5rem] relative overflow-hidden group">
@@ -277,6 +446,25 @@ export function RaffleManagerTab() {
                     <AdminRaffleCreateForm />
                 </div>
 
+                {/* Live Tickets Feed */}
+                {recentTickets.length > 0 && (
+                    <div className="glass-card p-6 bg-emerald-900/10 border-emerald-500/10 rounded-3xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest">LIVE TICKET PURCHASES</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            {recentTickets.map((t, i) => (
+                                <div key={i} className="px-4 py-2 bg-black/40 border border-emerald-500/20 rounded-xl flex items-center gap-2">
+                                    <Ticket size={12} className="text-emerald-500" />
+                                    <span className="text-[10px] font-mono text-white">{t.wallet_address.slice(0, 6)}...</span>
+                                    <span className="text-[10px] text-slate-400">bought {t.ticket_count} for #{t.raffle_id}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Raffle List */}
                 <div className="glass-card p-8 bg-slate-900/10 border-white/5 rounded-[2.5rem]">
                     <div className="flex items-center justify-between mb-8">
@@ -285,24 +473,31 @@ export function RaffleManagerTab() {
                                 <Trophy className="w-6 h-6 text-amber-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">ON-CHAIN <span className="text-amber-500">RAFFLES</span></h3>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Live management & Winners</p>
+                                <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">DATABASE <span className="text-amber-500">RAFFLES</span></h3>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Live Indexed Management</p>
                             </div>
                         </div>
-                        <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL: {raffleIds?.length ?? 0}</span>
+                        <div className="flex items-center gap-3">
+                            <button onClick={fetchData} className={`p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all ${loadingData ? 'animate-spin' : ''}`}>
+                                <RefreshCw className="w-4 h-4" />
+                            </button>
+                            <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL: {raffles.length}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {!raffleIds || raffleIds.length === 0 ? (
+                    {loadingData ? (
+                        <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-500/30" /></div>
+                    ) : raffles.length === 0 ? (
                         <div className="py-20 text-center glass-card bg-white/2 border-white/5 rounded-3xl">
                             <Ticket className="w-12 h-12 text-slate-800 mx-auto mb-4 opacity-20" />
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">No raffles found in contract.</p>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">No indexed raffles found.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
-                            {[...raffleIds].reverse().map(id => (
-                                <AdminRaffleRow key={id.toString()} raffleId={id} />
+                            {raffles.map(r => (
+                                <AdminRaffleRow key={r.id.toString()} raffleId={r.id} />
                             ))}
                         </div>
                     )}

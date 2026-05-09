@@ -58,8 +58,9 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     uint256 public pointsRaffleTicket = 15;
     uint256 public maxTicketsPerUser = 1000; 
     uint256 public maxParticipants = 10000;
-    uint256 public maintenanceFeeBP = 2000; // 20% Rake
-    uint256 public surchargeBP = 500; // 5% default
+    uint256 public maintenanceFeeBP = 2000; // 20% rake from sales
+    uint256 public claimFeeBP = 500;       // 5% fee from prizes (User Request #3)
+    uint256 public surchargeBP = 1000;      // 10% gas surcharge on purchase
     
     // Reward XP values
     uint256 public raffleCreateXP = 200;
@@ -253,9 +254,10 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
             require(success, "Rake transfer failed");
         }
 
-        // 3. Credit Sponsor (80% of sales + original PrizePool deposit)
+        // 3. Credit Sponsor (80% of sales)
+        // Note: raffle.prizePool is reserved for winners.
         if (raffle.sponsor != address(0)) {
-            sponsorBalances[raffle.sponsor] += (sponsorShare + raffle.prizePool);
+            sponsorBalances[raffle.sponsor] += sponsorShare;
         } else {
             // Admin Raffle: Ticket revenue becomes the prize
             raffle.prizePool += sponsorShare;
@@ -315,31 +317,41 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     function claimRafflePrize(uint256 raffleId) external nonReentrant {
         RaffleData storage raffle = raffles[raffleId];
         require(raffle.isFinalized, "Not finalized");
+        require(!hasClaimedPrize[raffleId][msg.sender], "Already claimed");
         
-        // Check if user is a winner
-        bool isWinner = false;
+        // Calculate total wins for this user
+        uint256 winCount = 0;
         uint256 winnersLen = raffle.winners.length;
         for (uint256 i = 0; i < winnersLen; i++) {
             if (raffle.winners[i] == msg.sender) {
-                isWinner = true;
-                break;
+                winCount++;
             }
         }
-        require(isWinner, "Not a winner");
-        require(!hasClaimedPrize[raffleId][msg.sender], "Already claimed");
+        
+        require(winCount > 0, "Not a winner");
+        uint256 totalPrize = raffle.prizePerWinner * winCount;
+        require(totalPrize > 0, "No prize");
 
-        uint256 prize = raffle.prizePerWinner;
-        require(prize > 0, "No prize");
+        // Calculate and deduct Platform Claim Fee (User Request #3)
+        uint256 claimFee = (totalPrize * claimFeeBP) / 10000;
+        uint256 netPrize = totalPrize - claimFee;
 
         hasClaimedPrize[raffleId][msg.sender] = true;
         
-        // EXTRA POINTS for Claiming Raffle Winner activity
+        // 1. Send Claim Fee to Owner
+        if (claimFee > 0) {
+            (bool fs, ) = payable(owner()).call{value: claimFee}("");
+            require(fs, "Claim fee transfer failed");
+        }
+
+        // 2. EXTRA POINTS for Claiming Raffle Winner activity
         masterContract.addPoints(msg.sender, raffleClaimXP, "Claim Raffle Prize");
 
-        (bool s, ) = payable(msg.sender).call{value: prize}("");
+        // 3. Send Net Prize to Winner
+        (bool s, ) = payable(msg.sender).call{value: netPrize}("");
         require(s, "Transfer failed");
 
-        emit RaffleWinner(raffleId, msg.sender, prize);
+        emit RaffleWinner(raffleId, msg.sender, netPrize);
     }
 
     /**
@@ -384,10 +396,12 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     function unpause() external onlyOwner { _unpause(); }
     function setMaster(address _m) external onlyOwner { masterContract = ICryptoDiscoMaster(_m); }
 
-    function setRaffleFees(uint256 _rakeBP, uint256 _surchargeBP) external onlyOwner {
+    function setRaffleFees(uint256 _rakeBP, uint256 _claimFeeBP, uint256 _surchargeBP) external onlyOwner {
         require(_rakeBP <= 5000, "Rake too high");
+        require(_claimFeeBP <= 2000, "Claim fee too high");
         require(_surchargeBP <= 2000, "Surcharge too high");
         maintenanceFeeBP = _rakeBP;
+        claimFeeBP = _claimFeeBP;
         surchargeBP = _surchargeBP;
     }
 

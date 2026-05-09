@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, BarChart, Plus, TrendingUp, Cpu, Database, Coins, Settings, RefreshCw, ArrowUpRight, Landmark, Clock, ShieldCheck } from 'lucide-react';
+import { Zap, BarChart, Plus, TrendingUp, Cpu, Database, Coins, Settings, RefreshCw, ArrowUpRight, Landmark, Clock, ShieldCheck, Save, Activity } from 'lucide-react';
 import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI, RAFFLE_ABI, SAFE_MULTISIG } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
@@ -34,6 +34,13 @@ export function BlockchainConfigSection() {
         reward: '0.01', // 0.01
         tasks: '3'
     });
+    const [sponsorSettings, setSponsorSettings] = useState({
+        fee: '2', // 2 USDC (Platform Fee)
+        minPool: '0.0006', // ~ $2 USD dalam ETH (Sponsor Reward Pool)
+        reward: '0.00006', // ~ $0.2 USD dalam ETH (Reward User per 3 tugas)
+        tasks: '3'
+    });
+    const [withdrawFee, setWithdrawFee] = useState('100');
     const [withdrawAmount, setWithdrawAmount] = useState('0.1');
     const [poolFormData, setPoolFormData] = useState({
         targetUSDC: 5000,
@@ -135,6 +142,13 @@ export function BlockchainConfigSection() {
         if (qXpCreate) setRaffleXp(prev => ({ ...prev, create: qXpCreate.toString() }));
         if (qXpClaim) setRaffleXp(prev => ({ ...prev, claim: qXpClaim.toString() }));
         if (qXpPurchase) setRaffleXp(prev => ({ ...prev, purchase: qXpPurchase.toString() }));
+
+        if (qSponsorFee) setSponsorSettings(prev => ({ ...prev, fee: (Number(qSponsorFee) / 1e6).toString() }));
+        if (qMinPool) setSponsorSettings(prev => ({ ...prev, minPool: formatUnits(qMinPool, 18) }));
+        if (qRewardClaim) setSponsorSettings(prev => ({ ...prev, reward: formatUnits(qRewardClaim, 18) }));
+        if (qTasksGoal) setSponsorSettings(prev => ({ ...prev, tasks: qTasksGoal.toString() }));
+        if (qWithdrawFee) setWithdrawFee(qWithdrawFee.toString());
+        if (qAutoApprove !== undefined) setAutoApprove(qAutoApprove);
 
         if (qOwner) setEconShares(prev => ({ ...prev, owner: qOwner.toString() }));
         if (qOps) setEconShares(prev => ({ ...prev, ops: qOps.toString() }));
@@ -964,7 +978,7 @@ export function BlockchainConfigSection() {
                                                 <button 
                                                     onClick={() => {
                                                         const p = { address: token.address, chain_id: token.chain_id };
-                                                        handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [p.address, false]);
+                                                        handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [p.address, false, 18, '']);
                                                         handleSyncTokenToDb('REMOVE_TOKEN_DB', p);
                                                     }}
                                                     className="text-red-400 hover:text-red-300 font-bold uppercase"
@@ -1007,7 +1021,7 @@ export function BlockchainConfigSection() {
                             <button 
                                 onClick={() => {
                                     if (!newTokenWhitelist.address || !newTokenWhitelist.symbol) return toast.error("Missing fields");
-                                    handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist.address, true]);
+                                    handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist.address, true, parseInt(newTokenWhitelist.decimals) || 18, newTokenWhitelist.symbol || '']);
                                     handleSyncTokenToDb('WHITELIST_TOKEN_DB', {
                                         ...newTokenWhitelist,
                                         decimals: parseInt(newTokenWhitelist.decimals),

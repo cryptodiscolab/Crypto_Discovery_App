@@ -1,3 +1,6 @@
+- **v3.59.5**: Raffle Admin Hardening & Platform Economics. Implementasi `AdminRaffleSettings` (Rake, Claim Fee, Surcharge), `CreatorEarningsCard` untuk penarikan revenue sponsor (80%), dan penegakan **Zero-Hardcode Mandate** pada seluruh form pembuatan raffle.
+- **v3.59.4**: Final Polish & Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added `daily_task_completion` reward keys.
+- **v3.59.3**: Multi-Token Sponsorship (V14) & Decimal-Aware Infrastructure. Implementasi DailyApp V14 dengan 6-decimal USDC base, reward mapping 2D (user => token => reward), dan perbaikan persistensi visibilitas SponsoredTaskCard.
 - **v3.59.2**: Ecosystem Hardening & Parity Audit. Implementasi **Hardening Center** di Accountant Ledger, penegakan **SBT-Gating** pada Leaderboard, dan integrasi **Parity Audit API** dengan Runtime ABI Guards.
 - **v3.59.1**: Ecosystem Infrastructure Hardening & Zero-Hardcode Sync. Refactor `abis_data.txt` untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.
 - **v3.58.0**: Lurah Ecosystem Hardening & Autonomous Agent Resiliency. Implementasi **Auto-Retry logic** pada RPC, heartbeat dinamis di `system_health`, dan eliminasi hardcoded addresses.
@@ -150,6 +153,7 @@ flowchart LR
 
 | Contract | Address | Governance |
 |---|---|---|
+| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` |
 | **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` |
 | **MasterX (XP)** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` |
 | **Raffle** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` |
@@ -955,4 +959,26 @@ Setiap agen yang mengelola tugas berantai (Multi-Action) atau distribusi reward 
 - **Manual Sync**: Gunakan tombol "Batch Sync" jika terdeteksi drift > 1% pada Top 50 users.
 
 ---
-*End of Task Feature Workflow - Nexus v3.59.2 Locked.*
+
+## 22. DailyApp V14 Multi-Token Sponsorship & Decimal Normalization (v3.59.3)
+
+Peningkatan infrastruktur sponsor untuk mendukung ekonomi multi-aset dan normalisasi parameter moneter.
+
+### 22.1 Multi-Token Rewards
+- **Storage Strategy**: Reward disimpan di `mapping(address => mapping(address => uint256)) public claimableRewards` (user => token => amount).
+- **Default Tokens**: USDC (Base) dan ETH.
+- **Claim Logic**: User memanggil `claimRewards(tokenAddress)` secara spesifik untuk menarik saldo per-token.
+
+### 22.2 Decimal Normalization (6-Decimal Base)
+Seluruh parameter ekonomi dikonfigurasi menggunakan basis **6-desimal** (USDC-native) untuk menghindari fragmentasi unit.
+- **buySponsorshipWithToken**: Mengonversi deposit token ke 6-desimal internal.
+  - ETH (18 dec) -> Normalisasi ke 6 dec.
+  - USDC (6 dec) -> Langsung.
+- **Validation**: Pengecekan `minPool` (threshold minimal sponsor) dilakukan terhadap nilai hasil normalisasi ini.
+
+### 22.3 UI Persistence Mandate
+- **Card Visibility**: `SponsoredTaskCard` tidak boleh menghilang hanya karena user sudah menyelesaikan tugas.
+- **Enforcement**: Kartu tetap ditampilkan selama `claimableRewards(user, token) > 0` untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.
+
+---
+*End of Task Feature Workflow - Nexus v3.59.3 LOCKED.*

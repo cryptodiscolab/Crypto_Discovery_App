@@ -34,7 +34,7 @@ export function QuickSponsorPortalSection({
                 </div>
                 <p className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em] leading-relaxed">
                     Listing Fee: <span className="text-white">${formatUnits(platformFee || 1000000n, 6)} USDC</span>.
-                    Min Reward $ / User: <span className="text-green-500">${formatUnits(minRewardUSD || 10000000000000000n, 18)}</span>.
+                    Min Reward $ / User: <span className="text-green-500">${formatUnits(minRewardUSD || 200000n, 6)}</span>.
                 </p>
             </div>
 
@@ -87,10 +87,10 @@ export function QuickSponsorPortalSection({
             </div>
 
             <AdminTransactionButton 
-                disabled={totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 18))}
+                disabled={totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 6))}
                 calls={buildSponsorCall()} 
                 onSuccess={handleTxSuccess}
-                text={totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 18)) ? `MIN POOL $${formatUnits(minPoolUSD || 5000000000000000000n, 18)} REQUIRED` : `REQUEST SPONSORSHIP ($${totalPoolUSD.toFixed(2)})`}
+                text={totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 6)) ? `MIN POOL $${formatUnits(minPoolUSD || 2000000n, 6)} REQUIRED` : `REQUEST SPONSORSHIP ($${totalPoolUSD.toFixed(2)})`}
                 className="w-full py-4 bg-white hover:bg-slate-100 text-black rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-30 disabled:grayscale transition-all"
             />
         </div>

@@ -1,4 +1,4 @@
-<h1>📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.2)</h1>
+<h1>📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.5)</h1>
 <p><strong>Status</strong>: 🛡️ ARCHITECTURALLY HARDENED
 <strong>Description</strong>: Sistem pencatatan keuangan ganda (double-entry audit trail) dan pusat kendali paritas on-chain untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).</p>
 <hr>
@@ -89,8 +89,22 @@
 <li><strong>Alur</strong>: <code>UI (AccountantLedgerTab)</code> -&gt; <code>useSBT (hook)</code> -&gt; <code>Contract (DailyApp/Raffle)</code> -&gt; <code>Transfer to SAFE_MULTISIG</code>.</li>
 <li><strong>Security</strong>: Hanya wallet dengan role Admin/Owner yang dapat mengeksekusi penarikan ini.</li>
 </ul>
+<h2>5. Multi-Token Audit Protocol (V14.1)</h2>
+<p>Sistem Ledger kini mendukung audit multi-token otomatis (USDC/ETH) dengan standar sinkronisasi event-driven:</p>
+<ol>
+<li><strong>On-Chain Event SOT</strong>:<ul>
+<li><code>SponsorshipRequested</code>: Mencatat pemasukan fee platform (USDC).</li>
+<li><code>RewardsClaimed</code>: Mencatat pengeluaran hadiah pengguna (USDC/ETH/DISCO). <em>Diperkenalkan di V14.1</em>.</li>
+</ul>
+</li>
+<li><strong>Decimal Normalization Engine</strong>:<ul>
+<li>Seluruh jumlah dana dinormalisasi secara otomatis berdasarkan desimal token (USDC=6, ETH=18) sebelum dicatat ke <code>user_activity_logs</code>.</li>
+<li>Payout dicatat dalam kategori <code>REWARD</code> dan ditampilkan sebagai pengeluaran (expense) di dashboard.</li>
+</ul>
+</li>
+</ol>
 <hr>
-<h2>5. Ecosystem Hardening Center (v3.59.2)</h2>
+<h2>6. Ecosystem Hardening Center (v3.59.4)</h2>
 <p>Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah terjadinya &quot;Data Drift&quot; pada XP dan Tier pengguna.</p>
 <h3>📍 Fitur Utama:</h3>
 <ol>
@@ -101,9 +115,64 @@
 <li><strong>Sync NFT URIs</strong>: Sinkronisasi metadata IPFS (Pinata) dari database ke kontrak on-chain.</li>
 </ul>
 </li>
+<li><strong>Manual Ledger Sync Protocol</strong>:<ul>
+<li><strong>On-Demand Trigger</strong>: Memungkinkan admin memicu sinkronisasi event blockchain (<code>accountant-sync</code>) secara manual untuk mengatasi kegagalan cron otomatis.</li>
+<li><strong>Block Height Visibility</strong>: Dashboard menampilkan <code>last_synced_block</code> dan menghitung selisih (<em>drift</em>) terhadap <code>current_block</code> jaringan.</li>
+<li><strong>Freshness Indicator</strong>: Memberikan feedback visual (Success/Warning) berdasarkan usia sinkronisasi terakhir untuk menjamin kemutakhiran data audit.</li>
+</ul>
+</li>
 </ol>
 <hr>
-<h2>6. Panduan Integrasi Modul Baru</h2>
+<hr>
+<h2>7. Raffle Economy Architecture (v3.59.5)</h2>
+<p>Ekosistem Raffle menggunakan sistem biaya tiga lapis untuk menjamin keberlanjutan operasional dan profitabilitas platform:</p>
+<table>
+<thead>
+<tr>
+<th>Komponen Biaya</th>
+<th>Nominal (Default)</th>
+<th>Pihak yang Membayar</th>
+<th>Tujuan</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Project Rake</strong></td>
+<td>20%</td>
+<td>Creator (dari Tiket)</td>
+<td>Revenue murni platform dari penjualan tiket.</td>
+</tr>
+<tr>
+<td><strong>Gas Surcharge</strong></td>
+<td>10%</td>
+<td>Creator (saat Create)</td>
+<td>Biaya operasional gas untuk API3 QRNG (Randomness).</td>
+</tr>
+<tr>
+<td><strong>Claim Fee</strong></td>
+<td>5%</td>
+<td>Pemenang (saat Claim)</td>
+<td>Biaya pemrosesan klaim dan maintenance hadiah.</td>
+</tr>
+</tbody></table>
+<h3>📍 Mekanisme Aliran Dana:</h3>
+<ol>
+<li><strong>Ticket Sales (80/20 Split)</strong>:<ul>
+<li>80% Masuk ke <code>sponsorBalances</code> (Internal mapping) -&gt; Dapat ditarik oleh Creator via Dashboard.</li>
+<li>20% Masuk ke <code>owner()</code> (Admin) -&gt; Dikirim otomatis saat <code>_finalizeRaffle</code>.</li>
+</ul>
+</li>
+<li><strong>Creation Surcharge</strong>:<ul>
+<li>10% Dipotong dari deposit awal creator -&gt; Dikirim otomatis ke <code>masterContract</code> (Operasional).</li>
+</ul>
+</li>
+<li><strong>Prize Payout</strong>:<ul>
+<li>Dana hadiah disimpan aman di kontrak hingga diklaim.</li>
+<li>Saat klaim, 5% dipotong untuk Admin, 95% dikirim ke Pemenang.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2>8. Panduan Integrasi Modul Baru</h2>
 <p>Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang <strong>WAJIB</strong> mengikuti langkah berikut:</p>
 <ol>
 <li><strong>Emit Log di Database</strong>: Gunakan kategori <code>PURCHASE</code> untuk setiap revenue.</li>
@@ -111,4 +180,4 @@
 <li><strong>Automatic Inclusion</strong>: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.</li>
 </ol>
 <hr>
-<p><em>End of Accountant Ledger SOT - Nexus v3.59.2 Locked.</em></p>
+<p><em>End of Accountant Ledger SOT - Nexus v3.59.5 Locked.</em></p>

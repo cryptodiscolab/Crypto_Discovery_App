@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
-import { ABIS, MASTER_X_ADDRESS } from '../lib/contracts';
+import { ABIS, MASTER_X_ADDRESS, DAILY_APP_ADDRESS } from '../lib/contracts';
 import toast from 'react-hot-toast';
 
 export function useSBT() {

@@ -120,7 +120,9 @@ export function UgcConfigSection() {
                 try {
                     const errData = await response.json();
                     if (errData.error) errorMsg = errData.error;
-                } catch(e) {}
+                } catch(e) {
+                    console.error('Failed to parse error response:', e);
+                }
                 throw new Error(errorMsg);
             }
             

@@ -1,4 +1,4 @@
-# 📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.2)
+# 📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.59.5)
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 **Description**: Sistem pencatatan keuangan ganda (double-entry audit trail) dan pusat kendali paritas on-chain untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).
 
@@ -49,9 +49,19 @@ Admin memiliki otoritas untuk menarik akumulasi dana ETH dari kontrak operasiona
 - **Alur**: `UI (AccountantLedgerTab)` -> `useSBT (hook)` -> `Contract (DailyApp/Raffle)` -> `Transfer to SAFE_MULTISIG`.
 - **Security**: Hanya wallet dengan role Admin/Owner yang dapat mengeksekusi penarikan ini.
 
+## 5. Multi-Token Audit Protocol (V14.1)
+Sistem Ledger kini mendukung audit multi-token otomatis (USDC/ETH) dengan standar sinkronisasi event-driven:
+
+1.  **On-Chain Event SOT**:
+    - `SponsorshipRequested`: Mencatat pemasukan fee platform (USDC).
+    - `RewardsClaimed`: Mencatat pengeluaran hadiah pengguna (USDC/ETH/DISCO). *Diperkenalkan di V14.1*.
+2.  **Decimal Normalization Engine**:
+    - Seluruh jumlah dana dinormalisasi secara otomatis berdasarkan desimal token (USDC=6, ETH=18) sebelum dicatat ke `user_activity_logs`.
+    - Payout dicatat dalam kategori `REWARD` dan ditampilkan sebagai pengeluaran (expense) di dashboard.
+
 ---
 
-## 5. Ecosystem Hardening Center (v3.59.2)
+## 6. Ecosystem Hardening Center (v3.59.4)
 Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah terjadinya "Data Drift" pada XP dan Tier pengguna.
 
 ### 📍 Fitur Utama:
@@ -60,10 +70,37 @@ Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah t
     *   **Sync XP**: Memperbarui status poin di kontrak MasterX berdasarkan data database.
     *   **Sync Tiers**: Memaksa pembaruan tier di blockchain jika terdeteksi inkonsistensi.
     *   **Sync NFT URIs**: Sinkronisasi metadata IPFS (Pinata) dari database ke kontrak on-chain.
+3.  **Manual Ledger Sync Protocol**:
+    *   **On-Demand Trigger**: Memungkinkan admin memicu sinkronisasi event blockchain (`accountant-sync`) secara manual untuk mengatasi kegagalan cron otomatis.
+    *   **Block Height Visibility**: Dashboard menampilkan `last_synced_block` dan menghitung selisih (*drift*) terhadap `current_block` jaringan.
+    *   **Freshness Indicator**: Memberikan feedback visual (Success/Warning) berdasarkan usia sinkronisasi terakhir untuk menjamin kemutakhiran data audit.
 
 ---
 
-## 6. Panduan Integrasi Modul Baru
+---
+
+## 7. Raffle Economy Architecture (v3.59.5)
+Ekosistem Raffle menggunakan sistem biaya tiga lapis untuk menjamin keberlanjutan operasional dan profitabilitas platform:
+
+| Komponen Biaya | Nominal (Default) | Pihak yang Membayar | Tujuan |
+|---|---|---|---|
+| **Project Rake** | 20% | Creator (dari Tiket) | Revenue murni platform dari penjualan tiket. |
+| **Gas Surcharge** | 10% | Creator (saat Create) | Biaya operasional gas untuk API3 QRNG (Randomness). |
+| **Claim Fee** | 5% | Pemenang (saat Claim) | Biaya pemrosesan klaim dan maintenance hadiah. |
+
+### 📍 Mekanisme Aliran Dana:
+1.  **Ticket Sales (80/20 Split)**:
+    *   80% Masuk ke `sponsorBalances` (Internal mapping) -> Dapat ditarik oleh Creator via Dashboard.
+    *   20% Masuk ke `owner()` (Admin) -> Dikirim otomatis saat `_finalizeRaffle`.
+2.  **Creation Surcharge**:
+    *   10% Dipotong dari deposit awal creator -> Dikirim otomatis ke `masterContract` (Operasional).
+3.  **Prize Payout**:
+    *   Dana hadiah disimpan aman di kontrak hingga diklaim.
+    *   Saat klaim, 5% dipotong untuk Admin, 95% dikirim ke Pemenang.
+
+---
+
+## 8. Panduan Integrasi Modul Baru
 Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang **WAJIB** mengikuti langkah berikut:
 
 1.  **Emit Log di Database**: Gunakan kategori `PURCHASE` untuk setiap revenue.
@@ -71,4 +108,4 @@ Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi k
 3.  **Automatic Inclusion**: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.
 
 ---
-*End of Accountant Ledger SOT - Nexus v3.59.2 Locked.*
+*End of Accountant Ledger SOT - Nexus v3.59.5 Locked.*

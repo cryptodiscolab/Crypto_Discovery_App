@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.2)
-**Last Updated**: 2026-05-08T22:45:00+07:00 — Ecosystem Hardening & Parity Audit (v3.59.2)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.5)
+**Last Updated**: 2026-05-10T02:30:00+07:00 — Raffle Economics & Creator Portal (v3.59.5)
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -12,7 +12,8 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 | Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
 | :--- | :--- | :--- | :--- |
 | **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
-| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Satellite Tugas (Social Verify, Tasks). V13.2 Fixed Mapping Revert. |
+| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | 09 Mei 2026 | Satellite Tugas Multi-Token (USDC/ETH). Decimal-Aware (6-dec base). |
+| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Legacy Satellite. Masih didukung untuk klaim reward lama. |
 | **Raffle Manager** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
 
@@ -153,6 +154,9 @@ Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi selu
 8. [ ] **Contract Call Parity**: Setiap contract write call HARUS menggunakan contract yang SAMA dengan sumber data read-nya. Mint data dari DAILY_APP → write ke DAILY_APP (v3.47.1).
 9. [ ] **SDK Error Visibility**: Setiap async SDK call (Li.Fi, Neynar, etc.) HARUS memiliki visible error state di UI jika gagal, bukan hanya console.error (v3.47.1).
 10. [ ] **Concurrent UI Performance**: Seluruh modal dengan hook berat (Wagmi, Li.Fi) WAJIB menggunakan `startTransition` untuk mencegah pemblokiran main thread (v3.56.0).
+11. [ ] **Zero-Hardcode Enforcement**: Seluruh input alamat kontrak di UI harus dinamis dan diambil dari Registry `CONTRACTS` atau `.env`.
+12. [ ] **Raffle Economics Configurability**: Admin harus dapat mengubah Rake, Claim Fee, dan Surcharge secara real-time melalui dashboard (v3.59.5).
+13. [ ] **Creator Revenue Accountability**: Setiap raffle harus mencatat porsi revenue kreator (80%) yang dapat ditarik secara mandiri melalui tombol "Withdraw Creator Earnings" (v3.59.5).
 
 ---
 
@@ -419,6 +423,79 @@ Protokol untuk memastikan database dan blockchain tetap dalam sinkronisasi sempu
   3. **Atomic Sync**: Setiap pembaruan parameter wajib menggunakan alur `Chain TX` -> `Admin Signature` -> `DB Sync (BATCH_UPDATE_POINTS / SYNC_WEIGHTS)`.
   4. **Emergency Recovery**: Tombol **Emergency Parity Sync** disediakan untuk memulihkan seluruh paritas konfigurasi secara massal.
 
+## 🏛️ 18. DailyApp V14 Multi-Token Sponsorship & Decimal Normalization (v3.59.3)
+
+Implementasi pengerasan infrastruktur untuk mendukung ekonomi multi-aset dengan normalisasi desimal otomatis.
+
+### 18.1 Multi-Token Reward Pool
+- **Storage**: Reward disimpan dalam mapping 2D `user => token => amount` di kontrak V14.
+- **Supported Tokens**: USDC (6-dec) dan Native ETH (18-dec) secara default. Token tambahan dapat diaktifkan via `setAllowedToken`.
+- **Claiming**: User melakukan klaim secara granular per-token melalui `claimRewards(tokenAddress)`.
+
+### 18.2 Decimal Normalization Protocol
+Untuk menjaga konsistensi parameter ekonomi (seperti `rewardPerClaim` dan `minRewardPoolValue`), V14 menggunakan **6-Decimal USDC Base** sebagai standar internal.
+- **Normalization Logic**:
+  - `ETH (18 dec)` -> Dibagi `10^12` -> `Normal (6 dec)`.
+  - `USDC (6 dec)` -> Tetap -> `Normal (6 dec)`.
+- **Validation**: Seluruh pengecekan threshold (min. deposit $5) dilakukan terhadap nilai yang sudah dinormalisasi ke 6-desimal.
+
+### 18.3 UI Persistence & Visibility Mandate
+- **Sponsored Task Cards**: Kartu tugas bersponsor tidak boleh disembunyikan HANYA karena status `hasCompletedTask`.
+- **Authoritative Condition**: Kartu harus tetap muncul selama `claimableRewards(user, token) > 0`. Ini memastikan user selalu memiliki akses ke tombol klaim hingga seluruh reward ditarik.
+
+## 🏛️ 19. Daily Goal Retention Loop (Milestone 3-Tasks Bonus) — v3.59.4
+Sistem insentif harian untuk memicu retensi pengguna melalui reward progresif dalam jendela waktu 24 jam.
+
+### 19.1 Daily Progress Tracking
+- **Data Source**: Menggunakan SQL View `v_user_daily_progress` yang memantau penyelesaian tugas di tabel `user_task_claims` dalam 24 jam terakhir.
+- **Milestone**: Target utama adalah penyelesaian **3 tugas** unik dalam satu siklus harian.
+- **UI Component**: `DailyGoalCard.jsx` menampilkan progress bar real-time (0/3, 1/3, dst) dan status klaim bonus.
+
+### 19.2 Automated Bonus Fulfillment
+- **Trigger**: Setiap kali user berhasil melakukan klaim tugas (`handleClaim` di `tasks-bundle.js`), sistem secara otomatis menjalankan `checkAndGrantDailyBonus`.
+- **Eligibility Check**:
+  1. Menghitung jumlah tugas yang diselesaikan hari ini.
+  2. Memeriksa apakah bonus harian untuk hari kalender tersebut sudah diberikan (mencegah double-claim).
+- **Fulfillment**:
+  - Jika `count >= 3` dan belum dapat bonus: Backend memanggil `fn_increment_xp` dengan porsi bonus (default: 50 XP).
+  - Aktivitas dicatat di `user_activity_logs` dengan kategori `REWARD` dan metadata `daily_bonus: true`.
+
 ---
-*End of Source of Truth Document - Nexus v3.59.2 LOCKED.*
+
+## 🏛️ 20. Manual Accountant Ledger Sync Protocol (v3.59.4)
+Mekanisme pengamanan audit finansial untuk mengatasi keterbatasan cron serverless.
+
+### 20.1 On-Demand Blockchain Sync
+- **Trigger**: Tombol "Trigger Sync" di Admin Portal -> Accountant Ledger.
+- **Backend Action**: `accountant-sync` di `admin-bundle.js`.
+- **Workflow**:
+  1. Verifikasi Admin Signature.
+  2. Backend memproses event `RewardsClaimed` dan `SponsorshipRequested` dari blockchain.
+  3. Mengupdate metadata `sync_state` untuk melacak progress sinkronisasi.
+- **Result**: Data ledger terjamin mutakhir tanpa menunggu jadwal cron, sangat krusial sebelum melakukan audit saldo akhir atau penarikan treasury.
+
+---
+
+## 🏛️ 21. Raffle Platform Economics & Creator Withdrawal Flow (v3.59.5)
+
+Sistem ekonomi sirkular yang memberikan transparansi bagi admin dan insentif bagi kreator konten (sponsor).
+
+### 21.1 Admin Economic Controls
+- **Workflow**: Admin mengakses **Raffle Manager -> Settings**.
+- **Dynamic Parameters**: Admin dapat mengubah persentase fee yang langsung berdampak pada logika on-chain:
+  1. **Project Rake**: Potongan dari total penjualan tiket (Default: 20%).
+  2. **Claim Fee**: Biaya yang dibayar pemenang saat klaim hadiah (Default: 5%).
+  3. **Gas Surcharge**: Biaya tambahan untuk menutupi biaya callback randomness (Default: 10%).
+- **State Sync**: Perubahan pada dashboard memicu `setRaffleFees` di kontrak `CryptoDiscoRaffle.sol`.
+
+### 21.2 Creator Revenue Portal
+- **Visibility**: Kreator melihat kartu **"Your Earnings"** di dashboard mereka.
+- **Data Source**: On-chain balance yang dihitung dari 80% penjualan tiket (dikurangi rake platform).
+- **Execution**: 
+  1. Kreator klik tombol **"Withdraw Creator Earnings"**.
+  2. Kontrak mentransfer sisa saldo tiket secara atomik ke alamat kreator.
+  3. UI melakukan refetch saldo dan menampilkan histori penarikan di `ActivityLogSection`.
+
+---
+*End of Source of Truth Document - Nexus v3.59.5 LOCKED.*
 

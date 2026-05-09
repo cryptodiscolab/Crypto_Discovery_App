@@ -236,6 +236,7 @@ export default async function handler(req, res) {
         case 'generate-sync-signature': await handleGenerateSyncSignature(req, res); break;
         // [FIX v3.56.5] Unified social verification status endpoint
         case 'social-status': await handleSocialStatus(req, res); break;
+        case 'get-daily-progress': await handleGetDailyProgress(req, res); break;
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -1388,6 +1389,40 @@ async function handleSyncBaseSocial(req, res) {
 // -----------------------------------------------------------------------------
 // [FIX v3.56.5] SOCIAL STATUS API
 // -----------------------------------------------------------------------------
+async function handleGetDailyProgress(req, res) {
+    const { wallet } = req.query;
+    if (!wallet) return res.status(400).json({ error: 'Missing wallet' });
+
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('v_user_daily_progress')
+            .select('*')
+            .eq('wallet_address', wallet.toLowerCase())
+            .maybeSingle();
+
+        if (error) throw error;
+
+        // Fetch reward point value for the bonus
+        const { data: bonusSetting } = await supabaseAdmin
+            .from('point_settings')
+            .select('points_value')
+            .eq('activity_key', 'daily_task_completion')
+            .maybeSingle();
+
+        return res.status(200).json({
+            success: true,
+            progress: data || {
+                wallet_address: wallet.toLowerCase(),
+                completed_count: 0,
+                bonus_claimed: false
+            },
+            bonus_amount: bonusSetting?.points_value || 50
+        });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+}
+
 async function handleSocialStatus(req, res) {
     const { address } = req.query;
     if (!address) return res.status(400).json({ error: 'Missing address' });

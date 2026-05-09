@@ -1,4 +1,7 @@
 <ul>
+<li><strong>v3.59.5</strong>: Raffle Admin Hardening &amp; Platform Economics. Implementasi <code>AdminRaffleSettings</code> (Rake, Claim Fee, Surcharge), <code>CreatorEarningsCard</code> untuk penarikan revenue sponsor (80%), dan penegakan <strong>Zero-Hardcode Mandate</strong> pada seluruh form pembuatan raffle.</li>
+<li><strong>v3.59.4</strong>: Final Polish &amp; Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added <code>daily_task_completion</code> reward keys.</li>
+<li><strong>v3.59.3</strong>: Multi-Token Sponsorship (V14) &amp; Decimal-Aware Infrastructure. Implementasi DailyApp V14 dengan 6-decimal USDC base, reward mapping 2D (user =&gt; token =&gt; reward), dan perbaikan persistensi visibilitas SponsoredTaskCard.</li>
 <li><strong>v3.59.2</strong>: Ecosystem Hardening &amp; Parity Audit. Implementasi <strong>Hardening Center</strong> di Accountant Ledger, penegakan <strong>SBT-Gating</strong> pada Leaderboard, dan integrasi <strong>Parity Audit API</strong> dengan Runtime ABI Guards.</li>
 <li><strong>v3.59.1</strong>: Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Sync. Refactor <code>abis_data.txt</code> untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.</li>
 <li><strong>v3.58.0</strong>: Lurah Ecosystem Hardening &amp; Autonomous Agent Resiliency. Implementasi <strong>Auto-Retry logic</strong> pada RPC, heartbeat dinamis di <code>system_health</code>, dan eliminasi hardcoded addresses.</li>
@@ -201,6 +204,11 @@ Crypto Disco memiliki <strong>DUA jalur tugas yang sangat berbeda</strong>. Agen
 </tr>
 </thead>
 <tbody><tr>
+<td><strong>DailyApp V14</strong></td>
+<td><code>0x888fE02bd09642de385E55DdC6D8a7Ab5580f834</code></td>
+<td><code>AccessControl</code></td>
+</tr>
+<tr>
 <td><strong>DailyApp V13.2</strong></td>
 <td><code>0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D</code></td>
 <td><code>AccessControl</code></td>
@@ -1477,4 +1485,28 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 <li><strong>Manual Sync</strong>: Gunakan tombol &quot;Batch Sync&quot; jika terdeteksi drift &gt; 1% pada Top 50 users.</li>
 </ul>
 <hr>
-<p><em>End of Task Feature Workflow - Nexus v3.59.2 Locked.</em></p>
+<h2>22. DailyApp V14 Multi-Token Sponsorship &amp; Decimal Normalization (v3.59.3)</h2>
+<p>Peningkatan infrastruktur sponsor untuk mendukung ekonomi multi-aset dan normalisasi parameter moneter.</p>
+<h3>22.1 Multi-Token Rewards</h3>
+<ul>
+<li><strong>Storage Strategy</strong>: Reward disimpan di <code>mapping(address =&gt; mapping(address =&gt; uint256)) public claimableRewards</code> (user =&gt; token =&gt; amount).</li>
+<li><strong>Default Tokens</strong>: USDC (Base) dan ETH.</li>
+<li><strong>Claim Logic</strong>: User memanggil <code>claimRewards(tokenAddress)</code> secara spesifik untuk menarik saldo per-token.</li>
+</ul>
+<h3>22.2 Decimal Normalization (6-Decimal Base)</h3>
+<p>Seluruh parameter ekonomi dikonfigurasi menggunakan basis <strong>6-desimal</strong> (USDC-native) untuk menghindari fragmentasi unit.</p>
+<ul>
+<li><strong>buySponsorshipWithToken</strong>: Mengonversi deposit token ke 6-desimal internal.<ul>
+<li>ETH (18 dec) -&gt; Normalisasi ke 6 dec.</li>
+<li>USDC (6 dec) -&gt; Langsung.</li>
+</ul>
+</li>
+<li><strong>Validation</strong>: Pengecekan <code>minPool</code> (threshold minimal sponsor) dilakukan terhadap nilai hasil normalisasi ini.</li>
+</ul>
+<h3>22.3 UI Persistence Mandate</h3>
+<ul>
+<li><strong>Card Visibility</strong>: <code>SponsoredTaskCard</code> tidak boleh menghilang hanya karena user sudah menyelesaikan tugas.</li>
+<li><strong>Enforcement</strong>: Kartu tetap ditampilkan selama <code>claimableRewards(user, token) &gt; 0</code> untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.</li>
+</ul>
+<hr>
+<p><em>End of Task Feature Workflow - Nexus v3.59.3 LOCKED.</em></p>

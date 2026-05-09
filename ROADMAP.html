@@ -1,0 +1,152 @@
+<h1>Crypto Disco: Phase 2 Roadmap</h1>
+<h2>Core Infrastructure (Operational)</h2>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>MasterX</strong>: Revenue distribution and point system.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Raffle</strong>: Ticket-based NFT raffle system.</li>
+</ul>
+<h2>Phase 2: Satellite Contracts &amp; Frontend Integration</h2>
+<h3>Step 1: Satellite Deployment [x]</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Develop <code>DailyApp.sol</code> (Lightweight Task System).</li>
+<li><input checked="" disabled="" type="checkbox"> Deploy <code>DailyApp.sol</code> to Base Sepolia.</li>
+<li><input checked="" disabled="" type="checkbox"> Link <code>DailyApp</code> as an authorized satellite in <code>MasterX</code>.</li>
+</ul>
+<h3>Step 2: Verification [x]</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Verify <code>MasterX</code> on BaseScan.</li>
+<li><input checked="" disabled="" type="checkbox"> Verify <code>Raffle</code> on BaseScan (Manual Proof-of-Work v3.31.0).</li>
+<li><input checked="" disabled="" type="checkbox"> Verify <code>DailyApp</code> on BaseScan.</li>
+<li><input checked="" disabled="" type="checkbox"> Deploy <code>Verification Server</code> to Vercel.</li>
+<li><input checked="" disabled="" type="checkbox"> Sync <code>VITE_VERIFY_SERVER_URL</code> in frontend.</li>
+</ul>
+<h3>Step 3: Frontend Integration [x]</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Setup React/Next.js scaffold (Farcaster/Mini App optimized).</li>
+<li><input checked="" disabled="" type="checkbox"> Implement NFT Raffle Buy &amp; Claim functions. (Zero-Trust XP Sync)</li>
+<li><input checked="" disabled="" type="checkbox"> Implement Daily Claim &amp; Reward Pool Distribution logic. (<strong>Verification-First v3.27.0</strong>: tx_hash proof, no passive triggers)</li>
+<li><input checked="" disabled="" type="checkbox"> Neynar API Integration (Social Verification).</li>
+<li><input checked="" disabled="" type="checkbox"> Base Paymaster Integration (Gasless transactions).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Admin Hub Command Center</strong>: Integrated Real-time P&amp;L, Economy Metrics, and Sentinel Audits.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>UGC ETH Reward Sync &amp; Live Pricing (v3.38.4)</strong>: Native ETH payouts with real-time USDC conversion oracle.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>ABI Consistency Audit &amp; Sync (v3.38.8)</strong>: Full stack ABI parity.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>UGC &amp; Price Oracle Restoration (v3.38.10)</strong>: <code>renewSponsorship</code> fix and drift identification.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Global Mobile UI Hardening (&quot;Native+&quot;) v3.40.18</strong>: Full responsive audit, 11px standardized typography, and notch-proof safe area implementation.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Identity Hardening &amp; Growth Loop v2 (v3.42.0)</strong>: Base Social Verification (Basenames) and 500 XP Referral Vesting with 10% passive dividends.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Database Hardening &amp; Clean Sweep UX (v3.42.2)</strong>: Systematic <code>.maybeSingle()</code> migration for PGRST116 resilience and &quot;Disappearing Task&quot; interface implementation.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Admin System Hardening &amp; ABI Synchronization (v3.42.8)</strong>: Corrected ABI phantom function calls, removed dead React states in System Configs, and replaced browser alerts with standard toasts.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Task Master ABI Parity &amp; Signature Alignment (v3.46.0)</strong>: Rebuilt <code>abis_data.txt</code> (157 entries), fixed <code>setSponsorshipParams</code> (4 args), <code>buySponsorshipWithToken</code> (string arrays), and migrated to direct <code>setTokenPriceUSD</code> oracle flow.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Create Mission Wallet Compatibility Fix (v3.46.1)</strong>: Refactored <code>PayAndCreateMissionButton</code> in Profile to use sequential transactions, removing dependency on experimental <code>EIP-5792</code> batch protocols to support standard wallets (MetaMask/Rabby).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Ecosystem Environment Sync &amp; Automation (v3.50.0)</strong>: Built a global <code>sync-all-envs.cjs</code> script to automate synchronization across 16 <code>.env</code> files. Integrated <code>sync env</code> as a mandatory agent trigger in <code>.cursorrules</code> to ensure absolute parity.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Gas Tracker Hardening &amp; Global Visibility (v3.51.0)</strong>: Implemented explicit descending threshold chain in <code>useGasTracker</code>, defense-in-depth handler guards, SBT mint protection, and a real-time color-coded gas indicator pill in the global header. Expanded <code>global-sync-env.js</code> to include 8 missing critical keys.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Ghost Claim Recovery &amp; Activity Log Hardening (v3.51.2)</strong>: Automated self-healing for missing activity logs and hardened XP reward lifecycle.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Premium Task &amp; Raffle Logic Hardening (v3.52.0)</strong>: Hardened 24h reset logic, 7-day UGC expiry, and initial premium metadata stamps.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Nexus UI &amp; Metadata Parity Overhaul (v3.53.0)</strong>: 100% parity between Task and Raffle interfaces. Dynamic Home Page stats from Supabase, standardized Cyberpunk stamps (ID, Creator, Created, Expires), and structural hardening of countdown layouts.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Nexus Command Center (NCC) v1.0 — Ecosystem Control Plane (v3.54.0)</strong>: Integrated Kanban, Mind Map, and Graphify visualization. Local-first dashboard with Data Inlining (CORS-proof) and automated Red/Yellow priority task discovery.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Accountant Ledger &amp; Financial Audit System (v3.59.1)</strong>: Implemented real-time double-entry audit trail, live on-chain balancing report (Safe/MasterX/DailyApp/Raffle), and manual treasury withdrawal execution module. Established full documentation parity via <code>ACCOUNTANT_LEDGER_SOT.md</code>.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Ecosystem Hardening &amp; Parity Audit (v3.59.2)</strong>: Implemented centralized Hardening Center for live drift monitoring. Enforced SBT-gating on Leaderboard SOT. Developed high-precision Parity Audit API with Runtime ABI Guards. Finalized NFT Metadata IPFS propagation logic.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Multi-Token Sponsorship (V14) &amp; Decimal Hardening (v3.59.3)</strong>: Integrated DailyApp V14 supporting USDC/ETH pools. Established 6-decimal normalization standard for all monetary parameters. Hardened SponsoredTaskCard visibility logic for persistent reward access.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>UGC Mission Hardening &amp; Lurah Proactive Monitoring (v3.59.1)</strong>: Implemented link regex guards, multi-action bounds, and stuck mission detection. Fixed Telegram webhook routing to correct Verification Server endpoint. Achieved full WSL environment parity with 13/13 audit checks passed.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Final Polish &amp; Performance Optimization (v3.59.4)</strong>: Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing to eliminate N+1 RPC calls, and added missing <code>create_task</code> and <code>daily_task_completion</code> reward keys.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Raffle Admin Hardening &amp; Platform Economics (v3.59.5)</strong>: Implemented dynamic fee controls (Rake 20%, Claim 5%, Surcharge 10%) and Creator Revenue Portal for atomic 80% withdrawals. Enforced Zero-Hardcode mandate across all raffle administrative workflows.</li>
+</ul>
+<h2>Identified ABI Drift (DAILY_APP) - [REPAIRED v3.38.25]</h2>
+<p>All identified drifts have been synchronized with <code>DailyAppV12Secured.json</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Function Name (Contract)</th>
+<th>Status in ABI</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>renewSponsorship</code></td>
+<td>✅ FIXED</td>
+<td>Core sponsorship renewal</td>
+</tr>
+<tr>
+<td><code>syncMasterXPoints</code></td>
+<td>✅ FIXED</td>
+<td>XP synchronization with MasterX</td>
+</tr>
+<tr>
+<td><code>markTaskAsVerified</code></td>
+<td>✅ FIXED</td>
+<td>Task verification logic</td>
+</tr>
+<tr>
+<td><code>mintNFT</code></td>
+<td>✅ FIXED</td>
+<td>NFT onboarding</td>
+</tr>
+<tr>
+<td><code>upgradeNFT</code></td>
+<td>✅ FIXED</td>
+<td>NFT progression</td>
+</tr>
+<tr>
+<td><code>getTask</code></td>
+<td>✅ FIXED</td>
+<td>Task data retrieval</td>
+</tr>
+<tr>
+<td><code>canDoTask</code></td>
+<td>✅ FIXED</td>
+<td>User eligibility checks</td>
+</tr>
+<tr>
+<td><code>setSponsorshipParams</code></td>
+<td>✅ FIXED</td>
+<td>Sponsorship parameters</td>
+</tr>
+</tbody></table>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> AI-Driven Fraud Prevention Layer (Implemented via <em>Lurah Ekosistem</em>).</li>
+</ul>
+<h2>Phase 3: Swap &amp; Profit Engine (v3.47.0) [x]</h2>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Integrate Li.Fi Widget/SDK for multi-chain bridging and swaps.</li>
+<li><input checked="" disabled="" type="checkbox"> Implement Integrator Fee (0.5%) sent to <code>MASTER_X_ADDRESS</code>.</li>
+<li><input checked="" disabled="" type="checkbox"> Refactored to SDK-First custom UI to bypass Vercel Rollup build crash.</li>
+<li><input checked="" disabled="" type="checkbox"> Add &quot;Insufficient Balance&quot; triggers in Profile and Raffle flows.</li>
+</ul>
+<h2>Phase 3 Hotfix: Triple Bug Remediation (v3.47.1) [x]</h2>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>Task Two-Step Flow</strong>: <code>TaskList.jsx</code> — GO TO TASK → 15s timer → CLAIM REWARD. Tasks must open external link before XP claim is allowed.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Swap Quote Fix</strong>: <code>SwapModal.jsx</code> — Fixed SDK re-init loop via <code>useRef</code>, added <code>toAddress</code> param (LiFi SDK v2 requirement), added visible error state + Jumper fallback.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>NFT Mint Contract Fix</strong>: <code>SBTUpgradeCard.jsx</code> — Fixed wrong contract call (was <code>MASTER_X.upgradeTier</code>, now <code>DAILY_APP.mintNFT</code>). Contract call parity = data source must match write target.</li>
+</ul>
+<h2>Phase 4: Ecosystem Growth &amp; Advanced Governance [⏸️ ON HOLD]</h2>
+<blockquote>
+<p>[!IMPORTANT]
+Phase 4 is currently <strong>ON HOLD</strong> per user request (2026-04-29). Focus remains on maintaining 100% parity across the established Nexus Command Center ecosystem.</p>
+</blockquote>
+<ul>
+<li><input disabled="" type="checkbox"> Tiered NFT Staking (Non-Riba based Utility).</li>
+<li><input disabled="" type="checkbox"> Community Treasury DAO (Revenue sharing logic - <em>Contract Implemented</em>).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Mission Quest &amp; Daily Goal Bonus</strong>: Extra XP rewards for users who complete specific task milestones (e.g., 3 tasks per day). (v3.59.4)</li>
+<li><input disabled="" type="checkbox"> Multi-chain Expansion Strategy (Optimism/Arbitrum).</li>
+</ul>
+<h2>Nexus Command Center Stabilization (v3.54.5) [x]</h2>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>Tier Economy Synchronization</strong>: 100% parity achieved between <code>MasterX</code> and <code>DailyApp</code> XP thresholds.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Parity Audit Layer</strong>: Automated on-chain drift detection implemented in NCC (Base Sepolia).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Sentinel Monitoring</strong>: <code>ncc-sentinel.cjs</code> active, ensuring Healthy/Nominal status reporting.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Live Lurah (v3.55.0)</strong>: Deployed <code>api/lurah-cron.js</code> and scheduled proactive Telegram alerting on Vercel.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Raffle Refund Protocol (v2.1)</strong>: Implemented on-chain refund for rejected UGC raffles.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Economy Parity Audit</strong>: Verified 100% threshold alignment between MasterX and DailyApp.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Concurrent UI Responsiveness (v3.56.0)</strong>: Integrated <code>React.startTransition</code> for all heavy modal triggers to maintain &lt;50ms INP across the ecosystem.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Raffle Ecosystem Hardening &amp; Zero-Trust Sync (v3.56.7)</strong>: Resolved <code>UUID</code> schema constraint in Raffle history, implemented Zero-Trust message integrity across verification endpoints, and hardened database RPC error propagation for 100% XP parity.</li>
+</ul>
+<h2>Immediate Protocol Constraints</h2>
+<ul>
+<li><strong>Immutable Architect Protocol</strong>: <code>viaIR: true</code>, <code>runs: 200</code>.</li>
+<li><strong>Pre-Flight Check</strong>: Manual verification of state transitions before public release.</li>
+</ul>
+<h2>Agent Self-Improvement Mandates (Added v3.47.1)</h2>
+<ul>
+<li><strong>BP-001 — Contract Call Parity</strong>: Always trace data lineage. Read from DAILY_APP → Write to DAILY_APP.</li>
+<li><strong>BP-002 — SDK Single Init</strong>: SDK <code>createConfig</code> must be called once per app lifecycle (useRef guard).</li>
+<li><strong>BP-003 — No Silent Errors</strong>: All async SDK calls must surface visible UI error state, not just console.error.</li>
+<li><strong>BP-004 — Two-Step Task Gate</strong>: Off-chain tasks with task_link require GO_TO_TASK → timer → CLAIM flow.</li>
+</ul>

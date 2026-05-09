@@ -357,6 +357,30 @@ export function CreateRafflePage() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* WINNER COUNT OPTION */}
+                                    <div className="pt-4 border-t border-white/5">
+                                        <label className="text-[11px] font-black uppercase text-amber-400/60 tracking-widest mb-1.5 block">Number of Winners</label>
+                                        <div className="relative group">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Trophy className="w-4 h-4 text-amber-500/50 group-focus-within:text-amber-400 transition-colors" />
+                                            </div>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="10"
+                                                className="input-native pl-10 font-mono text-lg"
+                                                value={formData.winnerCount}
+                                                onChange={e => setFormData({ ...formData, winnerCount: e.target.value })}
+                                            />
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <span className="text-[11px] font-black text-amber-300/40 uppercase tracking-widest">
+                                                    SLOTS
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[9px] font-bold text-slate-600 uppercase mt-2 tracking-tight">Prize pool will be split equally among all winners.</p>
+                                    </div>
                                 </div>
 
                                 <div className="glass-card p-4 space-y-4 border-white/5 bg-indigo-500/5">
@@ -483,7 +507,7 @@ export function CreateRafflePage() {
 
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center group">
-                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">PLATFORM FEE (5%)</span>
+                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">GAS SURCHARGE ({(surchargeBP ? Number(surchargeBP)/100 : 5)}%)</span>
                                     <div className="flex flex-col items-end">
                                         <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">+{stats.surcharge} ETH</span>
                                         <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.surchargeUsd}</span>
@@ -507,7 +531,7 @@ export function CreateRafflePage() {
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">PROJECT RAKE (20%)</span>
+                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">PROJECT RAKE ({(maintenanceFeeBP ? Number(maintenanceFeeBP)/100 : 20)}%)</span>
                                     <div className="flex flex-col items-end">
                                         <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">-{stats.projectRake} ETH</span>
                                         <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.projectRakeUsd}</span>

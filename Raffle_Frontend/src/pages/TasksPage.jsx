@@ -514,16 +514,16 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
     const [timer, setTimer] = useState(0);
     const [isClaiming, setIsClaiming] = useState(false);
 
-    // Track on-chain rewards for this specific user
+    // V14: Track on-chain rewards per token for this user
+    // Default to USDC for sponsored task rewards
+    const usdcAddr = CONTRACTS.USDC;
     const { data: rawClaimable, refetch: refetchRewards } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'claimableRewards',
-        args: [address],
-        query: { enabled: !!address }
+        args: [address, usdcAddr],
+        query: { enabled: !!address && !!usdcAddr }
     });
-
-    const claimable = rawClaimable ? Number(rawClaimable) / 1e18 : 0;
 
     // Track completion for the whole card
     const { data: progress } = useReadContract({
@@ -541,7 +541,8 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
     const hasGatedTask = tasks.some(t => t.isBaseSocialRequired);
     const isIdentityBlocked = hasGatedTask && !profileData?.is_base_social_verified;
 
-    if (isGlobalCompleted) return null;
+    // V14 FIX: Do not hide card if there are unclaimed rewards
+    if (isGlobalCompleted && (!rawClaimable || rawClaimable === 0n)) return null;
 
 
 
@@ -619,7 +620,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
                     </div>
                 )}
 
-                {verifyingStatus === 'success' && timer === 0 && (
+                {( (verifyingStatus === 'success' && timer === 0) || (rawClaimable && rawClaimable > 0n) ) && (
                     <button
                         onClick={async () => {
                             const tid = toast.loading("Claiming Mission Reward...");
@@ -629,6 +630,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
                                     address: CONTRACTS.DAILY_APP,
                                     abi: DAILY_APP_ABI,
                                     functionName: 'claimRewards',
+                                    args: [usdcAddr],
                                 });
 
                                 // v3.40+: Fast Sync via TxHash (No second signature required)

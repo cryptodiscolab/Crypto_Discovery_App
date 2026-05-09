@@ -6,6 +6,12 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.59.3 (Multi-Token Sponsorship & Decimal Hardening)
+- **Multi-Token Sponsorship Support**: Integrated DailyApp V14 (`0x888fE02bd09642de385E55DdC6D8a7Ab5580f834`) supporting USDC (6-dec) and ETH (18-dec) sponsorship pools.
+- **Decimal Normalization Protocol**: Established 6-decimal USDC as the internal monetary base. Automated normalization of ETH (18-dec) to 6-decimal for consistent threshold validation.
+- **Enhanced Visibility Persistence**: Mandated SponsoredTaskCard visibility based on remaining claimable rewards per-token, ensuring users don't lose access to reward claim buttons after task completion.
+- **ABI & Registry Synchronization**: Updated `abis_data.txt` and all PRD documentation to reflect V14 interface and multi-token claim logic.
+
 ## 🟢 v3.59.2 (Ecosystem Hardening & Parity Audit)
 - **Ecosystem Hardening Center**: Built a centralized admin dashboard in `AccountantLedgerTab.jsx` for live data drift monitoring (XP/Tier).
 - **High-Precision Parity Audit API**: Implemented `/api/admin/parity-audit` endpoint comparing Supabase `total_xp` with on-chain `userStats`.
@@ -434,6 +440,6 @@ GET  /api/verify/health
 
 ---
 
-**Implementation Complete! 🎉 — Nexus v3.59.2 Locked.**
+**Implementation Complete! 🎉 — Nexus v3.59.3 Locked.**
 
 All code has been created and is ready for deployment. Follow the Next Steps above to deploy and test the system.

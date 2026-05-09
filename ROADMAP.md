@@ -42,8 +42,10 @@
 - [x] **Nexus Command Center (NCC) v1.0 — Ecosystem Control Plane (v3.54.0)**: Integrated Kanban, Mind Map, and Graphify visualization. Local-first dashboard with Data Inlining (CORS-proof) and automated Red/Yellow priority task discovery.
 - [x] **Accountant Ledger & Financial Audit System (v3.59.1)**: Implemented real-time double-entry audit trail, live on-chain balancing report (Safe/MasterX/DailyApp/Raffle), and manual treasury withdrawal execution module. Established full documentation parity via `ACCOUNTANT_LEDGER_SOT.md`.
 - [x] **Ecosystem Hardening & Parity Audit (v3.59.2)**: Implemented centralized Hardening Center for live drift monitoring. Enforced SBT-gating on Leaderboard SOT. Developed high-precision Parity Audit API with Runtime ABI Guards. Finalized NFT Metadata IPFS propagation logic.
+- [x] **Multi-Token Sponsorship (V14) & Decimal Hardening (v3.59.3)**: Integrated DailyApp V14 supporting USDC/ETH pools. Established 6-decimal normalization standard for all monetary parameters. Hardened SponsoredTaskCard visibility logic for persistent reward access.
 - [x] **UGC Mission Hardening & Lurah Proactive Monitoring (v3.59.1)**: Implemented link regex guards, multi-action bounds, and stuck mission detection. Fixed Telegram webhook routing to correct Verification Server endpoint. Achieved full WSL environment parity with 13/13 audit checks passed.
 - [x] **Final Polish & Performance Optimization (v3.59.4)**: Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing to eliminate N+1 RPC calls, and added missing `create_task` and `daily_task_completion` reward keys.
+- [x] **Raffle Admin Hardening & Platform Economics (v3.59.5)**: Implemented dynamic fee controls (Rake 20%, Claim 5%, Surcharge 10%) and Creator Revenue Portal for atomic 80% withdrawals. Enforced Zero-Hardcode mandate across all raffle administrative workflows.
 
 ## Identified ABI Drift (DAILY_APP) - [REPAIRED v3.38.25]
 All identified drifts have been synchronized with `DailyAppV12Secured.json`.
@@ -78,7 +80,7 @@ All identified drifts have been synchronized with `DailyAppV12Secured.json`.
 
 - [ ] Tiered NFT Staking (Non-Riba based Utility).
 - [ ] Community Treasury DAO (Revenue sharing logic - *Contract Implemented*).
-- [ ] **Mission Quest & Daily Goal Bonus**: Extra XP rewards for users who complete specific task milestones (e.g., 3 tasks per day). *Details pending user review.*
+- [x] **Mission Quest & Daily Goal Bonus**: Extra XP rewards for users who complete specific task milestones (e.g., 3 tasks per day). (v3.59.4)
 - [ ] Multi-chain Expansion Strategy (Optimism/Arbitrum).
 
 ## Nexus Command Center Stabilization (v3.54.5) [x]

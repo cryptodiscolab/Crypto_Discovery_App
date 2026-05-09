@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { NexusPulseStrip } from './home/NexusPulseStrip';
 import toast from 'react-hot-toast';
 import { usePoints } from '../shared/context/PointsContext';
+import { DailyGoalCard } from './tasks/DailyGoalCard';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -177,6 +178,9 @@ export function UnifiedDashboard() {
                         </div>
                     </div>
                 )}
+                
+                {/* [v3.59.4] Daily Retention Goal Component */}
+                <DailyGoalCard />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Daily Admin Tasks */}
