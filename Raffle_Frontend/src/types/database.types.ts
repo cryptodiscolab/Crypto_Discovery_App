@@ -254,7 +254,8 @@ export type Database = {
           current_participants?: number | null
           description?: string | null
           duration_days: number
-          end_at?: string | null\n          id?: string
+          end_at?: string | null
+          id?: string
           is_refunded?: boolean | null
           max_participants: number
           platform_code?: string | null
@@ -421,7 +422,8 @@ export type Database = {
           description?: string | null
           id?: never
           is_active?: boolean | null
-          is_hidden?: boolean | null\n          platform?: string | null
+          is_hidden?: boolean | null
+          platform?: string | null
           points_value?: number
           updated_at?: string | null
         }
@@ -475,7 +477,8 @@ export type Database = {
       }
       raffles: {
         Row: {
-          created_at: string | null\n          creator_address: string
+          created_at: string | null
+          creator_address: string
           end_time: string | null
           id: number
           is_active: boolean | null
@@ -527,7 +530,8 @@ export type Database = {
         Relationships: []
       }
       sbt_pool_stats: {
-        Row: {\n          acc_bronze: string | null
+        Row: {
+          acc_bronze: string | null
           acc_diamond: string | null
           acc_gold: string | null
           acc_platinum: string | null
@@ -722,7 +726,418 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          tx_hash?: string | null\n          value_amount?: number | null\n          value_symbol?: string | null\n          wallet_address?: string\n        }\n        Relationships: []\n      }\n      user_claims: {\n        Row: {\n          campaign_id: string | null\n          claimed_at: string | null\n          created_at: string | null\n          id: string\n          is_claimed: boolean | null\n          is_verified: boolean | null\n          payout_amount: number | null\n          payout_status: string | null\n          payout_tx_hash: string | null\n          platform_identity: string | null\n          user_address: string\n          verified_at: string | null\n        }\n        Insert: {\n          campaign_id?: string | null\n          claimed_at?: string | null\n          created_at?: string | null\n          id?: string\n          is_claimed?: boolean | null\n          is_verified?: boolean | null\n          payout_amount?: number | null\n          payout_status?: string | null\n          payout_tx_hash?: string | null\n          platform_identity?: string | null\n          user_address: string\n          verified_at?: string | null\n        }\n        Update: {\n          campaign_id?: string | null\n          claimed_at?: string | null\n          created_at?: string | null\n          id?: string\n          is_claimed?: boolean | null\n          is_verified?: boolean | null\n          payout_amount?: number | null\n          payout_status?: string | null\n          payout_tx_hash?: string | null\n          platform_identity?: string | null\n          user_address?: string\n          verified_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"user_claims_campaign_id_fkey\"\n            columns: [\"campaign_id\"]\n            isOneToOne: false\n            referencedRelation: \"campaigns\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      user_point_logs: {\n        Row: {\n          activity_key: string\n          created_at: string | null\n          fid: number | null\n          id: string\n          metadata: Json | null\n          points_earned: number\n          user_address: string\n        }\n        Insert: {\n          activity_key: string\n          created_at?: string | null\n          fid?: number | null\n          id?: string\n          metadata?: Json | null\n          points_earned: number\n          user_address: string\n        }\n        Update: {\n          activity_key?: string\n          created_at?: string | null\n          fid?: number | null\n          id?: string\n          metadata?: Json | null\n          points_earned?: number\n          user_address?: string\n        }\n        Relationships: []\n      }\n      user_privileges: {\n        Row: {\n          feature_id: string\n          granted_at: string | null\n          wallet_address: string\n        }\n        Insert: {\n          feature_id: string\n          granted_at?: string | null\n          wallet_address: string\n        }\n        Update: {\n          feature_id?: string\n          granted_at?: string | null\n          wallet_address?: string\n        }\n        Relationships: []\n      }\n      user_profiles: {\n        Row: {\n          active_status: string | null\n          bio: string | null\n          created_at: string | null\n          display_name: string | null\n          fid: number | null\n          follower_count: number | null\n          following_count: number | null\n          google_email: string | null\n          google_id: string | null\n          instagram_id: string | null\n          instagram_username: string | null\n          is_admin: boolean | null\n          is_operator: boolean | null\n          last_daily_bonus_claim: string | null\n          last_login_at: string | null\n          last_streak_claim: string | null\n          neynar_score: number | null\n          oauth_provider: string | null\n          pfp_url: string | null\n          power_badge: boolean | null\n          raffle_tickets_bought: number | null\n          raffle_wins: number\n          raffles_created: number | null\n          referred_by: string | null\n          streak_count: number | null\n          telegram_id: string | null\n          telegram_username: string | null\n          tier: number | null\n          tier_override: number | null\n          tiktok_id: string | null\n          tiktok_username: string | null\n          total_xp: number | null\n          trust_score: number | null\n          twitter_id: string | null\n          twitter_username: string | null\n          updated_at: string | null\n          username: string | null\n          verifications: string[] | null\n          wallet_address: string\n        }\n        Insert: {\n          active_status?: string | null\n          bio?: string | null\n          created_at?: string | null\n          display_name?: string | null\n          fid?: number | null\n          follower_count?: number | null\n          following_count?: number | null\n          google_email?: string | null\n          google_id?: string | null\n          instagram_id?: string | null\n          instagram_username?: string | null\n          is_admin?: boolean | null\n          is_operator?: boolean | null\n          last_daily_bonus_claim?: string | null\n          last_login_at?: string | null\n          last_streak_claim?: string | null\n          neynar_score?: number | null\n          oauth_provider?: string | null\n          pfp_url?: string | null\n          power_badge?: boolean | null\n          raffle_tickets_bought?: number | null\n          raffle_wins?: number\n          raffles_created?: number | null\n          referred_by?: string | null\n          streak_count?: number | null\n          telegram_id?: string | null\n          telegram_username?: string | null\n          tier?: number | null\n          tier_override?: number | null\n          tiktok_id?: string | null\n          tiktok_username?: string | null\n          total_xp?: number | null\n          trust_score?: number | null\n          twitter_id?: string | null\n          twitter_username?: string | null\n          updated_at?: string | null\n          username?: string | null\n          verifications?: string[] | null\n          wallet_address: string\n        }\n        Update: {\n          active_status?: string | null\n          bio?: string | null\n          created_at?: string | null\n          display_name?: string | null\n          fid?: number | null\n          follower_count?: number | null\n          following_count?: number | null\n          google_email?: string | null\n          google_id?: string | null\n          instagram_id?: string | null\n          instagram_username?: string | null\n          is_admin?: boolean | null\n          is_operator?: boolean | null\n          last_daily_bonus_claim?: string | null\n          last_login_at?: string | null\n          last_streak_claim?: string | null\n          neynar_score?: number | null\n          oauth_provider?: string | null\n          pfp_url?: string | null\n          power_badge?: boolean | null\n          raffle_tickets_bought?: number | null\n          raffle_wins?: number\n          raffles_created?: number | null\n          referred_by?: string | null\n          streak_count?: number | null\n          telegram_id?: string | null\n          telegram_username?: string | null\n          tier?: number | null\n          tier_override?: number | null\n          tiktok_id?: string | null\n          tiktok_username?: string | null\n          total_xp?: number | null\n          trust_score?: number | null\n          twitter_id?: string | null\n          twitter_username?: string | null\n          updated_at?: string | null\n          username?: string | null\n          verifications?: string[] | null\n          wallet_address?: string\n        }\n        Relationships: []\n      }\n      user_task_claims: {\n        Row: {\n          action_type: string | null\n          claimed_at: string | null\n          id: string\n          platform: string | null\n          target_id: string | null\n          task_id: string\n          wallet_address: string\n          xp_earned: number\n        }\n        Insert: {\n          action_type?: string | null\n          claimed_at?: string | null\n          id?: string\n          platform?: string | null\n          target_id?: string | null\n          task_id: string\n          wallet_address: string\n          xp_earned: number\n        }\n        Update: {\n          action_type?: string | null\n          claimed_at?: string | null\n          id?: string\n          platform?: string | null\n          target_id?: string | null\n          task_id?: string\n          wallet_address?: string\n          xp_earned?: number\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"user_task_claims_task_id_fkey\"\n            columns: [\"task_id\"]\n            isOneToOne: false\n            referencedRelation: \"daily_tasks\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"user_task_claims_wallet_address_fkey\"\n            columns: [\"wallet_address\"]\n            isOneToOne: false\n            referencedRelation: \"user_profiles\"\n            referencedColumns: [\"wallet_address\"]\n          },\n          {\n            foreignKeyName: \"user_task_claims_wallet_address_fkey\"\n            columns: [\"wallet_address\"]\n            isOneToOne: false\n            referencedRelation: \"user_stats\"\n            referencedColumns: [\"wallet_address\"]\n          },\n          {\n            foreignKeyName: \"user_task_claims_wallet_address_fkey\"\n            columns: [\"wallet_address\"]\n            isOneToOne: false\n            referencedRelation: \"v_user_full_profile\"\n            referencedColumns: [\"wallet_address\"]\n          },\n        ]\n      }\n    }\n    Views: {\n      user_stats: {\n        Row: {\n          display_name: string | null\n          fid: number | null\n          is_admin: boolean | null\n          is_operator: boolean | null\n          last_daily_bonus_claim: string | null\n          pfp_url: string | null\n          rank_name: string | null\n          referred_by: string | null\n          streak_count: number | null\n          tier: number | null\n          total_xp: number | null\n          updated_at: string | null\n          username: string | null\n          wallet_address: string | null\n        }\n        Relationships: []\n      }\n      v_user_full_profile: {\n        Row: {\n          active_status: string | null\n          bio: string | null\n          display_name: string | null\n          fid: number | null\n          follower_count: number | null\n          following_count: number | null\n          google_email: string | null\n          google_id: string | null\n          is_admin: boolean | null\n          is_operator: boolean | null\n          last_daily_bonus_claim: string | null\n          neynar_score: number | null\n          oauth_provider: string | null\n          pfp_url: string | null\n          power_badge: boolean | null\n          rank_name: string | null\n          referred_by: string | null\n          streak_count: number | null\n          tier: number | null\n          total_xp: number | null\n          twitter_id: string | null\n          twitter_username: string | null\n          updated_at: string | null\n          username: string | null\n          verifications: string[] | null\n          wallet_address: string | null\n        }\n        Relationships: []\n      }\n    }\n    Functions: {\n      fn_archive_and_reset_season: {\n        Args: { p_new_season_id: number; p_old_season_id: number }\n        Returns: undefined\n      }\n      fn_compute_leaderboard_tiers: {\n        Args: never\n        Returns: {\n          computed_tier: number\n          wallet_address: string\n        }[]\n      }\n      fn_deactivate_expired_tasks: { Args: never; Returns: undefined }\n      fn_get_leaderboard: {\n        Args: { p_limit?: number; p_tier?: string }\n        Returns: {\n          display_name: string\n          pfp_url: string\n          raffle_wins: number\n          raffles_created: number\n          rank_name: string\n          total_xp: number\n          wallet_address: string\n        }[]\n      }\n      fn_get_tier_distribution: {\n        Args: never\n        Returns: {\n          tier_label: string\n          user_count: number\n        }[]\n      }\n      fn_increment_campaign_participants: {\n        Args: { p_campaign_id: string }\n        Returns: undefined\n      }\n      fn_increment_raffle_tickets: {\n        Args: { p_amount?: number; p_wallet: string }\n        Returns: undefined\n      }\n      fn_increment_raffle_wins: {\n        Args: { p_wallet: string }\n        Returns: undefined\n      }\n      fn_increment_raffles_created: {\n        Args: { p_wallet: string }\n        Returns: undefined\n      }\n      fn_increment_user_xp: {\n        Args: { p_wallet: string; p_xp: number }\n        Returns: undefined\n      }\n      fn_refresh_rank_scores: { Args: never; Returns: undefined }\n      is_admin_wallet: { Args: { wallet: string }; Returns: boolean }\n    }\n    Enums: {\n      [_ in never]: never\n    }\n    CompositeTypes: {\n      [_ in never]: never\n    }\n  }\n}
+          tx_hash?: string | null
+          value_amount?: number | null
+          value_symbol?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      user_claims: {
+        Row: {
+          campaign_id: string | null
+          claimed_at: string | null
+          created_at: string | null
+          id: string
+          is_claimed: boolean | null
+          is_verified: boolean | null
+          payout_amount: number | null
+          payout_status: string | null
+          payout_tx_hash: string | null
+          platform_identity: string | null
+          user_address: string
+          verified_at: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          claimed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_claimed?: boolean | null
+          is_verified?: boolean | null
+          payout_amount?: number | null
+          payout_status?: string | null
+          payout_tx_hash?: string | null
+          platform_identity?: string | null
+          user_address: string
+          verified_at?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          claimed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_claimed?: boolean | null
+          is_verified?: boolean | null
+          payout_amount?: number | null
+          payout_status?: string | null
+          payout_tx_hash?: string | null
+          platform_identity?: string | null
+          user_address?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_claims_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_point_logs: {
+        Row: {
+          activity_key: string
+          created_at: string | null
+          fid: number | null
+          id: string
+          metadata: Json | null
+          points_earned: number
+          user_address: string
+        }
+        Insert: {
+          activity_key: string
+          created_at?: string | null
+          fid?: number | null
+          id?: string
+          metadata?: Json | null
+          points_earned: number
+          user_address: string
+        }
+        Update: {
+          activity_key?: string
+          created_at?: string | null
+          fid?: number | null
+          id?: string
+          metadata?: Json | null
+          points_earned?: number
+          user_address?: string
+        }
+        Relationships: []
+      }
+      user_privileges: {
+        Row: {
+          feature_id: string
+          granted_at: string | null
+          wallet_address: string
+        }
+        Insert: {
+          feature_id: string
+          granted_at?: string | null
+          wallet_address: string
+        }
+        Update: {
+          feature_id?: string
+          granted_at?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          active_status: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          fid: number | null
+          follower_count: number | null
+          following_count: number | null
+          google_email: string | null
+          google_id: string | null
+          instagram_id: string | null
+          instagram_username: string | null
+          is_admin: boolean | null
+          is_operator: boolean | null
+          last_daily_bonus_claim: string | null
+          last_login_at: string | null
+          last_streak_claim: string | null
+          neynar_score: number | null
+          oauth_provider: string | null
+          pfp_url: string | null
+          power_badge: boolean | null
+          raffle_tickets_bought: number | null
+          raffle_wins: number
+          raffles_created: number | null
+          referred_by: string | null
+          streak_count: number | null
+          telegram_id: string | null
+          telegram_username: string | null
+          tier: number | null
+          tier_override: number | null
+          tiktok_id: string | null
+          tiktok_username: string | null
+          total_xp: number | null
+          trust_score: number | null
+          twitter_id: string | null
+          twitter_username: string | null
+          updated_at: string | null
+          username: string | null
+          verifications: string[] | null
+          wallet_address: string
+        }
+        Insert: {
+          active_status?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          fid?: number | null
+          follower_count?: number | null
+          following_count?: number | null
+          google_email?: string | null
+          google_id?: string | null
+          instagram_id?: string | null
+          instagram_username?: string | null
+          is_admin?: boolean | null
+          is_operator?: boolean | null
+          last_daily_bonus_claim?: string | null
+          last_login_at?: string | null
+          last_streak_claim?: string | null
+          neynar_score?: number | null
+          oauth_provider?: string | null
+          pfp_url?: string | null
+          power_badge?: boolean | null
+          raffle_tickets_bought?: number | null
+          raffle_wins?: number
+          raffles_created?: number | null
+          referred_by?: string | null
+          streak_count?: number | null
+          telegram_id?: string | null
+          telegram_username?: string | null
+          tier?: number | null
+          tier_override?: number | null
+          tiktok_id?: string | null
+          tiktok_username?: string | null
+          total_xp?: number | null
+          trust_score?: number | null
+          twitter_id?: string | null
+          twitter_username?: string | null
+          updated_at?: string | null
+          username?: string | null
+          verifications?: string[] | null
+          wallet_address: string
+        }
+        Update: {
+          active_status?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          fid?: number | null
+          follower_count?: number | null
+          following_count?: number | null
+          google_email?: string | null
+          google_id?: string | null
+          instagram_id?: string | null
+          instagram_username?: string | null
+          is_admin?: boolean | null
+          is_operator?: boolean | null
+          last_daily_bonus_claim?: string | null
+          last_login_at?: string | null
+          last_streak_claim?: string | null
+          neynar_score?: number | null
+          oauth_provider?: string | null
+          pfp_url?: string | null
+          power_badge?: boolean | null
+          raffle_tickets_bought?: number | null
+          raffle_wins?: number
+          raffles_created?: number | null
+          referred_by?: string | null
+          streak_count?: number | null
+          telegram_id?: string | null
+          telegram_username?: string | null
+          tier?: number | null
+          tier_override?: number | null
+          tiktok_id?: string | null
+          tiktok_username?: string | null
+          total_xp?: number | null
+          trust_score?: number | null
+          twitter_id?: string | null
+          twitter_username?: string | null
+          updated_at?: string | null
+          username?: string | null
+          verifications?: string[] | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      user_task_claims: {
+        Row: {
+          action_type: string | null
+          claimed_at: string | null
+          id: string
+          platform: string | null
+          target_id: string | null
+          task_id: string
+          wallet_address: string
+          xp_earned: number
+        }
+        Insert: {
+          action_type?: string | null
+          claimed_at?: string | null
+          id?: string
+          platform?: string | null
+          target_id?: string | null
+          task_id: string
+          wallet_address: string
+          xp_earned: number
+        }
+        Update: {
+          action_type?: string | null
+          claimed_at?: string | null
+          id?: string
+          platform?: string | null
+          target_id?: string | null
+          task_id?: string
+          wallet_address?: string
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_task_claims_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "daily_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_task_claims_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["wallet_address"]
+          },
+          {
+            foreignKeyName: "user_task_claims_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "user_stats"
+            referencedColumns: ["wallet_address"]
+          },
+          {
+            foreignKeyName: "user_task_claims_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "v_user_full_profile"
+            referencedColumns: ["wallet_address"]
+          },
+        ]
+      }
+    }
+    Views: {
+      user_stats: {
+        Row: {
+          display_name: string | null
+          fid: number | null
+          is_admin: boolean | null
+          is_operator: boolean | null
+          last_daily_bonus_claim: string | null
+          pfp_url: string | null
+          rank_name: string | null
+          referred_by: string | null
+          streak_count: number | null
+          tier: number | null
+          total_xp: number | null
+          updated_at: string | null
+          username: string | null
+          wallet_address: string | null
+        }
+        Relationships: []
+      }
+      v_user_full_profile: {
+        Row: {
+          active_status: string | null
+          bio: string | null
+          display_name: string | null
+          fid: number | null
+          follower_count: number | null
+          following_count: number | null
+          google_email: string | null
+          google_id: string | null
+          is_admin: boolean | null
+          is_operator: boolean | null
+          last_daily_bonus_claim: string | null
+          neynar_score: number | null
+          oauth_provider: string | null
+          pfp_url: string | null
+          power_badge: boolean | null
+          rank_name: string | null
+          referred_by: string | null
+          streak_count: number | null
+          tier: number | null
+          total_xp: number | null
+          twitter_id: string | null
+          twitter_username: string | null
+          updated_at: string | null
+          username: string | null
+          verifications: string[] | null
+          wallet_address: string | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      fn_archive_and_reset_season: {
+        Args: { p_new_season_id: number; p_old_season_id: number }
+        Returns: undefined
+      }
+      fn_compute_leaderboard_tiers: {
+        Args: never
+        Returns: {
+          computed_tier: number
+          wallet_address: string
+        }[]
+      }
+      fn_deactivate_expired_tasks: { Args: never; Returns: undefined }
+      fn_get_leaderboard: {
+        Args: { p_limit?: number; p_tier?: string }
+        Returns: {
+          display_name: string
+          pfp_url: string
+          raffle_wins: number
+          raffles_created: number
+          rank_name: string
+          total_xp: number
+          wallet_address: string
+        }[]
+      }
+      fn_get_tier_distribution: {
+        Args: never
+        Returns: {
+          tier_label: string
+          user_count: number
+        }[]
+      }
+      fn_increment_campaign_participants: {
+        Args: { p_campaign_id: string }
+        Returns: undefined
+      }
+      fn_increment_raffle_tickets: {
+        Args: { p_amount?: number; p_wallet: string }
+        Returns: undefined
+      }
+      fn_increment_raffle_wins: {
+        Args: { p_wallet: string }
+        Returns: undefined
+      }
+      fn_increment_raffles_created: {
+        Args: { p_wallet: string }
+        Returns: undefined
+      }
+      fn_increment_user_xp: {
+        Args: { p_wallet: string; p_xp: number }
+        Returns: undefined
+      }
+      fn_refresh_rank_scores: { Args: never; Returns: undefined }
+      is_admin_wallet: { Args: { wallet: string }; Returns: boolean }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
 
 export type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
@@ -846,3 +1261,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

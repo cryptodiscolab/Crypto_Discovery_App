@@ -12,6 +12,7 @@ Workflow ini digunakan khusus ketika user meminta untuk mensinkronisasi environm
 ### 1. Sinkronisasi Lokal
 - [ ] Jalankan `node scripts/sync/sync-all-envs.cjs`
 - [ ] Jalankan `node scripts/sync/rebuild_abis_data.cjs` (**MANDATORY** for Zero-Hardcode integrity).
+- [ ] **Clean-Pipe Sync Protocol**: Gunakan `spawnSync` + `stdin` untuk mencegah korupsi karakter pada Windows (v3.60.2).
 - Langkah ini memastikan semua file `.env` turunan memiliki nilai yang sama dan `abis_data.txt` tersinkron dengan placeholder lingkungan.
 
 ### 2. Sinkronisasi Global ke Vercel & Supabase

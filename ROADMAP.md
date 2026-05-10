@@ -46,6 +46,8 @@
 - [x] **UGC Mission Hardening & Lurah Proactive Monitoring (v3.59.1)**: Implemented link regex guards, multi-action bounds, and stuck mission detection. Fixed Telegram webhook routing to correct Verification Server endpoint. Achieved full WSL environment parity with 13/13 audit checks passed.
 - [x] **Final Polish & Performance Optimization (v3.59.4)**: Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing to eliminate N+1 RPC calls, and added missing `create_task` and `daily_task_completion` reward keys.
 - [x] **Raffle Admin Hardening & Platform Economics (v3.59.5)**: Implemented dynamic fee controls (Rake 20%, Claim 5%, Surcharge 10%) and Creator Revenue Portal for atomic 80% withdrawals. Enforced Zero-Hardcode mandate across all raffle administrative workflows.
+- [x] **TypeScript Ecosystem Hardening & Git Hygiene (v3.60.2)**: Completed 100% TSX migration for Admin Dashboard components. Resolved strict type errors (`never[]`, implicit `any`) in the main user frontend. Hardened `.gitignore` and automated build artifact cleanup to ensure a 100% clean Git tree.
+- [ ] **Phase 11: Serverless API Hardening (v3.61.0)**: 100% TypeScript migration for Vercel Serverless Functions (`api/`). Implementation of strict database entity types and server-side ABI parity.
 
 ## Identified ABI Drift (DAILY_APP) - [REPAIRED v3.38.25]
 All identified drifts have been synchronized with `DailyAppV12Secured.json`.

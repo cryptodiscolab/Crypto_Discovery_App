@@ -19,7 +19,7 @@ As the Lead Orchestrator (Antigravity), you should run this command daily, befor
 
 ```bash
 npm run orchestron
-# OR for full End-to-End synchronization (v3.59.1)
+# OR for full End-to-End synchronization (v3.60.2)
 # This is the "Nuclear Option" triggered by "> sync end to end"
 ```
 
@@ -31,6 +31,6 @@ npm run orchestron
 4. **Close Loop**: Once an issue is fixed and the Orchestron passes, you can manually update the Supabase report status to `RESOLVED` or instruct the user that the ecosystem is completely clean.
 
 ## 4. Sub-Agent Responsibilities
-- **Qwen**: Validates `node -c` for backend bundles and `npm run lint` for the frontend.
-- **OpenClaw**: Runs `npm run gitleaks-check` to enforce the Zero-Secret Leak guard.
-- **DeepSeek**: Runs `scripts/audits/check_sync_status.cjs` and `verify-db-sync.cjs` to ensure Database, Contracts (Zero-Hardcode), and APIs are 100% aligned.
+- **Qwen**: Validates `node -c` for backend bundles and `npm run build` (via `tsc`) for the frontend to enforce **TypeScript Hardening**.
+- **OpenClaw**: Runs `npm run gitleaks-check` to enforce the Zero-Secret Leak guard and Clean Git Tree Mandate.
+- **DeepSeek**: Runs `scripts/audits/check_sync_status.cjs` and `verify-db-sync.cjs` to ensure Database, Contracts (Zero-Hardcode), and APIs are 100% aligned (v3.60.2).

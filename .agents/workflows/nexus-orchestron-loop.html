@@ -1,0 +1,30 @@
+<hr>
+<h2>description: How to run the automated Nexus Orchestron to audit and resolve ecosystem errors across Local IDX, Supabase, and Vercel.</h2>
+<h1>Nexus Orchestron Loop</h1>
+<p>The <strong>Nexus Orchestron</strong> is an automated multi-agent framework designed to ensure 100% ecosystem synchronization and zero errors. It manages the execution of <strong>Qwen</strong> (Syntax), <strong>OpenClaw</strong> (Security), and <strong>DeepSeek</strong> (Logic/Sync) audits.</p>
+<h2>1. How It Works</h2>
+<ol>
+<li>The Orchestron (<code>scripts/orchestrator/nexus_orchestrator.cjs</code>) is run locally.</li>
+<li>It executes all three agent phases sequentially.</li>
+<li>If an error is detected, the Orchestron connects to Supabase and inserts an <code>OPEN</code> report into the <code>nexus_agent_reports</code> table.</li>
+<li>It also checks Vercel for the latest cloud deployment health.</li>
+</ol>
+<h2>2. Triggering the Orchestron</h2>
+<p>As the Lead Orchestrator (Antigravity), you should run this command daily, before merging features, or whenever requested by the user:</p>
+<pre><code class="language-bash">npm run orchestron
+# OR for full End-to-End synchronization (v3.60.2)
+# This is the &quot;Nuclear Option&quot; triggered by &quot;&gt; sync end to end&quot;
+</code></pre>
+<h2>3. The Resolution Loop</h2>
+<ol>
+<li><strong>Review Reports</strong>: The Orchestron will output any <code>Failed</code> statuses to the console and log them to Supabase.</li>
+<li><strong>Read Database</strong>: You can view all currently OPEN issues via the Supabase Dashboard (<code>nexus_agent_reports</code> table) or by running a quick SQL query via the Vercel/Node CLI.</li>
+<li><strong>Fix and Re-Audit</strong>: Once you fix the code (e.g., fixing a syntax error, removing a leaked secret, updating an ABI), you MUST run <code>npm run orchestron</code> again.</li>
+<li><strong>Close Loop</strong>: Once an issue is fixed and the Orchestron passes, you can manually update the Supabase report status to <code>RESOLVED</code> or instruct the user that the ecosystem is completely clean.</li>
+</ol>
+<h2>4. Sub-Agent Responsibilities</h2>
+<ul>
+<li><strong>Qwen</strong>: Validates <code>node -c</code> for backend bundles and <code>npm run build</code> (via <code>tsc</code>) for the frontend to enforce <strong>TypeScript Hardening</strong>.</li>
+<li><strong>OpenClaw</strong>: Runs <code>npm run gitleaks-check</code> to enforce the Zero-Secret Leak guard and Clean Git Tree Mandate.</li>
+<li><strong>DeepSeek</strong>: Runs <code>scripts/audits/check_sync_status.cjs</code> and <code>verify-db-sync.cjs</code> to ensure Database, Contracts (Zero-Hardcode), and APIs are 100% aligned (v3.60.2).</li>
+</ul>

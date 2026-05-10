@@ -1,0 +1,65 @@
+import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
+import { useNavigate } from 'react-router-dom';
+import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
+import { useCMS } from '../../../hooks/useCMS';
+
+/**
+ * AdminGuard: BUILD-READY Security Gate.
+ * Zero-Hardcode Mandate: Inherits from centralized contracts.js
+ */
+const AdminGuard: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+    const { address, isConnected } = useAccount();
+    const { isAdmin, isLoading, isLoadingRoles } = useCMS();
+    const navigate = useNavigate();
+    const [isAuthorized, setIsAuthorized] = useState(null);
+
+    useEffect(() => {
+        if (isConnected === false) {
+            setIsAuthorized(false);
+            return;
+        }
+
+        if (isLoading || isLoadingRoles) return; // Wait for CMS to load roles
+
+        // 1. Check Centralized Roles (Blockchain + DB)
+        if (isAdmin) {
+            setIsAuthorized(true);
+        } else {
+            setIsAuthorized(false);
+        }
+    }, [address, isConnected, isAdmin, isLoading, isLoadingRoles]);
+
+    if (isAuthorized === null) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Lock className="w-12 h-12 text-indigo-500 animate-pulse" />
+                <p className="text-slate-400 font-mono text-[11px] font-black uppercase tracking-widest">Validating Crypto Disco Admin Identity...</p>
+            </div>
+        );
+    }
+
+    if (isAuthorized === false) {
+        return (
+            <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6">
+                <div className="bg-red-500/10 p-6 rounded-full border border-red-500/20 mb-8">
+                    <ShieldAlert className="w-16 h-16 text-red-500" />
+                </div>
+                <h1 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter">Identity <span className="text-red-500">Rejected</span></h1>
+                <p className="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed font-black uppercase tracking-widest">
+                    Critical Security Failure: Your connected wallet identity does not match the Lead Architect authority.
+                </p>
+                <button
+                    onClick={() => navigate('/')}
+                    className="mt-8 flex items-center gap-2 bg-indigo-600 px-8 py-3 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl active:scale-95"
+                >
+                    <ArrowLeft className="w-4 h-4" /> Back to Home
+                </button>
+            </div>
+        );
+    }
+
+    return <>{children}</>;
+};
+
+export default AdminGuard;

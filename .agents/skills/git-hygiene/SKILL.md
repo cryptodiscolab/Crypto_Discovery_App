@@ -22,6 +22,7 @@ Git adalah **Single Source of Truth** untuk kode sumber. Polutan berikut ini **D
 | `FlatCryptoDisco*.sol` | Generated files — rebuild via `npx hardhat flatten` |
 | `_archive/` | Kode lama / legacy |
 | `scripts/audits/env-comparison-report-*.txt` | Output laporan otomatis CI |
+| `tsc_output*.txt`, `lint_results*.txt` | Build/Lint artifacts — CLEAN ON SIGHT (v3.60.2) |
 | `test-env/` | Data environment test lokal |
 | `*.log`, `*.tmp`, `*.scratch.*` | Log & file sementara |
 | `*.png`, `*.jpg`, `*.webp`, `*.gif`, `*.mp4` | Screenshot & media — DILARANG MUTLAK |
@@ -88,7 +89,7 @@ git status
 git rm --cached <nama-file>
 
 # Hapus file sementara yang sudah tidak diperlukan
-Remove-Item tmp_*.cjs, tmp_*.js
+Remove-Item tmp_*.cjs, tmp_*.js, tsc_output*.txt, lint_results*.txt
 
 # Check berapa file yang sedang di-track tapi seharusnya di-ignore
 git ls-files --others --exclude-standard | head -30
@@ -107,4 +108,4 @@ Skill ini WAJIB dipahami dan diterapkan oleh **semua agents**:
 
 ---
 
-*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.59.1.*
+*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.60.2.*

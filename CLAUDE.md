@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.59.5)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.60.2)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -72,6 +72,8 @@ Before responding to ANY request, read these files IN ORDER:
 66. **CONCURRENT UI RESPONSIVENESS MANDATE**: High-load components (Modals with heavy hooks) MUST be triggered using React `startTransition` to prevent main-thread blocking and maintain < 50ms INP responsiveness (v3.56.0).
 67. **MULTI-AGENT ORCHESTRATION MANDATE**: All heavy-duty sub-agent delegations (audits, mass refactoring) MUST use `scripts/orchestrator/gemini_agent_bridge.js` (v1.3.7). This ensures automatic 9-key rotation and model fallback (2.5 -> 3.1) resilience (v3.56.3).
 68. **ZERO-HARDCODE INFRASTRUCTURE MANDATE**: ALL contract addresses in `abis_data.txt` MUST be placeholders (`[RESOLVED_VIA_ENV]`). Hardcoding static addresses in source code or ABI definitions is strictly FORBIDDEN to ensure mainnet portability (v3.59.1).
+69. **TYPESCRIPT HARDENING MANDATE**: All frontend business logic MUST be strictly typed (.tsx). Implicit `any` is forbidden. Use surgical casting (`task as any`) only when interface discovery is blocked by legacy JSON structures (v3.60.2).
+70. **GIT HYGIENE ENFORCEMENT**: Strictly prohibit untracked `.env.vercel*` and audit artifacts (`tsc_output*.txt`). RUN `Remove-Item tsc_output*.txt` before each commit (v3.60.2).
 
 ---
 
@@ -131,4 +133,4 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.60.2 LOCKED.*

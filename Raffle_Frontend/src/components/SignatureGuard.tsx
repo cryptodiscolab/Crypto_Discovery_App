@@ -1,0 +1,138 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
+import { ShieldCheck, Lock, ArrowRight, AlertTriangle, RefreshCw, TrendingUp } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useSIWE } from '../hooks/useSIWE';
+import { useNavigate } from 'react-router-dom';
+
+/**
+ * SignatureGuard: Senior Security Layer.
+ * Enforces mandatory signature approval for all users.
+ * Optimized for Mobile (Base App) with zero blurs and flat design.
+ */
+export const SignatureGuard = ({ children }: { children: React.ReactNode }) => {
+    const { address, isConnected, status } = useAccount();
+    const { signMessageAsync } = useSignMessage();
+    const { disconnect } = useDisconnect();
+    const { isAuthenticated } = useSIWE();
+    const navigate = useNavigate();
+
+    const [isApproved, setIsApproved] = useState(false);
+    const [isSigning, setIsSigning] = useState(false);
+
+    const AUTH_KEY = 'crypto_disco_auth_status';
+
+    // 1. Initial Identity Check & Redirection
+    useEffect(() => {
+        // Wait for Wagmi to initialize
+        if (status === 'reconnecting' || status === 'connecting') return;
+
+        const authRaw = localStorage.getItem(AUTH_KEY);
+        let isAuth = false;
+
+        if (authRaw) {
+            try {
+                // Try parsing as JSON (New SDK Format)
+                const auth = JSON.parse(authRaw);
+                isAuth = auth.status === 'AUTHENTICATED';
+            } catch (e) {
+                // Fallback for Legacy Format
+                isAuth = authRaw === 'authenticated';
+            }
+        }
+
+        const isFullyAuth = isAuth && isConnected;
+        setIsApproved(isFullyAuth);
+
+        if (!isFullyAuth && status === 'disconnected') {
+            // Redirect to login ohne modal to prevent blocking UI
+            // We use a small timeout to allow routing state to settle if needed
+            const timeoutId = setTimeout(() => {
+                navigate('/login', { replace: true });
+            }, 10);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [isConnected, status, address, isAuthenticated, navigate]);
+
+    // 2. High-Performance Signature Logic (Still available if needed for internal actions)
+    const handleSignApproval = useCallback(async () => {
+        if (isSigning) return;
+
+        const timestamp = new Date().toISOString();
+        const message = `Crypto Disco\n\nLogin and verify identity for revenue sharing and anti-sybil protection.\n\nTimestamp: ${timestamp}`;
+
+        setIsSigning(true);
+        try {
+            // 🛡️ Development Bypass: Auto-approve for Mock Wallet
+            const isMockWallet = address?.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266';
+            if (import.meta.env.MODE === 'development' && isMockWallet) {
+                console.log('🛡️ [Security] Mock Wallet detected. Bypassing real signature...');
+                // Artificial delay for UX "Verified" feel
+                await new Promise(r => setTimeout(r, 800));
+            } else {
+                await signMessageAsync({ message });
+            }
+
+            localStorage.setItem(AUTH_KEY, JSON.stringify({ status: 'AUTHENTICATED', timestamp }));
+            setIsApproved(true);
+            toast.success("Identity Verified", { icon: '🛡️' });
+        } catch (err) {
+            console.error('[Security Node] Signature Rejected:', err.message);
+            toast.error("Signature required to enter.", { icon: '⚠️' });
+        } finally {
+            setIsSigning(false);
+        }
+    }, [signMessageAsync, isSigning, address]);
+
+    const handleReject = () => {
+        disconnect();
+        localStorage.removeItem(AUTH_KEY);
+        navigate('/login');
+    };
+
+    // If connected and approved, show app (Outlet/Children)
+    if (isApproved) return children;
+
+    // If connected but not approved: Show Sign-In Prompt (Zero-Flash)
+    if (isConnected && !isApproved) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center space-y-6">
+                <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center animate-pulse">
+                    <Lock className="text-indigo-400" size={32} />
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-lg font-black text-white italic tracking-tighter uppercase">IDENTITY <span className="text-indigo-500">LOCKED</span></h2>
+                    <p className="text-[11px] text-slate-500 max-w-[240px] leading-relaxed font-black uppercase tracking-widest">
+                        PLEASE SIGN THE VERIFICATION MESSAGE TO ACCESS YOUR PROFILE AND REWARDS.
+                    </p>
+                </div>
+                <button
+                    onClick={handleSignApproval}
+                    disabled={isSigning}
+                    className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-indigo-500/20"
+                >
+                    {isSigning ? (
+                        <div className="flex items-center gap-2">
+                            <RefreshCw className="animate-spin w-4 h-4" />
+                            VERIFYING...
+                        </div>
+                    ) : (
+                        <>
+                            <ShieldCheck size={16} />
+                            VERIFY IDENTITY
+                        </>
+                    )}
+                </button>
+                <button 
+                    onClick={handleReject}
+                    className="text-[11px] text-slate-500 font-black uppercase tracking-widest hover:text-red-400 transition-colors pt-2"
+                >
+                    DISCONNECT WALLET
+                </button>
+            </div>
+        );
+    }
+
+    // While checking or redirecting (disconnected), show nothing to avoid flash
+    return null;
+};

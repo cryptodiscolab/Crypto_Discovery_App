@@ -38,7 +38,9 @@ Force Vercel production to follow the Local SOT without GUI copy-pasting (which 
 ### 5. Final Ecosystem Health & Absolute Privacy Audit
 - [ ] Run `npm run gitleaks-check` to execute Zero-Exposure scan for leaking `PRIVATE_KEY` or `SERVICE_ROLE_KEY`.
 - [ ] Re-run `node scripts/audits/check_sync_status.cjs` and verify 13/13 Security Matrix checks pass.
-- [ ] Execute markdown compilation: `npx marked -i PRD/DISCO_DAILY_MASTER_PRD.md -o PRD/DISCO_DAILY_MASTER_PRD.html`.
+- [ ] **TypeScript Hardening Audit**: Run `npm run build` in `Raffle_Frontend` to verify zero type-drift (v3.60.2).
+- [ ] **HTML Parity Sync**: Execute markdown compilation: `npx marked -i PRD/DISCO_DAILY_MASTER_PRD.md -o PRD/DISCO_DAILY_MASTER_PRD.html` and other core PRDs.
+- [ ] **Git Hygiene**: Run `Remove-Item tsc_output*.txt` to ensure a clean tree.
 
 ---
 // turbo-all

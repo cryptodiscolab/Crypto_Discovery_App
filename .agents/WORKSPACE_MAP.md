@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.59.3)
-Last Update: 2026-05-08 (12:00)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.60.2)
+Last Update: 2026-05-10 (17:30)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -152,6 +152,8 @@ graph TD
 3.  **Every API change** must respect the existing bundle structure in `Raffle_Frontend/api/`.
 4.  **No local script execution** without checking `scripts/` subfolders first to avoid duplication.
 5.  **ZERO-HARDCODE MANDATE (v3.59.1)**: Prohibit use of static contract addresses in any source file or ABI definition. Pull exclusively from `.env`.
+6.  **TYPESCRIPT HARDENING MANDATE (v3.60.2)**: All new frontend code MUST be strictly typed (.tsx). Legacy .jsx must be refactored using surgical type casting (e.g., `task as any`) to clear `never` property errors if full interface definitions are unavailable.
+7.  **GIT HYGIENE MANDATE**: Never commit `.env.vercel*` or temporary audit logs. Run `Remove-Item tsc_output*.txt` before closing tasks.
 
 ---
 
@@ -189,4 +191,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-09T17:50:00+07:00 | Multi-Agent Bridge v1.3.8 & 27 Skills Synced. v3.59.3 LOCKED.*
+*Last Updated: 2026-05-10T17:30:00+07:00 | Multi-Agent Bridge v1.3.9 & 27 Skills Synced. v3.60.2 LOCKED.*

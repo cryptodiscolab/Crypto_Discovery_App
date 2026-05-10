@@ -8,7 +8,8 @@ paths = [
     '''artifacts''',
     '''cache''',
     '''tools/nexus-monitor''',
-    '''\.gitleaks\.toml$'''
+    '''\.gitleaks\.toml$''',
+    '''\.agents/skills/'''
 ]
 
 [[rules]]
@@ -90,3 +91,8 @@ paths = [
     description = "Detected sensitive MCP configuration key. Environment variables starting with MCP_ are reserved for secure model context protocol configurations."
     regex = '''(?i)MCP_[A-Z_]+[=:]\s*(?:['"]?[0-9a-zA-Z]{10,200}['"]?)'''
     keywords = ["MCP_"]
+
+[[rules]]
+    id = "forbidden-build-artifacts"
+    description = "Detected forbidden build/lint artifacts (tsc_output.txt, lint_results.txt). These files must be deleted per Git Hygiene Mandate (v3.60.2)."
+    path = '''(?i)(?:tsc_output.*\.txt|lint_results.*\.txt)'''

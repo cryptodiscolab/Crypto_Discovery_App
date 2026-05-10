@@ -36,5 +36,6 @@ This workflow automates the end-to-end synchronization of the Crypto Disco ecosy
 
 6. **Verification**
    - Run `node scripts/audits/check_sync_status.cjs`.
-   - Verify build stability via `npm run build`.
+   - Verify build stability via `npm run build` to confirm **TypeScript Hardening** (v3.60.2).
+   - **Git Hygiene**: Run pollutant cleanup and verify `.gitignore` integrity.
    - Commit and push all documentation changes together.

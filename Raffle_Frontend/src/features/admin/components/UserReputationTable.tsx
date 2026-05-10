@@ -1,0 +1,293 @@
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { supabase } from '../../../lib/supabaseClient';
+import {
+    AlertTriangle,
+    ChevronDown,
+    Calculator,
+    RefreshCw,
+    ExternalLink,
+    Database,
+    CheckCircle
+} from 'lucide-react';
+import { useAccount, useSignMessage } from 'wagmi';
+import { isAddress } from 'viem';
+import toast from 'react-hot-toast';
+
+interface UserProfile {
+    wallet_address: string;
+    username: string;
+    pfp_url?: string;
+    trust_score: number;
+    computed_tier: number;
+    tier_override: number | null;
+}
+
+interface MobileUserCardProps {
+    user: UserProfile;
+    sybilDetected: boolean;
+    onOverride: (addr: string, tier: number) => void;
+}
+
+/**
+ * StaticSkeletonCard: No-animation placeholder for ultra-stable rendering.
+ */
+const StaticSkeletonCard = () => (
+    <div className="p-4 border-b border-white/5 bg-[#0a0a0c] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-white/5 rounded-lg" />
+            <div className="space-y-1">
+                <div className="h-2 w-16 bg-white/5 rounded" />
+                <div className="h-2 w-10 bg-white/5 rounded" />
+            </div>
+        </div>
+        <div className="h-6 w-10 bg-white/5 rounded-md" />
+    </div>
+);
+
+/**
+ * MobileUserCard: Specialized Flexbox Card for WebViews.
+ */
+const MobileUserCard = memo(({ user, sybilDetected, onOverride }: MobileUserCardProps) => {
+    const currentTier = user.tier_override !== null ? user.tier_override : (user.computed_tier || 0);
+    const tiers = [
+        { id: 0, label: 'NONE', color: 'text-slate-500', bg: 'bg-slate-500/10' },
+        { id: 1, label: 'BRONZE', color: 'text-amber-700', bg: 'bg-amber-800/10' },
+        { id: 2, label: 'SILVER', color: 'text-slate-300', bg: 'bg-slate-400/10' },
+        { id: 3, label: 'GOLD', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+        { id: 4, label: 'DIAMOND', color: 'text-cyan-400', bg: 'bg-cyan-500/10' }
+    ];
+
+    const currentTierData = tiers.find(t => t.id === currentTier) || tiers[0];
+    const trustPercent = Math.min(user.trust_score || 0, 100);
+
+    return (
+        <div
+            className="p-4 border-b border-white/5 bg-[#0a0a0c] flex flex-col gap-3"
+            style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+        >
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 bg-[#161618] rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/5">
+                        {user.pfp_url ? (
+                            <img src={user.pfp_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        ) : (
+                            <span className="text-indigo-500 font-black text-[10px]">FC</span>
+                        )}
+                    </div>
+                    <div className="min-w-0">
+                        <p className="font-black text-white text-[13px] truncate uppercase tracking-tight">@{user.username || 'anon'}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                            {sybilDetected ? (
+                                <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[11px] font-black uppercase tracking-widest flex items-center gap-1">
+                                    <AlertTriangle className="w-2.5 h-2.5" /> Sybil
+                                </span>
+                            ) : (
+                                <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[11px] font-black uppercase tracking-widest flex items-center gap-1">
+                                    <CheckCircle className="w-2.5 h-2.5" /> Verified
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                        <select
+                            value={currentTier}
+                            onChange={(e) => onOverride(user.wallet_address, parseInt(e.target.value))}
+                            className={`text-[9px] font-black uppercase tracking-widest ${currentTierData.bg} ${currentTierData.color} border border-white/10 rounded-lg px-2 py-1 outline-none appearance-none cursor-pointer hover:border-white/30 transition-all`}
+                        >
+                            {tiers.map(t => (
+                                <option key={t.id} value={t.id} className="bg-[#121214] text-white">{t.label}</option>
+                            ))}
+                        </select>
+                        <a
+                            href={`https://warpcast.com/${user.username}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 bg-[#161618] rounded-lg border border-white/5 active:scale-95 transition-transform"
+                        >
+                            <ExternalLink className="w-4 h-4 text-indigo-500" />
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-1">
+                <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest opacity-60">
+                    <span className="text-slate-500">Trust Score</span>
+                    <span className="text-white">{user.trust_score || 0}</span>
+                </div>
+                <div className="h-1.5 w-full bg-[#161618] rounded-full overflow-hidden">
+                    <div
+                        className={`h-full rounded-full ${sybilDetected ? 'bg-red-500' : 'bg-indigo-500'}`}
+                        style={{ width: `${trustPercent}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+});
+
+MobileUserCard.displayName = 'MobileUserCard';
+
+export default function UserReputationTable() {
+    const [users, setUsers] = useState<UserProfile[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(0);
+    const [totalCount, setTotalCount] = useState(0);
+    const [revenue, setRevenue] = useState(0);
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
+    const limit = 5;
+
+    const handleQuickOverride = async (targetWallet: string, tierId: number) => {
+        if (!isAddress(targetWallet)) return;
+
+        const tid = toast.loading('Applying tier override...');
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Manual Tier Override\nTarget: ${targetWallet.toLowerCase()}\nTier: ${tierId}\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin/system/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'MANUAL_TIER_OVERRIDE',
+                    payload: { target_address: targetWallet, tier: tierId }
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to apply override");
+            }
+
+            toast.success('Override applied!', { id: tid });
+            setUsers(prev => prev.map(u =>
+                u.wallet_address?.toLowerCase() === targetWallet?.toLowerCase() ? { ...u, tier_override: tierId } : u
+            ));
+        } catch (error: any) {
+            toast.error('Override failed: ' + (error.message || 'Unknown error'), { id: tid });
+        }
+    };
+
+    const fetchReputationMetrics = useCallback(async (isInitial = false) => {
+        setLoading(true);
+        try {
+            const currentPage = isInitial ? 0 : page;
+            const rangeStart = currentPage * limit;
+            const { data, count, error } = await supabase
+                .from('user_profiles')
+                .select('*', { count: 'exact' })
+                .order('trust_score', { ascending: false })
+                .range(rangeStart, rangeStart + limit - 1);
+
+            if (error) throw error;
+
+            if (isInitial) {
+                setUsers(data as UserProfile[] || []);
+                setPage(1);
+            } else {
+                setUsers(prev => [...prev, ...(data as UserProfile[] || [])]);
+                setPage(prev => prev + 1);
+            }
+            setTotalCount(count || 0);
+        } catch (e: any) {
+            console.error('[User Audit] Pipeline sync failed:', e.message);
+            toast.error(`Pipeline sync failed: ${e.message || 'Network error'}`);
+        } finally {
+            setLoading(false);
+        }
+    }, [page, limit]);
+
+    useEffect(() => {
+        fetchReputationMetrics(true);
+    }, []);
+
+    const payoutPool = useMemo(() => revenue * 0.3, [revenue]);
+    const hasMore = users.length < totalCount;
+
+    return (
+        <div className="space-y-4" style={{ willChange: 'transform', transform: 'translateZ(0)' }}>
+            <div className="bg-[#121214] p-4 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                        <Calculator className="w-3.5 h-3.5 text-indigo-500" />
+                        <span className="text-[10px] font-black text-white uppercase tracking-tighter">Revenue Share Simulation (30%)</span>
+                    </div>
+                    <div className="bg-black px-2 py-1 rounded border border-white/10">
+                        <input
+                            type="number"
+                            value={revenue}
+                            onChange={(e) => setRevenue(Number(e.target.value))}
+                            className="bg-transparent border-none outline-none text-white font-black text-[10px] w-14"
+                        />
+                    </div>
+                </div>
+                <div className="h-px bg-white/5 w-full mb-2" />
+                <div className="flex justify-between items-center text-[10px] font-black uppercase">
+                    <span className="text-slate-600 tracking-widest">Share Pool</span>
+                    <span className="text-emerald-500">${payoutPool > 0 ? payoutPool.toLocaleString() : '---'}</span>
+                </div>
+                <p className="text-[7px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2">
+                    * This is a local simulation. Actual rewards are determined by on-chain pool balance.
+                </p>
+            </div>
+
+            <div
+                className="bg-[#0a0a0c] rounded-2xl border border-white/5 overflow-hidden"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+                {users.length === 0 && loading ? (
+                    Array.from({ length: 5 }).map((_, i) => <StaticSkeletonCard key={i} />)
+                ) : (
+                    <>
+                        {users.map(user => (
+                            <MobileUserCard
+                                key={user.wallet_address}
+                                user={user}
+                                sybilDetected={false}
+                                onOverride={handleQuickOverride}
+                            />
+                        ))}
+                    </>
+                )}
+
+                {hasMore && (
+                    <button
+                        disabled={loading}
+                        onClick={() => fetchReputationMetrics()}
+                        className="w-full py-5 bg-[#121214] flex flex-col items-center justify-center gap-1 active:bg-white/5 transition-colors"
+                    >
+                        {loading ? (
+                            <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin" />
+                        ) : (
+                            <>
+                                <ChevronDown className="w-5 h-5 text-slate-700" />
+                                <span className="text-[11px] font-black uppercase tracking-widest leading-none">Load More</span>
+                            </>
+                        )}
+                    </button>
+                )}
+            </div>
+
+            <div className="flex items-center justify-between px-2 opacity-40">
+                <div className="flex items-center gap-1">
+                    <Database className="w-2.5 h-2.5 text-indigo-500" />
+                    <span className="text-[11px] font-black uppercase tracking-widest">Nodes: {totalCount}</span>
+                </div>
+                <button
+                    onClick={() => fetchReputationMetrics(true)}
+                    className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest"
+                >
+                    <RefreshCw className="w-2.5 h-2.5" /> Force Sync
+                </button>
+            </div>
+        </div>
+    );
+}

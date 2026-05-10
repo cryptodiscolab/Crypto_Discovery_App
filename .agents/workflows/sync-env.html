@@ -1,0 +1,25 @@
+<hr>
+<h2>description: Sinkronisasi seluruh environment variables (lokal ke Vercel dan Supabase). Menjalankan script sync-all-envs dan global-sync-env.
+aliases: [&quot;/sync-env&quot;, &quot;sync env&quot;, &quot;sinkronisasi env&quot;, &quot;/sinkronisasi-env&quot;]</h2>
+<h1>Environment Variables Sync Workflow</h1>
+<p>Workflow ini digunakan khusus ketika user meminta untuk mensinkronisasi environment variables (seperti perintah &quot;sync env&quot; atau &quot;sinkronisasi env&quot;).</p>
+<h2>📋 Steps to Execute</h2>
+<h3>1. Sinkronisasi Lokal</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Jalankan <code>node scripts/sync/sync-all-envs.cjs</code></li>
+<li><input disabled="" type="checkbox"> Jalankan <code>node scripts/sync/rebuild_abis_data.cjs</code> (<strong>MANDATORY</strong> for Zero-Hardcode integrity).</li>
+<li><input disabled="" type="checkbox"> <strong>Clean-Pipe Sync Protocol</strong>: Gunakan <code>spawnSync</code> + <code>stdin</code> untuk mencegah korupsi karakter pada Windows (v3.60.2).</li>
+<li>Langkah ini memastikan semua file <code>.env</code> turunan memiliki nilai yang sama dan <code>abis_data.txt</code> tersinkron dengan placeholder lingkungan.</li>
+</ul>
+<h3>2. Sinkronisasi Global ke Vercel &amp; Supabase</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Jalankan <code>node scripts/sync/global-sync-env.js</code> (Bisa memakan waktu 5-10 menit di background).</li>
+<li>Langkah ini akan melakukan force push untuk semua env variables yang ada di lokal menuju environment Production dan Preview di project Vercel (<code>crypto-discovery-app</code> dan <code>dailyapp-verification-server</code>).</li>
+</ul>
+<h3>3. Laporan Eksekusi</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Beritahu user bahwa seluruh environment sudah disinkronisasi sesuai dengan versi <code>.env</code> lokal terbaru.</li>
+</ul>
+<hr>
+<p>// turbo-all
+// Workflow Complete</p>

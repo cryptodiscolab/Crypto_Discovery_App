@@ -5,7 +5,7 @@ description: >
   - **Anti-Hallucination Mandate (v3.59.2)**: Mandatory **Parity Audit** via `parity-audit` endpoint before closing any architectural task. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.59.2
+version: v3.60.2
 ---
 
 ### 🛡️ LOCAL HARDWARE OPTIMIZATION (Mandatory)
@@ -88,7 +88,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.59.2
+- **Versi Terakhir:** v3.60.2
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -231,6 +231,7 @@ Agent **WAJIB** merujuk pada `WORKSPACE_MAP.md` sebelum melakukan `list_dir` ata
 
 ### 11. Self-Audit & Auto-Remind (MANDATORY)
 - **Protocol Refresh**: Dilarang memulai task besar tanpa melakukan `view_file` pada `.cursorrules` dan `SKILL.md`.
+- **Re-read Skills Audit**: Setiap kali perintah "re-read skills" dipicu, Agent **WAJIB** menjalankan audit menyeluruh (`npm run lint` dan `npm run build` di folder frontend) untuk memastikan integritas kode.
 - **Sentinel Conscience**: Setiap kali memberikan `Development Plan`, Agent wajib menyertakan poin: "✅ Protocol & Security Audit: Verified".
 
 ### 7. Viral Growth & Social Proof (NEW)
@@ -279,7 +280,7 @@ Agent kini memiliki kemampuan untuk bekerja secara otonom melalui Telegram saat 
 Sebelum melakukan `git push`, Agent WAJIB menjalankan:
 
 ```bash
-# 1. Gitleaks Scan (CRITICAL) — Prevent secret leaks
+# 1. Gitleaks Scan (CRITICAL) — Prevent secret leaks (v3.60.2 Hardened)
 npm run gitleaks-check
 
 # 2. Import Audit — Periksa impor yang tidak valid
@@ -379,23 +380,37 @@ ABIs HARUS diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - [ ] **🛡️ ECOSYSTEM SECURITY REMEDIATION AUDIT (v3.43.0)**: Verifikasi 100% parity lintas proyek Vercel menggunakan **Clean-Pipe Sync Protocol**. Pastikan `robust_sync.cjs` dijalankan untuk setiap perubahan environment. **WAJIB.**
 - [ ] **📡 END-TO-END SYNC AUDIT (T.E.S)**: Verifikasi bahwa seluruh rantai (Env -> ABIs -> APIs -> Contracts -> Database -> UI) sinkron 100% tanpa drift. **WAJIB jika perintah `sync end to end` dipicu.**
 - [ ] **🛠️ BLOCKCHAIN PARITY AUDIT (v3.59.2)**: Verifikasi keberadaan detektor *drift* di `BlockchainConfigSection.jsx` dan ketersediaan tombol **Emergency Parity Sync**. Pastikan `admin-bundle.js` memiliki aksi `BATCH_UPDATE_POINTS` dan audit paritas sistem aktif. **WAJIB.**
-
-### Section 13: End-to-End Ecosystem Synchronization (T.E.S) Protocol (v3.59.1)
-Mandat ini diaktifkan saat agen menerima perintah `> sync end to end` atau `sinkronisasi total`.
-
-**Alur Eksekusi Wajib:**
-1.  **Phase 1: Environment Integrity**: Jalankan `node scripts/sync/sync-all-envs.cjs`. Verifikasi 16+ file env.
-2.  **Phase 2: Contract & ABI Purge**: Jalankan `node scripts/sync/rebuild_abis_data.cjs`. Pastikan `abis_data.txt` bersih dari hardcode.
-3.  **Phase 3: Core Audit Pipeline**: Jalankan `node scripts/audits/check_sync_status.cjs`. Pastikan 13/13 checks PASSED.
-4.  **Phase 4: Database & XP Parity**: Jalankan `node scripts/audits/verify-db-sync.cjs`. Verifikasi `point_settings` vs logic backend.
-5.  **Phase 5: API & Bundle Guard**: Verifikasi integritas `api/*-bundle.js` terhadap schema DB dan contract ABI terbaru.
-6.  **Phase 6: UI/UX State Verification**: Lakukan pengecekan visual (via browser sub-agent jika perlu) untuk memastikan data blockchain tersaji benar di Profile/Tasks Page.
-7.  **Phase 7: Documentation Lock**: Update `DISCO_DAILY_MASTER_PRD.md`, `CLAUDE.md`, and `.cursorrules` to reflect the new state.
+- [ ] **🧹 ZERO-WARNING HYGIENE AUDIT (v3.59.2)**: Verifikasi bahwa seluruh peringatan linter (`no-unused-vars`, `exhaustive-deps`) telah diminimalisir secara proaktif. Gunakan `scripts/cleanup_lint_safe.cjs` untuk pembersihan massal yang aman. **WAJIB.**
 
 **Status Final**: Laporan ke user wajib mencakup status "✅ ALL SYSTEMS SYNCHRONIZED & OPERATIONAL" dengan rincian per phase.
 
----
-*Status: ACTIVE. Sentinel Guard: ENABLED. v3.59.2 Locked.*
+### Section 14: Zero-Warning Hygiene Protocol (v3.59.2)
+Protokol ini bertujuan untuk menjaga kebersihan codebase dari "noise" peringatan linter yang dapat menyembunyikan masalah nyata.
+
+**Aturan Pembersihan Proaktif:**
+1.  **Unused React Imports**: Selalu hapus `import React from 'react'` di React 18+ jika variabel `React` tidak digunakan sebagai objek (misal: `React.useState`).
+2.  **Catch Block Hygiene**: Gunakan `catch (_)` untuk error yang sengaja tidak diproses, tetapi **PASTIKAN** variabel error asli tidak direferensikan di dalam blok tersebut.
+3.  **Exhaustive Deps**: Jangan membabi buta menambahkan dependensi. Evaluasi apakah efek memang harus berjalan ulang. Jika sengaja kosong, tambahkan komentar alasan.
+4.  **Dead Code Removal**: Hapus variabel atau fungsi yang ditandai `no-unused-vars` segera setelah fitur selesai di-refactor.
+
+**Alat Bantu**: Gunakan `node scripts/cleanup_lint_safe.cjs` untuk pembersihan otomatis yang terverifikasi aman dari ReferenceError.
+
+
+### Section 15: Modular Feature-Based Architecture Mandate (v3.60.0)
+Protokol ini mewajibkan transisi dari monolitik komponen ke struktur modular berbasis fitur untuk meningkatkan maintainability dan skalabilitas.
+
+**Prinsip Utama:**
+1.  **Feature Isolation**: Setiap fitur utama (Profile, Raffle, Admin, Missions) wajib memiliki folder sendiri di `src/features/[feature-name]`.
+2.  **Separation of Concerns**:
+    *   `components/`: UI murni dan sub-komponen.
+    *   `hooks/`: Logika bisnis dan data fetching (TanStack Query).
+    *   `store/`: State management lokal fitur (Zustand).
+    *   `services/`: Definisi API calls.
+3.  **Clean Entry Point**: File halaman utama (`src/pages/*.jsx`) hanya boleh bertindak sebagai orchestrator/layout, bukan tempat logika bisnis ribuan baris.
+4.  **Service Layer**: Dilarang melakukan fetch langsung di komponen. Gunakan central service di `src/services/`.
+5.  **TanStack Query Standard**: Gunakan `useQuery` untuk fetching dan `useMutation` untuk aksi yang mengubah data. Hapus `useEffect` manual untuk data fetching.
+
+**Verifikasi**: Setiap fitur baru atau refactor wajib lulus audit paritas struktur modular sebelum dinyatakan "Clean Move".
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).

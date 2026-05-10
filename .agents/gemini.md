@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-05-01*
-*PRD Version: v3.56.4 (SBT Tier Hardening & Sequential Mandate — Anti-Hallucination v1.0)*
+*Last Updated: 2026-05-10*
+*PRD Version: v3.60.2 (TypeScript Hardening & Git Hygiene — Anti-Hallucination v1.1)*
 
 ---
 
@@ -115,6 +115,9 @@ Before responding to ANY request, read these files IN ORDER:
 | **BP-005** | **ABI Drift Hook Mismatch** | Saat contract diupgrade, index-based access (e.g., `userRawData[1]`) bisa bergeser. Named property fallback wajib ada. | `useSBT.js`, `useNFTTiers.js` | Gunakan pola: `data.namedProp !== undefined ? data.namedProp : data[fallbackIndex]`. | v3.38.8 |
 | **BP-006** | **Raffle Rejection Sync Fail** | Admin menolak raffle di database tanpa melakukan refund on-chain, menyebabkan dana sponsor tersangkut. | `ModerationCenterTab.jsx`, `user-bundle.js` | **Refund-First Policy**: Selalu panggil `cancelRaffle()` on-chain sebelum memanggil API `reject-raffle`. Pastikan hash transaksi refund tersimpan di database. | v3.55.0 |
 | **BP-007** | **SBT Tier Jumping Assumption** | Agent berasumsi user bisa upgrade langsung ke Gold dari Rookie jika XP cukup. Padahal kontrak `DailyAppV13` mewajibkan sequential upgrade (N+1). | `SBTUpgradeCard.jsx`, `DailyAppV13.sol` | **Sequential-Only Policy**: Selalu verifikasi bahwa `tier == currentTier + 1`. Tampilkan pesan edukatif di UI jika user mencoba melompati tier. | v3.56.4 |
+| **BP-008** | **TS `never` Property Access** | State initializers `useState([])` tanpa generic `<any[]>` menyebabkan TS menyimpulkan type `never[]`. Property access pada array elemen (e.g., `item.id`) gagal. | `TaskList.tsx`, `UnifiedDashboard.tsx` | Gunakan explicit casting `item as any` atau definisikan interface. Untuk state, gunakan `useState<any[]>([])`. | v3.60.2 |
+| **BP-009** | **Implicit `any` in Hooks** | Hook parameters (e.g., `taskId` di `useTaskInfo`) tanpa type menyebabkan implicit `any` error di strict mode. | `useTaskInfo.ts` | Tambahkan type explicit: `taskId: string | number`. | v3.60.2 |
+| **BP-010** | **Vercel `.env` Leak Risk** | File `.env.vercel*` tertinggal di root dan berisiko ter-commit. | `.gitignore` | Tambahkan `.env.vercel*` dan `.env.prod.vercel` ke `.gitignore` secara permanen. | v3.60.2 |
 
 > 💡 **Agent Self-Check**: Sebelum menulis kode yang menyentuh contract write, selalu tanyakan: *"Apakah contract address yang di-call SAMA dengan sumber data yang digunakan?"*
 
@@ -496,5 +499,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.56.4 - Hardened & Synchronized.*
-*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE.*
+*Constitution v3.60.2 - Hardened & Synchronized.*
+*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT.*
