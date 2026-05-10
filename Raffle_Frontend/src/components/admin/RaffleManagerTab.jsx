@@ -7,6 +7,7 @@ import { encodeFunctionData } from 'viem';
 import { RAFFLE_ABI, CONTRACTS } from '../../lib/contracts';
 import { useRaffleList, useRaffleInfo, useRaffle } from '../../hooks/useRaffle';
 import toast from 'react-hot-toast';
+import { supabase } from '../../lib/supabaseClient';
 
 const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE;
 
@@ -234,8 +235,6 @@ function AdminRaffleCreateForm() {
         </div>
     );
 }
-
-import { supabase } from '../../lib/supabaseClient';
 
 function CreatorEarningsCard() {
     const { address } = useAccount();
@@ -552,6 +551,7 @@ export function RaffleManagerTab() {
                 </div>
             </div>
         </div>
+    </div>
     );
 }
 
