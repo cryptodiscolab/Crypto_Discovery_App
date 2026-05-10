@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign, Image as ImageIcon, Link as LinkIcon, Twitter, Tag, Shield, Clock, ChevronDown, Lock } from 'lucide-react';
+import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign, Image as ImageIcon, Link as LinkIcon, Twitter, Tag, Shield, Clock, ChevronDown, Lock, Trophy } from 'lucide-react';
 import { useAccount, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
