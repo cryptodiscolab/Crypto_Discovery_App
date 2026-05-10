@@ -1,0 +1,239 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
+import { verifyMessage } from 'viem';
+import {
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+    rpcClient,
+    RAFFLE_ABI,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    isMainnet
+} from './constants';
+
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// ─── Telegram Notification Helper ────────────────────────────────────────────
+async function notifyTelegramWinner(walletAddress: string, raffleId: string, xpAwarded: number) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+    try {
+        const short = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+        const text = `🏆 *NFT Raffle Winner Claim!*\n\n` +
+            `Wallet: \`${short}\`\n` +
+            `Raffle ID: #${raffleId}\n` +
+            `XP Bonus: +${xpAwarded} XP\n\n` +
+            `🎉 Prize claimed successfully on-chain.`;
+
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text,
+                parse_mode: 'Markdown'
+            })
+        });
+    } catch (e: any) {
+        console.warn('[Raffle] Telegram notify failed:', e.message);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// FEATURE GUARDS
+// -----------------------------------------------------------------------------
+async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promise<boolean> {
+    if (!isMainnet) return true;
+    
+    try {
+        const { data } = await supabaseAdmin
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'active_features')
+            .maybeSingle();
+        
+        const activeFeatures = data?.value || {};
+        if (activeFeatures[featureKey] !== true) {
+            res.status(403).json({ error: `Feature [${featureKey}] is currently disabled.` });
+            return false;
+        }
+        return true; 
+    } catch (e: any) {
+        console.error(`[Feature Guard] Failed to verify ${featureKey}`, e.message);
+        res.status(500).json({ error: "Feature Guard verification failed" });
+        return false;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// MAIN HANDLER
+// -----------------------------------------------------------------------------
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    const action = req.body?.action || req.query?.action;
+
+    if (['claim-prize'].includes(action)) {
+        if (!(await checkFeatureGuard('ugc_payment', res))) return;
+    }
+
+    switch (action) {
+        case 'claim-prize': await handleClaimPrize(req, res); break;
+        case 'leaderboard': await handleLeaderboard(req, res); break;
+        case 'announce-winner': await handleAnnounceWinner(req, res); break;
+        default:
+            return res.status(400).json({ error: `Invalid action: ${action}` });
+    }
+}
+
+async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
+    const { raffle_id } = req.body;
+    if (!raffle_id) return res.status(400).json({ error: 'Missing raffle_id' });
+
+    try {
+        const raffleInfo: any = await rpcClient.readContract({
+            address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA as `0x${string}`,
+            abi: RAFFLE_ABI,
+            functionName: 'getRaffleInfo',
+            args: [BigInt(raffle_id)]
+        });
+
+        if (!raffleInfo.isFinalized) return res.status(400).json({ error: 'Raffle is not finalized' });
+
+        const winners = (raffleInfo.winners || []).filter((w: string) => w !== '0x0000000000000000000000000000000000000000');
+        if (winners.length === 0) return res.status(400).json({ error: 'No winners found' });
+
+        if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+            const winnersList = winners.map((w: string) => `• \`${w.slice(0, 6)}...${w.slice(-4)}\``).join('\n');
+            const prizeETH = (Number(raffleInfo.prizePool) / 1e18).toFixed(4);
+            
+            const text = `🎉 *RAFFLE #${raffle_id} FINALIZED!* 🎉\n\n` +
+                `量子サイコロが振られ、当選者が決定しました！ \n\n` +
+                `💰 *Total Prize:* ${prizeETH} ETH\n` +
+                `🏆 *Winners:*\n${winnersList}\n\n` +
+                `🔗 Status & Claim: \nhttps://disco-daily.vercel.app/raffles`;
+
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text,
+                    parse_mode: 'Markdown'
+                })
+            });
+        }
+
+        return res.status(200).json({ success: true, message: 'Announcement sent' });
+    } catch (error: any) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
+    const { wallet_address, signature, message, raffle_id, tx_hash } = req.body;
+    if (!wallet_address || !signature || !message || !raffle_id) return res.status(400).json({ error: 'Missing required fields' });
+
+    try {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        if (!message.includes(`Raffle ID: ${raffle_id}`)) throw new Error(`Message mismatch for Raffle ID: ${raffle_id}`);
+
+        const normalizedWallet = wallet_address.toLowerCase();
+
+        try {
+            const raffleInfo: any = await rpcClient.readContract({
+                address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA as `0x${string}`,
+                abi: RAFFLE_ABI,
+                functionName: 'getRaffleInfo',
+                args: [BigInt(raffle_id)]
+            });
+
+            const winners = (raffleInfo.winners || []).map((w: string) => w.toLowerCase());
+            if (!winners.includes(normalizedWallet)) {
+                return res.status(403).json({ error: `Not a registered winner for Raffle #${raffle_id}` });
+            }
+        } catch (onChainErr: any) {
+            return res.status(500).json({ error: `Blockchain verification failed: ${onChainErr.message}` });
+        }
+
+        const { count } = await supabaseAdmin
+            .from('user_task_claims')
+            .select('id', { count: 'exact', head: true })
+            .eq('wallet_address', normalizedWallet)
+            .eq('task_id', `raffle_win_${raffle_id}`);
+
+        if (count && count > 0) return res.status(200).json({ success: true, alreadyClaimed: true });
+
+        const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').maybeSingle();
+        const xpAwarded = setting?.points_value || 0;
+
+        const { error: claimError } = await supabaseAdmin
+            .from('user_task_claims')
+            .insert({
+                wallet_address: normalizedWallet,
+                task_id: `raffle_win_${raffle_id}`,
+                xp_earned: xpAwarded,
+                platform: 'system',
+                action_type: 'raffle_win',
+                target_id: String(raffle_id),
+                claimed_at: new Date().toISOString()
+            });
+
+        if (claimError && claimError.code !== '23505') throw claimError;
+
+        if (xpAwarded > 0) {
+            await supabaseAdmin.rpc('fn_increment_xp', { p_wallet: normalizedWallet, p_amount: xpAwarded });
+        }
+
+        await supabaseAdmin.rpc('fn_increment_raffle_wins', { p_wallet: normalizedWallet });
+        await notifyTelegramWinner(normalizedWallet, raffle_id, xpAwarded);
+
+        await logActivity({
+            wallet: normalizedWallet,
+            category: 'REWARD',
+            type: 'NFT Raffle Win',
+            description: `Claimed prize for Raffle #${raffle_id}`,
+            amount: xpAwarded,
+            symbol: 'XP',
+            txHash: tx_hash
+        });
+
+        return res.status(200).json({ success: true, xpAwarded });
+    } catch (error: any) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
+    const { limit = '20', sort_by = 'raffle_wins' } = req.query as { limit?: string, sort_by?: string };
+    try {
+        const validSortKeys = ['raffle_wins', 'total_xp', 'raffles_created'];
+        const safeSort = validSortKeys.includes(sort_by) ? sort_by : 'raffle_wins';
+
+        const { data, error } = await supabaseAdmin
+            .from('v_user_full_profile')
+            .select('wallet_address, display_name, pfp_url, total_xp, rank_name, raffle_wins, raffles_created, streak_count')
+            .order(safeSort, { ascending: false })
+            .limit(parseInt(limit));
+
+        if (error) throw error;
+        return res.status(200).json({ success: true, data });
+    } catch (error: any) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function logActivity({ wallet, category, type, description, amount, symbol, txHash }: any) {
+    try {
+        await supabaseAdmin.from('user_activity_logs').insert({
+            wallet_address: wallet.toLowerCase(),
+            category,
+            activity_type: type,
+            description,
+            value_amount: amount || 0,
+            value_symbol: symbol || 'XP',
+            tx_hash: txHash
+        });
+    } catch (err: any) {
+        console.error('[logActivity Error]', err.message);
+    }
+}

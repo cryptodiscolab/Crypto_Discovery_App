@@ -1,13 +1,14 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { verifyMessage } from 'viem';
+import {
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY
+} from './constants';
 
-// Init Supabase Admin
-const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').trim();
-const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const { action, campaign_id, wallet, signature, message } = req.body;
@@ -15,14 +16,12 @@ export default async function handler(req, res) {
     try {
         if (action === 'join') {
             if (!campaign_id || !wallet || !signature || !message) {
-                return res.status(400).json({ error: 'Missing join data (campaign_id, wallet, signature, message)' });
+                return res.status(400).json({ error: 'Missing join data' });
             }
 
-            // Verify Signature
-            const valid = await verifyMessage({ address: wallet, message, signature });
+            const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
             if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-            // 1. Check if user already joined
             const { data: existing } = await supabaseAdmin
                 .from('user_claims')
                 .select('id')
@@ -30,11 +29,8 @@ export default async function handler(req, res) {
                 .eq('user_address', wallet.toLowerCase())
                 .maybeSingle();
 
-            if (existing) {
-                return res.status(400).json({ error: 'Already joined this campaign' });
-            }
+            if (existing) return res.status(400).json({ error: 'Already joined' });
 
-            // 2. Check campaign capacity
             const { data: campaign, error: cErr } = await supabaseAdmin
                 .from('campaigns')
                 .select('max_participants, current_participants, status')
@@ -47,7 +43,6 @@ export default async function handler(req, res) {
                 throw new Error('Campaign is full');
             }
 
-            // 3. Create claim record
             const { error: claimErr } = await supabaseAdmin
                 .from('user_claims')
                 .insert({
@@ -60,15 +55,13 @@ export default async function handler(req, res) {
 
             if (claimErr) throw claimErr;
 
-            // 4. Increment participants (Atomic Fix)
             await supabaseAdmin.rpc('fn_increment_campaign_participants', { p_campaign_id: campaign_id });
 
             return res.status(200).json({ success: true });
         }
 
         return res.status(400).json({ error: 'Invalid action' });
-    } catch (error) {
-        console.error('[API] Campaign Error:', error);
-        return res.status(500).json({ error: error.message || 'Internal server error' });
+    } catch (error: any) {
+        return res.status(500).json({ error: error.message });
     }
 }
