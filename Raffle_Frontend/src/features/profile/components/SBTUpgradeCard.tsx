@@ -65,12 +65,12 @@ export function SBTUpgradeCard() {
 
     const hasTotalXP = Number(userPoints) >= nextTier.pointsRequired;
     // DEV BYPASS: Auto-pass XP check for mock admin
-    const hasOnChainXP = (import.meta.env.DEV && address?.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'.toLowerCase()) 
+    const hasOnChainXP = (import.meta.env.DEV && address?.toLowerCase() === (import.meta.env.VITE_DEV_WALLET || '').toLowerCase()) 
         ? true 
         : Number(dailyAppXP) >= nextTier.pointsRequired;
     const isSoldOut = nextTier.maxSupply > 0 && nextTier.currentSupply >= nextTier.maxSupply;
     // DEV BYPASS: Auto-pass ETH balance check for mock admin
-    const hasEnoughETH = (import.meta.env.DEV && address?.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'.toLowerCase())
+    const hasEnoughETH = (import.meta.env.DEV && address?.toLowerCase() === (import.meta.env.VITE_DEV_WALLET || '').toLowerCase())
         ? true
         : (balanceData?.value ?? 0n) >= nextTier.mintPrice;
     

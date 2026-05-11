@@ -5,7 +5,8 @@ import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     NEYNAR_API_KEY,
-    getEnv
+    getEnv,
+    sanitizeError
 } from './constants';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -36,6 +37,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!response.ok) return res.status(502).json({ error: 'Neynar error' });
         return res.status(200).json({ ok: true });
     } catch (e: any) {
-        return res.status(500).json({ error: e.message });
+        return res.status(500).json({ error: sanitizeError(e) });
     }
 }

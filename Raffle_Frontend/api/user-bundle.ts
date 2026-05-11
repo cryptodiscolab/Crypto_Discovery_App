@@ -18,7 +18,8 @@ import {
     MASTER_ADMINS,
     WALLET_BOT_SIGNER,
     CHAIN_ID,
-    isMainnet
+    isMainnet,
+    sanitizeError
 } from './constants';
 import { 
     UserProfile, 
@@ -221,7 +222,7 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
         });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        res.status(500).json({ error: msg });
+        res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -265,7 +266,7 @@ async function handleLoginSync(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, profile: data });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -376,7 +377,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json(result);
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -411,7 +412,7 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ error: 'No Farcaster profile' });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -458,7 +459,7 @@ async function handleUpdateProfile(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: msg });
+        const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -484,7 +485,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, logs: data });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -508,7 +509,7 @@ async function handleFrontendLogActivity(req: VercelRequest, res: VercelResponse
 
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: msg });
+        const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -537,7 +538,7 @@ async function handleGetPointSettings(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, settings });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -653,7 +654,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -756,7 +757,7 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -827,7 +828,7 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, tier: actualTierOnChain });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -855,7 +856,7 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -904,7 +905,7 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json(data);
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -938,7 +939,7 @@ async function handleSyncOAuth(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Invalid provider' });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -972,7 +973,7 @@ async function handleApproveMission(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -991,7 +992,7 @@ async function handleApproveRaffle(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -1013,7 +1014,7 @@ async function handleRejectRaffle(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -1036,7 +1037,7 @@ async function handleFetchPendingMissions(req: VercelRequest, res: VercelRespons
         return res.status(200).json({ success: true, data });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -1052,7 +1053,7 @@ async function handleFetchPendingRaffles(req: VercelRequest, res: VercelResponse
         return res.status(200).json(data);
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -1063,7 +1064,7 @@ async function handleGetHealth(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true, health: data });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -1081,7 +1082,7 @@ async function handleResetHealth(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -1108,7 +1109,7 @@ async function handleSyncBaseSocial(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, basename });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -1121,7 +1122,7 @@ async function handleGetDailyProgress(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, progress: data || { wallet_address: wallet.toLowerCase(), completed_count: 0, bonus_claimed: false }, bonus_amount: bonusSetting?.points_value || 50 });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 

@@ -8,11 +8,15 @@ import {
     RPC_URL, 
     getContractAddr,
     RAFFLE_EVENT_ABI,
-    IS_MAINNET
+    IS_MAINNET,
+    sanitizeError
 } from './constants';
 import { 
     PointSetting,
-    Database 
+    Database,
+    DbDailyTask,
+    ExtendedVercelRequest,
+    TaskClaimResponse
 } from './types';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -50,7 +54,7 @@ async function getTaskReward(taskId: string): Promise<number> {
             .from('daily_tasks')
             .select('xp_reward, platform, action_type')
             .eq('id', taskId)
-            .maybeSingle<DailyTask>();
+            .maybeSingle<DbDailyTask>();
             
         if (!task) return 0;
         const dynamicKey = `${task.platform}_${task.action_type}`.toLowerCase().replace(/\s+/g, '_');
@@ -164,7 +168,7 @@ async function validateAndCalculateXP(wallet_address: string, signature: string,
     if (task_id && task_id.startsWith('raffle_')) {
         targetId = task_id.split('_').pop() || null;
     } else {
-        const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).maybeSingle<DailyTask>();
+        const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).maybeSingle<DbDailyTask>();
         targetId = task?.target_id || null;
     }
 
@@ -215,7 +219,7 @@ async function checkAndGrantDailyBonus(wallet_address: string) {
                 .maybeSingle()
         ]);
 
-        if (!progress || progress.bonus_claimed || progress.completed_count < 3) return;
+        if (!progress || progress.bonus_claimed || (progress.completed_count ?? 0) < 3) return;
 
         const isVerified = !!(profile?.is_base_social_verified || profile?.fid || profile?.twitter_id);
         
@@ -302,7 +306,7 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         console.error(`[API Handler Error] Action: ${action}`, msg);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -342,7 +346,7 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         console.error('[handleClaim Error]', msg);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
@@ -532,6 +536,6 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('[handleClaimUgcCampaign]', msg);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }

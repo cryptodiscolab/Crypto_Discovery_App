@@ -10,9 +10,11 @@ export interface Task {
     isActive: boolean;
     cooldown: number;
     minTier: number;
+    createdAt?: number;
     requiresVerification: boolean;
     sponsorshipId: number;
     platform?: string;
+    action_type?: string;
     isBaseSocialRequired?: boolean;
 }
 

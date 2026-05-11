@@ -145,7 +145,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI, functionName: 'addTask',
+                abi: DAILY_APP_ABI as any, functionName: 'addTask',
                 args: [BigInt(dailyPoints || 0), BigInt(cd), BigInt(dailyMinTier), dailyDesc, '', dailyRequiresVerify]
             }),
         }];
@@ -156,7 +156,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI, functionName: 'buySponsorshipWithToken',
+                abi: DAILY_APP_ABI as any, functionName: 'buySponsorshipWithToken',
                 args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, totalPool, (CONTRACTS.CREATOR_TOKEN as `0x${string}`) || '0x0000000000000000000000000000000000000000']
             }),
         }];
@@ -300,7 +300,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                         {subTab === 'daily' && (
                             <QuickTaskForgeSection
                                 dailyDesc={dailyDesc} onDailyDescChange={setDailyDesc}
-                                dailyPoints={dailyPoints} onDailyPointsChange={setDailyPoints}
+                                dailyPoints={dailyPoints} onDailyPointsChange={(v: string | number) => setDailyPoints(String(v))}
                                 dailyCooldown={dailyCooldown} onDailyCooldownChange={setDailyCooldown}
                                 dailyRequiresVerify={dailyRequiresVerify} onDailyRequiresVerifyChange={setDailyRequiresVerify}
                                 dailyIsBaseSocialRequired={dailyIsBaseSocialRequired} onDailyIsBaseSocialRequiredChange={setDailyIsBaseSocialRequired}
@@ -334,7 +334,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                         {subTab === 'BATCH_CREATOR' && (
                             <TaskBatchCreatorSection 
                                 tasksBatch={tasksBatch} 
-                                onUpdateTask={updateTaskLine} 
+                                onUpdateTask={updateTaskLine as any} 
                                 onDeploy={handleBatchSave} 
                                 isSaving={isWaiting} 
                             />

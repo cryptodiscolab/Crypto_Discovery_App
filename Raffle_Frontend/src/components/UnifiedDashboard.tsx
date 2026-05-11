@@ -191,7 +191,7 @@ export function UnifiedDashboard() {
                     {/* Daily Admin Tasks */}
                     <div className="space-y-4">
                         <div className="space-y-3">
-                            {((dailyTaskIds as bigint[]) || [])?.map((tid) => (
+                            {((dailyTaskIds as unknown as bigint[]) || [])?.map((tid) => (
                                 <DailyTaskItem
                                     key={Number(tid)}
                                     taskId={Number(tid)}
@@ -276,7 +276,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
                     <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'}`}>{String(t.title || '').toUpperCase()}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">
-                            +{estimateXP(t.baseReward, multipliers)} XP
+                            +{estimateXP(t.baseReward, multipliers as MultiplierResult)} XP
                         </p>
                         {multipliers.total !== 1.0 && (
                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight line-through opacity-50">
@@ -300,7 +300,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
                     ) : (
                         <ClaimButton 
                             taskId={taskId} 
-                            isDisabled={finalDisabled} 
+                            isDisabled={!!finalDisabled} 
                             onSuccess={(hash) => {
                                 onSucceed(hash);
                                 refetchCompletion();
@@ -545,7 +545,7 @@ function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, mu
                         )}
                     </div>
                     <p className={`text-[11px] font-black uppercase tracking-widest ${isSelected ? 'text-white' : 'text-indigo-400'}`}>
-                        +{estimateXP(task.baseReward, multipliers)} XP
+                        +{estimateXP(task.baseReward, multipliers as MultiplierResult)} XP
                     </p>
                 </div>
             </div>

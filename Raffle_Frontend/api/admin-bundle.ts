@@ -18,9 +18,10 @@ import {
     getEnv,
     DAILY_APP_ADDRESS,
     RAFFLE_ADDRESS,
-    SAFE_MULTISIG
+    SAFE_MULTISIG,
+    sanitizeError
 } from './constants';
-import { Database } from './database.types';
+import { Database, Json } from './database.types';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -199,7 +200,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(error) });
     }
 }
 
@@ -232,7 +233,7 @@ async function handleParityAudit(res: VercelResponse) {
                 }],
                 functionName: 'userStats',
                 args: [u.wallet_address as `0x${string}`]
-            }) as [bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+            }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
 
             const onChainXp = Number(stats[0]);
             const onChainTier = Number(stats[3]);
@@ -307,7 +308,7 @@ async function handleEconomyStats(res: VercelResponse) {
         supabaseAdmin.from('user_activity_logs').select('value_amount').eq('category', 'PURCHASE').eq('value_symbol', 'USDC'),
         supabaseAdmin.from('user_task_claims').select('xp_earned')
     ]);
-    const totalRevenue = revenueRes.data?.reduce((s, r) => s + (parseFloat(r.value_amount) || 0), 0) || 0;
+    const totalRevenue = revenueRes.data?.reduce((s, r) => s + (Number(r.value_amount) || 0), 0) || 0;
     const totalXp = claimsRes.data?.reduce((s, c) => s + (c.xp_earned || 0), 0) || 0;
     return res.status(200).json({ success: true, metrics: { totalRevenue, totalXp } });
 }
@@ -329,7 +330,7 @@ async function handleAccountantSync(req: VercelRequest, res: VercelResponse, adm
         return res.status(200).json({ success: true, details: syncRes.data });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        return res.status(500).json({ error: msg });
+        return res.status(500).json({ error: sanitizeError(e) });
     }
 }
 
@@ -410,6 +411,7 @@ async function handleTaskSync(tasks: TaskSyncData[], res: VercelResponse) {
     for (const task of tasks) {
         await supabaseAdmin.from('daily_tasks').insert([{
             title: task.title,
+            description: task.title,
             xp_reward: task.reward_points,
             platform: task.platform,
             action_type: task.action_type,
@@ -431,7 +433,7 @@ interface UgcMissionCreatePayload {
 }
 
 async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: string, res: VercelResponse) {
-    const errors = validateUgcMission(payload);
+    const errors = validateUgcMission(payload as unknown as MissionPayload);
     if (errors.length > 0) return res.status(400).json({ error: 'Validation failed', details: errors });
 
     const missionData = { ...payload, is_active: false, is_verified_payment: false, created_at: new Date().toISOString() };
@@ -452,7 +454,7 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
         created_at: new Date().toISOString()
     }));
 
-    await supabaseAdmin.from('daily_tasks').insert(taskRows);
+    await supabaseAdmin.from('daily_tasks').insert(taskRows as any);
     await logAdminAction(admin, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, ...missionData } as unknown as Json);
     return res.status(200).json({ success: true, data: campaign });
 }
@@ -463,11 +465,11 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
     if (mErr || !mission) throw new Error("Mission not found");
     if (!mission.payment_tx_hash) throw new Error("No payment hash");
 
-    const receipt = await rpcClient.getTransactionReceipt({ hash: mission.payment_tx_hash });
+    const receipt = await rpcClient.getTransactionReceipt({ hash: mission.payment_tx_hash as `0x${string}` });
     if (receipt.status !== 'success') throw new Error("Transaction failed");
 
     const { data: ugcConfigRes } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
-    const ugcConfig = ugcConfigRes?.value || {};
+    const ugcConfig = (ugcConfigRes?.value || {}) as Record<string, string>;
     const treasury = ugcConfig.treasury_address || SAFE_MULTISIG;
 
     let totalUsdcTransferred = BigInt(0);
@@ -480,9 +482,9 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
         }
     }
 
-    const rewardPerUserRaw = BigInt(Math.floor(parseFloat(mission.reward_amount_per_user || 0) * 1e6));
+    const rewardPerUserRaw = BigInt(Math.floor(Number(mission.reward_amount_per_user || 0) * 1e6));
     const totalRewardPoolRaw = rewardPerUserRaw * BigInt(mission.max_participants || 0);
-    const listingFeeRaw = BigInt(Math.floor(parseFloat(ugcConfig.listing_fee_usdc || 0) * 1e6));
+    const listingFeeRaw = BigInt(Math.floor(parseFloat(ugcConfig.listing_fee_usdc || '0') * 1e6));
     const expectedTotalRaw = totalRewardPoolRaw + listingFeeRaw;
 
     if (totalUsdcTransferred < expectedTotalRaw) return res.status(400).json({ error: 'Payment insufficient' });

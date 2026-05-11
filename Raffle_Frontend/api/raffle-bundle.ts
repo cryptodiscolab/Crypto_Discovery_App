@@ -9,7 +9,8 @@ import {
     RAFFLE_ABI,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
-    isMainnet
+    isMainnet,
+    sanitizeError
 } from './constants';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -124,7 +125,7 @@ async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ success: true, message: 'Announcement sent' });
     } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: sanitizeError(error) });
     }
 }
 
@@ -153,7 +154,7 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
                 return res.status(403).json({ error: `Not a registered winner for Raffle #${raffle_id}` });
             }
         } catch (onChainErr: any) {
-            return res.status(500).json({ error: `Blockchain verification failed: ${onChainErr.message}` });
+            return res.status(500).json({ error: sanitizeError(onChainErr) });
         }
 
         const { count } = await supabaseAdmin
@@ -200,7 +201,7 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ success: true, xpAwarded });
     } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: sanitizeError(error) });
     }
 }
 
@@ -219,7 +220,7 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
         if (error) throw error;
         return res.status(200).json({ success: true, data });
     } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: sanitizeError(error) });
     }
 }
 

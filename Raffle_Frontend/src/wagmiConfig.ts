@@ -35,7 +35,7 @@ const connectors = connectorsForWallets(
                     iconUrl: 'https://avatars.githubusercontent.com/u/106669223?v=4',
                     iconBackground: '#fff',
                     createConnector: (details) => mock({
-                        accounts: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'],
+                        accounts: [import.meta.env.VITE_DEV_WALLET || ''],
                     }),
                 }),
             ],
@@ -52,15 +52,7 @@ const activeChain = activeChainId === 84532 ? baseSepolia : base;
 
 export const config = createConfig({
     chains: [base, baseSepolia],
-    connectors: [
-        ...connectors,
-        mock({
-            accounts: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'],
-            features: {
-                reconnect: true,
-            },
-        })
-    ],
+    connectors,
     multiInjectedProviderDiscovery: true, // EIP-6963 support
     transports: {
         [base.id]: fallback([

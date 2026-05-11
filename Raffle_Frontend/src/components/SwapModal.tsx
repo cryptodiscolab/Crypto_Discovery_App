@@ -25,27 +25,10 @@ interface LiFiQuote {
   };
 }
 
-const DEFAULT_TOKENS: Record<number, Token[]> = {
-  8453: [
-    { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' },
-    { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6, symbol: 'USDC', logo: '$' },
-    { address: '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed', decimals: 18, symbol: 'DEGEN', logo: '🎩' },
-    { address: '0xcbB7C0000aB88B473b1f5aFd9ef80C444f71d1D4', decimals: 8, symbol: 'cbBTC', logo: '₿' }
-  ],
-  84532: [
-    { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' },
-    { address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6, symbol: 'USDC', logo: '$' }
-  ]
-};
-
-// Source tokens from env (JSON) or fall back to defaults
-const TOKENS: Record<number, Token[]> = (() => {
-  try {
-    const envTokens = import.meta.env.VITE_SWAP_TOKENS;
-    if (envTokens) return JSON.parse(envTokens);
-  } catch { /* fall through */ }
-  return DEFAULT_TOKENS;
-})();
+// Expected format for VITE_SWAP_TOKENS:
+// { "8453": [{ "address": "0x...", "decimals": 18, "symbol": "ETH", "logo": "Ξ" }, ...], "84532": [...] }
+const DEFAULT_TOKENS: Record<number, Token[]> = JSON.parse(import.meta.env.VITE_SWAP_TOKENS || '{}');
+const TOKENS = DEFAULT_TOKENS;
 
 // Li.Fi SDK init flag
 let _lifiConfigured = false;

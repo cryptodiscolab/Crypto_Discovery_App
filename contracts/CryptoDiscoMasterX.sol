@@ -98,6 +98,12 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
     mapping(address => uint256) public userRewardDebt;
     mapping(address => bool) public isSatellite;
 
+    // V15 FIX H-8: Rate limiting for addPoints
+    uint256 public maxPointsPerEpoch = 10000; // Max 10k points per user per 24h
+    uint256 public constant EPOCH_DURATION = 24 hours;
+    mapping(address => uint256) public userEpochPoints; // points added this epoch
+    mapping(address => uint256) public userEpochStart;  // epoch start timestamp
+
     // Seasonal & Upgrade Config
     uint256 public currentSeasonId = 1;
     address public dailyAppContract;
@@ -144,6 +150,17 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
 
     function addPoints(address user, uint256 points, string calldata reason) public {
         require(msg.sender == raffleContract || isSatellite[msg.sender] || msg.sender == owner(), "Unauthorized");
+        
+        // V15 FIX H-8: Rate limit per user per epoch (owner bypasses for admin corrections)
+        if (msg.sender != owner()) {
+            if (block.timestamp >= userEpochStart[user] + EPOCH_DURATION) {
+                userEpochStart[user] = block.timestamp;
+                userEpochPoints[user] = 0;
+            }
+            require(userEpochPoints[user] + points <= maxPointsPerEpoch, "Epoch limit reached");
+            userEpochPoints[user] += points;
+        }
+        
         users[user].points += points;
         emit PointsAwarded(user, points, reason);
     }
@@ -400,18 +417,20 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         }
 
         unchecked {
-            if (oldTier == SBTTier.DIAMOND)  diamondHolders--;
-            else if (oldTier == SBTTier.PLATINUM) platinumHolders--; // ✅ Fix V-11
-            else if (oldTier == SBTTier.GOLD)    goldHolders--;
-            else if (oldTier == SBTTier.SILVER)  silverHolders--;
-            else if (oldTier == SBTTier.BRONZE)  bronzeHolders--;
-
+            // V15 FIX C-2: Increment only (safe to be unchecked — only grows)
             if (newTier == SBTTier.DIAMOND)  diamondHolders++;
-            else if (newTier == SBTTier.PLATINUM) platinumHolders++; // ✅ Fix V-11
+            else if (newTier == SBTTier.PLATINUM) platinumHolders++;
             else if (newTier == SBTTier.GOLD)    goldHolders++;
             else if (newTier == SBTTier.SILVER)  silverHolders++;
             else if (newTier == SBTTier.BRONZE)  bronzeHolders++;
         }
+
+        // V15 FIX C-2: Decrement with explicit underflow guard (checked arithmetic)
+        if (oldTier == SBTTier.DIAMOND)  { require(diamondHolders > 0, "Underflow"); diamondHolders--; }
+        else if (oldTier == SBTTier.PLATINUM) { require(platinumHolders > 0, "Underflow"); platinumHolders--; }
+        else if (oldTier == SBTTier.GOLD)    { require(goldHolders > 0, "Underflow"); goldHolders--; }
+        else if (oldTier == SBTTier.SILVER)  { require(silverHolders > 0, "Underflow"); silverHolders--; }
+        else if (oldTier == SBTTier.BRONZE)  { require(bronzeHolders > 0, "Underflow"); bronzeHolders--; }
 
         users[user].tier = newTier;
         userRewardDebt[user] = accRewardPerShare[newTier];
@@ -537,5 +556,11 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
         maxGasPrice = _mGas;
         pointsPerTicket = _pPerTicket;
         ticketDescription = _desc;
+    }
+
+    // V15 FIX H-8: Admin can adjust rate limit
+    function setMaxPointsPerEpoch(uint256 _max) external onlyOwner {
+        require(_max >= 1000, "Min 1000");
+        maxPointsPerEpoch = _max;
     }
 }

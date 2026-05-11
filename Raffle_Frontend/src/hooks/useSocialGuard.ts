@@ -12,7 +12,7 @@ export function useSocialGuard(address?: string): UseQueryResult<SocialProfile |
             if (!address) return null;
 
             // DEV-MODE BYPASS: Auto-verify mock admin wallet
-            if (import.meta.env.DEV && address.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266') {
+            if (import.meta.env.DEV && address.toLowerCase() === (import.meta.env.VITE_DEV_WALLET || '').toLowerCase()) {
                 return {
                     farcaster: { username: 'nexus_admin', fid: 1, verified: true },
                     twitter: { username: 'nexus_dev', verified: true },

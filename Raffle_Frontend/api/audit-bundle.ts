@@ -11,7 +11,8 @@ import {
     MASTER_X_EVENT_ABI,
     DAILY_APP_EVENT_ABI,
     USDC_ADDRESS,
-    getEnv
+    getEnv,
+    sanitizeError
 } from './constants';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -46,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(400).json({ error: "Invalid action" });
         }
     } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: sanitizeError(error) });
     }
 }
 
@@ -69,7 +70,7 @@ async function handleRpcProxy(req: VercelRequest, res: VercelResponse) {
         const data = await response.json();
         return res.status(response.status).json(data);
     } catch (e: any) {
-        return res.status(500).json({ error: e.message });
+        return res.status(500).json({ error: sanitizeError(e) });
     }
 }
 
@@ -90,7 +91,7 @@ async function handleFarcasterCheck(req: VercelRequest, res: VercelResponse) {
         const user = data[clean]?.[0] || null;
         return res.status(user ? 200 : 404).json(user);
     } catch (e: any) {
-        return res.status(500).json({ error: e.message });
+        return res.status(500).json({ error: sanitizeError(e) });
     }
 }
 
@@ -181,7 +182,7 @@ async function handleSyncEvents(req: VercelRequest, res: VercelResponse) {
 
         return res.json({ status: "ok", scanned: `${fromBlock}->${toBlock}`, duration: Date.now() - startTime });
     } catch (e: any) {
-        return res.status(500).json({ error: e.message });
+        return res.status(500).json({ error: sanitizeError(e) });
     }
 }
 

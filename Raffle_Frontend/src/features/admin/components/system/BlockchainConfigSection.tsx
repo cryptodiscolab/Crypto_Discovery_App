@@ -120,16 +120,16 @@ export function BlockchainConfigSection() {
 
     // Sync contract data to local state
     useEffect(() => {
-        if (qDaily) setRewards(prev => ({ ...prev, daily: qDaily.toString() }));
-        if (qReferral) setRewards(prev => ({ ...prev, referral: qReferral.toString() }));
-        if (qRake) setRaffleFees(prev => ({ ...prev, rake: qRake.toString() }));
-        if (qSurcharge) setRaffleFees(prev => ({ ...prev, surcharge: qSurcharge.toString() }));
-        if (qMaxUser) setRaffleLimits(prev => ({ ...prev, maxUser: qMaxUser.toString() }));
-        if (qMaxPart) setRaffleLimits(prev => ({ ...prev, maxParticipants: qMaxPart.toString() }));
-        if (qXpCreate) setRaffleXp(prev => ({ ...prev, create: qXpCreate.toString() }));
-        if (qXpClaim) setRaffleXp(prev => ({ ...prev, claim: qXpClaim.toString() }));
-        if (qXpBuy) setRaffleXp(prev => ({ ...prev, purchase: qXpBuy.toString() }));
-        if (qWithdrawFee) setWithdrawFee(qWithdrawFee.toString());
+        if (qDaily) setRewards(prev => ({ ...prev, daily: String(qDaily) }));
+        if (qReferral) setRewards(prev => ({ ...prev, referral: String(qReferral) }));
+        if (qRake) setRaffleFees(prev => ({ ...prev, rake: String(qRake) }));
+        if (qSurcharge) setRaffleFees(prev => ({ ...prev, surcharge: String(qSurcharge) }));
+        if (qMaxUser) setRaffleLimits(prev => ({ ...prev, maxUser: String(qMaxUser) }));
+        if (qMaxPart) setRaffleLimits(prev => ({ ...prev, maxParticipants: String(qMaxPart) }));
+        if (qXpCreate) setRaffleXp(prev => ({ ...prev, create: String(qXpCreate) }));
+        if (qXpClaim) setRaffleXp(prev => ({ ...prev, claim: String(qXpClaim) }));
+        if (qXpBuy) setRaffleXp(prev => ({ ...prev, purchase: String(qXpBuy) }));
+        if (qWithdrawFee) setWithdrawFee(String(qWithdrawFee));
         
         if (qShares) {
             const [owner, ops, treasury, sbt] = qShares as [bigint, bigint, bigint, bigint];
@@ -161,8 +161,8 @@ export function BlockchainConfigSection() {
     useEffect(() => {
         if (poolSettings) {
             setPoolFormData({
-                targetUSDC: poolSettings.target_usdc || 5000,
-                claimTimestamp: poolSettings.claim_timestamp || 0
+                targetUSDC: poolSettings.targetUSDC || 5000,
+                claimTimestamp: poolSettings.claimTimestamp || 0
             });
         }
     }, [poolSettings]);

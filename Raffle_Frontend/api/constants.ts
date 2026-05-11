@@ -110,7 +110,8 @@ export const PROFILE_LIMITS = {
 
 export const MASTER_ADMINS = getEnv('VITE_ADMIN_WALLETS', getEnv('VITE_ADMIN_ADDRESS', getEnv('ADMIN_ADDRESS', ''))).toLowerCase().split(',').filter(Boolean);
 
-export const SAFE_MULTISIG = getEnv('VITE_SAFE_MULTISIG', getEnv('SAFE_MULTISIG', '0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa'));
+export const SAFE_MULTISIG = getEnv('VITE_SAFE_MULTISIG', getEnv('SAFE_MULTISIG', ''));
+if (!SAFE_MULTISIG) console.warn('[Zero-Hardcode] SAFE_MULTISIG is empty — set VITE_SAFE_MULTISIG or SAFE_MULTISIG env var');
 
 export const NEYNAR_API_KEY = getEnv('NEYNAR_API_KEY');
 export const WALLET_BOT_SIGNER = getEnv('WALLET_BOT_SIGNER', getEnv('WALLET_PRIVATE_KEY', getEnv('ADMIN_PRIVATE_KEY', getEnv('PRIVATE_KEY'))));
@@ -118,8 +119,9 @@ export const TELEGRAM_BOT_TOKEN = getEnv('TELEGRAM_BOT_TOKEN');
 export const TELEGRAM_CHAT_ID = getEnv('TELEGRAM_CHAT_ID');
 
 export const USDC_ADDRESS = IS_MAINNET
-    ? getEnv('VITE_USDC_ADDRESS', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
-    : getEnv('VITE_USDC_ADDRESS_SEPOLIA', '0x036CbD53842c5426634e7929541eC2318f3dCF7e');
+    ? getEnv('VITE_USDC_ADDRESS', '')
+    : getEnv('VITE_USDC_ADDRESS_SEPOLIA', '');
+if (!USDC_ADDRESS) console.warn(`[Zero-Hardcode] USDC_ADDRESS is empty — set VITE_USDC_ADDRESS${IS_MAINNET ? '' : '_SEPOLIA'} env var`);
 
 export const MASTER_X_ADDRESS = IS_MAINNET
     ? getEnv('VITE_MASTER_X_ADDRESS', '')
@@ -174,3 +176,16 @@ export const RAFFLE_EVENT_ABI = [
     { anonymous: false, inputs: [{ indexed: true, name: 'raffleId', type: 'uint256' }, { indexed: false, name: 'timestamp', type: 'uint256' }], name: 'RaffleCreated', type: 'event' },
     { anonymous: false, inputs: [{ indexed: true, name: 'raffleId', type: 'uint256' }, { indexed: true, name: 'winner', type: 'address' }, { indexed: false, name: 'prize', type: 'uint256' }], name: 'RaffleWinner', type: 'event' }
 ] as const;
+
+
+// ERROR SANITIZATION — Never expose internal errors to clients
+export function sanitizeError(err: unknown): string {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (process.env.NODE_ENV === 'development') return msg;
+    // Allow known safe user-facing messages through
+    const safePatterns = ['not found', 'unauthorized', 'forbidden', 'invalid', 'expired', 'already claimed', 'insufficient', 'not eligible', 'cooldown', 'limit reached', 'feature disabled'];
+    const lower = msg.toLowerCase();
+    if (safePatterns.some(p => lower.includes(p))) return msg;
+    console.error('[API Error]', msg);
+    return 'An unexpected error occurred. Please try again.';
+}

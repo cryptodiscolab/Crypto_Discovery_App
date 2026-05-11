@@ -248,7 +248,7 @@ function CreatorEarningsCard() {
     const { address } = useAccount();
     const { data: balance, refetch } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: RAFFLE_ABI,
+        abi: RAFFLE_ABI as any,
         functionName: 'sponsorBalances',
         args: [address],
         query: { enabled: !!address }
@@ -428,7 +428,7 @@ export function RaffleManagerTab() {
                             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest">LIVE TICKET PURCHASES</h3>
                         </div>
                         <div className="flex flex-wrap gap-3">
-                            {recentTickets.map((t, i) => (
+                            {recentTickets.map((t: any, i: number) => (
                                 <div key={i} className="px-4 py-2 bg-black/40 border border-emerald-500/20 rounded-xl flex items-center gap-2">
                                     <Ticket size={12} className="text-emerald-500" />
                                     <span className="text-[10px] font-mono text-white">{(t as any).wallet_address.slice(0, 6)}...</span>
@@ -470,7 +470,7 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
-                            {raffles.map((r) => (
+                            {raffles.map((r: any) => (
                                 <AdminRaffleRow key={(r as any).id.toString()} raffleId={(r as any).id} />
                             ))}
                         </div>
@@ -502,7 +502,7 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {winners.map((w, i) => (
+                            {winners.map((w: any, i: number) => (
                                 <div key={(w as any).wallet_address} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-yellow-500/20 transition-all group">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-slate-900 text-slate-500'}`}>

@@ -79,6 +79,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
     mapping(uint256 => mapping(address => uint256)) public ticketCountPerUser;
     mapping(uint256 => mapping(address => bool)) public hasClaimedPrize;
     mapping(address => uint256) public sponsorBalances;
+    mapping(uint256 => uint256) public finalizedAt; // H-4: track finalization timestamp
 
     // ============ Events ============
     
@@ -290,12 +291,39 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
                     break;
                 }
             }
+
+            // H-5: Deduplication — re-roll if winner already selected
+            bool isDuplicate = false;
+            for (uint256 k = 0; k < raffle.winners.length; k++) {
+                if (raffle.winners[k] == winner) { isDuplicate = true; break; }
+            }
+            if (isDuplicate) {
+                uint256 maxAttempts = raffle.participants.length;
+                uint256 attempt;
+                for (attempt = 1; attempt <= maxAttempts; attempt++) {
+                    derivedRandom = uint256(keccak256(abi.encode(randomNumber, i, attempt)));
+                    winningTicket = derivedRandom % raffle.totalTickets;
+                    ticketCounter = 0;
+                    for (uint256 j = 0; j < raffle.participants.length; j++) {
+                        address p = raffle.participants[j];
+                        ticketCounter += ticketCountPerUser[raffleId][p];
+                        if (winningTicket < ticketCounter) { winner = p; break; }
+                    }
+                    isDuplicate = false;
+                    for (uint256 k = 0; k < raffle.winners.length; k++) {
+                        if (raffle.winners[k] == winner) { isDuplicate = true; break; }
+                    }
+                    if (!isDuplicate) break;
+                }
+                if (isDuplicate) break; // Max attempts exhausted, stop picking
+            }
             
             raffle.winners.push(winner);
         }
         
         raffle.prizePerWinner = prizePerWinner;
         raffle.isFinalized = true;
+        finalizedAt[raffleId] = block.timestamp; // H-4: record finalization time
         
         // If it was the current auto-raffle (Admin one), spawn next
         if (raffle.sponsor == address(0)) {
@@ -377,6 +405,35 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
         }
 
         emit RaffleCancelled(raffleId, sponsor, refundAmount);
+    }
+
+    /**
+     * @notice H-4: Reclaim unclaimed prize ETH after 90 days post-finalization.
+     */
+    function reclaimUnclaimedPrizes(uint256 raffleId) external onlyOwner nonReentrant {
+        RaffleData storage raffle = raffles[raffleId];
+        require(raffle.isFinalized, "Not finalized");
+        require(block.timestamp >= finalizedAt[raffleId] + 90 days, "Too early");
+
+        // Calculate unclaimed amount
+        uint256 unclaimed = 0;
+        for (uint256 i = 0; i < raffle.winners.length; i++) {
+            address w = raffle.winners[i];
+            if (!hasClaimedPrize[raffleId][w]) {
+                // Count wins for this address (may appear multiple times)
+                uint256 wins = 0;
+                for (uint256 j = i; j < raffle.winners.length; j++) {
+                    if (raffle.winners[j] == w) wins++;
+                }
+                unclaimed += raffle.prizePerWinner * wins;
+                hasClaimedPrize[raffleId][w] = true; // prevent double-reclaim
+            }
+        }
+        require(unclaimed > 0, "Nothing to reclaim");
+
+        address recipient = raffle.sponsor != address(0) ? raffle.sponsor : owner();
+        (bool s, ) = payable(recipient).call{value: unclaimed}("");
+        require(s, "Transfer failed");
     }
 
     /**

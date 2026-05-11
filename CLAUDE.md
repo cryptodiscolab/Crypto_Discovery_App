@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.63.4-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.63.5-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -25,6 +25,68 @@ Before responding to ANY request, read these files IN ORDER:
 > ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.3)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.3).
 
 ---
+
+## Rule 1 — Think Before Coding.
+No silent assumptions. State what you're assuming. Surface tradeoffs. Ask before guessing. Push back when a simpler approach exists.
+## Rule 2 — Simplicity First.
+Minimum code that solves the problem. No speculative features. No abstractions for single-use code. If a senior engineer would call it overcomplicated — simplify.
+## Rule 3 — Surgical Changes.
+Touch only what you must. Don't "improve" adjacent code, comments, or formatting. Don't refactor what isn't broken. Match existing style.
+## Rule 4 — Goal-Driven Execution.
+Define success criteria. Loop until verified. Don't tell Claude what steps to follow, tell it what success looks like and let it iterate.
+## Rule 5 — Use the model only for judgment calls
+Use Claude for: classification, drafting, summarization, extraction from unstructured text.
+Do NOT use Claude for: routing, retries, status-code handling, deterministic transforms.
+If a status code already answers the question, plain code answers the question.
+## Rule 6 — Token budgets are not advisory
+Per-task budget: 4,000 tokens.
+Per-session budget: 30,000 tokens.
+If a task is approaching budget, summarize and start fresh. Do not push through.
+Surfacing the breach > silently overrunning.
+## Rule 7 — Surface conflicts, don't average them
+If two existing patterns in the codebase contradict, don't blend them.
+Pick one (the more recent / more tested), explain why, and flag the other for cleanup.
+"Average" code that satisfies both rules is the worst code.
+## Rule 8 — Read before you write
+Before adding code in a file, read the file's exports, the immediate caller, and any obvious shared utilities.
+If you don't understand why existing code is structured the way it is, ask before adding to it.
+"Looks orthogonal to me" is the most dangerous phrase in this codebase.
+## Rule 9 — Tests verify intent, not just behavior
+Every test must encode WHY the behavior matters, not just WHAT it does.
+A test like `expect(getUserName()).toBe('John')` is worthless if the function takes a hardcoded ID.
+If you can't write a test that would fail when business logic changes, the function is wrong.
+## Rule 10 — Checkpoint after every significant step
+After completing each step in a multi-step task: summarize what was done, what's verified, what's left.
+Don't continue from a state you can't describe back to me.
+If you lose track, stop and restate.
+## Rule 11 — Match the codebase's conventions, even if you disagree
+If the codebase uses snake_case and you'd prefer camelCase: snake_case.
+If the codebase uses class-based components and you'd prefer hooks: class-based.
+Disagreement is a separate conversation. Inside the codebase, conformance > taste.
+If you genuinely think the convention is harmful, surface it. Don't fork it silently.
+## Rule 12 — Fail loud
+If you can't be sure something worked, say so explicitly.
+"Migration completed" is wrong if 30 records were skipped silently.
+"Tests pass" is wrong if you skipped any.
+"Feature works" is wrong if you didn't verify the edge case I asked about.
+Default to surfacing uncertainty, not hiding it.
+## Rule 13 — Verify before declaring victory
+Before you say "done", "completed", or "fixed":
+1. Rerun any automated checks you touched
+2. Manually verify the user-facing behavior you changed
+3. Check console logs for errors
+4. Verify related functionality still works
+If you can't verify, say "Partial: [what's done], needs verification for: [what's not]".
+## Rule 14 — Don't "optimize" without user permission
+If you see code that's "inefficient", "not idiomatic", or "needs refactoring", DO NOT change it unless:
+1. The user explicitly asks for optimization
+2. The inefficiency is causing a documented bug
+3. The pattern is clearly broken, not just suboptimal
+"Premature optimization is the root of all evil" applies to LLMs too.
+If you think something should be optimized, explain the trade-offs and ask permission first.
+
+--
+
 
 ## 🔴 ABSOLUTE LAWS (Nexus v3.61.0)
 
@@ -105,6 +167,10 @@ Notify user format (Standard Reporting v3.26.0):
 -   **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
 -   **DailyAppV12Secured (Mainnet)**: `[RESERVED]`
 -   **DailyAppV13.2 (Sepolia)**: `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D`
+-   **DailyAppV15 (Sepolia, ACTIVE)**: `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2`
+-   **MasterX (Sepolia)**: `0x980770dAcE8f13E10632D3EC1410FAA4c707076c`
+-   **Raffle (Sepolia)**: `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3`
+-   **CMS V2 (Sepolia)**: `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC`
 -   **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 -   **Language**: Chat = Bahasa Indonesia | UI/Code = English
 
@@ -135,4 +201,5 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.63.1 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.63.5 LOCKED.*
+*DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*

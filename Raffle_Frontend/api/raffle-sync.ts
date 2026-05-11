@@ -6,7 +6,8 @@ import {
     rpcClient,
     isMainnet,
     RAFFLE_EVENT_ABI,
-    getEnv
+    getEnv,
+    sanitizeError
 } from './constants';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -78,6 +79,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.json({ success: true, from: fromBlock.toString(), to: toBlock.toString(), duration: Date.now() - startTime });
     } catch (e: any) {
-        return res.status(500).json({ error: e.message });
+        return res.status(500).json({ error: sanitizeError(e) });
     }
 }

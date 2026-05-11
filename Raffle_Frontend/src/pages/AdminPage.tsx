@@ -53,7 +53,7 @@ export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
     } = useCMS();
 
     // Derived owner status
-    const isContractOwner = address && contractOwner && address.toLowerCase() === contractOwner.toLowerCase();
+    const isContractOwner = address && contractOwner && address.toLowerCase() === (contractOwner as string).toLowerCase();
 
     const [activeTab, setActiveTab] = useState(initialTab);
     const [taskSubTab, setTaskSubTab] = useState('batch');

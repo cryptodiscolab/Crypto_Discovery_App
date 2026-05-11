@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyMessage } from 'viem';
 import {
     SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY
+    SUPABASE_SERVICE_ROLE_KEY,
+    sanitizeError
 } from './constants';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -62,6 +63,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(400).json({ error: 'Invalid action' });
     } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: sanitizeError(error) });
     }
 }

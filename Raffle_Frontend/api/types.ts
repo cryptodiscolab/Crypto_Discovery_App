@@ -1,7 +1,7 @@
 import { VercelRequest } from '@vercel/node';
 import { Database, Json } from './database.types';
 
-export { Json };
+export type { Json, Database };
 export type DbUserProfile = Database['public']['Tables']['user_profiles']['Row'];
 export type DbDailyTask = Database['public']['Tables']['daily_tasks']['Row'];
 export type DbUserActivityLog = Database['public']['Tables']['user_activity_logs']['Row'];
@@ -30,9 +30,7 @@ export interface DailyTask extends Omit<DbDailyTask, 'created_at' | 'expires_at'
     task_type: 'social' | 'regular' | 'system' | 'ugc';
 }
 
-export interface UserProfile extends DbUserProfile {
-    is_admin?: boolean;
-}
+export interface UserProfile extends DbUserProfile {}
 
 export interface UserActivityLog {
     id?: number;

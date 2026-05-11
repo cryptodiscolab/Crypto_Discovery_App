@@ -16,6 +16,7 @@ export interface VerifiedActionPayload {
     xp_earned?: number;
     platform?: string;
     action_type?: string;
+    target_id?: string | null;
     socialId?: string | number;
     fid?: number;
     twitterId?: string;
@@ -62,7 +63,7 @@ export function useVerifiedAction() {
         if (isSocialVerify && verifyServerUrl) {
             // Only real social verification (NOT claim) goes to the Verification Server
             // Endpoint format: /api/verify/[platform]/[action]
-            const platform = payload.platform.toLowerCase();
+            const platform = (payload.platform || '').toLowerCase();
             const actionType = payload.action_type || 'task';
             endpoint = `${verifyServerUrl}/api/verify/${platform}/${actionType}`;
             
