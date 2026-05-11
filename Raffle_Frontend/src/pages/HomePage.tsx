@@ -76,7 +76,7 @@ export function HomePage() {
                 {frameUser?.username || 'Nexus Agent'}
               </p>
               <p className={`text-[11px] font-bold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
-                {isConnected ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Guest Mode'}
+                {isConnected && address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Guest Mode'}
               </p>
             </div>
           </div>
@@ -84,7 +84,7 @@ export function HomePage() {
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-[11px] font-black uppercase tracking-tighter text-emerald-500 leading-none">Points</p>
-              <p className={`text-[11px] font-black ${isLight ? 'text-zinc-900' : 'text-white'}`}>{userPoints} XP</p>
+              <p className={`text-[11px] font-black ${isLight ? 'text-zinc-900' : 'text-white'}`}>{userPoints?.toString() || '0'} XP</p>
             </div>
             <div className="w-px h-6 bg-white/10" />
             <Trophy className="w-4 h-4 text-[#0052FF]" />
@@ -112,7 +112,7 @@ export function HomePage() {
         </div>
 
         {/* ── Announcement Banner ───────────────────────────────────────── */}
-        <AnnouncementBanner announcement={announcement} />
+        <AnnouncementBanner announcement={announcement as any} />
 
         {/* ── Pool Widget ──────────────────────────────────────────────────── */}
         {/* Minimalist: bg-zinc-900, tanpa border warna, tanpa glow overlay berlapis */}
@@ -180,7 +180,7 @@ export function HomePage() {
               .filter(card => card.visible !== false)
               .map((card, index) => {
                 const isCustomImage = card.icon && typeof card.icon === 'string' && card.icon.startsWith('http');
-                const IconComponent = iconMap[card.icon] || Sparkles;
+                const IconComponent = (iconMap as any)[card.icon] || Sparkles;
 
                 return (
                   <Link key={index} to={card.link || '/'} className="group">
@@ -225,7 +225,7 @@ export function HomePage() {
 }
 
 // Helper: countdown display
-function HomeCountdown({ timestamp }) {
+function HomeCountdown({ timestamp }: { timestamp: number }) {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {

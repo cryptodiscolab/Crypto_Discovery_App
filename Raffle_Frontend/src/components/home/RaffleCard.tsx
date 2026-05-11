@@ -22,7 +22,7 @@ export function RaffleCard() {
     const [ticketAmount, setTicketAmount] = useState(1);
 
     // Check if connected address is a winner
-    const isWinner = address && raffle?.winners?.map(w => w.toLowerCase()).includes(address.toLowerCase());
+    const isWinner = address && raffle?.winners?.map((w: string) => w.toLowerCase()).includes(address.toLowerCase());
     const alreadyFinalized = raffle?.isFinalized;
 
     const handleBuy = async () => {
@@ -59,7 +59,9 @@ export function RaffleCard() {
         if (!isWinner) return toast.error("You are not a winner of this raffle");
         setIsClaiming(true);
         try {
-            await claimPrize(raffle.id);
+            if (raffle) {
+                await claimPrize(raffle.id);
+            }
         } catch (err) {
             console.error("Claim error", err);
         } finally {
@@ -76,7 +78,8 @@ export function RaffleCard() {
     }
 
     // Default if no raffle found
-    const displayedRaffle = raffle || {
+    const displayedRaffle: any = raffle || {
+        id: 0,
         title: "No Active Raffle",
         description: "Stay tuned for the next blue-chip NFT drop!",
         prizeName: "TBA",
@@ -84,7 +87,10 @@ export function RaffleCard() {
         endTime: 0,
         totalTickets: 0,
         maxTickets: 100,
-        isActive: false
+        isActive: false,
+        sponsor: null,
+        created_at: null,
+        prizePool: 0n
     };
 
     const progress = (displayedRaffle.totalTickets / (displayedRaffle.maxTickets || 1)) * 100;

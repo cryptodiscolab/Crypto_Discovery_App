@@ -15,8 +15,8 @@
  * @param {Number} totalUsers - System user count
  * @returns {Object} { global, individual, underdog, total }
  */
-export function calculateMultipliers(userStats, totalUsers = 1000) {
-    if (!userStats) return { global: 1.0, individual: 1.0, underdog: 1.0, total: 1.0 };
+export function calculateMultipliers(userStats: any, totalUsers: number = 1000) {
+    if (!userStats) return { global: 1.0, individual: 1.0, underdog: 1.0, total: 1.0, isUnderdogActive: false };
 
     // 1. Global Multiplier (Logarithmic)
     // Formula: 1.5 / (1 + log10(totalUsers / 1000 + 1))
@@ -54,7 +54,7 @@ export function calculateMultipliers(userStats, totalUsers = 1000) {
  * @param {Object} multipliers - Result from calculateMultipliers
  * @returns {Number} Rounded estimated XP (Min: 5)
  */
-export function estimateXP(baseXP, multipliers) {
+export function estimateXP(baseXP: number, multipliers: any) {
     if (!baseXP) return 0;
     const estimated = Math.round(baseXP * multipliers.total);
     return Math.max(5, estimated);

@@ -63,7 +63,11 @@ export const config = createConfig({
     ],
     multiInjectedProviderDiscovery: true, // EIP-6963 support
     transports: {
-        [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org'),
+        [base.id]: fallback([
+            http(import.meta.env.VITE_BASE_RPC_URL),
+            http('https://mainnet.base.org'),
+            http('https://base.meowrpc.com'),
+        ]),
         [baseSepolia.id]: fallback([
             http(import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
             http('https://sepolia.base.org'),

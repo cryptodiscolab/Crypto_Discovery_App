@@ -10,7 +10,11 @@ interface PoolTabProps {
     ethPrice: number;
     settings?: {
         targetUSDC?: number;
+        claimTimestamp?: number;
     };
+    onDistribute?: () => void;
+    onUpdateSettings?: (settings: any) => void;
+    onRefetch?: () => void;
 }
 
 export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {

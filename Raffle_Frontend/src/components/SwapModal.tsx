@@ -65,12 +65,11 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   useEffect(() => {
     if (configuredRef.current) return;
     try {
-      createConfig({
-        integrator: 'crypto-disco-app',
-        wagmi: wagmiConfig
+      (createConfig as any)({
+        integrator: 'crypto-disco-app'
       });
       configuredRef.current = true;
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[SwapModal] Li.Fi SDK init failed:', e.message);
       configuredRef.current = true;
     }
@@ -95,13 +94,15 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           fromAmount: amountWei,
           fromAddress: address,
           toAddress: address,
-          feeConfig: { fee: 0.005, integrator: 'crypto-disco-app' }
-        });
+          // v3.45.0+: Use raw object for better compatibility across SDK updates
+          fee: 0.005,
+          integrator: 'crypto-disco-app'
+        } as any);
         setQuote(result);
-      } catch (error) {
-        console.error("Quote Error:", error);
-        setQuote(null);
-        const errMsg = error?.message || '';
+        } catch (error: any) {
+          console.error("Quote Error:", error);
+          setQuote(null);
+          const errMsg = error?.message || '';
         if (errMsg.includes('No route found') || errMsg.includes('no route')) {
           setQuoteError('No swap route found for this pair/amount.');
         } else if (errMsg.includes('amount') || errMsg.includes('too small')) {
@@ -134,7 +135,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       setAmountIn('');
       setQuote(null);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Swap Error:", error);
       toast.error(error?.message || "Swap failed", { id: tid });
     } finally {

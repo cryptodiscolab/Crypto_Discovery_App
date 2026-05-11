@@ -12,7 +12,7 @@ import { supabase, cleanWallet } from './supabaseClient';
  * This was used for an old RLS pattern that is now forbidden.
  * All writes must move to /api/verify-action or similar backend routes.
  */
-export const createAuthenticatedClient = (walletAddress) => {
+export const createAuthenticatedClient = (walletAddress: string) => {
     console.warn("[Security] createAuthenticatedClient is deprecated. Use API Routes for writes.");
     return supabase; // Fallback to standard client (Select only)
 };

@@ -24,14 +24,14 @@ export function useOAuth() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const [isLinking, setIsLinking] = useState(false);
-    const [linkedGoogle, setLinkedGoogle] = useState(null);
-    const [linkedX, setLinkedX] = useState(null);
+    const [linkedGoogle, setLinkedGoogle] = useState<any>(null);
+    const [linkedX, setLinkedX] = useState<any>(null);
 
     /**
      * Internal: Call the Supabase OAuth sign-in popup.
      * Uses Supabase SDK to handle PKCE/State coordination automatically.
      */
-    const openSupabaseOAuth = useCallback(async (provider) => {
+    const openSupabaseOAuth = useCallback(async (provider: any): Promise<any> => {
         const { supabase } = await import('../lib/supabaseClient');
         
         const redirectTo = `${window.location.origin}/oauth-callback`;
@@ -55,7 +55,7 @@ export function useOAuth() {
         return new Promise((resolve, reject) => {
             let resolved = false;
 
-            const handleMessage = (event) => {
+            const handleMessage = (event: any) => {
                 // Security check: Only trust messages from our own origin
                 if (event.origin !== window.location.origin) return;
 
@@ -162,7 +162,7 @@ export function useOAuth() {
             toast.success(`Google linked: ${oauthUser.email}`, { id: tid, duration: 5000 });
             return { success: true, email: oauthUser.email };
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('[linkGoogle]', err);
             toast.error(err.message || 'Google link failed', { id: tid });
             return { success: false, error: err.message };
@@ -223,7 +223,7 @@ export function useOAuth() {
             toast.success(`X linked: @${twitterUsername}`, { id: tid, duration: 5000 });
             return { success: true, username: twitterUsername };
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('[linkX]', err);
             toast.error(err.message || 'X link failed', { id: tid });
             return { success: false, error: err.message };

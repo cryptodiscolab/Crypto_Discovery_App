@@ -4,7 +4,17 @@ import { create } from 'zustand';
  * Profile Store for managing global user state.
  * [v3.60.0] Modular Feature-Based Architecture
  */
-export const useProfileStore = create((set) => ({
+interface ProfileState {
+    profileData: any;
+    isLoading: boolean;
+    error: any;
+    setProfileData: (data: any) => void;
+    setLoading: (loading: boolean) => void;
+    setError: (err: any) => void;
+    reset: () => void;
+}
+
+export const useProfileStore = create<ProfileState>((set) => ({
     profileData: null,
     isLoading: false,
     error: null,

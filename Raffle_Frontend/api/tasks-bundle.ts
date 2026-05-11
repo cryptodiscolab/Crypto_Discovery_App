@@ -11,13 +11,11 @@ import {
     IS_MAINNET
 } from './constants';
 import { 
-    ExtendedVercelRequest, 
-    TaskClaimResponse, 
-    DailyTask, 
-    PointSetting 
+    PointSetting,
+    Database 
 } from './types';
 
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const publicClient = createPublicClient({
     chain: VIEM_CHAIN,
@@ -37,8 +35,9 @@ async function getPointValue(activityKey: string): Promise<number> {
         
         if (error || !data) return 0;
         return data.points_value || 0;
-    } catch (e) {
-        console.error(`[PointLookup Error] Key: ${activityKey}`, e);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`[PointLookup Error] Key: ${activityKey}`, msg);
         return 0;
     }
 }
@@ -57,7 +56,7 @@ async function getTaskReward(taskId: string): Promise<number> {
         const dynamicKey = `${task.platform}_${task.action_type}`.toLowerCase().replace(/\s+/g, '_');
         const dynamicValue = await getPointValue(dynamicKey);
         return dynamicValue > 0 ? dynamicValue : (task.xp_reward || 0);
-    } catch (e) { return 0; }
+    } catch (e: unknown) { return 0; }
 }
 
 /**
@@ -99,9 +98,10 @@ async function verifyRaffleOnChain(taskId: string, wallet_address: string, messa
                 throw new Error(`On-chain mismatch: Claimed ${expectedAmount} but found ${confirmedAmount} tickets in logs.`);
             }
             return true;
-        } catch (err: any) {
-            console.error('[verifyRaffleOnChain] Purchase verification failed:', err.message);
-            throw new Error(`Blockchain verification failed: ${err.message}`);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error('[verifyRaffleOnChain] Purchase verification failed:', msg);
+            throw new Error(`Blockchain verification failed: ${msg}`);
         }
     }
 
@@ -119,13 +119,14 @@ async function verifyRaffleOnChain(taskId: string, wallet_address: string, messa
                 fromBlock: 'earliest'
             });
 
-            const isWinner = logs.some(log => (log.args as any).winner.toLowerCase() === wallet_address.toLowerCase());
+            const isWinner = logs.some(log => (log.args as { winner: string }).winner.toLowerCase() === wallet_address.toLowerCase());
             if (!isWinner) throw new Error(`User ${wallet_address} is not a winner of Raffle #${raffleId}`);
             
             return true;
-        } catch (err: any) {
-            console.error('[verifyRaffleOnChain] Win verification failed:', err.message);
-            throw new Error(`Winner verification failed: ${err.message}`);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error('[verifyRaffleOnChain] Win verification failed:', msg);
+            throw new Error(`Winner verification failed: ${msg}`);
         }
     }
 
@@ -179,20 +180,20 @@ async function validateAndCalculateXP(wallet_address: string, signature: string,
     return { xp, targetId };
 }
 
-async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }: any) {
+async function logActivity(wallet: string, category: string, type: string, description: string) {
     try {
         await supabaseAdmin.from('user_activity_logs').insert({
             wallet_address: wallet.toLowerCase(),
             category,
             activity_type: type,
             description,
-            value_amount: amount || 0,
-            value_symbol: symbol || 'XP',
-            tx_hash: txHash,
-            metadata: metadata || {}
+            value_amount: 0,
+            value_symbol: 'XP',
+            created_at: new Date().toISOString()
         });
-    } catch (err: any) {
-        console.error('[logActivity Error]', err.message);
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[logActivity Error]', msg);
     }
 }
 
@@ -200,13 +201,28 @@ async function checkAndGrantDailyBonus(wallet_address: string) {
     try {
         const wallet = wallet_address.toLowerCase();
         
-        const { data: progress } = await supabaseAdmin
-            .from('v_user_daily_progress')
-            .select('*')
-            .eq('wallet_address', wallet)
-            .maybeSingle();
+        // 🛡️ HARDENING (v3.60.4): Identity-Gated Retention
+        const [{ data: profile }, { data: progress }] = await Promise.all([
+            supabaseAdmin
+                .from('user_profiles')
+                .select('is_base_social_verified, fid, twitter_id')
+                .eq('wallet_address', wallet)
+                .maybeSingle(),
+            supabaseAdmin
+                .from('v_user_daily_progress')
+                .select('*')
+                .eq('wallet_address', wallet)
+                .maybeSingle()
+        ]);
 
         if (!progress || progress.bonus_claimed || progress.completed_count < 3) return;
+
+        const isVerified = !!(profile?.is_base_social_verified || profile?.fid || profile?.twitter_id);
+        
+        if (!isVerified) {
+            console.warn(`[DailyBonus] User ${wallet} reached 3-task goal but is NOT verified. Identity Gating active.`);
+            return;
+        }
 
         const bonusXp = await getPointValue('daily_task_completion') || 50;
         
@@ -225,21 +241,15 @@ async function checkAndGrantDailyBonus(wallet_address: string) {
             p_amount: bonusXp
         });
 
-        await logActivity({
-            wallet,
-            category: 'XP',
-            type: 'Daily Goal Reached',
-            description: `Unlocked 3-Task Daily Bonus!`,
-            amount: bonusXp,
-            symbol: 'XP',
-            metadata: { milestone: 3 }
-        });
+        await logActivity(wallet, 'XP', 'Daily Goal Reached', `Unlocked 3-Task Daily Bonus!`);
 
-        console.log(`[DailyBonus] Granted ${bonusXp} XP to ${wallet}`);
-    } catch (e: any) {
-        console.error('[DailyBonus Error]', e.message);
+        console.log(`[DailyBonus] Granted ${bonusXp} XP to ${wallet} (Verified)`);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error('[DailyBonus Error]', msg);
     }
 }
+
 
 async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promise<boolean> {
     if (!IS_MAINNET) return true; 
@@ -251,15 +261,16 @@ async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promi
             .eq('key', 'active_features')
             .maybeSingle();
         
-        const activeFeatures = (data?.value as any) || {};
+        const activeFeatures = (data?.value as Record<string, boolean>) || {};
         if (activeFeatures[featureKey] !== true) {
             console.warn(`[Feature Guard] BLOCKED: Attempt to access disabled feature '${featureKey}' on Mainnet.`);
             res.status(403).json({ error: `Feature [${featureKey}] is currently disabled for Phased Rollout. Please wait for the next phase.` });
             return false;
         }
         return true; 
-    } catch (e: any) {
-        console.error(`[Feature Guard] Failed to verify ${featureKey}`, e.message);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`[Feature Guard] Failed to verify ${featureKey}`, msg);
         res.status(500).json({ error: "Feature Guard verification failed" });
         return false;
     }
@@ -288,9 +299,10 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
             case 'claim-ugc-campaign': await handleClaimUgcCampaign(req, res); break;
             default: res.status(400).json({ error: 'Invalid action' }); break;
         }
-    } catch (error: any) {
-        console.error(`[API Handler Error] Action: ${action}`, error);
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(`[API Handler Error] Action: ${action}`, msg);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -298,64 +310,40 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
     const { wallet_address, signature, message, task_id } = req.body;
     if (!wallet_address || !signature || !message || !task_id) throw new Error('Missing fields');
 
-    const { xp, targetId } = await validateAndCalculateXP(wallet_address, signature, message, task_id);
+    try {
+        const { xp, targetId } = await validateAndCalculateXP(wallet_address, signature, message, task_id);
 
-    const { error } = await supabaseAdmin.from('user_task_claims').insert({
-        wallet_address: wallet_address.toLowerCase(),
-        task_id,
-        xp_earned: xp,
-        target_id: targetId
-    });
+        const { error } = await supabaseAdmin.from('user_task_claims').insert({
+            wallet_address: wallet_address.toLowerCase(),
+            task_id,
+            xp_earned: xp,
+            target_id: targetId
+        });
 
-    if (error) {
-        if (error.code === '23505') {
-            return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
+        if (error) {
+            if (error.code === '23505') {
+                return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
+            }
+            throw error;
         }
-        throw error;
-    }
 
-    if (xp > 0) {
-        const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
-            p_wallet: wallet_address.toLowerCase(),
-            p_amount: xp
-        });
-        if (xpErr) {
-            console.error('[handleClaim] fn_increment_xp failed:', xpErr.message);
-            return res.status(500).json({ error: "Failed to update XP. Please try again." });
+        if (xp > 0) {
+            const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: wallet_address.toLowerCase(),
+                p_amount: xp
+            });
+            if (xpErr) throw xpErr;
         }
+
+        await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`);
+
+        await checkAndGrantDailyBonus(wallet_address);
+        return res.status(200).json({ success: true, xp });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error('[handleClaim Error]', msg);
+        return res.status(500).json({ error: msg });
     }
-
-    if (task_id && task_id.startsWith('raffle_buy_')) {
-        const ticketAmount = message.match(/Amount:\s*(\d+)/i)?.[1];
-        const ticketCount = ticketAmount ? parseInt(ticketAmount, 10) : 1;
-        await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
-            p_wallet: wallet_address.toLowerCase(),
-            p_amount: ticketCount
-        });
-
-        await logActivity({
-            wallet: wallet_address,
-            category: 'PURCHASE',
-            type: 'Raffle Ticket Buy',
-            description: `Purchased ${ticketCount} Tickets for Raffle`,
-            amount: xp,
-            symbol: 'XP',
-            metadata: { task_id, tickets_bought: ticketCount }
-        });
-    } else {
-        await logActivity({
-            wallet: wallet_address,
-            category: 'XP',
-            type: 'Task Claim',
-            description: `Claimed ${xp} XP for ${task_id}`,
-            amount: xp,
-            symbol: 'XP',
-            metadata: { task_id }
-        });
-    }
-
-    await checkAndGrantDailyBonus(wallet_address);
-    return res.status(200).json({ success: true, xp } as TaskClaimResponse);
 }
 
 async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
@@ -395,32 +383,14 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
         const amountMatch = message.match(/Amount:\s*(\d+)/i);
         const ticketCount = amountMatch ? parseInt(amountMatch[1], 10) : 1;
         
-        const { error: ticketErr } = await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
+        await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
             p_wallet: wallet_address.toLowerCase(),
             p_amount: ticketCount
         });
-        
-        if (ticketErr) console.error('[handleVerify] fn_increment_raffle_tickets failed:', ticketErr.message);
 
-        await logActivity({
-            wallet: wallet_address,
-            category: 'PURCHASE',
-            type: 'Raffle Ticket Buy',
-            description: `Purchased ${ticketCount} Tickets for Raffle`,
-            amount: xp,
-            symbol: 'XP',
-            metadata: { task_id, tickets_bought: ticketCount }
-        });
+        await logActivity(wallet_address, 'PURCHASE', 'Raffle Ticket Buy', `Purchased ${ticketCount} Tickets for Raffle`);
     } else {
-        await logActivity({
-            wallet: wallet_address,
-            category: 'XP',
-            type: 'Task Verify',
-            description: `Verified ${task_id} on ${platform}`,
-            amount: xp,
-            symbol: 'XP',
-            metadata: { task_id, platform, action_type }
-        });
+        await logActivity(wallet_address, 'XP', 'Task Verify', `Verified ${task_id} on ${platform}`);
     }
 
     await checkAndGrantDailyBonus(wallet_address);
@@ -458,15 +428,7 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
         }
     }
 
-    await logActivity({
-        wallet: wallet_address,
-        category: 'XP',
-        type: 'Social Verify',
-        description: `Verified ${action_type} on ${platform}`,
-        amount: xp,
-        symbol: 'XP',
-        metadata: { task_id, platform, action_type }
-    });
+    await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`);
 
     await checkAndGrantDailyBonus(wallet_address);
     return res.status(200).json({ success: true, xp, message: `Task verified.` });
@@ -479,10 +441,10 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
-    if (!valid) return res.status(401).json({ error: 'Invalid signature' });
-
     try {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
         const { data: subTasks, error: stErr } = await supabaseAdmin
             .from('daily_tasks')
             .select('id, action_type, xp_reward, platform')
@@ -555,18 +517,10 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
                 p_wallet: wallet_address.toLowerCase(),
                 p_amount: totalXp
             });
-            if (xpErr) console.error('[handleClaimUgcCampaign] fn_increment_xp failed:', xpErr.message);
+            if (xpErr) throw xpErr;
         }
 
-        await logActivity({
-            wallet: wallet_address,
-            category: 'XP',
-            type: 'UGC Campaign Complete',
-            description: `Completed UGC Campaign: ${campaign?.title || campaign_id}`,
-            amount: totalXp,
-            symbol: 'XP',
-            metadata: { campaign_id, sub_task_count: subTasks.length, usdc_reward: campaign?.reward_amount_per_user }
-        });
+        await logActivity(wallet_address, 'XP', 'UGC Campaign Complete', `Completed UGC Campaign: ${campaign?.title || campaign_id}`);
 
         return res.status(200).json({
             success: true,
@@ -575,8 +529,9 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             reward_symbol: campaign?.reward_symbol || 'USDC',
             message: 'Campaign reward claimed successfully!'
         });
-    } catch (err: any) {
-        console.error('[handleClaimUgcCampaign]', err);
-        return res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[handleClaimUgcCampaign]', msg);
+        return res.status(500).json({ error: msg });
     }
 }

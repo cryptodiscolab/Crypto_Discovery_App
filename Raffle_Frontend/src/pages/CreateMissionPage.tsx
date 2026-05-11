@@ -53,10 +53,32 @@ const PLATFORM_URL_RULES = {
     onchain:    { pattern: /.*/,                        hint: 'any URL' }
 };
 
-function validatePlatformUrl(url, platform) {
-    const rule = PLATFORM_URL_RULES[platform];
+type PlatformCode = 'farcaster' | 'twitter' | 'tiktok' | 'instagram' | 'onchain';
+
+function validatePlatformUrl(url: string, platform: PlatformCode) {
+    const rule = (PLATFORM_URL_RULES as any)[platform];
     if (!rule) return true;
     return rule.pattern.test(url);
+}
+
+interface UgcConfig {
+    listing_fee_usdc: string;
+    treasury_address: `0x${string}`;
+    is_active: boolean;
+}
+
+interface MissionFormData {
+    title: string;
+    description: string;
+    platform: PlatformCode;
+    link: string;
+    reward_amount_per_user: string;
+    max_participants: string;
+    duration_days: string;
+    isBaseSocialRequired: boolean;
+    minFollowers: string;
+    minAccountAge: string;
+    minNeynarScore: string;
 }
 
 export function CreateMissionPage() {
@@ -67,15 +89,15 @@ export function CreateMissionPage() {
     const { signMessageAsync } = useSignMessage();
 
     // System Config State
-    const [ugcConfig, setUgcConfig] = useState({
+    const [ugcConfig, setUgcConfig] = useState<UgcConfig>({
         listing_fee_usdc: '5',
-        treasury_address: CONTRACTS.MASTER_X,
+        treasury_address: CONTRACTS.MASTER_X as `0x${string}`,
         is_active: true
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedActions, setSelectedActions] = useState(['follow']);
-    const [formData, setFormData] = useState({
+    const [selectedActions, setSelectedActions] = useState<string[]>(['follow']);
+    const [formData, setFormData] = useState<MissionFormData>({
         title: '',
         description: '',
         platform: 'farcaster',
@@ -90,13 +112,14 @@ export function CreateMissionPage() {
     });
 
     // Reset actions when platform changes
-    const handlePlatformChange = (newPlatform) => {
-        const defaultAction = PLATFORM_ACTIONS[newPlatform]?.[0]?.value || 'follow';
+    const handlePlatformChange = (newPlatform: string) => {
+        const pCode = newPlatform as PlatformCode;
+        const defaultAction = (PLATFORM_ACTIONS as any)[pCode]?.[0]?.value || 'follow';
         setSelectedActions([defaultAction]);
-        setFormData(prev => ({ ...prev, platform: newPlatform, link: '' }));
+        setFormData(prev => ({ ...prev, platform: pCode, link: '' }));
     };
 
-    const toggleAction = (value) => {
+    const toggleAction = (value: string) => {
         setSelectedActions(prev => {
             if (prev.includes(value)) return prev.filter(a => a !== value);
             if (prev.length >= 3) { toast.error('Maksimal 3 aksi per misi.'); return prev; }
@@ -134,7 +157,7 @@ export function CreateMissionPage() {
         };
     }, [formData, ugcConfig]);
 
-    const handleCreate = async (e) => {
+    const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isConnected) return toast.error("Please connect wallet");
 
@@ -142,7 +165,7 @@ export function CreateMissionPage() {
         if (!formData.title || formData.title.trim().length < 5) return toast.error('Mission title must be at least 5 characters.');
         if (!formData.link || formData.link.trim().length < 10) return toast.error('Mission link is required.');
         if (!validatePlatformUrl(formData.link, formData.platform)) {
-            const rule = PLATFORM_URL_RULES[formData.platform];
+            const rule = (PLATFORM_URL_RULES as any)[formData.platform];
             return toast.error(`[Link Guard] Mission link must be from ${rule.hint}`);
         }
         if (selectedActions.length === 0) return toast.error('Pilih minimal 1 aksi.');
@@ -152,17 +175,20 @@ export function CreateMissionPage() {
         const tid = toast.loading("Processing USDC Payment...");
 
         try {
+            if (!CONTRACTS.USDC) throw new Error("USDC address not configured");
+            
             // 1. USDC Payment (Transfer to Treasury)
             const txHash = await writeContractAsync({
-                address: CONTRACTS.USDC,
+                address: CONTRACTS.USDC as any,
                 abi: erc20Abi,
                 functionName: 'transfer',
                 args: [ugcConfig.treasury_address, stats.totalAmountRaw]
-            });
+            }) as `0x${string}`;
 
             toast.loading("Verifying transaction on blockchain...", { id: tid });
             
             // Wait for tx confirmation
+            if (!publicClient) throw new Error("RPC Client not found");
             await publicClient.waitForTransactionReceipt({ hash: txHash });
 
             toast.loading("Synchronizing Mission with Discovery Engine...", { id: tid });
@@ -181,7 +207,7 @@ export function CreateMissionPage() {
                 reward_amount_per_user: formData.reward_amount_per_user,
                 total_reward_pool: stats.rewardPool,
                 max_participants: parseInt(formData.max_participants),
-                sponsor_address: address.toLowerCase(),
+                sponsor_address: address?.toLowerCase() || '',
                 duration_days: parseInt(formData.duration_days),
                 status: 'pending',
                 reward_symbol: 'USDC',
@@ -213,7 +239,7 @@ export function CreateMissionPage() {
                 if (result?.details && Array.isArray(result.details)) {
                     // Show each validation error as a separate toast
                     toast.dismiss(tid);
-                    result.details.forEach((detail, i) => {
+                    result.details.forEach((detail: string, i: number) => {
                         setTimeout(() => toast.error(detail, { duration: 6000 }), i * 400);
                     });
                 } else {
@@ -224,7 +250,7 @@ export function CreateMissionPage() {
 
             toast.success("Mission Created & Payment Verified! Pending Admin Approval.", { id: tid });
             navigate('/tasks');
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             toast.error(err.shortMessage || err.message || "Operation failed", { id: tid });
         } finally {

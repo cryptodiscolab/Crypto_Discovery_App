@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { usePriceOracle } from '../../../../hooks/usePriceOracle';
 import { formatUnits, parseUnits, parseEther } from 'viem';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../../../../lib/supabaseClient';
 import { cleanWallet } from '../../../../utils/cleanWallet';
 import { useSBT } from '../../../../hooks/useSBT';
 import { useCMS } from '../../../../hooks/useCMS';
@@ -63,15 +63,15 @@ export function BlockchainConfigSection() {
     });
 
 
-    const { prices } = usePriceOracle((ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens)?.map(t => t.address) || []);
+    const { prices } = usePriceOracle(((ecosystemSettings as any)?.allowed_tokens || (ecosystemSettings as any)?.whitelisted_tokens)?.map((t: any) => t.address) || []);
     
     // Derived USD values for indicators
-    const getUsdValue = (humanAmount, isUsdc = false) => {
+    const getUsdValue = (humanAmount: string, isUsdc = false) => {
         if (!humanAmount) return 0;
         const amount = parseFloat(humanAmount);
         if (isUsdc) return amount;
         
-        const ethPrice = prices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || prices['0x4200000000000000000000000000000000000006'] || 0;
+        const ethPrice = (prices as any)['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || (prices as any)['0x4200000000000000000000000000000000000006'] || 0;
         return amount * ethPrice;
     };
     const [autoApprove, setAutoApprove] = useState(true);
@@ -90,7 +90,7 @@ export function BlockchainConfigSection() {
         decimals: '18',
         chain_id: '8453' // Default to Base
     });
-    const tokens = ecosystemSettings?.allowed_tokens || ecosystemSettings?.whitelisted_tokens || [];
+    const tokens = (ecosystemSettings as any)?.allowed_tokens || (ecosystemSettings as any)?.whitelisted_tokens || [];
 
     // 1. READ Global Rewards
     const { data: qDaily } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'dailyBonusAmount' });
@@ -133,64 +133,64 @@ export function BlockchainConfigSection() {
     const { data: qAutoApprove } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'autoApproveSponsorship' });
 
     useEffect(() => {
-        if (qDaily) setRewards(prev => ({ ...prev, daily: qDaily.toString() }));
-        if (qReferral) setRewards(prev => ({ ...prev, referral: qReferral.toString() }));
-        if (qRake) setRaffleFees(prev => ({ ...prev, rake: qRake.toString() }));
-        if (qSurcharge) setRaffleFees(prev => ({ ...prev, surcharge: qSurcharge.toString() }));
-        if (qMaxUser) setRaffleLimits(prev => ({ ...prev, maxUser: qMaxUser.toString() }));
-        if (qMaxPart) setRaffleLimits(prev => ({ ...prev, maxParticipants: qMaxPart.toString() }));
-        if (qXpCreate) setRaffleXp(prev => ({ ...prev, create: qXpCreate.toString() }));
-        if (qXpClaim) setRaffleXp(prev => ({ ...prev, claim: qXpClaim.toString() }));
-        if (qXpPurchase) setRaffleXp(prev => ({ ...prev, purchase: qXpPurchase.toString() }));
+        if (qDaily !== undefined) setRewards(prev => ({ ...prev, daily: String(qDaily) }));
+        if (qReferral !== undefined) setRewards(prev => ({ ...prev, referral: String(qReferral) }));
+        if (qRake !== undefined) setRaffleFees(prev => ({ ...prev, rake: String(qRake) }));
+        if (qSurcharge !== undefined) setRaffleFees(prev => ({ ...prev, surcharge: String(qSurcharge) }));
+        if (qMaxUser !== undefined) setRaffleLimits(prev => ({ ...prev, maxUser: String(qMaxUser) }));
+        if (qMaxPart !== undefined) setRaffleLimits(prev => ({ ...prev, maxParticipants: String(qMaxPart) }));
+        if (qXpCreate !== undefined) setRaffleXp(prev => ({ ...prev, create: String(qXpCreate) }));
+        if (qXpClaim !== undefined) setRaffleXp(prev => ({ ...prev, claim: String(qXpClaim) }));
+        if (qXpPurchase !== undefined) setRaffleXp(prev => ({ ...prev, purchase: String(qXpPurchase) }));
 
-        if (qSponsorFee) setSponsorSettings(prev => ({ ...prev, fee: (Number(qSponsorFee) / 1e6).toString() }));
-        if (qMinPool) setSponsorSettings(prev => ({ ...prev, minPool: formatUnits(qMinPool, 18) }));
-        if (qRewardClaim) setSponsorSettings(prev => ({ ...prev, reward: formatUnits(qRewardClaim, 18) }));
-        if (qTasksGoal) setSponsorSettings(prev => ({ ...prev, tasks: qTasksGoal.toString() }));
-        if (qWithdrawFee) setWithdrawFee(qWithdrawFee.toString());
-        if (qAutoApprove !== undefined) setAutoApprove(qAutoApprove);
+        if (qSponsorFee !== undefined) setSponsorSettings(prev => ({ ...prev, fee: (Number(qSponsorFee) / 1e6).toString() }));
+        if (qMinPool !== undefined) setSponsorSettings(prev => ({ ...prev, minPool: formatUnits(qMinPool as bigint, 18) }));
+        if (qRewardClaim !== undefined) setSponsorSettings(prev => ({ ...prev, reward: formatUnits(qRewardClaim as bigint, 18) }));
+        if (qTasksGoal !== undefined) setSponsorSettings(prev => ({ ...prev, tasks: String(qTasksGoal) }));
+        if (qWithdrawFee !== undefined) setWithdrawFee(String(qWithdrawFee));
+        if (qAutoApprove !== undefined) setAutoApprove(qAutoApprove as boolean);
 
-        if (qOwner) setEconShares(prev => ({ ...prev, owner: qOwner.toString() }));
-        if (qOps) setEconShares(prev => ({ ...prev, ops: qOps.toString() }));
-        if (qTreasury) setEconShares(prev => ({ ...prev, treasury: qTreasury.toString() }));
-        if (qSbtShare) setEconShares(prev => ({ ...prev, sbt: qSbtShare.toString() }));
+        if (qOwner !== undefined) setEconShares(prev => ({ ...prev, owner: String(qOwner) }));
+        if (qOps !== undefined) setEconShares(prev => ({ ...prev, ops: String(qOps) }));
+        if (qTreasury !== undefined) setEconShares(prev => ({ ...prev, treasury: String(qTreasury) }));
+        if (qSbtShare !== undefined) setEconShares(prev => ({ ...prev, sbt: String(qSbtShare) }));
 
-        if (qDWeight) setTierWeights(prev => ({ ...prev, diamond: qDWeight.toString() }));
-        if (qPWeight) setTierWeights(prev => ({ ...prev, platinum: qPWeight.toString() }));
-        if (qGWeight) setTierWeights(prev => ({ ...prev, gold: qGWeight.toString() }));
-        if (qSWeight) setTierWeights(prev => ({ ...prev, silver: qSWeight.toString() }));
-        if (qBWeight) setTierWeights(prev => ({ ...prev, bronze: qBWeight.toString() }));
+        if (qDWeight !== undefined) setTierWeights(prev => ({ ...prev, diamond: String(qDWeight) }));
+        if (qPWeight !== undefined) setTierWeights(prev => ({ ...prev, platinum: String(qPWeight) }));
+        if (qGWeight !== undefined) setTierWeights(prev => ({ ...prev, gold: String(qGWeight) }));
+        if (qSWeight !== undefined) setTierWeights(prev => ({ ...prev, silver: String(qSWeight) }));
+        if (qBWeight !== undefined) setTierWeights(prev => ({ ...prev, bronze: String(qBWeight) }));
 
-        if (qTUSDC) setMasterParams(prev => ({ ...prev, tUSDC: qTUSDC.toString() }));
-        if (qMGas) setMasterParams(prev => ({ ...prev, mGas: qMGas.toString() }));
-        if (qPPT) setMasterParams(prev => ({ ...prev, pPerTicket: qPPT.toString() }));
-        if (qDesc) setMasterParams(prev => ({ ...prev, desc: qDesc.toString() }));
+        if (qTUSDC !== undefined) setMasterParams(prev => ({ ...prev, tUSDC: String(qTUSDC) }));
+        if (qMGas !== undefined) setMasterParams(prev => ({ ...prev, mGas: String(qMGas) }));
+        if (qPPT !== undefined) setMasterParams(prev => ({ ...prev, pPerTicket: String(qPPT) }));
+        if (qDesc !== undefined) setMasterParams(prev => ({ ...prev, desc: String(qDesc) }));
 
-        if (qLastDist) setPoolFormData(prev => ({ ...prev, claimTimestamp: Number(qLastDist) }));
+        if (qLastDist !== undefined) setPoolFormData(prev => ({ ...prev, claimTimestamp: Number(qLastDist) }));
 
         // [v3.59.2] Drift Detection Logic
         const checkDrift = async () => {
             try {
                 const { data: ps } = await supabase.from('point_settings').select('activity_key, points_value');
-                const pMap = new Map(ps?.map(p => [p.activity_key, p.points_value]));
+                const pMap = new Map(ps?.map((p: any) => [p.activity_key, p.points_value]));
                 
                 // Compare Rewards
-                const dailyMatch = qDaily?.toString() === pMap.get('daily_claim')?.toString();
-                const refMatch = qReferral?.toString() === pMap.get('referral_invite')?.toString();
+                const dailyMatch = (qDaily as any)?.toString() === pMap.get('daily_claim')?.toString();
+                const refMatch = (qReferral as any)?.toString() === pMap.get('referral_invite')?.toString();
                 
                 // Compare Raffle XP
-                const cMatch = qXpCreate?.toString() === pMap.get('raffle_create')?.toString();
-                const clMatch = qXpClaim?.toString() === pMap.get('raffle_claim')?.toString();
-                const pMatch = qXpPurchase?.toString() === pMap.get('raffle_buy')?.toString();
+                const cMatch = (qXpCreate as any)?.toString() === pMap.get('raffle_create')?.toString();
+                const clMatch = (qXpClaim as any)?.toString() === pMap.get('raffle_claim')?.toString();
+                const pMatch = (qXpPurchase as any)?.toString() === pMap.get('raffle_buy')?.toString();
 
                 // Compare Weights (from system_settings)
                 const { data: sw } = await supabase.from('system_settings').select('value').eq('key', 'tier_pool_weights').maybeSingle();
                 const wMatch = sw?.value && 
-                    sw.value.diamond === qDWeight?.toString() &&
-                    sw.value.platinum === qPWeight?.toString() &&
-                    sw.value.gold === qGWeight?.toString() &&
-                    sw.value.silver === qSWeight?.toString() &&
-                    sw.value.bronze === qBWeight?.toString();
+                    sw.value.diamond === (qDWeight as any)?.toString() &&
+                    sw.value.platinum === (qPWeight as any)?.toString() &&
+                    sw.value.gold === (qGWeight as any)?.toString() &&
+                    sw.value.silver === (qSWeight as any)?.toString() &&
+                    sw.value.bronze === (qBWeight as any)?.toString();
 
                 setDrift({
                     rewards: !dailyMatch || !refMatch,
@@ -220,7 +220,7 @@ export function BlockchainConfigSection() {
         const tid = toast.loading('Updating Global Rewards on-chain...');
         try {
             const tx = await writeContractAsync({
-                address: CONTRACTS.DAILY_APP,
+                address: CONTRACTS.DAILY_APP as `0x${string}`,
                 abi: DAILY_APP_ABI,
                 functionName: 'setGlobalRewards',
                 args: [BigInt(rewards.daily), BigInt(rewards.referral)],
@@ -242,7 +242,7 @@ export function BlockchainConfigSection() {
             });
 
             toast.success('Rewards updated on-chain & in DB!', { id: tid });
-        } catch (err) {
+        } catch (err: any) {
             toast.error(err.message, { id: tid });
         }
     };
@@ -252,13 +252,13 @@ export function BlockchainConfigSection() {
         const tid = toast.loading("Syncing Raffle Fees...");
         try {
             await writeContractAsync({
-                address: CONTRACTS.RAFFLE,
+                address: CONTRACTS.RAFFLE as `0x${string}`,
                 abi: RAFFLE_ABI,
                 functionName: 'setRaffleFees',
                 args: [BigInt(raffleFees.rake), BigInt(raffleFees.surcharge)],
             });
             toast.success("Raffle Fees Updated!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
 
@@ -267,13 +267,13 @@ export function BlockchainConfigSection() {
         const tid = toast.loading("Syncing Raffle Limits...");
         try {
             await writeContractAsync({
-                address: CONTRACTS.RAFFLE,
+                address: CONTRACTS.RAFFLE as `0x${string}`,
                 abi: RAFFLE_ABI,
                 functionName: 'setRaffleLimits',
                 args: [BigInt(raffleLimits.maxUser), BigInt(raffleLimits.maxParticipants)],
             });
             toast.success("Raffle Limits Updated!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
 
@@ -281,7 +281,7 @@ export function BlockchainConfigSection() {
         const tid = toast.loading('Updating Raffle XP on-chain...');
         try {
             await writeContractAsync({
-                address: CONTRACTS.RAFFLE,
+                address: CONTRACTS.RAFFLE as `0x${string}`,
                 abi: RAFFLE_ABI,
                 functionName: 'setXpRewards',
                 args: [BigInt(raffleXp.create), BigInt(raffleXp.claim), BigInt(raffleXp.purchase)],
@@ -304,7 +304,7 @@ export function BlockchainConfigSection() {
             });
 
             toast.success('Raffle XP updated on-chain & in DB!', { id: tid });
-        } catch (err) {
+        } catch (err: any) {
             toast.error(err.message, { id: tid });
         }
     };
@@ -314,13 +314,13 @@ export function BlockchainConfigSection() {
         const tid = toast.loading("Syncing MasterX Shares...");
         try {
             await writeContractAsync({
-                address: CONTRACTS.MASTER_X,
+                address: CONTRACTS.MASTER_X as `0x${string}`,
                 abi: MASTER_X_ABI,
                 functionName: 'setRevenueShares',
                 args: [BigInt(econShares.owner), BigInt(econShares.ops), BigInt(econShares.treasury), BigInt(econShares.sbt)],
             });
             toast.success("Revenue Shares Updated!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
 
@@ -328,7 +328,7 @@ export function BlockchainConfigSection() {
         const tid = toast.loading('Updating Tier Weights on-chain...');
         try {
             await writeContractAsync({
-                address: CONTRACTS.MASTER_X,
+                address: CONTRACTS.MASTER_X as `0x${string}`,
                 abi: MASTER_X_ABI,
                 functionName: 'setTierWeights',
                 args: [
@@ -353,7 +353,7 @@ export function BlockchainConfigSection() {
             });
 
             toast.success('Weights updated on-chain & in DB!', { id: tid });
-        } catch (err) {
+        } catch (err: any) {
             toast.error(err.message, { id: tid });
         }
     };
@@ -364,7 +364,7 @@ export function BlockchainConfigSection() {
         try {
             // 1. Withdrawal Fee
             await writeContractAsync({
-                address: CONTRACTS.DAILY_APP,
+                address: CONTRACTS.DAILY_APP as `0x${string}`,
                 abi: DAILY_APP_ABI,
                 functionName: 'setWithdrawalFeeBP',
                 args: [BigInt(withdrawFee)],
@@ -372,7 +372,7 @@ export function BlockchainConfigSection() {
             
             // 2. Sponsorship Settings
             await writeContractAsync({
-                address: CONTRACTS.DAILY_APP,
+                address: CONTRACTS.DAILY_APP as `0x${string}`,
                 abi: DAILY_APP_ABI,
                 functionName: 'setSettings',
                 args: [
@@ -385,29 +385,29 @@ export function BlockchainConfigSection() {
 
             // 3. Auto Approve
             await writeContractAsync({
-                address: CONTRACTS.DAILY_APP,
+                address: CONTRACTS.DAILY_APP as `0x${string}`,
                 abi: DAILY_APP_ABI,
                 functionName: 'setAutoApproveSponsorship',
                 args: [autoApprove],
             });
 
             toast.success("Economic Indicators Updated!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
 
-    const handleUpdatePointer = async (contract, abi, functionName, arg) => {
+    const handleUpdatePointer = async (contract: string, abi: any, functionName: string, arg: any) => {
         setIsSaving(true);
         const tid = toast.loading(`Updating ${functionName}...`);
         try {
             await writeContractAsync({
-                address: contract,
+                address: contract as `0x${string}`,
                 abi: abi,
                 functionName: functionName,
                 args: Array.isArray(arg) ? arg : [arg],
             });
             toast.success("Transaction submitted!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
 
@@ -416,7 +416,7 @@ export function BlockchainConfigSection() {
         const tid = toast.loading("Updating MasterX Protocol Parameters...");
         try {
             await writeContractAsync({
-                address: CONTRACTS.MASTER_X,
+                address: CONTRACTS.MASTER_X as `0x${string}`,
                 abi: MASTER_X_ABI,
                 functionName: 'setParams',
                 args: [
@@ -427,7 +427,7 @@ export function BlockchainConfigSection() {
                 ],
             });
             toast.success("MasterX Parameters Updated!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || e.message, { id: tid }); }
         finally { setIsSaving(false); }
     };
 
@@ -439,7 +439,7 @@ export function BlockchainConfigSection() {
             await distributeRevenue();
             toast.success("Community Rewards Unlocked!", { id: tid });
             if (refetchAll) refetchAll();
-        } catch (e) {
+        } catch (e: any) {
             toast.error(e.shortMessage || e.message, { id: tid });
         } finally {
             setIsSaving(false);
@@ -454,7 +454,7 @@ export function BlockchainConfigSection() {
             await withdrawTreasury(parseEther(withdrawAmount));
             toast.success("Treasury fueled!", { id: tid });
             if (refetchAll) refetchAll();
-        } catch (e) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Withdrawal failed", { id: tid });
         } finally {
             setIsSaving(false);
@@ -467,14 +467,14 @@ export function BlockchainConfigSection() {
         try {
             await updatePoolSettings(poolFormData);
             toast.success("Pool Settings Updated!", { id: tid });
-        } catch (e) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Update failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleSyncTokenToDb = async (action, tokenData) => {
+    const handleSyncTokenToDb = async (action: string, tokenData: any) => {
         try {
             const message = `Action: ${action}\nToken: ${tokenData.address}\nTimestamp: ${Date.now()}`;
             const sig = await signMessageAsync({ message });
@@ -487,7 +487,7 @@ export function BlockchainConfigSection() {
                 payload: tokenData
             });
             toast.success(`Token ${action === 'WHITELIST_TOKEN_DB' ? 'Added to' : 'Removed from'} Database!`);
-        } catch (err) {
+        } catch (err: any) {
             console.error("DB Sync failed:", err);
             toast.error("Contract updated, but DB sync failed.");
         }
@@ -541,7 +541,7 @@ export function BlockchainConfigSection() {
                                     payload: tierWeights
                                 });
                                 toast.success('Full System Parity Restored!', { id: tid });
-                            } catch (e) { toast.error(e.message, { id: tid }); }
+                            } catch (e: any) { toast.error(e.message, { id: tid }); }
                         }}
                         className="h-full bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
                     >
@@ -885,7 +885,7 @@ export function BlockchainConfigSection() {
                     <div>
                         <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Last Distribution</p>
                         <p className="text-sm font-mono text-white">
-                            {qLastDist > 0
+                            {(qLastDist as any) > 0
                                 ? new Date(Number(qLastDist) * 1000).toLocaleString()
                                 : 'Loading...'}
                         </p>
@@ -923,7 +923,7 @@ export function BlockchainConfigSection() {
                             <label className="text-[9px] font-black text-slate-500 uppercase">DailyApp → MasterX Pointer</label>
                             <input type="text" value={pointers.masterX} onChange={e => setPointers({ ...pointers, masterX: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
                         </div>
-                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setMasterX', pointers.masterX)} className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-400">Update MasterX Link</button>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP as `0x${string}`, DAILY_APP_ABI, 'setMasterX', pointers.masterX)} className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-400">Update MasterX Link</button>
                     </div>
 
                     {/* MasterX -> Raffle Link */}
@@ -932,7 +932,7 @@ export function BlockchainConfigSection() {
                             <label className="text-[9px] font-black text-slate-500 uppercase">MasterX → Raffle Pointer</label>
                             <input type="text" value={pointers.raffleContract} onChange={e => setPointers({ ...pointers, raffleContract: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
                         </div>
-                        <button onClick={() => handleUpdatePointer(CONTRACTS.MASTER_X, MASTER_X_ABI, 'setRaffleContract', pointers.raffleContract)} className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-400">Update Raffle Link</button>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.MASTER_X as `0x${string}`, MASTER_X_ABI, 'setRaffleContract', pointers.raffleContract)} className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-400">Update Raffle Link</button>
                     </div>
 
                     {/* DailyApp Tokens */}
@@ -941,7 +941,7 @@ export function BlockchainConfigSection() {
                             <label className="text-[9px] font-black text-slate-500 uppercase">USDCToken Address (DailyApp)</label>
                             <input type="text" value={pointers.usdcToken} onChange={e => setPointers({ ...pointers, usdcToken: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
                         </div>
-                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setUSDCToken', pointers.usdcToken)} className="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl text-[9px] font-black uppercase text-white">Set USDC Token</button>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP as `0x${string}`, DAILY_APP_ABI, 'setUSDCToken', pointers.usdcToken)} className="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl text-[9px] font-black uppercase text-white">Set USDC Token</button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -949,7 +949,7 @@ export function BlockchainConfigSection() {
                             <label className="text-[9px] font-black text-slate-500 uppercase">CreatorToken Address (DailyApp)</label>
                             <input type="text" value={pointers.creatorToken} onChange={e => setPointers({ ...pointers, creatorToken: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
                         </div>
-                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setCreatorToken', pointers.creatorToken)} className="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl text-[9px] font-black uppercase text-white">Set Creator Token</button>
+                        <button onClick={() => handleUpdatePointer(CONTRACTS.DAILY_APP as `0x${string}`, DAILY_APP_ABI, 'setCreatorToken', pointers.creatorToken)} className="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl text-[9px] font-black uppercase text-white">Set Creator Token</button>
                     </div>
 
                     {/* Payment Token Whitelist Management */}
@@ -969,7 +969,7 @@ export function BlockchainConfigSection() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-white">
-                                    {tokens.map((token, i) => (
+                                    {tokens.map((token: any, i: number) => (
                                         <tr key={i} className="hover:bg-white/5 transition-colors">
                                             <td className="px-4 py-2 font-black">{token.symbol}</td>
                                             <td className="px-4 py-2 text-slate-400">{token.chain_id}</td>
@@ -978,7 +978,7 @@ export function BlockchainConfigSection() {
                                                 <button 
                                                     onClick={() => {
                                                         const p = { address: token.address, chain_id: token.chain_id };
-                                                        handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [p.address, false, 18, '']);
+                                                        handleUpdatePointer(CONTRACTS.DAILY_APP as `0x${string}`, DAILY_APP_ABI, 'setAllowedToken', [p.address, false, 18, '']);
                                                         handleSyncTokenToDb('REMOVE_TOKEN_DB', p);
                                                     }}
                                                     className="text-red-400 hover:text-red-300 font-bold uppercase"
@@ -990,7 +990,7 @@ export function BlockchainConfigSection() {
                                     ))}
                                     {tokens.length === 0 && (
                                         <tr>
-                                            <td colSpan="4" className="px-4 py-4 text-center text-slate-500 italic">No custom tokens whitelisted.</td>
+                                            <td colSpan={4} className="px-4 py-4 text-center text-slate-500 italic">No custom tokens whitelisted.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -1021,7 +1021,7 @@ export function BlockchainConfigSection() {
                             <button 
                                 onClick={() => {
                                     if (!newTokenWhitelist.address || !newTokenWhitelist.symbol) return toast.error("Missing fields");
-                                    handleUpdatePointer(CONTRACTS.DAILY_APP, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist.address, true, parseInt(newTokenWhitelist.decimals) || 18, newTokenWhitelist.symbol || '']);
+                                    handleUpdatePointer(CONTRACTS.DAILY_APP as `0x${string}`, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist.address, true, parseInt(newTokenWhitelist.decimals) || 18, newTokenWhitelist.symbol || '']);
                                     handleSyncTokenToDb('WHITELIST_TOKEN_DB', {
                                         ...newTokenWhitelist,
                                         decimals: parseInt(newTokenWhitelist.decimals),

@@ -11,7 +11,7 @@ export const NotificationService = {
      * @param {string} message - Isi pesan (max 500 karakter).
      * @param {"mention"|"cast"} type - Tipe notifikasi.
      */
-    async sendFarcasterNotification(fid, message, type = 'mention') {
+    async sendFarcasterNotification(fid: number | string, message: string, type: string = 'mention') {
         if (!fid || !message) {
             console.warn('[NotificationService] Missing fid or message');
             return false;
@@ -32,7 +32,7 @@ export const NotificationService = {
 
             return true;
         } catch (error) {
-            console.error('[NotificationService] Fetch error:', error.message);
+            console.error('[NotificationService] Fetch error:', (error as any).message);
             return false;
         }
     },
@@ -41,9 +41,9 @@ export const NotificationService = {
      * Cek deadline reward dan trigger notifikasi jika diperlukan.
      * Logika ini berjalan di client — hanya memeriksa, tidak kirim langsung ke Neynar.
      */
-    checkDeadlinesAndNotify(unclaimedRewards) {
+    checkDeadlinesAndNotify(unclaimedRewards: any[]) {
         const now = Date.now();
-        unclaimedRewards.forEach(reward => {
+        unclaimedRewards.forEach((reward: any) => {
             if (!reward.isClaimed && reward.deadline) {
                 const timeLeft = reward.deadline - now;
                 // 1 jam sebelum deadline: trigger notification via server

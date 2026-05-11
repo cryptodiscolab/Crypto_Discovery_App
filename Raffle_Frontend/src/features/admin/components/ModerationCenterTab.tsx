@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, CheckCircle, XCircle, Clock, Trash2, RefreshCw, Ticket, Zap, AlertTriangle } from 'lucide-react';
 import { useAccount, useSignMessage, useWriteContract } from 'wagmi';
-import { RAFFLE_ADDRESS, RAFFLE_ABI } from '@/lib/contracts';
+import { RAFFLE_ADDRESS, RAFFLE_ABI } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
 
 interface Raffle {
@@ -105,7 +105,7 @@ export function ModerationCenterTab() {
         try {
             // 1. Contract Call: cancelRaffle
             const txHash = await writeContractAsync({
-                address: RAFFLE_ADDRESS,
+                address: RAFFLE_ADDRESS as `0x${string}`,
                 abi: RAFFLE_ABI,
                 functionName: 'cancelRaffle',
                 args: [BigInt(selectedItem.id)],
@@ -141,7 +141,7 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "DB Sync failed");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Rejection Error:", error);
             toast.error(error.shortMessage || error.message || "Rejection failed", { id: tid });
         } finally {
@@ -175,12 +175,12 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Approval failed");
             }
-        } catch (error) {
+        } catch (error: any) {
             toast.error(error.message, { id: tid });
         }
     };
 
-    const handleVerifyOnchain = async (missionId) => {
+    const handleVerifyOnchain = async (missionId: number | string) => {
         const tid = toast.loading("Verifying on-chain payment...");
         try {
             const timestamp = new Date().toISOString();
@@ -206,12 +206,12 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Verification failed");
             }
-        } catch (error) {
+        } catch (error: any) {
             toast.error(error.message, { id: tid });
         }
     };
 
-    const handleApproveMission = async (missionId) => {
+    const handleApproveMission = async (missionId: number | string) => {
         const tid = toast.loading("Approving mission...");
         try {
             const timestamp = new Date().toISOString();
@@ -237,7 +237,7 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Approval failed");
             }
-        } catch (error) {
+        } catch (error: any) {
             toast.error(error.message, { id: tid });
         }
     };

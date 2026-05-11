@@ -33,7 +33,7 @@ export function SBTUpgradeCard() {
 
     // Feature Flags Check
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
-    const isSbtFeatureEnabled = !isMainnet || ecosystemSettings?.active_features?.sbt_minting === true;
+    const isSbtFeatureEnabled = !isMainnet || (ecosystemSettings as any)?.active_features?.sbt_minting === true;
 
 
     // Find current and next tier (Sync on-chain tier to bypass DB delay)

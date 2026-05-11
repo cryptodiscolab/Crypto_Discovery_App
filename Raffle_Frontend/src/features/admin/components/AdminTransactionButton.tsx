@@ -44,19 +44,20 @@ export function AdminTransactionButton({
 
     // 3. Wait for Receipt
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ 
-        hash: hash || bundleId 
+        hash: hash as `0x${string}` | undefined
     });
 
     useEffect(() => {
         if (isSuccess && (hash || bundleId)) {
             toast.success(successMessage);
-            if (onSuccess) onSuccess(hash || bundleId);
+            const finalId = hash || (typeof bundleId === 'string' ? bundleId : (bundleId as any)?.id);
+            if (onSuccess && finalId) onSuccess(finalId);
         }
     }, [isSuccess, hash, bundleId, onSuccess, successMessage]);
 
     useEffect(() => {
-        if (singleError) toast.error(singleError.shortMessage || "Transaction failed");
-        if (batchError) toast.error(batchError.shortMessage || "Batch failed");
+        if (singleError) toast.error((singleError as any).shortMessage || "Transaction failed");
+        if (batchError) toast.error((batchError as any).shortMessage || "Batch failed");
     }, [singleError, batchError]);
 
     const handleClick = () => {
@@ -70,19 +71,18 @@ export function AdminTransactionButton({
                 functionName: calls[0].functionName,
                 args: calls[0].args || [],
                 value: calls[0].value || 0n,
-                data: calls[0].data // Fallback for encoded data
             });
         } else {
             // Try Batch (Atomic)
             writeContracts({
                 contracts: calls.map(c => ({
                     address: c.to,
-                    abi: c.abi,
-                    functionName: c.functionName,
-                    args: c.args,
+                    abi: (c.abi || []) as any,
+                    functionName: (c.functionName || '') as any,
+                    args: c.args || [],
                     value: c.value,
                     data: c.data
-                }))
+                })) as any
             });
         }
     };

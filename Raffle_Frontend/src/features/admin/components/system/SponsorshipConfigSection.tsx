@@ -21,9 +21,9 @@ export function SponsorshipConfigSection() {
 
     useEffect(() => {
         if (currentFee) setFee((Number(currentFee) / 1e6).toString());
-        if (currentAutoApprove !== undefined) setAutoApprove(currentAutoApprove);
+        if (currentAutoApprove !== undefined) setAutoApprove(currentAutoApprove as boolean);
         if (currentReward) setRewardPerClaim((Number(currentReward) / 1e18).toString());
-        if (currentTasks) setTasksForReward(currentTasks.toString());
+        if (currentTasks) setTasksForReward((currentTasks as any).toString());
         if (currentMinPool) setMinPool((Number(currentMinPool) / 1e18).toString()); // minRewardPoolValue is in wei
     }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
@@ -35,7 +35,7 @@ export function SponsorshipConfigSection() {
         try {
             // ✅ Correct ABI function: setSettings(fee, minPool, reward, tasks)
             await writeContractAsync({
-                address: CONTRACTS.DAILY_APP,
+                address: CONTRACTS.DAILY_APP as any,
                 abi: DAILY_APP_ABI,
                 functionName: 'setSettings',
                 args: [
@@ -49,7 +49,7 @@ export function SponsorshipConfigSection() {
             // ✅ Auto-Approve is a separate function (verified in ABI)
             if (autoApprove !== currentAutoApprove) {
                 await writeContractAsync({
-                    address: CONTRACTS.DAILY_APP,
+                    address: CONTRACTS.DAILY_APP as any,
                     abi: DAILY_APP_ABI,
                     functionName: 'setAutoApproveSponsorship',
                     args: [autoApprove],
@@ -57,7 +57,7 @@ export function SponsorshipConfigSection() {
             }
 
             toast.success("Sponsorship Settings Updated!", { id: tid });
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             toast.error("Update Failed: " + (error.shortMessage || error.message), { id: tid });
         } finally {

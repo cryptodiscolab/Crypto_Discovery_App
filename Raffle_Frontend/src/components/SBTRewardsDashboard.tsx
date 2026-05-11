@@ -34,8 +34,10 @@ export function SBTRewardsDashboard() {
     useEffect(() => {
         const fetchGas = async () => {
             try {
-                const gasPrice = await publicClient.getGasPrice();
-                setCurrentGasPrice(gasPrice);
+                if (publicClient) {
+                    const gasPrice = await publicClient.getGasPrice();
+                    setCurrentGasPrice(gasPrice);
+                }
             } catch (e) {
                 console.error("Failed to fetch gas price", e);
             }
@@ -105,7 +107,7 @@ export function SBTRewardsDashboard() {
             } catch (syncErr) {
                 console.warn('Pool Sync failed:', syncErr);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             toast.error(err.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -262,7 +264,7 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
                     .select('*')
                     .maybeSingle();
                 if (!error && data && mounted) setStats(data);
-            } catch (e) {
+            } catch (e: any) {
                 console.warn('[SBTTierBreakdown] fetch error:', e.message);
             } finally {
                 if (mounted) setLoading(false);

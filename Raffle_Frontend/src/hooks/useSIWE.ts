@@ -12,12 +12,12 @@ export function useSIWE() {
     const { address, chain } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [session, setSession] = useState(null);
+    const [error, setError] = useState<string | null>(null);
+    const [session, setSession] = useState<any | null>(null);
 
     // 1. Generate SIWE Message (Standard Format with Custom Statement)
     // Memoized to prevent unnecessary re-calculations
-    const createSIWEMessage = useCallback((address, chainId, nonce, fid = null) => {
+    const createSIWEMessage = useCallback((address: string, chainId: number, nonce: string, fid: string | number | null = null) => {
         const domain = "crypto-discovery-app.vercel.app";
         const origin = "https://crypto-discovery-app.vercel.app";
         const statement = "Sign in to Crypto Disco to verify identity and access revenue sharing features.";
@@ -110,7 +110,7 @@ ${resourceLines}`;
 
             return userSession;
 
-        } catch (err) {
+        } catch (err: any) {
             console.error("SIWE Error:", err);
             setError(err.message || "Sign-in failed");
             throw err;

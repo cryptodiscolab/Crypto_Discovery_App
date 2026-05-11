@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSignMessage } from 'wagmi';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
 
 /**
@@ -8,25 +8,27 @@ import { cleanWallet } from '../utils/cleanWallet';
  * Adheres to Anti-Riba and hardware optimization principles.
  */
 export const useFarcaster = () => {
-    const [profileData, setProfileData] = useState(null);
+    const [profileData, setProfileData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
     const { signMessageAsync } = useSignMessage();
 
-    const abortControllerRef = useRef(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Cache Key Generator
-    const getStorageKey = (address) => `fc_cache_${address?.toLowerCase()}`;
+    const getStorageKey = (address: string | null | undefined) => `fc_cache_${address?.toLowerCase()}`;
 
-    const clearCache = useCallback((address) => {
+    const clearCache = useCallback((address: string | null | undefined) => {
         if (!address) return;
         localStorage.removeItem(getStorageKey(address));
         setProfileData(null);
     }, []);
 
-    const syncUser = useCallback(async (address, forceRefresh = false) => {
+    const syncUser = useCallback(async (address: string | null | undefined, forceRefresh = false) => {
         if (!address) return null;
-        const wallet = cleanWallet(address);
+        const walletRaw = cleanWallet(address);
+        if (!walletRaw) return null;
+        const wallet = walletRaw as string;
         const storageKey = getStorageKey(wallet);
 
         // 1. Zero-Latency: Load from Local Storage immediately
@@ -136,9 +138,9 @@ export const useFarcaster = () => {
             localStorage.setItem(storageKey, JSON.stringify(finalProfile));
             return finalProfile;
 
-        } catch (err) {
+        } catch (err: any) {
             if (err.name === 'AbortError') return null;
-            setError(err.message);
+            setError(err.message || "Unknown error");
             console.error("[Sync Hook] Process Error:", err);
             return null;
         } finally {

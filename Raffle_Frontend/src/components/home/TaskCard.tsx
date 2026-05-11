@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle2, Zap, Coins, Gift } from 'lucide-react';
 import { GridCard } from './GridCard';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
 import { Link } from 'react-router-dom';
 
 export function TaskCard() {
@@ -66,7 +66,7 @@ export function TaskCard() {
                         <div key={i} className="h-14 bg-white/5 rounded-xl border border-white/5 animate-pulse" />
                     ))
                 ) : tasks.length > 0 ? (
-                    tasks.map((task, i) => (
+                    tasks.map((task: any, i: number) => (
                         <div key={task.id} className="group/item flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/40 border border-white/5 hover:border-blue-500/30 hover:bg-zinc-900/60 transition-all duration-300">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-lg group-hover/item:scale-110 transition-transform">

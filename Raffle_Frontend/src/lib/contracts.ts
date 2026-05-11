@@ -9,7 +9,7 @@
 import abisDataRaw from './abis_data.txt?raw';
 import { getAddress } from 'viem';
 
-let _cache = null;
+let _cache: any = null;
 const _get = () => {
   if (!_cache) {
     try {
@@ -23,7 +23,7 @@ const _get = () => {
 };
 
 // Helper to create a proxy that acts like an array but only loads on access
-const createAbiProxy = (name) => {
+const createAbiProxy = (name: string) => {
   return new Proxy([], {
     get: (target, prop) => {
       const realAbi = _get().ABIS[name] || [];
@@ -45,7 +45,7 @@ const createAbiProxy = (name) => {
 const chainId = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
 const isSepolia = chainId === 84532;
 
-const cleanAddr = (addr) => {
+const cleanAddr = (addr: any) => {
   if (!addr || typeof addr !== 'string') return undefined;
   
   let cleaned = addr.replace(/["'\s\r\n\t\0]/g, '').trim();
@@ -70,7 +70,7 @@ const cleanAddr = (addr) => {
   }
 };
 
-const getAddr = (key, envKey, envKeySepolia) => {
+const getAddr = (key: string, envKey: string, envKeySepolia?: string) => {
   let addr;
   if (isSepolia && envKeySepolia) {
     addr = import.meta.env[envKeySepolia] 

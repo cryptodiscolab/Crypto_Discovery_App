@@ -14,11 +14,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Singleton implementation using globalThis
-if (!globalThis.supabaseInstance && supabaseUrl && supabaseAnonKey) {
-    globalThis.supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
-} else if (!globalThis.supabaseInstance) {
+if (!(globalThis as any).supabaseInstance && supabaseUrl && supabaseAnonKey) {
+    (globalThis as any).supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+} else if (!(globalThis as any).supabaseInstance) {
     // Mock client to prevent crashes if env vars are missing
-    globalThis.supabaseInstance = {
+    (globalThis as any).supabaseInstance = {
         from: () => ({
             select: () => ({ order: () => ({ range: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: { message: "Supabase not initialized" } }) }) }) }) }),
             upsert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: { message: "Supabase not initialized" } }) }) })
@@ -26,11 +26,11 @@ if (!globalThis.supabaseInstance && supabaseUrl && supabaseAnonKey) {
     };
 }
 
-export const supabase = globalThis.supabaseInstance;
+export const supabase = (globalThis as any).supabaseInstance;
 
 // Helper: Clean wallet address untuk konsistensi (lowercase)
 // Prevents case-sensitivity bugs in EVM address comparisons
-export const cleanWallet = (address) => {
+export const cleanWallet = (address: string | null | undefined) => {
     if (!address) return null;
     return address.toLowerCase().trim();
 };

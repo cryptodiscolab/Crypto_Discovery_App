@@ -8,7 +8,7 @@ export const userService = {
     /**
      * Get user profile details from the bundle
      */
-    getProfile: async (address) => {
+    getProfile: async (address: string) => {
         const { data } = await axios.get(`/api/user-bundle?action=get-profile&wallet=${address}`);
         return data;
     },
@@ -16,7 +16,7 @@ export const userService = {
     /**
      * Get activity logs for a specific user and category
      */
-    getActivityLogs: async (address, category = 'ALL') => {
+    getActivityLogs: async (address: string, category = 'ALL') => {
         const { data } = await axios.get(`/api/user-bundle?action=get-activity-logs&wallet=${address}&category=${category}`);
         return data;
     },
@@ -24,7 +24,7 @@ export const userService = {
     /**
      * Sync UGC Mission metadata after contract creation
      */
-    syncUgcMission: async (payload) => {
+    syncUgcMission: async (payload: any) => {
         const { data } = await axios.post('/api/user-bundle', {
             action: 'sync-ugc-mission',
             ...payload
@@ -35,7 +35,7 @@ export const userService = {
     /**
      * Get user reputation audit status
      */
-    getReputationStatus: async (address) => {
+    getReputationStatus: async (address: string) => {
         const { data } = await axios.get(`/api/user-bundle?action=check-reputation&wallet=${address}`);
         return data;
     }

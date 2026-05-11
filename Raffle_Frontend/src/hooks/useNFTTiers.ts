@@ -3,7 +3,7 @@ import { ABIS, CONTRACTS } from '../lib/contracts';
 import { useMemo } from 'react';
 import { formatEther, parseEther } from 'viem';
 
-const V12 = CONTRACTS.DAILY_APP;
+const V12 = CONTRACTS.DAILY_APP as `0x${string}`;
 
 export function useNFTTiers() {
     const { address } = useAccount();
@@ -51,7 +51,7 @@ export function useNFTTiers() {
         dailyBonusAmount: dailyBonus ? Number(dailyBonus) : 0
     }), [tokenPrice, withdrawalFee, dailyBonus]);
 
-    const updateEconomy = async (tokenP) => {
+    const updateEconomy = async (tokenP: any) => {
         if (tokenP) {
             await writeContractAsync({
                 address: V12,
@@ -62,7 +62,7 @@ export function useNFTTiers() {
         }
     };
 
-    const setCreatorToken = async (tokenAddr) => {
+    const setCreatorToken = async (tokenAddr: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -71,7 +71,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setUSDCToken = async (tokenAddr) => {
+    const setUSDCToken = async (tokenAddr: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -80,7 +80,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setMasterX = async (masterAddr) => {
+    const setMasterX = async (masterAddr: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -89,7 +89,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setPaymentTokenStatus = async (tokenAddr, status, decimals = 18, symbol = '') => {
+    const setPaymentTokenStatus = async (tokenAddr: any, status: any, decimals = 18, symbol = '') => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -98,7 +98,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setWithdrawalFeeBP = async (feeBP) => {
+    const setWithdrawalFeeBP = async (feeBP: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -107,7 +107,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setDailyBonusAmount = async (amount) => {
+    const setDailyBonusAmount = async (amount: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -116,7 +116,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setAutoApproveSponsorship = async (status) => {
+    const setAutoApproveSponsorship = async (status: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -125,7 +125,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setSponsorshipSettings = async (rewardClaim, tasksGoal, minPool, fee) => {
+    const setSponsorshipSettings = async (rewardClaim: any, tasksGoal: any, minPool: any, fee: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -134,7 +134,7 @@ export function useNFTTiers() {
         });
     };
 
-    const updateTierConfig = async (id, points, price, multiplier, bonus, maxSupply, isOpen) => {
+    const updateTierConfig = async (id: any, points: any, price: any, multiplier: any, bonus: any, maxSupply: any, isOpen: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -143,7 +143,7 @@ export function useNFTTiers() {
         });
     };
 
-    const updateBatchConfig = async (tiersArr, pointsArr, pricesArr, bonusesArr, multipliersArr, suppliesArr, openArr) => {
+    const updateBatchConfig = async (tiersArr: any, pointsArr: any, pricesArr: any, bonusesArr: any, multipliersArr: any, suppliesArr: any, openArr: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -152,7 +152,7 @@ export function useNFTTiers() {
         });
     };
 
-    const updateTierURI = async (id, uri) => {
+    const updateTierURI = async (id: any, uri: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -161,7 +161,7 @@ export function useNFTTiers() {
         });
     };
 
-    const toggleTier = async (id, status) => {
+    const toggleTier = async (id: any, status: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -170,7 +170,7 @@ export function useNFTTiers() {
         });
     };
 
-    const mintTier = async (id, price) => {
+    const mintTier = async (id: any, price: any) => {
         return await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,

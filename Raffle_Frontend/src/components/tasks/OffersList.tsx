@@ -10,7 +10,7 @@ const STATUS_COLORS = {
     upcoming: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
 };
 
-function CampaignCard({ campaign, onClaim, userAddress }) {
+function CampaignCard({ campaign, onClaim, userAddress }: { campaign: any; onClaim: (c: any) => void; userAddress?: string }) {
     const now = Date.now();
     const startAt = campaign.start_at ? new Date(campaign.start_at).getTime() : 0;
     const endAt = campaign.end_at ? new Date(campaign.end_at).getTime() : Infinity;
@@ -109,7 +109,7 @@ export function OffersList() {
             let query = supabase
                 .from('campaigns')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false }) as any;
 
             if (filter === 'active') {
                 query = query.eq('status', 'active');
@@ -117,15 +117,21 @@ export function OffersList() {
 
             const { data, error } = await query;
             if (error) throw error;
-            setCampaigns(data || []);
-        } catch (err) {
+            
+            // v3.59.6: Robust Defaulting
+            const normalized = (data || []).map((c: any) => ({
+                ...c,
+                reward_symbol: c.reward_symbol || 'USDC'
+            }));
+            setCampaigns(normalized as any);
+        } catch (err: any) {
             console.error('[OffersList] fetch error:', err.message);
         } finally {
             setLoading(false);
         }
     }
 
-    async function handleClaim(campaign) {
+    async function handleClaim(campaign: any) {
         if (!address) return;
         setJoiningId(campaign.id);
         const tid = toast.loading(`JOINING ${campaign.title.toUpperCase()}...`);
@@ -148,7 +154,7 @@ export function OffersList() {
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || 'Failed to join');
             toast.success(`Successfully joined "${campaign.title}"!`, { id: tid });
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             toast.error(err.shortMessage || err.message, { id: tid });
         } finally {
@@ -156,7 +162,7 @@ export function OffersList() {
         }
     }
 
-    const filtered = campaigns.filter(c =>
+    const filtered = (campaigns as any[]).filter((c: any) =>
         !search || c.title?.toLowerCase().includes(search.toLowerCase())
     );
 

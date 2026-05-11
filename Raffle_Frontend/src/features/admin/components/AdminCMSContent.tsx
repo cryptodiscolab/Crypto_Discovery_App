@@ -36,7 +36,7 @@ export default function AdminCMSContent() {
 
     // Card Form State
     const [cardForm, setCardForm] = useState(emptyForm);
-    const [editingCardId, setEditingCardId] = useState(null);
+    const [editingCardId, setEditingCardId] = useState<number | null>(null);
 
     useEffect(() => {
         if (featureCards && Array.isArray(featureCards)) {
@@ -90,7 +90,7 @@ export default function AdminCMSContent() {
                 { id: tid, duration: 6000 }
             );
             refetchAll();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -98,7 +98,7 @@ export default function AdminCMSContent() {
         }
     };
 
-    const handleImageUpload = async (e) => {
+    const handleImageUpload = async (e: any) => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -135,7 +135,7 @@ export default function AdminCMSContent() {
 
             setCardForm(prev => ({ ...prev, icon: publicUrl }));
             toast.success("Image uploaded successfully!", { id: toastId });
-        } catch (err) {
+        } catch (err: any) {
             console.error('[Upload Error]', err);
             toast.error("Upload failed: " + err.message, { id: toastId });
         } finally {
@@ -152,7 +152,7 @@ export default function AdminCMSContent() {
                 </div>
             );
         }
-        const IconComponent = Icons[iconName] || Icons.HelpCircle;
+        const IconComponent = (Icons as any)[iconName] || Icons.HelpCircle;
         return <IconComponent className="w-5 h-5 text-indigo-400" />;
     };
 
@@ -198,7 +198,7 @@ export default function AdminCMSContent() {
                                     onChange={(e) => setCardForm({ ...cardForm, icon: e.target.value })}
                                     className="w-full bg-[#0a0a0c] border border-white/5 p-3 pl-12 rounded-xl text-white text-sm focus:border-indigo-500/50 outline-none"
                                     placeholder="Enter Lucide name (e.g. Shield) or upload below"
-                                    disabled={cardForm.icon && cardForm.icon.startsWith('http')}
+                                    disabled={Boolean(cardForm.icon && cardForm.icon.startsWith('http'))}
                                 />
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
                                     {renderIconPreview(cardForm.icon)}

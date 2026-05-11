@@ -75,7 +75,7 @@ export function TaskManagerTab() {
     const [pointSettings, setPointSettings] = useState<any[]>([]);
     const [isLoadingPoints, setIsLoadingPoints] = useState(true);
 
-    const [txHash, setTxHash] = useState(null);
+    const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
     const { data: receipt, isSuccess: isTxSuccess, isError: isTxError, error: txError } = useWaitForTransactionReceipt({ hash: txHash });
     const syncedHashes = useRef(new Set());
 
@@ -95,8 +95,8 @@ export function TaskManagerTab() {
 
     const getGlobalPoints = (platform: string, action: string, currentSettings: any[] = pointSettings) => {
         if (!currentSettings || currentSettings.length === 0) return 0;
-        const platMap = { 'Farcaster': 'farcaster', 'X': 'x', 'Base App': 'base', 'TikTok': 'tiktok', 'Instagram': 'instagram' };
-        const actMap = { 'Follow': 'follow', 'Like': 'like', 'Recast/Repost': 'recast', 'Comment': 'comment', 'Quote': 'quote' };
+        const platMap: Record<string, string> = { 'Farcaster': 'farcaster', 'X': 'x', 'Base App': 'base', 'TikTok': 'tiktok', 'Instagram': 'instagram' };
+        const actMap: Record<string, string> = { 'Follow': 'follow', 'Like': 'like', 'Recast/Repost': 'recast', 'Comment': 'comment', 'Quote': 'quote' };
         const platKey = platMap[platform] || platform.toLowerCase();
         let actKey = actMap[action] || action.toLowerCase();
         if (platKey === 'x' && actKey === 'recast') actKey = 'repost';
@@ -109,7 +109,7 @@ export function TaskManagerTab() {
         return keyMatch ? keyMatch.points_value : 0;
     };
 
-    const syncAuditAction = async (txHash, action, details) => {
+    const syncAuditAction = async (txHash: any, action: any, details: any) => {
         try {
             const timestamp = new Date().toISOString();
             const message = `Governance Audit Log\nTX: ${txHash}\nAdmin: ${address}\nAction: ${action}\nTime: ${timestamp}`;
@@ -170,11 +170,11 @@ export function TaskManagerTab() {
                     toast.success("Done! On-chain task & DB synchronized.", { id: tid });
                     setTasksBatch(prev => prev.map(t => ({ ...t, title: '' })));
                     refetchCount();
-                    setTxHash(null);
-                } catch (error) { toast.error(`Sync failed: ${error.message}`, { id: tid }); }
+                    setTxHash(undefined);
+                } catch (error: any) { toast.error(`Sync failed: ${error.message}`, { id: tid }); }
                 finally { setIsSaving(false); }
             }
-            if (isTxError) { toast.error(`Confirmation Failed: ${txError?.shortMessage || "Internal Error"}`); setIsSaving(false); setTxHash(null); }
+            if (isTxError) { toast.error(`Confirmation Failed: ${(txError as any)?.shortMessage || "Internal Error"}`); setIsSaving(false); setTxHash(undefined); }
         };
         syncToSupabase();
     }, [isTxSuccess, isTxError, receipt]);
@@ -188,7 +188,7 @@ export function TaskManagerTab() {
         const tid = toast.loading("Deploying batch...");
         try {
             const hash = await writeContractAsync({
-                address: DAILY_APP_ADDRESS,
+                address: DAILY_APP_ADDRESS as any,
                 abi: DAILY_APP_ABI,
                 functionName: 'addTaskBatch',
                 args: [
@@ -200,18 +200,18 @@ export function TaskManagerTab() {
                     validTasks.map(t => t.requiresVerification)
                 ],
             });
-            setTxHash(hash);
-        } catch (e) { toast.error(e.shortMessage || e.message, { id: tid }); setIsSaving(false); }
+            setTxHash(hash as `0x${string}`);
+        } catch (e: any) { toast.error(e.shortMessage || e.message, { id: tid }); setIsSaving(false); }
     };
 
-    const updateTaskLine = (index: number, field: keyof TaskBatchItem, value: any) => {
+    const updateTaskLine = (idx: number, field: string, value: any) => {
         const newBatch = [...tasksBatch];
-        newBatch[index][field] = value;
+        (newBatch[idx] as any)[field] = value;
         if (field === 'platform' || field === 'action') {
-            const platform = field === 'platform' ? value : newBatch[index].platform;
-            const action = field === 'action' ? value : newBatch[index].action;
-            newBatch[index].title = `${action} our post on ${platform}`;
-            if (!isLoadingPoints) newBatch[index].baseReward = getGlobalPoints(platform, action);
+            const platform = field === 'platform' ? value : newBatch[idx].platform;
+            const action = field === 'action' ? value : newBatch[idx].action;
+            newBatch[idx].title = `${action} our post on ${platform}`;
+            if (!isLoadingPoints) newBatch[idx].baseReward = getGlobalPoints(platform, action);
         }
         setTasksBatch(newBatch);
     };
@@ -224,9 +224,9 @@ export function TaskManagerTab() {
             const tasksRequired = BigInt(3);
             const pool = newMinPoolUSD ? BigInt(Math.round(parseFloat(newMinPoolUSD) * 1e6)) : BigInt(2000000); // $2.00
             const fee = newPlatformFee ? BigInt(Math.round(parseFloat(newPlatformFee) * 1e6)) : (currentPlatformFee || BigInt(2000000));
-            await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams', args: [rewardPerClaimVal, tasksRequired, pool, fee] });
+            await writeContractAsync({ address: DAILY_APP_ADDRESS as any, abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams', args: [rewardPerClaimVal, tasksRequired, pool, fee] });
             toast.success("Updated!", { id: tid });
-        } catch (e) { toast.error(e.shortMessage || "Failed", { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || "Failed", { id: tid }); }
     };
 
     const handleUpdatePrice = async () => {
@@ -234,7 +234,7 @@ export function TaskManagerTab() {
         const tid = toast.loading("Updating token price...");
         try {
             const price = BigInt(parseFloat(newTokenPriceUSD) * 1e18);
-            const hash = await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'setTokenPriceUSD', args: [price] });
+            const hash = await writeContractAsync({ address: DAILY_APP_ADDRESS as any, abi: DAILY_APP_ABI, functionName: 'setTokenPriceUSD', args: [price] });
             if (hash) {
                 const newPriceVal = Number(price) / 1e18;
                 const message = `Sync Economy Price\nTX: ${hash}\nAdmin: ${address}\nPrice: ${newPriceVal}\nTime: ${new Date().toISOString()}`;
@@ -247,7 +247,7 @@ export function TaskManagerTab() {
                 toast.success("Price Updated & Synced!", { id: tid });
                 syncAuditAction(hash, 'UPDATE_TOKEN_PRICE', { new_price: newTokenPriceUSD });
             }
-        } catch (e) { toast.error(e.shortMessage || "Failed", { id: tid }); }
+        } catch (e: any) { toast.error(e.shortMessage || "Failed", { id: tid }); }
     };
 
     const handleCreateSponsorship = async () => {
@@ -256,7 +256,7 @@ export function TaskManagerTab() {
         const tid = toast.loading("Processing...");
         try {
             const hash = await writeContractAsync({
-                address: DAILY_APP_ADDRESS,
+                address: DAILY_APP_ADDRESS as any,
                 abi: DAILY_APP_ABI,
                 functionName: 'buySponsorshipWithToken',
                 args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, BigInt(Math.round(parseFloat(rewardPerUserUSD) * Number(targetClaims) * 1e6)), CREATOR_TOKEN_ADDR || '0x0000000000000000000000000000000000000000']
@@ -273,7 +273,7 @@ export function TaskManagerTab() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        wallet: address,
+                        wallet: address as any,
                         signature,
                         message,
                         action: 'sync-ugc-mission',
@@ -299,31 +299,31 @@ export function TaskManagerTab() {
                 toast.success("Deployed & Synchronized!", { id: tid });
                 setViewMode('VIEW_TASKS');
             }
-        } catch (e) { 
+        } catch (e: any) { 
             console.error("Sponsorship error:", e);
             toast.error(e.shortMessage || "Failed to deploy", { id: tid }); 
         } finally { setIsSponsorSaving(false); }
     };
 
-    const handleApprove = async (rid) => {
+    const handleApprove = async (rid: any) => {
         try { const hash = await approveSponsorship(rid); if (hash) syncAuditAction(hash, 'SPONSOR_APPROVE', { request_id: rid }); }
-        catch (e) { toast.error(e.shortMessage); }
+        catch (e: any) { toast.error(e.shortMessage); }
     };
 
-    const handleReject = async (rid) => {
+    const handleReject = async (rid: any) => {
         const reason = window.prompt("Reason?");
         if (!reason) return;
         try { const hash = await rejectSponsorship(rid, reason); if (hash) syncAuditAction(hash, 'SPONSOR_REJECT', { request_id: rid, reason }); }
-        catch (e) { toast.error(e.shortMessage); }
+        catch (e: any) { toast.error(e.shortMessage); }
     };
 
-    const handleToggleTaskStatus = async (tid, current) => {
+    const handleToggleTaskStatus = async (tid: any, current: any) => {
         const lid = toast.loading("Updating status...");
         try {
-            await writeContractAsync({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'setTaskActive', args: [BigInt(tid), !current] });
+            await writeContractAsync({ address: DAILY_APP_ADDRESS as any, abi: DAILY_APP_ABI, functionName: 'setTaskActive', args: [BigInt(tid), !current] });
             toast.success("Updated!", { id: lid });
             refetchCount();
-        } catch (e) { toast.error(e.shortMessage, { id: lid }); }
+        } catch (e: any) { toast.error(e.shortMessage, { id: lid }); }
     };
 
     return (
@@ -340,7 +340,7 @@ export function TaskManagerTab() {
                         { id: 'VIEW_TASKS', label: 'Campaigns', icon: <List className="w-4 h-4" />, color: 'indigo' },
                     ].map(tab => {
                         const isActive = viewMode === tab.id;
-                        const colorMap = {
+                        const colorMap: Record<string, string> = {
                             purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20 shadow-purple-500/10',
                             emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shadow-emerald-500/10',
                             amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20 shadow-amber-500/10',
@@ -400,7 +400,7 @@ export function TaskManagerTab() {
                         newTokenPriceUSD={newTokenPriceUSD} onNewTokenPriceUSDChange={setNewTokenPriceUSD}
                         currentPlatformFee={currentPlatformFee}
                         currentTokenPrice={currentTokenPrice}
-                        pendingPrice={null}
+                        pendingPrice={undefined}
                         onUpdateEconomy={handleUpdateEconomy}
                         onSchedulePrice={handleUpdatePrice}
                         onExecutePrice={handleUpdatePrice}

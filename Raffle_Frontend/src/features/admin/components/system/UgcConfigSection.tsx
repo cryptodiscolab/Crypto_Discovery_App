@@ -19,7 +19,7 @@ export function UgcConfigSection() {
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [drifts, setDrifts] = useState({});
+    const [drifts, setDrifts] = useState<Record<string, string>>({});
 
     // On-chain Data for Parity Audit
     const { data: minRewardPool } = useReadContract({
@@ -59,8 +59,8 @@ export function UgcConfigSection() {
         }
     }
 
-    function performAudit(currentConfig) {
-        const newDrifts = {};
+    function performAudit(currentConfig: any) {
+        const newDrifts: Record<string, string> = {};
         
         // Audit Listing Fee vs Contract minRewardPool (assuming Listing Fee >= minRewardPool)
         if (minRewardPool) {
@@ -127,7 +127,7 @@ export function UgcConfigSection() {
             }
             
             toast.success('UGC Configuration updated!', { id: tid });
-        } catch (error) {
+        } catch (error: any) {
             toast.error('Save failed: ' + error.message, { id: tid });
         } finally {
             setSaving(false);

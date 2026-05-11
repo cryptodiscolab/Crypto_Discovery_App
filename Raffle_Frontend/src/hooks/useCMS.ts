@@ -3,7 +3,7 @@ import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClie
 import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS, APP_CONFIG } from '../lib/contracts';
 import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
 
 const CMS_CONTRACT_ADDRESS = CONTRACTS.CMS;
@@ -12,7 +12,7 @@ const DEFAULT_ADMIN_ROLE = "0x00000000000000000000000000000000000000000000000000
 // Default fallback states
 const DEFAULT_ANNOUNCEMENT = { visible: false, title: "", message: "", type: "info" };
 const DEFAULT_POOL_SETTINGS = { targetUSDC: 0, claimTimestamp: 0 };
-const DEFAULT_NEWS = [];
+const DEFAULT_NEWS: any[] = [];
 
 /**
  * Custom hook for interacting with ContentCMSV2 contract
@@ -169,7 +169,7 @@ export function useCMS() {
             }
 
             // Quick Client-Side ENV Check for local Dev
-            const localAdmins = (import.meta.env.VITE_ADMIN_WALLETS || '').toLowerCase().split(',').map(a => a.trim()).filter(Boolean);
+            const localAdmins = (import.meta.env.VITE_ADMIN_WALLETS || '').toLowerCase().split(',').map((a: any) => a.trim()).filter(Boolean);
             if (localAdmins.includes(wallet)) {
                 if (isMounted) setIsEnvAdmin(true);
                 // Can optionally skip DB check to optimize further if already env-admin
@@ -186,7 +186,7 @@ export function useCMS() {
                 if (!error && data && isMounted) {
                     setIsDbAdmin(!!data.is_admin);
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.warn('[useCMS] DB Admin check failed:', e.message);
                 if (isMounted) setIsDbAdmin(false);
             }
@@ -197,7 +197,7 @@ export function useCMS() {
                     const json = await res.json();
                     if (isMounted && json.isAdmin) setIsEnvAdmin(true);
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.warn('[useCMS] ENV Admin check failed:', e.message);
             } finally {
                 if (isMounted) setIsCheckingRoles(false);
@@ -221,11 +221,11 @@ export function useCMS() {
         let announcement = DEFAULT_ANNOUNCEMENT;
         let poolSettings = DEFAULT_POOL_SETTINGS;
         let news = DEFAULT_NEWS;
-        let featureCards = [];
+        let featureCards: any[] = [];
 
         // Parse Announcement and Pool Settings
         try {
-            if (announcementRaw && typeof announcementRaw === 'string' && announcementRaw.trim() !== "") {
+            if (announcementRaw && typeof announcementRaw === 'string' && (announcementRaw as string).trim() !== "") {
                 const parsed = JSON.parse(announcementRaw);
                 if (parsed && typeof parsed === 'object') {
                     if (parsed.announcement) {
@@ -255,7 +255,7 @@ export function useCMS() {
 
         // Parse News
         try {
-            if (newsRaw && typeof newsRaw === 'string' && newsRaw.trim() !== "") {
+            if (newsRaw && typeof newsRaw === 'string' && (newsRaw as string).trim() !== "") {
                 const parsed = JSON.parse(newsRaw);
                 if (Array.isArray(parsed)) {
                     news = parsed.map(item => ({
@@ -273,7 +273,7 @@ export function useCMS() {
 
         // Parse Feature Cards
         try {
-            if (featureCardsRaw && typeof featureCardsRaw === 'string' && featureCardsRaw.trim() !== "") {
+            if (featureCardsRaw && typeof featureCardsRaw === 'string' && (featureCardsRaw as string).trim() !== "") {
                 const parsed = JSON.parse(featureCardsRaw);
                 if (Array.isArray(parsed)) {
                     featureCards = parsed.map(item => ({
@@ -303,7 +303,7 @@ export function useCMS() {
     // WRITE FUNCTIONS - CONTENT MANAGEMENT
     // ============================================
 
-    const updateAnnouncement = useCallback(async (newAnnouncement) => {
+    const updateAnnouncement = useCallback(async (newAnnouncement: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
 
         const newSettings = {
@@ -321,7 +321,7 @@ export function useCMS() {
         return hash;
     }, [poolSettings, writeContractAsync]);
 
-    const updatePoolSettings = useCallback(async (newPoolSettings) => {
+    const updatePoolSettings = useCallback(async (newPoolSettings: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
 
         const newSettings = {
@@ -339,7 +339,7 @@ export function useCMS() {
         return hash;
     }, [announcement, writeContractAsync]);
 
-    const updateNews = useCallback(async (newNews) => {
+    const updateNews = useCallback(async (newNews: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newNews);
         const hash = await writeContractAsync({
@@ -352,7 +352,7 @@ export function useCMS() {
         return hash;
     }, [writeContractAsync]);
 
-    const updateFeatureCards = useCallback(async (newCards) => {
+    const updateFeatureCards = useCallback(async (newCards: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newCards);
         const hash = await writeContractAsync({
@@ -365,7 +365,7 @@ export function useCMS() {
         return hash;
     }, [writeContractAsync]);
 
-    const batchUpdate = useCallback(async (newAnnouncement, newNews, newCards) => {
+    const batchUpdate = useCallback(async (newAnnouncement: any, newNews: any, newCards: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const hash = await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
@@ -385,7 +385,7 @@ export function useCMS() {
     // WRITE FUNCTIONS - ROLE MANAGEMENT
     // ============================================
 
-    const grantOperator = useCallback(async (operatorAddress) => {
+    const grantOperator = useCallback(async (operatorAddress: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
@@ -395,7 +395,7 @@ export function useCMS() {
         });
     }, [writeContractAsync]);
 
-    const revokeOperator = useCallback(async (operatorAddress) => {
+    const revokeOperator = useCallback(async (operatorAddress: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
@@ -409,7 +409,7 @@ export function useCMS() {
     // WRITE FUNCTIONS - SPONSORED ACCESS WHITELIST
     // ============================================
 
-    const grantPrivilege = useCallback(async (userAddress, featureId) => {
+    const grantPrivilege = useCallback(async (userAddress: any, featureId: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
@@ -419,7 +419,7 @@ export function useCMS() {
         });
     }, [writeContractAsync]);
 
-    const revokePrivilege = useCallback(async (userAddress, featureId) => {
+    const revokePrivilege = useCallback(async (userAddress: any, featureId: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
@@ -429,7 +429,7 @@ export function useCMS() {
         });
     }, [writeContractAsync]);
 
-    const batchGrantPrivileges = useCallback(async (userAddresses, featureIds) => {
+    const batchGrantPrivileges = useCallback(async (userAddresses: any, featureIds: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeContractAsync({
             address: CMS_CONTRACT_ADDRESS,
@@ -447,7 +447,7 @@ export function useCMS() {
      * Check if a user has access to a specific feature
      * FIXED: Removed useReadContract hook from inside function
      */
-    const checkAccess = useCallback(async (userAddress, featureId) => {
+    const checkAccess = useCallback(async (userAddress: any, featureId: any) => {
         if (!CMS_CONTRACT_ADDRESS) return false;
         try {
             if (!publicClient) return false;
@@ -467,7 +467,7 @@ export function useCMS() {
     /**
      * Show success toast with BaseScan link
      */
-    const showSuccessToast = (message, txHash) => {
+    const showSuccessToast = (message: any, txHash: any) => {
         toast.success(
             `${message} - View on Explorer: ${APP_CONFIG.EXPLORER_URL}/tx/${txHash}`,
             { duration: 6000 }
@@ -506,6 +506,13 @@ export function useCMS() {
         updateNews,
         updateFeatureCards,
         batchUpdate,
+
+        // Role write functions
+        grantOperator,
+        revokeOperator,
+        grantPrivilege,
+        revokePrivilege,
+        batchGrantPrivileges,
 
         // Helpers
         showSuccessToast,

@@ -3,12 +3,12 @@ import { useSignMessage } from 'wagmi';
 import { APP_CONFIG } from '../lib/contracts';
 import toast from 'react-hot-toast';
 
-export function useVerification(refetchStats) {
+export function useVerification(refetchStats?: () => void) {
     const [isVerifying, setIsVerifying] = useState(false);
-    const [lastActionTime, setLastActionTime] = useState({});
+    const [lastActionTime, setLastActionTime] = useState<Record<string | number, number>>({});
     const { signMessageAsync } = useSignMessage();
 
-    const verifyTask = async (task, address, taskId, userFid = null) => {
+    const verifyTask = async (task: any, address: string, taskId: string | number, userFid: number | null = null) => {
         // 0. Anti-Fraud: 30s Delay Check
         const now = Date.now();
         const lastTime = lastActionTime[taskId] || 0;
@@ -104,7 +104,7 @@ export function useVerification(refetchStats) {
                 toast.error(detail, { id: tid, duration: 5000 });
                 return false;
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('[Verification Error]', error);
             const errMsg = error.message || "Unknown Verification error";
 
@@ -121,7 +121,7 @@ export function useVerification(refetchStats) {
         }
     };
 
-    const registerTaskStart = (taskId) => {
+    const registerTaskStart = (taskId: string | number) => {
         setLastActionTime(prev => ({ ...prev, [taskId]: Date.now() }));
     };
 

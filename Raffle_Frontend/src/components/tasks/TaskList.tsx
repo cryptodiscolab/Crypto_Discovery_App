@@ -5,6 +5,8 @@ import { Loader2, CheckCircle2, Zap, Clock, AlertCircle, Coins, ExternalLink, Ar
 import toast from 'react-hot-toast';
 import { usePoints } from '../../shared/context/PointsContext';
 import { useVerifiedAction } from '../../hooks/useVerifiedAction';
+import { useFarcaster } from '../../hooks/useFarcaster';
+import { DailyGoalCard } from './DailyGoalCard';
 
 
 export function TaskList() {
@@ -16,12 +18,11 @@ export function TaskList() {
     const [isLoading, setIsLoading] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
     const [isBaseVerified, setIsBaseVerified] = useState(false); // v3.42.0
-    const [claimingTask, setClaimingTask] = useState(null);
-    const [userSocials, setUserSocials] = useState(null);
+    const [claimingTask, setClaimingTask] = useState<string | number | null>(null);
+    const { profileData, syncUser, isLoading: isSyncing } = useFarcaster();
     // Two-Step Task Flow: track which tasks have been started (link opened)
-    const [startedTasks, setStartedTasks] = useState({}); // { task_id: timestamp }
-    const [countdowns, setCountdowns] = useState({}); // { task_id: secondsLeft }
-    const [dailyProgress, setDailyProgress] = useState({ completed_count: 0, bonus_claimed: false }); // v3.59.5
+    const [startedTasks, setStartedTasks] = useState<Record<string, number>>({}); // { task_id: timestamp }
+    const [countdowns, setCountdowns] = useState<Record<string, number>>({}); // { task_id: secondsLeft }
     const countdownRefs = useRef({});
     const { execute: executeClaim } = useVerifiedAction();
     const { refetch, gasTracker } = usePoints();
@@ -35,9 +36,12 @@ export function TaskList() {
             setCountdowns(prev => {
                 const next = { ...prev };
                 ids.forEach(id => {
-                    const elapsed = Math.floor((Date.now() - startedTasks[id]) / 1000);
-                    const remaining = Math.max(0, 15 - elapsed);
-                    next[id] = remaining;
+                    const startTime = startedTasks[id];
+                    if (startTime) {
+                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                        const remaining = Math.max(0, 15 - elapsed);
+                        next[id] = remaining;
+                    }
                 });
                 return next;
             });
@@ -45,7 +49,7 @@ export function TaskList() {
         return () => clearInterval(interval);
     }, [startedTasks]);
 
-    const handleGoToTask = (task) => {
+    const handleGoToTask = (task: any) => {
         if (!isConnected || !address) {
             toast.error('Please connect wallet first');
             return;
@@ -84,22 +88,16 @@ export function TaskList() {
 
             // 2. Fetch User Claims & Score (if connected)
             if (address) {
-                const [claimsResult, profileResult] = await Promise.all([
+                const [claimsResult] = await Promise.all([
                     supabase
                         .from('user_task_claims')
                         .select('task_id, claimed_at')
-                        .eq('wallet_address', address.toLowerCase()),
-
-                    supabase
-                        .from('user_profiles')
-                        .select('neynar_score, is_base_social_verified, fid, twitter_id, twitter_username, tiktok_username, instagram_username')
                         .eq('wallet_address', address.toLowerCase())
-                        .maybeSingle()
                 ]);
 
                 if (claimsResult.data) {
                     setUserClaims(prev => {
-                        const dbClaimIds = new Set(claimsResult.data.map(c => String(c.task_id).toLowerCase()));
+                        const dbClaimIds = new Set((claimsResult.data || []).map((c: any) => String(c.task_id).toLowerCase()));
                         const recentOptimistic = prev.filter(c =>
                             !dbClaimIds.has(String(c.task_id).toLowerCase()) &&
                             (Date.now() - new Date(c.claimed_at).getTime() < 15000)
@@ -110,29 +108,14 @@ export function TaskList() {
                     setUserClaims(prev => prev.filter(c => (Date.now() - new Date(c.claimed_at).getTime() < 15000)));
                 }
 
-                if (profileResult.data) {
-                    setUserScore(profileResult.data.neynar_score || 0);
-                    setIsBaseVerified(!!profileResult.data.is_base_social_verified);
+                if (profileData) {
+                    setUserScore(profileData.neynar_score || 0);
+                    setIsBaseVerified(!!profileData.is_base_social_verified);
                     setHasProfile(true);
-                    setUserSocials(profileResult.data);
                 } else {
                     setUserScore(0);
                     setIsBaseVerified(false);
                     setHasProfile(false);
-                    setUserSocials(null);
-                }
-
-                // 3. Fetch Daily Progress (v3.59.5)
-                const { data: progressData } = await supabase
-                    .from('v_user_daily_progress')
-                    .select('*')
-                    .eq('wallet_address', address.toLowerCase())
-                    .maybeSingle();
-
-                if (progressData) {
-                    setDailyProgress(progressData);
-                } else {
-                    setDailyProgress({ completed_count: 0, bonus_claimed: false });
                 }
             } else {
                 // If not connected, clear user-specific states
@@ -154,9 +137,17 @@ export function TaskList() {
 
     useEffect(() => {
         fetchData();
-    }, [address]);
+    }, [address, profileData]);
 
-    const handleClaim = async (task) => {
+    // v3.59.6: Automatic Identity Sync Mandate
+    useEffect(() => {
+        if (isConnected && address && !profileData && !isSyncing) {
+            console.log("[TaskList] Missing identity detected. Triggering background sync...");
+            syncUser(address);
+        }
+    }, [isConnected, address, profileData, isSyncing, syncUser]);
+
+    const handleClaim = async (task: any) => {
         if (!isConnected || !address) {
             toast.error("Please connect wallet first");
             return;
@@ -185,10 +176,10 @@ export function TaskList() {
                 action_type: task.action_type,
                 target_id: task.target_id,
                 // Social Identity for Robust Verification
-                fid: userSocials?.fid,
-                twitterId: userSocials?.twitter_id,
-                tiktokHandle: userSocials?.tiktok_username,
-                instagramHandle: userSocials?.instagram_username,
+                fid: profileData?.fid,
+                twitterId: profileData?.twitter_id,
+                tiktokHandle: profileData?.tiktok_username,
+                instagramHandle: profileData?.instagram_username,
                 // Action Params (if any)
                 targetFid: task.target_fid || task.target_id,
                 tweetId: task.tweet_id || task.target_id,
@@ -280,44 +271,8 @@ export function TaskList() {
                 <h3 className="text-[11px] font-black text-white uppercase tracking-widest">QUICK MISSIONS</h3>
             </div>
 
-            {/* [v3.59.5] Nexus Daily Goal Progress */}
-            {isConnected && (
-                <div className="mb-8 p-5 glass-card border-white/5 relative overflow-hidden group animate-fade-in">
-                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Gift size={48} className="text-indigo-400" />
-                    </div>
-                    
-                    <div className="flex justify-between items-end mb-3">
-                        <div>
-                            <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] mb-1">Nexus Daily Goal</h3>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                {dailyProgress.bonus_claimed 
-                                    ? "Today's Bonus Unlocked! 🚀" 
-                                    : `Complete 3 tasks for +50 XP Bonus`}
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-lg font-black text-white tabular-nums">{Math.min(dailyProgress.completed_count, 3)}/3</span>
-                        </div>
-                    </div>
-
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                        <div 
-                            className={`h-full transition-all duration-1000 ease-out rounded-full ${
-                                dailyProgress.bonus_claimed ? 'bg-gradient-to-r from-green-500 to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_10px_rgba(99,102,241,0.3)]'
-                            }`}
-                            style={{ width: `${(Math.min(dailyProgress.completed_count, 3) / 3) * 100}%` }}
-                        />
-                    </div>
-                    
-                    {dailyProgress.bonus_claimed && (
-                        <div className="mt-3 flex items-center gap-2 text-green-400 animate-pulse">
-                            <CheckCircle2 size={12} />
-                            <span className="text-[9px] font-black uppercase tracking-widest">+50 XP Bonus Awarded</span>
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* [v3.60.4] Hardened Daily Retention Goal Component */}
+            <DailyGoalCard />
 
             {isGasHigh && !isGasExpensive && (
                 <div className="flex items-center justify-center gap-2 mb-4 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-widest text-center shadow-inner">
@@ -326,9 +281,10 @@ export function TaskList() {
             )}
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {activeTasks.map(task => {
-                    const hasStarted = !!startedTasks[task.id];
-                    const countdown = countdowns[task.id] ?? (hasStarted ? 0 : null);
+                {activeTasks.map((task: any) => {
+                    const taskId = String(task.id);
+                    const hasStarted = !!startedTasks[taskId];
+                    const countdown = countdowns[taskId] ?? (hasStarted ? 0 : null);
                     const canClaim = hasStarted && countdown === 0;
 
                     // Anti-Sybil Check

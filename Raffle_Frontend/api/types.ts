@@ -1,4 +1,9 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Database, Json } from './database.types';
+
+export { Json };
+export type DbUserProfile = Database['public']['Tables']['user_profiles']['Row'];
+export type DbDailyTask = Database['public']['Tables']['daily_tasks']['Row'];
+export type DbUserActivityLog = Database['public']['Tables']['user_activity_logs']['Row'];
 
 export interface BaseResponse {
     success: boolean;
@@ -12,54 +17,20 @@ export interface TaskClaimResponse extends BaseResponse {
 }
 
 export interface PointSetting {
-    id: string;
+    id: number;
     activity_key: string;
     points_value: number;
     is_active: boolean;
 }
 
-export interface DailyTask {
-    id: string;
-    title: string;
-    description: string;
-    platform: string;
-    action_type: string;
-    xp_reward: number;
-    target_id?: string;
-    task_type: 'social' | 'regular' | 'system' | 'ugc';
-    is_active: boolean;
-    is_base_social_required: boolean;
-    min_neynar_score: number;
-    expires_at?: string;
+export interface DailyTask extends Omit<DbDailyTask, 'created_at' | 'expires_at'> {
     created_at: string;
-    onchain_id?: string;
+    expires_at?: string;
+    task_type: 'social' | 'regular' | 'system' | 'ugc';
 }
 
-export interface UserProfile {
-    wallet_address: string;
-    total_xp: number;
-    tier: number;
-    is_base_social_verified: boolean;
-    neynar_score: number;
-    referred_by?: string | null;
-    referral_bonus_paid: boolean;
-    fid?: number | null;
-    username?: string | null;
-    display_name?: string | null;
-    bio?: string | null;
-    pfp_url?: string | null;
-    google_id?: string | null;
-    google_email?: string | null;
-    twitter_id?: string | null;
-    twitter_username?: string | null;
-    oauth_provider?: string | null;
+export interface UserProfile extends DbUserProfile {
     is_admin?: boolean;
-    last_onchain_xp?: number;
-    streak_count?: number;
-    last_streak_claim?: string | null;
-    last_login_at?: string;
-    updated_at: string;
-    base_username?: string | null;
 }
 
 export interface UserActivityLog {

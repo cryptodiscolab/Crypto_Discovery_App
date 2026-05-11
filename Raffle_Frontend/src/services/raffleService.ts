@@ -13,10 +13,10 @@ class RaffleService {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data?.map(r => r.id) || [];
+        return data?.map((r: any) => r.id) || [];
     }
 
-    async getRaffleMetadata(raffleId) {
+    async getRaffleMetadata(raffleId: number | string) {
         if (!raffleId) return null;
         
         const { data, error } = await supabase

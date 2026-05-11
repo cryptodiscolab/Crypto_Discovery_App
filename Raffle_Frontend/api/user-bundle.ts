@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { Database } from './database.types';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { verifyMessage, keccak256, encodePacked } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -27,7 +28,7 @@ import {
     UgcRafflePayload 
 } from './types';
 
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const neynar = new NeynarAPIClient({ apiKey: NEYNAR_API_KEY || '' });
 
 // -----------------------------------------------------------------------------
@@ -61,8 +62,9 @@ async function reportHealth(serviceKey: string, status: string, error: string | 
             last_error: error,
             updated_at: new Date().toISOString()
         }, { onConflict: 'service_key' });
-    } catch (e: any) { 
-        console.error(`[Health] Failed to report for ${serviceKey}`, e.message); 
+    } catch (e: unknown) { 
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`[Health] Failed to report for ${serviceKey}`, msg); 
     }
 }
 
@@ -75,13 +77,14 @@ async function fetchWithRetry<T>(fn: () => Promise<T>, serviceKey: string, retri
             const res = await fn();
             await reportHealth(serviceKey, 'healthy');
             return res;
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
             if (i === retries - 1) {
-                await reportHealth(serviceKey, 'failed', err.message);
+                await reportHealth(serviceKey, 'failed', msg);
                 throw err;
             }
             const backoff = delay * Math.pow(2, i);
-            console.warn(`[Retry] ${serviceKey} attempt ${i + 1} failed. Re-trying in ${backoff}ms...`, err.message);
+            console.warn(`[Retry] ${serviceKey} attempt ${i + 1} failed. Re-trying in ${backoff}ms...`, msg);
             await new Promise(resolve => setTimeout(resolve, backoff));
         }
     }
@@ -107,8 +110,9 @@ async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promi
             return false;
         }
         return true;
-    } catch (e: any) {
-        console.error(`[Feature Guard] Failed to verify ${featureKey}`, e.message);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`[Feature Guard] Failed to verify ${featureKey}`, msg);
         res.status(500).json({ error: "Feature Guard verification failed" });
         return false;
     }
@@ -182,7 +186,7 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
         const cleanAddress = wallet_address.toLowerCase();
 
         const { data: profile, error } = await supabaseAdmin
-            .from('users')
+            .from('user_profiles')
             .select('total_xp')
             .eq('wallet_address', cleanAddress)
             .single();
@@ -211,8 +215,10 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
             signature: signedSignature,
             signer: account.address
         });
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+        });
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        res.status(500).json({ error: msg });
     }
 }
 
@@ -232,7 +238,7 @@ async function handleLoginSync(req: VercelRequest, res: VercelResponse) {
             .eq('wallet_address', cleanAddress)
             .maybeSingle();
 
-        const updateData: any = {
+        const updateData: Partial<DbUserProfile> = {
             wallet_address: cleanAddress,
             fid: fid || null,
             last_login_at: new Date().toISOString(),
@@ -254,8 +260,9 @@ async function handleLoginSync(req: VercelRequest, res: VercelResponse) {
 
         if (error) throw error;
         return res.status(200).json({ success: true, profile: data });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -273,8 +280,9 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 if (receipt?.status === 'success' && receipt.from.toLowerCase() === cleanAddress) {
                     skipSignature = true;
                 }
-            } catch (hashErr: any) {
-                if (hashErr.message === 'RPC_TIMEOUT') skipSignature = true;
+            } catch (hashErr: unknown) {
+                const msg = hashErr instanceof Error ? hashErr.message : String(hashErr);
+                if (msg === 'RPC_TIMEOUT') skipSignature = true;
             }
         }
 
@@ -292,12 +300,12 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
 
         const lastOnChainXp = profile?.last_onchain_xp || 0;
 
-        const contractStats: any = await rpcClient.readContract({
+        const contractStats = await rpcClient.readContract({
             address: DAILY_APP_ADDRESS as `0x${string}`,
             abi: DAILY_APP_USER_STATS_ABI,
             functionName: 'userStats',
             args: [cleanAddress as `0x${string}`],
-        });
+        }) as [bigint, bigint, bigint, bigint, bigint];
 
         const currentOnChainXp = Number(contractStats?.[0] || 0);
         const currentTierOnChain = Number(contractStats?.[3] || 0);
@@ -363,8 +371,9 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
         }
 
         return res.status(200).json(result);
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -376,11 +385,11 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
         const valid = await verifyMessage({ address: address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         
-        const response: any = await fetchWithRetry(
-            () => (neynar as any).fetchBulkUsersByEthOrSolAddress({ addresses: [address] }),
+        const response = await fetchWithRetry(
+            () => neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [address] }),
             'neynar-api'
-        );
-        const fcUser = response?.[address.toLowerCase()]?.[0];
+        ) as Record<string, any[]>;
+        const fcUser = response?.[address.toLowerCase()]?.[0] as any;
 
         if (fcUser) {
             const { data, error } = await supabaseAdmin
@@ -397,8 +406,9 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ ok: true, profile: data });
         }
         return res.status(404).json({ error: 'No Farcaster profile' });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -410,7 +420,7 @@ async function handleUpdateProfile(req: VercelRequest, res: VercelResponse) {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const sanitizedPayload: any = { ...payload };
+        const sanitizedPayload: Partial<UserProfile> = { ...payload };
         delete sanitizedPayload.is_admin;
         delete sanitizedPayload.wallet_address;
         delete sanitizedPayload.total_xp;
@@ -431,8 +441,9 @@ async function handleUpdateProfile(req: VercelRequest, res: VercelResponse) {
                         return res.status(400).json({ error: `Avatar exceeds limit.` });
                     }
                 }
-            } catch (err: any) {
-                console.warn(`[Profile Update] Image check failed:`, err.message);
+            } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : String(err);
+                console.warn(`[Profile Update] Image check failed:`, msg);
             }
         }
 
@@ -443,8 +454,8 @@ async function handleUpdateProfile(req: VercelRequest, res: VercelResponse) {
         if (error) throw error;
 
         return res.status(200).json({ success: true });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: msg });
     }
 }
 
@@ -468,8 +479,9 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
         if (error) throw error;
 
         return res.status(200).json({ success: true, logs: data });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -492,8 +504,8 @@ async function handleFrontendLogActivity(req: VercelRequest, res: VercelResponse
         });
 
         return res.status(200).json({ success: true });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: msg });
     }
 }
 
@@ -504,23 +516,25 @@ async function handleGetPointSettings(req: VercelRequest, res: VercelResponse) {
             supabaseAdmin.from('system_settings').select('key, value'),
             supabaseAdmin.from('allowed_tokens').select('*').eq('is_active', true)
         ]);
-
-        const settings: any = points?.reduce((acc: any, curr: any) => {
+        
+        type SettingValue = string | number | boolean | Json;
+        const settings: Record<string, SettingValue> = points?.reduce((acc, curr) => {
             acc[curr.activity_key] = curr.points_value;
             return acc;
-        }, {}) || {};
+        }, {} as Record<string, SettingValue>) || {};
 
-        system?.forEach((s: any) => {
+        system?.forEach((s) => {
             settings[s.key] = s.value;
         });
 
-        const tokenList = (allowedTokens && allowedTokens.length > 0) ? allowedTokens : (settings.whitelisted_tokens_json || []);
+        const tokenList = (allowedTokens && allowedTokens.length > 0) ? allowedTokens : (settings.whitelisted_tokens_json as any || []);
         settings.allowed_tokens = tokenList;
         settings.whitelisted_tokens = tokenList;
 
         return res.status(200).json({ success: true, settings });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -553,7 +567,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             sponsor_address: sponsor_address.toLowerCase(),
             platform_code: platform_code || 'farcaster',
             reward_amount_per_user: reward_amount_per_user.toString(),
-            max_participants: parseInt(max_participants as any),
+            max_participants: Number(max_participants),
             status: 'pending',
             created_at: new Date().toISOString(),
             payment_token: payment_token || null,
@@ -610,7 +624,10 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
                     metadata: { campaign_id: campaign.id }
                 });
             }
-        } catch (xpErr: any) { console.warn('[SyncUgcMission] XP error:', xpErr.message); }
+        } catch (xpErr: unknown) {
+            const msg = xpErr instanceof Error ? xpErr.message : String(xpErr);
+            console.warn('[SyncUgcMission] XP error:', msg); 
+        }
 
         await logActivity({
             wallet,
@@ -624,8 +641,9 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         });
 
         return res.status(200).json({ success: true });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -642,17 +660,20 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
 
         if (!isAdminWallet) {
             try {
-                const raffleInfo: any = await rpcClient.readContract({
-                    address: DAILY_APP_ADDRESS as `0x${string}`, // Fixed: use DAILY_APP_ADDRESS or dedicated Raffle address
+                const raffleInfo = await rpcClient.readContract({
+                    address: DAILY_APP_ADDRESS as `0x${string}`, 
                     abi: RAFFLE_ABI,
                     functionName: 'getRaffleInfo',
                     args: [BigInt(raffle_id)]
-                });
+                }) as { sponsor: string };
 
                 if (raffleInfo.sponsor.toLowerCase() !== wallet.toLowerCase()) {
                     return res.status(403).json({ error: `Not sponsor of Raffle #${raffle_id}` });
                 }
-            } catch (onChainErr: any) { console.error('[handleSyncUgcRaffle] On-chain check fail:', onChainErr.message); }
+            } catch (onChainErr: unknown) {
+                const msg = onChainErr instanceof Error ? onChainErr.message : String(onChainErr);
+                console.error('[handleSyncUgcRaffle] On-chain check fail:', msg);
+            }
         }
 
         const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
@@ -665,7 +686,7 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
             creator_address: wallet.toLowerCase(),
             sponsor_address: wallet.toLowerCase(),
             end_time: end_time ? new Date(end_time * 1000).toISOString() : null,
-            max_tickets: parseInt(max_tickets as any),
+            max_tickets: Number(max_tickets),
             prize_pool: prizePool,
             metadata_uri: metadata_uri || null,
             is_active: false,
@@ -720,8 +741,9 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         });
 
         return res.status(200).json({ success: true });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -736,15 +758,15 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         const { tierName, ethSpent, txHash } = payload;
         
         const { data: thresholds } = await supabaseAdmin.from('sbt_thresholds').select('level, tier_name');
-        const tierMap: any = thresholds?.reduce((acc: any, t: any) => { if (t.tier_name) acc[t.tier_name] = t.level; return acc; }, {}) || {};
+        const tierMap: Record<string, number> = thresholds?.reduce((acc, t) => { if (t.tier_name) acc[t.tier_name] = t.level; return acc; }, {} as Record<string, number>) || {};
         const tierIndex = tierMap[tierName] || 0;
 
-        const contractStats: any = await rpcClient.readContract({
+        const contractStats = await rpcClient.readContract({
             address: DAILY_APP_ADDRESS as `0x${string}`,
             abi: DAILY_APP_USER_STATS_ABI,
             functionName: 'userStats',
             args: [wallet.toLowerCase() as `0x${string}`],
-        });
+        }) as [bigint, bigint, bigint, bigint, bigint];
 
         const actualTierOnChain = Number(contractStats?.[3] || 0);
         const actualPointsOnChain = Number(contractStats?.[0] || 0);
@@ -772,8 +794,9 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         });
 
         return res.status(200).json({ success: true, tier: actualTierOnChain });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -799,12 +822,24 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
         });
 
         return res.status(200).json({ success: true });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
-async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }: any) {
+interface LogActivityParams {
+    wallet: string;
+    category: string;
+    type: string;
+    description: string;
+    amount?: number;
+    symbol?: string;
+    txHash?: string | null;
+    metadata?: Json;
+}
+
+async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }: LogActivityParams) {
     try {
         await supabaseAdmin.from('user_activity_logs').insert({
             wallet_address: wallet.toLowerCase(),
@@ -816,8 +851,9 @@ async function logActivity({ wallet, category, type, description, amount, symbol
             tx_hash: txHash,
             metadata: metadata || {}
         });
-    } catch (err: any) {
-        console.error('[logActivity Error]', err.message);
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[logActivity Error]', msg);
     }
 }
 
@@ -835,8 +871,9 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
         const { data, error } = await query;
         if (error) throw error;
         return res.status(200).json(data);
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -868,8 +905,9 @@ async function handleSyncOAuth(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true });
         }
         return res.status(400).json({ error: 'Invalid provider' });
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -901,7 +939,10 @@ async function handleApproveMission(req: VercelRequest, res: VercelResponse) {
         await logActivity({ wallet: wallet.toLowerCase(), category: 'ADMIN', type: 'UGC Approval', description: `Approved mission: ${mission_id}` });
 
         return res.status(200).json({ success: true });
-    } catch (error: any) { return res.status(500).json({ error: error.message }); }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleApproveRaffle(req: VercelRequest, res: VercelResponse) {
@@ -917,7 +958,10 @@ async function handleApproveRaffle(req: VercelRequest, res: VercelResponse) {
         await logActivity({ wallet: wallet.toLowerCase(), category: 'ADMIN', type: 'Raffle Approval', description: `Approved raffle: ${raffle_id}` });
 
         return res.status(200).json({ success: true });
-    } catch (error: any) { return res.status(500).json({ error: error.message }); }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleRejectRaffle(req: VercelRequest, res: VercelResponse) {
@@ -936,7 +980,10 @@ async function handleRejectRaffle(req: VercelRequest, res: VercelResponse) {
 
         await supabaseAdmin.from('admin_audit_logs').insert({ admin_address: wallet.toLowerCase(), action: 'UGC_REJECT_RAFFLE', details: { raffle_id, reason } });
         return res.status(200).json({ success: true });
-    } catch (error: any) { return res.status(500).json({ error: error.message }); }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleCheckAdmin(req: VercelRequest, res: VercelResponse) {
@@ -956,7 +1003,10 @@ async function handleFetchPendingMissions(req: VercelRequest, res: VercelRespons
         const { data, error } = await supabaseAdmin.from('daily_tasks').select('*').eq('is_active', false).not('creator_address', 'is', null);
         if (error) throw error;
         return res.status(200).json({ success: true, data });
-    } catch (error: any) { return res.status(500).json({ error: error.message }); }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleFetchPendingRaffles(req: VercelRequest, res: VercelResponse) {
@@ -969,7 +1019,10 @@ async function handleFetchPendingRaffles(req: VercelRequest, res: VercelResponse
         const { data, error } = await supabaseAdmin.from('raffles').select('*').eq('is_active', false).is('rejection_reason', null);
         if (error) throw error;
         return res.status(200).json(data);
-    } catch (error: any) { return res.status(500).json({ error: error.message }); }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleGetHealth(req: VercelRequest, res: VercelResponse) {
@@ -977,7 +1030,10 @@ async function handleGetHealth(req: VercelRequest, res: VercelResponse) {
         const { data, error } = await supabaseAdmin.from('system_health').select('*').order('service_key');
         if (error) throw error;
         return res.status(200).json({ ok: true, health: data });
-    } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleResetHealth(req: VercelRequest, res: VercelResponse) {
@@ -992,7 +1048,10 @@ async function handleResetHealth(req: VercelRequest, res: VercelResponse) {
         }, { onConflict: 'service_key' });
         if (error) throw error;
         return res.status(200).json({ ok: true });
-    } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleSyncBaseSocial(req: VercelRequest, res: VercelResponse) {
@@ -1005,7 +1064,10 @@ async function handleSyncBaseSocial(req: VercelRequest, res: VercelResponse) {
         let basename = null;
         try {
             basename = await rpcClient.getEnsName({ address: normalizedWallet as `0x${string}` });
-        } catch (err: any) { console.warn('[Basename Sync] Error:', err.message); }
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.warn('[Basename Sync] Error:', msg); 
+        }
 
         if (!basename) return res.status(404).json({ error: 'No Basename found' });
 
@@ -1013,7 +1075,10 @@ async function handleSyncBaseSocial(req: VercelRequest, res: VercelResponse) {
         await logActivity({ wallet: normalizedWallet, category: 'IDENTITY', type: 'Base Social Link', description: `Verified Base Social: ${basename}` });
 
         return res.status(200).json({ success: true, basename });
-    } catch (error: any) { return res.status(500).json({ error: error.message }); }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleGetDailyProgress(req: VercelRequest, res: VercelResponse) {
@@ -1023,7 +1088,10 @@ async function handleGetDailyProgress(req: VercelRequest, res: VercelResponse) {
         if (error) throw error;
         const { data: bonusSetting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'daily_task_completion').maybeSingle();
         return res.status(200).json({ success: true, progress: data || { wallet_address: wallet.toLowerCase(), completed_count: 0, bonus_claimed: false }, bonus_amount: bonusSetting?.points_value || 50 });
-    } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return res.status(500).json({ error: msg });
+    }
 }
 
 async function handleSocialStatus(req: VercelRequest, res: VercelResponse) {
@@ -1042,5 +1110,5 @@ async function handleSocialStatus(req: VercelRequest, res: VercelResponse) {
             twitter: hasTwitter ? { username: profile.twitter_username, id: profile.twitter_id, verified: true } : null,
             isVerified: !!isVerified
         });
-    } catch (e: any) { return res.status(500).json({ error: 'Internal Error', isVerified: false }); }
+    } catch (e: unknown) { return res.status(500).json({ error: 'Internal Error', isVerified: false }); }
 }

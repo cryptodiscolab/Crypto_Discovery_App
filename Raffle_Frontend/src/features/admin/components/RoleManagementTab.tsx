@@ -36,7 +36,7 @@ export function RoleManagementTab() {
 
                 if (error) throw error;
                 if (data) {
-                    setOperators(data.map(u => ({
+                    setOperators(data.map((u: any) => ({
                         address: u.wallet_address,
                         role: 'Operator'
                     })));
@@ -104,7 +104,7 @@ export function RoleManagementTab() {
             setOperators([...operators, { address: operatorAddress, role: 'Operator' }]);
             setOperatorAddress('');
             refetchAll();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
             toast.error(e.message || e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -149,7 +149,7 @@ export function RoleManagementTab() {
             // Remove from local list
             setOperators(operators.filter(op => op.address?.toLowerCase() !== addr?.toLowerCase()));
             refetchAll();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
             toast.error(e.message || e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -190,7 +190,7 @@ export function RoleManagementTab() {
 
             toast.success("Verifier Role Active!", { id: tid });
             refetchAll();
-        } catch (e) {
+        } catch (e: any) {
             toast.error(e.message || "Grant verifier failed", { id: tid });
         } finally {
             setIsSaving(false);

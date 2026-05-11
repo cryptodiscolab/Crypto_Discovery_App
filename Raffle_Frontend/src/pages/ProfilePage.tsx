@@ -63,9 +63,11 @@ export default function ProfilePage() {
   return (
     <div className="pb-24 animate-in fade-in duration-500">
       <ProfileHeader 
-        profileData={profileData} 
-        onEdit={() => toast.success("Profile customization coming soon!")}
-        onLogout={() => { disconnect(); navigate('/'); }}
+        {...{
+          profileData,
+          onEdit: () => toast.success("Profile customization coming soon!"),
+          onLogout: () => { disconnect(); navigate('/'); }
+        } as any}
       />
 
       <main className="max-w-screen-md mx-auto space-y-6">
@@ -99,7 +101,7 @@ export default function ProfilePage() {
               refetchSBT();
             }}
             pointSettings={ecosystemSettings} 
-            streakCount={profileData.streakCount}
+            streakCount={(profileData as any).streakCount}
           />
         )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}
@@ -113,7 +115,7 @@ export default function ProfilePage() {
             }}
           />
         )}
-        {activeModal === 'swap' && <SwapModal onClose={() => setActiveModal(null)} />}
+        {activeModal === 'swap' && <SwapModal isOpen={true} onClose={() => setActiveModal(null)} />}
 
         {/* STATS & IDENTITY */}
         <ProfileStats 
@@ -128,7 +130,7 @@ export default function ProfilePage() {
         <div className="px-4 space-y-6">
           <SBTUpgradeCard />
           <SBTGallery />
-          <ReferralCard address={address} />
+          <ReferralCard />
         </div>
 
         {/* ACTIVITY LOGS */}

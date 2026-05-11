@@ -10,21 +10,21 @@ import { SkeletonLoader } from './components/SkeletonLoader';
 import { ReferralTracker } from './components/ReferralTracker';
 
 // Lazy Load Pages (Non-critical components)
-const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.default || m.HomePage })));
-const RafflesPage = lazy(() => import('./pages/RafflesPage').then(m => ({ default: m.default || m.RafflesPage })));
-const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.default || m.LeaderboardPage })));
-const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.default || m.ProfilePage })));
-const CreateRafflePage = lazy(() => import('./pages/CreateRafflePage').then(m => ({ default: m.default || m.CreateRafflePage })));
-const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.default || m.TasksPage })));
-const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.default || m.AdminPage })));
-const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.default || m.LoginPage })));
-const CreateMissionPage = lazy(() => import('./pages/CreateMissionPage').then(m => ({ default: m.default || m.CreateMissionPage })));
-const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: m.default || m.OAuthCallbackPage })));
-const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage').then(m => ({ default: m.default || m.RaffleDetailPage })));
+const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: (m as any).default || (m as any).HomePage })));
+const RafflesPage = lazy(() => import('./pages/RafflesPage').then(m => ({ default: (m as any).default || (m as any).RafflesPage })));
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: (m as any).default || (m as any).LeaderboardPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: (m as any).default || (m as any).ProfilePage })));
+const CreateRafflePage = lazy(() => import('./pages/CreateRafflePage').then(m => ({ default: (m as any).default || (m as any).CreateRafflePage })));
+const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: (m as any).default || (m as any).TasksPage })));
+const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: (m as any).default || (m as any).AdminPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: (m as any).default || (m as any).LoginPage })));
+const CreateMissionPage = lazy(() => import('./pages/CreateMissionPage').then(m => ({ default: (m as any).default || (m as any).CreateMissionPage })));
+const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: (m as any).default || (m as any).OAuthCallbackPage })));
+const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage').then(m => ({ default: (m as any).default || (m as any).RaffleDetailPage })));
 
-const AdminDashboard = lazy(() => import('./pages/admin/dashboard').then(m => ({ default: m.default || m.AdminDashboard })));
-const AdminGuard = lazy(() => import('./features/admin/components/AdminGuard').then(m => ({ default: m.default || m.AdminGuard })));
-const SignatureGuard = lazy(() => import('./components/SignatureGuard').then(m => ({ default: m.default || m.SignatureGuard })));
+const AdminDashboard = lazy(() => import('./pages/admin/dashboard').then(m => ({ default: (m as any).default || (m as any).AdminDashboard })));
+const AdminGuard = lazy<React.ComponentType<{ children: React.ReactNode }>>(() => import('./features/admin/components/AdminGuard').then(m => ({ default: (m as any).default || (m as any).AdminGuard })));
+const SignatureGuard = lazy<React.ComponentType<{ children: React.ReactNode }>>(() => import('./components/SignatureGuard').then(m => ({ default: (m as any).default || (m as any).SignatureGuard })));
 
 const ProtectedLayout = () => (
   <SignatureGuard>

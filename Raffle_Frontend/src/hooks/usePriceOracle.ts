@@ -10,10 +10,10 @@ const CACHE_DURATION = 60000; // 1 minute
  * @param {string[]} tokenAddresses - Array of token addresses to fetch prices for.
  * @returns {object} { prices, isLoading, error, refetch }
  */
-export function usePriceOracle(tokenAddresses = []) {
-  const [prices, setPrices] = useState({});
+export function usePriceOracle(tokenAddresses: string[] = []) {
+  const [prices, setPrices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Memoize the stringified addresses to prevent unnecessary re-fetches
   const joinedAddresses = useMemo(() => 
@@ -34,9 +34,10 @@ export function usePriceOracle(tokenAddresses = []) {
     });
 
     if (addrsToFetch.length === 0) {
-      const cachedPrices = {};
+      const cachedPrices: Record<string, number> = {};
       joinedAddresses.split(',').forEach(addr => {
-        cachedPrices[addr.toLowerCase()] = PRICE_CACHE.get(addr.toLowerCase()).price;
+        const cached = PRICE_CACHE.get(addr.toLowerCase());
+        if (cached) cachedPrices[addr.toLowerCase()] = cached.price;
       });
       setPrices(prev => ({ ...prev, ...cachedPrices }));
       setIsLoading(false);
@@ -50,12 +51,12 @@ export function usePriceOracle(tokenAddresses = []) {
       const response = await fetch(url);
       const data = await response.json();
 
-      const newPrices = {};
+      const newPrices: Record<string, number> = {};
       
       if (data.pairs && data.pairs.length > 0) {
         // Group pairs by baseToken address and pick the one with most liquidity
-        const bestPairs = {};
-        data.pairs.forEach(pair => {
+        const bestPairs: Record<string, any> = {};
+        data.pairs.forEach((pair: any) => {
           const addr = pair.baseToken.address.toLowerCase();
           const liquidity = parseFloat(pair.liquidity?.usd || 0);
           if (!bestPairs[addr] || liquidity > parseFloat(bestPairs[addr].liquidity?.usd || 0)) {
@@ -84,9 +85,9 @@ export function usePriceOracle(tokenAddresses = []) {
       });
 
       setPrices(prev => ({ ...prev, ...newPrices }));
-    } catch (err) {
+    } catch (err: any) {
       console.error('[PriceOracle] Fetch error:', err);
-      setError(err.message);
+      setError(err.message || "Unknown error");
     } finally {
       setIsLoading(false);
     }

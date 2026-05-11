@@ -8,7 +8,8 @@ import { awardTaskXP } from '../dailyAppLogic';
 import { usePaymaster } from './usePaymaster';
 import toast from 'react-hot-toast';
 
-const RAFFLE_ADDRESS = CONTRACTS.RAFFLE;
+const RAFFLE_ADDRESS = CONTRACTS.RAFFLE as `0x${string}`;
+const MASTER_X_ADDRESS = CONTRACTS.MASTER_X as `0x${string}`;
 
 export function useRaffle() {
     const { address } = useAccount();
@@ -22,17 +23,17 @@ export function useRaffle() {
     const { isGaslessSupported, paymasterCapabilities } = usePaymaster();
     const { sendCallsAsync } = useSendCalls();
 
-    const buyTickets = async (raffleId, amount) => {
-        const price = await publicClient.readContract({
-            address: CONTRACTS.MASTER_X,
+    const buyTickets = async (raffleId: number | string, amount: number | string) => {
+        const price = (await publicClient!.readContract({
+            address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
             functionName: 'getTicketPriceInETH'
-        });
-        const surcharge = await publicClient.readContract({
+        })) as bigint;
+        const surcharge = (await publicClient!.readContract({
             address: RAFFLE_ADDRESS,
             abi: ABIS.RAFFLE,
             functionName: 'surchargeBP'
-        });
+        })) as bigint;
         const baseETH = price * BigInt(amount);
         const requiredETH = (baseETH * (10000n + BigInt(surcharge))) / 10000n;
 
@@ -48,11 +49,11 @@ export function useRaffle() {
             toast.success("Tickets bought! Signing for XP...");
             try {
                 const timestamp = new Date().toISOString();
-                const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
+                const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address?.toLowerCase() || ''}\nTime: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
 
                 // 1. Award XP (Internal Logic) - appended hash to allow multiple purchases
-                await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}_${hash}`, 0);
+                await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${hash}`, 0 as any);
 
                 // 2. Log Activity (User History)
                 await fetch('/api/user-bundle', {
@@ -73,7 +74,7 @@ export function useRaffle() {
                 });
 
                 if (refetch) refetch();
-            } catch (e) {
+            } catch (e: any) {
                 console.warn("XP Awarding/Logging skipped:", e.message);
             }
         }
@@ -84,28 +85,28 @@ export function useRaffle() {
      * buyTicketsGasless - Gasless via Base Paymaster (Coinbase Smart Wallet only)
      * Fallback otomatis ke buyTickets jika wallet tidak support EIP-5792.
      */
-    const buyTicketsGasless = async (raffleId, amount) => {
+    const buyTicketsGasless = async (raffleId: number | string, amount: number | string) => {
         // Fallback ke tx biasa jika tidak support gasless
         if (!isGaslessSupported) {
             return buyTickets(raffleId, amount);
         }
 
         const callData = encodeFunctionData({
-            abi: ABIS.RAFFLE,
+            abi: ABIS.RAFFLE as any,
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount)],
         });
 
-        const price = await publicClient.readContract({
-            address: CONTRACTS.MASTER_X,
+        const price = (await publicClient!.readContract({
+            address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
             functionName: 'getTicketPriceInETH'
-        });
-        const surcharge = await publicClient.readContract({
+        })) as bigint;
+        const surcharge = (await publicClient!.readContract({
             address: RAFFLE_ADDRESS,
             abi: ABIS.RAFFLE,
             functionName: 'surchargeBP'
-        });
+        })) as bigint;
         const baseETH = price * BigInt(amount);
         const requiredETH = (baseETH * (10000n + BigInt(surcharge))) / 10000n;
 
@@ -124,29 +125,29 @@ export function useRaffle() {
             let attempts = 0;
             while (attempts < 10) {
                 await new Promise(r => setTimeout(r, 2000));
-                const status = await publicClient.request({
-                    method: 'wallet_getCallsStatus',
-                    params: [callId],
+                const status = await publicClient!.request({
+                    method: 'wallet_getCallsStatus' as any,
+                    params: [callId] as any,
                 });
-                const receipt = status?.receipts?.[0];
+                const receipt = (status as any)?.receipts?.[0];
                 if (receipt?.transactionHash) {
                     resolvedTxHash = receipt.transactionHash;
                     break;
                 }
                 attempts++;
             }
-        } catch (resolveErr) {
+        } catch (resolveErr: any) {
             console.warn('[buyTicketsGasless] Could not resolve txHash from callId, falling back:', resolveErr.message);
         }
 
         // Award XP & Log Activity
         try {
             const timestamp = new Date().toISOString();
-            const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
+            const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address?.toLowerCase() || ''}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
             // 1. Award XP — use resolved txHash so backend verifyRaffleOnChain succeeds
-            await awardTaskXP(address, signature, message, `raffle_buy_${raffleId}_${resolvedTxHash}`, 0);
+            await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${resolvedTxHash}`, 0 as any);
 
             // 2. Log Activity
             await fetch('/api/user-bundle', {
@@ -167,14 +168,14 @@ export function useRaffle() {
             });
 
             if (refetch) refetch();
-        } catch (e) {
+        } catch (e: any) {
             console.warn("XP Awarding/Logging skipped:", e.message);
         }
 
         return callId;
     };
 
-    const drawRaffle = async (raffleId) => {
+    const drawRaffle = async (raffleId: number | string) => {
         setIsDrawing(true);
         const tid = toast.loading("Drawing winner...");
         try {
@@ -187,14 +188,14 @@ export function useRaffle() {
             toast.success("Winner draw requested!", { id: tid });
             setIsDrawing(false);
             return hash;
-        } catch (e) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Draw failed", { id: tid });
             setIsDrawing(false);
             throw e;
         }
     };
 
-    const claimPrize = async (raffleId) => {
+    const claimPrize = async (raffleId: number | string) => {
         const tid = toast.loading("Submitting prize claim...");
         try {
             const hash = await writeContractAsync({
@@ -208,7 +209,7 @@ export function useRaffle() {
                 toast.success("🎉 Prize claimed on-chain! Signing for XP bonus...", { id: tid });
                 try {
                     const timestamp = new Date().toISOString();
-                    const message = `Claim NFT Raffle Prize\nRaffle ID: ${raffleId}\nWinner: ${address.toLowerCase()}\nTime: ${timestamp}`;
+                    const message = `Claim NFT Raffle Prize\nRaffle ID: ${raffleId}\nWinner: ${address?.toLowerCase() || ''}\nTime: ${timestamp}`;
                     const signature = await signMessageAsync({ message });
 
                     const response = await fetch('/api/raffle/claim-prize', {
@@ -228,26 +229,26 @@ export function useRaffle() {
                         toast.success(`You won! +${result.xpAwarded} XP added! 🏆`);
                     }
                     if (refetch) refetch();
-                } catch (e) {
+                } catch (e: any) {
                     console.warn("XP Awarding skipped:", e.message);
                     toast.success("Prize claimed! XP sync pending.", { id: tid });
                 }
             }
             return hash;
-        } catch (e) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Claim failed", { id: tid });
             throw e;
         }
     };
 
-    const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH, extraMetadata }) => {
+    const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH, extraMetadata }: { winnerCount: number, maxTickets: number, durationDays: number, metadataURI: string, depositETH: bigint, extraMetadata?: any }) => {
         // [FIX v3.56.5] Read surchargeBP dynamically from contract instead of hardcoding 5%.
         // This ensures totalValue stays in sync if the admin updates the surcharge on-chain.
-        const surchargeBP = await publicClient.readContract({
+        const surchargeBP = (await publicClient!.readContract({
             address: RAFFLE_ADDRESS,
             abi: ABIS.RAFFLE,
             functionName: 'surchargeBP'
-        });
+        })) as bigint;
         const totalValue = (BigInt(depositETH) * (10000n + BigInt(surchargeBP))) / 10000n;
 
         const hash = await writeContractAsync({
@@ -273,7 +274,7 @@ export function useRaffle() {
                 // Extract raffle ID from event
                 let raffleId = 0;
                 try {
-                    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+                    const receipt = await publicClient!.waitForTransactionReceipt({ hash });
                     for (const log of receipt.logs) {
                         try {
                             const decoded = decodeEventLog({
@@ -282,7 +283,7 @@ export function useRaffle() {
                                 topics: log.topics,
                             });
                             if (decoded.eventName === 'RaffleCreated') {
-                                raffleId = Number(decoded.args.raffleId);
+                                raffleId = Number((decoded.args as any).raffleId);
                                 break;
                             }
                         } catch (e) { /* skip logs from other events */ }
@@ -302,8 +303,8 @@ export function useRaffle() {
                         payload: {
                             raffle_id: raffleId || 0,
                             end_time: Math.floor(Date.now() / 1000) + (durationDays * 86400),
-                            max_tickets: parseInt(maxTickets),
-                            winnerCount: parseInt(winnerCount),
+                            max_tickets: Number(maxTickets),
+                            winnerCount: Number(winnerCount),
                             txHash: hash,
                             depositETH: formatEther(totalValue),
                             metadata_uri: metadataURI,
@@ -312,7 +313,7 @@ export function useRaffle() {
                     })
                 });
                 toast.success("Raffle synced to explorer!");
-            } catch (logErr) {
+            } catch (logErr: any) {
                 console.warn('Logging UGC Raffle failed:', logErr.message);
             }
         }
@@ -332,7 +333,7 @@ export function useRaffle() {
         return hash;
     };
 
-    const adminCreateRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, extraMetadata = {} }) => {
+    const adminCreateRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, extraMetadata = {} }: { winnerCount: number, maxTickets: number, durationDays: number, metadataURI: string, extraMetadata?: any }) => {
         const hash = await writeContractAsync({
             address: RAFFLE_ADDRESS,
             abi: ABIS.RAFFLE,
@@ -356,12 +357,12 @@ export function useRaffle() {
                 // Resolve raffleId from RaffleCreated event log
                 let raffleId = 0;
                 try {
-                    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+                    const receipt = await publicClient!.waitForTransactionReceipt({ hash });
                     for (const log of receipt.logs) {
                         try {
                             const decoded = decodeEventLog({ abi: ABIS.RAFFLE, data: log.data, topics: log.topics });
                             if (decoded.eventName === 'RaffleCreated') {
-                                raffleId = Number(decoded.args.raffleId);
+                                raffleId = Number((decoded.args as any).raffleId);
                                 break;
                             }
                         } catch (e) { /* skip unrelated logs */ }
@@ -381,8 +382,8 @@ export function useRaffle() {
                         payload: {
                             raffle_id: raffleId || 0,
                             end_time: Math.floor(Date.now() / 1000) + (durationDays * 86400),
-                            max_tickets: parseInt(maxTickets),
-                            winnerCount: parseInt(winnerCount),
+                            max_tickets: Number(maxTickets),
+                            winnerCount: Number(winnerCount),
                             txHash: hash,
                             depositETH: '0', // Admin raffles are free (no deposit)
                             metadata_uri: metadataURI,
@@ -390,7 +391,7 @@ export function useRaffle() {
                         }
                     })
                 });
-            } catch (syncErr) {
+            } catch (syncErr: any) {
                 console.warn('[adminCreateRaffle] DB sync skipped:', syncErr.message);
             }
         }

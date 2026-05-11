@@ -47,7 +47,7 @@ export async function ensureUserProfile(walletAddress: string, signature: string
  * @param {number} taskId 
  * @param {number} xpReward 
  */
-export async function awardTaskXP(walletAddress: string, signature: string, message: string, taskId: number, xpReward: number) {
+export async function awardTaskXP(walletAddress: string, signature: string, message: string, taskId: string | number, xpReward: number) {
     try {
         const response = await fetch('/api/tasks/verify', {
             method: 'POST',

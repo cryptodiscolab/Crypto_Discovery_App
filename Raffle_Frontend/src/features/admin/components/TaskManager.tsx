@@ -64,7 +64,8 @@ interface TaskItemProps {
 }
 
 function TaskItem({ id, address, abi }: TaskItemProps) {
-    const { data: task } = useReadContract({ address, abi, functionName: 'tasks', args: [id] });
+    const { data: taskData } = useReadContract({ address, abi, functionName: 'tasks', args: [id] });
+    const task = taskData as any[];
     if (!task || task[0] === 0n) return null;
     return (
         <div className="flex items-center justify-between p-3 bg-[#0a0a0c] border border-white/5 rounded-xl">
@@ -94,7 +95,8 @@ interface SponsorRequestItemProps {
 }
 
 function SponsorRequestItem({ id, address, abi }: SponsorRequestItemProps) {
-    const { data: req } = useReadContract({ address, abi, functionName: 'sponsorRequests', args: [id] });
+    const { data: reqData } = useReadContract({ address, abi, functionName: 'sponsorRequests', args: [id] });
+    const req = reqData as any[];
     if (!req || req[0] === '0x0000000000000000000000000000000000000000') return null;
     const statusMap = ["PENDING", "APPROVED", "REJECTED"];
     const status = statusMap[req[8]];
@@ -151,16 +153,16 @@ export function TaskManager() {
     const [configMinPool, setConfigMinPool] = useState('');
     const [configMinReward, setConfigMinReward] = useState('');
 
-    const [pointSettings, setPointSettings] = useState([]);
+    const [pointSettings, setPointSettings] = useState<any[]>([]);
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { data: hash, error: writeError } = useWriteContract();
     const { data: receipt, isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
 
-    const { data: platformFee } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
-    const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
-    const { data: minRewardUSD } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
-    const { data: tokenPrice } = useReadContract({ address: DAILY_APP_ADDRESS, abi: DAILY_APP_ABI, functionName: 'tokenPriceUSD' });
+    const { data: platformFee } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'sponsorshipPlatformFee' }) as { data: bigint | undefined };
+    const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'minRewardPoolValue' }) as { data: bigint | undefined };
+    const { data: minRewardUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'rewardPerClaim' }) as { data: bigint | undefined };
+    const { data: tokenPrice } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'tokenPriceUSD' }) as { data: bigint | undefined };
 
     const totalPoolUSD = Number(sponsorRewardPerUser || 0) * Number(sponsorTotalClaims || 0);
     const requiredTokens = tokenPrice && tokenPrice > 0n ? (parseUnits(totalPoolUSD.toString(), 18) * parseUnits('1', 18)) / tokenPrice : 0n;
@@ -224,7 +226,7 @@ export function TaskManager() {
                     toast.success("Ecosystem Synchronized!", { id: tid });
                     setDailyDesc('');
                     setSponsorTitle('');
-                } catch (err) {
+                } catch (err: any) {
                     console.error('[Quick Sync Error]', err);
                     toast.error("Sync Failed - Audit Required", { id: tid });
                 }
@@ -238,8 +240,8 @@ export function TaskManager() {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI, functionName: 'addTask',
-                args: [BigInt(dailyPoints || 0), BigInt(cd), dailyMinTier, dailyDesc, '', dailyRequiresVerify]
+                abi: DAILY_APP_ABI as any, functionName: 'addTask',
+                args: [BigInt(dailyPoints || 0), BigInt(cd), BigInt(dailyMinTier), dailyDesc, '', dailyRequiresVerify]
             }),
         }];
     };
@@ -248,8 +250,8 @@ export function TaskManager() {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI, functionName: 'buySponsorshipWithToken',
-                args: [0, [sponsorTitle], [sponsorLink], sponsorEmail, parseUnits((Number(sponsorRewardPerUser) * Number(sponsorTotalClaims)).toString(), 6), CONTRACTS.CREATOR_TOKEN || '0x0000000000000000000000000000000000000000']
+                abi: DAILY_APP_ABI as any, functionName: 'buySponsorshipWithToken',
+                args: [0n, [sponsorTitle], [sponsorLink], sponsorEmail, parseUnits((Number(sponsorRewardPerUser) * Number(sponsorTotalClaims)).toString(), 6), (CONTRACTS.CREATOR_TOKEN as `0x${string}`) || '0x0000000000000000000000000000000000000000']
             }),
         }];
     };
@@ -258,7 +260,7 @@ export function TaskManager() {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI, functionName: 'setSponsorshipParams',
+                abi: DAILY_APP_ABI as any, functionName: 'setSponsorshipParams',
                 // V14: All values in USDC 6-decimal base
                 args: [parseUnits(configMinReward || '0.20', 6), BigInt(3), parseUnits(configMinPool || '2', 6), parseUnits(configPlatformFee || '2', 6)]
             }),
@@ -291,7 +293,7 @@ export function TaskManager() {
             {mode === 'daily' && (
                 <QuickTaskForgeSection
                     dailyDesc={dailyDesc} onDailyDescChange={setDailyDesc}
-                    dailyPoints={dailyPoints} onDailyPointsChange={setDailyPoints}
+                    dailyPoints={dailyPoints} onDailyPointsChange={(v: string | number) => setDailyPoints(v.toString())}
                     dailyCooldown={dailyCooldown} onDailyCooldownChange={setDailyCooldown}
                     dailyRequiresVerify={dailyRequiresVerify} onDailyRequiresVerifyChange={setDailyRequiresVerify}
                     dailyIsBaseSocialRequired={dailyIsBaseSocialRequired} onDailyIsBaseSocialRequiredChange={setDailyIsBaseSocialRequired}
@@ -330,13 +332,13 @@ export function TaskManager() {
                 />
             )}
 
-            {mode === 'view' && <TaskViewer address={DAILY_APP_ADDRESS} abi={DAILY_APP_ABI} />}
+            {mode === 'view' && <TaskViewer address={DAILY_APP_ADDRESS as any} abi={DAILY_APP_ABI} />}
 
             {(writeError || isWaiting) && (
                 <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center gap-3">
                     {isWaiting ? <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" /> : <AlertCircle className="w-4 h-4 text-red-500" />}
                     <p className="text-[9px] font-black text-indigo-400 uppercase">
-                        {isWaiting ? "Committing to Blockchain..." : (writeError.shortMessage || "Error")}
+                        {isWaiting ? "Committing to Blockchain..." : ((writeError as any)?.shortMessage || "Error")}
                     </p>
                 </div>
             )}

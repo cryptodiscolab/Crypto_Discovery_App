@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
-import { ABIS, MASTER_X_ADDRESS, DAILY_APP_ADDRESS } from '../lib/contracts';
+import { ABIS, MASTER_X_ADDRESS as MX_ADDR, DAILY_APP_ADDRESS as DA_ADDR } from '../lib/contracts';
+
+const MASTER_X_ADDRESS = MX_ADDR as `0x${string}`;
+const DAILY_APP_ADDRESS = DA_ADDR as `0x${string}`;
 import toast from 'react-hot-toast';
 
 export function useSBT() {
@@ -48,14 +51,14 @@ export function useSBT() {
 
     const userTier = useMemo(() => {
         if (!userRawData) return 0;
-        // Supports both named and index-based access (tier is index 3 in latest ABI)
-        return userRawData.tier !== undefined ? Number(userRawData.tier) : (userRawData[3] !== undefined ? Number(userRawData[3]) : Number(userRawData[1] || 0));
+        const data = userRawData as any;
+        return data.tier !== undefined ? Number(data.tier) : (data[3] !== undefined ? Number(data[3]) : Number(data[1] || 0));
     }, [userRawData]);
 
     const userOnChainXP = useMemo(() => {
         if (!userRawData) return 0n;
-        // totalXP is index 0 in latest ABI
-        return userRawData.totalXP !== undefined ? userRawData.totalXP : (userRawData[0] || 0n);
+        const data = userRawData as any;
+        return data.totalXP !== undefined ? data.totalXP : (data[0] || 0n);
     }, [userRawData]);
 
     // 3. Fetch User Reward Debt
@@ -81,7 +84,7 @@ export function useSBT() {
     });
 
     const claimableAmount = (accReward !== undefined && userRewardDebt !== undefined) 
-        ? ((accReward - userRewardDebt) * 1n) / 1000000000000000000n
+        ? ((BigInt(accReward as any) - BigInt(userRewardDebt as any)) * 1n) / 1000000000000000000n
         : 0n;
 
     // 4. Fetch System Settings
@@ -145,7 +148,7 @@ export function useSBT() {
     const claimRewards = async () => {
         if (!isConnected) throw new Error("Wallet not connected");
         return await writeContractAsync({
-            address: MASTER_X_ADDRESS,
+            address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'claimSBTRewards',
         });
@@ -153,49 +156,49 @@ export function useSBT() {
 
     const distributeRevenue = async () => {
         return await writeContractAsync({
-            address: MASTER_X_ADDRESS,
+            address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'distributeRevenue',
         });
     };
 
-    const updateTier = async (userAddress, newTier) => {
+    const updateTier = async (userAddress: string, newTier: number | string) => {
         return await writeContractAsync({
-            address: MASTER_X_ADDRESS,
+            address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'updateUserTier',
             args: [userAddress, newTier],
         });
     };
 
-    const withdrawTreasury = async (amount) => {
+    const withdrawTreasury = async (amount: bigint) => {
         return await writeContractAsync({
-            address: MASTER_X_ADDRESS,
+            address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'withdrawTreasury',
             args: [amount],
         });
     };
 
-    const setMasterParams = async (tUSDC, mGas, pPerTicket, desc) => {
+    const setMasterParams = async (tUSDC: bigint, mGas: bigint, pPerTicket: bigint, desc: string) => {
         return await writeContractAsync({
-            address: MASTER_X_ADDRESS,
+            address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'setParams',
             args: [tUSDC, mGas, pPerTicket, desc],
         });
     };
 
-    const setRaffleContract = async (raffleAddr) => {
+    const setRaffleContract = async (raffleAddr: string) => {
         return await writeContractAsync({
-            address: MASTER_X_ADDRESS,
+            address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'setRaffleContract',
             args: [raffleAddr],
         });
     };
 
-    const setDailyApp = async (dailyAddr, isSatellite) => {
+    const setDailyApp = async (dailyAddr: any, isSatellite: any) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -204,7 +207,7 @@ export function useSBT() {
         });
     };
 
-    const setTierWeights = async (d, p, g, s, b) => {
+    const setTierWeights = async (d: any, p: any, g: any, s: any, b: any) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -217,7 +220,7 @@ export function useSBT() {
      * Leaderboard -> Contract Tier Sync
      * Fetches calculated tiers from API and batch updates contract
      */
-    const syncTiersToContract = async (signMessageAsync) => {
+    const syncTiersToContract = async (signMessageAsync: any) => {
         const toastId = toast.loading('Calculating tiers and preparing sync...');
         try {
             const timestamp = new Date().toISOString();
@@ -240,8 +243,8 @@ export function useSBT() {
             toast.loading(`Syncing ${result.data.length} users to on-chain...`, { id: toastId });
 
             // Optimized: Use batchUpdateUserTiers
-            const userAddresses = result.data.map(item => item.wallet_address);
-            const userTiers = result.data.map(item => item.computed_tier);
+            const userAddresses = result.data.map((item: any) => item.wallet_address);
+            const userTiers = result.data.map((item: any) => item.computed_tier);
 
             const tx = await writeContractAsync({
                 address: MASTER_X_ADDRESS,
@@ -253,7 +256,7 @@ export function useSBT() {
             toast.success(`Successfully synced ${result.data.length} tiers in one batch!`, { id: toastId });
             return { success: true, count: result.data.length, tx };
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('[SyncTiers] Error:', error);
             toast.error(`Sync failed: ${error.message}`, { id: toastId });
             throw error;
@@ -264,7 +267,7 @@ export function useSBT() {
      * Leaderboard -> Contract Points Sync
      * Fetches XP from DB and batch updates contract
      */
-    const syncPointsToContract = async (signMessageAsync) => {
+    const syncPointsToContract = async (signMessageAsync: any) => {
         const toastId = toast.loading('Fetching points data...');
         try {
             const timestamp = new Date().toISOString();
@@ -287,8 +290,8 @@ export function useSBT() {
 
             toast.loading(`Syncing XP for ${result.data.length} users...`, { id: toastId });
 
-            const userAddresses = result.data.map(item => item.wallet_address);
-            const userPoints = result.data.map(item => BigInt(item.total_xp));
+            const userAddresses = result.data.map((item: any) => item.wallet_address);
+            const userPoints = result.data.map((item: any) => BigInt(item.total_xp));
 
             const tx = await writeContractAsync({
                 address: MASTER_X_ADDRESS,
@@ -300,7 +303,7 @@ export function useSBT() {
             toast.success(`Successfully synced ${result.data.length} users' XP!`, { id: toastId });
             return { success: true, count: result.data.length, tx };
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('[SyncPoints] Error:', error);
             toast.error(`Points sync failed: ${error.message}`, { id: toastId });
             throw error;
@@ -311,7 +314,7 @@ export function useSBT() {
      * setTierURI
      * Updates the base URI for a specific SBT tier in the DailyApp contract
      */
-    const setTierURI = async (tier, uri) => {
+    const setTierURI = async (tier: any, uri: any) => {
         return await writeContractAsync({
             address: DAILY_APP_ADDRESS,
             abi: ABIS.DAILY_APP,
@@ -354,7 +357,7 @@ export function useSBT() {
 
             toast.success('All NFT Metadata synced to contract!', { id: toastId });
             return { success: true };
-        } catch (error) {
+        } catch (error: any) {
             console.error('[SyncMetadata] Error:', error);
             toast.error(`Metadata sync failed: ${error.message}`, { id: toastId });
             throw error;
@@ -368,7 +371,7 @@ export function useSBT() {
         functionName: 'currentSeasonId',
     });
 
-    const setTierConfig = async (tier, feeWei, minXP) => {
+    const setTierConfig = async (tier: any, feeWei: any, minXP: any) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -377,7 +380,7 @@ export function useSBT() {
         });
     };
 
-    const resetSeason = async (newSeasonId) => {
+    const resetSeason = async (newSeasonId: any) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -386,7 +389,7 @@ export function useSBT() {
         });
     };
 
-    const upgradeTier = async (feeValueWei) => {
+    const upgradeTier = async (feeValueWei: any) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -395,7 +398,7 @@ export function useSBT() {
         });
     };
 
-    const getSeasonPeak = async (userAddr, seasonId) => {
+    const getSeasonPeak = async (userAddr: any, seasonId: any) => {
         // Since we want to use useReadContract usually, but for a specific call 
         // that depends on arguments not available at hook init, we can use a helper or another hook instance.
         // For simplicity, we'll let the component handle the specific season read if needed, 
@@ -450,6 +453,6 @@ export function useSBT() {
         goldWeight: Number(goldWeight || 0),
         silverWeight: Number(silverWeight || 0),
         bronzeWeight: Number(bronzeWeight || 0),
-        isLoading: refetchPool && (totalPoolBalance === undefined || userRawData === undefined)
+        isLoading: (totalPoolBalance === undefined || userRawData === undefined)
     };
 }

@@ -25,12 +25,12 @@ import {
 import { toast } from 'react-hot-toast';
 
 const RaffleDetailPage = () => {
-    const { id } = useParams();
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { address } = useAccount();
     const { userTier } = usePoints();
     const { data: socialProfile } = useSocialGuard(address);
-    const { raffle, isLoading, refetch } = useRaffleInfo(id);
+    const { raffle, isLoading, refetch } = useRaffleInfo(id || 0);
     const { buyTickets, buyTicketsGasless, isGaslessSupported } = useRaffle();
     const [isBuying, setIsBuying] = useState(false);
     const [ticketAmount, setTicketAmount] = useState(1);
@@ -88,13 +88,13 @@ const RaffleDetailPage = () => {
         
         try {
             if (isGaslessSupported) {
-                await buyTicketsGasless(id, ticketAmount);
+                await buyTicketsGasless(id || 0, ticketAmount);
             } else {
-                await buyTickets(id, ticketAmount);
+                await buyTickets(id || 0, ticketAmount);
             }
             toast.success(`Success! Purchased ${ticketAmount} entry(s)`, { id: tid });
             refetch();
-        } catch (e) {
+        } catch (e: any) {
             toast.error(e.shortMessage || e.message || "Purchase failed", { id: tid });
         } finally {
             setIsBuying(false);
@@ -183,7 +183,7 @@ const RaffleDetailPage = () => {
                                         <Users className="w-4 h-4 text-blue-400" />
                                         <span className="text-sm font-semibold">{raffle.totalTickets} Participants</span>
                                     </div>
-                                    {raffle.min_sbt_level > 0 && (
+                                    {raffle.min_sbt_level && raffle.min_sbt_level > 0 && (
                                         <div className="flex items-center gap-2 bg-purple-500/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-purple-500/30">
                                             <ShieldCheck className="w-4 h-4 text-purple-400" />
                                             <span className="text-sm font-semibold">Tier {raffle.min_sbt_level}+ Required</span>
@@ -368,7 +368,7 @@ const RaffleDetailPage = () => {
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${raffle.min_sbt_level > 0 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-800 text-zinc-600'}`}>
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${(raffle.min_sbt_level || 0) > 0 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-800 text-zinc-600'}`}>
                                             <Trophy className="w-4 h-4" />
                                         </div>
                                         <div>

@@ -76,7 +76,7 @@ export const SignatureGuard = ({ children }: { children: React.ReactNode }) => {
             localStorage.setItem(AUTH_KEY, JSON.stringify({ status: 'AUTHENTICATED', timestamp }));
             setIsApproved(true);
             toast.success("Identity Verified", { icon: '🛡️' });
-        } catch (err) {
+        } catch (err: any) {
             console.error('[Security Node] Signature Rejected:', err.message);
             toast.error("Signature required to enter.", { icon: '⚠️' });
         } finally {

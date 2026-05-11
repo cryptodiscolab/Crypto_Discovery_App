@@ -108,7 +108,7 @@ function OrganicTaskRow({ id, onToggle }: { id: bigint; onToggle: (id: bigint, i
     const [dbMeta, setDbMeta] = React.useState<TaskDbMeta | null>(null);
     useEffect(() => {
         if (!id) return;
-        supabase.from('daily_tasks').select('is_base_social_required, reward_symbol, reward_amount_per_user').eq('id', Number(id)).maybeSingle().then(({ data }) => { if (data) setDbMeta(data as TaskDbMeta); });
+        supabase.from('daily_tasks').select('is_base_social_required, reward_symbol, reward_amount_per_user').eq('id', Number(id)).maybeSingle().then(({ data }: any) => { if (data) setDbMeta(data as TaskDbMeta); });
     }, [id]);
     if (!task || (task as any[])[0] === "") return null;
     const [baseReward, isActive, , , title, , , requiresVerification] = task as any[];
@@ -122,7 +122,7 @@ function OrganicTaskRow({ id, onToggle }: { id: bigint; onToggle: (id: bigint, i
                     <div className="flex items-center gap-3"><span className="text-[10px] font-black text-slate-600 font-mono">#{id.toString()}</span><h5 className="text-sm font-black text-white uppercase tracking-widest">{title}</h5></div>
                     <div className="flex items-center gap-3 mt-2">
                         <span className="text-[9px] font-black text-indigo-400 bg-black/40 px-2.5 py-1 rounded-lg border border-white/5">{Number(baseReward)} XP</span>
-                        {dbMeta?.reward_amount_per_user > 0 && <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">{dbMeta.reward_amount_per_user} {dbMeta.reward_symbol}</span>}
+                        {dbMeta && dbMeta.reward_amount_per_user > 0 && <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">{dbMeta.reward_amount_per_user} {dbMeta.reward_symbol}</span>}
                         <span className={`text-[8px] font-black uppercase ${isActive ? 'text-emerald-500' : 'text-slate-700'}`}>{isActive ? 'ONLINE' : 'OFFLINE'}</span>
                     </div>
                 </div>
@@ -168,7 +168,7 @@ function SponsorCardItem({ id }: { id: bigint }) {
     const [dbMeta, setDbMeta] = React.useState<SponsorDbMeta | null>(null);
     useEffect(() => {
         if (!id) return;
-        supabase.from('daily_tasks').select('is_base_social_required, created_at, expires_at').eq('onchain_id', Number(id)).maybeSingle().then(({ data }) => { if (data) setDbMeta(data as SponsorDbMeta); });
+        supabase.from('daily_tasks').select('is_base_social_required, created_at, expires_at').eq('onchain_id', Number(id)).maybeSingle().then(({ data }: any) => { if (data) setDbMeta(data as SponsorDbMeta); });
     }, [id]);
     if (!request || Number((request as any[])[8]) !== 1) return null;
     const [, , title, link, , , rewardPerUserUSD, targetClaims] = request as any[];

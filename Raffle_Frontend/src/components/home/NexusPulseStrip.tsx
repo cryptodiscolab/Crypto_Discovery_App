@@ -6,7 +6,7 @@ import { Users, Zap, Activity, Globe, Loader2 } from 'lucide-react';
  * (v3.42.0 Identity & Growth Release)
  */
 export const NexusPulseStrip = () => {
-    const [stats, setStats] = useState(null);
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchStats = async () => {

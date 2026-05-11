@@ -10,8 +10,19 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+interface HealthService {
+    service_key: string;
+    status: string;
+    last_heartbeat: string;
+    last_error?: string;
+    metadata?: {
+        consecutive_success?: number;
+        [key: string]: any;
+    };
+}
+
 export function HealthDashboardSection() {
-    const [healthData, setHealthData] = useState([]);
+    const [healthData, setHealthData] = useState<HealthService[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -35,7 +46,7 @@ export function HealthDashboardSection() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleReset = async (serviceKey) => {
+    const handleReset = async (serviceKey: string) => {
         if (!confirm(`Reset health status for ${serviceKey}?`)) return;
         const tid = toast.loading(`Resetting ${serviceKey}...`);
         try {
@@ -51,12 +62,12 @@ export function HealthDashboardSection() {
             } else {
                 toast.error(data.error || 'Reset failed', { id: tid });
             }
-        } catch (e) {
+        } catch (e: any) {
             toast.error('Network error during reset', { id: tid });
         }
     };
 
-    const getStatusColor = (status, lastHeartbeat) => {
+    const getStatusColor = (status: string, lastHeartbeat: string) => {
         if (status === 'failed') return 'text-red-500 bg-red-500/10 border-red-500/20';
         if (status === 'recovering') return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
         
@@ -67,7 +78,7 @@ export function HealthDashboardSection() {
         return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
     };
 
-    const getStatusIcon = (status, lastHeartbeat) => {
+    const getStatusIcon = (status: string, lastHeartbeat: string) => {
         if (status === 'failed') return <AlertCircle className="w-4 h-4" />;
         if (status === 'recovering') return <RefreshCw className="w-4 h-4 animate-spin-slow" />;
         const lastHb = new Date(lastHeartbeat).getTime();
@@ -75,7 +86,7 @@ export function HealthDashboardSection() {
         return <CheckCircle2 className="w-4 h-4" />;
     };
 
-    const formatLastSync = (ts) => {
+    const formatLastSync = (ts: string) => {
         const date = new Date(ts);
         return date.toLocaleString();
     };

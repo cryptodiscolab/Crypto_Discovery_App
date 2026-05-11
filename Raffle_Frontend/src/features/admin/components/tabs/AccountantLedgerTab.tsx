@@ -10,7 +10,7 @@ import { useAccount, useBalance, useSignMessage } from 'wagmi';
 import { 
     MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS
 } from '../../../../lib/contracts';
-import { ShieldCheck, HardDrive, DatabaseZap, FileJson, Award } from 'lucide-react';
+import { ShieldCheck, HardDrive, DatabaseZap, FileJson, Award, Wallet } from 'lucide-react';
 
 interface Aggregate {
     income: { USDC: number; ETH: number };

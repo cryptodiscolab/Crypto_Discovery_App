@@ -12,7 +12,7 @@ const AdminGuard: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const { address, isConnected } = useAccount();
     const { isAdmin, isLoading, isLoadingRoles } = useCMS();
     const navigate = useNavigate();
-    const [isAuthorized, setIsAuthorized] = useState(null);
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
     useEffect(() => {
         if (isConnected === false) {

@@ -60,7 +60,7 @@ export function SBTGallery({ walletAddress }: { walletAddress?: string }) {
                     ended_at
                 )
             `)
-            .eq('wallet_address', targetAddress.toLowerCase())
+            .eq('wallet_address', targetAddress?.toLowerCase())
             .order('season_id', { ascending: false });
 
         if (!error && data) setHistory(data);

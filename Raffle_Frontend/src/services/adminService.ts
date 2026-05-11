@@ -34,7 +34,7 @@ class AdminService {
         return data.data;
     }
 
-    async announceWinner(raffleId) {
+    async announceWinner(raffleId: number | string) {
         const res = await fetch('/api/raffle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -45,7 +45,7 @@ class AdminService {
         return data;
     }
 
-    async syncAdminRaffle(payload) {
+    async syncAdminRaffle(payload: any) {
         const res = await fetch('/api/admin/system/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

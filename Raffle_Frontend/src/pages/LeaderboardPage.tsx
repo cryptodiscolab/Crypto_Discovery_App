@@ -3,13 +3,13 @@ import { Trophy, Crown, Sparkles, Medal, Users, Shield } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
 
-const formatAddress = (addr) => {
+const formatAddress = (addr: string) => {
   if (!addr) return 'Unknown';
   return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
 };
 
-function LeaderboardRow({ user, rank, isCurrentUser }) {
-  const getDisplayAddress = (name, addr) => {
+function LeaderboardRow({ user, rank, isCurrentUser }: { user: any, rank: number, isCurrentUser: boolean | string | undefined }) {
+  const getDisplayAddress = (name: string, addr: string) => {
     if (name && name.startsWith('0x') && name.length > 20) {
       return formatAddress(name);
     }
@@ -23,7 +23,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
   const raffleWins = user.raffle_wins || 0;
 
   // Rank Colors
-  const getRankColor = (r) => {
+  const getRankColor = (r: number) => {
     if (r === 1) return 'text-yellow-500';
     if (r === 2) return 'text-slate-300';
     if (r === 3) return 'text-amber-600';
@@ -95,8 +95,8 @@ function LeaderboardRow({ user, rank, isCurrentUser }) {
 
 export function LeaderboardPage() {
   const { address } = useAccount();
-  const [allUsers, setAllUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All'); // 'All', 'Elite', 'Gold', 'Silver', 'Rookie'
 
@@ -118,7 +118,7 @@ export function LeaderboardPage() {
     if (activeTab === 'All') {
       setFilteredUsers(allUsers);
     } else {
-      setFilteredUsers(allUsers.filter(u => u.rank_name === activeTab));
+      setFilteredUsers(allUsers.filter((u: any) => u.rank_name === activeTab));
     }
   }, [activeTab, allUsers]);
 

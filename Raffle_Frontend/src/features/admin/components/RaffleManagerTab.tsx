@@ -49,9 +49,10 @@ function AdminRaffleCreateForm({ syncRaffle }: AdminRaffleCreateFormProps) {
 
     const handleSuccess = async () => {
         try {
+            if (!publicClient) throw new Error("Public client not ready");
             const currentId = await publicClient.readContract({
-                address: RAFFLE_ADDRESS,
-                abi: RAFFLE_ABI,
+                address: RAFFLE_ADDRESS as `0x${string}`,
+                abi: RAFFLE_ABI as any,
                 functionName: 'currentRaffleId',
             });
             const actualId = Number(currentId);
@@ -82,7 +83,7 @@ function AdminRaffleCreateForm({ syncRaffle }: AdminRaffleCreateFormProps) {
                             is_base_social_required: form.is_base_social_required
                         }
                     });
-                } catch (e) {
+                } catch (e: any) {
                     console.warn("DB Sync failed locally:", e.message);
                 }
             }
@@ -101,7 +102,7 @@ function AdminRaffleCreateForm({ syncRaffle }: AdminRaffleCreateFormProps) {
                 min_sbt_level: '0',
                 is_base_social_required: true
             });
-        } catch (e) {
+        } catch (e: any) {
             console.error("Read currentId failed:", e);
             toast.success('Raffle created on-chain!');
         }
@@ -275,7 +276,7 @@ function CreatorEarningsCard() {
                 calls={calls}
                 onSuccess={() => {
                     toast.success("Earnings withdrawn successfully!");
-                    refetch();
+                    (refetch as any)();
                 }}
                 text="WITHDRAW EARNINGS"
                 className="w-full md:w-auto px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-emerald-900/40 active:scale-95 transition-all"
@@ -375,7 +376,7 @@ export function RaffleManagerTab() {
         // Setup real-time subscription for new tickets
         const sub = supabase
             .channel('public:raffle_tickets')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'raffle_tickets' }, payload => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'raffle_tickets' }, (payload: any) => {
                 refetchTickets();
                 toast(`New Ticket Purchased!`, { icon: '🎟️' });
             })
@@ -421,7 +422,7 @@ export function RaffleManagerTab() {
                             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest">LIVE TICKET PURCHASES</h3>
                         </div>
                         <div className="flex flex-wrap gap-3">
-                            {recentTickets.map((t, i) => (
+                            {recentTickets.map((t: any, i: number) => (
                                 <div key={i} className="px-4 py-2 bg-black/40 border border-emerald-500/20 rounded-xl flex items-center gap-2">
                                     <Ticket size={12} className="text-emerald-500" />
                                     <span className="text-[10px] font-mono text-white">{t.wallet_address.slice(0, 6)}...</span>
@@ -463,7 +464,7 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
-                            {raffles.map(r => (
+                            {raffles.map((r: any) => (
                                 <AdminRaffleRow key={r.id.toString()} raffleId={r.id} />
                             ))}
                         </div>
@@ -479,7 +480,7 @@ export function RaffleManagerTab() {
                             <Medal className="w-5 h-5 text-yellow-400" />
                             <h3 className="text-sm font-black text-yellow-300 uppercase tracking-widest">TOP WINNERS</h3>
                         </div>
-                        <button onClick={refetchWinners} className={`p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all ${isLoadingWinners ? 'animate-spin' : ''}`}>
+                        <button onClick={() => refetchWinners()} className={`p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all ${isLoadingWinners ? 'animate-spin' : ''}`}>
                             <RefreshCw className="w-4 h-4" />
                         </button>
                     </div>
@@ -495,7 +496,7 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {winners.map((w, i) => (
+                            {winners.map((w: any, i: number) => (
                                 <div key={w.wallet_address} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-yellow-500/20 transition-all group">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-slate-900 text-slate-500'}`}>
@@ -536,7 +537,7 @@ function WinnersPanel({ winners, raffleId }: WinnersPanelProps) {
     if (realWinners.length === 0) return null;
 
     const handleAnnounce = async () => {
-        await announceWinner(raffleId);
+        await announceWinner(raffleId.toString());
     };
 
     return (
@@ -565,7 +566,7 @@ function WinnersPanel({ winners, raffleId }: WinnersPanelProps) {
                         rel="noopener noreferrer"
                         className="text-[11px] font-mono text-emerald-300 hover:text-emerald-200 transition-colors truncate"
                     >
-                        {w.slice(0, 10)}...{w.slice(-8)}
+                        {w?.slice(0, 10)}...{w?.slice(-8)}
                     </a>
                 </div>
             ))}
@@ -586,12 +587,14 @@ function AdminRaffleRow({ raffleId }: AdminRaffleRowProps) {
 
     const handleDraw = async (e: React.MouseEvent) => {
         e.stopPropagation();
+        if (!publicClient) return toast.error("Public Client not ready");
+        
         try {
             setDrawPending(true);
             const hash = await drawRaffle(raffleId);
 
             // Wait for tx confirmation
-            if (hash && publicClient) {
+            if (hash) {
                 toast.loading('Menunggu konfirmasi on-chain...', { id: 'draw-confirm' });
                 await publicClient.waitForTransactionReceipt({ hash });
                 toast.success('Draw request confirmed! Menunggu QRNG callback...', { id: 'draw-confirm' });
@@ -611,8 +614,9 @@ function AdminRaffleRow({ raffleId }: AdminRaffleRowProps) {
 
             // Watch raffle.isFinalized via refetch
             const stopWhenDone = setInterval(async () => {
-                const result = await refetch();
-                if (result?.data?.isFinalized) {
+                const result = await (refetch as any)();
+                const resData = result?.data as any;
+                if (resData?.raffle?.isFinalized) {
                     clearInterval(stopWhenDone);
                     clearInterval(poll);
                     setDrawPending(false);
@@ -620,7 +624,7 @@ function AdminRaffleRow({ raffleId }: AdminRaffleRowProps) {
                 }
             }, 4000);
 
-        } catch (e) {
+        } catch (e: any) {
             console.error("Draw error:", e);
             setDrawPending(false);
         }

@@ -38,14 +38,13 @@ const NFTConfigTab = React.lazy(() => import('../features/admin/components/tabs/
 const NexusMonitorTab = React.lazy(() => import('../features/admin/components/tabs/NexusMonitorTab').then(m => ({ default: m.NexusMonitorTab })));
 const AccountantLedgerTab = React.lazy(() => import('../features/admin/components/tabs/AccountantLedgerTab').then(m => ({ default: m.AccountantLedgerTab })));
 
-export function AdminPage({ initialTab = 'pool' }) {
+export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
     const navigate = useNavigate();
-    const { isConnected } = useAccount();
+    const { address, isConnected } = useAccount();
     const { totalPoolBalance, contractOwner, distributeRevenue, updateTier, withdrawTreasury, refetchAll } = useSBT();
     const {
         isAdmin: isCMSAdmin,
         isOperator,
-        isContractOwner,
         canEdit: canEditCMS,
         isLoading: loadingCMS,
         poolSettings,
@@ -53,6 +52,9 @@ export function AdminPage({ initialTab = 'pool' }) {
         updatePoolSettings,
         refetchAll: refetchCMS
     } = useCMS();
+
+    // Derived owner status
+    const isContractOwner = address && contractOwner && (address as any).toLowerCase() === (contractOwner as any).toLowerCase();
 
     const [activeTab, setActiveTab] = useState(initialTab);
     const [taskSubTab, setTaskSubTab] = useState('batch');

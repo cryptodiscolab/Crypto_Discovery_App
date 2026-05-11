@@ -59,7 +59,7 @@ export function UnifiedDashboard() {
         fetchBaseStatus();
     }, [address]);
 
-    const multis = calculateMultipliers(userStats as any, totalUsers) as Multipliers;
+    const multis = calculateMultipliers(userStats as any, totalUsers) as any;
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -191,7 +191,7 @@ export function UnifiedDashboard() {
                     {/* Daily Admin Tasks */}
                     <div className="space-y-4">
                         <div className="space-y-3">
-                            {(dailyTaskIds as any[])?.map((tid) => (
+                            {((dailyTaskIds as unknown as any[]) || [])?.map((tid) => (
                                 <DailyTaskItem
                                     key={Number(tid)}
                                     taskId={Number(tid)}
@@ -236,7 +236,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
     multipliers: Multipliers;
 }) {
     const { task, isLoading } = useTaskInfo(taskId);
-    const { verifyTask, isVerifying, registerTaskStart } = useVerification(onSucceed);
+    const { verifyTask, isVerifying, registerTaskStart } = useVerification(() => onSucceed(''));
 
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
         address: CONTRACTS.DAILY_APP,
@@ -259,7 +259,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
         if (needsVerify) {
             registerTaskStart(taskId);
             window.open(t.link, '_blank');
-            const success = await verifyTask(t, address, taskId);
+            const success = await verifyTask(t, address || '', taskId);
             if (success) {
                 refetchCompletion();
             }
@@ -495,7 +495,7 @@ function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, mu
         }
         if (needsVerify) {
             window.open(t.link, '_blank');
-            const success = await verifyTask(t, address, taskId);
+            const success = await verifyTask(t, address || '', taskId);
             if (success) {
                 refetchCompletion();
             }

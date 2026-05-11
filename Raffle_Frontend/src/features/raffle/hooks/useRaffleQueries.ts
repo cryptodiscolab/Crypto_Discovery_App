@@ -30,7 +30,7 @@ export function useRaffleList(): RaffleListResult {
     // Fetch Total Raffle Count from Blockchain
     const contractQuery = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: ABIS.RAFFLE,
+        abi: ABIS.RAFFLE as any,
         functionName: 'currentRaffleId',
     });
 
@@ -53,7 +53,7 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
     // 1. Fetch On-Chain Raffle State
     const { data: chainData, isLoading: chainLoading, refetch: refetchChain } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: ABIS.RAFFLE,
+        abi: ABIS.RAFFLE as any,
         functionName: 'getRaffleInfo',
         args: [BigInt(raffleId || 0)],
         query: {
@@ -70,33 +70,36 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
     });
 
     const isLoading = chainLoading || dbLoading;
+    const refetchAll = () => {
+        refetchChain();
+        refetchDb();
+    };
 
-    if (!chainData || isLoading) return { raffle: null, isLoading };
+    if (!chainData || isLoading) return { raffle: null, isLoading, refetch: refetchAll };
+
+    const c = chainData as any;
 
     // Merge on-chain truth with off-chain rich metadata
     return {
         raffle: {
-            id: Number(chainData.raffleId),
-            totalTickets: Number(chainData.totalTickets),
-            maxTickets: Number(chainData.maxTickets),
-            targetPrizePool: chainData.targetPrizePool,
-            prizePool: chainData.prizePool,
-            participants: chainData.participants,
-            winners: chainData.winners,
-            winnerCount: Number(chainData.winnerCount),
-            randomNumber: chainData.randomNumber,
-            isActive: chainData.isActive,
-            isFinalized: chainData.isFinalized,
-            sponsor: chainData.sponsor,
-            metadataURI: chainData.metadataURI,
-            endTime: Number(chainData.endTime),
-            prizePerWinner: chainData.prizePerWinner,
+            id: Number(c.raffleId),
+            totalTickets: Number(c.totalTickets),
+            maxTickets: Number(c.maxTickets),
+            targetPrizePool: c.targetPrizePool,
+            prizePool: c.prizePool,
+            participants: c.participants,
+            winners: c.winners,
+            winnerCount: Number(c.winnerCount),
+            randomNumber: c.randomNumber,
+            isActive: c.isActive,
+            isFinalized: c.isFinalized,
+            sponsor: c.sponsor,
+            metadataURI: c.metadataURI,
+            endTime: Number(c.endTime),
+            prizePerWinner: c.prizePerWinner,
             ...(dbData || {}) // Spread title, image_url, description, etc.
-        },
+        } as any,
         isLoading,
-        refetch: () => {
-            refetchChain();
-            refetchDb();
-        }
+        refetch: refetchAll
     };
 }

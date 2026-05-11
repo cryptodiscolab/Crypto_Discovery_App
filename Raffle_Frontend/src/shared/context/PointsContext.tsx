@@ -123,7 +123,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
             prevVisualXp,
             diff: visualXp - dbXp
         };
-        setSyncLogs(prev => [log, ...prev].slice(0, 50));
+        setSyncLogs((prev: any[]) => [log, ...prev].slice(0, 50));
     }, []);
 
     // ==========================================
@@ -295,7 +295,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     const value = {
         userPoints,
         userTier,
-        rankName: profileData?.rank_name || rankName,
+        rankName: (profileData as any)?.rank_name || rankName,
         profileData,
         totalTasksCompleted,
         unclaimedRewards,

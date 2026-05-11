@@ -1,5 +1,26 @@
 import { BarChart3, Sliders, Users, Search, Award, History } from 'lucide-react';
 
+interface TierConfig {
+    percentiles: Record<string, number>;
+    floors: Record<string, number>;
+}
+
+interface AdvancedTierSectionProps {
+    tierDistribution: any[];
+    tierConfig: TierConfig;
+    onTierConfigChange: (category: keyof TierConfig, key: string, val: number) => void;
+    onSaveTierConfig: () => void;
+    targetWallet: string;
+    onTargetWalletChange: (val: string) => void;
+    overrideTier: number;
+    onOverrideTierChange: (tier: number) => void;
+    onApplyOverride: () => void;
+    onSyncTiers: () => void;
+    saving: boolean;
+    currentSeasonId: number;
+    onResetSeason: () => void;
+}
+
 export function AdvancedTierSection({
     tierDistribution,
     tierConfig,
@@ -14,7 +35,7 @@ export function AdvancedTierSection({
     saving,
     currentSeasonId,
     onResetSeason
-}) {
+}: AdvancedTierSectionProps) {
     return (
         <div className="space-y-8">
             {/* Leaderboard Distribution Stats */}
@@ -31,7 +52,7 @@ export function AdvancedTierSection({
                         { key: 'SILVER', color: 'text-slate-300', bg: 'bg-slate-400/10' },
                         { key: 'BRONZE', color: 'text-amber-700', bg: 'bg-amber-800/10' }
                     ].map(t => {
-                        const dist = tierDistribution.find(d => d.tier_label === t.key);
+                        const dist = tierDistribution.find((d: any) => d.tier_label === t.key);
                         return (
                             <div key={t.key} className={`${t.bg} p-3 rounded-2xl border border-white/5 flex flex-col items-center sm:items-start`}>
                                 <p className={`text-[9px] font-black tracking-widest ${t.color}`}>{t.key}</p>
@@ -65,7 +86,7 @@ export function AdvancedTierSection({
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={((tierConfig.percentiles?.[t.key] || tierConfig[t.key] || 0) * 100).toFixed(2)}
+                                        value={(((tierConfig.percentiles as any)?.[t.key] || (tierConfig as any)[t.key] || 0) * 100).toFixed(2)}
                                         onChange={(e) => onTierConfigChange('percentiles', t.key, parseFloat(e.target.value) / 100)}
                                         className={`w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-xs ${t.border} outline-none`}
                                     />

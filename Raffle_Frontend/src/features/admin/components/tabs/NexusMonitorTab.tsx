@@ -53,7 +53,7 @@ export const NexusMonitorTab = () => {
                 event: '*',
                 schema: 'public',
                 table: 'agents_vault'
-            }, (payload) => {
+            }, (payload: any) => {
                 if (payload.eventType === 'INSERT') {
                     setTasks(prev => [payload.new as NexusTask, ...prev].slice(0, 50));
                 } else if (payload.eventType === 'UPDATE') {

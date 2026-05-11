@@ -15,12 +15,12 @@ export function useVerifiedAction() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
 
-    const execute = useCallback(async (action, payload) => {
+    const execute = useCallback(async (action: string, payload: any) => {
         if (!address) throw new Error('Wallet not connected');
 
         // Build a deterministic, human-readable message
         const timestamp = Math.floor(Date.now() / 1000);
-        const message = `Crypto Disco App\nAction: ${action}\nWallet: ${address.toLowerCase()}\nTimestamp: ${timestamp}`;
+        const message = `Crypto Disco App\nAction: ${action}\nWallet: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
 
         // Sign the message via wagmi
         const signature = await signMessageAsync({ message });
@@ -35,7 +35,7 @@ export function useVerifiedAction() {
         
         // Final endpoint selection
         let endpoint = '/api/tasks-bundle';
-        let headers = { 'Content-Type': 'application/json' };
+        let headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
         if (isSocialVerify && verifyServerUrl) {
             // Only real social verification (NOT claim) goes to the Verification Server

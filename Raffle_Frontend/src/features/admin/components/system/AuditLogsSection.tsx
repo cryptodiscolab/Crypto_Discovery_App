@@ -1,6 +1,6 @@
 import { History, Cpu, Zap } from 'lucide-react';
 
-export function AuditLogsSection({ logs }) {
+export function AuditLogsSection({ logs }: { logs: any[] }) {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
             <div className="flex items-center justify-between mb-4">
@@ -29,10 +29,10 @@ export function AuditLogsSection({ logs }) {
                         <tbody className="divide-y divide-white/5">
                             {logs.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-10 text-center text-slate-500 italic">No audit logs found.</td>
+                                    <td colSpan={4} className="px-6 py-10 text-center text-slate-500 italic">No audit logs found.</td>
                                 </tr>
                             ) : (
-                                logs.map((log) => (
+                                logs.map((log: any) => (
                                     <tr key={log.id} className="hover:bg-white/[0.02] transition-all">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex flex-col">
@@ -53,7 +53,7 @@ export function AuditLogsSection({ logs }) {
                                                 <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{log.action || 'UNKNOWN'}</span>
                                                 <span className="text-[11px] text-slate-300 truncate max-w-[300px]">
                                                     {typeof log.details === 'object' && log.details !== null
-                                                        ? Object.keys(log.details).slice(0, 2).map(k => `${k}: ${String(log.details[k]).slice(0,20)}`).join(' · ')
+                                                        ? Object.keys(log.details).slice(0, 2).map(k => `${k}: ${String((log.details as any)[k]).slice(0, 20)}`).join(' · ')
                                                         : 'System sync executed'}
                                                 </span>
                                             </div>

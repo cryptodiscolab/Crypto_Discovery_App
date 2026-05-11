@@ -36,8 +36,8 @@ export function UgcRevenueTab() {
                 const data = result.data || [];
                 setRevenueData(data);
                 
-                const pending = data.filter(r => !r.is_revenue_allocated);
-                const total = pending.reduce((sum, r) => sum + parseFloat(r.sbt_share_amount || 0), 0);
+                const pending = data.filter((r: any) => !r.is_revenue_allocated);
+                const total = pending.reduce((sum: number, r: any) => sum + parseFloat(String(r.sbt_share_amount || 0)), 0);
                 setStats({ totalPending: total, count: pending.length });
             }
         } catch (error) {
@@ -78,12 +78,12 @@ export function UgcRevenueTab() {
             } else {
                 throw new Error(result.error || "Update failed");
             }
-        } catch (error) {
+        } catch (error: any) {
             toast.error(error.message, { id: tid });
         }
     };
 
-    const copyToClipboard = (text, label) => {
+    const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         toast.success(`${label} copied!`);
     };
@@ -120,7 +120,7 @@ export function UgcRevenueTab() {
                         <div className="space-y-2">
                             <p className="admin-label !mb-0 !text-[11px]">1. Destination (MasterX)</p>
                             <button 
-                                onClick={() => copyToClipboard(CONTRACTS.MASTER_X, 'MasterX Address')}
+                                onClick={() => copyToClipboard(CONTRACTS.MASTER_X as any, 'MasterX Address')}
                                 className="w-full flex items-center justify-between px-3 py-2 bg-black/40 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group"
                             >
                                 <span className="text-[11px] font-mono text-slate-300 truncate">{CONTRACTS.MASTER_X}</span>
@@ -177,7 +177,7 @@ export function UgcRevenueTab() {
                         <tbody className="divide-y divide-white/5">
                             {revenueData.filter(m => filterTab === 'PENDING' ? !m.is_revenue_allocated : m.is_revenue_allocated).length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-20 text-center text-[11px] font-black uppercase tracking-widest">No records found for this view</td>
+                                    <td colSpan={5} className="px-6 py-20 text-center text-[11px] font-black uppercase tracking-widest">No records found for this view</td>
                                 </tr>
                             ) : (
                                 revenueData
@@ -189,10 +189,10 @@ export function UgcRevenueTab() {
                                             <p className="text-[11px] font-black uppercase tracking-widest">{mission.id}</p>
                                         </td>
                                         <td className="px-6 py-4 text-xs font-mono text-slate-300">
-                                            {parseFloat(mission.listing_fee_usdc || 0).toFixed(2)}
+                                            {parseFloat(String(mission.listing_fee_usdc || 0)).toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4 text-xs font-bold text-indigo-400 font-mono">
-                                            {parseFloat(mission.sbt_share_amount || 0).toFixed(2)}
+                                            {parseFloat(String(mission.sbt_share_amount || 0)).toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4">
                                             {mission.is_revenue_allocated ? (

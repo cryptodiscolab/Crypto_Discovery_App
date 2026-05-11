@@ -6,28 +6,28 @@ import { userService } from '../../../services/userService';
  * [v3.60.0] Modular Feature-Based Architecture
  */
 
-export const useProfile = (address) => {
+export const useProfile = (address: string | undefined) => {
     return useQuery({
         queryKey: ['profile', address],
-        queryFn: () => userService.getProfile(address),
+        queryFn: () => userService.getProfile(address!),
         enabled: !!address,
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 };
 
-export const useActivityLogs = (address, category) => {
+export const useActivityLogs = (address: string | undefined, category?: string) => {
     return useQuery({
         queryKey: ['activity-logs', address, category],
-        queryFn: () => userService.getActivityLogs(address, category),
+        queryFn: () => userService.getActivityLogs(address!, category),
         enabled: !!address,
         staleTime: 1000 * 30, // 30 seconds
     });
 };
 
-export const useReputation = (address) => {
+export const useReputation = (address: string | undefined) => {
     return useQuery({
         queryKey: ['reputation', address],
-        queryFn: () => userService.getReputationStatus(address),
+        queryFn: () => userService.getReputationStatus(address!),
         enabled: !!address,
     });
 };

@@ -13,7 +13,7 @@ import { UGCCampaignCard } from '../components/UGCCampaignCard';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
-function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
+function TaskRow({ taskId, userStats, refetchStats, offChainClaims }: { taskId: string | number, userStats: any, refetchStats: () => void, offChainClaims: Set<string> }) {
     const { task, isLoading } = useTaskInfo(taskId);
     const { doTask, isLoading: isDoing } = useDoTask();
     const { address } = useAccount();
@@ -25,7 +25,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
 
     // Countdown Logic
     useEffect(() => {
-        const lastTime = lastActionTime[taskId];
+        const lastTime = (lastActionTime as any)[taskId];
         if (!lastTime) return;
 
         const updateTimer = () => {
@@ -58,12 +58,12 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
         query: { enabled: !!address && !!task }
     });
 
-    const isBaseLocked = task?.isBaseSocialRequired && !profileData?.is_base_social_verified;
-    const isTierLocked = Number(userTier) < Number(task?.minTier);
+    const isBaseLocked = (task as any)?.isBaseSocialRequired && !(profileData as any)?.is_base_social_verified;
+    const isTierLocked = Number(userTier) < Number((task as any)?.minTier);
     const isOffChainCompleted = offChainClaims?.has(String(taskId).toLowerCase());
     const canDo = !isTierLocked && !isCompleted && !isBaseLocked && !isOffChainCompleted;
 
-    if (isLoading || !task || !task.isActive || isCompleted || isOffChainCompleted) return null;
+    if (isLoading || !task || !(task as any).isActive || isCompleted || isOffChainCompleted) return null;
 
     const handleAction = async () => {
         if (!address) {
@@ -72,7 +72,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
         }
 
         if (isTierLocked) {
-            toast.error(`Tier ${task.minTier} required for this task! Upgrade in your Profile.`, {
+            toast.error(`Tier ${(task as any).minTier} required for this task! Upgrade in your Profile.`, {
                 icon: '🔒',
                 duration: 4000
             });
@@ -85,7 +85,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
         }
 
         // Farcaster Account Check
-        if (!profileData?.fid && (task.link.includes('warpcast.com') || task.link.includes('farcaster'))) {
+        if (!(profileData as any)?.fid && ((task as any).link.includes('warpcast.com') || (task as any).link.includes('farcaster'))) {
             toast((t) => (
                 <div className="flex flex-col gap-3 p-1">
                     <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
@@ -110,7 +110,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
         }
 
         // Base Social Identity Check (v3.42.0 Hardening)
-        if (task.isBaseSocialRequired && !profileData?.is_base_social_verified) {
+        if ((task as any).isBaseSocialRequired && !(profileData as any)?.is_base_social_verified) {
             toast((t) => (
                 <div className="flex flex-col gap-3 p-1">
                     <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
@@ -138,7 +138,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
         registerTaskStart(taskId);
 
         // 2. Open link in new tab
-        window.open(task.link, '_blank');
+        window.open((task as any).link, '_blank');
 
         // 3. Call doTask on-chain (registers intent/cooldown)
         try {
@@ -146,18 +146,18 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
             await doTask(taskId);
             toast.success("Action registered! Wait 30s before Verification.", { id: `task-${taskId}` });
             refetchCompletion();
-        } catch (error) {
+        } catch (error: any) {
             console.error("DoTask error:", error);
             toast.error("Action failed: " + (error.shortMessage || error.message), { id: `task-${taskId}` });
         }
     };
 
-    const handleVerify = async (e) => {
+    const handleVerify = async (e: any) => {
         e.stopPropagation();
         if (!canDo || isVerifying || timeLeft > 0) return;
 
         // Farcaster Referral Nudge
-        if (!profileData?.fid && (task.link.includes('warpcast.com') || task.link.includes('farcaster'))) {
+        if (!(profileData as any)?.fid && ((task as any).link.includes('warpcast.com') || (task as any).link.includes('farcaster'))) {
             toast((t) => (
                 <div className="flex flex-col gap-3 p-1">
                     <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
@@ -181,7 +181,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
             return;
         }
 
-        const success = await verifyTask(task, address, taskId, profileData?.fid);
+        const success = await verifyTask(task as any, address!, taskId, (profileData as any)?.fid);
         if (success) refetchCompletion();
     };
 
@@ -192,14 +192,14 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
         >
             <div className="flex items-center gap-4 flex-1 min-w-0">
                 {/* Icon Box */}
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500/10' : isBaseLocked ? 'bg-blue-500/10' : isTierLocked ? 'bg-slate-800' : task.requiresVerification ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                    {isCompleted ? <CheckCircle size={18} className="text-green-500" /> : isBaseLocked ? <Shield size={18} className="text-blue-400" /> : isTierLocked ? <Shield size={18} className="text-slate-500" /> : task.platform?.toLowerCase() === 'twitter' || task.title.toLowerCase().includes('twitter') ? <Twitter size={18} /> : <Zap size={18} />}
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500/10' : isBaseLocked ? 'bg-blue-500/10' : isTierLocked ? 'bg-slate-800' : (task as any).requiresVerification ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                    {isCompleted ? <CheckCircle size={18} className="text-green-500" /> : isBaseLocked ? <Shield size={18} className="text-blue-400" /> : isTierLocked ? <Shield size={18} className="text-slate-500" /> : (task as any).platform?.toLowerCase() === 'twitter' || (task as any).title.toLowerCase().includes('twitter') ? <Twitter size={18} /> : <Zap size={18} />}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                        <span className="value-native text-white truncate">{task.title}</span>
+                        <span className="value-native text-white truncate">{(task as any).title}</span>
                         {isCompleted && (
                             <span className="label-native bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30">COMPLETED</span>
                         )}
@@ -208,24 +208,24 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
                                 <Shield size={10} /> IDENTITY GUARD
                             </span>
                         )}
-                        {task.requiresVerification && !isCompleted && !isBaseLocked && (
+                        {(task as any).requiresVerification && !isCompleted && !isBaseLocked && (
                             <Shield size={12} className="text-green-500 flex-shrink-0" />
                         )}
                         {isTierLocked && (
                             <span className="label-native bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
-                                LVL {task.minTier}
+                                LVL {(task as any).minTier}
                             </span>
                         )}
                     </div>
                     <div className="flex items-center gap-3 text-slate-500 label-native">
                         <span className="text-yellow-500 flex items-center gap-1">
-                            +{Number(task.baseReward)} XP
+                            +{Number((task as any).baseReward)} XP
                         </span>
-                        {!isCompleted && task.sponsorshipId == 0 && (
+                        {!isCompleted && (task as any).sponsorshipId == 0 && (
                             <>
                                 <span>•</span>
                                 <span className="flex items-center gap-1">
-                                    <Clock size={10} /> {Number(task.cooldown) / 3600}h
+                                    <Clock size={10} /> {Number((task as any).cooldown) / 3600}h
                                 </span>
                             </>
                         )}
@@ -241,7 +241,7 @@ function TaskRow({ taskId, userStats, refetchStats, offChainClaims }) {
                    <div className="flex items-center gap-2 text-blue-400 label-native border border-blue-400/30 bg-blue-400/5 px-2 py-1 rounded-lg">
                       <Shield size={12} /> VERIFY REQ
                    </div>
-                ) : task.requiresVerification ? (
+                ) : (task as any).requiresVerification ? (
                     <button
                         onClick={handleVerify}
                         disabled={isVerifying || isTierLocked || timeLeft > 0}
@@ -277,7 +277,7 @@ export function TasksPage() {
     const { userPoints, userTier, rankName } = usePoints();
     const { refetch } = useUserV12Stats(address);
     const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'offers'
-    const [offChainClaims, setOffChainClaims] = useState(new Set());
+    const [offChainClaims, setOffChainClaims] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         if (address) {
@@ -285,9 +285,9 @@ export function TasksPage() {
                 .from('user_task_claims')
                 .select('task_id')
                 .eq('wallet_address', address.toLowerCase())
-                .then(({ data, error }) => {
+                .then(({ data, error }: { data: any, error: any }) => {
                     if (data && !error) {
-                        setOffChainClaims(new Set(data.map(d => String(d.task_id).toLowerCase())));
+                        setOffChainClaims(new Set(data.map((d: any) => String(d.task_id).toLowerCase())));
                     }
                 });
         } else {
@@ -296,7 +296,7 @@ export function TasksPage() {
     }, [address]);
 
     // Fetch active UGC campaigns + their sub-tasks
-    const [ugcCampaigns, setUgcCampaigns] = useState([]);
+    const [ugcCampaigns, setUgcCampaigns] = useState<any[]>([]);
     useEffect(() => {
         const fetchUgcCampaigns = async () => {
             try {
@@ -310,25 +310,31 @@ export function TasksPage() {
 
                 if (!campaigns || campaigns.length === 0) { setUgcCampaigns([]); return; }
 
+                // Default missing reward symbols for robustness
+                const normalizedCampaigns = campaigns.map((c: any) => ({
+                    ...c,
+                    reward_symbol: c.reward_symbol || 'USDC'
+                }));
+
                 // 2. Fetch sub-tasks for all campaigns
-                const campaignIds = campaigns.map(c => c.id);
+                const campaignIds = normalizedCampaigns.map((c: any) => c.id);
                 const { data: subTasks } = await supabase
                     .from('daily_tasks')
-                    .select('id, title, action_type, platform, link, onchain_id')
+                    .select('id, title, action_type, platform, link, onchain_id, is_base_social_required')
                     .in('onchain_id', campaignIds)
                     .eq('task_type', 'ugc')
                     .eq('is_active', true);
 
                 // 3. Group sub-tasks by campaign
-                const tasksByCampaign = {};
-                (subTasks || []).forEach(t => {
+                const tasksByCampaign: Record<string, any[]> = {};
+                (subTasks || []).forEach((t: any) => {
                     if (!tasksByCampaign[t.onchain_id]) tasksByCampaign[t.onchain_id] = [];
                     tasksByCampaign[t.onchain_id].push(t);
                 });
 
-                setUgcCampaigns(campaigns.map(c => ({
+                setUgcCampaigns(normalizedCampaigns.map((c: any) => ({
                     ...c,
-                    subTasks: tasksByCampaign[c.id] || []
+                    subTasks: (tasksByCampaign as any)[c.id] || []
                 })));
             } catch (e) {
                 console.error('[UGC Fetch]', e);
@@ -336,6 +342,15 @@ export function TasksPage() {
         };
         fetchUgcCampaigns();
     }, []);
+
+    // v3.59.6: Automatic Identity Sync Mandate
+    const { profileData, syncUser, isLoading: isSyncing } = useFarcaster();
+    useEffect(() => {
+        if (isConnected && address && !profileData && !isSyncing) {
+            console.log("[TasksPage] Missing identity detected. Triggering background sync...");
+            syncUser(address);
+        }
+    }, [isConnected, address, profileData, isSyncing, syncUser]);
 
     // Fetch all task data in one batch
     const { data: allTasksRaw, isLoading: isTasksLoading } = useReadContract({
@@ -348,10 +363,10 @@ export function TasksPage() {
 
     const taskGroups = useMemo(() => {
         if (!allTasksRaw) return { regulars: [], sponsored: {} };
-        const regs = [];
-        const spons = {};
+        const regs: any[] = [];
+        const spons: Record<string, any[]> = {};
 
-        allTasksRaw.forEach((t, index) => {
+        allTasksRaw && (allTasksRaw as any[]).forEach((t: any, index: number) => {
             const taskId = index + 1;
             const taskObj = {
                 id: taskId,
@@ -443,6 +458,7 @@ export function TasksPage() {
                                         campaign={campaign}
                                         subTasks={campaign.subTasks}
                                         userClaimedTaskIds={offChainClaims}
+                                        refetchStats={refetch}
                                     />
                                 ))}
                             </div>
@@ -503,14 +519,14 @@ export function TasksPage() {
     );
 }
 
-function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims }) {
+function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims }: { sponsorshipId: string | number, tasks: any[], refetchStats: () => void, offChainClaims: Set<string> }) {
     const navigate = useNavigate();
     const { profileData } = useFarcaster();
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { writeContractAsync } = useWriteContract();
     const { verifyTask, registerTaskStart, isVerifying } = useVerification(refetchStats);
-    const [verifyingStatus, setVerifyingStatus] = useState(null); // 'success', 'fail', null
+    const [verifyingStatus, setVerifyingStatus] = useState<'success' | 'fail' | null>(null); // 'success', 'fail', null
     const [timer, setTimer] = useState(0);
     const [isClaiming, setIsClaiming] = useState(false);
 
@@ -521,7 +537,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'claimableRewards',
-        args: [address, usdcAddr],
+        args: [address as `0x${string}`, usdcAddr as `0x${string}`],
         query: { enabled: !!address && !!usdcAddr }
     });
 
@@ -530,7 +546,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'userSponsorshipProgress',
-        args: [address, BigInt(sponsorshipId)],
+        args: [address as `0x${string}`, BigInt(sponsorshipId)],
         query: { enabled: !!address }
     });
 
@@ -539,7 +555,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
     
     // Identity Guard Hardening (v3.42.1)
     const hasGatedTask = tasks.some(t => t.isBaseSocialRequired);
-    const isIdentityBlocked = hasGatedTask && !profileData?.is_base_social_verified;
+    const isIdentityBlocked = hasGatedTask && !(profileData as any)?.is_base_social_verified;
 
     // V14 FIX: Do not hide card if there are unclaimed rewards
     if (isGlobalCompleted && (!rawClaimable || rawClaimable === 0n)) return null;
@@ -553,7 +569,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
 
         try {
             for (const t of tasks) {
-                const success = await verifyTask(t, address, t.id);
+                const success = await verifyTask(t, address as string, t.id);
                 if (!success) {
                     allSuccess = false;
                     break;
@@ -627,10 +643,10 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
                             setIsClaiming(true);
                             try {
                                  const hash = await writeContractAsync({
-                                    address: CONTRACTS.DAILY_APP,
+                                    address: CONTRACTS.DAILY_APP as `0x${string}`,
                                     abi: DAILY_APP_ABI,
                                     functionName: 'claimRewards',
-                                    args: [usdcAddr],
+                                    args: [usdcAddr as `0x${string}`],
                                 });
 
                                 // v3.40+: Fast Sync via TxHash (No second signature required)
@@ -660,7 +676,7 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
 
                                 toast.success("Mission Reward Claimed! 🎉", { id: tid });
                                 setVerifyingStatus(null);
-                            } catch (err) {
+                            } catch (err: any) {
                                 toast.error(err.shortMessage || "Claim failed", { id: tid });
                             } finally {
                                 setIsClaiming(false);
@@ -701,12 +717,12 @@ function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims 
     );
 }
 
-function IndividualTaskRow({ task, address, onAction, offChainClaims }) {
+function IndividualTaskRow({ task, address, onAction, offChainClaims }: { task: any, address: string | undefined, onAction: () => void, offChainClaims: Set<string> }) {
     const { data: isVerified } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'isTaskVerified',
-        args: [address, BigInt(task.id)],
+        args: [address as `0x${string}`, BigInt(task.id)],
         query: { enabled: !!address }
     });
 
@@ -714,7 +730,7 @@ function IndividualTaskRow({ task, address, onAction, offChainClaims }) {
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'hasCompletedTask',
-        args: [address, BigInt(task.id)],
+        args: [address as `0x${string}`, BigInt(task.id)],
         query: { enabled: !!address }
     });
 

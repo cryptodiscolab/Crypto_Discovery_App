@@ -10,6 +10,12 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 import { ABIS, CONTRACTS } from './lib/contracts';
 
+interface NavItem {
+  path: string;
+  label: string;
+  isAdmin?: boolean;
+}
+
 export function Header() {
   const { address, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
@@ -25,7 +31,7 @@ export function Header() {
     if (!gasTracker || gasTracker.isLoadingGas || gasTracker.gasCategory === 'Unknown') return null;
     const cat = gasTracker.gasCategory;
     const gwei = gasTracker.gasPriceGwei;
-    const colorMap = {
+    const colorMap: Record<string, { bg: string; border: string; text: string; dot: string }> = {
       'Cheap':     { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-400', dot: 'bg-emerald-500' },
       'Normal':    { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', dot: 'bg-emerald-400' },
       'High':      { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', dot: 'bg-amber-400' },
@@ -39,7 +45,7 @@ export function Header() {
     return Boolean(isSBTAdmin || isCMSAdmin || canEditCMS);
   }, [isSBTAdmin, isCMSAdmin, canEditCMS]);
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { path: '/', label: 'HOME' },
     { path: '/tasks', label: 'TASKS' },
     { path: '/raffles', label: 'RAFFLES' },

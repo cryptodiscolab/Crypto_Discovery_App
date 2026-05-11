@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI } from '../lib/contracts';
 import { usePriceOracle } from '../hooks/usePriceOracle';
 
-const RafflePreview = ({ data }) => {
+const RafflePreview = ({ data }: { data: any }) => {
     return (
         <div className="glass-card overflow-hidden border-white/5 bg-slate-900/40 group">
             <div className="relative aspect-video bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -41,11 +41,11 @@ const RafflePreview = ({ data }) => {
                 <div className="flex justify-between items-end pt-2 border-t border-white/5">
                     <div>
                         <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">PRIZE POOL</p>
-                        <p className="text-[11px] font-black text-blue-400 font-mono tracking-widest">{parseFloat(data.prizeDeposit || 0).toFixed(2)} ETH</p>
+                        <p className="text-[11px] font-black text-blue-400 font-mono tracking-widest">{parseFloat(data.prizeDeposit || '0').toFixed(2)} ETH</p>
                     </div>
                     <div className="text-right">
                         <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">TICKET PRICE</p>
-                        <p className="text-[11px] font-black text-indigo-400 font-mono tracking-widest">{parseFloat(data.ticketPrice || 0).toFixed(4)} ETH</p>
+                        <p className="text-[11px] font-black text-indigo-400 font-mono tracking-widest">{parseFloat(data.ticketPrice || '0').toFixed(4)} ETH</p>
                     </div>
                 </div>
             </div>
@@ -62,7 +62,7 @@ export function CreateRafflePage() {
 
     // Feature Flags Check
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
-    const isUgcFeatureEnabled = !isMainnet || ecosystemSettings?.active_features?.ugc_payment === true;
+    const isUgcFeatureEnabled = !isMainnet || (ecosystemSettings as any)?.active_features?.ugc_payment === true;
 
     const { data: globalTicketPrice } = useReadContract({
         address: CONTRACTS.MASTER_X,
@@ -143,7 +143,7 @@ export function CreateRafflePage() {
         };
     }, [formData, globalTicketPrice, ethPrice, maintenanceFeeBP, surchargeBP]);
 
-    const handleCreate = async (e) => {
+    const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.title) return toast.error("Please enter a title");
 
@@ -192,16 +192,16 @@ export function CreateRafflePage() {
 
             toast.loading("Sending on-chain transaction...", { id: tid });
             await createSponsorshipRaffle({
-                winnerCount: formData.winnerCount,
-                maxTickets: formData.maxTickets,
-                durationDays: formData.durationDays,
+                winnerCount: parseInt(formData.winnerCount),
+                maxTickets: parseInt(formData.maxTickets),
+                durationDays: parseInt(formData.durationDays),
                 metadataURI: metadataURI,
                 depositETH: parseEther(formData.prizeDeposit || '0'),
                 extraMetadata: { ...fullMetadata, is_base_social_required: formData.isBaseSocialRequired }
             });
             toast.success("Raffle Event Sponsored! 🎲", { id: tid });
             navigate('/raffles');
-        } catch (err) {
+        } catch (err: any) {
             toast.error(err.shortMessage || err.message || "Creation failed", { id: tid });
         } finally {
             setIsSubmitting(false);

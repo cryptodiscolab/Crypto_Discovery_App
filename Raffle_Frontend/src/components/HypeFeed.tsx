@@ -48,7 +48,7 @@ export const HypeFeed = () => {
             }
 
             // 2. Fetch identities from the Master View (Mandate Alignment)
-            const wallets = [...new Set(logs.map(l => l.wallet_address.toLowerCase()))];
+            const wallets = [...new Set((logs as any[]).map((l: any) => l.wallet_address.toLowerCase()))];
             const { data: profiles, error: profileError } = await supabase
                 .from('v_user_full_profile')
                 .select('wallet_address, display_name, username, pfp_url')
@@ -59,12 +59,12 @@ export const HypeFeed = () => {
             }
 
             // 3. Transform into feed items with joined data
-            const profileMap = (profiles || []).reduce((acc, p) => {
+            const profileMap = (profiles || []).reduce((acc: Record<string, any>, p: any) => {
                 acc[p.wallet_address.toLowerCase()] = p;
                 return acc;
             }, {});
 
-            const feed = logs.map(log => {
+            const feed: FeedItem[] = (logs as any[]).map((log: any) => {
                 const user = profileMap[log.wallet_address.toLowerCase()];
                 return {
                     id: log.id,

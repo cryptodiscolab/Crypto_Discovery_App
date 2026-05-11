@@ -15,10 +15,11 @@ import {
     ERC20_ABI,
     UGC_PLATFORM_LINK_RULES,
     VALID_ACTION_TYPES,
-    getEnv
-} from './constants';
+    getEnv,
+    Database
+} from './types';
 
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const AUTHORIZED_ADMINS = [
     getEnv('VITE_ADMIN_ADDRESS', ''),
@@ -35,7 +36,7 @@ async function isAuthorizedAdmin(address: string) {
     return isAuthorized;
 }
 
-async function logAdminAction(admin_address: string, action: string, details: any) {
+async function logAdminAction(admin_address: string, action: string, details: Json) {
     try {
         await supabaseAdmin.from('admin_audit_logs').insert({
             admin_address: admin_address.toLowerCase(),
@@ -43,12 +44,22 @@ async function logAdminAction(admin_address: string, action: string, details: an
             details: details || {},
             created_at: new Date().toISOString()
         });
-    } catch (err: any) {
-        console.error('[logAdminAction Error]', err.message);
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[logAdminAction Error]', msg);
     }
 }
 
-function validateUgcMission(payload: any) {
+interface MissionPayload {
+    title: string;
+    link: string;
+    platform_code: string;
+    action_types: string[];
+    reward_amount_per_user: string;
+    max_participants: string;
+}
+
+function validateUgcMission(payload: MissionPayload) {
     const errors: string[] = [];
     if (!payload.title || payload.title.trim().length < 5) errors.push('Mission title must be at least 5 characters.');
     if (!payload.link || payload.link.trim().length < 10) errors.push('Mission link is required.');
@@ -183,8 +194,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             default:
                 return res.status(400).json({ error: `Invalid action: ${action}` });
         }
-    } catch (error: any) {
-        return res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: msg });
     }
 }
 
@@ -199,7 +211,7 @@ async function handleParityAudit(res: VercelResponse) {
 
     const auditResults = await Promise.all(users.map(async (u) => {
         try {
-            const stats: any = await rpcClient.readContract({
+            const stats = await rpcClient.readContract({
                 address: DAILY_APP_ADDRESS as `0x${string}`,
                 abi: [{
                     "inputs": [{"internalType": "address", "name": "", "type": "address"}],
@@ -217,8 +229,9 @@ async function handleParityAudit(res: VercelResponse) {
                     "type": "function"
                 }],
                 functionName: 'userStats',
-                args: [u.wallet_address]
-            });
+                args: [u.wallet_address as `0x${string}`]
+            }) as [bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+
             const onChainXp = Number(stats[0]);
             const onChainTier = Number(stats[3]);
             return {
@@ -227,11 +240,12 @@ async function handleParityAudit(res: VercelResponse) {
                 onchain_xp: onChainXp,
                 db_tier: u.tier,
                 onchain_tier: onChainTier,
-                xp_drift_value: u.total_xp - onChainXp,
+                xp_drift_value: (u.total_xp || 0) - onChainXp,
                 tier_drift: u.tier !== onChainTier
             };
-        } catch (e: any) {
-            return { address: u.wallet_address, error: e.message };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return { address: u.wallet_address, error: msg };
         }
     }));
 
@@ -253,11 +267,11 @@ async function handleParityAudit(res: VercelResponse) {
     const { data: dbWeights } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'tier_pool_weights').maybeSingle();
     const system_parity = {
         weights_match: JSON.stringify(dbWeights?.value) === JSON.stringify({
-            diamond: contractWeights[0].toString(),
-            platinum: contractWeights[1].toString(),
-            gold: contractWeights[2].toString(),
-            silver: contractWeights[3].toString(),
-            bronze: contractWeights[4].toString()
+            diamond: contractWeights[0]?.toString() || '0',
+            platinum: contractWeights[1]?.toString() || '0',
+            gold: contractWeights[2]?.toString() || '0',
+            silver: contractWeights[3]?.toString() || '0',
+            bronze: contractWeights[4]?.toString() || '0'
         })
     };
 
@@ -278,8 +292,8 @@ async function handleSyncPoints(res: VercelResponse) {
     return res.status(200).json({ success: true, data });
 }
 
-async function handleGenericUpsert(key: string, value: any, admin: string, action: string, res: VercelResponse, conflictCol = 'key') {
-    const row = conflictCol === 'key' ? { key, value, updated_at: new Date().toISOString() } : value;
+async function handleGenericUpsert(key: string, value: Json, admin: string, action: string, res: VercelResponse, conflictCol = 'key') {
+    const row = conflictCol === 'key' ? { key, value, updated_at: new Date().toISOString() } : (value as any);
     const { error } = await supabaseAdmin.from('system_settings').upsert(row, { onConflict: conflictCol });
     if (error) throw error;
     await logAdminAction(admin, action, value);
@@ -311,12 +325,23 @@ async function handleAccountantSync(req: VercelRequest, res: VercelResponse, adm
         const syncRes = await axios.get(syncUrl, { headers: { 'Authorization': `Bearer ${CRON_SECRET}` }, timeout: 8000 });
         await logAdminAction(admin, 'ACCOUNTANT_SYNC_TRIGGER', syncRes.data);
         return res.status(200).json({ success: true, details: syncRes.data });
-    } catch (e: any) {
-        return res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return res.status(500).json({ error: msg });
     }
 }
 
-async function handleTaskCreate(data: any, admin: string, res: VercelResponse) {
+interface TaskCreateData {
+    title: string;
+    description: string;
+    xp_reward?: number;
+    platform?: string;
+    action_type?: string;
+    link?: string;
+    is_active?: boolean;
+}
+
+async function handleTaskCreate(data: TaskCreateData, admin: string, res: VercelResponse) {
     const { error } = await supabaseAdmin.from('daily_tasks').insert({
         title: data.title,
         description: data.description,
@@ -328,7 +353,7 @@ async function handleTaskCreate(data: any, admin: string, res: VercelResponse) {
         created_at: new Date().toISOString()
     });
     if (error) throw error;
-    await logAdminAction(admin, 'TASK_CREATE', data);
+    await logAdminAction(admin, 'TASK_CREATE', data as unknown as Json);
     return res.status(200).json({ success: true });
 }
 
@@ -339,7 +364,16 @@ async function handleRoleUpdate(target: string, status: boolean, admin: string, 
     return res.status(200).json({ success: true });
 }
 
-async function handleSyncRaffle(payload: any, admin: string, res: VercelResponse) {
+interface SyncRafflePayload {
+    raffle_id: number;
+    creator: string;
+    nft_address?: string;
+    token_id?: number;
+    end_time: string;
+    title?: string;
+}
+
+async function handleSyncRaffle(payload: SyncRafflePayload, admin: string, res: VercelResponse) {
     const raffleData = {
         id: payload.raffle_id,
         creator_address: payload.creator.toLowerCase(),
@@ -351,7 +385,7 @@ async function handleSyncRaffle(payload: any, admin: string, res: VercelResponse
         updated_at: new Date().toISOString()
     };
     await supabaseAdmin.from('raffles').upsert(raffleData, { onConflict: 'id' });
-    await logAdminAction(admin, 'SYNC_RAFFLE', raffleData);
+    await logAdminAction(admin, 'SYNC_RAFFLE', raffleData as unknown as Json);
     return res.status(200).json({ success: true });
 }
 
@@ -362,7 +396,15 @@ async function handleResetSeason(newSeasonId: string, admin: string, res: Vercel
     return res.status(200).json({ success: true });
 }
 
-async function handleTaskSync(tasks: any[], res: VercelResponse) {
+interface TaskSyncData {
+    title: string;
+    reward_points: number;
+    platform: string;
+    action_type: string;
+    link: string;
+}
+
+async function handleTaskSync(tasks: TaskSyncData[], res: VercelResponse) {
     for (const task of tasks) {
         await supabaseAdmin.from('daily_tasks').insert([{
             title: task.title,
@@ -377,12 +419,21 @@ async function handleTaskSync(tasks: any[], res: VercelResponse) {
     return res.status(200).json({ success: true });
 }
 
-async function handleCreateUgcMission(payload: any, admin: string, res: VercelResponse) {
+interface UgcMissionCreatePayload {
+    title: string;
+    description: string;
+    action_types: string[];
+    platform_code?: string;
+    link?: string;
+    sponsor_address: string;
+}
+
+async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: string, res: VercelResponse) {
     const errors = validateUgcMission(payload);
     if (errors.length > 0) return res.status(400).json({ error: 'Validation failed', details: errors });
 
     const missionData = { ...payload, is_active: false, is_verified_payment: false, created_at: new Date().toISOString() };
-    const { data: campaign, error: cErr } = await supabaseAdmin.from('campaigns').insert([missionData]).select().maybeSingle();
+    const { data: campaign, error: cErr } = await supabaseAdmin.from('campaigns').insert([missionData as any]).select().maybeSingle();
     if (cErr || !campaign) throw cErr || new Error('Failed to create campaign');
 
     const taskRows = payload.action_types.map((action: string) => ({
@@ -400,7 +451,7 @@ async function handleCreateUgcMission(payload: any, admin: string, res: VercelRe
     }));
 
     await supabaseAdmin.from('daily_tasks').insert(taskRows);
-    await logAdminAction(admin, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, ...missionData });
+    await logAdminAction(admin, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, ...missionData } as unknown as Json);
     return res.status(200).json({ success: true, data: campaign });
 }
 
@@ -421,7 +472,7 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
     for (const log of receipt.logs) {
         if (log.address.toLowerCase() === USDC_ADDRESS.toLowerCase()) {
             try {
-                const decoded: any = decodeEventLog({ abi: ERC20_ABI, eventName: 'Transfer', data: log.data, topics: log.topics });
+                const decoded = decodeEventLog({ abi: ERC20_ABI, eventName: 'Transfer', data: log.data, topics: log.topics }) as { args: { to: string, value: bigint } };
                 if (decoded.args.to.toLowerCase() === treasury.toLowerCase()) totalUsdcTransferred += decoded.args.value;
             } catch (e) { continue; }
         }

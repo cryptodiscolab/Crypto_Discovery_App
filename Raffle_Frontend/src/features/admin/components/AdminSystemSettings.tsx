@@ -128,12 +128,12 @@ export default function AdminSystemSettings() {
             setSbtThresholds(thresholdsRes.data || []);
             if (!issuedRes.error) setIssuedSubnames(issuedRes.data || []);
             if (!usersRes.error) {
-                const issuedWallets = new Set((issuedRes.data || []).map(s => cleanWallet(s.wallet_address)));
-                setEligibleUsers(usersRes.data.filter(u => u.wallet_address && !issuedWallets.has(cleanWallet(u.wallet_address))));
+                const issuedWallets = new Set((issuedRes.data || []).map((s: any) => cleanWallet(s.wallet_address)));
+                setEligibleUsers(usersRes.data.filter((u: any) => u.wallet_address && !issuedWallets.has(cleanWallet(u.wallet_address))));
             }
             if (!logsRes.error) setAuditLogs(logsRes.data || []);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Fetch Error:', error);
             toast.error("Failed to sync DB data: " + error.message);
         }
@@ -156,7 +156,7 @@ export default function AdminSystemSettings() {
         try {
             const cleanData = pointSettings.filter(item => item.activity_key?.trim()).map(item => ({
                 activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
-                points_value: parseInt(item.points_value) || 0,
+                points_value: parseInt(item.points_value as any) || 0,
                 platform: item.platform || 'farcaster',
                 action_type: item.action_type || 'Follow',
                 is_active: item.is_active ?? true,
@@ -177,7 +177,7 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to update points");
             toast.success('Point Settings updated!', { id: tid });
             await fetchPointSettings();
-        } catch (error) {
+        } catch (error: any) {
             toast.error('Failed to save points: ' + error.message, { id: tid });
         } finally { setSaving(false); }
     };
@@ -210,7 +210,7 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to update thresholds");
             toast.success('SBT Thresholds updated!', { id: tid });
             await fetchPointSettings();
-        } catch (error) { toast.error('Failed to save thresholds: ' + error.message, { id: tid }); }
+        } catch (error: any) { toast.error('Failed to save thresholds: ' + error.message, { id: tid }); }
         finally { setSaving(false); }
     };
 
@@ -229,9 +229,9 @@ export default function AdminSystemSettings() {
             });
 
             if (!response.ok) throw new Error('Failed to save tier config');
-            if (!silent) toast.success('Tier configuration saved!', { id: tid });
-        } catch (error) {
-            if (!silent) toast.error('Failed to save tier config: ' + error.message, { id: tid });
+            if (!silent) toast.success('Tier configuration saved!', { id: tid ?? undefined });
+        } catch (error: any) {
+            if (!silent) toast.error('Failed to save tier config: ' + error.message, { id: tid ?? undefined });
             throw error;
         } finally { if (!silent) setSaving(false); }
     };
@@ -258,7 +258,7 @@ export default function AdminSystemSettings() {
             toast.success('Manual override applied!', { id: tid });
             setTargetWallet('');
             fetchTierDistribution();
-        } catch (error) { toast.error('Override failed: ' + error.message, { id: tid }); }
+        } catch (error: any) { toast.error('Override failed: ' + error.message, { id: tid }); }
         finally { setSaving(false); }
     };
 
@@ -283,14 +283,14 @@ export default function AdminSystemSettings() {
             await resetSeason(nextSeason);
             toast.success(`Season ${nextSeason} Started!`, { id: tid });
             fetchTierDistribution();
-        } catch (e) {
-            toast.error(e.shortMessage || "Reset failed", { id: tid });
+        } catch (e: any) {
+            toast.error(e.shortMessage || e.message || "Reset failed", { id: tid });
         } finally {
             setSaving(false);
         }
     };
 
-    const issueSubname = async (user, label) => {
+    const issueSubname = async (user: any, label: string) => {
         if (!label || label.length < 3) return toast.error('Label too short');
         setSaving(true);
         const tid = toast.loading('Issuing ENS Subname...');
@@ -312,7 +312,7 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to issue identity");
             toast.success(`Identity ${fullName} issued!`, { id: tid });
             fetchPointSettings();
-        } catch (error) { toast.error('ENS Error: ' + error.message, { id: tid }); }
+        } catch (error: any) { toast.error('ENS Error: ' + error.message, { id: tid }); }
         finally { setSaving(false); }
     };
 
@@ -389,7 +389,7 @@ export default function AdminSystemSettings() {
                     <AdvancedTierSection
                         tierDistribution={tierDistribution}
                         tierConfig={tierConfig}
-                        onTierConfigChange={(category, key, val) => setTierConfig({ ...tierConfig, [category]: { ...tierConfig[category], [key]: val } })}
+                        onTierConfigChange={(category: keyof TierConfig, key: string, val: number) => setTierConfig({ ...tierConfig, [category]: { ...tierConfig[category], [key]: val } })}
                         onSaveTierConfig={() => saveTierConfig()}
                         targetWallet={targetWallet}
                         onTargetWalletChange={setTargetWallet}
