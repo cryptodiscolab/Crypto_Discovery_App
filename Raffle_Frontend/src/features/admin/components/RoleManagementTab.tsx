@@ -19,7 +19,7 @@ export function RoleManagementTab() {
     const { grantRole, revokeRole } = useDailyAppAdmin();
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
-    const [verifierAddress, setVerifierAddress] = useState('0x52260c30697674a7C837FEB2af21bBf3606795C8'); // Default derived from server .env
+    const [verifierAddress, setVerifierAddress] = useState(import.meta.env.VITE_VERIFIER_ADDRESS || '0x52260c30697674a7C837FEB2af21bBf3606795C8');
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     // Operators list (fetched from database)
@@ -36,7 +36,7 @@ export function RoleManagementTab() {
 
                 if (error) throw error;
                 if (data) {
-                    setOperators(data.map((u: any) => ({
+                    setOperators(data.map((u: { wallet_address: string }) => ({
                         address: u.wallet_address,
                         role: 'Operator'
                     })));
@@ -104,9 +104,9 @@ export function RoleManagementTab() {
             setOperators([...operators, { address: operatorAddress, role: 'Operator' }]);
             setOperatorAddress('');
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e.message || e.shortMessage || "Transaction failed", { id: tid });
+            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -149,9 +149,9 @@ export function RoleManagementTab() {
             // Remove from local list
             setOperators(operators.filter(op => op.address?.toLowerCase() !== addr?.toLowerCase()));
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e.message || e.shortMessage || "Transaction failed", { id: tid });
+            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -190,8 +190,8 @@ export function RoleManagementTab() {
 
             toast.success("Verifier Role Active!", { id: tid });
             refetchAll();
-        } catch (e: any) {
-            toast.error(e.message || "Grant verifier failed", { id: tid });
+        } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "Grant verifier failed", { id: tid });
         } finally {
             setIsSaving(false);
         }

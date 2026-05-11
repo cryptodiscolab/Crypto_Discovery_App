@@ -90,16 +90,16 @@ export default function AdminCMSContent() {
                 { id: tid, duration: 6000 }
             );
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e.shortMessage || "Transaction failed", { id: tid });
+            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleImageUpload = async (e: any) => {
-        const file = e.target.files[0];
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (!file) return;
 
         // Validation
@@ -135,9 +135,9 @@ export default function AdminCMSContent() {
 
             setCardForm(prev => ({ ...prev, icon: publicUrl }));
             toast.success("Image uploaded successfully!", { id: toastId });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[Upload Error]', err);
-            toast.error("Upload failed: " + err.message, { id: toastId });
+            toast.error("Upload failed: " + (err instanceof Error ? err.message : String(err)), { id: toastId });
         } finally {
             setIsUploading(false);
         }
@@ -152,7 +152,7 @@ export default function AdminCMSContent() {
                 </div>
             );
         }
-        const IconComponent = (Icons as any)[iconName] || Icons.HelpCircle;
+        const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[iconName] || Icons.HelpCircle;
         return <IconComponent className="w-5 h-5 text-indigo-400" />;
     };
 

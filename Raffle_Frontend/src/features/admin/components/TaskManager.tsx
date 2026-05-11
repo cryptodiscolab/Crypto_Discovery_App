@@ -1,140 +1,65 @@
-import { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage } from 'wagmi';
+import { useState, useEffect, useRef } from 'react';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage, useConfig } from 'wagmi';
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 import {
     Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle,
-    Star, Database, RefreshCw, Settings, TrendingUp
+    Star, Database, RefreshCw, Settings, TrendingUp,
+    Share2, List, Clock, Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
 import { DAILY_APP_ABI, CONTRACTS } from '../../../lib/contracts';
+import { useDailyAppAdmin } from '../../../hooks/useContract';
+import { TaskBatchItem } from '../types/tasks';
 
 // Sub-sections
 import { QuickTaskForgeSection } from './tasks/QuickTaskForgeSection';
 import { QuickSponsorPortalSection } from './tasks/QuickSponsorPortalSection';
 import { QuickEconConfigSection } from './tasks/QuickEconConfigSection';
+import { TaskBatchCreatorSection } from './tasks/TaskBatchCreatorSection';
+import { SponsorshipPortalSection } from './tasks/SponsorshipPortalSection';
+import { EconomyConfigSection } from './tasks/EconomyConfigSection';
+import { ActiveCampaignsSection } from './tasks/ActiveCampaignsSection';
+import { EconomyMetrics } from './EconomyMetrics';
 
 const DAILY_APP_ADDRESS = CONTRACTS.DAILY_APP;
 
-interface TaskViewerProps {
-    address: `0x${string}`;
-    abi: any;
+interface TaskManagerProps {
+    initialMode?: 'batch' | 'quick';
 }
 
-function TaskViewer({ address, abi }: TaskViewerProps) {
-    const { data: nextTaskId } = useReadContract({ address, abi, functionName: 'nextTaskId' });
-    const { data: nextSponsorId } = useReadContract({ address, abi, functionName: 'totalSponsorRequests' });
-
-    return (
-        <div className="space-y-4 text-left">
-            <div className="flex items-center gap-2 mb-2 px-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-[10px] font-black text-white uppercase tracking-tighter">On-Chain Registry</span>
-            </div>
-            <div className="space-y-2">
-                <h4 className="text-[8px] font-black text-slate-600 uppercase tracking-widest px-1">Live Tasks ({Number(nextTaskId || 0)})</h4>
-                <div className="grid grid-cols-1 gap-2">
-                    {Array.from({ length: Number(nextTaskId || 1) - 1 }).map((_, i) => (
-                        <TaskItem key={i + 1} id={BigInt(i + 1)} address={address} abi={abi} />
-                    ))}
-                    {Number(nextTaskId || 1) <= 1 && (
-                        <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-[9px] text-slate-500 italic text-center">No tasks deployed on-chain</div>
-                    )}
-                </div>
-            </div>
-            <div className="space-y-2">
-                <h4 className="text-[8px] font-black text-slate-600 uppercase tracking-widest px-1">Sponsorship Requests ({Number(nextSponsorId || 0)})</h4>
-                <div className="grid grid-cols-1 gap-3">
-                    {Array.from({ length: Number(nextSponsorId || 0) }).map((_, i) => (
-                        <SponsorRequestItem key={i + 1} id={BigInt(i + 1)} address={address} abi={abi} />
-                    ))}
-                    {Number(nextSponsorId || 0) === 0 && (
-                        <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-[9px] text-slate-500 italic text-center">No sponsorships requested</div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
+interface PointSetting {
+    id: string;
+    activity_key: string;
+    points_value: number;
+    platform: string;
+    action_type: string;
+    is_active: boolean;
 }
 
-interface TaskItemProps {
-    id: bigint;
-    address: `0x${string}`;
-    abi: any;
-}
+export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
+    const { address, chainId } = useAccount();
+    const { signMessageAsync } = useSignMessage();
+    const { writeContractAsync, data: hash, error: writeError } = useWriteContract();
+    const { data: receipt, isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
+    const { approveSponsorship, rejectSponsorship } = useDailyAppAdmin();
 
-function TaskItem({ id, address, abi }: TaskItemProps) {
-    const { data: taskData } = useReadContract({ address, abi, functionName: 'tasks', args: [id] });
-    const task = taskData as any[];
-    if (!task || task[0] === 0n) return null;
-    return (
-        <div className="flex items-center justify-between p-3 bg-[#0a0a0c] border border-white/5 rounded-xl">
-            <div className="flex flex-col text-left">
-                <span className="text-[10px] text-white font-bold">{task[4]}</span>
-                <div className="flex items-center gap-2">
-                    <span className="text-[8px] text-slate-500 uppercase tracking-tighter">ID: {id.toString()}</span>
-                    {task[1] ? (
-                        <span className="text-[7px] px-1.5 py-0.5 bg-green-500/10 text-green-500 rounded-full font-black uppercase">Active</span>
-                    ) : (
-                        <span className="text-[7px] px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded-full font-black uppercase">Paused</span>
-                    )}
-                </div>
-            </div>
-            <div className="flex items-center gap-1.5 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">
-                <Star className="w-2.5 h-2.5 text-indigo-400" />
-                <span className="text-[10px] font-mono text-indigo-400 font-black">{task[0].toString()} XP</span>
-            </div>
-        </div>
-    );
-}
+    const [controlMode, setControlMode] = useState<'batch' | 'quick'>(initialMode);
+    const [subTab, setSubTab] = useState('daily');
+    const syncedHashes = useRef(new Set());
 
-interface SponsorRequestItemProps {
-    id: bigint;
-    address: `0x${string}`;
-    abi: any;
-}
+    // --- SHARED DATA ---
+    const [pointSettings, setPointSettings] = useState<PointSetting[]>([]);
+    const [isLoadingPoints, setIsLoadingPoints] = useState(true);
 
-function SponsorRequestItem({ id, address, abi }: SponsorRequestItemProps) {
-    const { data: reqData } = useReadContract({ address, abi, functionName: 'sponsorRequests', args: [id] });
-    const req = reqData as any[];
-    if (!req || req[0] === '0x0000000000000000000000000000000000000000') return null;
-    const statusMap = ["PENDING", "APPROVED", "REJECTED"];
-    const status = statusMap[req[8]];
-    return (
-        <div className="p-4 bg-[#0a0a0c] border border-white/5 rounded-xl space-y-3 text-left">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Zap className="w-3.5 h-3.5 text-yellow-500" />
-                    <span className="text-[10px] font-black text-white uppercase tracking-tighter">{req[2]}</span>
-                </div>
-                <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase ${status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500' : status === 'APPROVED' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                    {status}
-                </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[9px]">
-                <div className="flex flex-col">
-                    <span className="text-slate-600 uppercase font-black tracking-widest text-left">Sponsor</span>
-                    <span className="text-white truncate font-mono">{req[0]}</span>
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-slate-600 uppercase font-black tracking-widest text-left">Pool Size</span>
-                    <span className="text-indigo-400 font-black">{formatUnits(req[5], 18)} Tokens</span>
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-slate-600 uppercase font-black tracking-widest text-left">Target Claims</span>
-                    <span className="text-white font-black">{req[7].toString()} Users</span>
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-slate-600 uppercase font-black tracking-widest text-left">Value/User</span>
-                    <span className="text-green-500 font-black">${formatUnits(req[6], 18)} USD</span>
-                </div>
-            </div>
-        </div>
-    );
-}
+    const { data: platformFee } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
+    const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
+    const { data: minRewardUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
+    const { data: tokenPrice } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'tokenPriceUSD' });
+    const { data: nextTaskId, refetch: refetchTasks } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'nextTaskId' });
+    const { data: nextSponsorId, refetch: refetchSponsors } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'totalSponsorRequests' });
 
-export function TaskManager() {
-    const [mode, setMode] = useState('daily');
+    // --- QUICK MODE STATES ---
     const [dailyDesc, setDailyDesc] = useState('');
     const [dailyPoints, setDailyPoints] = useState('');
     const [dailyCooldown, setDailyCooldown] = useState('24h');
@@ -142,204 +67,330 @@ export function TaskManager() {
     const [dailyIsBaseSocialRequired, setDailyIsBaseSocialRequired] = useState(false);
     const [dailyMinTier, setDailyMinTier] = useState(0);
 
-    const [sponsorTitle, setSponsorTitle] = useState('');
-    const [sponsorLink, setSponsorLink] = useState('');
-    const [sponsorEmail, setSponsorEmail] = useState('');
-    const [sponsorRewardPerUser, setSponsorRewardPerUser] = useState('0.10');
-    const [sponsorTotalClaims, setSponsorTotalClaims] = useState('50');
-    const [sponsorIsBaseSocialRequired, setSponsorIsBaseSocialRequired] = useState(false);
+    const [quickSponsorTitle, setQuickSponsorTitle] = useState('');
+    const [quickSponsorLink, setQuickSponsorLink] = useState('');
+    const [quickSponsorEmail, setQuickSponsorEmail] = useState('');
+    const [quickSponsorRewardPerUser, setQuickSponsorRewardPerUser] = useState('0.10');
+    const [quickSponsorTotalClaims, setQuickSponsorTotalClaims] = useState('50');
+    const [quickSponsorIsBaseSocialRequired, setQuickSponsorIsBaseSocialRequired] = useState(false);
 
     const [configPlatformFee, setConfigPlatformFee] = useState('');
     const [configMinPool, setConfigMinPool] = useState('');
     const [configMinReward, setConfigMinReward] = useState('');
 
-    const [pointSettings, setPointSettings] = useState<any[]>([]);
-    const { address } = useAccount();
-    const { signMessageAsync } = useSignMessage();
-    const { data: hash, error: writeError } = useWriteContract();
-    const { data: receipt, isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
+    // --- BATCH MODE STATES ---
+    const [tasksBatch, setTasksBatch] = useState<TaskBatchItem[]>([
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, isBaseSocialRequired: false, minNeynarScore: 0, minFollowers: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, isBaseSocialRequired: false, minNeynarScore: 0, minFollowers: 0, powerBadgeRequired: false, noSpamFilter: true },
+        { platform: 'Farcaster', action: 'Follow', title: '', link: '', target_id: '', baseReward: 0, minTier: 1, cooldown: 86400, requiresVerification: true, isBaseSocialRequired: false, minNeynarScore: 0, minFollowers: 0, powerBadgeRequired: false, noSpamFilter: true }
+    ]);
+    const [batchSponsorTitle, setBatchSponsorTitle] = useState('');
+    const [batchSponsorLink, setBatchSponsorLink] = useState('');
+    const [batchSponsorEmail, setBatchSponsorEmail] = useState('');
+    const [batchRewardPerUserUSD, setBatchRewardPerUserUSD] = useState('0.01');
+    const [batchTargetClaims, setBatchTargetClaims] = useState('500');
+    const [batchIsBaseSocialRequired, setBatchIsBaseSocialRequired] = useState(false);
 
-    const { data: platformFee } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'sponsorshipPlatformFee' }) as { data: bigint | undefined };
-    const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'minRewardPoolValue' }) as { data: bigint | undefined };
-    const { data: minRewardUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'rewardPerClaim' }) as { data: bigint | undefined };
-    const { data: tokenPrice } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI as any, functionName: 'tokenPriceUSD' }) as { data: bigint | undefined };
-
-    const totalPoolUSD = Number(sponsorRewardPerUser || 0) * Number(sponsorTotalClaims || 0);
-    const requiredTokens = tokenPrice && tokenPrice > 0n ? (parseUnits(totalPoolUSD.toString(), 18) * parseUnits('1', 18)) / tokenPrice : 0n;
-
+    // --- INITIALIZATION ---
     useEffect(() => {
-        const fetchInitial = async () => {
-            const { data } = await supabase.from('point_settings').select('*').eq('is_active', true);
-            setPointSettings(data || []);
+        const fetchPoints = async () => {
+            try {
+                const { data, error } = await supabase.from('point_settings').select('*').eq('is_active', true);
+                if (error) throw error;
+                if (data) {
+                    setPointSettings(data);
+                    setTasksBatch(prev => prev.map(task => ({ ...task, baseReward: getGlobalPoints(task.platform, task.action, data) })));
+                }
+            } finally { setIsLoadingPoints(false); }
         };
-        fetchInitial();
+        fetchPoints();
     }, []);
 
-    const handleTxSuccess = () => {
-        toast.success('Transaction Confirmed! Syncing with system...');
+    const getGlobalPoints = (platform: string, action: string, currentSettings: PointSetting[] = pointSettings) => {
+        if (!currentSettings || currentSettings.length === 0) return 0;
+        const platMap: Record<string, string> = { 'Farcaster': 'farcaster', 'X': 'x', 'Base App': 'base', 'TikTok': 'tiktok', 'Instagram': 'instagram' };
+        const actMap: Record<string, string> = { 'Follow': 'follow', 'Like': 'like', 'Recast/Repost': 'recast', 'Comment': 'comment', 'Quote': 'quote' };
+        const platKey = platMap[platform] || platform.toLowerCase();
+        let actKey = actMap[action] || action.toLowerCase();
+        if (platKey === 'x' && actKey === 'recast') actKey = 'repost';
+
+        const match = currentSettings.find(s => 
+            (s.platform?.toLowerCase() === platKey && s.action_type?.toLowerCase() === actKey) ||
+            [`task_${platKey}_${actKey}`, `${platKey}_${actKey}`].includes(s.activity_key?.toLowerCase())
+        );
+        return match ? match.points_value : 0;
     };
 
-    useEffect(() => {
-        const syncQuickAction = async () => {
-            if (isTxSuccess && receipt) {
-                const tid = toast.loading("Syncing Backend Gating...");
-                try {
-                    const timestamp = new Date().toISOString();
-                    const message = `Sync Quick Admin Action\nTX: ${receipt.transactionHash}\nAdmin: ${address}\nTime: ${timestamp}`;
-                    const signature = await signMessageAsync({ message });
+    // --- SHARED ACTIONS ---
+    const handleTxSuccess = () => {
+        toast.success('Blockchain confirmation received!');
+    };
 
-                    if (mode === 'daily') {
-                        // Sync single task
-                        await fetch('/api/admin/tasks/sync', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                action: 'task-sync',
-                                wallet_address: address, signature, message,
-                                tasks: [{
-                                    platform: 'system',
-                                    action_type: 'custom',
-                                    title: dailyDesc,
-                                    link: '',
-                                    is_base_social_required: dailyIsBaseSocialRequired
-                                }]
-                            })
-                        });
-                    } else if (mode === 'sponsor') {
-                        // Sync sponsorship
-                        await fetch('/api/admin/tasks/sync', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                action: 'task-sync',
-                                wallet_address: address, signature, message,
-                                tasks: [{
-                                    platform: 'sponsor',
-                                    action_type: 'visit',
-                                    title: sponsorTitle,
-                                    link: sponsorLink,
-                                    is_base_social_required: sponsorIsBaseSocialRequired
-                                }]
-                            })
-                        });
-                    }
-                    toast.success("Ecosystem Synchronized!", { id: tid });
-                    setDailyDesc('');
-                    setSponsorTitle('');
-                } catch (err: any) {
-                    console.error('[Quick Sync Error]', err);
-                    toast.error("Sync Failed - Audit Required", { id: tid });
-                }
-            }
-        };
-        syncQuickAction();
-    }, [isTxSuccess, receipt]);
+    const syncAuditAction = async (tx: string, action: string, details: Record<string, unknown>) => {
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Governance Audit Log\nTX: ${tx}\nAdmin: ${address}\nAction: ${action}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+            await fetch('/api/admin/tasks/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ wallet_address: address, signature, message, action: 'AUDIT_GOVERNANCE', tx_hash: tx, governor_action: action, details })
+            });
+        } catch (err) { console.error('[Audit Sync Error]', err); }
+    };
 
-    const buildAdminTaskCall = () => {
+    // --- QUICK MODE LOGIC ---
+    const buildQuickTaskCall = () => {
         const cd = dailyCooldown === '24h' ? 86400 : dailyCooldown === '1h' ? 3600 : 43200;
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any, functionName: 'addTask',
+                abi: DAILY_APP_ABI, functionName: 'addTask',
                 args: [BigInt(dailyPoints || 0), BigInt(cd), BigInt(dailyMinTier), dailyDesc, '', dailyRequiresVerify]
             }),
         }];
     };
 
-    const buildSponsorCall = () => {
+    const buildQuickSponsorCall = () => {
+        const totalPool = parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), 6);
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any, functionName: 'buySponsorshipWithToken',
-                args: [0n, [sponsorTitle], [sponsorLink], sponsorEmail, parseUnits((Number(sponsorRewardPerUser) * Number(sponsorTotalClaims)).toString(), 6), (CONTRACTS.CREATOR_TOKEN as `0x${string}`) || '0x0000000000000000000000000000000000000000']
+                abi: DAILY_APP_ABI, functionName: 'buySponsorshipWithToken',
+                args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, totalPool, (CONTRACTS.CREATOR_TOKEN as `0x${string}`) || '0x0000000000000000000000000000000000000000']
             }),
         }];
     };
 
-    const buildConfigCall = () => {
-        return [{
-            to: DAILY_APP_ADDRESS,
-            data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any, functionName: 'setSponsorshipParams',
-                // V14: All values in USDC 6-decimal base
-                args: [parseUnits(configMinReward || '0.20', 6), BigInt(3), parseUnits(configMinPool || '2', 6), parseUnits(configPlatformFee || '2', 6)]
-            }),
-        }];
+    // --- BATCH MODE LOGIC ---
+    const handleBatchSave = async () => {
+        const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
+        if (validTasks.length === 0) return toast.error("Enter Task Names");
+        
+        const tid = toast.loading("Deploying batch...");
+        try {
+            await writeContractAsync({
+                address: DAILY_APP_ADDRESS as `0x${string}`,
+                abi: DAILY_APP_ABI,
+                functionName: 'addTaskBatch',
+                args: [
+                    validTasks.map(t => BigInt(t.baseReward)),
+                    validTasks.map(t => BigInt(t.cooldown)),
+                    validTasks.map(t => t.minTier),
+                    validTasks.map(t => t.title),
+                    validTasks.map(t => t.link || 'https://warpcast.com/CryptoDisco'),
+                    validTasks.map(t => t.requiresVerification)
+                ],
+            });
+            toast.success("Batch transaction submitted!", { id: tid });
+        } catch (e: unknown) {
+            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Batch deployment failed", { id: tid });
+        }
     };
+
+    const handleCreateBatchSponsorship = async () => {
+        if (!batchSponsorTitle || !batchSponsorLink) return toast.error("Missing fields");
+        const tid = toast.loading("Processing Batch Sponsorship...");
+        try {
+            const totalPool = BigInt(Math.round(parseFloat(batchRewardPerUserUSD) * Number(batchTargetClaims) * 1e6));
+            await writeContractAsync({
+                address: DAILY_APP_ADDRESS as `0x${string}`,
+                abi: DAILY_APP_ABI,
+                functionName: 'buySponsorshipWithToken',
+                args: [0n, [batchSponsorTitle], [batchSponsorLink], batchSponsorEmail, totalPool, CONTRACTS.CREATOR_TOKEN as `0x${string}`]
+            });
+            toast.success("Sponsorship transaction submitted!", { id: tid });
+        } catch (e: unknown) {
+            toast.error(e instanceof Error ? (e as any).shortMessage || "Deployment failed" : "Deployment failed", { id: tid });
+        }
+    };
+
+    const updateTaskLine = <K extends keyof TaskBatchItem>(idx: number, field: K, value: TaskBatchItem[K]) => {
+        const newBatch = [...tasksBatch];
+        newBatch[idx] = { ...newBatch[idx], [field]: value };
+        if (field === 'platform' || field === 'action') {
+            const platform = field === 'platform' ? (value as string) : newBatch[idx].platform;
+            const action = field === 'action' ? (value as string) : newBatch[idx].action;
+            newBatch[idx].title = `${action} our post on ${platform}`;
+            if (!isLoadingPoints) newBatch[idx].baseReward = getGlobalPoints(platform, action);
+        }
+        setTasksBatch(newBatch);
+    };
+
+    // --- TRANSACTION SYNC EFFECT ---
+    useEffect(() => {
+        const syncToEcosystem = async () => {
+            if (isTxSuccess && receipt && !syncedHashes.current.has(receipt.transactionHash)) {
+                syncedHashes.current.add(receipt.transactionHash);
+                const tid = toast.loading("Syncing Ecosystem Security...");
+                try {
+                    const timestamp = new Date().toISOString();
+                    const message = `Admin Protocol Sync\nTX: ${receipt.transactionHash}\nAdmin: ${address}\nTime: ${timestamp}`;
+                    const signature = await signMessageAsync({ message });
+
+                    // Handle different sync requirements based on mode/tab
+                    const payload: Record<string, unknown> = { action: 'admin-sync', tx_hash: receipt.transactionHash, wallet_address: address, signature, message };
+
+                    if (controlMode === 'quick') {
+                        if (subTab === 'daily') {
+                            payload.tasks = [{ title: dailyDesc, is_base_social_required: dailyIsBaseSocialRequired }];
+                        } else if (subTab === 'sponsor') {
+                            payload.tasks = [{ title: quickSponsorTitle, is_base_social_required: quickSponsorIsBaseSocialRequired }];
+                        }
+                    } else {
+                        if (subTab === 'BATCH_CREATOR') {
+                            payload.tasks = tasksBatch.filter(t => t.title.trim() !== '').map(t => ({ ...t, action_type: t.action.toLowerCase() }));
+                        }
+                    }
+
+                    await fetch('/api/admin/tasks/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    toast.success("Ecosystem Hardened & Synced", { id: tid });
+                    refetchTasks();
+                    refetchSponsors();
+                } catch (e) { toast.error("Sync partial failure", { id: tid }); }
+            }
+        };
+        syncToEcosystem();
+    }, [isTxSuccess, receipt]);
 
     return (
-        <div className="space-y-6">
-            <div className="bg-[#121214] p-4 rounded-xl border border-indigo-500/20 flex flex-wrap gap-4 items-center justify-between group overflow-hidden relative">
-                <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-green-500" />
-                    <span className="text-[10px] font-black text-white uppercase tracking-tighter">Economic Ecosystem Health</span>
-                </div>
-                <div className="flex gap-6">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[7px] text-slate-500 uppercase font-black tracking-widest">Platform Fee</span>
-                        <span className="text-[10px] text-white font-black font-mono">{platformFee ? formatUnits(platformFee, 6) : '0.00'} USDC</span>
-                    </div>
+        <div className="space-y-8">
+            <EconomyMetrics />
+
+            {/* Mode Toggle */}
+            <div className="flex justify-center">
+                <div className="flex p-1 bg-black/40 rounded-2xl border border-white/5">
+                    <button 
+                        onClick={() => setControlMode('quick')}
+                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${controlMode === 'quick' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                        Quick Forge
+                    </button>
+                    <button 
+                        onClick={() => setControlMode('batch')}
+                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${controlMode === 'batch' ? 'bg-purple-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                        Smart Batch
+                    </button>
                 </div>
             </div>
 
+            {/* Sub-Tabs */}
             <div className="flex gap-2 p-1 bg-[#121214] border border-white/5 rounded-xl">
-                {['daily', 'sponsor', 'config', 'view'].map(m => (
-                    <button key={m} onClick={() => setMode(m)} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${mode === m ? 'bg-[#0a0a0c] text-indigo-400 border border-white/5 shadow-inner' : 'text-slate-600'}`}>
-                        {m === 'daily' ? 'Set Daily' : m === 'sponsor' ? 'Sponsor Portal' : m === 'config' ? 'Econ-Config' : 'Analytics'}
+                {(controlMode === 'quick' ? ['daily', 'sponsor', 'config', 'analytics'] : ['BATCH_CREATOR', 'SPONSOR_PORTAL', 'ADMIN_CONFIG', 'VIEW_TASKS']).map(t => (
+                    <button 
+                        key={t} 
+                        onClick={() => setSubTab(t)} 
+                        className={`flex-1 py-3 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${subTab === t ? 'bg-[#0a0a0c] text-indigo-400 border border-white/5' : 'text-slate-600 hover:text-slate-400'}`}
+                    >
+                        {t.replace('_', ' ').replace('daily', 'Single Task').replace('sponsor', 'Sponsor').replace('analytics', 'Analytics')}
                     </button>
                 ))}
             </div>
 
-            {mode === 'daily' && (
-                <QuickTaskForgeSection
-                    dailyDesc={dailyDesc} onDailyDescChange={setDailyDesc}
-                    dailyPoints={dailyPoints} onDailyPointsChange={(v: string | number) => setDailyPoints(v.toString())}
-                    dailyCooldown={dailyCooldown} onDailyCooldownChange={setDailyCooldown}
-                    dailyRequiresVerify={dailyRequiresVerify} onDailyRequiresVerifyChange={setDailyRequiresVerify}
-                    dailyIsBaseSocialRequired={dailyIsBaseSocialRequired} onDailyIsBaseSocialRequiredChange={setDailyIsBaseSocialRequired}
-                    dailyMinTier={dailyMinTier} onDailyMinTierChange={setDailyMinTier}
-                    pointSettings={pointSettings}
-                    buildAdminTaskCall={buildAdminTaskCall}
-                    handleTxSuccess={handleTxSuccess}
-                />
-            )}
+            {/* Dynamic Content */}
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {controlMode === 'quick' ? (
+                    <>
+                        {subTab === 'daily' && (
+                            <QuickTaskForgeSection
+                                dailyDesc={dailyDesc} onDailyDescChange={setDailyDesc}
+                                dailyPoints={dailyPoints} onDailyPointsChange={setDailyPoints}
+                                dailyCooldown={dailyCooldown} onDailyCooldownChange={setDailyCooldown}
+                                dailyRequiresVerify={dailyRequiresVerify} onDailyRequiresVerifyChange={setDailyRequiresVerify}
+                                dailyIsBaseSocialRequired={dailyIsBaseSocialRequired} onDailyIsBaseSocialRequiredChange={setDailyIsBaseSocialRequired}
+                                dailyMinTier={dailyMinTier} onDailyMinTierChange={setDailyMinTier}
+                                pointSettings={pointSettings}
+                                buildAdminTaskCall={buildQuickTaskCall}
+                                handleTxSuccess={handleTxSuccess}
+                            />
+                        )}
+                        {subTab === 'sponsor' && (
+                            <QuickSponsorPortalSection
+                                sponsorTitle={quickSponsorTitle} onSponsorTitleChange={setQuickSponsorTitle}
+                                sponsorLink={quickSponsorLink} onSponsorLinkChange={setQuickSponsorLink}
+                                sponsorEmail={quickSponsorEmail} onSponsorEmailChange={setQuickSponsorEmail}
+                                sponsorTotalClaims={quickSponsorTotalClaims} onSponsorTotalClaimsChange={setQuickSponsorTotalClaims}
+                                sponsorRewardPerUser={quickSponsorRewardPerUser} onSponsorRewardPerUserChange={setQuickSponsorRewardPerUser}
+                                sponsorIsBaseSocialRequired={quickSponsorIsBaseSocialRequired} onSponsorIsBaseSocialRequiredChange={setQuickSponsorIsBaseSocialRequired}
+                                platformFee={platformFee}
+                                minRewardUSD={minRewardUSD}
+                                minPoolUSD={minPoolUSD}
+                                totalPoolUSD={Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)}
+                                requiredTokens={0n} // TODO: calculate based on price
+                                buildSponsorCall={buildQuickSponsorCall}
+                                handleTxSuccess={handleTxSuccess}
+                            />
+                        )}
+                        {/* Add config and analytics here for quick mode if needed, or share with batch */}
+                    </>
+                ) : (
+                    <>
+                        {subTab === 'BATCH_CREATOR' && (
+                            <TaskBatchCreatorSection 
+                                tasksBatch={tasksBatch} 
+                                onUpdateTask={updateTaskLine} 
+                                onDeploy={handleBatchSave} 
+                                isSaving={isWaiting} 
+                            />
+                        )}
+                        {subTab === 'SPONSOR_PORTAL' && (
+                            <SponsorshipPortalSection
+                                sponsorTitle={batchSponsorTitle} onSponsorTitleChange={setBatchSponsorTitle}
+                                sponsorLink={batchSponsorLink} onSponsorLinkChange={setBatchSponsorLink}
+                                sponsorEmail={batchSponsorEmail} onSponsorEmailChange={setBatchSponsorEmail}
+                                rewardPerUserUSD={batchRewardPerUserUSD} onRewardPerUserUSDChange={setBatchRewardPerUserUSD}
+                                targetClaims={batchTargetClaims} onTargetClaimsChange={setBatchTargetClaims}
+                                isBaseSocialRequired={batchIsBaseSocialRequired} onIsBaseSocialRequiredChange={setBatchIsBaseSocialRequired}
+                                currentTokenPrice={tokenPrice}
+                                currentPlatformFee={platformFee}
+                                onCreateSponsorship={handleCreateBatchSponsorship}
+                                isSponsorSaving={isWaiting}
+                            />
+                        )}
+                        {subTab === 'ADMIN_CONFIG' && (
+                            <EconomyConfigSection
+                                newPlatformFee={configPlatformFee} onNewPlatformFeeChange={setConfigPlatformFee}
+                                newMinPoolUSD={configMinPool} onNewMinPoolUSDChange={setConfigMinPool}
+                                newMinRewardUSD={configMinReward} onNewMinRewardUSDChange={setConfigMinReward}
+                                newTokenPriceUSD={''} onNewTokenPriceUSDChange={() => {}}
+                                currentPlatformFee={platformFee}
+                                currentTokenPrice={tokenPrice}
+                                pendingPrice={undefined}
+                                onUpdateEconomy={async () => {}}
+                                onSchedulePrice={async () => {}}
+                                onExecutePrice={async () => {}}
+                            />
+                        )}
+                        {subTab === 'VIEW_TASKS' && (
+                            <ActiveCampaignsSection
+                                nextSponsorId={nextSponsorId}
+                                nextTaskId={nextTaskId}
+                                onToggleTaskStatus={async () => {}}
+                                onApproveSponsor={async (id) => { await approveSponsorship(id); refetchSponsors(); }}
+                                onRejectSponsor={async (id) => { const r = prompt("Reason?"); if(r) await rejectSponsorship(id, r); refetchSponsors(); }}
+                                onRefetchSponsors={refetchSponsors}
+                            />
+                        )}
+                    </>
+                )}
+            </div>
 
-            {mode === 'sponsor' && (
-                <QuickSponsorPortalSection
-                    sponsorTitle={sponsorTitle} onSponsorTitleChange={setSponsorTitle}
-                    sponsorLink={sponsorLink} onSponsorLinkChange={setSponsorLink}
-                    sponsorEmail={sponsorEmail} onSponsorEmailChange={setSponsorEmail}
-                    sponsorTotalClaims={sponsorTotalClaims} onSponsorTotalClaimsChange={setSponsorTotalClaims}
-                    sponsorRewardPerUser={sponsorRewardPerUser} onSponsorRewardPerUserChange={setSponsorRewardPerUser}
-                    sponsorIsBaseSocialRequired={sponsorIsBaseSocialRequired} onSponsorIsBaseSocialRequiredChange={setSponsorIsBaseSocialRequired}
-                    platformFee={platformFee}
-                    minRewardUSD={minRewardUSD}
-                    minPoolUSD={minPoolUSD}
-                    totalPoolUSD={totalPoolUSD}
-                    requiredTokens={requiredTokens}
-                    buildSponsorCall={buildSponsorCall}
-                    handleTxSuccess={handleTxSuccess}
-                />
-            )}
-
-            {mode === 'config' && (
-                <QuickEconConfigSection
-                    configPlatformFee={configPlatformFee} onConfigPlatformFeeChange={setConfigPlatformFee}
-                    configMinPool={configMinPool} onConfigMinPoolChange={setConfigMinPool}
-                    configMinReward={configMinReward} onConfigMinRewardChange={setConfigMinReward}
-                    buildConfigCall={buildConfigCall}
-                    handleTxSuccess={handleTxSuccess}
-                />
-            )}
-
-            {mode === 'view' && <TaskViewer address={DAILY_APP_ADDRESS as any} abi={DAILY_APP_ABI} />}
-
+            {/* Error/Loading Overlay */}
             {(writeError || isWaiting) && (
-                <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center gap-3">
-                    {isWaiting ? <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" /> : <AlertCircle className="w-4 h-4 text-red-500" />}
-                    <p className="text-[9px] font-black text-indigo-400 uppercase">
-                        {isWaiting ? "Committing to Blockchain..." : ((writeError as any)?.shortMessage || "Error")}
-                    </p>
+                <div className="fixed bottom-10 right-10 z-[200] p-6 bg-[#080808] border border-white/5 rounded-2xl shadow-2xl animate-in slide-in-from-right-4">
+                    <div className="flex items-center gap-4">
+                        {isWaiting ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
+                        <div>
+                            <p className="text-[11px] font-black text-white uppercase tracking-widest">{isWaiting ? "Protocol Engagement Active" : "Authorization Error"}</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">{isWaiting ? "Awaiting block confirmation..." : (writeError as any)?.shortMessage || writeError?.message}</p>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

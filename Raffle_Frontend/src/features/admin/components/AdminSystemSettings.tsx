@@ -52,6 +52,28 @@ interface SbtThreshold {
     badge_url: string;
 }
 
+interface AuditLog {
+    id: string;
+    admin_wallet: string;
+    action_type: string;
+    created_at: string;
+    payload?: Record<string, unknown>;
+}
+
+interface EnsSubdomain {
+    id: string;
+    wallet_address: string;
+    label: string;
+    full_name: string;
+    created_at: string;
+}
+
+interface EligibleUser {
+    fid: number;
+    wallet_address: string;
+    total_xp: number;
+}
+
 /**
  * Admin System Settings Component
  * Decomposed into smaller modules to ensure build stability and maintainability.
@@ -64,9 +86,9 @@ export default function AdminSystemSettings() {
     // Core States
     const [pointSettings, setPointSettings] = useState<PointSetting[]>([]);
     const [sbtThresholds, setSbtThresholds] = useState<SbtThreshold[]>([]);
-    const [eligibleUsers, setEligibleUsers] = useState<any[]>([]);
-    const [issuedSubnames, setIssuedSubnames] = useState<any[]>([]);
-    const [auditLogs, setAuditLogs] = useState<any[]>([]);
+    const [eligibleUsers, setEligibleUsers] = useState<EligibleUser[]>([]);
+    const [issuedSubnames, setIssuedSubnames] = useState<EnsSubdomain[]>([]);
+    const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [activeTab, setActiveTab] = useState('settings');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -126,16 +148,16 @@ export default function AdminSystemSettings() {
 
             setPointSettings(pointsRes.data || []);
             setSbtThresholds(thresholdsRes.data || []);
-            if (!issuedRes.error) setIssuedSubnames(issuedRes.data || []);
+            if (!issuedRes.error) setIssuedSubnames(issuedRes.data as EnsSubdomain[] || []);
             if (!usersRes.error) {
-                const issuedWallets = new Set((issuedRes.data || []).map((s: any) => cleanWallet(s.wallet_address)));
-                setEligibleUsers(usersRes.data.filter((u: any) => u.wallet_address && !issuedWallets.has(cleanWallet(u.wallet_address))));
+                const issuedWallets = new Set((issuedRes.data || []).map((s: EnsSubdomain) => cleanWallet(s.wallet_address)));
+                setEligibleUsers((usersRes.data as EligibleUser[]).filter((u: EligibleUser) => u.wallet_address && !issuedWallets.has(cleanWallet(u.wallet_address))));
             }
-            if (!logsRes.error) setAuditLogs(logsRes.data || []);
+            if (!logsRes.error) setAuditLogs(logsRes.data as AuditLog[] || []);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Fetch Error:', error);
-            toast.error("Failed to sync DB data: " + error.message);
+            toast.error("Failed to sync DB data: " + (error instanceof Error ? error.message : String(error)));
         }
     };
 
@@ -156,7 +178,7 @@ export default function AdminSystemSettings() {
         try {
             const cleanData = pointSettings.filter(item => item.activity_key?.trim()).map(item => ({
                 activity_key: item.activity_key.toLowerCase().trim().replace(/\s+/g, '_'),
-                points_value: parseInt(item.points_value as any) || 0,
+                points_value: Number(item.points_value) || 0,
                 platform: item.platform || 'farcaster',
                 action_type: item.action_type || 'Follow',
                 is_active: item.is_active ?? true,
@@ -177,8 +199,8 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to update points");
             toast.success('Point Settings updated!', { id: tid });
             await fetchPointSettings();
-        } catch (error: any) {
-            toast.error('Failed to save points: ' + error.message, { id: tid });
+        } catch (error: unknown) {
+            toast.error('Failed to save points: ' + (error instanceof Error ? error.message : String(error)), { id: tid });
         } finally { setSaving(false); }
     };
 
@@ -210,7 +232,7 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to update thresholds");
             toast.success('SBT Thresholds updated!', { id: tid });
             await fetchPointSettings();
-        } catch (error: any) { toast.error('Failed to save thresholds: ' + error.message, { id: tid }); }
+        } catch (error: unknown) { toast.error('Failed to save thresholds: ' + (error instanceof Error ? error.message : String(error)), { id: tid }); }
         finally { setSaving(false); }
     };
 
@@ -230,8 +252,8 @@ export default function AdminSystemSettings() {
 
             if (!response.ok) throw new Error('Failed to save tier config');
             if (!silent) toast.success('Tier configuration saved!', { id: tid ?? undefined });
-        } catch (error: any) {
-            if (!silent) toast.error('Failed to save tier config: ' + error.message, { id: tid ?? undefined });
+        } catch (error: unknown) {
+            if (!silent) toast.error('Failed to save tier config: ' + (error instanceof Error ? error.message : String(error)), { id: tid ?? undefined });
             throw error;
         } finally { if (!silent) setSaving(false); }
     };
@@ -258,7 +280,7 @@ export default function AdminSystemSettings() {
             toast.success('Manual override applied!', { id: tid });
             setTargetWallet('');
             fetchTierDistribution();
-        } catch (error: any) { toast.error('Override failed: ' + error.message, { id: tid }); }
+        } catch (error: unknown) { toast.error('Override failed: ' + (error instanceof Error ? error.message : String(error)), { id: tid }); }
         finally { setSaving(false); }
     };
 
@@ -283,14 +305,15 @@ export default function AdminSystemSettings() {
             await resetSeason(nextSeason);
             toast.success(`Season ${nextSeason} Started!`, { id: tid });
             fetchTierDistribution();
-        } catch (e: any) {
-            toast.error(e.shortMessage || e.message || "Reset failed", { id: tid });
+        } catch (e: unknown) {
+            const errMsg = e instanceof Error ? (e as any).shortMessage || e.message : String(e);
+            toast.error(errMsg || "Reset failed", { id: tid });
         } finally {
             setSaving(false);
         }
     };
 
-    const issueSubname = async (user: any, label: string) => {
+    const issueSubname = async (user: EligibleUser, label: string) => {
         if (!label || label.length < 3) return toast.error('Label too short');
         setSaving(true);
         const tid = toast.loading('Issuing ENS Subname...');
@@ -312,7 +335,7 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to issue identity");
             toast.success(`Identity ${fullName} issued!`, { id: tid });
             fetchPointSettings();
-        } catch (error: any) { toast.error('ENS Error: ' + error.message, { id: tid }); }
+        } catch (error: unknown) { toast.error('ENS Error: ' + (error instanceof Error ? error.message : String(error)), { id: tid }); }
         finally { setSaving(false); }
     };
 

@@ -141,9 +141,9 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "DB Sync failed");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Rejection Error:", error);
-            toast.error(error.shortMessage || error.message || "Rejection failed", { id: tid });
+            toast.error(error instanceof Error ? (error as any).shortMessage || error.message : "Rejection failed", { id: tid });
         } finally {
             setIsRejecting(false);
         }
@@ -175,8 +175,8 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Approval failed");
             }
-        } catch (error: any) {
-            toast.error(error.message, { id: tid });
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : String(error), { id: tid });
         }
     };
 
@@ -206,8 +206,8 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Verification failed");
             }
-        } catch (error: any) {
-            toast.error(error.message, { id: tid });
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : String(error), { id: tid });
         }
     };
 
@@ -237,8 +237,8 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Approval failed");
             }
-        } catch (error: any) {
-            toast.error(error.message, { id: tid });
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : String(error), { id: tid });
         }
     };
 

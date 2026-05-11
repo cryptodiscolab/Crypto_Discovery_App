@@ -114,8 +114,8 @@ export default function AdminCampaignTab() {
                 status: 'active',
                 platform_code: 'farcaster'
             });
-        } catch (error: any) {
-            toast.error('Failed to create campaign: ' + error.message, { id: tid });
+        } catch (error: unknown) {
+            toast.error('Failed to create campaign: ' + (error instanceof Error ? error.message : String(error)), { id: tid });
         } finally {
             setSaving(false);
         }
@@ -153,8 +153,8 @@ export default function AdminCampaignTab() {
 
             toast.success(`Campaign marked as ${newStatus}!`, { id: tid });
             fetchCampaigns();
-        } catch (error: any) {
-            toast.error('Update failed: ' + error.message, { id: tid });
+        } catch (error: unknown) {
+            toast.error('Update failed: ' + (error instanceof Error ? error.message : String(error)), { id: tid });
         } finally {
             setSaving(false);
         }
@@ -191,8 +191,8 @@ export default function AdminCampaignTab() {
 
             toast.success('Campaign deleted permanently!', { id: tid });
             fetchCampaigns();
-        } catch (error: any) {
-            toast.error('Delete failed: ' + error.message, { id: tid });
+        } catch (error: unknown) {
+            toast.error('Delete failed: ' + (error instanceof Error ? error.message : String(error)), { id: tid });
         } finally {
             setSaving(false);
         }
