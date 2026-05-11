@@ -1,3 +1,4 @@
+- **v3.61.0**: Serverless API Hardening & 100% TS Migration. Refaktor `user-bundle.ts`, `tasks-bundle.ts`, dan `admin-bundle.ts` ke strict TypeScript. Integrasi `database.types.ts` dan implementasi `unknown` error guard pattern.
 - **v3.59.5**: Raffle Admin Hardening & Platform Economics. Implementasi `AdminRaffleSettings` (Rake, Claim Fee, Surcharge), `CreatorEarningsCard` untuk penarikan revenue sponsor (80%), dan penegakan **Zero-Hardcode Mandate** pada seluruh form pembuatan raffle.
 - **v3.59.4**: Final Polish & Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added `daily_task_completion` reward keys.
 - **v3.59.3**: Multi-Token Sponsorship (V14) & Decimal-Aware Infrastructure. Implementasi DailyApp V14 dengan 6-decimal USDC base, reward mapping 2D (user => token => reward), dan perbaikan persistensi visibilitas SponsoredTaskCard.
@@ -57,8 +58,8 @@ graph TB
         DAL["dailyAppLogic.js<br/>(XP Award Bridge)"]
     end
 
-    subgraph "⚡ API Layer (Vercel Serverless)"
-        TB["tasks-bundle.js<br/>handleClaim | handleVerify | handleSocialVerify"]
+    subgraph "⚡ API Layer (Vercel Serverless - Hardened v3.61.0)"
+        TB["tasks-bundle.ts<br/>handleClaim | handleVerify | handleSocialVerify"]
         UB["user-bundle.js<br/>handleXpSync (On-Chain)"]
         CB["campaigns.js<br/>handleJoin"]
     end
@@ -322,6 +323,9 @@ Digunakan oleh **Lurah Brain** untuk memfilter laporan agen (Linter, Security, S
 ## 5. API Routing & Bundle Map
 
 ### 5.1 Vercel Rewrites (vercel.json)
+
+> [!IMPORTANT]
+> **Hardening Mandate (v3.61.0)**: Seluruh file di `Raffle_Frontend/api/` telah dimigrasikan ke **.ts** (TypeScript). Vercel secara otomatis memproses file `.ts` sebagai serverless functions. Mapping di `vercel.json` tetap menggunakan nama file tanpa ekstensi atau `.js` (Vercel runtime handles the rest).
 
 | Frontend Path | Backend Target | Action |
 |---|---|---|
@@ -793,9 +797,9 @@ All User Generated Content (Missions, Raffles) default to `is_active: false` and
 
 | File | Purpose | Path |
 |---|---|---|
-| [tasks-bundle.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/tasks-bundle.js) | Task claim, verify, social-verify handlers | `api/` |
-| [user-bundle.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/user-bundle.js) | On-chain XP sync, profile sync | `api/` |
-| [admin-bundle.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/admin-bundle.js) | Admin task CRUD, system settings | `api/` |
+| [tasks-bundle.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/tasks-bundle.ts) | Task claim, verify, social-verify handlers (100% TS) | `api/` |
+| [user-bundle.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/user-bundle.ts) | On-chain XP sync, profile sync (100% TS) | `api/` |
+| [admin-bundle.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/admin-bundle.ts) | Admin task CRUD, system settings (100% TS) | `api/` |
 | [campaigns.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/campaigns.js) | Campaign join handler | `api/` |
 
 ### Routing

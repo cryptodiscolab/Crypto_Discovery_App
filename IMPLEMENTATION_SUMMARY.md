@@ -13,6 +13,7 @@ This file tracks the latest technical implementations, bug fixes, and feature ad
 - **Admin Payload Hardening**: Enforced strict interface compliance for administrative payloads, including UGC mission creation and raffle state synchronization, eliminating loose `any` casts in audit trails.
 - **Zero-Hardcode ABI Parity**: Verified that all on-chain verification logic and event decoding (`decodeEventLog`) utilize centralized ABI definitions from `constants.ts` without hardcoded addresses.
 - **Git Hygiene Enforcement**: Standardized the exclusion of audit artifacts (`tsc-errors*.txt`) and maintained a clean source tree for production readiness.
+- **Ecosystem Documentation Sync**: Synchronized all core documentation artifacts, including `WORKSPACE_MAP.md`, `TASK_FEATURE_WORKFLOW.md`, `FEATURE_WORKFLOW_SOT.md`, and `MASTER_COGNITIVE_MAP.md` to reflect the v3.61.0 hardening state.
 
 ## 🟢 v3.60.4 (Daily Retention Hardening & UGC Pipeline)
 - **Premium Daily Retention UI**: Overhauled the `DailyGoalCard` component with a high-fidelity SVG circular progress indicator, glassmorphism aesthetics, and `React.startTransition` for concurrent UI responsiveness.

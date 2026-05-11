@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.59.5)
-**Last Updated**: 2026-05-10T02:30:00+07:00 — Raffle Economics & Creator Portal (v3.59.5)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.61.0)
+**Last Updated**: 2026-05-11T07:30:00+07:00 — Serverless API Hardening & TS Migration (v3.61.0)
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -55,11 +55,12 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 - **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D`).
 - **Success**: MetaMask/Wallet mengembalikan `tx_hash`.
 
-### 2.2 The Backend Synchronization
+### 2.2 The Backend Synchronization (Hardened v3.61.0)
 - **Triggers**: Setelah `tx_hash` didapat, Frontend memanggil `/api/user-bundle?action=xp`.
-- **Workflow (Backend `handleXpSync`)**:
-  1. **Validation**: Backend menerima `tx_hash`. Tidak perlu `signature`.
-  2. **RPC Read (Lag-Prone)**: Backend mencoba membaca `readContract(userStats)`.
+- **Workflow (Backend `handleXpSync` - 100% TS)**:
+  1. **Validation**: Backend menerima `tx_hash`. Menggunakan strict interface `UserBundlePayload`.
+  2. **Security**: Implementasi `unknown` error guard pattern untuk mencegah kegagalan fatal pada RPC lag.
+  3. **RPC Read (Lag-Prone)**: Backend mencoba membaca `readContract(userStats)`.
   3. **Optimistic Trust Fallback**:
      - Jika `tx_hash` ada, TETAPI `readContract` gagal/timeout.
      - ATAU jika `tx_hash` valid tapi XP On-Chain belum berubah (RPC lag `xpDelta === 0`).
@@ -157,6 +158,7 @@ Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi selu
 11. [ ] **Zero-Hardcode Enforcement**: Seluruh input alamat kontrak di UI harus dinamis dan diambil dari Registry `CONTRACTS` atau `.env`.
 12. [ ] **Raffle Economics Configurability**: Admin harus dapat mengubah Rake, Claim Fee, dan Surcharge secara real-time melalui dashboard (v3.59.5).
 13. [ ] **Creator Revenue Accountability**: Setiap raffle harus mencatat porsi revenue kreator (80%) yang dapat ditarik secara mandiri melalui tombol "Withdraw Creator Earnings" (v3.59.5).
+14. [ ] **Strict API Typing (v3.61.0)**: Seluruh API serverless di `api/` harus menggunakan tipe data eksplisit dan error guarding yang resilien.
 
 ---
 

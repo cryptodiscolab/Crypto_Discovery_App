@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.60.2)
-Last Update: 2026-05-10 (17:30)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.61.0)
+Last Update: 2026-05-11 (07:30)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -47,6 +47,8 @@ e:\Disco Gacha\Disco_DailyApp
 │
 ├── Raffle_Frontend/         # 💻 Main Web Application (Vite + React)
 │   ├── api/                 # Serverless Backend Bundles (Vercel)
+│   │   ├── database.types.ts # 🆕 Canonical Supabase Schema (Generated)
+│   │   ├── types.ts          # 🆕 Central Entity Interfaces (Hardened)
 │   ├── src/                 # Frontend Source
 │   │   ├── components/      # Modular UI Components
 │   │   │   ├── UGCCampaignCard.jsx # 🆕 Multi-Action Campaign UI
@@ -152,7 +154,7 @@ graph TD
 3.  **Every API change** must respect the existing bundle structure in `Raffle_Frontend/api/`.
 4.  **No local script execution** without checking `scripts/` subfolders first to avoid duplication.
 5.  **ZERO-HARDCODE MANDATE (v3.59.1)**: Prohibit use of static contract addresses in any source file or ABI definition. Pull exclusively from `.env`.
-6.  **TYPESCRIPT HARDENING MANDATE (v3.60.2)**: All new frontend code MUST be strictly typed (.tsx). Legacy .jsx must be refactored using surgical type casting (e.g., `task as any`) to clear `never` property errors if full interface definitions are unavailable.
+6.  **TYPESCRIPT HARDENING MANDATE (v3.61.0)**: All serverless API code in `Raffle_Frontend/api/` MUST be strictly typed. Implicit `any` is prohibited. Error handling MUST use the `unknown` catch pattern with explicit type guards.
 7.  **GIT HYGIENE MANDATE**: Never commit `.env.vercel*` or temporary audit logs. Run `Remove-Item tsc_output*.txt` before closing tasks.
 
 ---
@@ -191,4 +193,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-10T17:30:00+07:00 | Multi-Agent Bridge v1.3.9 & 27 Skills Synced. v3.60.2 LOCKED.*
+*Last Updated: 2026-05-11T07:30:00+07:00 | Multi-Agent Bridge v1.4.0 & 27 Skills Synced. v3.61.0 LOCKED.*
