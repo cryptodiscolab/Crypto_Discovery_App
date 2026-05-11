@@ -4,8 +4,8 @@ import { base, baseSepolia } from 'viem/chains';
 // 1. ENVIRONMENT VALIDATION
 export const getEnv = (key: string, fallback: string = ''): string => (process.env[key] || fallback).trim();
 
-export const SUPABASE_URL = getEnv('VITE_SUPABASE_URL');
-export const SUPABASE_SERVICE_ROLE_KEY = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+export const SUPABASE_URL = getEnv('VITE_SUPABASE_URL', getEnv('NEXT_PUBLIC_SUPABASE_URL', getEnv('SUPABASE_URL')));
+export const SUPABASE_SERVICE_ROLE_KEY = getEnv('SUPABASE_SERVICE_ROLE_KEY', getEnv('SUPABASE_SECRET_KEY'));
 
 export const CHAIN_ID = getEnv('VITE_CHAIN_ID', getEnv('NEXT_PUBLIC_CHAIN_ID', '84532'));
 export const IS_MAINNET = CHAIN_ID === '8453';
@@ -113,7 +113,7 @@ export const MASTER_ADMINS = getEnv('VITE_ADMIN_WALLETS', getEnv('VITE_ADMIN_ADD
 export const SAFE_MULTISIG = getEnv('VITE_SAFE_MULTISIG', getEnv('SAFE_MULTISIG', '0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa'));
 
 export const NEYNAR_API_KEY = getEnv('NEYNAR_API_KEY');
-export const WALLET_BOT_SIGNER = getEnv('WALLET_BOT_SIGNER', getEnv('WALLET_PRIVATE_KEY', getEnv('ADMIN_PRIVATE_KEY')));
+export const WALLET_BOT_SIGNER = getEnv('WALLET_BOT_SIGNER', getEnv('WALLET_PRIVATE_KEY', getEnv('ADMIN_PRIVATE_KEY', getEnv('PRIVATE_KEY'))));
 export const TELEGRAM_BOT_TOKEN = getEnv('TELEGRAM_BOT_TOKEN');
 export const TELEGRAM_CHAT_ID = getEnv('TELEGRAM_CHAT_ID');
 

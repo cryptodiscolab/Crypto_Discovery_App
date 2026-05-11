@@ -1,3 +1,4 @@
+import { VercelRequest } from '@vercel/node';
 import { Database, Json } from './database.types';
 
 export { Json };
