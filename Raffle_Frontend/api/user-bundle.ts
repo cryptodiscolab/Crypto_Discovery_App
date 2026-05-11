@@ -770,8 +770,9 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
 
         const { tierName, ethSpent, txHash } = payload;
         
-        const { data: thresholds } = await supabaseAdmin.from('sbt_thresholds').select('level, tier_name');
+        const { data: thresholds } = await supabaseAdmin.from('sbt_thresholds').select('level, tier_name, min_xp');
         const tierMap: Record<string, number> = thresholds?.reduce((acc, t) => { if (t.tier_name) acc[t.tier_name] = t.level; return acc; }, {} as Record<string, number>) || {};
+        const minXpMap: Record<number, number> = thresholds?.reduce((acc, t) => { acc[t.level] = t.min_xp; return acc; }, {} as Record<number, number>) || {};
         const tierIndex = tierMap[tierName] || 0;
 
         const contractStats = await rpcClient.readContract({
@@ -785,10 +786,27 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         const actualPointsOnChain = Number(contractStats?.[0] || 0);
 
         if (actualTierOnChain >= tierIndex && tierIndex > 0) {
+            // Check if burn already logged to prevent double-burn on retry
+            const { data: existingBurn } = await supabaseAdmin.from('user_task_claims').select('id').eq('task_id', `sbt_upgrade_burn_${txHash}`).maybeSingle();
+            
+            if (!existingBurn) {
+                const burnedXP = minXpMap[actualTierOnChain] || 0;
+                if (burnedXP > 0) {
+                    await supabaseAdmin.from('user_task_claims').insert({
+                        wallet_address: wallet.toLowerCase(),
+                        task_id: `sbt_upgrade_burn_${txHash}`,
+                        xp_earned: -burnedXP,
+                        platform: 'base',
+                        action_type: 'tier_upgrade'
+                    });
+                }
+            }
+
             await supabaseAdmin
                 .from('user_profiles')
                 .update({ 
                     tier: actualTierOnChain, 
+                    total_xp: actualPointsOnChain, // Force parity with on-chain burned balance
                     last_onchain_xp: actualPointsOnChain,
                     updated_at: new Date().toISOString()
                 })

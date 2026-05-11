@@ -38,5 +38,21 @@ export const userService = {
     getReputationStatus: async (address: string) => {
         const { data } = await axios.get(`/api/user-bundle?action=check-reputation&wallet=${address}`);
         return data;
+    },
+
+    /**
+     * Sync Farcaster Identity
+     */
+    syncFarcaster: async (payload: { address: string; signature: string; message: string }) => {
+        const { data } = await axios.post('/api/user-bundle?action=fc-sync', payload);
+        return data;
+    },
+
+    /**
+     * Update User Profile (display name, bio, etc.)
+     */
+    updateProfile: async (payload: { wallet: string; signature: string; message: string; payload: any }) => {
+        const { data } = await axios.post('/api/user-bundle?action=update-profile', payload);
+        return data;
     }
 };

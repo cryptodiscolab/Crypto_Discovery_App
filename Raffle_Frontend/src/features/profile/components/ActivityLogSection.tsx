@@ -1,17 +1,7 @@
 import { useState } from 'react';
 import { History, Zap, ShoppingCart, Award, Clock, ArrowRight, ExternalLink } from 'lucide-react';
 import { useActivityLogs } from '../hooks/useProfileQueries';
-
-interface ActivityLog {
-    id: string;
-    category: string;
-    activity_type: string;
-    description: string;
-    created_at: string;
-    value_amount: number;
-    value_symbol: string;
-    tx_hash?: string;
-}
+import { ActivityLog } from '../types';
 
 interface ActivityLogSectionProps {
     walletAddress?: string;
@@ -19,7 +9,7 @@ interface ActivityLogSectionProps {
 
 /**
  * ActivityLogSection Component
- * [v3.60.0] Modular Feature-Based Architecture
+ * [v3.61.0] Modular Feature-Based Architecture - Hardened Types
  */
 export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) => {
     const [category, setCategory] = useState('ALL');

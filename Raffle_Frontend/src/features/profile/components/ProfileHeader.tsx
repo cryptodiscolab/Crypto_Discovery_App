@@ -1,18 +1,6 @@
-import { Star, Loader2, Users, ShieldCheck, Sparkles } from 'lucide-react';
+import { Star, Loader2, Users, ShieldCheck, Sparkles, RefreshCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-interface ProfileData {
-    avatarUrl?: string;
-    powerBadge?: boolean;
-    fid?: string | number;
-    displayName?: string;
-    username?: string;
-    is_base_social_verified?: boolean;
-}
-
-interface OnChainUserData {
-    currentTier?: bigint | number;
-}
+import { ProfileData, OnChainUserData } from '../types';
 
 interface ProfileHeaderProps {
     profileData: ProfileData;
@@ -31,7 +19,7 @@ interface ProfileHeaderProps {
 
 /**
  * ProfileHeader Component
- * [v3.60.0] Modular Feature-Based Architecture
+ * [v3.61.0] Modular Feature-Based Architecture - Hardened Types
  */
 export const ProfileHeader = ({
     profileData,
@@ -43,7 +31,6 @@ export const ProfileHeader = ({
     isFarcasterLoading,
     address,
     onChainUserData,
-    potentialTier,
     setActiveModal,
     setProfileData
 }: ProfileHeaderProps) => {
@@ -87,9 +74,14 @@ export const ProfileHeader = ({
                                         }
                                     }}
                                     disabled={isFarcasterLoading}
-                                    className={`px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-colors ${!profileData.fid ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+                                    className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${!profileData.fid ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:scale-105 active:scale-95' : 'bg-zinc-800/50 text-zinc-300 border border-white/5 hover:bg-zinc-700'}`}
                                 >
-                                    {isFarcasterLoading ? <Loader2 className="animate-spin w-4 h-4" /> : !profileData.fid ? "SYNC FARCASTER" : "REFRESH"}
+                                    {isFarcasterLoading ? <Loader2 className="animate-spin w-4 h-4" /> : (
+                                        <>
+                                            {!profileData.fid ? "SYNC IDENTITY" : <RefreshCcw size={14} className="group-hover:rotate-180 transition-transform duration-500" />}
+                                            {!profileData.fid ? "" : "REFRESH"}
+                                        </>
+                                    )}
                                 </button>
                                 <button onClick={() => setIsEditing(true)} className="px-4 py-1.5 rounded-full border border-white/20 label-native hover:bg-white/10 active:scale-95 transition-transform">
                                     EDIT

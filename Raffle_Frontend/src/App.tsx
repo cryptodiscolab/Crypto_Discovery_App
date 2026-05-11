@@ -22,10 +22,7 @@ const LeaderboardPage = lazy(async () => {
   const { LeaderboardPage } = await import('./pages/LeaderboardPage');
   return { default: LeaderboardPage };
 });
-const ProfilePage = lazy(async () => {
-  const { ProfilePage } = await import('./pages/ProfilePage');
-  return { default: ProfilePage };
-});
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const CreateRafflePage = lazy(async () => {
   const { CreateRafflePage } = await import('./pages/CreateRafflePage');
   return { default: CreateRafflePage };
@@ -50,21 +47,15 @@ const OAuthCallbackPage = lazy(async () => {
   const { OAuthCallbackPage } = await import('./pages/OAuthCallbackPage');
   return { default: OAuthCallbackPage };
 });
-const RaffleDetailPage = lazy(async () => {
-  const { RaffleDetailPage } = await import('./pages/raffle/RaffleDetailPage');
-  return { default: RaffleDetailPage };
-});
+const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage'));
 
-const AdminDashboard = lazy(async () => {
-  const { AdminDashboard } = await import('./pages/admin/dashboard');
-  return { default: AdminDashboard };
-});
+const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const AdminGuard = lazy(async () => {
   const { default: AdminGuard } = await import('./features/admin/components/AdminGuard');
   return { default: AdminGuard };
 });
 const SignatureGuard = lazy(async () => {
-  const { default: SignatureGuard } = await import('./components/SignatureGuard');
+  const { SignatureGuard } = await import('./components/SignatureGuard');
   return { default: SignatureGuard };
 });
 

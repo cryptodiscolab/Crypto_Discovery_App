@@ -1285,11 +1285,18 @@ export type Database = {
         Row: {
           badge_url: string | null
           display_name: string | null
+          fid: number | null
+          global_rank: number | null
+          is_admin: boolean | null
+          is_operator: boolean | null
+          last_daily_bonus_claim: string | null
           pfp_url: string | null
           rank_name: string | null
+          referred_by: string | null
           streak_count: number | null
           tier: number | null
           total_xp: number | null
+          updated_at: string | null
           username: string | null
           wallet_address: string | null
         }
@@ -1328,30 +1335,18 @@ export type Database = {
       v_user_full_profile: {
         Row: {
           badge_url: string | null
-          bio: string | null
           display_name: string | null
           fid: number | null
-          follower_count: number | null
-          following_count: number | null
-          google_email: string | null
-          google_id: string | null
+          global_rank: number | null
           is_admin: boolean | null
           is_operator: boolean | null
           last_daily_bonus_claim: string | null
-          last_onchain_xp: number | null
-          neynar_score: number | null
-          oauth_provider: string | null
           pfp_url: string | null
-          power_badge: boolean | null
-          raffle_wins: number | null
-          raffles_created: number | null
           rank_name: string | null
           referred_by: string | null
           streak_count: number | null
           tier: number | null
           total_xp: number | null
-          twitter_id: string | null
-          twitter_username: string | null
           updated_at: string | null
           username: string | null
           wallet_address: string | null

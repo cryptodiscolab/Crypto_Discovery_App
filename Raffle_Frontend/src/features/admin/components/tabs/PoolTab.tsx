@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Database, TrendingUp, Zap, Timer as TimerIcon, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Database, TrendingUp, Zap, Timer as TimerIcon, CheckCircle2, AlertCircle, RefreshCw, Edit3 } from 'lucide-react';
 import { formatUnits } from 'viem';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../../../../hooks/useSBT';
@@ -26,9 +26,54 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
         contractOwner,
         refetchAll,
         diamondWeight, platinumWeight, goldWeight, silverWeight, bronzeWeight,
+        setTierWeights
     } = useSBT();
 
     const [isDistributing, setIsDistributing] = useState(false);
+    const [isEditingWeights, setIsEditingWeights] = useState(false);
+    const [isSyncingWeights, setIsSyncingWeights] = useState(false);
+    const [tempWeights, setTempWeights] = useState({
+        diamond: 30,
+        platinum: 25,
+        gold: 20,
+        silver: 15,
+        bronze: 10
+    });
+
+    // Update temp weights when contract data loads
+    useEffect(() => {
+        if (diamondWeight !== undefined) {
+            setTempWeights({
+                diamond: Number(diamondWeight),
+                platinum: Number(platinumWeight),
+                gold: Number(goldWeight),
+                silver: Number(silverWeight),
+                bronze: Number(bronzeWeight)
+            });
+        }
+    }, [diamondWeight, platinumWeight, goldWeight, silverWeight, bronzeWeight]);
+
+    const handleUpdateWeights = async () => {
+        setIsSyncingWeights(true);
+        const tid = toast.loading('Syncing Tier Weights to Contract...');
+        try {
+            await setTierWeights(
+                tempWeights.diamond,
+                tempWeights.platinum,
+                tempWeights.gold,
+                tempWeights.silver,
+                tempWeights.bronze
+            );
+            toast.success('Tier Weights Synchronized!', { id: tid });
+            setIsEditingWeights(false);
+            refetchAll();
+        } catch (err: any) {
+            console.error('[PoolTab] setTierWeights error:', err);
+            toast.error(err.shortMessage || 'Sync failed. Check owner wallet & gas.', { id: tid });
+        } finally {
+            setIsSyncingWeights(false);
+        }
+    };
 
     // Use prop 'balance' if passed, fallback to hook
     const effectiveBalance = balance ?? (totalPoolBalance as bigint) ?? 0n;
@@ -106,21 +151,53 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
 
             {/* ── Tier Weights Grid ── */}
             <div className="glass-card p-6 rounded-2xl border border-white/10">
-                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-4">Tier Weight Configuration</p>
+                <div className="flex items-center justify-between mb-4">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Tier Weight Configuration</p>
+                    {isOwner && (
+                        <button 
+                            onClick={() => {
+                                if (isEditingWeights) {
+                                    handleUpdateWeights();
+                                } else {
+                                    setIsEditingWeights(true);
+                                }
+                            }}
+                            disabled={isSyncingWeights}
+                            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-lg transition-all flex items-center gap-2"
+                        >
+                            {isSyncingWeights ? <RefreshCw size={12} className="animate-spin" /> : isEditingWeights ? <CheckCircle2 size={12} /> : <Edit3 size={12} />}
+                            {isSyncingWeights ? 'Syncing...' : isEditingWeights ? 'Save & Sync' : 'Edit Weights'}
+                        </button>
+                    )}
+                </div>
                 <div className="grid grid-cols-5 gap-2">
                     {[
-                        { name: 'Diamond',  w: diamondWeight,  color: 'text-cyan-400'   },
-                        { name: 'Platinum', w: platinumWeight, color: 'text-violet-400'  },
-                        { name: 'Gold',     w: goldWeight,     color: 'text-yellow-400'  },
-                        { name: 'Silver',   w: silverWeight,   color: 'text-slate-300'   },
-                        { name: 'Bronze',   w: bronzeWeight,   color: 'text-amber-600'   },
+                        { name: 'Diamond',  key: 'diamond',  w: tempWeights.diamond,  color: 'text-cyan-400'   },
+                        { name: 'Platinum', key: 'platinum', w: tempWeights.platinum, color: 'text-violet-400'  },
+                        { name: 'Gold',     key: 'gold',     w: tempWeights.gold,     color: 'text-yellow-400'  },
+                        { name: 'Silver',   key: 'silver',   w: tempWeights.silver,   color: 'text-slate-300'   },
+                        { name: 'Bronze',   key: 'bronze',   w: tempWeights.bronze,   color: 'text-amber-600'   },
                     ].map(t => (
                         <div key={t.name} className="flex flex-col items-center p-3 rounded-xl bg-black/30 border border-white/5">
-                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">{t.name}</span>
-                            <span className={`text-[12px] font-bold ${t.color}`}>{t.w !== undefined ? String(t.w) : '—'}</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">{t.name}</span>
+                            {isEditingWeights ? (
+                                <input 
+                                    type="number"
+                                    value={t.w}
+                                    onChange={(e) => setTempWeights(prev => ({ ...prev, [t.key]: Number(e.target.value) }))}
+                                    className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-1 text-[12px] font-bold text-center text-white outline-none focus:border-indigo-500"
+                                />
+                            ) : (
+                                <span className={`text-[12px] font-bold ${t.color}`}>{t.w !== undefined ? String(t.w) : '—'}</span>
+                            )}
                         </div>
                     ))}
                 </div>
+                {isEditingWeights && (
+                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider mt-3 text-center">
+                        Total Weight: {Object.values(tempWeights).reduce((a, b) => a + b, 0)}% (Should ideally be 100%)
+                    </p>
+                )}
             </div>
 
             {/* ── Progress & Distribution Panel ── */}

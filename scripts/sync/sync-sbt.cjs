@@ -46,6 +46,11 @@ async function main() {
                     CryptoDiscoMasterX.goldHolders(),
                     CryptoDiscoMasterX.silverHolders(),
                     CryptoDiscoMasterX.bronzeHolders(),
+                    CryptoDiscoMasterX.diamondWeight(),
+                    CryptoDiscoMasterX.platinumWeight(),
+                    CryptoDiscoMasterX.goldWeight(),
+                    CryptoDiscoMasterX.silverWeight(),
+                    CryptoDiscoMasterX.bronzeWeight(),
                 ]);
                 break;
             } catch (err) {
@@ -59,7 +64,8 @@ async function main() {
             totalSBTPoolBalance,
             noneAcc, bronzeAcc, silverAcc, goldAcc, platinumAcc, diamondAcc,
             lastDist, totalLocked,
-            diamondHolders, platinumHolders, goldHolders, silverHolders, bronzeHolders
+            diamondHolders, platinumHolders, goldHolders, silverHolders, bronzeHolders,
+            dW, pW, gW, sW, bW
         ] = contractData;
 
         const stats = {
@@ -77,6 +83,11 @@ async function main() {
             silver_holders: Number(silverHolders),
             bronze_holders: Number(bronzeHolders),
             last_distribution_at: new Date(Number(lastDist) * 1000).toISOString(),
+            share_legendary: Number(dW),
+            share_epic: Number(pW),
+            share_rare: Number(gW),
+            share_common: Number(sW),
+            share_participation: Number(bW),
             updated_at: new Date().toISOString()
         };
 
