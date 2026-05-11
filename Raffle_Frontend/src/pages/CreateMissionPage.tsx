@@ -56,7 +56,7 @@ const PLATFORM_URL_RULES = {
 type PlatformCode = 'farcaster' | 'twitter' | 'tiktok' | 'instagram' | 'onchain';
 
 function validatePlatformUrl(url: string, platform: PlatformCode) {
-    const rule = (PLATFORM_URL_RULES as any)[platform];
+    const rule = PLATFORM_URL_RULES[platform];
     if (!rule) return true;
     return rule.pattern.test(url);
 }
@@ -114,7 +114,8 @@ export function CreateMissionPage() {
     // Reset actions when platform changes
     const handlePlatformChange = (newPlatform: string) => {
         const pCode = newPlatform as PlatformCode;
-        const defaultAction = (PLATFORM_ACTIONS as any)[pCode]?.[0]?.value || 'follow';
+        const actions = PLATFORM_ACTIONS[pCode];
+        const defaultAction = actions?.[0]?.value || 'follow';
         setSelectedActions([defaultAction]);
         setFormData(prev => ({ ...prev, platform: pCode, link: '' }));
     };
@@ -165,7 +166,7 @@ export function CreateMissionPage() {
         if (!formData.title || formData.title.trim().length < 5) return toast.error('Mission title must be at least 5 characters.');
         if (!formData.link || formData.link.trim().length < 10) return toast.error('Mission link is required.');
         if (!validatePlatformUrl(formData.link, formData.platform)) {
-            const rule = (PLATFORM_URL_RULES as any)[formData.platform];
+            const rule = PLATFORM_URL_RULES[formData.platform];
             return toast.error(`[Link Guard] Mission link must be from ${rule.hint}`);
         }
         if (selectedActions.length === 0) return toast.error('Pilih minimal 1 aksi.');
@@ -179,11 +180,11 @@ export function CreateMissionPage() {
             
             // 1. USDC Payment (Transfer to Treasury)
             const txHash = await writeContractAsync({
-                address: CONTRACTS.USDC as any,
+                address: CONTRACTS.USDC as `0x${string}`,
                 abi: erc20Abi,
                 functionName: 'transfer',
                 args: [ugcConfig.treasury_address, stats.totalAmountRaw]
-            }) as `0x${string}`;
+            });
 
             toast.loading("Verifying transaction on blockchain...", { id: tid });
             
@@ -250,9 +251,12 @@ export function CreateMissionPage() {
 
             toast.success("Mission Created & Payment Verified! Pending Admin Approval.", { id: tid });
             navigate('/tasks');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            toast.error(err.shortMessage || err.message || "Operation failed", { id: tid });
+            const errorMessage = err instanceof Error ? err.message : "Operation failed";
+            // @ts-ignore - Handle wagmi shortMessage if present
+            const shortMessage = (err as any).shortMessage;
+            toast.error(shortMessage || errorMessage, { id: tid });
         } finally {
             setIsSubmitting(false);
         }

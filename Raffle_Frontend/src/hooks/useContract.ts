@@ -3,6 +3,17 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { ABIS, CONTRACTS, APP_CONFIG } from '../lib/contracts'; // BUG-7 fix: use canonical ABI
 import { awardTaskXP } from '../dailyAppLogic';
 import toast from 'react-hot-toast';
+import { ContractTask } from '../types/tasks';
+
+export type ContractUserStats = readonly [
+    bigint,   // points
+    bigint,   // totalTasksCompleted
+    bigint,   // referralCount
+    bigint,   // currentTier
+    bigint,   // tasksForReferralProgress
+    bigint,   // lastDailyBonusClaim
+    boolean   // isBlacklisted
+];
 
 const V12_ADDRESS = CONTRACTS.DAILY_APP as `0x${string}`;
 
@@ -25,15 +36,15 @@ export function useUserInfo(address: `0x${string}` | undefined) {
 
     const stats = useMemo(() => {
         if (!userInfo) return null;
-        // In Ethers/Wagmi, return value can be array-like or object with keys
+        const u = userInfo as ContractUserStats;
         return {
-            points: (userInfo as any).points !== undefined ? Number((userInfo as any).points) : Number((userInfo as any)[0]),
-            totalTasksCompleted: (userInfo as any).totalTasksCompleted !== undefined ? Number((userInfo as any).totalTasksCompleted) : Number((userInfo as any)[1]),
-            referralCount: (userInfo as any).referralCount !== undefined ? Number((userInfo as any).referralCount) : Number((userInfo as any)[2]),
-            currentTier: (userInfo as any).currentTier !== undefined ? Number((userInfo as any).currentTier) : Number((userInfo as any)[3]),
-            tasksForReferralProgress: (userInfo as any).tasksForReferralProgress !== undefined ? Number((userInfo as any).tasksForReferralProgress) : Number((userInfo as any)[4]),
-            lastDailyBonusClaim: (userInfo as any).lastDailyBonusClaim !== undefined ? Number((userInfo as any).lastDailyBonusClaim) : Number((userInfo as any)[5]),
-            isBlacklisted: (userInfo as any).isBlacklisted !== undefined ? (userInfo as any).isBlacklisted : (userInfo as any)[6],
+            points: Number(u[0]),
+            totalTasksCompleted: Number(u[1]),
+            referralCount: Number(u[2]),
+            currentTier: Number(u[3]),
+            tasksForReferralProgress: Number(u[4]),
+            lastDailyBonusClaim: Number(u[5]),
+            isBlacklisted: u[6],
             lastActivity: lastActivity ? Number(lastActivity) : 0
         };
     }, [userInfo, lastActivity]);
@@ -97,15 +108,15 @@ export function useTaskInfo(taskId: string | number) {
     return {
         task: {
             id: Number(taskId),
-            baseReward: Number((task as any)[0]),
-            isActive: (task as any)[1],
-            cooldown: Number((task as any)[2]),
-            minTier: Number((task as any)[3] || 0),
-            title: (task as any)[4],
-            link: (task as any)[5],
-            createdAt: Number((task as any)[6]),
-            requiresVerification: (task as any)[7],
-            sponsorshipId: Number((task as any)[8])
+            baseReward: Number((task as ContractTask)[0]),
+            isActive: (task as ContractTask)[1],
+            cooldown: Number((task as ContractTask)[2]),
+            minTier: Number((task as ContractTask)[3] || 0),
+            title: (task as ContractTask)[4],
+            link: (task as ContractTask)[5],
+            createdAt: Number((task as ContractTask)[6]),
+            requiresVerification: (task as ContractTask)[7],
+            sponsorshipId: Number((task as ContractTask)[8])
         },
         isLoading
     };

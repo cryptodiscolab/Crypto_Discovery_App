@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Flame } from 'lucide-react';
-import { useAccount, useWriteContract, usePublicClient } from 'wagmi';
+import { useAccount, useWriteContract, usePublicClient, useSignMessage } from 'wagmi';
 import toast from 'react-hot-toast';
 import { useUserInfo } from '../../../../hooks/useContract';
 import { usePoints } from '../../../../shared/context/PointsContext';
@@ -24,6 +24,7 @@ interface DailyClaimModalProps {
 export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount }: DailyClaimModalProps) {
     const { address } = useAccount();
     const { writeContractAsync } = useWriteContract();
+    const { signMessageAsync } = useSignMessage();
     const publicClient = usePublicClient();
     const { refetch: refetchPoints, ecosystemSettings } = usePoints();
     const [isClaiming, setIsClaiming] = useState(false);
@@ -70,7 +71,9 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.loading('Syncing XP...', { id: tid });
             try {
-                await fetch('/api/user-bundle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'xp', wallet_address: address, tx_hash: hash }) });
+                const syncMsg = `Sync Daily Claim\nTx: ${hash}\nWallet: ${address}`;
+                const syncSig = await signMessageAsync({ message: syncMsg });
+                await fetch('/api/user-bundle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'xp', wallet_address: address, tx_hash: hash, signature: syncSig, message: syncMsg }) });
                 await new Promise(r => setTimeout(r, 1500));
                 await Promise.all([refetchOnChainStats(), refetchPoints()]);
                 toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });

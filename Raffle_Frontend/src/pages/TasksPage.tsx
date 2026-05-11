@@ -1,282 +1,32 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Shield, Sparkles, CheckCircle, CheckCircle2, Clock, ExternalLink, Loader2, Award, Zap, Twitter, MessageSquare, ArrowRight, Gift, Megaphone } from 'lucide-react';
-import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
-import { useAllTasks, useTaskInfo, useDoTask, useUserV12Stats } from '../hooks/useContract';
-import { useVerification } from '../hooks/useVerification';
-import { usePoints } from '../shared/context/PointsContext';
-import { useFarcaster } from '../hooks/useFarcaster';
-import { ABIS, CONTRACTS, APP_CONFIG, DAILY_APP_ABI } from '../lib/contracts';
-import toast from 'react-hot-toast';
+import { useState, useMemo, useEffect } from 'react';
+import { Award, Loader2, CheckCircle2 } from 'lucide-react';
+import { useAccount, useReadContract } from 'wagmi';
+import { useAllTasks, useUserV12Stats } from '../hooks/useContract';
+import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
 import { TaskList } from '../components/tasks/TaskList';
 import { OffersList } from '../components/tasks/OffersList';
 import { UGCCampaignCard } from '../components/UGCCampaignCard';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { useFarcaster } from '../hooks/useFarcaster';
+import { usePoints } from '../shared/context/PointsContext';
 
-function TaskRow({ taskId, userStats, refetchStats, offChainClaims }: { taskId: string | number, userStats: any, refetchStats: () => void, offChainClaims: Set<string> }) {
-    const { task, isLoading } = useTaskInfo(taskId);
-    const { doTask, isLoading: isDoing } = useDoTask();
-    const { address } = useAccount();
-    const { userTier } = usePoints();
-    const { profileData } = useFarcaster();
-    const { verifyTask, isVerifying, registerTaskStart, lastActionTime } = useVerification(refetchStats);
-    const [timeLeft, setTimeLeft] = useState(0);
-    const navigate = useNavigate();
+// New Modular Components
+import { TaskRow } from './tasks/TaskRow';
+import { SponsoredTaskCard } from './tasks/SponsoredTaskCard';
+import { Task, UGCCampaign, ContractTask } from '../types/tasks';
+import { Database } from '../types/database.types';
 
-    // Countdown Logic
-    useEffect(() => {
-        const lastTime = (lastActionTime as any)[taskId];
-        if (!lastTime) return;
-
-        const updateTimer = () => {
-            const now = Date.now();
-            const diff = Math.floor((now - lastTime) / 1000);
-            const remaining = Math.max(0, APP_CONFIG.SOCIAL_INDEX_DELAY_SEC - diff);
-            setTimeLeft(remaining);
-            return remaining;
-        };
-
-        const initialRemaining = updateTimer();
-        if (initialRemaining <= 0) return;
-
-        const interval = setInterval(() => {
-            const remaining = updateTimer();
-            if (remaining <= 0) {
-                clearInterval(interval);
-            }
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [lastActionTime, taskId]);
-
-    // NEW: Check if task is already completed (One-time logic)
-    const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'hasCompletedTask',
-        args: [address, taskId],
-        query: { enabled: !!address && !!task }
-    });
-
-    const isBaseLocked = (task as any)?.isBaseSocialRequired && !(profileData as any)?.is_base_social_verified;
-    const isTierLocked = Number(userTier) < Number((task as any)?.minTier);
-    const isOffChainCompleted = offChainClaims?.has(String(taskId).toLowerCase());
-    const canDo = !isTierLocked && !isCompleted && !isBaseLocked && !isOffChainCompleted;
-
-    if (isLoading || !task || !(task as any).isActive || isCompleted || isOffChainCompleted) return null;
-
-    const handleAction = async () => {
-        if (!address) {
-            toast.error("Please connect your wallet");
-            return;
-        }
-
-        if (isTierLocked) {
-            toast.error(`Tier ${(task as any).minTier} required for this task! Upgrade in your Profile.`, {
-                icon: '🔒',
-                duration: 4000
-            });
-            return;
-        }
-
-        if (isCompleted) {
-            toast.error("You have already completed this sponsored task!");
-            return;
-        }
-
-        // Farcaster Account Check
-        if (!(profileData as any)?.fid && ((task as any).link.includes('warpcast.com') || (task as any).link.includes('farcaster'))) {
-            toast((t) => (
-                <div className="flex flex-col gap-3 p-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
-                        <Sparkles className="w-3 h-3 text-indigo-400" />
-                        Farcaster Required
-                    </span>
-                    <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
-                        This task requires a Farcaster account. Join now to start earning XP!
-                    </p>
-                    <a
-                        href={APP_CONFIG.FARCASTER_REFERRAL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[11px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
-                        onClick={() => toast.dismiss(t.id)}
-                    >
-                        Sign Up for Farcaster
-                    </a>
-                </div>
-            ), { duration: 8000, id: 'fc-referral-nudge' });
-            return;
-        }
-
-        // Base Social Identity Check (v3.42.0 Hardening)
-        if ((task as any).isBaseSocialRequired && !(profileData as any)?.is_base_social_verified) {
-            toast((t) => (
-                <div className="flex flex-col gap-3 p-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
-                        <Shield className="w-3 h-3 text-blue-400" />
-                        Identity Verification Required
-                    </span>
-                    <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
-                        THIS PREMIUM TASK REQUIRES A VERIFIED <span className="text-blue-400">BASE SOCIAL (BASENAMES)</span> IDENTITY.
-                    </p>
-                    <button
-                        onClick={() => {
-                            toast.dismiss(t.id);
-                            navigate('/profile');
-                        }}
-                        className="w-full py-2 bg-blue-600 rounded-lg text-white text-[11px] font-black uppercase tracking-[0.2em] text-center hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
-                    >
-                        GO TO PROFILE TO VERIFY
-                    </button>
-                </div>
-            ), { duration: 8000, id: 'base-social-nudge' });
-            return;
-        }
-
-        // 1. Register start time for anti-fraud (30s)
-        registerTaskStart(taskId);
-
-        // 2. Open link in new tab
-        window.open((task as any).link, '_blank');
-
-        // 3. Call doTask on-chain (registers intent/cooldown)
-        try {
-            toast.loading("Registering task action...", { id: `task-${taskId}` });
-            await doTask(taskId);
-            toast.success("Action registered! Wait 30s before Verification.", { id: `task-${taskId}` });
-            refetchCompletion();
-        } catch (error: any) {
-            console.error("DoTask error:", error);
-            toast.error("Action failed: " + (error.shortMessage || error.message), { id: `task-${taskId}` });
-        }
-    };
-
-    const handleVerify = async (e: any) => {
-        e.stopPropagation();
-        if (!canDo || isVerifying || timeLeft > 0) return;
-
-        // Farcaster Referral Nudge
-        if (!(profileData as any)?.fid && ((task as any).link.includes('warpcast.com') || (task as any).link.includes('farcaster'))) {
-            toast((t) => (
-                <div className="flex flex-col gap-3 p-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
-                        <Sparkles className="w-3 h-3 text-indigo-400" />
-                        Verification Blocked
-                    </span>
-                    <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
-                        Cannot verify Farcaster tasks without a connected account.
-                    </p>
-                    <a
-                        href={APP_CONFIG.FARCASTER_REFERRAL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full py-2 bg-indigo-600 rounded-lg text-white text-[11px] font-black uppercase tracking-[0.2em] text-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
-                        onClick={() => toast.dismiss(t.id)}
-                    >
-                        Join Farcaster
-                    </a>
-                </div>
-            ), { duration: 8000, id: 'fc-verify-blocked' });
-            return;
-        }
-
-        const success = await verifyTask(task as any, address!, taskId, (profileData as any)?.fid);
-        if (success) refetchCompletion();
-    };
-
-    return (
-        <div
-            onClick={(!isTierLocked && !isCompleted) ? (isBaseLocked ? handleAction : handleAction) : undefined}
-            className={`flex items-center justify-between p-4 border-b border-white/5 active:bg-white/5 transition-colors cursor-pointer group ${(!isTierLocked && !isCompleted) ? (isBaseLocked ? 'bg-blue-500/5' : '') : 'opacity-50 cursor-not-allowed'}`}
-        >
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-                {/* Icon Box */}
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500/10' : isBaseLocked ? 'bg-blue-500/10' : isTierLocked ? 'bg-slate-800' : (task as any).requiresVerification ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                    {isCompleted ? <CheckCircle size={18} className="text-green-500" /> : isBaseLocked ? <Shield size={18} className="text-blue-400" /> : isTierLocked ? <Shield size={18} className="text-slate-500" /> : (task as any).platform?.toLowerCase() === 'twitter' || (task as any).title.toLowerCase().includes('twitter') ? <Twitter size={18} /> : <Zap size={18} />}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                        <span className="value-native text-white truncate">{(task as any).title}</span>
-                        {isCompleted && (
-                            <span className="label-native bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30">COMPLETED</span>
-                        )}
-                        {isBaseLocked && (
-                            <span className="label-native bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30 flex items-center gap-1">
-                                <Shield size={10} /> IDENTITY GUARD
-                            </span>
-                        )}
-                        {(task as any).requiresVerification && !isCompleted && !isBaseLocked && (
-                            <Shield size={12} className="text-green-500 flex-shrink-0" />
-                        )}
-                        {isTierLocked && (
-                            <span className="label-native bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
-                                LVL {(task as any).minTier}
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-3 text-slate-500 label-native">
-                        <span className="text-yellow-500 flex items-center gap-1">
-                            +{Number((task as any).baseReward)} XP
-                        </span>
-                        {!isCompleted && (task as any).sponsorshipId == 0 && (
-                            <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                    <Clock size={10} /> {Number((task as any).cooldown) / 3600}h
-                                </span>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Action Area */}
-            <div className="flex items-center gap-3 pl-4">
-                {isCompleted ? (
-                    <CheckCircle className="text-green-500" size={20} />
-                ) : isBaseLocked ? (
-                   <div className="flex items-center gap-2 text-blue-400 label-native border border-blue-400/30 bg-blue-400/5 px-2 py-1 rounded-lg">
-                      <Shield size={12} /> VERIFY REQ
-                   </div>
-                ) : (task as any).requiresVerification ? (
-                    <button
-                        onClick={handleVerify}
-                        disabled={isVerifying || isTierLocked || timeLeft > 0}
-                        className={`px-4 py-1.5 rounded-full text-white label-native shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 ${timeLeft > 0 ? 'bg-zinc-800 shadow-none' : 'bg-[#0052FF] premium-glow shadow-blue-500/10'}`}
-                    >
-                        {isVerifying ? (
-                            <Loader2 size={14} className="animate-spin" />
-                        ) : timeLeft > 0 ? (
-                            <>
-                                <Clock size={12} className="animate-pulse" />
-                                {timeLeft}s
-                            </>
-                        ) : (
-                            "Verify"
-                        )}
-                    </button>
-                ) : (
-                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
-                        {isDoing ? <Loader2 size={16} className="animate-spin text-slate-400" /> : <ArrowRight size={16} className="text-slate-400 group-hover:text-white" />}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
+type DailyTask = Database['public']['Tables']['daily_tasks']['Row'];
 
 export function TasksPage() {
     const navigate = useNavigate();
     const { address, isConnected } = useAccount();
-    const { signMessageAsync } = useSignMessage();
     const { totalTasks: tasksCount } = useAllTasks();
-    const totalTasks = tasksCount || 0;
+    const totalTasks = Number(tasksCount || 0);
     const { userPoints, userTier, rankName } = usePoints();
     const { refetch } = useUserV12Stats(address);
-    const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'offers'
+    const [activeTab, setActiveTab] = useState<'tasks' | 'offers'>('tasks');
     const [offChainClaims, setOffChainClaims] = useState<Set<string>>(new Set());
 
     useEffect(() => {
@@ -285,9 +35,9 @@ export function TasksPage() {
                 .from('user_task_claims')
                 .select('task_id')
                 .eq('wallet_address', address.toLowerCase())
-                .then(({ data, error }: { data: any, error: any }) => {
+                .then(({ data, error }) => {
                     if (data && !error) {
-                        setOffChainClaims(new Set(data.map((d: any) => String(d.task_id).toLowerCase())));
+                        setOffChainClaims(new Set(data.map((d) => String(d.task_id).toLowerCase())));
                     }
                 });
         } else {
@@ -296,11 +46,10 @@ export function TasksPage() {
     }, [address]);
 
     // Fetch active UGC campaigns + their sub-tasks
-    const [ugcCampaigns, setUgcCampaigns] = useState<any[]>([]);
+    const [ugcCampaigns, setUgcCampaigns] = useState<UGCCampaign[]>([]);
     useEffect(() => {
         const fetchUgcCampaigns = async () => {
             try {
-                // 1. Fetch active campaigns
                 const { data: campaigns } = await supabase
                     .from('campaigns')
                     .select('id, title, platform_code, reward_amount_per_user, reward_symbol, is_active, is_verified_payment')
@@ -310,14 +59,7 @@ export function TasksPage() {
 
                 if (!campaigns || campaigns.length === 0) { setUgcCampaigns([]); return; }
 
-                // Default missing reward symbols for robustness
-                const normalizedCampaigns = campaigns.map((c: any) => ({
-                    ...c,
-                    reward_symbol: c.reward_symbol || 'USDC'
-                }));
-
-                // 2. Fetch sub-tasks for all campaigns
-                const campaignIds = normalizedCampaigns.map((c: any) => c.id);
+                const campaignIds = campaigns.map((c) => c.id);
                 const { data: subTasks } = await supabase
                     .from('daily_tasks')
                     .select('id, title, action_type, platform, link, onchain_id, is_base_social_required')
@@ -325,16 +67,35 @@ export function TasksPage() {
                     .eq('task_type', 'ugc')
                     .eq('is_active', true);
 
-                // 3. Group sub-tasks by campaign
-                const tasksByCampaign: Record<string, any[]> = {};
-                (subTasks || []).forEach((t: any) => {
-                    if (!tasksByCampaign[t.onchain_id]) tasksByCampaign[t.onchain_id] = [];
-                    tasksByCampaign[t.onchain_id].push(t);
+                const tasksByCampaign: Record<string, Task[]> = {};
+                (subTasks as DailyTask[] | null || []).forEach((t) => {
+                    if (t.onchain_id === null || t.onchain_id === undefined) return;
+                    const onchainIdStr = String(t.onchain_id);
+                    if (!tasksByCampaign[onchainIdStr]) tasksByCampaign[onchainIdStr] = [];
+                    tasksByCampaign[onchainIdStr].push({
+                        id: t.id,
+                        title: t.title || '',
+                        link: t.link || '',
+                        baseReward: 0, 
+                        isActive: true,
+                        cooldown: 0,
+                        minTier: 0,
+                        requiresVerification: true,
+                        sponsorshipId: 0,
+                        platform: t.platform || undefined,
+                        isBaseSocialRequired: !!t.is_base_social_required
+                    });
                 });
 
-                setUgcCampaigns(normalizedCampaigns.map((c: any) => ({
-                    ...c,
-                    subTasks: (tasksByCampaign as any)[c.id] || []
+                setUgcCampaigns(campaigns.map((c) => ({
+                    id: String(c.id),
+                    title: c.title || '',
+                    platform_code: c.platform_code || '',
+                    reward_amount_per_user: Number(c.reward_amount_per_user || 0),
+                    reward_symbol: c.reward_symbol || 'USDC',
+                    is_active: !!c.is_active,
+                    is_verified_payment: !!c.is_verified_payment,
+                    subTasks: tasksByCampaign[c.id] || []
                 })));
             } catch (e) {
                 console.error('[UGC Fetch]', e);
@@ -343,48 +104,46 @@ export function TasksPage() {
         fetchUgcCampaigns();
     }, []);
 
-    // v3.59.6: Automatic Identity Sync Mandate
     const { profileData, syncUser, isLoading: isSyncing } = useFarcaster();
     useEffect(() => {
         if (isConnected && address && !profileData && !isSyncing) {
-            console.log("[TasksPage] Missing identity detected. Triggering background sync...");
             syncUser(address);
         }
     }, [isConnected, address, profileData, isSyncing, syncUser]);
 
-    // Fetch all task data in one batch
     const { data: allTasksRaw, isLoading: isTasksLoading } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
+        address: CONTRACTS.DAILY_APP as `0x${string}`,
         abi: DAILY_APP_ABI,
         functionName: 'getTasksInRange',
-        args: [BigInt(1), BigInt(totalTasks > 0 ? totalTasks : 0)], // Adjusted range to include totalTasks
+        args: [BigInt(1), BigInt(totalTasks)],
         query: { enabled: totalTasks > 0 }
     });
 
     const taskGroups = useMemo(() => {
-        if (!allTasksRaw) return { regulars: [], sponsored: {} };
-        const regs: any[] = [];
-        const spons: Record<string, any[]> = {};
+        if (!allTasksRaw) return { regulars: [] as Task[], sponsored: {} as Record<string, Task[]> };
+        const regs: Task[] = [];
+        const spons: Record<string, Task[]> = {};
 
-        allTasksRaw && (allTasksRaw as any[]).forEach((t: any, index: number) => {
+        (allTasksRaw as ContractTask[]).forEach((t, index) => {
             const taskId = index + 1;
-            const taskObj = {
+            const taskObj: Task = {
                 id: taskId,
-                baseReward: Number(t.baseReward),
-                isActive: t.isActive,
-                cooldown: Number(t.cooldown),
-                minTier: Number(t.minTier),
-                title: t.title,
-                link: t.link,
-                requiresVerification: t.requiresVerification,
-                sponsorshipId: Number(t.sponsorshipId)
+                baseReward: Number(t[0]),
+                isActive: t[1],
+                cooldown: Number(t[2]),
+                minTier: Number(t[3]),
+                title: t[4],
+                link: t[5],
+                requiresVerification: t[7],
+                sponsorshipId: Number(t[8])
             };
 
             if (taskObj.sponsorshipId === 0) {
                 regs.push(taskObj);
             } else {
-                if (!spons[taskObj.sponsorshipId]) spons[taskObj.sponsorshipId] = [];
-                spons[taskObj.sponsorshipId].push(taskObj);
+                const sId = String(taskObj.sponsorshipId);
+                if (!spons[sId]) spons[sId] = [];
+                spons[sId].push(taskObj);
             }
         });
         return { regulars: regs, sponsored: spons };
@@ -393,7 +152,6 @@ export function TasksPage() {
     return (
         <div className="w-full bg-[#050505] min-h-screen">
             <div className="max-w-screen-lg mx-auto pb-28 md:pb-8">
-                {/* Header (Flat) */}
                 <div className="px-4 py-8 border-b border-white/5">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -409,7 +167,6 @@ export function TasksPage() {
                             </button>
                         </div>
 
-                        {/* Stats Row (Inline) */}
                         {isConnected && (
                             <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl">
                                 <div>
@@ -428,7 +185,6 @@ export function TasksPage() {
                         )}
                     </div>
 
-                    {/* Tab Switcher */}
                     <div className="flex gap-2 mt-8 p-1 bg-[#080808] border border-white/5 rounded-xl w-full max-w-sm mx-auto md:mx-0 shadow-lg">
                         <button
                             onClick={() => setActiveTab('tasks')}
@@ -445,10 +201,8 @@ export function TasksPage() {
                     </div>
                 </div>
 
-                {/* Task Content */}
                 {activeTab === 'tasks' ? (
                     <div className="px-4 mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
-                    {/* UGC Campaign Cards */}
                         {ugcCampaigns.length > 0 && (
                             <div className="space-y-4">
                                 <p className="label-native text-slate-600 px-1">SPONSORED MISSIONS</p>
@@ -456,7 +210,7 @@ export function TasksPage() {
                                     <UGCCampaignCard
                                         key={campaign.id}
                                         campaign={campaign}
-                                        subTasks={campaign.subTasks}
+                                        subTasks={campaign.subTasks || []}
                                         userClaimedTaskIds={offChainClaims}
                                         refetchStats={refetch}
                                     />
@@ -464,17 +218,14 @@ export function TasksPage() {
                             </div>
                         )}
 
-                        {/* Supabase Tasks Injection Point */}
                         <TaskList />
 
-                        {/* Regular On-Chain Tasks */}
                         {taskGroups.regulars.length > 0 && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {taskGroups.regulars.map(task => (
                                     <TaskRow
                                         key={task.id}
                                         taskId={task.id}
-                                        userStats={null}
                                         refetchStats={refetch}
                                         offChainClaims={offChainClaims}
                                     />
@@ -482,7 +233,6 @@ export function TasksPage() {
                             </div>
                         )}
 
-                        {/* Sponsored Cards */}
                         {Object.entries(taskGroups.sponsored).map(([sId, tasks]) => (
                             <SponsoredTaskCard
                                 key={sId}
@@ -509,262 +259,11 @@ export function TasksPage() {
                         )}
                     </div>
                 ) : (
-                    /* Offers Content */
                     <div className="px-4 mt-6">
                         <OffersList />
                     </div>
                 )}
             </div>
-        </div>
-    );
-}
-
-function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChainClaims }: { sponsorshipId: string | number, tasks: any[], refetchStats: () => void, offChainClaims: Set<string> }) {
-    const navigate = useNavigate();
-    const { profileData } = useFarcaster();
-    const { address } = useAccount();
-    const { signMessageAsync } = useSignMessage();
-    const { writeContractAsync } = useWriteContract();
-    const { verifyTask, registerTaskStart, isVerifying } = useVerification(refetchStats);
-    const [verifyingStatus, setVerifyingStatus] = useState<'success' | 'fail' | null>(null); // 'success', 'fail', null
-    const [timer, setTimer] = useState(0);
-    const [isClaiming, setIsClaiming] = useState(false);
-
-    // V14: Track on-chain rewards per token for this user
-    // Default to USDC for sponsored task rewards
-    const usdcAddr = CONTRACTS.USDC;
-    const { data: rawClaimable, refetch: refetchRewards } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'claimableRewards',
-        args: [address as `0x${string}`, usdcAddr as `0x${string}`],
-        query: { enabled: !!address && !!usdcAddr }
-    });
-
-    // Track completion for the whole card
-    const { data: progress } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'userSponsorshipProgress',
-        args: [address as `0x${string}`, BigInt(sponsorshipId)],
-        query: { enabled: !!address }
-    });
-
-    const progressCount = Number(progress || 0);
-    const isGlobalCompleted = progressCount >= tasks.length;
-    
-    // Identity Guard Hardening (v3.42.1)
-    const hasGatedTask = tasks.some(t => t.isBaseSocialRequired);
-    const isIdentityBlocked = hasGatedTask && !(profileData as any)?.is_base_social_verified;
-
-    // V14 FIX: Do not hide card if there are unclaimed rewards
-    if (isGlobalCompleted && (!rawClaimable || rawClaimable === 0n)) return null;
-
-
-
-    const handleVerifyCard = async () => {
-        setVerifyingStatus(null);
-        let allSuccess = true;
-        const tid = toast.loading("System verifying tasks...");
-
-        try {
-            for (const t of tasks) {
-                const success = await verifyTask(t, address as string, t.id);
-                if (!success) {
-                    allSuccess = false;
-                    break;
-                }
-            }
-
-            if (allSuccess) {
-                setVerifyingStatus('success');
-                setTimer(30);
-                toast.success("Verified by system!", { id: tid });
-                const interval = setInterval(() => {
-                    setTimer(prev => {
-                        if (prev <= 1) {
-                            clearInterval(interval);
-                            return 0;
-                        }
-                        return prev - 1;
-                    });
-                }, 1000);
-            } else {
-                setVerifyingStatus('fail');
-                toast.error("You are not Verified, please complete task", { id: tid });
-            }
-        } catch (err) {
-            toast.error("Verification error", { id: tid });
-        }
-    };
-
-    return (
-        <div className={`glass-card overflow-hidden transition-colors ${verifyingStatus === 'success' ? 'ring-1 ring-green-500/40' : ''}`}>
-            <div className="px-4 py-3 bg-[#080808]/80 border-b border-white/5 flex justify-between items-center backdrop-blur-3xl">
-                <div className="flex items-center gap-2">
-                    {hasGatedTask ? (
-                        <Shield className="text-blue-400 animate-pulse" size={18} />
-                    ) : (
-                        <Award className="text-yellow-400" size={18} />
-                    )}
-                    <span className={`label-native italic ${hasGatedTask ? 'text-blue-400 font-black' : 'text-white'}`}>
-                        {hasGatedTask ? 'IDENTITY GUARDED MISSION' : 'Sponsored Mission'}
-                    </span>
-                </div>
-                {isGlobalCompleted && (
-                    <span className="label-native bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30">Mission Accomplished</span>
-                )}
-            </div>
-
-            <div className="divide-y divide-white/5">
-                {tasks.map((task) => (
-                    <IndividualTaskRow
-                        key={task.id}
-                        task={task}
-                        address={address}
-                        onAction={() => registerTaskStart(task.id)}
-                        offChainClaims={offChainClaims}
-                    />
-                ))}
-            </div>
-
-            <div className="p-4 bg-black/20 border-t border-white/5 space-y-4">
-                {verifyingStatus === 'success' && timer > 0 && (
-                    <div className="bg-green-500/10 text-green-400 p-3 rounded-xl border border-green-500/20 text-center animate-pulse">
-                        <p className="label-native mb-1">Status: Verified</p>
-                        <p className="label-native">Claim rewarding in {timer}s...</p>
-                    </div>
-                )}
-
-                {( (verifyingStatus === 'success' && timer === 0) || (rawClaimable && rawClaimable > 0n) ) && (
-                    <button
-                        onClick={async () => {
-                            const tid = toast.loading("Claiming Mission Reward...");
-                            setIsClaiming(true);
-                            try {
-                                 const hash = await writeContractAsync({
-                                    address: CONTRACTS.DAILY_APP as `0x${string}`,
-                                    abi: DAILY_APP_ABI,
-                                    functionName: 'claimRewards',
-                                    args: [usdcAddr as `0x${string}`],
-                                });
-
-                                // v3.40+: Fast Sync via TxHash (No second signature required)
-                                toast.loading("Mining & Syncing XP...", { id: tid });
-                                
-                                fetch('/api/user-bundle', {
-                                    method: 'POST',
-                                    headers: { 'content-type': 'application/json' },
-                                    body: JSON.stringify({
-                                        action: 'xp',
-                                        wallet_address: address,
-                                        signature: null, 
-                                        message: null,
-                                        tx_hash: hash, 
-                                    }),
-                                })
-                                .then(async (res) => {
-                                    if (res.ok) {
-                                        console.log('[TasksPage] XP synchronized via txHash');
-                                        await Promise.all([
-                                            refetchRewards(),
-                                            refetchStats()
-                                        ]);
-                                    }
-                                })
-                                .catch((err) => console.error('[Sync Fetch Error]', err));
-
-                                toast.success("Mission Reward Claimed! 🎉", { id: tid });
-                                setVerifyingStatus(null);
-                            } catch (err: any) {
-                                toast.error(err.shortMessage || "Claim failed", { id: tid });
-                            } finally {
-                                setIsClaiming(false);
-                            }
-                        }}
-                        disabled={isClaiming}
-                        className="w-full bg-green-600 hover:bg-green-500 py-3.5 rounded-xl text-white label-native transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/20"
-                    >
-                        {isClaiming ? <Loader2 className="animate-spin" size={14} /> : <Gift size={14} />}
-                        Claim Task Reward
-                    </button>
-                )}
-
-                {verifyingStatus === 'fail' && (
-                    <div className="bg-red-500/10 text-red-400 p-3 rounded-xl border border-red-500/20 text-center">
-                        <p className="label-native mb-1">Verification Failed</p>
-                        <p className="label-native">Please ensure all tasks are completed</p>
-                    </div>
-                )}
-
-                {!isGlobalCompleted && verifyingStatus !== 'success' && (
-                    <button
-                        onClick={isIdentityBlocked ? () => {
-                            toast.error("Identity verification required to start this mission!");
-                            navigate('/profile');
-                        } : handleVerifyCard}
-                        disabled={isVerifying}
-                        className={`w-full py-3.5 rounded-xl text-white label-native transition-all active:scale-95 disabled:opacity-50 shadow-xl 
-                          ${isIdentityBlocked 
-                            ? 'bg-blue-600/10 border border-blue-500/30 text-[#0052FF] hover:bg-blue-600/20' 
-                            : 'bg-[#0052FF] premium-glow shadow-blue-500/20'}`}
-                    >
-                        {isVerifying ? "SYSTEM CHECKING..." : isIdentityBlocked ? "VERIFY IDENTITY TO UNLOCK" : "VERIFY MISSION"}
-                    </button>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function IndividualTaskRow({ task, address, onAction, offChainClaims }: { task: any, address: string | undefined, onAction: () => void, offChainClaims: Set<string> }) {
-    const { data: isVerified } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'isTaskVerified',
-        args: [address as `0x${string}`, BigInt(task.id)],
-        query: { enabled: !!address }
-    });
-
-    const { data: isCompleted } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'hasCompletedTask',
-        args: [address as `0x${string}`, BigInt(task.id)],
-        query: { enabled: !!address }
-    });
-
-    const isCompletedOffChain = offChainClaims?.has(String(task.id).toLowerCase());
-
-    if (isCompleted || isCompletedOffChain) return null;
-
-    return (
-        <div className="flex items-center justify-between px-4 py-4 hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
-            <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${isVerified ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-white/5 text-slate-500 border-white/5'}`}>
-                    {isVerified ? <CheckCircle size={18} /> : <Zap size={18} />}
-                </div>
-                <div>
-                    <h4 className={`value-native ${isVerified ? 'text-slate-500 line-through' : 'text-white'}`}>{task.title}</h4>
-                    <p className="label-native text-slate-500 font-mono opacity-60">Task ID #{task.id}</p>
-                </div>
-            </div>
-
-            {!isVerified ? (
-                <button
-                    onClick={() => {
-                        window.open(task.link, '_blank');
-                        onAction();
-                    }}
-                    className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white hover:shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-90"
-                >
-                    <ExternalLink size={16} />
-                </button>
-            ) : (
-                <div className="w-10 h-10 flex items-center justify-center text-green-500">
-                    <CheckCircle size={20} />
-                </div>
-            )}
         </div>
     );
 }

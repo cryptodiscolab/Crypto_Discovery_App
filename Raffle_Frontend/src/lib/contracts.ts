@@ -153,9 +153,9 @@ export const APP_CONFIG = {
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
   EXPLORER_URL: import.meta.env.VITE_EXPLORER_URL || 'https://sepolia.basescan.org',
   FEES: {
-    // [LEGACY] These are fallback values. Use RAFFLE contract's maintenanceFeeBP and surchargeBP instead.
-    SURCHARGE_BP: 500, // 5%
-    RAKE_BP: 2000     // 20%
+    // Fallback values — production reads from RAFFLE contract's maintenanceFeeBP and surchargeBP
+    SURCHARGE_BP: Number(import.meta.env.VITE_SURCHARGE_BP || 500),
+    RAKE_BP: Number(import.meta.env.VITE_RAKE_BP || 2000)
   },
   PROFILE: {
     MAX_NAME_LEN: Number(import.meta.env.VITE_MAX_NAME_LEN || 50),

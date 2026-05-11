@@ -1,4 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Define the global type for the singleton
+declare global {
+    var supabaseInstance: SupabaseClient | any;
+}
 
 // Hardened Supabase Client Singleton
 // Prevents "Multiple GoTrueClient instances" warning on low-spec hardware
@@ -14,19 +19,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Singleton implementation using globalThis
-if (!(globalThis as any).supabaseInstance && supabaseUrl && supabaseAnonKey) {
-    (globalThis as any).supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
-} else if (!(globalThis as any).supabaseInstance) {
+if (!globalThis.supabaseInstance && supabaseUrl && supabaseAnonKey) {
+    globalThis.supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+} else if (!globalThis.supabaseInstance) {
     // Mock client to prevent crashes if env vars are missing
-    (globalThis as any).supabaseInstance = {
+    globalThis.supabaseInstance = {
         from: () => ({
             select: () => ({ order: () => ({ range: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: { message: "Supabase not initialized" } }) }) }) }) }),
-            upsert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: { message: "Supabase not initialized" } }) }) })
+            upsert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: { message: "Supabase not initialized" } }) }) }),
+            update: () => ({ eq: () => Promise.resolve({ error: { message: "Supabase not initialized" } }) }),
+            maybeSingle: () => Promise.resolve({ data: null, error: null })
         })
-    };
+    } as unknown as SupabaseClient;
 }
 
-export const supabase = (globalThis as any).supabaseInstance;
+export const supabase = globalThis.supabaseInstance;
 
 // Helper: Clean wallet address untuk konsistensi (lowercase)
 // Prevents case-sensitivity bugs in EVM address comparisons

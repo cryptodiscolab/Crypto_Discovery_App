@@ -1,3 +1,4 @@
+- **v3.63.0**: Admin Architecture Consolidation & Technical Debt Liquidation. Unified `TaskManager` components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (`ActiveCampaignsSection`, `EconomyConfigSection`, etc.). Archival of legacy Python/SQL scripts.
 - **v3.61.0**: Serverless API Hardening & 100% TS Migration. Refaktor `user-bundle.ts`, `tasks-bundle.ts`, dan `admin-bundle.ts` ke strict TypeScript. Integrasi `database.types.ts` dan implementasi `unknown` error guard pattern.
 - **v3.59.5**: Raffle Admin Hardening & Platform Economics. Implementasi `AdminRaffleSettings` (Rake, Claim Fee, Surcharge), `CreatorEarningsCard` untuk penarikan revenue sponsor (80%), dan penegakan **Zero-Hardcode Mandate** pada seluruh form pembuatan raffle.
 - **v3.59.4**: Final Polish & Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added `daily_task_completion` reward keys.
@@ -750,28 +751,28 @@ User → Click "JOIN MISSION" → EIP-191 Sign → POST /api/campaigns {action: 
 
 ---
 
-## 13. Admin Task Management
+## 13. Admin Task Management (Hardened v3.63.0)
 
-### 13.1 Off-Chain Task Management (v3.42.8)
+### 13.1 Unified TaskManager Architecture
+Dashboard Admin telah dikonsolidasi dari komponen monolitik menjadi arsitektur modular yang terpusat di `src/features/admin/`. Komponen `TaskManagerTab` dan `TaskManager` digabungkan untuk menyatukan workflow "Quick Forge" dan "Smart Batch".
 
-Admin Dashboard → `TaskManagerTab` → Create/Sync Task.
-Pipeline Backend (`admin-bundle.js`) sekarang memproses field berikut secara atomic:
-- `title` & `description`: Keduanya di-set (sebelumnya hanya description).
-- `xp_reward`: Poin dasar.
-- `target_id`: ID unik sosial (FID/TweetID) untuk Sybil prevention (verified in tasks-bundle).
+**Key Sub-Components**:
+- `ActiveCampaignsSection`: Pemantauan misi UGC yang sedang berjalan.
+- `EconomyConfigSection`: Pengaturan parameter ekonomi protokol (XP, Fees).
+- `TaskBatchCreatorSection`: Pembuatan tugas secara massal (Batch Creator).
+- `QuickTaskCreator`: Pembuatan tugas manual cepat.
+
+### 13.2 Type-Safe Administration
+Seluruh data administratif kini menggunakan interface strict di `src/features/admin/types/tasks.ts`. Penggunaan `any` telah dieliminasi untuk menjamin integritas data saat pengiriman ke `admin-bundle.ts`.
+
+### 13.3 Off-Chain Task Management
+Pipeline Backend (`admin-bundle.js`) memproses field berikut secara atomic:
+- `title` & `description`: Keduanya di-set secara eksplisit.
+- `xp_reward`: Poin dasar dari `point_settings`.
+- `target_id`: ID unik sosial (FID/TweetID) untuk Sybil prevention.
 - `min_neynar_score`: Gating reputasi Farcaster.
-- `expires_at`: Tanggal kadaluarsa. Jika di-set, task otomatis hilang dari UI melalui query filter: `.or('expires_at.is.null,expires_at.gt.NOW')`.
-- `is_base_social_required`: Toggle Identity Guard.
-
-### 13.2 On-Chain Task Creation
-Admin Dashboard → Contract call → `DailyApp.addTask()`
-- Parameters: baseReward, isActive, cooldown, minTier, title, link, requiresVerification, sponsorshipId
-- Sponsorship: Sponsor pays fee via `buySponsorshipWithToken` (passing string arrays for titles/links) → Admin approves via `approveSponsorship(requestId)`
-
-### 13.3 Economy & Price Management (v3.46.0)
-- **Direct Price Update**: Menggunakan `setTokenPriceUSD(uint256)` untuk memperbarui harga token secara instan (tanpa timelock).
-- **Sponsorship Config**: `setSponsorshipParams` sekarang menerima 4 parameter wajib: `(rewardPerClaim, tasksRequired, minPool, platformFee)`.
-- **UI Logic**: Seluruh variabel phantom (`minRewardPoolUSD`, etc) telah dimigrasi ke `minRewardPoolValue` dan `rewardPerClaim`.
+- `expires_at`: Tanggal kadaluarsa otomatis.
+- `is_base_social_required`: Toggle Identity Guard (Basenames).
 
 All User Generated Content (Missions, Raffles) default to `is_active: false` and require explicit admin approval before becoming visible to users.
 

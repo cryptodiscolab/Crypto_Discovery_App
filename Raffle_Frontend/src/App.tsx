@@ -10,21 +10,63 @@ import { SkeletonLoader } from './components/SkeletonLoader';
 import { ReferralTracker } from './components/ReferralTracker';
 
 // Lazy Load Pages (Non-critical components)
-const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: (m as any).default || (m as any).HomePage })));
-const RafflesPage = lazy(() => import('./pages/RafflesPage').then(m => ({ default: (m as any).default || (m as any).RafflesPage })));
-const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: (m as any).default || (m as any).LeaderboardPage })));
-const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: (m as any).default || (m as any).ProfilePage })));
-const CreateRafflePage = lazy(() => import('./pages/CreateRafflePage').then(m => ({ default: (m as any).default || (m as any).CreateRafflePage })));
-const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: (m as any).default || (m as any).TasksPage })));
-const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: (m as any).default || (m as any).AdminPage })));
-const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: (m as any).default || (m as any).LoginPage })));
-const CreateMissionPage = lazy(() => import('./pages/CreateMissionPage').then(m => ({ default: (m as any).default || (m as any).CreateMissionPage })));
-const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: (m as any).default || (m as any).OAuthCallbackPage })));
-const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage').then(m => ({ default: (m as any).default || (m as any).RaffleDetailPage })));
+const HomePage = lazy(async () => {
+  const { HomePage } = await import('./pages/HomePage');
+  return { default: HomePage };
+});
+const RafflesPage = lazy(async () => {
+  const { RafflesPage } = await import('./pages/RafflesPage');
+  return { default: RafflesPage };
+});
+const LeaderboardPage = lazy(async () => {
+  const { LeaderboardPage } = await import('./pages/LeaderboardPage');
+  return { default: LeaderboardPage };
+});
+const ProfilePage = lazy(async () => {
+  const { ProfilePage } = await import('./pages/ProfilePage');
+  return { default: ProfilePage };
+});
+const CreateRafflePage = lazy(async () => {
+  const { CreateRafflePage } = await import('./pages/CreateRafflePage');
+  return { default: CreateRafflePage };
+});
+const TasksPage = lazy(async () => {
+  const { TasksPage } = await import('./pages/TasksPage');
+  return { default: TasksPage };
+});
+const AdminPage = lazy(async () => {
+  const { AdminPage } = await import('./pages/AdminPage');
+  return { default: AdminPage };
+});
+const LoginPage = lazy(async () => {
+  const { LoginPage } = await import('./pages/LoginPage');
+  return { default: LoginPage };
+});
+const CreateMissionPage = lazy(async () => {
+  const { CreateMissionPage } = await import('./pages/CreateMissionPage');
+  return { default: CreateMissionPage };
+});
+const OAuthCallbackPage = lazy(async () => {
+  const { OAuthCallbackPage } = await import('./pages/OAuthCallbackPage');
+  return { default: OAuthCallbackPage };
+});
+const RaffleDetailPage = lazy(async () => {
+  const { RaffleDetailPage } = await import('./pages/raffle/RaffleDetailPage');
+  return { default: RaffleDetailPage };
+});
 
-const AdminDashboard = lazy(() => import('./pages/admin/dashboard').then(m => ({ default: (m as any).default || (m as any).AdminDashboard })));
-const AdminGuard = lazy<React.ComponentType<{ children: React.ReactNode }>>(() => import('./features/admin/components/AdminGuard').then(m => ({ default: (m as any).default || (m as any).AdminGuard })));
-const SignatureGuard = lazy<React.ComponentType<{ children: React.ReactNode }>>(() => import('./components/SignatureGuard').then(m => ({ default: (m as any).default || (m as any).SignatureGuard })));
+const AdminDashboard = lazy(async () => {
+  const { AdminDashboard } = await import('./pages/admin/dashboard');
+  return { default: AdminDashboard };
+});
+const AdminGuard = lazy(async () => {
+  const { default: AdminGuard } = await import('./features/admin/components/AdminGuard');
+  return { default: AdminGuard };
+});
+const SignatureGuard = lazy(async () => {
+  const { default: SignatureGuard } = await import('./components/SignatureGuard');
+  return { default: SignatureGuard };
+});
 
 const ProtectedLayout = () => (
   <SignatureGuard>
@@ -49,7 +91,7 @@ function DebugMockConnect() {
     <button
       id="debug-mock-connect"
       onClick={() => {
-        console.log('🚀 Debug: Connecting Mock Wallet...');
+        
         if (mockConnector) connect({ connector: mockConnector });
       }}
       style={{

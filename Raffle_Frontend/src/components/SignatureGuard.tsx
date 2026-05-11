@@ -66,7 +66,7 @@ export const SignatureGuard = ({ children }: { children: React.ReactNode }) => {
             // 🛡️ Development Bypass: Auto-approve for Mock Wallet
             const isMockWallet = address?.toLowerCase() === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266';
             if (import.meta.env.MODE === 'development' && isMockWallet) {
-                console.log('🛡️ [Security] Mock Wallet detected. Bypassing real signature...');
+                
                 // Artificial delay for UX "Verified" feel
                 await new Promise(r => setTimeout(r, 800));
             } else {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useReadContract, useWriteContract, useAccount } from 'wagmi';
+import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { ABIS, MASTER_X_ADDRESS as MX_ADDR, DAILY_APP_ADDRESS as DA_ADDR } from '../lib/contracts';
 
 const MASTER_X_ADDRESS = MX_ADDR as `0x${string}`;
@@ -9,6 +9,13 @@ import toast from 'react-hot-toast';
 export function useSBT() {
     const { address, isConnected } = useAccount();
     const { writeContractAsync } = useWriteContract();
+    const publicClient = usePublicClient();
+
+    const writeAndWait = async (params: Parameters<typeof writeContractAsync>[0]) => {
+        const hash = await writeContractAsync(params);
+        await publicClient!.waitForTransactionReceipt({ hash });
+        return hash;
+    };
 
     // 1. Fetch Total Pool Balance
     const { data: totalPoolBalance, refetch: refetchPool } = useReadContract({
@@ -51,13 +58,13 @@ export function useSBT() {
 
     const userTier = useMemo(() => {
         if (!userRawData) return 0;
-        const data = userRawData as any;
-        return data.tier !== undefined ? Number(data.tier) : (data[3] !== undefined ? Number(data[3]) : Number(data[1] || 0));
+        const data = userRawData as { tier?: bigint; totalXP?: bigint } & readonly bigint[];
+        return data.tier !== undefined ? Number(data.tier) : (data[1] !== undefined ? Number(data[1]) : 0);
     }, [userRawData]);
 
     const userOnChainXP = useMemo(() => {
         if (!userRawData) return 0n;
-        const data = userRawData as any;
+        const data = userRawData as { tier?: bigint; totalXP?: bigint } & readonly bigint[];
         return data.totalXP !== undefined ? data.totalXP : (data[0] || 0n);
     }, [userRawData]);
 
@@ -84,7 +91,7 @@ export function useSBT() {
     });
 
     const claimableAmount = (accReward !== undefined && userRewardDebt !== undefined) 
-        ? ((BigInt(accReward as any) - BigInt(userRewardDebt as any)) * 1n) / 1000000000000000000n
+        ? ((BigInt(accReward as bigint) - BigInt(userRewardDebt as bigint)) * 1n) / 1000000000000000000n
         : 0n;
 
     // 4. Fetch System Settings
@@ -147,7 +154,7 @@ export function useSBT() {
 
     const claimRewards = async () => {
         if (!isConnected) throw new Error("Wallet not connected");
-        return await writeContractAsync({
+        return await writeAndWait({
             address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'claimSBTRewards',
@@ -155,7 +162,7 @@ export function useSBT() {
     };
 
     const distributeRevenue = async () => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'distributeRevenue',
@@ -163,7 +170,7 @@ export function useSBT() {
     };
 
     const updateTier = async (userAddress: string, newTier: number | string) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'updateUserTier',
@@ -172,7 +179,7 @@ export function useSBT() {
     };
 
     const withdrawTreasury = async (amount: bigint) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'withdrawTreasury',
@@ -181,7 +188,7 @@ export function useSBT() {
     };
 
     const setMasterParams = async (tUSDC: bigint, mGas: bigint, pPerTicket: bigint, desc: string) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'setParams',
@@ -190,7 +197,7 @@ export function useSBT() {
     };
 
     const setRaffleContract = async (raffleAddr: string) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
             functionName: 'setRaffleContract',
@@ -198,7 +205,7 @@ export function useSBT() {
         });
     };
 
-    const setDailyApp = async (dailyAddr: any, isSatellite: any) => {
+    const setDailyApp = async (dailyAddr: `0x${string}`, isSatellite: boolean) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -207,7 +214,7 @@ export function useSBT() {
         });
     };
 
-    const setTierWeights = async (d: any, p: any, g: any, s: any, b: any) => {
+    const setTierWeights = async (d: number | string, p: number | string, g: number | string, s: number | string, b: number | string) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -220,7 +227,7 @@ export function useSBT() {
      * Leaderboard -> Contract Tier Sync
      * Fetches calculated tiers from API and batch updates contract
      */
-    const syncTiersToContract = async (signMessageAsync: any) => {
+    const syncTiersToContract = async (signMessageAsync: (args: { message: string }) => Promise<`0x${string}`>) => {
         const toastId = toast.loading('Calculating tiers and preparing sync...');
         try {
             const timestamp = new Date().toISOString();
@@ -243,8 +250,8 @@ export function useSBT() {
             toast.loading(`Syncing ${result.data.length} users to on-chain...`, { id: toastId });
 
             // Optimized: Use batchUpdateUserTiers
-            const userAddresses = result.data.map((item: any) => item.wallet_address);
-            const userTiers = result.data.map((item: any) => item.computed_tier);
+            const userAddresses = result.data.map((item: { wallet_address: string }) => item.wallet_address);
+            const userTiers = result.data.map((item: { computed_tier: number }) => item.computed_tier);
 
             const tx = await writeContractAsync({
                 address: MASTER_X_ADDRESS,
@@ -256,9 +263,9 @@ export function useSBT() {
             toast.success(`Successfully synced ${result.data.length} tiers in one batch!`, { id: toastId });
             return { success: true, count: result.data.length, tx };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[SyncTiers] Error:', error);
-            toast.error(`Sync failed: ${error.message}`, { id: toastId });
+            toast.error(`Sync failed: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
             throw error;
         }
     };
@@ -267,7 +274,7 @@ export function useSBT() {
      * Leaderboard -> Contract Points Sync
      * Fetches XP from DB and batch updates contract
      */
-    const syncPointsToContract = async (signMessageAsync: any) => {
+    const syncPointsToContract = async (signMessageAsync: (args: { message: string }) => Promise<`0x${string}`>) => {
         const toastId = toast.loading('Fetching points data...');
         try {
             const timestamp = new Date().toISOString();
@@ -290,8 +297,8 @@ export function useSBT() {
 
             toast.loading(`Syncing XP for ${result.data.length} users...`, { id: toastId });
 
-            const userAddresses = result.data.map((item: any) => item.wallet_address);
-            const userPoints = result.data.map((item: any) => BigInt(item.total_xp));
+            const userAddresses = result.data.map((item: { wallet_address: string }) => item.wallet_address);
+            const userPoints = result.data.map((item: { total_xp: string | number }) => BigInt(item.total_xp));
 
             const tx = await writeContractAsync({
                 address: MASTER_X_ADDRESS,
@@ -303,9 +310,9 @@ export function useSBT() {
             toast.success(`Successfully synced ${result.data.length} users' XP!`, { id: toastId });
             return { success: true, count: result.data.length, tx };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[SyncPoints] Error:', error);
-            toast.error(`Points sync failed: ${error.message}`, { id: toastId });
+            toast.error(`Points sync failed: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
             throw error;
         }
     };
@@ -314,12 +321,12 @@ export function useSBT() {
      * setTierURI
      * Updates the base URI for a specific SBT tier in the DailyApp contract
      */
-    const setTierURI = async (tier: any, uri: any) => {
+    const setTierURI = async (tier: number | string, uri: string) => {
         return await writeContractAsync({
             address: DAILY_APP_ADDRESS,
             abi: ABIS.DAILY_APP,
             functionName: 'setTierURI',
-            args: [tier, uri],
+            args: [BigInt(tier), uri],
         });
     };
 
@@ -357,9 +364,9 @@ export function useSBT() {
 
             toast.success('All NFT Metadata synced to contract!', { id: toastId });
             return { success: true };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[SyncMetadata] Error:', error);
-            toast.error(`Metadata sync failed: ${error.message}`, { id: toastId });
+            toast.error(`Metadata sync failed: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
             throw error;
         }
     };
@@ -371,7 +378,7 @@ export function useSBT() {
         functionName: 'currentSeasonId',
     });
 
-    const setTierConfig = async (tier: any, feeWei: any, minXP: any) => {
+    const setTierConfig = async (tier: number | string, feeWei: number | string | bigint, minXP: number | string | bigint) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -380,7 +387,7 @@ export function useSBT() {
         });
     };
 
-    const resetSeason = async (newSeasonId: any) => {
+    const resetSeason = async (newSeasonId: number | string | bigint) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -389,7 +396,7 @@ export function useSBT() {
         });
     };
 
-    const upgradeTier = async (feeValueWei: any) => {
+    const upgradeTier = async (feeValueWei: number | string | bigint) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
@@ -398,11 +405,9 @@ export function useSBT() {
         });
     };
 
-    const getSeasonPeak = async (userAddr: any, seasonId: any) => {
-        // Since we want to use useReadContract usually, but for a specific call 
-        // that depends on arguments not available at hook init, we can use a helper or another hook instance.
-        // For simplicity, we'll let the component handle the specific season read if needed, 
-        // but here we can provide a generic way if we want to fetch current season peak.
+    const getSeasonPeak = async (userAddr: string, seasonId: number | string | bigint) => {
+        // Implementation pending...
+        console.log("Fetching peak for", userAddr, "in season", seasonId);
     };
 
     const refetchAll = () => {

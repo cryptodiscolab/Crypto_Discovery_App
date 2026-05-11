@@ -132,7 +132,7 @@ export const useFarcaster = () => {
 
             // 4. SKIP Client-Side Upsert (API already handled it via Service Role)
             // This prevents RLS 42501 errors and double-writes.
-            console.log("[Sync Hook] Profile synced successfully via API.");
+            
 
             setProfileData(finalProfile);
             localStorage.setItem(storageKey, JSON.stringify(finalProfile));

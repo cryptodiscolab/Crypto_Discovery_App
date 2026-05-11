@@ -14,6 +14,21 @@ interface FeedItem {
     type: 'activity';
 }
 
+interface UserActivityLog {
+    id: number | string;
+    description: string;
+    activity_type: string;
+    created_at: string;
+    wallet_address: string;
+}
+
+interface UserProfileView {
+    wallet_address: string;
+    display_name: string | null;
+    username: string | null;
+    pfp_url: string | null;
+}
+
 export const HypeFeed = () => {
     const [activities, setActivities] = useState<FeedItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -42,13 +57,15 @@ export const HypeFeed = () => {
                 .limit(10);
 
             if (logError) throw logError;
-            if (!logs || logs.length === 0) {
+            if (!logs || (logs as UserActivityLog[]).length === 0) {
                 setActivities([]);
                 return;
             }
 
+            const typedLogs = logs as UserActivityLog[];
+
             // 2. Fetch identities from the Master View (Mandate Alignment)
-            const wallets = [...new Set((logs as any[]).map((l: any) => l.wallet_address.toLowerCase()))];
+            const wallets = [...new Set(typedLogs.map((l) => l.wallet_address.toLowerCase()))];
             const { data: profiles, error: profileError } = await supabase
                 .from('v_user_full_profile')
                 .select('wallet_address, display_name, username, pfp_url')
@@ -59,24 +76,24 @@ export const HypeFeed = () => {
             }
 
             // 3. Transform into feed items with joined data
-            const profileMap = (profiles || []).reduce((acc: Record<string, any>, p: any) => {
+            const profileMap = (profiles as UserProfileView[] || []).reduce((acc: Record<string, UserProfileView>, p) => {
                 acc[p.wallet_address.toLowerCase()] = p;
                 return acc;
             }, {});
 
-            const feed: FeedItem[] = (logs as any[]).map((log: any) => {
+            const feed: FeedItem[] = typedLogs.map((log) => {
                 const user = profileMap[log.wallet_address.toLowerCase()];
                 return {
                     id: log.id,
                     name: user?.display_name || user?.username || `${log.wallet_address.slice(0, 4)}...${log.wallet_address.slice(-4)}`,
-                    avatar: user?.pfp_url,
+                    avatar: user?.pfp_url || undefined,
                     message: log.description || "is active in the Nexus",
                     type: 'activity'
                 };
             });
 
             setActivities(feed);
-        } catch (e) {
+        } catch (e: unknown) {
             console.error('[HypeFeed] Error:', e);
         }
     };

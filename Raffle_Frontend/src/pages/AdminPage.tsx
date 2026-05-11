@@ -17,13 +17,12 @@ import { cleanWallet } from '../utils/cleanWallet';
 const RoleManagementTab = React.lazy(() => import('../features/admin/components/RoleManagementTab').then(m => ({ default: m.RoleManagementTab })));
 const WhitelistManagerTab = React.lazy(() => import('../features/admin/components/WhitelistManagerTab').then(m => ({ default: m.WhitelistManagerTab })));
 const RaffleManagerTab = React.lazy(() => import('../features/admin/components/RaffleManagerTab').then(m => ({ default: m.RaffleManagerTab })));
-const TaskManagerTab = React.lazy(() => import('../features/admin/components/TaskManagerTab').then(m => ({ default: m.TaskManagerTab })));
+const TaskManager = React.lazy(() => import('../features/admin/components/TaskManager').then(m => ({ default: m.TaskManager })));
 const UserReputationTable = React.lazy(() => import('../features/admin/components/UserReputationTable'));
 const TaskClaimLogs = React.lazy(() => import('../features/admin/components/TaskClaimLogs'));
 const SBTRewardsDashboard = React.lazy(() => import('../components/SBTRewardsDashboard').then(module => ({ default: module.SBTRewardsDashboard })));
 const AdminSystemSettings = React.lazy(() => import('../features/admin/components/AdminSystemSettings'));
 const AdminCMSContent = React.lazy(() => import('../features/admin/components/AdminCMSContent'));
-const TaskManager = React.lazy(() => import('../features/admin/components/TaskManager').then(m => ({ default: m.TaskManager })));
 const AdminCampaignTab = React.lazy(() => import('../features/admin/components/AdminCampaignTab'));
 const ModerationCenterTab = React.lazy(() => import('../features/admin/components/ModerationCenterTab').then(m => ({ default: m.ModerationCenterTab })));
 const UgcRevenueTab = React.lazy(() => import('../features/admin/components/UgcRevenueTab').then(m => ({ default: m.UgcRevenueTab })));
@@ -54,7 +53,7 @@ export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
     } = useCMS();
 
     // Derived owner status
-    const isContractOwner = address && contractOwner && (address as any).toLowerCase() === (contractOwner as any).toLowerCase();
+    const isContractOwner = address && contractOwner && address.toLowerCase() === contractOwner.toLowerCase();
 
     const [activeTab, setActiveTab] = useState(initialTab);
     const [taskSubTab, setTaskSubTab] = useState('batch');
@@ -301,9 +300,7 @@ export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
                                                 Claim History
                                             </button>
                                         </div>
-                                        {taskSubTab === 'batch' && <TaskManagerTab />}
-                                        {taskSubTab === 'quick' && <TaskManager />}
-                                        {taskSubTab === 'history' && <TaskClaimLogs />}
+                                        {taskSubTab === 'history' ? <TaskClaimLogs /> : <TaskManager initialMode={taskSubTab as 'batch' | 'quick'} />}
                                     </div>
                                 )}
                                 {activeTab === 'roles' && <RoleManagementTab />}

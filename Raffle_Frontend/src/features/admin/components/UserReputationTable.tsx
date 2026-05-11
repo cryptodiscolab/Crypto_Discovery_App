@@ -171,8 +171,8 @@ export default function UserReputationTable() {
             setUsers(prev => prev.map(u =>
                 u.wallet_address?.toLowerCase() === targetWallet?.toLowerCase() ? { ...u, tier_override: tierId } : u
             ));
-        } catch (error: any) {
-            toast.error('Override failed: ' + (error.message || 'Unknown error'), { id: tid });
+        } catch (error: unknown) {
+            toast.error('Override failed: ' + (error instanceof Error ? error.message : 'Unknown error'), { id: tid });
         }
     };
 
@@ -197,9 +197,10 @@ export default function UserReputationTable() {
                 setPage(prev => prev + 1);
             }
             setTotalCount(count || 0);
-        } catch (e: any) {
-            console.error('[User Audit] Pipeline sync failed:', e.message);
-            toast.error(`Pipeline sync failed: ${e.message || 'Network error'}`);
+        } catch (e: unknown) {
+            const errMsg = e instanceof Error ? e.message : String(e);
+            console.error('[User Audit] Pipeline sync failed:', errMsg);
+            toast.error(`Pipeline sync failed: ${errMsg || 'Network error'}`);
         } finally {
             setLoading(false);
         }

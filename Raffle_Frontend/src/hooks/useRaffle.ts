@@ -7,6 +7,7 @@ import { ABIS, CONTRACTS } from '../lib/contracts';
 import { awardTaskXP } from '../dailyAppLogic';
 import { usePaymaster } from './usePaymaster';
 import toast from 'react-hot-toast';
+import { CallStatusResponse, RaffleExtraMetadata } from '../types';
 
 const RAFFLE_ADDRESS = CONTRACTS.RAFFLE as `0x${string}`;
 const MASTER_X_ADDRESS = CONTRACTS.MASTER_X as `0x${string}`;
@@ -53,7 +54,7 @@ export function useRaffle() {
                 const signature = await signMessageAsync({ message });
 
                 // 1. Award XP (Internal Logic) - appended hash to allow multiple purchases
-                await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${hash}`, 0 as any);
+                await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${hash}`, 0);
 
                 // 2. Log Activity (User History)
                 await fetch('/api/user-bundle', {
@@ -74,8 +75,8 @@ export function useRaffle() {
                 });
 
                 if (refetch) refetch();
-            } catch (e: any) {
-                console.warn("XP Awarding/Logging skipped:", e.message);
+            } catch (e: unknown) {
+                console.warn("XP Awarding/Logging skipped:", e instanceof Error ? e.message : String(e));
             }
         }
         return hash;
@@ -92,7 +93,7 @@ export function useRaffle() {
         }
 
         const callData = encodeFunctionData({
-            abi: ABIS.RAFFLE as any,
+            abi: ABIS.RAFFLE,
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount)],
         });
@@ -126,18 +127,19 @@ export function useRaffle() {
             while (attempts < 10) {
                 await new Promise(r => setTimeout(r, 2000));
                 const status = await publicClient!.request({
-                    method: 'wallet_getCallsStatus' as any,
-                    params: [callId] as any,
-                });
-                const receipt = (status as any)?.receipts?.[0];
+                const status = (await publicClient!.request({
+                    method: 'wallet_getCallsStatus',
+                    params: [callId],
+                })) as CallStatusResponse;
+                const receipt = status?.receipts?.[0];
                 if (receipt?.transactionHash) {
                     resolvedTxHash = receipt.transactionHash;
                     break;
                 }
                 attempts++;
             }
-        } catch (resolveErr: any) {
-            console.warn('[buyTicketsGasless] Could not resolve txHash from callId, falling back:', resolveErr.message);
+        } catch (resolveErr: unknown) {
+            console.warn('[buyTicketsGasless] Could not resolve txHash from callId, falling back:', resolveErr instanceof Error ? resolveErr.message : String(resolveErr));
         }
 
         // Award XP & Log Activity
@@ -147,7 +149,7 @@ export function useRaffle() {
             const signature = await signMessageAsync({ message });
 
             // 1. Award XP — use resolved txHash so backend verifyRaffleOnChain succeeds
-            await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${resolvedTxHash}`, 0 as any);
+            await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${resolvedTxHash}`, 0);
 
             // 2. Log Activity
             await fetch('/api/user-bundle', {
@@ -168,8 +170,8 @@ export function useRaffle() {
             });
 
             if (refetch) refetch();
-        } catch (e: any) {
-            console.warn("XP Awarding/Logging skipped:", e.message);
+        } catch (e: unknown) {
+            console.warn("XP Awarding/Logging skipped:", e instanceof Error ? e.message : String(e));
         }
 
         return callId;
@@ -189,7 +191,7 @@ export function useRaffle() {
             setIsDrawing(false);
             return hash;
         } catch (e: any) {
-            toast.error(e.shortMessage || "Draw failed", { id: tid });
+            toast.error((e as { shortMessage?: string }).shortMessage || "Draw failed", { id: tid });
             setIsDrawing(false);
             throw e;
         }
@@ -236,12 +238,12 @@ export function useRaffle() {
             }
             return hash;
         } catch (e: any) {
-            toast.error(e.shortMessage || "Claim failed", { id: tid });
+            toast.error((e as { shortMessage?: string }).shortMessage || "Claim failed", { id: tid });
             throw e;
         }
     };
 
-    const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH, extraMetadata }: { winnerCount: number, maxTickets: number, durationDays: number, metadataURI: string, depositETH: bigint, extraMetadata?: any }) => {
+    const createSponsorshipRaffle = async ({ winnerCount, maxTickets, durationDays, metadataURI, depositETH, extraMetadata }: { winnerCount: number, maxTickets: number, durationDays: number, metadataURI: string, depositETH: bigint, extraMetadata?: RaffleExtraMetadata }) => {
         // [FIX v3.56.5] Read surchargeBP dynamically from contract instead of hardcoding 5%.
         // This ensures totalValue stays in sync if the admin updates the surcharge on-chain.
         const surchargeBP = (await publicClient!.readContract({
@@ -283,7 +285,7 @@ export function useRaffle() {
                                 topics: log.topics,
                             });
                             if (decoded.eventName === 'RaffleCreated') {
-                                raffleId = Number((decoded.args as any).raffleId);
+                                raffleId = Number((decoded.args as { raffleId: bigint }).raffleId);
                                 break;
                             }
                         } catch (e) { /* skip logs from other events */ }
@@ -362,7 +364,7 @@ export function useRaffle() {
                         try {
                             const decoded = decodeEventLog({ abi: ABIS.RAFFLE, data: log.data, topics: log.topics });
                             if (decoded.eventName === 'RaffleCreated') {
-                                raffleId = Number((decoded.args as any).raffleId);
+                                raffleId = Number((decoded.args as { raffleId: bigint }).raffleId);
                                 break;
                             }
                         } catch (e) { /* skip unrelated logs */ }
@@ -391,8 +393,8 @@ export function useRaffle() {
                         }
                     })
                 });
-            } catch (syncErr: any) {
-                console.warn('[adminCreateRaffle] DB sync skipped:', syncErr.message);
+            } catch (syncErr: unknown) {
+                console.warn('[adminCreateRaffle] DB sync skipped:', syncErr instanceof Error ? syncErr.message : String(syncErr));
             }
         }
 

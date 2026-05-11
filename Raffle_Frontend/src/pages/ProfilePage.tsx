@@ -41,6 +41,24 @@ export default function ProfilePage() {
   const { claimableAmount, refetchAll: refetchSBT } = useSBTData();
 
   const [activeModal, setActiveModal] = useState<string | null>(null); // 'claim', 'task', 'revenue', 'swap', 'renew'
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editableProfileData, setEditableProfileData] = useState(profileData);
+
+  // Update editable data when profileData loads
+  useEffect(() => {
+    if (profileData) setEditableProfileData(profileData);
+  }, [profileData]);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    toast.loading("Saving profile...", { duration: 1000 });
+    setTimeout(() => {
+      setIsSaving(false);
+      setIsEditing(false);
+      toast.success("Profile updated!");
+    }, 1000);
+  };
 
   if (!address) {
     return (
@@ -63,11 +81,17 @@ export default function ProfilePage() {
   return (
     <div className="pb-24 animate-in fade-in duration-500">
       <ProfileHeader 
-        {...{
-          profileData,
-          onEdit: () => toast.success("Profile customization coming soon!"),
-          onLogout: () => { disconnect(); navigate('/'); }
-        } as any}
+        profileData={editableProfileData || profileData}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+        isSaving={isSaving}
+        handleSaveProfile={handleSaveProfile}
+        syncUser={async () => ({})} // Placeholder
+        isFarcasterLoading={false}
+        address={address}
+        onChainUserData={{}}
+        setActiveModal={setActiveModal}
+        setProfileData={setEditableProfileData}
       />
 
       <main className="max-w-screen-md mx-auto space-y-6">
@@ -100,8 +124,7 @@ export default function ProfilePage() {
               refetchOnChainStats();
               refetchSBT();
             }}
-            pointSettings={ecosystemSettings} 
-            streakCount={(profileData as any).streakCount}
+            streakCount={(profileData as { streakCount?: number }).streakCount || 0}
           />
         )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}

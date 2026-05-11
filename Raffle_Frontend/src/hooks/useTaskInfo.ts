@@ -2,11 +2,15 @@ import { useReadContract } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
 import { supabase } from '../lib/supabaseClient';
 import { useState, useEffect } from 'react';
+import { Task, ContractTask } from '../types/tasks';
+import { Database } from '../types/database.types';
 
-export function useTaskInfo(taskId: string | number): { task: any, isLoading: boolean } {
-    const [dbMetadata, setDbMetadata] = useState<any>(null);
+type DailyTask = Database['public']['Tables']['daily_tasks']['Row'];
+
+export function useTaskInfo(taskId: string | number): { task: Task | null, isLoading: boolean } {
+    const [dbMetadata, setDbMetadata] = useState<DailyTask | null>(null);
     const { data: task, isLoading: isContractLoading } = useReadContract({
-        address: CONTRACTS.DAILY_APP as any,
+        address: CONTRACTS.DAILY_APP as `0x${string}`,
         abi: DAILY_APP_ABI,
         functionName: 'getTask',
         args: [BigInt(taskId)],
@@ -21,7 +25,7 @@ export function useTaskInfo(taskId: string | number): { task: any, isLoading: bo
                     .select('is_base_social_required, platform, action_type')
                     .eq('id', taskId)
                     .maybeSingle();
-                if (data) setDbMetadata(data);
+                if (data) setDbMetadata(data as DailyTask);
             } catch (err: any) {
                 console.warn('[useTaskInfo] DB fetch failed:', err.message);
             }
@@ -31,23 +35,25 @@ export function useTaskInfo(taskId: string | number): { task: any, isLoading: bo
 
     if (!task || isContractLoading) return { task: null, isLoading: isContractLoading };
 
+    const t = task as ContractTask;
+
     // Standard mapping from Contract Tuple to Task Object
     return {
         task: {
             id: Number(taskId),
-            baseReward: Number((task as any)[0]),
-            isActive: (task as any)[1],
-            cooldown: Number((task as any)[2]),
-            minTier: Number((task as any)[3] || 0),
-            title: (task as any)[4],
-            link: (task as any)[5],
-            createdAt: Number((task as any)[6]),
-            requiresVerification: (task as any)[7],
-            sponsorshipId: Number((task as any)[8]),
+            baseReward: Number(t[0]),
+            isActive: t[1],
+            cooldown: Number(t[2]),
+            minTier: Number(t[3] || 0),
+            title: t[4],
+            link: t[5],
+            createdAt: Number(t[6]),
+            requiresVerification: t[7],
+            sponsorshipId: Number(t[8]),
             // Hybrid Metadata (v3.41.2 Hardening)
-            platform: (dbMetadata as any)?.platform || ((task as any)[4].toLowerCase().includes('twitter') ? 'twitter' : 'farcaster'),
-            action_type: (dbMetadata as any)?.action_type || ((task as any)[4].toLowerCase().includes('follow') ? 'follow' : 'like'),
-            isBaseSocialRequired: (dbMetadata as any)?.is_base_social_required || false
+            platform: dbMetadata?.platform || (t[4].toLowerCase().includes('twitter') ? 'twitter' : 'farcaster'),
+            action_type: dbMetadata?.action_type || (t[4].toLowerCase().includes('follow') ? 'follow' : 'like'),
+            isBaseSocialRequired: dbMetadata?.is_base_social_required || false
         },
         isLoading: isContractLoading
     };

@@ -43,7 +43,9 @@ export type Database = {
           category: string
           content: string
           file_path: string
+          hash: string | null
           id: string
+          summary: string | null
           updated_at: string | null
           version: number | null
         }
@@ -51,7 +53,9 @@ export type Database = {
           category: string
           content: string
           file_path: string
+          hash?: string | null
           id?: string
+          summary?: string | null
           updated_at?: string | null
           version?: number | null
         }
@@ -59,7 +63,9 @@ export type Database = {
           category?: string
           content?: string
           file_path?: string
+          hash?: string | null
           id?: string
+          summary?: string | null
           updated_at?: string | null
           version?: number | null
         }
@@ -230,8 +236,13 @@ export type Database = {
           duration_days: number
           end_at: string | null
           id: string
+          is_active: boolean | null
           is_refunded: boolean | null
+          is_revenue_allocated: boolean | null
+          is_verified_payment: boolean | null
+          listing_fee_usdc: number | null
           max_participants: number
+          payment_tx_hash: string | null
           platform_code: string | null
           platform_fee_paid: number
           refund_amount_platform: number | null
@@ -239,7 +250,9 @@ export type Database = {
           refund_tx_hash: string | null
           remaining_reward_pool: number
           reward_amount_per_user: number
+          reward_symbol: string | null
           reward_token_address: string
+          sbt_share_amount: number | null
           sponsor_address: string
           start_at: string
           status: string | null
@@ -256,8 +269,13 @@ export type Database = {
           duration_days: number
           end_at?: string | null
           id?: string
+          is_active?: boolean | null
           is_refunded?: boolean | null
+          is_revenue_allocated?: boolean | null
+          is_verified_payment?: boolean | null
+          listing_fee_usdc?: number | null
           max_participants: number
+          payment_tx_hash?: string | null
           platform_code?: string | null
           platform_fee_paid: number
           refund_amount_platform?: number | null
@@ -265,7 +283,9 @@ export type Database = {
           refund_tx_hash?: string | null
           remaining_reward_pool: number
           reward_amount_per_user: number
+          reward_symbol?: string | null
           reward_token_address: string
+          sbt_share_amount?: number | null
           sponsor_address: string
           start_at?: string
           status?: string | null
@@ -282,8 +302,13 @@ export type Database = {
           duration_days?: number
           end_at?: string | null
           id?: string
+          is_active?: boolean | null
           is_refunded?: boolean | null
+          is_revenue_allocated?: boolean | null
+          is_verified_payment?: boolean | null
+          listing_fee_usdc?: number | null
           max_participants?: number
+          payment_tx_hash?: string | null
           platform_code?: string | null
           platform_fee_paid?: number
           refund_amount_platform?: number | null
@@ -291,7 +316,9 @@ export type Database = {
           refund_tx_hash?: string | null
           remaining_reward_pool?: number
           reward_amount_per_user?: number
+          reward_symbol?: string | null
           reward_token_address?: string
+          sbt_share_amount?: number | null
           sponsor_address?: string
           start_at?: string
           status?: string | null
@@ -313,10 +340,12 @@ export type Database = {
           account_age_requirement: number | null
           action_type: string | null
           created_at: string | null
+          creator_address: string | null
           description: string
           expires_at: string | null
           id: string
           is_active: boolean | null
+          is_base_social_required: boolean | null
           link: string | null
           min_followers: number | null
           min_neynar_score: number | null
@@ -329,16 +358,20 @@ export type Database = {
           target_id: string | null
           task_type: string | null
           title: string | null
+          token_reward_amount: number | null
+          token_reward_symbol: string | null
           xp_reward: number | null
         }
         Insert: {
           account_age_requirement?: number | null
           action_type?: string | null
           created_at?: string | null
+          creator_address?: string | null
           description: string
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_base_social_required?: boolean | null
           link?: string | null
           min_followers?: number | null
           min_neynar_score?: number | null
@@ -351,16 +384,20 @@ export type Database = {
           target_id?: string | null
           task_type?: string | null
           title?: string | null
+          token_reward_amount?: number | null
+          token_reward_symbol?: string | null
           xp_reward?: number | null
         }
         Update: {
           account_age_requirement?: number | null
           action_type?: string | null
           created_at?: string | null
+          creator_address?: string | null
           description?: string
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_base_social_required?: boolean | null
           link?: string | null
           min_followers?: number | null
           min_neynar_score?: number | null
@@ -373,6 +410,8 @@ export type Database = {
           target_id?: string | null
           task_type?: string | null
           title?: string | null
+          token_reward_amount?: number | null
+          token_reward_symbol?: string | null
           xp_reward?: number | null
         }
         Relationships: []
@@ -401,6 +440,39 @@ export type Database = {
           id?: string
           label?: string
           wallet_address?: string
+        }
+        Relationships: []
+      }
+      nexus_agent_reports: {
+        Row: {
+          agent_role: string
+          created_at: string | null
+          error_type: string
+          id: string
+          message: string
+          resolved_at: string | null
+          status: string
+          target_file: string | null
+        }
+        Insert: {
+          agent_role: string
+          created_at?: string | null
+          error_type: string
+          id?: string
+          message: string
+          resolved_at?: string | null
+          status?: string
+          target_file?: string | null
+        }
+        Update: {
+          agent_role?: string
+          created_at?: string | null
+          error_type?: string
+          id?: string
+          message?: string
+          resolved_at?: string | null
+          status?: string
+          target_file?: string | null
         }
         Relationships: []
       }
@@ -475,55 +547,135 @@ export type Database = {
           },
         ]
       }
-      raffles: {
+      raffle_sync_state: {
+        Row: {
+          id: string
+          last_synced_block: number
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          last_synced_block?: number
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          last_synced_block?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      raffle_tickets: {
         Row: {
           created_at: string | null
+          id: string
+          raffle_id: number
+          ticket_count: number
+          tx_hash: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          raffle_id: number
+          ticket_count?: number
+          tx_hash: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          raffle_id?: number
+          ticket_count?: number
+          tx_hash?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_tickets_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raffles: {
+        Row: {
+          cancellation_tx: string | null
+          category: string | null
+          created_at: string | null
           creator_address: string
+          description: string | null
           end_time: string | null
+          external_link: string | null
           id: number
+          image_url: string | null
           is_active: boolean | null
           is_finalized: boolean | null
           max_tickets: number | null
           metadata_uri: string | null
+          min_sbt_level: number | null
           nft_contract: string | null
           prize_per_winner: number | null
           prize_pool: number | null
+          rejection_reason: string | null
           sponsor_address: string | null
+          title: string | null
           token_id: number | null
+          twitter_link: string | null
           updated_at: string | null
           winner_count: number | null
         }
         Insert: {
+          cancellation_tx?: string | null
+          category?: string | null
           created_at?: string | null
           creator_address: string
+          description?: string | null
           end_time?: string | null
+          external_link?: string | null
           id: number
+          image_url?: string | null
           is_active?: boolean | null
           is_finalized?: boolean | null
           max_tickets?: number | null
           metadata_uri?: string | null
+          min_sbt_level?: number | null
           nft_contract?: string | null
           prize_per_winner?: number | null
           prize_pool?: number | null
+          rejection_reason?: string | null
           sponsor_address?: string | null
+          title?: string | null
           token_id?: number | null
+          twitter_link?: string | null
           updated_at?: string | null
           winner_count?: number | null
         }
         Update: {
+          cancellation_tx?: string | null
+          category?: string | null
           created_at?: string | null
           creator_address?: string
+          description?: string | null
           end_time?: string | null
+          external_link?: string | null
           id?: number
+          image_url?: string | null
           is_active?: boolean | null
           is_finalized?: boolean | null
           max_tickets?: number | null
           metadata_uri?: string | null
+          min_sbt_level?: number | null
           nft_contract?: string | null
           prize_per_winner?: number | null
           prize_pool?: number | null
+          rejection_reason?: string | null
           sponsor_address?: string | null
+          title?: string | null
           token_id?: number | null
+          twitter_link?: string | null
           updated_at?: string | null
           winner_count?: number | null
         }
@@ -542,6 +694,11 @@ export type Database = {
           id: number
           last_distribution_at: string | null
           platinum_holders: number | null
+          share_common: number | null
+          share_epic: number | null
+          share_legendary: number | null
+          share_participation: number | null
+          share_rare: number | null
           silver_holders: number | null
           total_locked_rewards: number | null
           total_pool_balance: number | null
@@ -559,6 +716,11 @@ export type Database = {
           id: number
           last_distribution_at?: string | null
           platinum_holders?: number | null
+          share_common?: number | null
+          share_epic?: number | null
+          share_legendary?: number | null
+          share_participation?: number | null
+          share_rare?: number | null
           silver_holders?: number | null
           total_locked_rewards?: number | null
           total_pool_balance?: number | null
@@ -576,6 +738,11 @@ export type Database = {
           id?: number
           last_distribution_at?: string | null
           platinum_holders?: number | null
+          share_common?: number | null
+          share_epic?: number | null
+          share_legendary?: number | null
+          share_participation?: number | null
+          share_rare?: number | null
           silver_holders?: number | null
           total_locked_rewards?: number | null
           total_pool_balance?: number | null
@@ -676,6 +843,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_health: {
+        Row: {
+          id: number
+          last_error: string | null
+          last_heartbeat: string | null
+          metadata: Json | null
+          service_key: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          last_error?: string | null
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          service_key: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          last_error?: string | null
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          service_key?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           key: string
@@ -691,6 +888,30 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      telegram_chat_history: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          role: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          role?: string
         }
         Relationships: []
       }
@@ -731,7 +952,29 @@ export type Database = {
           value_symbol?: string | null
           wallet_address?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_logs_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["wallet_address"]
+          },
+          {
+            foreignKeyName: "user_activity_logs_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "user_stats"
+            referencedColumns: ["wallet_address"]
+          },
+          {
+            foreignKeyName: "user_activity_logs_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "v_user_full_profile"
+            referencedColumns: ["wallet_address"]
+          },
+        ]
       }
       user_claims: {
         Row: {
@@ -837,6 +1080,7 @@ export type Database = {
       user_profiles: {
         Row: {
           active_status: string | null
+          base_username: string | null
           bio: string | null
           created_at: string | null
           display_name: string | null
@@ -848,10 +1092,15 @@ export type Database = {
           instagram_id: string | null
           instagram_username: string | null
           is_admin: boolean | null
+          is_base_social_verified: boolean | null
           is_operator: boolean | null
+          is_verifier: boolean
           last_daily_bonus_claim: string | null
           last_login_at: string | null
+          last_onchain_xp: number | null
+          last_seen_at: string | null
           last_streak_claim: string | null
+          manual_xp_bonus: number | null
           neynar_score: number | null
           oauth_provider: string | null
           pfp_url: string | null
@@ -859,6 +1108,7 @@ export type Database = {
           raffle_tickets_bought: number | null
           raffle_wins: number
           raffles_created: number | null
+          referral_bonus_paid: boolean | null
           referred_by: string | null
           streak_count: number | null
           telegram_id: string | null
@@ -878,6 +1128,7 @@ export type Database = {
         }
         Insert: {
           active_status?: string | null
+          base_username?: string | null
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -889,10 +1140,15 @@ export type Database = {
           instagram_id?: string | null
           instagram_username?: string | null
           is_admin?: boolean | null
+          is_base_social_verified?: boolean | null
           is_operator?: boolean | null
+          is_verifier?: boolean
           last_daily_bonus_claim?: string | null
           last_login_at?: string | null
+          last_onchain_xp?: number | null
+          last_seen_at?: string | null
           last_streak_claim?: string | null
+          manual_xp_bonus?: number | null
           neynar_score?: number | null
           oauth_provider?: string | null
           pfp_url?: string | null
@@ -900,6 +1156,7 @@ export type Database = {
           raffle_tickets_bought?: number | null
           raffle_wins?: number
           raffles_created?: number | null
+          referral_bonus_paid?: boolean | null
           referred_by?: string | null
           streak_count?: number | null
           telegram_id?: string | null
@@ -919,6 +1176,7 @@ export type Database = {
         }
         Update: {
           active_status?: string | null
+          base_username?: string | null
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -930,10 +1188,15 @@ export type Database = {
           instagram_id?: string | null
           instagram_username?: string | null
           is_admin?: boolean | null
+          is_base_social_verified?: boolean | null
           is_operator?: boolean | null
+          is_verifier?: boolean
           last_daily_bonus_claim?: string | null
           last_login_at?: string | null
+          last_onchain_xp?: number | null
+          last_seen_at?: string | null
           last_streak_claim?: string | null
+          manual_xp_bonus?: number | null
           neynar_score?: number | null
           oauth_provider?: string | null
           pfp_url?: string | null
@@ -941,6 +1204,7 @@ export type Database = {
           raffle_tickets_bought?: number | null
           raffle_wins?: number
           raffles_created?: number | null
+          referral_bonus_paid?: boolean | null
           referred_by?: string | null
           streak_count?: number | null
           telegram_id?: string | null
@@ -993,13 +1257,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_task_claims_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "daily_tasks"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "user_task_claims_wallet_address_fkey"
             columns: ["wallet_address"]
             isOneToOne: false
@@ -1026,26 +1283,51 @@ export type Database = {
     Views: {
       user_stats: {
         Row: {
+          badge_url: string | null
           display_name: string | null
-          fid: number | null
-          is_admin: boolean | null
-          is_operator: boolean | null
-          last_daily_bonus_claim: string | null
           pfp_url: string | null
           rank_name: string | null
-          referred_by: string | null
           streak_count: number | null
           tier: number | null
           total_xp: number | null
-          updated_at: string | null
           username: string | null
           wallet_address: string | null
         }
         Relationships: []
       }
+      v_user_daily_progress: {
+        Row: {
+          bonus_claimed: boolean | null
+          completed_count: number | null
+          wallet_address: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_task_claims_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["wallet_address"]
+          },
+          {
+            foreignKeyName: "user_task_claims_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "user_stats"
+            referencedColumns: ["wallet_address"]
+          },
+          {
+            foreignKeyName: "user_task_claims_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: false
+            referencedRelation: "v_user_full_profile"
+            referencedColumns: ["wallet_address"]
+          },
+        ]
+      }
       v_user_full_profile: {
         Row: {
-          active_status: string | null
+          badge_url: string | null
           bio: string | null
           display_name: string | null
           fid: number | null
@@ -1056,10 +1338,13 @@ export type Database = {
           is_admin: boolean | null
           is_operator: boolean | null
           last_daily_bonus_claim: string | null
+          last_onchain_xp: number | null
           neynar_score: number | null
           oauth_provider: string | null
           pfp_url: string | null
           power_badge: boolean | null
+          raffle_wins: number | null
+          raffles_created: number | null
           rank_name: string | null
           referred_by: string | null
           streak_count: number | null
@@ -1069,7 +1354,6 @@ export type Database = {
           twitter_username: string | null
           updated_at: string | null
           username: string | null
-          verifications: string[] | null
           wallet_address: string | null
         }
         Relationships: []
@@ -1127,7 +1411,12 @@ export type Database = {
         Args: { p_wallet: string; p_xp: number }
         Returns: undefined
       }
+      fn_increment_xp: {
+        Args: { p_amount: number; p_is_dividend?: boolean; p_wallet: string }
+        Returns: undefined
+      }
       fn_refresh_rank_scores: { Args: never; Returns: undefined }
+      get_auth_wallet: { Args: never; Returns: string }
       is_admin_wallet: { Args: { wallet: string }; Returns: boolean }
     }
     Enums: {
@@ -1139,9 +1428,9 @@ export type Database = {
   }
 }
 
-export type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -1261,4 +1550,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

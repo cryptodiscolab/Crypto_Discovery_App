@@ -86,9 +86,15 @@ test-env/
 
 # === SUPABASE TEMP ===
 Raffle_Frontend/supabase/.temp/
+supabase/.temp/
+.supabase/
 
-# === OTHER VERCEL PROJECTS ===
-verification_vault/
+# === SCRATCH & BUILD ARTIFACTS (Mandatory v3.63.1) ===
+tsc_output*.txt
+lint_results*.txt
+agent_vault_schema.sql
+*._schema.sql
+*.sql.dump
 
 # === DATA DUMP & LOGS HYGIENE (Mandatory) ===
 supabase_full_dump.json

@@ -21,6 +21,22 @@ export interface BaseResponse<T> {
     success: boolean;
 }
 
+export interface CallReceipt {
+    transactionHash: `0x${string}`;
+    blockHash: `0x${string}`;
+    blockNumber: bigint;
+    status: 'success' | 'reverted';
+}
+
+export interface CallStatusResponse {
+    status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+    receipts?: CallReceipt[];
+}
+
+export interface RaffleExtraMetadata {
+    [key: string]: any; // Flexibel for UGC metadata
+}
+
 export interface Raffle {
     id: number;
     totalTickets: number;
@@ -49,4 +65,5 @@ export interface Raffle {
     twitter_link?: string;
     external_link?: string;
     created_at?: string;
+    extra_metadata?: RaffleExtraMetadata;
 }

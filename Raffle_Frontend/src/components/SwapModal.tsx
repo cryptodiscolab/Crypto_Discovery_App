@@ -17,7 +17,15 @@ interface Token {
   logo: string;
 }
 
-const TOKENS: Record<number, Token[]> = {
+interface LiFiQuote {
+  id: string;
+  estimate: {
+    toAmount: string;
+    gasCosts?: { amount: string }[];
+  };
+}
+
+const DEFAULT_TOKENS: Record<number, Token[]> = {
   8453: [
     { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' },
     { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6, symbol: 'USDC', logo: '$' },
@@ -29,6 +37,15 @@ const TOKENS: Record<number, Token[]> = {
     { address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6, symbol: 'USDC', logo: '$' }
   ]
 };
+
+// Source tokens from env (JSON) or fall back to defaults
+const TOKENS: Record<number, Token[]> = (() => {
+  try {
+    const envTokens = import.meta.env.VITE_SWAP_TOKENS;
+    if (envTokens) return JSON.parse(envTokens);
+  } catch { /* fall through */ }
+  return DEFAULT_TOKENS;
+})();
 
 // Li.Fi SDK init flag
 let _lifiConfigured = false;
@@ -44,7 +61,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [toToken, setToToken] = useState<Token>(TOKENS[selectedChainId]?.[1] || TOKENS[8453][1]);
   
   const [amountIn, setAmountIn] = useState('');
-  const [quote, setQuote] = useState<any>(null);
+  const [quote, setQuote] = useState<LiFiQuote | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -65,12 +82,12 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   useEffect(() => {
     if (configuredRef.current) return;
     try {
-      (createConfig as any)({
+      createConfig({
         integrator: 'crypto-disco-app'
       });
       configuredRef.current = true;
-    } catch (e: any) {
-      console.warn('[SwapModal] Li.Fi SDK init failed:', e.message);
+    } catch (e: unknown) {
+      console.warn('[SwapModal] Li.Fi SDK init failed:', e instanceof Error ? e.message : String(e));
       configuredRef.current = true;
     }
   }, [wagmiConfig]);
@@ -95,14 +112,14 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           fromAddress: address,
           toAddress: address,
           // v3.45.0+: Use raw object for better compatibility across SDK updates
-          fee: 0.005,
+          fee: Number(import.meta.env.VITE_SWAP_FEE || 0.005),
           integrator: 'crypto-disco-app'
-        } as any);
-        setQuote(result);
-        } catch (error: any) {
+        });
+        setQuote(result as unknown as LiFiQuote);
+        } catch (error: unknown) {
           console.error("Quote Error:", error);
           setQuote(null);
-          const errMsg = error?.message || '';
+          const errMsg = error instanceof Error ? error.message : String(error);
         if (errMsg.includes('No route found') || errMsg.includes('no route')) {
           setQuoteError('No swap route found for this pair/amount.');
         } else if (errMsg.includes('amount') || errMsg.includes('too small')) {
@@ -126,18 +143,19 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     const tid = toast.loading("Executing Swap via Li.Fi...");
     
     try {
-      await executeRoute(quote, {
-        updateRouteHook: (route) => {
-          console.log('Route updated:', route);
+      // @ts-ignore - Route type mismatch across SDK versions
+      await executeRoute(quote as any, {
+        updateRouteHook: () => {
+          
         },
       });
       toast.success("Swap Successful!", { id: tid });
       setAmountIn('');
       setQuote(null);
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Swap Error:", error);
-      toast.error(error?.message || "Swap failed", { id: tid });
+      toast.error(error instanceof Error ? error.message : "Swap failed", { id: tid });
     } finally {
       setIsSwapping(false);
     }

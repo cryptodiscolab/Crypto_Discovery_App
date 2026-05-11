@@ -122,6 +122,8 @@ dist
 # Inteillij
 .idea
 .vercel
+.vercel_backup/
+.vercel_backup_*/
 .env*.local
 
 # Build Statistics

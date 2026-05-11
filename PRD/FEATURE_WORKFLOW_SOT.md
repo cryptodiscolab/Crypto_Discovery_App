@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.61.0)
-**Last Updated**: 2026-05-11T07:30:00+07:00 — Serverless API Hardening & TS Migration (v3.61.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.63.0)
+**Last Updated**: 2026-05-11T12:00:00+07:00 — Admin Architecture Consolidation (v3.63.0)
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -159,6 +159,7 @@ Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi selu
 12. [ ] **Raffle Economics Configurability**: Admin harus dapat mengubah Rake, Claim Fee, dan Surcharge secara real-time melalui dashboard (v3.59.5).
 13. [ ] **Creator Revenue Accountability**: Setiap raffle harus mencatat porsi revenue kreator (80%) yang dapat ditarik secara mandiri melalui tombol "Withdraw Creator Earnings" (v3.59.5).
 14. [ ] **Strict API Typing (v3.61.0)**: Seluruh API serverless di `api/` harus menggunakan tipe data eksplisit dan error guarding yang resilien.
+15. [ ] **Admin Consolidation (v3.63.0)**: Seluruh modul administratif harus menggunakan komponen terpusat di `src/features/admin/` dan interface strict di `types/tasks.ts`.
 
 ---
 

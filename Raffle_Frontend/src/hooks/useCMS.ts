@@ -24,6 +24,12 @@ export function useCMS() {
     const config = useConfig();
     const publicClient = usePublicClient();
 
+    const writeAndWait = async (params: Parameters<typeof writeContractAsync>[0]) => {
+        const hash = await writeContractAsync(params);
+        await publicClient!.waitForTransactionReceipt({ hash });
+        return hash;
+    };
+
     // ============================================
     // READ CONTENT FROM CONTRACT
     // ============================================
@@ -311,7 +317,7 @@ export function useCMS() {
             pool: poolSettings
         };
         const jsonString = JSON.stringify(newSettings);
-        const hash = await writeContractAsync({
+        const hash = await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateAnnouncement',
@@ -329,7 +335,7 @@ export function useCMS() {
             pool: newPoolSettings
         };
         const jsonString = JSON.stringify(newSettings);
-        const hash = await writeContractAsync({
+        const hash = await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateAnnouncement',
@@ -342,7 +348,7 @@ export function useCMS() {
     const updateNews = useCallback(async (newNews: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newNews);
-        const hash = await writeContractAsync({
+        const hash = await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateNews',
@@ -355,7 +361,7 @@ export function useCMS() {
     const updateFeatureCards = useCallback(async (newCards: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newCards);
-        const hash = await writeContractAsync({
+        const hash = await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'updateFeatureCards',
@@ -367,7 +373,7 @@ export function useCMS() {
 
     const batchUpdate = useCallback(async (newAnnouncement: any, newNews: any, newCards: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
-        const hash = await writeContractAsync({
+        const hash = await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'batchUpdate',
@@ -387,7 +393,7 @@ export function useCMS() {
 
     const grantOperator = useCallback(async (operatorAddress: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
-        return await writeContractAsync({
+        return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'grantOperator',
@@ -397,7 +403,7 @@ export function useCMS() {
 
     const revokeOperator = useCallback(async (operatorAddress: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
-        return await writeContractAsync({
+        return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'revokeOperator',
@@ -411,7 +417,7 @@ export function useCMS() {
 
     const grantPrivilege = useCallback(async (userAddress: any, featureId: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
-        return await writeContractAsync({
+        return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'grantPrivilege',
@@ -421,7 +427,7 @@ export function useCMS() {
 
     const revokePrivilege = useCallback(async (userAddress: any, featureId: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
-        return await writeContractAsync({
+        return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'revokePrivilege',
@@ -431,7 +437,7 @@ export function useCMS() {
 
     const batchGrantPrivileges = useCallback(async (userAddresses: any, featureIds: any) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
-        return await writeContractAsync({
+        return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
             abi: ABIS.CMS,
             functionName: 'batchGrantPrivileges',

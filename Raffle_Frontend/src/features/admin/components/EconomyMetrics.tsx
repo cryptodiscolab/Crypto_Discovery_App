@@ -17,12 +17,13 @@ export function EconomyMetrics() {
     const [loading, setLoading] = useState(true);
 
     // Check Verifier Role in Contract
-    const VERIFIER_ADDRESS = "0x52260c30697674a7C837FEB2af21bBf3606795C8"; // Standard Verifier
+    const VERIFIER_ADDRESS = import.meta.env.VITE_VERIFIER_ADDRESS || "0x52260c30697674a7C837FEB2af21bBf3606795C8";
+    const VERIFIER_ROLE_HASH = import.meta.env.VITE_VERIFIER_ROLE_HASH || "0x3d0613dc01850387e388c60f1ad9250000000000000000000000000000000000";
     const { data: hasVerifierRole } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'hasRole',
-        args: ["0x3d0613dc01850387e388c60f1ad9250000000000000000000000000000000000", VERIFIER_ADDRESS] // VERIFIER_ROLE hash
+        args: [VERIFIER_ROLE_HASH, VERIFIER_ADDRESS]
     });
 
     const fetchStats = async () => {

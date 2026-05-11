@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract, useAccount } from 'wagmi';
+import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { ABIS, CONTRACTS } from '../lib/contracts';
 import { useMemo } from 'react';
 import { formatEther, parseEther } from 'viem';
@@ -8,6 +8,13 @@ const V12 = CONTRACTS.DAILY_APP as `0x${string}`;
 export function useNFTTiers() {
     const { address } = useAccount();
     const { writeContractAsync } = useWriteContract();
+    const publicClient = usePublicClient();
+
+    const writeAndWait = async (params: Parameters<typeof writeContractAsync>[0]) => {
+        const hash = await writeContractAsync(params);
+        await publicClient!.waitForTransactionReceipt({ hash });
+        return hash;
+    };
 
     // Fetch configs for tiers 1-5 (Bronze - Diamond)
     const { data: bConfig, refetch: r1 } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'nftConfigs', args: [1] });
@@ -53,7 +60,7 @@ export function useNFTTiers() {
 
     const updateEconomy = async (tokenP: any) => {
         if (tokenP) {
-            await writeContractAsync({
+            await writeAndWait({
                 address: V12,
                 abi: ABIS.DAILY_APP,
                 functionName: 'setTokenPriceUSD',
@@ -63,7 +70,7 @@ export function useNFTTiers() {
     };
 
     const setCreatorToken = async (tokenAddr: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setCreatorToken',
@@ -72,7 +79,7 @@ export function useNFTTiers() {
     };
 
     const setUSDCToken = async (tokenAddr: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setUSDCToken',
@@ -81,7 +88,7 @@ export function useNFTTiers() {
     };
 
     const setMasterX = async (masterAddr: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setMasterX',
@@ -90,7 +97,7 @@ export function useNFTTiers() {
     };
 
     const setPaymentTokenStatus = async (tokenAddr: any, status: any, decimals = 18, symbol = '') => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setAllowedToken',
@@ -99,7 +106,7 @@ export function useNFTTiers() {
     };
 
     const setWithdrawalFeeBP = async (feeBP: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setWithdrawalFeeBP',
@@ -108,7 +115,7 @@ export function useNFTTiers() {
     };
 
     const setDailyBonusAmount = async (amount: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setDailyBonusAmount',
@@ -117,7 +124,7 @@ export function useNFTTiers() {
     };
 
     const setAutoApproveSponsorship = async (status: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setAutoApproveSponsorship',
@@ -126,7 +133,7 @@ export function useNFTTiers() {
     };
 
     const setSponsorshipSettings = async (rewardClaim: any, tasksGoal: any, minPool: any, fee: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setSponsorshipParams',
@@ -135,7 +142,7 @@ export function useNFTTiers() {
     };
 
     const updateTierConfig = async (id: any, points: any, price: any, multiplier: any, bonus: any, maxSupply: any, isOpen: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'updateNFTConfig',
@@ -144,7 +151,7 @@ export function useNFTTiers() {
     };
 
     const updateBatchConfig = async (tiersArr: any, pointsArr: any, pricesArr: any, bonusesArr: any, multipliersArr: any, suppliesArr: any, openArr: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setNFTConfigsBatch',
@@ -153,7 +160,7 @@ export function useNFTTiers() {
     };
 
     const updateTierURI = async (id: any, uri: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setTierURI',
@@ -162,7 +169,7 @@ export function useNFTTiers() {
     };
 
     const toggleTier = async (id: any, status: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setTierStatus',
@@ -171,7 +178,7 @@ export function useNFTTiers() {
     };
 
     const mintTier = async (id: any, price: any) => {
-        return await writeContractAsync({
+        return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'mintNFT',

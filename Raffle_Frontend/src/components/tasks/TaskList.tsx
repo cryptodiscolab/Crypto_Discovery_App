@@ -142,7 +142,7 @@ export function TaskList() {
     // v3.59.6: Automatic Identity Sync Mandate
     useEffect(() => {
         if (isConnected && address && !profileData && !isSyncing) {
-            console.log("[TaskList] Missing identity detected. Triggering background sync...");
+            
             syncUser(address);
         }
     }, [isConnected, address, profileData, isSyncing, syncUser]);

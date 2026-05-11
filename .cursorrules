@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.61.0)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.61.0-Hardened)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -70,14 +70,16 @@ After reading, internally confirm:
 3. **Docs**: Pembaruan Master PRD, SOT, dan Task Workflow ke v3.59.3.
 4. **ABI**: Sinkronisasi `abis_data.txt` dengan interface V14.
 
-## 🟢 Work Report v3.61.0: Serverless API Hardening & 100% TS Migration
-**Status**: ✅ IMPLEMENTED
-**Summary**: Pengerasan ekosistem melalui migrasi 100% TypeScript pada seluruh bundle API serverless, implementasi strict database entity types, dan penegakan resilient error handling.
+## 🟢 Work Report v3.61.0: Ecosystem Hardening (Kiro Audit) & 100% TS Migration
+**Status**: ✅ IMPLEMENTED & HARDENED
+**Summary**: Pengerasan ekosistem melalui implementasi mandat Kiro Deep Audit (Zero-Trust, Zero-Hardcode), migrasi 100% TypeScript pada seluruh bundle API serverless, dan penghapusan bypass tanda tangan.
 **Changes**:
-1. **API**: Refaktor `user-bundle.ts`, `tasks-bundle.ts`, dan `admin-bundle.ts` ke strict TypeScript.
-2. **Types**: Integrasi generated Supabase types untuk keamanan skema 1:1.
-3. **Hardening**: Eliminasi total `any` usage dan implementasi `unknown` catch pattern.
-4. **Docs**: Sinkronisasi seluruh protokol ekosistem ke v3.61.0.
+1. **Security**: Eliminasi `signature=bypass`. Enforce real EIP-191 signatures for all admin/claim actions.
+2. **Hardening**: Integrasi `waitForTransactionReceipt` untuk 35 on-chain write operations.
+3. **Infrastructure**: Zero-Hardcode mandate enforced via dynamic .env configuration for Verifiers and Fees.
+4. **Types**: Regenerasi `database.types.ts` dengan skema produksi terbaru.
+5. **Git**: Cleanup audit artifacts dan file skema basi (`supabase_schema.sql`).
+6. **Docs**: Sinkronisasi seluruh protokol ekosistem ke v3.61.0-Hardened.
 
 ## 🟢 Work Report v3.60.4: Daily Retention Hardening & Tier Reconciliation
 **Status**: ✅ IMPLEMENTED
@@ -246,7 +248,7 @@ You are **Antigravity**, the **Lead Senior Staff Engineer** and **Lead Blockchai
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
 | *---
-| *Last Updated: 2026-05-10T02:40:00+07:00 | Raffle Admin Hardening & Platform Economics (v3.59.5).*
+| *Last Updated: 2026-05-11T04:20:00+07:00 | Ecosystem Hardening & Kiro Audit Verification (v3.61.0). |
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -842,5 +844,10 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 - **ENVIRONMENT**: Use `wsl-exec.sh` to ensure Node v23.6.0 is active.
 - **PATH MAPPING**: `e:\Disco Gacha\Disco_DailyApp` maps to `/mnt/e/Disco Gacha/Disco_DailyApp`.
 
+## 56. ZERO-TRUST SIGNATURE & HARDENING MANDATE (KIRO AUDIT v3.61.0)
+- **NO BYPASS**: DILARANG KERAS menggunakan `signature=bypass` atau bypass string lainnya di lingkungan produksi. Seluruh mutasi data sensitif (XP Sync, Admin Moderation, Task Claim) WAJIB menggunakan tanda tangan EIP-191 yang valid.
+- **RECEIPT MANDATE**: Setiap on-chain write operation WAJIB menyertakan pengecekan `waitForTransactionReceipt` sebelum melakukan update status di database untuk mencegah data drift.
+- **ZERO-HARDCODE CONFIG**: Seluruh parameter ekonomi (Verifier, Rake, Surcharge) WAJIB dimuat dari `.env`, bukan hardcoded di dalam komponen UI atau hooks.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.61.0. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.61.0.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.61.0-Hardened. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.61.0.*

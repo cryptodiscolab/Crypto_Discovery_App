@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.61.0)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.63.0)
 Last Update: 2026-05-11 (07:30)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
@@ -50,12 +50,18 @@ e:\Disco Gacha\Disco_DailyApp
 │   │   ├── database.types.ts # 🆕 Canonical Supabase Schema (Generated)
 │   │   ├── types.ts          # 🆕 Central Entity Interfaces (Hardened)
 │   ├── src/                 # Frontend Source
-│   │   ├── components/      # Modular UI Components
-│   │   │   ├── UGCCampaignCard.jsx # 🆕 Multi-Action Campaign UI
-│   │   │   └── SwapModal.jsx # Disco Quick Swap UI (SDK-First)
+│   │   ├── components/      # Global UI Components (Shared)
+│   │   ├── features/        # Feature-Based Modules
+│   │   │   ├── admin/       # 🆕 Hardened Admin Dashboard (v3.63.0)
+│   │   │   │   ├── components/ # Modular Admin Components
+│   │   │   │   │   ├── tasks/  # Task Management Modules
+│   │   │   │   │   └── system/ # Protocol & Economic Configs
+│   │   │   │   └── types/      # Strict Administrative Interfaces
+│   │   │   ├── profile/     # User Profile & SBT Logic
+│   │   │   └── raffle/      # Raffle Core Features
 │   │   ├── hooks/           # Business Logic & State Hooks
 │   │   ├── lib/             # Core Configs (Supabase, Contracts)
-│   │   ├── pages/           # Route-level Page Components
+│   │   ├── pages/           # Route-level Page Components (AdminPage.tsx)
 │   │   └── services/        # External API Integrations
 │   └── vercel.json          # API Routing & Security Headers
 │
@@ -193,4 +199,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-11T07:30:00+07:00 | Multi-Agent Bridge v1.4.0 & 27 Skills Synced. v3.61.0 LOCKED.*
+*Last Updated: 2026-05-11T12:00:00+07:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.63.0 LOCKED.*

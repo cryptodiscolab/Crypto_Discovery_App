@@ -31,5 +31,5 @@ export function useSocialGuard(address?: string): UseQueryResult<SocialProfile |
         enabled: !!address,
         staleTime: 1000 * 60 * 5,   // 5 min cache
         gcTime: 1000 * 60 * 30,  // 30 min in memory
-    }) as any;
+    });
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { ShieldCheck, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { cleanWallet } from '../utils/cleanWallet';
 
@@ -11,6 +11,7 @@ interface PendingMission {
 
 export function GovernancePanel() {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const [pendingMissions, setPendingMissions] = useState<PendingMission[]>([]);
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | number | null>(null);
@@ -19,12 +20,10 @@ export function GovernancePanel() {
         if (!address) return;
         setLoading(true);
         try {
-            // In a production app, you'd want to sign a message once and reuse the signature
-            // For now, we'll assume the user is already authenticated via SIWE or similar
-            // or just use a dummy signature/message if the backend MASTER_ADMIN check is wallet-based
-            // but our backend handleFetchPendingMissions requires signature.
-            // Simplified: Fetch missions
-            const res = await fetch(`/api/user-bundle?action=pending-missions&wallet=${address}&signature=bypass&message=admin_fetch`);
+            const timestamp = new Date().toISOString();
+            const message = `Fetch Pending Missions\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+            const res = await fetch(`/api/user-bundle?action=pending-missions&wallet=${address}&signature=${encodeURIComponent(signature)}&message=${encodeURIComponent(message)}`);
             if (res.ok) {
                 const data = await res.json();
                 setPendingMissions(data);
@@ -39,17 +38,18 @@ export function GovernancePanel() {
     const approveMission = async (campaignId: string | number) => {
         setActionLoading(campaignId);
         try {
-            // In a real scenario, this requires a real signature for 'approve-mission'
-            // For the sake of this implementation, we'll call the endpoint
+            const timestamp = new Date().toISOString();
+            const message = `Approve Mission\nCampaign: ${campaignId}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
             const res = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'approve-mission',
-                    wallet: address,
+                    wallet_address: address,
                     campaign_id: campaignId,
-                    signature: 'bypass', // Backend MASTER_ADMINS still applies, signature bypass for demo/internal
-                    message: 'Approve mission'
+                    signature,
+                    message
                 })
             });
 

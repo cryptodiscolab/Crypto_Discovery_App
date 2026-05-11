@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { useReadContract, useWriteContract } from 'wagmi';
+import { useReadContract, useWriteContract, usePublicClient } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../lib/contracts';
 import toast from 'react-hot-toast';
 
@@ -28,32 +28,33 @@ export function SponsorshipConfigSection() {
     }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
     const { writeContractAsync } = useWriteContract();
+    const publicClient = usePublicClient();
 
     const handleSaveSponsorshipConfig = async () => {
         setIsSaving(true);
         const tid = toast.loading("Updating Sponsorship Params...");
         try {
-            // ✅ Correct ABI function: setSettings(fee, minPool, reward, tasks)
-            await writeContractAsync({
+            const hash1 = await writeContractAsync({
                 address: CONTRACTS.DAILY_APP as any,
                 abi: DAILY_APP_ABI,
                 functionName: 'setSettings',
                 args: [
-                    BigInt(Math.floor(Number(fee) * 1e6)),           // _feeUSDC
-                    BigInt(Math.floor(Number(minPool) * 1e18)),      // _minPool (in wei)
-                    BigInt(Math.floor(Number(rewardPerClaim) * 1e18)), // _reward
-                    BigInt(tasksForReward)                           // _tasks
+                    BigInt(Math.floor(Number(fee) * 1e6)),
+                    BigInt(Math.floor(Number(minPool) * 1e18)),
+                    BigInt(Math.floor(Number(rewardPerClaim) * 1e18)),
+                    BigInt(tasksForReward)
                 ],
             });
+            await publicClient!.waitForTransactionReceipt({ hash: hash1 });
 
-            // ✅ Auto-Approve is a separate function (verified in ABI)
             if (autoApprove !== currentAutoApprove) {
-                await writeContractAsync({
+                const hash2 = await writeContractAsync({
                     address: CONTRACTS.DAILY_APP as any,
                     abi: DAILY_APP_ABI,
                     functionName: 'setAutoApproveSponsorship',
                     args: [autoApprove],
                 });
+                await publicClient!.waitForTransactionReceipt({ hash: hash2 });
             }
 
             toast.success("Sponsorship Settings Updated!", { id: tid });

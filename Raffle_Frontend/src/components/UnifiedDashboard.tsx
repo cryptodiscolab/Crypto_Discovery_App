@@ -10,8 +10,8 @@ import { encodeFunctionData } from 'viem';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCMS } from '../hooks/useCMS';
 import { GovernancePanel } from './GovernancePanel';
-import { calculateMultipliers, estimateXP } from '../lib/economy';
-import { useUserInfo, useV12Stats } from '../hooks/useContract';
+import { calculateMultipliers, estimateXP, MultiplierResult, UserStats } from '../lib/economy';
+import { useUserInfo, useV12Stats, ContractUserStats } from '../hooks/useContract';
 import { supabase } from '../lib/supabaseClient';
 import { NexusPulseStrip } from './home/NexusPulseStrip';
 import toast from 'react-hot-toast';
@@ -59,7 +59,7 @@ export function UnifiedDashboard() {
         fetchBaseStatus();
     }, [address]);
 
-    const multis = calculateMultipliers(userStats as any, totalUsers) as any;
+    const multis = calculateMultipliers(userStats as UserStats | null, totalUsers);
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -105,14 +105,14 @@ export function UnifiedDashboard() {
         query: { enabled: !!address },
     });
 
-    const userPoints = userData ? Number((userData as any[])[0]) : 0;
+    const userPoints = userData ? Number((userData as [bigint])[0]) : 0;
     const unsyncedPoints = unsyncedPointsRaw ? Number(unsyncedPointsRaw) : 0;
 
     const handleTransactionSuccess = useCallback(async (txHash: string) => {
         // BUG-SYNC fix: Trigger backend XP sync immediately after transaction confirmation
         if (address) {
             try {
-                console.log('[Dashboard Sync] Triggering XP sync for tx:', txHash);
+                
                 // Call /api/user/xp — Vercel routes this to user-bundle?action=xp
                 fetch('/api/user/xp', {
                     method: 'POST',
@@ -126,7 +126,7 @@ export function UnifiedDashboard() {
                         const err = await res.json();
                         console.warn('[Dashboard Sync] XP sync failed:', err.error);
                     } else {
-                        console.log('[Dashboard Sync] XP synced to DB');
+                        
                     }
                     // Refetch local stats after backend updates
                     if (refetchStats) refetchStats();
@@ -191,7 +191,7 @@ export function UnifiedDashboard() {
                     {/* Daily Admin Tasks */}
                     <div className="space-y-4">
                         <div className="space-y-3">
-                            {((dailyTaskIds as unknown as any[]) || [])?.map((tid) => (
+                            {((dailyTaskIds as bigint[]) || [])?.map((tid) => (
                                 <DailyTaskItem
                                     key={Number(tid)}
                                     taskId={Number(tid)}
@@ -248,7 +248,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
     // v3.42.2: Hard Hide for completed tasks
     if (isLoading || !task || isCompleted) return null;
 
-    const t = task as any;
+    const t = task;
     // Hardening v3.41.2: Check Base Social Requirement
     const isBaseLocked = t.isBaseSocialRequired && !isBaseVerified;
     const finalDisabled = isDisabled || isBaseLocked;
@@ -379,12 +379,12 @@ function SponsorCard({ sponsorId, isDisabled, isBaseVerified, address, onSuccess
     };
 
     // v3.42.2: Hard Hide for completed cards
-    if (!sponsorData || !taskIds || selectedTasks.length === 0 && (taskIds as any[]).length > 0 && false) return null; // Placeholder logic, actual check below
+    if (!sponsorData || !taskIds || (selectedTasks.length === 0 && (taskIds as bigint[]).length > 0 && false)) return null; 
 
     // We need to check if all subtasks are done
     // Let's refine the return logic below
 
-    const sponsorName = (sponsorData as any[])?.[0];
+    const sponsorName = (sponsorData as [string])?.[0];
     const cardsDisabled = isDisabled || selectedTasks.length === 0;
 
     return (
@@ -398,7 +398,7 @@ function SponsorCard({ sponsorId, isDisabled, isBaseVerified, address, onSuccess
             </div>
 
             <div className="space-y-2 mb-6">
-                {(taskIds as any[])?.map((tid) => (
+                {(taskIds as bigint[])?.map((tid) => (
                     <SubTaskItem
                         key={Number(tid)}
                         taskId={Number(tid)}
@@ -483,7 +483,7 @@ function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, mu
     // v3.42.2: Hard Hide for completed subtasks
     if (isLoading || !task || isCompleted) return null;
 
-    const t = task as any;
+    const t = task;
     const isBaseLocked = t.isBaseSocialRequired && !isBaseVerified;
     const needsVerify = t.requiresVerification && !isCompleted;
 
@@ -545,7 +545,7 @@ function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, mu
                         )}
                     </div>
                     <p className={`text-[11px] font-black uppercase tracking-widest ${isSelected ? 'text-white' : 'text-indigo-400'}`}>
-                        +{estimateXP((task as any).baseReward, multipliers)} XP
+                        +{estimateXP(task.baseReward, multipliers)} XP
                     </p>
                 </div>
             </div>

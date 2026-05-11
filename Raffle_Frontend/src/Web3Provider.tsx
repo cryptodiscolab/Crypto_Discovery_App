@@ -32,7 +32,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
               configurable: true,
               enumerable: true
             });
-            console.log('%c[WalletConflict] Resolved: Provider slot is now writable.', 'color: #4ade80; font-weight: bold;');
+            
           } catch (e) {
             console.error('[WalletConflict] Failed to resolve trap:', e);
             setWalletConflict(true);

@@ -11,11 +11,33 @@ import { useSignMessage, useAccount } from 'wagmi';
  *   const { execute, isLoading, error } = useVerifiedAction();
  *   await execute('claim_task', { task_id: '...', xp_earned: 50 });
  */
+export interface VerifiedActionPayload {
+    task_id?: string;
+    xp_earned?: number;
+    platform?: string;
+    action_type?: string;
+    socialId?: string | number;
+    fid?: number;
+    twitterId?: string;
+    targetFid?: number;
+    castHash?: string;
+    tweetId?: string;
+    targetUserId?: string;
+    tiktokHandle?: string;
+    instagramHandle?: string;
+    actionParams?: {
+        targetFid?: number;
+        castHash?: string;
+        tweetId?: string;
+        targetUserId?: string;
+    };
+}
+
 export function useVerifiedAction() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
 
-    const execute = useCallback(async (action: string, payload: any) => {
+    const execute = useCallback(async (action: string, payload: VerifiedActionPayload) => {
         if (!address) throw new Error('Wallet not connected');
 
         // Build a deterministic, human-readable message
@@ -45,7 +67,8 @@ export function useVerifiedAction() {
             endpoint = `${verifyServerUrl}/api/verify/${platform}/${actionType}`;
             
             // Verification Server requires API Secret for auth
-            const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET || 'disco-secure-api-key';
+            const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET;
+            if (!apiSecret) throw new Error('VITE_VERIFY_API_SECRET is missing');
             headers['X-API-SECRET'] = apiSecret;
         }
 

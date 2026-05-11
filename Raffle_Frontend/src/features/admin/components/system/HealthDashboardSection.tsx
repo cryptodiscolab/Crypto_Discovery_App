@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAccount, useSignMessage } from 'wagmi';
 import { 
     Activity, 
     CheckCircle2, 
@@ -22,6 +23,8 @@ interface HealthService {
 }
 
 export function HealthDashboardSection() {
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const [healthData, setHealthData] = useState<HealthService[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -50,10 +53,13 @@ export function HealthDashboardSection() {
         if (!confirm(`Reset health status for ${serviceKey}?`)) return;
         const tid = toast.loading(`Resetting ${serviceKey}...`);
         try {
+            const timestamp = new Date().toISOString();
+            const message = `Reset Health\nService: ${serviceKey}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
             const res = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'reset-health', service_key: serviceKey })
+                body: JSON.stringify({ action: 'reset-health', service_key: serviceKey, wallet_address: address, signature, message })
             });
             const data = await res.json();
             if (data.ok) {

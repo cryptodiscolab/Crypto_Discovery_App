@@ -1,4 +1,4 @@
-# 📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.60.2)
+# 📊 ACCOUNTANT LEDGER: SOURCE OF TRUTH (v3.63.0)
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 **Description**: Sistem pencatatan keuangan ganda (double-entry audit trail) dan pusat kendali paritas on-chain untuk ekosistem Crypto Disco. Menjamin transparansi mutlak antara transaksi On-Chain dan data Off-Chain (Database).
 
@@ -10,7 +10,7 @@ Sistem Ledger bekerja dengan menggabungkan data dari dua sumber utama:
 2.  **Off-Chain (Database)**: Log aktivitas pengguna (`user_activity_logs`) yang mencatat kategori transaksi.
 
 ### 📍 Komponen Utama
-- **Dashboard UI**: `AccountantLedgerTab.jsx` (Admin Portal).
+- **Dashboard UI**: `AdminPage.tsx` -> `TaskManager.tsx` (Modular sections in `src/features/admin/components/`).
 - **Backend Logic**: `admin-bundle.js` (Endpoint `/api/admin/accountant-ledger`).
 - **Hook**: `useSBT.js` (Fungsi `withdrawTreasury`).
 - **Database Table**: `user_activity_logs`.
@@ -108,4 +108,5 @@ Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi k
 3.  **Automatic Inclusion**: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.
 
 ---
-*End of Accountant Ledger SOT - Nexus v3.60.2 Locked.*
+---
+*End of Accountant Ledger SOT - Nexus v3.63.0 Locked.*

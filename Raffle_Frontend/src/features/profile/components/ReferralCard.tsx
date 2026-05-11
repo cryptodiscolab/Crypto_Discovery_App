@@ -83,7 +83,7 @@ export const ReferralCard = () => {
                     url: refLink,
                 });
             } catch (err) {
-                console.log('Error sharing:', err);
+                console.error('Error sharing:', err);
             }
         } else {
             handleCopy();
