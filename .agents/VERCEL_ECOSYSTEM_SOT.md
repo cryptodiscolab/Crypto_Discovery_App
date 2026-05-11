@@ -1,4 +1,4 @@
-# 🌐 VERCEL ECOSYSTEM AGENT SKILLS (v3.63.0)
+# 🌐 VERCEL ECOSYSTEM AGENT SKILLS (v3.63.1)
 **Status**: 🛡️ ACTIVE & LOCKED
 **Source of Truth for Vercel Integrations, Deployment, and Next.js/React Best Practices.**
 
@@ -59,4 +59,4 @@ This document defines the canonical guidelines and skill integrations derived fr
 - "Make the UI feel more native/smooth." (Triggers `vercel-react-view-transitions`).
 - "Audit my app for performance." (Triggers `vercel-react-best-practices`).
 
-*Integrity Confirmed. Zero Hardcode Inspected. v3.63.0 Parity Reached.*
+*Integrity Confirmed. Zero Hardcode Inspected. v3.63.1 Parity Reached (Hardened).*

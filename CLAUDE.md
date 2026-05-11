@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.61.0-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.63.1-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.61.0)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.61.0).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.1)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.1).
 
 ---
 
@@ -75,6 +75,7 @@ Before responding to ANY request, read these files IN ORDER:
 69. **TYPESCRIPT HARDENING MANDATE**: All frontend business logic and Serverless API bundles MUST be strictly typed (.tsx / .ts). Implicit `any` is strictly forbidden. All catch blocks MUST use `unknown` with explicit type guards to prevent runtime leakage (v3.61.0).
 70. **GIT HYGIENE ENFORCEMENT**: Strictly prohibit untracked `.env.vercel*` and audit artifacts (`tsc_output*.txt`, `tsc-errors*.txt`). RUN `Remove-Item tsc-errors*.txt` before each commit (v3.61.0).
 71. **RETENTION HARDENING MANDATE**: All daily retention mechanisms MUST use identity gating (`is_base_social_verified`) and concurrent transitions for UI smoothness. UGC campaigns MUST use signature-based verification hooks for audit integrity (v3.61.0).
+72. **LURAH CRON HARDENING MANDATE**: All ecosystem cron jobs MUST use individual task timeouts (runWithTimeout) and parallel isolation (allSettled) to prevent 504 Vercel timeouts. Heartbeat updates MUST be atomic and final to ensure accurate system health visibility (v3.63.1).
 
 ---
 
@@ -134,4 +135,4 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.61.0 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.63.1 LOCKED.*
