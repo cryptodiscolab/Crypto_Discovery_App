@@ -10,22 +10,26 @@ import {
     NEYNAR_API_KEY,
     rpcClient,
     DAILY_APP_ADDRESS,
+    RAFFLE_ADDRESS,
     RAFFLE_ABI,
     DAILY_APP_USER_STATS_ABI,
     TASK_IDS,
     PROFILE_LIMITS,
     MASTER_ADMINS,
     WALLET_BOT_SIGNER,
+    CHAIN_ID,
     isMainnet
 } from './constants';
 import { 
     UserProfile, 
+    DbUserProfile,
     UserActivityLog, 
     SyncPayload, 
     XpSyncPayload, 
     UpdateProfilePayload, 
     UgcMissionPayload, 
-    UgcRafflePayload 
+    UgcRafflePayload,
+    Json
 } from './types';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -44,7 +48,7 @@ async function checkBreaker(serviceKey: string): Promise<boolean> {
         .maybeSingle();
     
     if (data?.status === 'failed') {
-        const lastUpdate = new Date(data.updated_at).getTime();
+        const lastUpdate = new Date(data.updated_at || 0).getTime();
         if (Date.now() - lastUpdate < BREAK_COOLDOWN) {
             console.warn(`[CircuitBreaker] Breaker OPEN for ${serviceKey}.`);
             return false;
@@ -104,7 +108,7 @@ async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promi
             .eq('key', 'active_features')
             .maybeSingle();
         
-        const activeFeatures = data?.value || {};
+        const activeFeatures = (data?.value || {}) as Record<string, any>;
         if (activeFeatures[featureKey] !== true) {
             res.status(403).json({ error: `Feature [${featureKey}] is currently disabled.` });
             return false;
@@ -215,7 +219,6 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
             signature: signedSignature,
             signer: account.address
         });
-        });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         res.status(500).json({ error: msg });
@@ -238,7 +241,7 @@ async function handleLoginSync(req: VercelRequest, res: VercelResponse) {
             .eq('wallet_address', cleanAddress)
             .maybeSingle();
 
-        const updateData: Partial<DbUserProfile> = {
+        const updateData: Database['public']['Tables']['user_profiles']['Insert'] = {
             wallet_address: cleanAddress,
             fid: fid || null,
             last_login_at: new Date().toISOString(),
@@ -305,7 +308,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             abi: DAILY_APP_USER_STATS_ABI,
             functionName: 'userStats',
             args: [cleanAddress as `0x${string}`],
-        }) as [bigint, bigint, bigint, bigint, bigint];
+        }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
 
         const currentOnChainXp = Number(contractStats?.[0] || 0);
         const currentTierOnChain = Number(contractStats?.[3] || 0);
@@ -554,38 +557,45 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'ugc_task_completion').maybeSingle()
         ]);
         
-        const ugcConfig = ugcConfigRes?.value || {};
+        const ugcConfig = (ugcConfigRes?.value || {}) as Record<string, any>;
         const platformFee = ugcConfig.listing_fee_usdc 
-            ? parseFloat(ugcConfig.listing_fee_usdc) 
-            : (sysSetting?.value ? parseFloat(sysSetting.value) : 0);
+            ? parseFloat(String(ugcConfig.listing_fee_usdc)) 
+            : (sysSetting?.value ? parseFloat(String(sysSetting.value)) : 0);
             
         const taskXpReward = pointSetting?.points_value || 0;
 
-        const { data: campaign, error: campaignErr } = await supabaseAdmin.from('campaigns').insert([{
+        const { data: campaign, error: campaignErr } = await supabaseAdmin.from('campaigns').insert({
             title,
             description,
             sponsor_address: sponsor_address.toLowerCase(),
             platform_code: platform_code || 'farcaster',
-            reward_amount_per_user: reward_amount_per_user.toString(),
+            reward_amount_per_user: parseFloat(reward_amount_per_user),
             max_participants: Number(max_participants),
             status: 'pending',
             created_at: new Date().toISOString(),
             payment_token: payment_token || null,
-            reward_symbol: reward_symbol || 'TOKEN'
-        }]).select().maybeSingle();
+            reward_symbol: reward_symbol || 'TOKEN',
+            creation_tx_hash: txHash,
+            duration_days: 30, // Default duration if not specified
+            reward_token_address: payment_token || '0x0000000000000000000000000000000000000000',
+            total_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
+            remaining_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
+            platform_fee_paid: platformFee,
+            chain_id: Number(CHAIN_ID)
+        }).select().maybeSingle();
 
         if (campaignErr || !campaign) throw campaignErr || new Error('Campaign creation failed');
 
         if (tasks_batch && Array.isArray(tasks_batch)) {
             const tasksToInsert = tasks_batch.map(task => ({
-                description: task.title,
+                description: task.title || 'UGC Task',
                 xp_reward: taskXpReward,
                 platform: task.platform || 'base',
                 action_type: task.action_type || 'follow',
                 link: task.link,
                 is_active: false,
                 task_type: 'ugc',
-                onchain_id: campaign.id,
+                target_id: campaign.id,
                 token_reward_amount: parseFloat(reward_amount_per_user || '0'),
                 token_reward_symbol: reward_symbol || 'TOKEN',
                 creator_address: wallet.toLowerCase(),
@@ -656,12 +666,14 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount, txHash } = payload;
+        
+        const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
         const isAdminWallet = MASTER_ADMINS.includes(wallet.toLowerCase());
 
         if (!isAdminWallet) {
             try {
                 const raffleInfo = await rpcClient.readContract({
-                    address: DAILY_APP_ADDRESS as `0x${string}`, 
+                    address: RAFFLE_ADDRESS as `0x${string}`, 
                     abi: RAFFLE_ABI,
                     functionName: 'getRaffleInfo',
                     args: [BigInt(raffle_id)]
@@ -676,17 +688,18 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
             }
         }
 
-        const { data: sysSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
-        const platformFeePercent = sysSetting?.value ? parseFloat(sysSetting.value) : 5;
+        const sysSettingData = (sysSetting?.value || {}) as Record<string, any>;
+        const platformFeePercent = sysSettingData.raffle_platform_fee_percent ? parseFloat(String(sysSettingData.raffle_platform_fee_percent)) : 5;
         const feeMultiplier = 1 + (platformFeePercent / 100);
         const prizePool = depositETH ? parseFloat(depositETH) / feeMultiplier : 0;
 
         const { error: raffleErr } = await supabaseAdmin.from('raffles').upsert({
-            id: raffle_id,
+            id: Number(raffle_id),
             creator_address: wallet.toLowerCase(),
             sponsor_address: wallet.toLowerCase(),
             end_time: end_time ? new Date(end_time * 1000).toISOString() : null,
             max_tickets: Number(max_tickets),
+            winner_count: Number(winnerCount),
             prize_pool: prizePool,
             metadata_uri: metadata_uri || null,
             is_active: false,
@@ -766,7 +779,7 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             abi: DAILY_APP_USER_STATS_ABI,
             functionName: 'userStats',
             args: [wallet.toLowerCase() as `0x${string}`],
-        }) as [bigint, bigint, bigint, bigint, bigint];
+        }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
 
         const actualTierOnChain = Number(contractStats?.[3] || 0);
         const actualPointsOnChain = Number(contractStats?.[0] || 0);
@@ -836,7 +849,7 @@ interface LogActivityParams {
     amount?: number;
     symbol?: string;
     txHash?: string | null;
-    metadata?: Json;
+    metadata?: any;
 }
 
 async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }: LogActivityParams) {

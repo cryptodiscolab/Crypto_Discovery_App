@@ -110,6 +110,8 @@ export const PROFILE_LIMITS = {
 
 export const MASTER_ADMINS = getEnv('VITE_ADMIN_WALLETS', getEnv('VITE_ADMIN_ADDRESS', getEnv('ADMIN_ADDRESS', ''))).toLowerCase().split(',').filter(Boolean);
 
+export const SAFE_MULTISIG = getEnv('VITE_SAFE_MULTISIG', getEnv('SAFE_MULTISIG', '0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa'));
+
 export const NEYNAR_API_KEY = getEnv('NEYNAR_API_KEY');
 export const WALLET_BOT_SIGNER = getEnv('WALLET_BOT_SIGNER', getEnv('WALLET_PRIVATE_KEY', getEnv('ADMIN_PRIVATE_KEY')));
 export const TELEGRAM_BOT_TOKEN = getEnv('TELEGRAM_BOT_TOKEN');

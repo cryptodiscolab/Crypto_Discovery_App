@@ -5,8 +5,9 @@ Dokumentasi ini merangkum mekanisme teknis, aturan ekonomi, dan alur integrasi a
 ---
 
 ## 1. Membership NFT (KTP Digital Pemain)
-**Contract**: `DailyAppV12Secured.sol` (ERC721 - Soulbound)  
-**Tujuan**: Identitas pemain, sistem leveling, dan pengganda (multiplier) XP.
+**Contract**: `DailyApp.sol` (V14 - ERC721 - Soulbound)  
+**Address**: `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` (Base Sepolia)
+**Tujuan**: Identitas pemain, sistem leveling, multi-token reward, dan pengganda (multiplier) XP.
 
 ### 📊 Rincian Tier & Ekonomi (Lurah V2)
 | Tier | Index | XP Reqd | Multiplier (BP) | Multiplier (x) |
@@ -38,8 +39,9 @@ Dokumentasi ini merangkum mekanisme teknis, aturan ekonomi, dan alur integrasi a
 ---
 
 ## 2. SBT Feature (Sistem Bagi Hasil)
-**Contract**: `CryptoDiscoMaster.sol` (Internal Tier Mapping)  
-**Tujuan**: Distribusi pendapatan aplikasi (Revenue Sharing) kepada komunitas.
+**Contract**: `NewMasterX.sol` (v3.63.x)  
+**Address**: `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` (Base Sepolia)
+**Tujuan**: Controller utama, distribusi pendapatan aplikasi (Revenue Sharing), dan point system management.
 
 ### 💰 Mekanisme Revenue Split
 Semua pendapatan yang masuk ke contract dibagi secara otomatis:
@@ -56,9 +58,14 @@ Isi dari kolam 30% tersebut dibagikan kepada user yang memiliki status SBT on-ch
 - **Silver SBT**: x2 porsi kolam (Weight: 2).
 - **Bronze SBT**: x1 porsi kolam (Weight: 1).
 
+## 4. Raffle & UGC Manager (Protocol V2.1)
+**Contract**: `CryptoDiscoRaffle.sol`
+**Address**: `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` (Base Sepolia)
+**Tujuan**: NFT Gacha, Sponsor Missions, dan Refund Protocol Automatis.
+
 ---
 
-## 3. Sistem Verifikasi Sosial (Proof of Personhood)
+## 5. Sistem Verifikasi Sosial (Proof of Personhood)
 **Server**: `Verification Service` (Node.js/Ethers)  
 **Tujuan**: Memastikan user adalah manusia asli sebelum mendapatkan tier SBT.
 

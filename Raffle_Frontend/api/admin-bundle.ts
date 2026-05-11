@@ -16,8 +16,11 @@ import {
     UGC_PLATFORM_LINK_RULES,
     VALID_ACTION_TYPES,
     getEnv,
-    Database
-} from './types';
+    DAILY_APP_ADDRESS,
+    RAFFLE_ADDRESS,
+    SAFE_MULTISIG
+} from './constants';
+import { Database } from './database.types';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -206,8 +209,7 @@ async function handleParityAudit(res: VercelResponse) {
     const { data: users, error } = await supabaseAdmin.from('user_profiles').select('wallet_address, total_xp, tier').order('total_xp', { ascending: false }).limit(50);
     if (error) throw error;
 
-    const DAILY_APP_ADDRESS = isMainnet ? getEnv('VITE_DAILY_APP_ADDRESS') : getEnv('VITE_DAILY_APP_ADDRESS_SEPOLIA');
-    const RAFFLE_ADDRESS = isMainnet ? getEnv('VITE_RAFFLE_ADDRESS') : getEnv('VITE_RAFFLE_ADDRESS_SEPOLIA');
+    // Using centralized constants from imports for Zero-Hardcode parity
 
     const auditResults = await Promise.all(users.map(async (u) => {
         try {
@@ -466,7 +468,7 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
 
     const { data: ugcConfigRes } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
     const ugcConfig = ugcConfigRes?.value || {};
-    const treasury = ugcConfig.treasury_address || getEnv('VITE_SAFE_MULTISIG', "");
+    const treasury = ugcConfig.treasury_address || SAFE_MULTISIG;
 
     let totalUsdcTransferred = BigInt(0);
     for (const log of receipt.logs) {

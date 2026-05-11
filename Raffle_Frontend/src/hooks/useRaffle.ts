@@ -93,19 +93,19 @@ export function useRaffle() {
         }
 
         const callData = encodeFunctionData({
-            abi: ABIS.RAFFLE,
+            abi: ABIS.RAFFLE as any,
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount)],
         });
 
         const price = (await publicClient!.readContract({
             address: MASTER_X_ADDRESS,
-            abi: ABIS.MASTER_X,
+            abi: ABIS.MASTER_X as any,
             functionName: 'getTicketPriceInETH'
         })) as bigint;
         const surcharge = (await publicClient!.readContract({
             address: RAFFLE_ADDRESS,
-            abi: ABIS.RAFFLE,
+            abi: ABIS.RAFFLE as any,
             functionName: 'surchargeBP'
         })) as bigint;
         const baseETH = price * BigInt(amount);
@@ -120,14 +120,13 @@ export function useRaffle() {
 
         // [FIX v3.56.5] Resolve actual on-chain txHash from callId for backend verification.
         // EIP-5792 callId is NOT a valid txHash — we must resolve receipts to get the real hash.
-        let resolvedTxHash = callId; // fallback
+        let resolvedTxHash: string = typeof callId === 'string' ? callId : (callId as any).id; // fallback to ID from call response
         try {
             // Poll getCallsStatus to retrieve the actual transaction hash
             let attempts = 0;
             while (attempts < 10) {
                 await new Promise(r => setTimeout(r, 2000));
-                const status = await publicClient!.request({
-                const status = (await publicClient!.request({
+                const status = (await (publicClient as any)!.request({
                     method: 'wallet_getCallsStatus',
                     params: [callId],
                 })) as CallStatusResponse;
@@ -218,6 +217,7 @@ export function useRaffle() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
+                            action: 'claim-prize',
                             wallet_address: address,
                             signature,
                             message,

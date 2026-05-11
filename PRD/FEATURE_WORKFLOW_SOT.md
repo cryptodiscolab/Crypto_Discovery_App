@@ -1,5 +1,5 @@
-# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.63.0)
-**Last Updated**: 2026-05-11T12:00:00+07:00 — Admin Architecture Consolidation (v3.63.0)
+# 🎯 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.63.4)
+**Last Updated**: 2026-05-11T18:30:00+07:00 — Admin API Hardening (v3.63.4)
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -16,6 +16,7 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 | **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Legacy Satellite. Masih didukung untuk klaim reward lama. |
 | **Raffle Manager** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
+| **Safe Multisig** | `0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa` | - | Treasury Pusat & End-point Penarikan. |
 
 > [!WARNING]
 > Mismatched Contract Alert: Jika API atau interaksi on-chain `revert`, hal pertama yang harus dicek oleh Sentinel Agent adalah apakah `.env` (`VITE_MASTER_X_ADDRESS_SEPOLIA`, dll) sudah persis menunjuk ke alamat tabel di atas.
@@ -499,6 +500,10 @@ Sistem ekonomi sirkular yang memberikan transparansi bagi admin dan insentif bag
   2. Kontrak mentransfer sisa saldo tiket secara atomik ke alamat kreator.
   3. UI melakukan refetch saldo dan menampilkan histori penarikan di `ActivityLogSection`.
 
+### 16.3 Address Parity Hardening (v3.63.3)
+- **Mandate**: Seluruh pemanggilan `readContract` dan `writeContract` di level API Serverless WAJIB menggunakan resolver terpusat (`RAFFLE_ADDRESS`, `DAILY_APP_ADDRESS`) dari `constants.ts`.
+- **Enforcement**: Dilarang menggunakan `process.env` secara langsung di dalam logika bisnis handler untuk alamat kontrak. Seluruh dependensi alamat harus melalui proxy resolver yang mendukung `isMainnet` toggle.
+
 ---
-*End of Source of Truth Document - Nexus v3.59.5 LOCKED.*
+*End of Source of Truth Document - Nexus v3.63.3 LOCKED.*
 

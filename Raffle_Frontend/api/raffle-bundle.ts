@@ -5,6 +5,7 @@ import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     rpcClient,
+    RAFFLE_ADDRESS,
     RAFFLE_ABI,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
@@ -89,7 +90,7 @@ async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
 
     try {
         const raffleInfo: any = await rpcClient.readContract({
-            address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA as `0x${string}`,
+            address: RAFFLE_ADDRESS as `0x${string}`,
             abi: RAFFLE_ABI,
             functionName: 'getRaffleInfo',
             args: [BigInt(raffle_id)]
@@ -141,7 +142,7 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
 
         try {
             const raffleInfo: any = await rpcClient.readContract({
-                address: process.env.VITE_RAFFLE_ADDRESS_SEPOLIA as `0x${string}`,
+                address: RAFFLE_ADDRESS as `0x${string}`,
                 abi: RAFFLE_ABI,
                 functionName: 'getRaffleInfo',
                 args: [BigInt(raffle_id)]

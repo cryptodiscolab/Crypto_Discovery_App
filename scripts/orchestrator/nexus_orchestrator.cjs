@@ -113,20 +113,62 @@ async function runQwenPhase() {
     
     // 1. Backend Syntax Checks
     const apiFiles = [
-        'Raffle_Frontend/api/user-bundle.js', 
-        'Raffle_Frontend/api/admin-bundle.js', 
-        'Raffle_Frontend/api/tasks-bundle.js', 
+        'Raffle_Frontend/api/user-bundle.ts', 
+        'Raffle_Frontend/api/admin-bundle.ts', 
+        'Raffle_Frontend/api/tasks-bundle.ts', 
+        'Raffle_Frontend/api/lurah-cron.ts',
         'verification-server/api/webhook/telegram.js',
         'verification-server/api/cron/lurah-ekosistem.js'
     ];
     for(const file of apiFiles) {
         const fullPath = path.join(__dirname, '../../', file);
         if (fs.existsSync(fullPath)) {
-            const res = runCommand('node', ['-c', file]);
-            if (!res.success) {
-                await reportToNexus('Qwen', 'SYNTAX', `Syntax Error in ${file}:\n${res.output}`, file);
+            let success = false;
+            let output = '';
+            
+            if (file.endsWith('.ts')) {
+                // Use typescript compiler API for robust syntax check without environment issues
+                try {
+                    const ts = require('typescript');
+                    const source = fs.readFileSync(fullPath, 'utf8');
+                    const result = ts.transpileModule(source, { 
+                        reportDiagnostics: true,
+                        compilerOptions: { 
+                            module: ts.ModuleKind.ESNext,
+                            target: ts.ScriptTarget.ESNext,
+                            skipLibCheck: true
+                        } 
+                    });
+                    
+                    if (result.diagnostics && result.diagnostics.length > 0) {
+                        // Check if any diagnostics are actual syntax errors (Category 1)
+                        const syntaxErrors = result.diagnostics.filter(d => d.category === 1);
+                        if (syntaxErrors.length > 0) {
+                            success = false;
+                            output = ts.formatDiagnostics(syntaxErrors, ts.createCompilerHost({}));
+                        } else {
+                            success = true;
+                        }
+                    } else {
+                        success = true;
+                    }
+                } catch (e) {
+                    // Fallback to esbuild if typescript is not available
+                    const res = runCommand('npx', ['esbuild', fullPath, '--log-level=error', '--dry-run']);
+                    success = res.success;
+                    output = res.output;
+                }
+            } else {
+                const res = runCommand('node', ['-c', file]);
+                success = res.success;
+                output = res.output;
+            }
+
+            if (!success) {
+                await reportToNexus('Qwen', 'SYNTAX', `Syntax Error in ${file}:\n${output}`, file);
             } else {
                 await resolveNexusReports('Qwen', 'SYNTAX', file);
+                console.log(`✅ ${file}: Syntax OK`);
             }
         } else {
             console.log(`⚠️  File not found for syntax check: ${file}`);

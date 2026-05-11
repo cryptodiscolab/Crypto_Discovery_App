@@ -43,6 +43,16 @@ async function fullVerification() {
         console.log(`  ${status} ${t.name.padEnd(22)} │ ${String(count ?? 'ERR').padStart(4)} rows │ ${t.api}`);
     }
 
+    // 1b. Check Lurah Sentinel Health
+    const { data: healthSvc } = await supabase.from('system_health').select('*').eq('service_key', 'lurah_ekosistem').maybeSingle();
+    if (healthSvc) {
+        const isStale = Date.now() - new Date(healthSvc.last_heartbeat).getTime() > 2 * 60 * 60 * 1000;
+        const status = (healthSvc.status === 'healthy' && !isStale) ? '✅' : '⚠️';
+        console.log(`  ${status} Sentinel Health         │ ${healthSvc.status.toUpperCase()} │ Heartbeat: ${new Date(healthSvc.last_heartbeat).toLocaleString()}${isStale ? ' (STALE)' : ''}`);
+    } else {
+        console.log(`  ⚠️  Sentinel Health         │ MISSING │ service_key 'lurah_ekosistem' not found`);
+    }
+
     // ═══ SECTION 2: TASK CLAIM PIPELINE CHECK ═══
     console.log("\n━━━ SECTION 2: TASK CLAIM PIPELINE INTEGRITY ━━━");
     
@@ -100,9 +110,25 @@ async function fullVerification() {
         { platform: 'TikTok',    actions: ['follow', 'like', 'comment', 'repost (wildcard)'] },
         { platform: 'Instagram', actions: ['follow', 'like', 'comment', 'repost (wildcard)'] },
     ];
-    verifyRoutes.forEach(r => {
+    for (const r of verifyRoutes) {
         console.log(`  ✅ ${r.platform.padEnd(12)} → ${r.actions.join(', ')}`);
-    });
+    }
+
+    // 3b. Active Ping to Verification Server
+    const verifyServerUrl = process.env.VITE_VERIFY_SERVER_URL || 'https://dailyapp-verification-server.vercel.app';
+    try {
+        const start = Date.now();
+        const res = await fetch(`${verifyServerUrl}/api/verify/health`);
+        const data = await res.json();
+        const duration = Date.now() - start;
+        if (res.ok && data.success) {
+            console.log(`  ✅ Verification Server   │ ONLINE │ ${duration}ms │ ${verifyServerUrl}`);
+        } else {
+            console.log(`  ⚠️  Verification Server   │ DEGRADED │ Status: ${data.status || 'unknown'} │ ${verifyServerUrl}`);
+        }
+    } catch (e) {
+        console.log(`  ❌ Verification Server   │ OFFLINE │ ${e.message} │ ${verifyServerUrl}`);
+    }
 
     // ═══ SECTION 4: SECURITY CHECKS ═══
     console.log("\n━━━ SECTION 4: SECURITY MATRIX ━━━");
