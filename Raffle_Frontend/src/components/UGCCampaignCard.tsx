@@ -147,6 +147,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     refetchStats?: () => void;
 }) {
     const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { profileData } = useFarcaster();
     const { verifyTask, registerTaskStart, isVerifying, lastActionTime } = useVerification(refetchStats);
 
@@ -160,7 +161,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     const isBaseVerified = useMemo(() => (profileData as any)?.is_base_social_verified === true, [profileData]);
 
     const totalTasks = subTasks.length;
-    const completedCount = subTasks.filter(t => userClaimedTaskIds.has(t.id)).length;
+    const completedCount = subTasks.filter(t => userClaimedTaskIds.has(String(t.id))).length;
     const allDone = completedCount === totalTasks && totalTasks > 0;
     const alreadyCampaignClaimed = userClaimedTaskIds.has(`ugc_campaign_${campaign.id}`);
 
@@ -192,7 +193,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
         const tid = toast.loading('Claiming campaign rewards...');
         try {
             // Check if any sub-task is still gated and user is unverified
-            const hasGatedRemaining = subTasks.some(t => t.is_base_social_required && !userClaimedTaskIds.has(t.id) && !isBaseVerified);
+            const hasGatedRemaining = subTasks.some(t => t.is_base_social_required && !userClaimedTaskIds.has(String(t.id)) && !isBaseVerified);
             if (hasGatedRemaining) throw new Error("IDENTITY LOCKED: Complete gated tasks first.");
 
             const timestamp = new Date().toISOString();
@@ -206,10 +207,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                     action: 'claim-ugc-campaign', 
                     wallet_address: address, 
                     campaign_id: campaign.id,
-                    signature: await (window as any).ethereum.request({
-                        method: 'personal_sign',
-                        params: [message, address]
-                    }),
+                    signature: await signMessageAsync({ message }),
                     message 
                 })
             });
@@ -272,7 +270,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                 {/* Sub-Task List */}
                 <div className="px-6 pb-4 space-y-2 mt-2">
                     {subTasks.map((task, i) => {
-                        const isDone = userClaimedTaskIds.has(task.id);
+                        const isDone = userClaimedTaskIds.has(String(task.id));
                         const lastTime = (lastActionTime as any)[task.id] || 0;
                         const diff = Math.floor((Date.now() - lastTime) / 1000);
                         const isCountingDown = lastTime > 0 && diff < APP_CONFIG.SOCIAL_INDEX_DELAY_SEC;

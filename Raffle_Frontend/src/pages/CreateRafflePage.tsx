@@ -161,30 +161,24 @@ export function CreateRafflePage() {
                 created_at: new Date().toISOString()
             };
 
-            // [FIX] Upload to IPFS via Pinata instead of inline base64
-            const pinataJWT = import.meta.env.VITE_PINATA_JWT;
+            // Upload to IPFS via backend API (Pinata JWT never exposed to client)
             let metadataURI = '';
             
-            if (pinataJWT) {
-                const res = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
-                    method: "POST",
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${pinataJWT}`
-                    },
-                    body: JSON.stringify({
-                        pinataOptions: { cidVersion: 1 },
-                        pinataMetadata: { name: `Raffle_${formData.title.replace(/\s+/g, '_')}.json` },
-                        pinataContent: fullMetadata
-                    })
-                });
-                
-                if (!res.ok) throw new Error("Failed to pin to IPFS");
+            const res = await fetch("/api/pin-metadata", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    metadata: fullMetadata,
+                    name: `Raffle_${formData.title.replace(/\s+/g, '_')}.json`
+                })
+            });
+            
+            if (res.ok) {
                 const data = await res.json();
-                metadataURI = `ipfs://${data.IpfsHash}`;
+                metadataURI = data.uri;
                 toast.success("Metadata pinned to IPFS!", { id: tid });
             } else {
-                console.warn("No Pinata JWT found. Falling back to inline base64.");
+                console.warn("IPFS pin failed. Falling back to inline base64.");
                 const metadataStr = JSON.stringify(fullMetadata);
                 metadataURI = `data:application/json;base64,${btoa(unescape(encodeURIComponent(metadataStr)))}`;
                 toast.success("Using inline metadata.", { id: tid });
