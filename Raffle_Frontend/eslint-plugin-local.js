@@ -3,7 +3,9 @@
  * 
  * Loads custom ESLint rules from ./eslint-rules directory
  */
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const fs = require('fs');
 
 const rulesDir = path.join(__dirname, 'eslint-rules');

@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-05-10*
-*PRD Version: v3.60.2 (TypeScript Hardening & Git Hygiene — Anti-Hallucination v1.1)*
+*Last Updated: 2026-05-12*
+*PRD Version: v3.63.5-Hardened (TypeScript Hardening & Node.js Supply Chain Security)*
 
 ---
 
@@ -349,6 +349,13 @@ Aktifkan "mental tool" yang relevan berdasarkan konteks task:
 - **Checksum Enforcement**: Gunakan viem `getAddress()` untuk memastikan checksum address valid (EIP-55).
 - **Environment Parity**: Samakan nilai `.env`, `.env.local`, `.env.vercel`, dan `.env.vercel.production`.
 
+### 4.1 NODE.JS SUPPLY CHAIN SECURITY (v3.63.5)
+- **Dependency Pinning**: DILARANG menggunakan `^` (caret) atau `~` (tilde) di `package.json` untuk paket krusial. Gunakan versi absolut dan selalu jalankan `npm ci` di environment CI/CD untuk memastikan konsistensi lockfile.
+- **Ignore Scripts**: Selalu gunakan flag `--ignore-scripts` saat instalasi (`npm install --ignore-scripts`) untuk mencegah eksekusi malicious `postinstall`. Gunakan pengecualian (whitelist) hanya untuk paket terpercaya yang butuh kompilasi native.
+- **Dependency Bloat Control**: Hindari menginstall paket pihak ketiga (NPM) untuk fungsi-fungsi utilitas kecil. Tulis kode sendiri (vendorizing) ke dalam folder `src/lib/` untuk mengurangi *attack surface*.
+- **Anti-Typosquatting**: Pastikan ejaan nama paket disalin langsung dari dokumentasi resmi (jangan diketik manual).
+- **Real-time Monitoring**: Integrasikan atau rujuk hasil monitoring (seperti Snyk / Socket.dev) untuk memindai aktivitas anomali pada dependensi NPM.
+
 ---
 
 ## 9. WORKSPACE & DATA ARCHITECTURE (E2E)
@@ -499,5 +506,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.60.2 - Hardened & Synchronized.*
-*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT.*
+*Constitution v3.63.5 - Hardened & Synchronized.*
+*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened.*

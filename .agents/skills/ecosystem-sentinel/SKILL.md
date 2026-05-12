@@ -5,7 +5,7 @@ description: >
   - **Anti-Hallucination Mandate (v3.59.2)**: Mandatory **Parity Audit** via `parity-audit` endpoint before closing any architectural task. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.60.2
+version: v3.63.5-Hardened
 ---
 
 ### 🛡️ LOCAL HARDWARE OPTIMIZATION (Mandatory)

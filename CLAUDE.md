@@ -22,7 +22,15 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.3)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.3).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.5-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.5).
+
+---
+
+## 🛡️ SECURE INSTALLATION MANDATE (v3.63.5)
+
+To prevent supply-chain malware injection, ALL installations MUST follow these commands:
+- **`npm install --ignore-scripts`** — For general dependency addition.
+- **`npm ci`** — For clean, reproducible, and script-safe environment setup.
 
 ---
 

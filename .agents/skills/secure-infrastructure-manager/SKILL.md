@@ -78,6 +78,13 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Sync Verification Mandate (CRITICAL)**: Agent WAJIB mengeksekusi `node scripts/audits/verify-db-sync.cjs` setiap kali memulai atau menyelesaikan task database/backend.
 - **Legacy Column Cleanup**: Laporkan kolom redundan dan unifikasi melalui SQL migration.
 
+### 9. Node.js Supply Chain Security Mandate (Anti-Malware)
+- **Dependency Pinning**: DILARANG menggunakan `^` (caret) atau `~` (tilde) di `package.json` untuk paket krusial. Gunakan versi absolut dan selalu jalankan `npm ci` di environment CI/CD.
+- **Ignore Scripts**: Pertimbangkan penggunaan `--ignore-scripts` saat instalasi (`npm install --ignore-scripts`) untuk mencegah eksekusi malicious `postinstall`. Jika build tool membutuhkan native binary (seperti Vite/esbuild), pastikan hanya paket yang dipercaya yang diizinkan (whitelist).
+- **Dependency Bloat Control**: Hindari menginstall paket pihak ketiga untuk fungsi-fungsi kecil (seperti utility strings/numbers). Lebih baik tulis kode sendiri (vendorizing) ke dalam folder `src/lib/`.
+- **Anti-Typosquatting**: Pastikan ejaan nama paket disalin langsung dari dokumentasi resmi (jangan diketik manual).
+- **Real-time Monitoring**: Integrasikan alat monitoring (Snyk / Socket.dev) untuk memindai aktivitas anomali pada dependensi NPM.
+
 ## 📋 Checklist Security & Infra (v3.43.0)
 - [ ] Apakah kontrak yang digunakan adalah versi terbaru (PRD v3.43.0)?
 - [ ] Apakah `PRIVATE_KEY` sudah aman dari paparan publik/frontend?
@@ -105,4 +112,4 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan tanpa `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines).
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.59.1*
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.63.5-Hardened*

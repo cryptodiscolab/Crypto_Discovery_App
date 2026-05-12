@@ -38,7 +38,12 @@ const FALLBACK_TOKENS: Record<number, Token[]> = {
   ]
 };
 const TOKENS: Record<number, Token[]> = (() => {
-  try { const parsed = JSON.parse(import.meta.env.VITE_SWAP_TOKENS || ''); return Object.keys(parsed).length > 0 ? parsed : FALLBACK_TOKENS; } catch { return FALLBACK_TOKENS; }
+  try { 
+    const parsed = JSON.parse(import.meta.env.VITE_SWAP_TOKENS || ''); 
+    return Object.keys(parsed).length > 0 ? { ...FALLBACK_TOKENS, ...parsed } : FALLBACK_TOKENS; 
+  } catch { 
+    return FALLBACK_TOKENS; 
+  }
 })();
 
 // Li.Fi SDK init flag
@@ -51,8 +56,13 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   
   // States
   const [selectedChainId, setSelectedChainId] = useState<number>(import.meta.env.VITE_CHAIN_ID ? parseInt(import.meta.env.VITE_CHAIN_ID) : 8453);
-  const [fromToken, setFromToken] = useState<Token>(TOKENS[selectedChainId]?.[0] || TOKENS[8453]?.[0] || FALLBACK_TOKENS[8453][0]);
-  const [toToken, setToToken] = useState<Token>(TOKENS[selectedChainId]?.[1] || TOKENS[8453]?.[1] || FALLBACK_TOKENS[8453][1]);
+  
+  const getSafeToken = (chainId: number, index: number, fallbackChainId: number = 8453) => {
+    return TOKENS[chainId]?.[index] || FALLBACK_TOKENS[fallbackChainId]?.[index] || FALLBACK_TOKENS[8453][index];
+  };
+
+  const [fromToken, setFromToken] = useState<Token>(getSafeToken(selectedChainId, 0));
+  const [toToken, setToToken] = useState<Token>(getSafeToken(selectedChainId, 1));
   
   const [amountIn, setAmountIn] = useState('');
   const [quote, setQuote] = useState<LiFiQuote | null>(null);
@@ -298,7 +308,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                <span>Provider Fee</span>
                <span className="text-slate-400">0.5% + Gas</span>
              </div>
-             {quote?.estimate?.gasCosts && (
+             {quote?.estimate?.gasCosts && quote.estimate.gasCosts.length > 0 && quote.estimate.gasCosts[0]?.amount && (
                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
                  <span>Est. Gas</span>
                  <span className="text-amber-400">
