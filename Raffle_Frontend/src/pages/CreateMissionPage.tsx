@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { useAccount, useWriteContract, usePublicClient, useSignMessage } from 'wagmi';
 import { parseUnits, erc20Abi } from 'viem';
-import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { CONTRACTS } from '../lib/contracts';
@@ -94,6 +93,7 @@ export function CreateMissionPage() {
         treasury_address: CONTRACTS.MASTER_X as `0x${string}`,
         is_active: true
     });
+    const [isConfigLoading, setIsConfigLoading] = useState(true);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedActions, setSelectedActions] = useState<string[]>(['follow']);
@@ -133,11 +133,15 @@ export function CreateMissionPage() {
     }, []);
 
     const fetchUgcConfig = async () => {
+        setIsConfigLoading(true);
         try {
-            const { data } = await supabase.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
+            const res = await fetch('/api/admin-bundle?action=get-ugc-config');
+            const data = await res.json();
             if (data?.value) setUgcConfig(data.value);
         } catch (e) {
             console.error('Failed to fetch UGC config:', e);
+        } finally {
+            setIsConfigLoading(false);
         }
     };
 
@@ -174,12 +178,13 @@ export function CreateMissionPage() {
 
         setIsSubmitting(true);
         const tid = toast.loading("Processing USDC Payment...");
+        let txHash: `0x${string}` | undefined;
 
         try {
             if (!CONTRACTS.USDC) throw new Error("USDC address not configured");
             
             // 1. USDC Payment (Transfer to Treasury)
-            const txHash = await writeContractAsync({
+            txHash = await writeContractAsync({
                 address: CONTRACTS.USDC as `0x${string}`,
                 abi: erc20Abi,
                 functionName: 'transfer',
@@ -256,7 +261,12 @@ export function CreateMissionPage() {
             const errorMessage = err instanceof Error ? err.message : "Operation failed";
             // @ts-ignore - Handle wagmi shortMessage if present
             const shortMessage = (err as any).shortMessage;
-            toast.error(shortMessage || errorMessage, { id: tid });
+            // If payment was sent but backend failed, show recovery info
+            if (txHash) {
+                toast.error(`Mission creation failed but payment was sent. TX: ${txHash}. Contact support with this hash.`, { id: tid, duration: 10000 });
+            } else {
+                toast.error(shortMessage || errorMessage, { id: tid });
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -271,6 +281,14 @@ export function CreateMissionPage() {
                     <h2 className="text-[12px] font-black text-white uppercase tracking-[0.3em] mb-3">IDENTITY REQUIRED</h2>
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">AUTHENTICATE YOUR WALLET TO ACCESS SPONSORSHIP PORTAL.</p>
                 </div>
+            </div>
+        );
+    }
+
+    if (isConfigLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
             </div>
         );
     }

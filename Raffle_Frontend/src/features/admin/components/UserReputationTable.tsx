@@ -252,7 +252,7 @@ export default function UserReputationTable() {
                             <MobileUserCard
                                 key={user.wallet_address}
                                 user={user}
-                                sybilDetected={false}
+                                sybilDetected={user.trust_score !== undefined && user.trust_score < 0.3}
                                 onOverride={handleQuickOverride}
                             />
                         ))}

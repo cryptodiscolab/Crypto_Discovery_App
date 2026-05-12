@@ -186,6 +186,8 @@ export function RoleManagementTab() {
                     action_type: 'GRANT_VERIFIER',
                     payload: { target_address: verifierAddress }
                 })
+            }).then(async (response) => {
+                if (!response.ok) { const err = await response.json(); throw new Error(err.error || 'Sync failed'); }
             });
 
             toast.success("Verifier Role Active!", { id: tid });

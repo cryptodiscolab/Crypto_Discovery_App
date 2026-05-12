@@ -211,6 +211,29 @@ export function ModerationCenterTab() {
         }
     };
 
+    const handleRejectMission = async (mission: Mission) => {
+        if (!window.confirm('Reject this mission? Funds will need manual refund.')) return;
+        const tid = toast.loading("Rejecting mission...");
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Reject Mission ${mission.id}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/admin-bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reject-mission', mission_id: mission.id, wallet_address: address, signature, message })
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.error || 'Rejection failed');
+            toast.success("Mission rejected!", { id: tid });
+            fetchPending();
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "Rejection failed", { id: tid });
+        }
+    };
+
     const handleApproveMission = async (missionId: number | string) => {
         const tid = toast.loading("Approving mission...");
         try {
@@ -383,7 +406,10 @@ export function ModerationCenterTab() {
                                                 <CheckCircle className="w-3.5 h-3.5" /> Approve
                                             </button>
                                         )}
-                                        <button className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all">
+                                        <button 
+                                            onClick={() => handleRejectMission(mission)}
+                                            className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all"
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>

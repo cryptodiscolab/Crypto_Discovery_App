@@ -312,6 +312,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                                         ) : (
                                             <button
                                                 onClick={() => handleGoToTask(task)}
+                                                disabled={isGated}
                                                 className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isGated ? 'bg-white/5 text-slate-500 cursor-not-allowed' : 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-600/40'}`}
                                             >
                                                 Go <ExternalLink className="w-2.5 h-2.5" />

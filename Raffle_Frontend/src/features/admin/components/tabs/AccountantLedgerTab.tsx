@@ -91,6 +91,7 @@ export function AccountantLedgerTab() {
     const fetchLedger = async () => {
         setLoading(true);
         try {
+            // TODO: migrate to signature-based auth (generate message with timestamp, sign with signMessageAsync, send signature + message instead of Bearer token)
             const token = localStorage.getItem('adminToken');
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/accountant-ledger`, {
                 method: 'POST', 
@@ -149,6 +150,7 @@ export function AccountantLedgerTab() {
         setIsHardening(true);
         const toastId = toast.loading("Auditing ecosystem parity...");
         try {
+            // TODO: migrate to signature-based auth (generate message with timestamp, sign with signMessageAsync, send signature + message instead of Bearer token)
             const token = localStorage.getItem('adminToken');
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/parity-audit`, {
                 method: 'POST',

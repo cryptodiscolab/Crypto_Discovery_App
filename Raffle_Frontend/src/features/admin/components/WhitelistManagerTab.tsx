@@ -104,7 +104,7 @@ export function WhitelistManagerTab() {
             });
 
             if (!response.ok) {
-                console.warn("Database sync failed, but blockchain tx succeeded.");
+                toast.error('Blockchain succeeded but DB sync failed. Please retry.');
             }
 
             toast.success("Privilege Granted & Synced!", { id: tid });
@@ -169,7 +169,7 @@ export function WhitelistManagerTab() {
             });
 
             if (!response.ok) {
-                console.warn("Database sync failed, but blockchain tx succeeded.");
+                toast.error('Blockchain succeeded but DB sync failed. Please retry.');
             }
 
             toast.success("Batch Privileges Granted & Synced!", { id: tid });
@@ -219,7 +219,7 @@ export function WhitelistManagerTab() {
             });
 
             if (!response.ok) {
-                console.warn("Database sync failed, but blockchain tx succeeded.");
+                toast.error('Blockchain succeeded but DB sync failed. Please retry.');
             }
 
             toast.success("Privilege Revoked & Synced!", { id: tid });

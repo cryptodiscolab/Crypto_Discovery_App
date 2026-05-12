@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Crown, Sparkles, Medal, Users, Shield } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { supabase } from '../lib/supabaseClient';
 
 const formatAddress = (addr: string) => {
   if (!addr) return 'Unknown';
@@ -112,7 +111,9 @@ export function LeaderboardPage() {
   ];
 
   useEffect(() => {
-    fetchLeaderboard();
+    const controller = new AbortController();
+    fetchLeaderboard(controller.signal);
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -123,15 +124,16 @@ export function LeaderboardPage() {
     }
   }, [activeTab, allUsers]);
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = async (signal?: AbortSignal) => {
     setFetchError(null);
     try {
-      const response = await fetch(`/api/leaderboard?limit=100`);
+      const response = await fetch(`/api/leaderboard?limit=100`, { signal });
       if (!response.ok) throw new Error("Failed to fetch leaderboard");
       const data = await response.json();
       setAllUsers(data || []);
       setFilteredUsers(data || []);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error("Error fetching leaderboard:", err);
       setFetchError('Failed to load leaderboard. Please try again.');
     } finally {
@@ -196,7 +198,7 @@ export function LeaderboardPage() {
                 <h3 className="text-[11px] font-black text-red-400 uppercase tracking-widest">{fetchError}</h3>
               </div>
               <button
-                onClick={fetchLeaderboard}
+                onClick={() => fetchLeaderboard()}
                 className="mt-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[11px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all"
               >
                 RETRY

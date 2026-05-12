@@ -27,6 +27,7 @@ import { toast } from 'react-hot-toast';
 const RaffleDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const numericId = Number(id);
     const { address } = useAccount();
     const { userTier } = usePoints();
     const { data: socialProfile } = useSocialGuard(address);
@@ -100,6 +101,19 @@ const RaffleDetailPage = () => {
             setIsBuying(false);
         }
     };
+
+    if (!id || isNaN(numericId)) {
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+                <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+                <h1 className="text-2xl font-bold text-white mb-2">Invalid Raffle ID</h1>
+                <p className="text-zinc-400 mb-6">The raffle ID provided is not valid.</p>
+                <button onClick={() => navigate('/raffles')} className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all">
+                    <ChevronLeft className="w-5 h-5" /> Back to Raffles
+                </button>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -305,6 +319,7 @@ const RaffleDetailPage = () => {
                                                 <button 
                                                     onClick={() => setTicketAmount(p => Math.max(1, p - 1))}
                                                     disabled={ticketAmount <= 1 || isBuying}
+                                                    aria-label="Decrease quantity"
                                                     className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg disabled:opacity-30 transition-all font-black text-xl"
                                                 >
                                                     -
@@ -315,6 +330,7 @@ const RaffleDetailPage = () => {
                                                 <button 
                                                     onClick={() => setTicketAmount(p => p + 1)}
                                                     disabled={isBuying || ticketAmount >= (raffle.maxTickets - raffle.totalTickets)}
+                                                    aria-label="Increase quantity"
                                                     className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg disabled:opacity-30 transition-all font-black text-xl"
                                                 >
                                                     +

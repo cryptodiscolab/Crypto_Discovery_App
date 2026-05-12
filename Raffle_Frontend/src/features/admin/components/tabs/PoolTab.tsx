@@ -54,6 +54,8 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
     }, [diamondWeight, platinumWeight, goldWeight, silverWeight, bronzeWeight]);
 
     const handleUpdateWeights = async () => {
+        const sum = Object.values(tempWeights).reduce((a, b) => a + Number(b), 0);
+        if (sum !== 100) { toast.error(`Weights must sum to 100 (currently ${sum})`); return; }
         setIsSyncingWeights(true);
         const tid = toast.loading('Syncing Tier Weights to Contract...');
         try {

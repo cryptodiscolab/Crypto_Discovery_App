@@ -297,7 +297,8 @@ export default function AdminSystemSettings() {
 
     const handleResetSeason = async () => {
         const nextSeason = currentSeasonId + 1;
-        if (!window.confirm(`⚠️ DANGER: RESET SEASON TO ${nextSeason}?\n\nThis will clear all user reward debt and start a fresh distribution cycle. This action is IRREVERSIBLE.`)) return;
+        const input = window.prompt('Type RESET to confirm season reset. This is IRREVERSIBLE.');
+        if (input !== 'RESET') return;
         
         setSaving(true);
         const tid = toast.loading(`Resetting Season to ${nextSeason}...`);

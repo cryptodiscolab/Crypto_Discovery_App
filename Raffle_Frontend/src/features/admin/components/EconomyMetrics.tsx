@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, DollarSign, Activity, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAccount, useSignMessage, useReadContract } from 'wagmi';
+import { keccak256, toHex } from 'viem';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
 
@@ -18,7 +19,7 @@ export function EconomyMetrics() {
 
     // Check Verifier Role in Contract
     const VERIFIER_ADDRESS = import.meta.env.VITE_VERIFIER_ADDRESS || "0x52260c30697674a7C837FEB2af21bBf3606795C8";
-    const VERIFIER_ROLE_HASH = import.meta.env.VITE_VERIFIER_ROLE_HASH || "0x3d0613dc01850387e388c60f1ad9250000000000000000000000000000000000";
+    const VERIFIER_ROLE_HASH = import.meta.env.VITE_VERIFIER_ROLE_HASH || keccak256(toHex('VERIFIER_ROLE'));
     const { data: hasVerifierRole } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
@@ -95,7 +96,7 @@ export function EconomyMetrics() {
                     <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest bg-purple-500/10 px-2 py-1 rounded-full">Engagement</span>
                 </div>
                 <h4 className="text-3xl font-black text-white mb-1">
-                    {!stats ? '----' : (stats?.communityXp / 1000).toFixed(1) + 'k'}
+                    {!stats ? '----' : ((stats?.communityXp || 0) / 1000).toFixed(1) + 'k'}
                 </h4>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Total XP Distributed to Users</p>
             </div>

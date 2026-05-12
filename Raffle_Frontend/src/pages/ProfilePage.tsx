@@ -39,7 +39,7 @@ export default function ProfilePage() {
   const { linkGoogle, linkX, isLinking: isOAuthLinking } = useOAuth();
 
   // Modular Data Fetching (TanStack Query)
-  const { data: profileData, refetch: refetchProfile, isLoading: isProfileLoading } = useProfile(address);
+  const { data: profileData, refetch: refetchProfile, isLoading: isProfileLoading, isError: isProfileError } = useProfile(address);
   const { refetch: refetchOnChainStats, stats: onChainStats } = useUserInfo(address);
   const { claimableAmount, refetchAll: refetchSBT } = useSBTData();
 
@@ -135,6 +135,18 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  if (isProfileError) return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 p-8 text-center">
+      <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
+        <Shield size={32} className="text-red-400" />
+      </div>
+      <p className="text-[11px] font-black text-red-400 uppercase tracking-widest">Failed to load profile</p>
+      <button onClick={() => refetchProfile()} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[11px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all">
+        RETRY
+      </button>
+    </div>
+  );
 
   if (isProfileLoading || !profileData) return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">

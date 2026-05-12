@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap, Settings, ClipboardList, Landmark, Edit3, Newspaper } from 'lucide-react';
+import { ShieldCheck, Database, RefreshCw, LayoutList, Trophy, Zap, Settings, Landmark, Edit3, Newspaper } from 'lucide-react';
 
 
 import AdminGuard from '../../features/admin/components/AdminGuard';
@@ -19,10 +19,6 @@ const AdminSystemSettings = lazy(() => import('../../features/admin/components/A
 const AdminCMSContent = lazy(() => import('../../features/admin/components/AdminCMSContent'));
 const WhitelistManagerTab = lazy(() => import('../../features/admin/components/WhitelistManagerTab').then(m => ({ default: m.WhitelistManagerTab })));
 const RaffleManagerTab = lazy(() => import('../../features/admin/components/RaffleManagerTab').then(m => ({ default: m.RaffleManagerTab })));
-
-// Unified Legacy Components (to be moved/merged properly later)
-import { AdminPage } from '../AdminPage'; // Using internal tab sub-components if exported
-// Note: For now, we will wrap the legacy components if they are not exported as standalone
 
 
 const AdminDashboard = () => {
