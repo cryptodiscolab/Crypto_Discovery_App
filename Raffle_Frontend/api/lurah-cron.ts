@@ -13,7 +13,19 @@ import {
     getEnv
 } from './constants';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// Move initialization inside handler to prevent top-level invocation failures
+let supabase: ReturnType<typeof createClient> | null = null;
+const getSupabase = () => {
+    if (supabase) return supabase;
+    const url = SUPABASE_URL;
+    const key = SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+        throw new Error(`Missing Supabase Configuration: URL=${!!url}, KEY=${!!key}`);
+    }
+    supabase = createClient(url, key);
+    return supabase;
+};
+
 const CRON_SECRET = getEnv('CRON_SECRET', '');
 const AUDIT_TIMEOUT_MS = 8000; // 8s total function limit
 const INDIVIDUAL_TASK_TIMEOUT_MS = 2500; // 2.5s per task to allow parallel completion
@@ -66,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await Promise.allSettled([
             // 1. Database Health Check
             runWithTimeout("Database Connect", (async () => {
-                const { error } = await supabase.from('system_settings').select('key', { count: 'exact', head: true }).limit(1);
+                const { error } = await getSupabase().from('system_settings').select('key', { count: 'exact', head: true }).limit(1);
                 if (error) throw error;
             })(), INDIVIDUAL_TASK_TIMEOUT_MS, auditResults),
 
@@ -87,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // 3. Parity & State Audit
             runWithTimeout("Parity & State Audit", (async () => {
                 // Check XP Parity for Top User
-                const { data: topUser } = await supabase.from('user_profiles')
+                const { data: topUser } = await getSupabase().from('user_profiles')
                     .select('wallet_address, total_xp')
                     .order('total_xp', { ascending: false })
                     .limit(1)
@@ -113,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 // Check for Stuck Campaigns
                 const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
-                const { data: stuck } = await supabase.from('campaigns')
+                const { data: stuck } = await getSupabase().from('campaigns')
                     .select('id')
                     .eq('is_verified_payment', true)
                     .eq('status', 'pending')
@@ -135,7 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Update Global Health State (Essential Heartbeat)
         try {
-            await supabase.from('system_health').upsert({
+            await getSupabase().from('system_health').upsert({
                 service_key: 'lurah_ekosistem',
                 status: auditResults.status.toLowerCase(),
                 last_heartbeat: new Date().toISOString(),
