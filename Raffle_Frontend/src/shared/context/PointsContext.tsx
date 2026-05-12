@@ -182,6 +182,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     const fetchEcosystemSettings = useCallback(async () => {
         try {
             const response = await fetch('/api/user-bundle?action=get-point-settings');
+            if (!response.ok) { console.warn('[PointsContext] Settings API returned', response.status); return; }
             const data = await response.json();
             if (data.success && data.settings) {
                 const settings = { ...data.settings };
