@@ -1,3 +1,9 @@
-export default function handler(req: any, res: any) {
-    res.status(200).json({ message: "TS Pong!" });
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default function handler(_req: VercelRequest, res: VercelResponse) {
+    res.status(200).json({
+        message: "Pong!",
+        time: new Date().toISOString(),
+        node_version: process.version
+    });
 }
