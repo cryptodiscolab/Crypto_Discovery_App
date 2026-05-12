@@ -145,13 +145,13 @@ function AppContent() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
                 <Route path="/" element={<HomePage />} />
+                <Route path="/profile/:userAddress" element={<ProfilePage />} />
                 <Route element={<ProtectedLayout />}>
                   <Route path="/tasks" element={<TasksPage />} />
                   <Route path="/raffles" element={<RafflesPage />} />
                   <Route path="/raffles/:id" element={<RaffleDetailPage />} />
                   <Route path="/leaderboard" element={<LeaderboardPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/profile/:userAddress" element={<ProfilePage />} />
                   <Route path="/create-raffle" element={<CreateRafflePage />} />
                   <Route path="/create-mission" element={<CreateMissionPage />} />
                   <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
