@@ -12,7 +12,8 @@ import {
     bitgetWallet
 } from '@rainbow-me/rainbowkit/wallets';
 
-const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '5ae6de312908f2d0cd512576920b78cd';
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || '';
+if (!projectId) console.warn('[wagmi] VITE_REOWN_PROJECT_ID is empty — WalletConnect may not work.');
 
 // PROTOCOL COMPLIANT WALLET ORDER (Rule 4)
 const connectors = connectorsForWallets(
@@ -29,15 +30,15 @@ const connectors = connectorsForWallets(
                 walletConnectWallet,
                 rabbyWallet,
                 bitgetWallet,
-                () => ({
+                ...(import.meta.env.DEV ? [() => ({
                     id: 'mock',
                     name: 'Mock Wallet',
                     iconUrl: 'https://avatars.githubusercontent.com/u/106669223?v=4',
                     iconBackground: '#fff',
-                    createConnector: (details) => mock({
+                    createConnector: (details: any) => mock({
                         accounts: [import.meta.env.VITE_DEV_WALLET || ''],
                     }),
-                }),
+                })] : []),
             ],
         },
     ],

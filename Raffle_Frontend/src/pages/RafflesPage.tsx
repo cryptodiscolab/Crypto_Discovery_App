@@ -9,7 +9,7 @@ import { RaffleRow } from '../features/raffle/components/RaffleRow';
 export function RafflesPage() {
   const [filter, setFilter] = useState('all');
   const [isSwapOpen, setIsSwapOpen] = useState(false);
-  const { raffleIds } = useRaffleList();
+  const { raffleIds, isLoading, refetch } = useRaffleList();
 
   // Filter is applied via the RaffleRow's raffle data — we pass the active filter down
   // For accurate filtering we filter inside RaffleRow using raffle.isActive / isFinalized.
@@ -57,10 +57,21 @@ export function RafflesPage() {
 
         {/* Raffle Feed */}
         <div className="divide-y divide-white/5 md:divide-y-0 grid grid-cols-1 md:grid-cols-2 md:gap-4 md:px-4">
-          {!raffleIds || raffleIds.length === 0 ? (
+          {isLoading ? (
             <div className="py-20 text-center col-span-full">
-              <RefreshCw className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
-              <p className="label-native text-slate-500">SYNCING RAFFLES...</p>
+              <Loader2 className="w-8 h-8 text-slate-700 mx-auto animate-spin mb-2" />
+              <p className="label-native text-slate-500">LOADING RAFFLES...</p>
+            </div>
+          ) : !raffleIds || raffleIds.length === 0 ? (
+            <div className="py-20 text-center col-span-full">
+              <Ticket className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+              <p className="label-native text-slate-500">NO ACTIVE RAFFLES</p>
+              <button
+                onClick={() => refetch()}
+                className="mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 label-native text-slate-400 hover:bg-white/10 transition-all"
+              >
+                RETRY
+              </button>
             </div>
           ) : (
             <>

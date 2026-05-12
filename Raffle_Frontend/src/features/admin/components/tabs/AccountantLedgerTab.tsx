@@ -220,6 +220,10 @@ export function AccountantLedgerTab() {
             return toast.error("Enter a valid amount to withdraw");
         }
 
+        if (!window.confirm(`Are you sure you want to withdraw ${withdrawAmount} ETH? This is irreversible.`)) {
+            return;
+        }
+
         setIsWithdrawing(true);
         try {
             await withdrawTreasury(parseEther(withdrawAmount.toString()));

@@ -156,6 +156,7 @@ function AppContent() {
                   <Route path="/create-mission" element={<CreateMissionPage />} />
                   <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                 </Route>
+                <Route path="*" element={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><p className="text-[11px] font-black uppercase tracking-widest text-slate-400">404 — PAGE NOT FOUND</p><a href="/" className="mt-4 inline-block text-indigo-400 text-[11px] font-black uppercase tracking-widest">RETURN HOME</a></div></div>} />
               </Routes>
             </Suspense>
           </ErrorBoundary>

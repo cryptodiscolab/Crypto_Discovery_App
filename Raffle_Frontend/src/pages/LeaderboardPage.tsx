@@ -98,6 +98,7 @@ export function LeaderboardPage() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('All'); // 'All', 'Elite', 'Gold', 'Silver', 'Rookie'
 
   const tabs = [
@@ -123,6 +124,7 @@ export function LeaderboardPage() {
   }, [activeTab, allUsers]);
 
   const fetchLeaderboard = async () => {
+    setFetchError(null);
     try {
       const response = await fetch(`/api/leaderboard?limit=100`);
       if (!response.ok) throw new Error("Failed to fetch leaderboard");
@@ -131,6 +133,7 @@ export function LeaderboardPage() {
       setFilteredUsers(data || []);
     } catch (err) {
       console.error("Error fetching leaderboard:", err);
+      setFetchError('Failed to load leaderboard. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -184,7 +187,22 @@ export function LeaderboardPage() {
 
         {/* List Content */}
         <div className="bg-[#0B0E14]">
-          {loading ? (
+          {fetchError && !loading ? (
+            <div className="py-20 flex flex-col items-center gap-4 text-center px-8">
+              <div className="p-4 bg-red-900/20 rounded-full text-red-500">
+                <Trophy size={48} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-[11px] font-black text-red-400 uppercase tracking-widest">{fetchError}</h3>
+              </div>
+              <button
+                onClick={fetchLeaderboard}
+                className="mt-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[11px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all"
+              >
+                RETRY
+              </button>
+            </div>
+          ) : loading ? (
             <div className="space-y-0 divide-y divide-white/5">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="flex items-center p-4 gap-4 animate-pulse">

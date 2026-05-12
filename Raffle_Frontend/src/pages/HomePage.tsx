@@ -30,6 +30,8 @@ const iconMap = {
   TrendingUp,
 };
 
+const colorMap: Record<string, string> = { indigo: 'text-indigo-400', emerald: 'text-emerald-400', amber: 'text-amber-400', rose: 'text-rose-400', cyan: 'text-cyan-400', purple: 'text-purple-400' };
+
 import { useFarcaster } from '../shared/context/FarcasterContext';
 
 export function HomePage() {
@@ -191,7 +193,7 @@ export function HomePage() {
                         {isCustomImage ? (
                           <img src={card.icon} alt={card.title} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
-                          <IconComponent className={`w-5 h-5 text-${card.color || 'indigo'}-400`} />
+                          <IconComponent className={`w-5 h-5 ${colorMap[card.color] || 'text-indigo-400'}`} />
                         )}
                       </div>
 
@@ -201,7 +203,7 @@ export function HomePage() {
                       </p>
 
                       {card.linkText && (
-                        <div className={`flex items-center mt-3 text-[11px] font-black uppercase tracking-widest text-${card.color || 'indigo'}-400 group-hover:underline`}>
+                        <div className={`flex items-center mt-3 text-[11px] font-black uppercase tracking-widest ${colorMap[card.color] || 'text-indigo-400'} group-hover:underline`}>
                           {String(card.linkText || '').toUpperCase()} →
                         </div>
                       )}
