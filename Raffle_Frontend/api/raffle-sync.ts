@@ -8,7 +8,7 @@ import {
     RAFFLE_EVENT_ABI,
     getEnv,
     sanitizeError
-} from './constants';
+} from './_shared/constants';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const CRON_SECRET = getEnv('CRON_SECRET', '');

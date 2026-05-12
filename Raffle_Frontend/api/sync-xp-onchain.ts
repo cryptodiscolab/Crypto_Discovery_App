@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createWalletClient, createPublicClient, http, encodeFunctionData } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia, base } from 'viem/chains';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, getEnv, sanitizeError } from './constants';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, getEnv, sanitizeError } from './_shared/constants';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

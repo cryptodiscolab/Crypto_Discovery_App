@@ -10,14 +10,14 @@ import {
     RAFFLE_EVENT_ABI,
     IS_MAINNET,
     sanitizeError
-} from './constants';
+} from './_shared/constants';
 import { 
     PointSetting,
     Database,
     DbDailyTask,
     ExtendedVercelRequest,
     TaskClaimResponse
-} from './types';
+} from './_shared/types';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

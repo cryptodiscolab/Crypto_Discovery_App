@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from './database.types';
+import { Database } from './_shared/database.types';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { verifyMessage, keccak256, encodePacked } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -20,7 +20,7 @@ import {
     CHAIN_ID,
     isMainnet,
     sanitizeError
-} from './constants';
+} from './_shared/constants';
 import { 
     UserProfile, 
     DbUserProfile,
@@ -31,7 +31,7 @@ import {
     UgcMissionPayload, 
     UgcRafflePayload,
     Json
-} from './types';
+} from './_shared/types';
 
 // Move initialization inside helper to prevent top-level invocation failures
 let supabaseAdminInstance: ReturnType<typeof createClient<Database>> | null = null;
