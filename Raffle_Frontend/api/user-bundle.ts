@@ -151,6 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'fc-sync': await handleFarcasterSync(req, res); break;
         case 'update-profile': await handleUpdateProfile(req, res); break;
         case 'get-activity-logs': await handleGetActivityLogs(req, res); break;
+        case 'get-profile': await handleGetProfile(req, res); break;
         case 'log-activity': await handleFrontendLogActivity(req, res); break;
         case 'get-point-settings': await handleGetPointSettings(req, res); break;
         case 'sync-ugc-mission': await handleSyncUgcMission(req, res); break;
@@ -460,6 +461,28 @@ async function handleUpdateProfile(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleGetProfile(req: VercelRequest, res: VercelResponse) {
+    const { wallet } = req.query as { wallet: string };
+    if (!wallet) return res.status(400).json({ error: 'Missing wallet' });
+
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('user_profiles')
+            .select('*')
+            .eq('wallet_address', wallet.toLowerCase())
+            .maybeSingle();
+
+        if (error) throw error;
+        if (!data) return res.status(200).json({ success: true, data: null, isNew: true });
+
+        return res.status(200).json({ success: true, data });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[handleGetProfile]', msg);
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 
