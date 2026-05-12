@@ -167,18 +167,12 @@ export function useCMS() {
 
     useEffect(() => {
         let isMounted = true;
+        const currentAddress = address;
         const checkAdminStatus = async () => {
-            const wallet = cleanWallet(address);
+            const wallet = cleanWallet(currentAddress);
             if (!wallet) {
                 if (isMounted) { setIsDbAdmin(false); setIsEnvAdmin(false); }
                 return;
-            }
-
-            // Quick Client-Side ENV Check for local Dev
-            const localAdmins = (import.meta.env.VITE_ADMIN_WALLETS || '').toLowerCase().split(',').map((a: any) => a.trim()).filter(Boolean);
-            if (localAdmins.includes(wallet)) {
-                if (isMounted) setIsEnvAdmin(true);
-                // Can optionally skip DB check to optimize further if already env-admin
             }
 
             try {
@@ -189,7 +183,7 @@ export function useCMS() {
                     .eq('wallet_address', wallet)
                     .maybeSingle();
 
-                if (!error && data && isMounted) {
+                if (!error && data && isMounted && currentAddress === address) {
                     setIsDbAdmin(!!data.is_admin);
                 }
             } catch (e: any) {
@@ -201,7 +195,7 @@ export function useCMS() {
                 const res = await fetch(`/api/is-admin?wallet=${encodeURIComponent(wallet)}`);
                 if (res.ok) {
                     const json = await res.json();
-                    if (isMounted && json.isAdmin) setIsEnvAdmin(true);
+                    if (isMounted && currentAddress === address && json.isAdmin) setIsEnvAdmin(true);
                 }
             } catch (e: any) {
                 console.warn('[useCMS] ENV Admin check failed:', e.message);

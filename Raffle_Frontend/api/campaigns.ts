@@ -23,6 +23,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
             if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
+            const isoMatch = message.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/);
+            if (!isoMatch) return res.status(401).json({ error: 'Invalid message format: Missing timestamp' });
+            const messageTime = new Date(isoMatch[0]).getTime();
+            if (Math.abs(Date.now() - messageTime) / (1000 * 60) > 5) return res.status(401).json({ error: 'Signature expired' });
+
             const { data: existing } = await supabaseAdmin
                 .from('user_claims')
                 .select('id')

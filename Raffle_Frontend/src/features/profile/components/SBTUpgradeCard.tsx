@@ -64,13 +64,13 @@ export function SBTUpgradeCard() {
     const dailyAppXP = userOnChainStats?.points || 0;
 
     const hasTotalXP = Number(userPoints) >= nextTier.pointsRequired;
-    // DEV BYPASS: Auto-pass XP check for mock admin
-    const hasOnChainXP = (import.meta.env.DEV && address?.toLowerCase() === (import.meta.env.VITE_DEV_WALLET || '').toLowerCase()) 
+    // SECURITY: DEV-only bypass — import.meta.env.DEV is false in production builds
+    const hasOnChainXP = (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase()) 
         ? true 
         : Number(dailyAppXP) >= nextTier.pointsRequired;
     const isSoldOut = nextTier.maxSupply > 0 && nextTier.currentSupply >= nextTier.maxSupply;
-    // DEV BYPASS: Auto-pass ETH balance check for mock admin
-    const hasEnoughETH = (import.meta.env.DEV && address?.toLowerCase() === (import.meta.env.VITE_DEV_WALLET || '').toLowerCase())
+    // SECURITY: DEV-only bypass — import.meta.env.DEV is false in production builds
+    const hasEnoughETH = (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase())
         ? true
         : (balanceData?.value ?? 0n) >= nextTier.mintPrice;
     

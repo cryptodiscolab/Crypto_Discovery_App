@@ -11,28 +11,7 @@ import { Buffer } from 'buffer';
 (window as any).Buffer = Buffer;
 (window as any).process = (window as any).process || { env: {} };
 
-// 🛡️ Global Fetch Interceptor (Fix 401 Unauthorized)
-const originalFetch = window.fetch;
-window.fetch = async (...args) => {
-    let [resource, config] = args;
-    const url = typeof resource === 'string' ? resource : (resource as Request).url;
-
-    // Check if the request is targeting our backend verification server API
-    if (url && (url.startsWith('/api') || url.includes(import.meta.env.VITE_VERIFY_SERVER_URL))) {
-        const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET || 'disco-secure-api-key';
-        
-        config = config || {};
-        const headers = new Headers(config.headers || {});
-        
-        if (!headers.has('x-api-secret')) {
-            headers.set('x-api-secret', apiSecret);
-        }
-        
-        config.headers = headers;
-    }
-    
-    return originalFetch(resource, config);
-};
+// Global fetch interceptor removed — API secret is handled server-side only
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

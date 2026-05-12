@@ -11,8 +11,8 @@ export function useSocialGuard(address?: string): UseQueryResult<SocialProfile |
         queryFn: async (): Promise<SocialProfile | null> => {
             if (!address) return null;
 
-            // DEV-MODE BYPASS: Auto-verify mock admin wallet
-            if (import.meta.env.DEV && address.toLowerCase() === (import.meta.env.VITE_DEV_WALLET || '').toLowerCase()) {
+            // SECURITY: DEV-only bypass — import.meta.env.DEV is false in production builds
+            if (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase()) {
                 return {
                     farcaster: { username: 'nexus_admin', fid: 1, verified: true },
                     twitter: { username: 'nexus_dev', verified: true },

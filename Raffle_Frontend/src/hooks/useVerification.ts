@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSignMessage } from 'wagmi';
 import { APP_CONFIG } from '../lib/contracts';
 import toast from 'react-hot-toast';
@@ -6,12 +6,13 @@ import toast from 'react-hot-toast';
 export function useVerification(refetchStats?: () => void) {
     const [isVerifying, setIsVerifying] = useState(false);
     const [lastActionTime, setLastActionTime] = useState<Record<string | number, number>>({});
+    const lastActionTimeRef = useRef<Record<string | number, number>>({});
     const { signMessageAsync } = useSignMessage();
 
     const verifyTask = async (task: any, address: string, taskId: string | number, userFid: number | null = null) => {
         // 0. Anti-Fraud: 30s Delay Check
         const now = Date.now();
-        const lastTime = lastActionTime[taskId] || 0;
+        const lastTime = lastActionTimeRef.current[taskId] || 0;
         const diff = Math.floor((now - lastTime) / 1000);
         const WAIT_DELAY = APP_CONFIG.SOCIAL_INDEX_DELAY_SEC;
 
@@ -122,6 +123,7 @@ export function useVerification(refetchStats?: () => void) {
     };
 
     const registerTaskStart = (taskId: string | number) => {
+        lastActionTimeRef.current = { ...lastActionTimeRef.current, [taskId]: Date.now() };
         setLastActionTime(prev => ({ ...prev, [taskId]: Date.now() }));
     };
 

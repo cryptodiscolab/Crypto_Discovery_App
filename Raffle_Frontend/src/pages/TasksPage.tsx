@@ -45,10 +45,26 @@ export function TasksPage() {
         }
     }, [address]);
 
+    const refetchClaims = () => {
+        if (address) {
+            supabase
+                .from('user_task_claims')
+                .select('task_id')
+                .eq('wallet_address', address.toLowerCase())
+                .then(({ data, error }: { data: any; error: any }) => {
+                    if (data && !error) {
+                        setOffChainClaims(new Set(data.map((d: any) => String(d.task_id).toLowerCase())));
+                    }
+                });
+        }
+    };
+
     // Fetch active UGC campaigns + their sub-tasks
     const [ugcCampaigns, setUgcCampaigns] = useState<UGCCampaign[]>([]);
+    const [isLoadingUgc, setIsLoadingUgc] = useState(false);
     useEffect(() => {
         const fetchUgcCampaigns = async () => {
+            setIsLoadingUgc(true);
             try {
                 const { data: campaigns } = await supabase
                     .from('campaigns')
@@ -99,6 +115,8 @@ export function TasksPage() {
                 })));
             } catch (e) {
                 console.error('[UGC Fetch]', e);
+            } finally {
+                setIsLoadingUgc(false);
             }
         };
         fetchUgcCampaigns();
@@ -203,6 +221,11 @@ export function TasksPage() {
 
                 {activeTab === 'tasks' ? (
                     <div className="px-4 mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+                        {isLoadingUgc && (
+                            <div className="py-6 text-center">
+                                <Loader2 className="w-6 h-6 text-indigo-500 mx-auto animate-spin" />
+                            </div>
+                        )}
                         {ugcCampaigns.length > 0 && (
                             <div className="space-y-4">
                                 <p className="label-native text-slate-600 px-1">SPONSORED MISSIONS</p>
@@ -212,7 +235,7 @@ export function TasksPage() {
                                         campaign={campaign}
                                         subTasks={(campaign.subTasks || []) as any}
                                         userClaimedTaskIds={offChainClaims}
-                                        refetchStats={refetch}
+                                        refetchStats={() => { refetch(); refetchClaims(); }}
                                     />
                                 ))}
                             </div>

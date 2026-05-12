@@ -48,30 +48,16 @@ export function useVerifiedAction() {
         // Sign the message via wagmi
         const signature = await signMessageAsync({ message });
 
-        // [v3.51.1] Fixed Routing Logic — Dual Pipeline Awareness
-        // claim_task actions ALWAYS go to /api/tasks-bundle (off-chain Supabase tasks)
-        // Only actual social verification actions route to Verification Server
+        // [v3.60.0] All actions route through /api/tasks-bundle (server handles verification secret)
         const bundleAction = (action === 'claim_task') ? 'claim' : action;
         const isClaimAction = (action === 'claim_task');
         const isSocialVerify = !isClaimAction && payload.platform && payload.platform !== 'regular' && payload.platform !== 'system';
-        const verifyServerUrl = import.meta.env.VITE_VERIFY_SERVER_URL;
-        
-        // Final endpoint selection
-        let endpoint = '/api/tasks-bundle';
-        let headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
-        if (isSocialVerify && verifyServerUrl) {
-            // Only real social verification (NOT claim) goes to the Verification Server
-            // Endpoint format: /api/verify/[platform]/[action]
-            const platform = (payload.platform || '').toLowerCase();
-            const actionType = payload.action_type || 'task';
-            endpoint = `${verifyServerUrl}/api/verify/${platform}/${actionType}`;
-            
-            // Verification Server requires API Secret for auth
-            const apiSecret = import.meta.env.VITE_VERIFY_API_SECRET;
-            if (!apiSecret) throw new Error('VITE_VERIFY_API_SECRET is missing');
-            headers['X-API-SECRET'] = apiSecret;
-        }
+        // All requests go through our server — never expose secrets client-side
+        const endpoint = isSocialVerify
+            ? '/api/tasks-bundle?action=social-verify'
+            : '/api/tasks-bundle';
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
         const res = await fetch(endpoint, {
             method: 'POST',

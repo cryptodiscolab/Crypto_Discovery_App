@@ -305,6 +305,11 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
         if (!allowed) return;
     }
 
+    if (action === 'claim-ugc-campaign') {
+        const allowed = await checkFeatureGuard('ugc_campaign', res);
+        if (!allowed) return;
+    }
+
     try {
         switch (action) {
             case 'claim': await handleClaim(req, res); break;
