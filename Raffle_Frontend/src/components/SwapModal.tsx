@@ -47,18 +47,24 @@ const TOKENS: Record<number, Token[]> = (() => {
 })();
 
 // Li.Fi SDK init flag
-let _lifiConfigured = false;
+// let _lifiConfigured = false; // Unused, keeping as comment for reference
 
 export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { address, chainId: activeChainId } = useAccount();
   const { data: walletClient } = useWalletClient();
   const wagmiConfig = useConfig();
   
-  // States
-  const [selectedChainId, setSelectedChainId] = useState<number>(import.meta.env.VITE_CHAIN_ID ? parseInt(import.meta.env.VITE_CHAIN_ID) : 8453);
+  // States - default to activeChainId from wallet, fallback to env or 8453
+  const [selectedChainId, setSelectedChainId] = useState<number>(() => {
+    const envChain = import.meta.env.VITE_CHAIN_ID ? parseInt(import.meta.env.VITE_CHAIN_ID) : 8453;
+    return envChain;
+  });
   
-  const getSafeToken = (chainId: number, index: number, fallbackChainId: number = 8453) => {
-    return TOKENS[chainId]?.[index] || FALLBACK_TOKENS[fallbackChainId]?.[index] || FALLBACK_TOKENS[8453][index];
+  // Helper function to safely get token with fallback
+  const getSafeToken = (chainId: number, index: number, fallbackChainId: number = 8453): Token => {
+    const chainTokens = TOKENS[chainId] || TOKENS[fallbackChainId] || FALLBACK_TOKENS[8453];
+    const token = (chainTokens && chainTokens.length > 0) ? (chainTokens[index] || chainTokens[0]) : null;
+    return token || { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' };
   };
 
   const [fromToken, setFromToken] = useState<Token>(getSafeToken(selectedChainId, 0));
@@ -73,14 +79,26 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   // Sync token selection when chain changes
   useEffect(() => {
-    const available = TOKENS[selectedChainId];
-    if (available) {
+    const available = TOKENS[selectedChainId] || TOKENS[8453] || FALLBACK_TOKENS[8453] || [];
+    if (available.length > 0) {
       setFromToken(available[0]);
       setToToken(available[1] || available[0]);
+    } else {
+      // Emergency fallback if somehow no tokens are available for selected chain
+      const safeDefault = FALLBACK_TOKENS[8453][0];
+      setFromToken(safeDefault);
+      setToToken(safeDefault);
     }
     setQuote(null);
     setAmountIn('');
   }, [selectedChainId]);
+
+  // Auto-switch internal chain if wallet changes to a supported network
+  useEffect(() => {
+    if (activeChainId && NETWORKS.some(n => n.id === activeChainId) && activeChainId !== selectedChainId) {
+      setSelectedChainId(activeChainId);
+    }
+  }, [activeChainId, selectedChainId]);
 
   // Init LiFi
   useEffect(() => {
@@ -147,7 +165,6 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     const tid = toast.loading("Executing Swap via Li.Fi...");
     
     try {
-      // @ts-ignore - Route type mismatch across SDK versions
       await executeRoute(quote as any, {
         updateRouteHook: () => {
           
@@ -240,12 +257,12 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <select
                 value={fromToken.address}
                 onChange={(e) => {
-                  const token = TOKENS[selectedChainId].find(t => t.address === e.target.value);
+                  const token = TOKENS[selectedChainId]?.find(t => t.address === e.target.value);
                   if (token) setFromToken(token);
                 }}
                 className="bg-white/5 px-3 py-1.5 rounded-xl border border-white/10 text-[11px] font-black tracking-widest text-white outline-none cursor-pointer hover:bg-white/10 transition-colors shrink-0 max-w-[120px]"
               >
-                {TOKENS[selectedChainId].map(t => (
+                {(TOKENS[selectedChainId] || TOKENS[8453] || FALLBACK_TOKENS[8453] || []).filter(Boolean).map(t => (
                   <option key={t.address} value={t.address} className="bg-[#0B0E14]">
                     {t.logo} {t.symbol}
                   </option>
@@ -278,12 +295,12 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <select
                 value={toToken.address}
                 onChange={(e) => {
-                  const token = TOKENS[selectedChainId].find(t => t.address === e.target.value);
+                  const token = TOKENS[selectedChainId]?.find(t => t.address === e.target.value);
                   if (token) setToToken(token);
                 }}
                 className="bg-white/5 px-3 py-1.5 rounded-xl border border-white/10 text-[11px] font-black tracking-widest text-white outline-none cursor-pointer hover:bg-white/10 transition-colors shrink-0 max-w-[120px]"
               >
-                {TOKENS[selectedChainId].map(t => (
+                {(TOKENS[selectedChainId] || FALLBACK_TOKENS[8453] || []).map(t => (
                   <option key={t.address} value={t.address} className="bg-[#0B0E14]">
                     {t.logo} {t.symbol}
                   </option>

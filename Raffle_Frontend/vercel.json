@@ -107,7 +107,7 @@
         },
         {
             "path": "/api/sync-xp-onchain",
-            "schedule": "*/30 * * * *"
+            "schedule": "0 2 * * *"
         },
         {
             "path": "/api/lurah-cron",
