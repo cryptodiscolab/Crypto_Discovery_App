@@ -27,8 +27,19 @@ interface LiFiQuote {
 
 // Expected format for VITE_SWAP_TOKENS:
 // { "8453": [{ "address": "0x...", "decimals": 18, "symbol": "ETH", "logo": "Ξ" }, ...], "84532": [...] }
-const DEFAULT_TOKENS: Record<number, Token[]> = JSON.parse(import.meta.env.VITE_SWAP_TOKENS || '{}');
-const TOKENS = DEFAULT_TOKENS;
+const FALLBACK_TOKENS: Record<number, Token[]> = {
+  8453: [
+    { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' },
+    { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6, symbol: 'USDC', logo: '$' },
+  ],
+  84532: [
+    { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' },
+    { address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6, symbol: 'USDC', logo: '$' },
+  ]
+};
+const TOKENS: Record<number, Token[]> = (() => {
+  try { const parsed = JSON.parse(import.meta.env.VITE_SWAP_TOKENS || ''); return Object.keys(parsed).length > 0 ? parsed : FALLBACK_TOKENS; } catch { return FALLBACK_TOKENS; }
+})();
 
 // Li.Fi SDK init flag
 let _lifiConfigured = false;
@@ -40,8 +51,8 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   
   // States
   const [selectedChainId, setSelectedChainId] = useState<number>(import.meta.env.VITE_CHAIN_ID ? parseInt(import.meta.env.VITE_CHAIN_ID) : 8453);
-  const [fromToken, setFromToken] = useState<Token>(TOKENS[selectedChainId]?.[0] || TOKENS[8453][0]);
-  const [toToken, setToToken] = useState<Token>(TOKENS[selectedChainId]?.[1] || TOKENS[8453][1]);
+  const [fromToken, setFromToken] = useState<Token>(TOKENS[selectedChainId]?.[0] || TOKENS[8453]?.[0] || FALLBACK_TOKENS[8453][0]);
+  const [toToken, setToToken] = useState<Token>(TOKENS[selectedChainId]?.[1] || TOKENS[8453]?.[1] || FALLBACK_TOKENS[8453][1]);
   
   const [amountIn, setAmountIn] = useState('');
   const [quote, setQuote] = useState<LiFiQuote | null>(null);
