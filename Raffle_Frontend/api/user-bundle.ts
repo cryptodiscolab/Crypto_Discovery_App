@@ -926,6 +926,20 @@ async function logActivity({ wallet, category, type, description, amount, symbol
 
 async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
     try {
+        // Force initialization check
+        getSupabaseAdmin();
+    } catch (initErr: any) {
+        return res.status(500).json({ 
+            error: "Initialization Failed", 
+            message: initErr.message,
+            env_status: {
+                has_url: !!SUPABASE_URL,
+                has_key: !!SUPABASE_SERVICE_ROLE_KEY
+            }
+        });
+    }
+
+    try {
         const { limit = '100', tier } = req.query as { limit?: string, tier?: string };
         let query = getSupabaseAdmin()
             .from('v_user_full_profile')

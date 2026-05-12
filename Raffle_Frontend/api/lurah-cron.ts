@@ -66,6 +66,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
+    try {
+        // Force initialization check
+        getSupabase();
+    } catch (initErr: any) {
+        return res.status(500).json({ 
+            error: "Initialization Failed", 
+            message: initErr.message,
+            env_status: {
+                has_url: !!SUPABASE_URL,
+                has_key: !!SUPABASE_SERVICE_ROLE_KEY,
+                has_secret: !!CRON_SECRET
+            }
+        });
+    }
+
     const auditResults: AuditResults = {
         timestamp: new Date().toISOString(),
         status: "HEALTHY",
