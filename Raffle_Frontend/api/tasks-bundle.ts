@@ -28,6 +28,16 @@ const publicClient = createPublicClient({
 
 // 🛡️ REFACTORED HELPERS 🛡️
 
+// Fire-and-forget: trigger on-chain XP sync after DB update
+function triggerOnchainSync() {
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '';
+    if (!baseUrl) return;
+    fetch(`${baseUrl}/api/sync-xp-onchain`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || ''}` }
+    }).catch(() => {}); // fire-and-forget, don't block response
+}
+
 async function getPointValue(activityKey: string): Promise<number> {
     try {
         const { data, error } = await supabaseAdmin
@@ -342,6 +352,7 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
         await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`);
 
         await checkAndGrantDailyBonus(wallet_address);
+        triggerOnchainSync();
         return res.status(200).json({ success: true, xp });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);

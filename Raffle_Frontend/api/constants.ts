@@ -118,10 +118,8 @@ export const WALLET_BOT_SIGNER = getEnv('WALLET_BOT_SIGNER', getEnv('WALLET_PRIV
 export const TELEGRAM_BOT_TOKEN = getEnv('TELEGRAM_BOT_TOKEN');
 export const TELEGRAM_CHAT_ID = getEnv('TELEGRAM_CHAT_ID');
 
-export const USDC_ADDRESS = IS_MAINNET
-    ? getEnv('VITE_USDC_ADDRESS', '')
-    : getEnv('VITE_USDC_ADDRESS_SEPOLIA', '');
-if (!USDC_ADDRESS) console.warn(`[Zero-Hardcode] USDC_ADDRESS is empty — set VITE_USDC_ADDRESS${IS_MAINNET ? '' : '_SEPOLIA'} env var`);
+export const USDC_ADDRESS = getEnv('VITE_USDC_ADDRESS', getEnv('USDC_ADDRESS', ''));
+if (!USDC_ADDRESS) console.warn('[Zero-Hardcode] USDC_ADDRESS is empty — set VITE_USDC_ADDRESS env var');
 
 export const MASTER_X_ADDRESS = IS_MAINNET
     ? getEnv('VITE_MASTER_X_ADDRESS', '')

@@ -171,8 +171,9 @@ graph TD
 |----------|---------------------|----------------------|------------|
 | **MasterX** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` ✅ |
 | **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` ✅ |
-| **DailyApp V14** | `[RESERVED]` | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` ✅ |
-| **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` ✅ |
+| **DailyApp V15** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | `AccessControl` ✅ |
+| **DailyApp V14** | `[RESERVED]` | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` (DEPRECATED) |
+| **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` (DEPRECATED) |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
@@ -199,4 +200,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-11T16:55:00+07:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.63.1 LOCKED.*
+*Last Updated: 2026-05-12T02:04:00+07:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.63.5 LOCKED.*

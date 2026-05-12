@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await Promise.allSettled([
             // 1. Database Health Check
             runWithTimeout("Database Connect", (async () => {
-                const { error } = await supabase.from('system_health').select('count', { count: 'exact', head: true }).limit(1);
+                const { error } = await supabase.from('system_settings').select('key', { count: 'exact', head: true }).limit(1);
                 if (error) throw error;
             })(), INDIVIDUAL_TASK_TIMEOUT_MS, auditResults),
 
@@ -76,10 +76,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     { name: "MasterX", address: MASTER_X_ADDRESS },
                     { name: "DailyApp", address: DAILY_APP_ADDRESS },
                     { name: "Raffle", address: RAFFLE_ADDRESS }
-                ];
+                ].filter(c => c.address && c.address !== '[RESERVED]' && c.address.startsWith('0x'));
 
+                if (contracts.length === 0) return; // Skip if no valid addresses
                 await Promise.all(contracts.map(async (c) => {
-                    if (!c.address || c.address === '[RESERVED]' || c.address === '0x0000000000000000000000000000000000000000') return;
                     await rpcClient.getBytecode({ address: c.address as `0x${string}` });
                 }));
             })(), INDIVIDUAL_TASK_TIMEOUT_MS, auditResults),

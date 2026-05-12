@@ -106,6 +106,10 @@
             "schedule": "0 0 * * *"
         },
         {
+            "path": "/api/sync-xp-onchain",
+            "schedule": "*/30 * * * *"
+        },
+        {
             "path": "/api/lurah-cron",
             "schedule": "0 1 * * *"
         }

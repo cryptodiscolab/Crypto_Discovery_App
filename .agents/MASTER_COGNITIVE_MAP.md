@@ -238,11 +238,11 @@ graph TD
     RF -->|Mint| TKT((Raffle Tickets))
 ```
 
-### 📋 Active Contract Registry (v3.63.3):
+### 📋 Active Contract Registry (v3.63.5):
 | Kontrak | Alamat (Base Sepolia) | Peran Utama |
 |---|---|---|
 | **MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | Controller Utama, NFT/SBT Mint & Upgrade. |
-| **DailyApp** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | Satellite Tugas (Social Verify, Claims). V14. |
+| **DailyApp** | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | Satellite Tugas (Social Verify, Claims). V15 Security-Hardened. |
 | **Raffle** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | Tiket Gacha & Refund Protocol V2.1. |
 | **CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Content Text Mapping On-Chain. |
 | **Safe Multisig** | `0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa` | Treasury Pusat & Penarikan. |
