@@ -88,8 +88,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
-    const { raffle_id } = req.body;
+    const { raffle_id, wallet_address, signature, message } = req.body;
     if (!raffle_id) return res.status(400).json({ error: 'Missing raffle_id' });
+
+    // Admin auth: require wallet signature from an admin
+    if (wallet_address && signature && message) {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+    }
 
     try {
         const raffleInfo: any = await rpcClient.readContract({

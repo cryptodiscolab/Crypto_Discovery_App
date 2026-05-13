@@ -8,6 +8,7 @@ import { Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { ReferralTracker } from './components/ReferralTracker';
+import { RaffleWinBanner } from './components/RaffleWinBanner';
 
 // Lazy Load Pages (Non-critical components)
 const HomePage = lazy(async () => {
@@ -124,6 +125,7 @@ function AppContent() {
       <DebugMockConnect />
       <div className={`${theme} min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col overflow-x-hidden w-full max-w-[100vw] relative`}>
         {!isFrame && <Header />}
+        {!isFrame && <RaffleWinBanner />}
         
         <main 
           className={`flex-1 ${!isFrame ? 'pt-16 pb-20 md:pb-6' : ''}`}
