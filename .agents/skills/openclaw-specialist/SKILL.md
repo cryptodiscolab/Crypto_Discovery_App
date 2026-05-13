@@ -35,4 +35,4 @@ Setiap audit keamanan harus mengikuti alur:
 - **Zero-Screenshot Mandate**: Strictly forbids processing or committing media files (`.png`, `.jpg`, `.mp4`).
 
 OpenClaw: Deep Security. Absolute Integrity.
-Version: 3.38.25
+Version: v3.63.5-Hardened

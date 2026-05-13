@@ -4,7 +4,7 @@ description: Guide for implementing smooth, native-feeling animations using Reac
 license: MIT
 metadata:
   author: vercel
-  version: "1.0.0"
+  version: v3.63.5-Hardened
 ---
 
 # React View Transitions

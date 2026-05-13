@@ -1,7 +1,7 @@
 ---
 name: cognitive-orchestrator
 description: Mengelola sinkronisasi kognitif lintas agen dan memastikan metodologi skill-creator v0.40.1 diterapkan di seluruh ekosistem.
-version: 1.2.0 (v3.59.2 Compatible)
+version: v3.63.5-Hardened
 triggers:
   - "sync agents"
   - "cognitive expansion"
@@ -36,7 +36,7 @@ Setiap agen yang mengaktifkan skill ini wajib mengikuti alur:
 - Dilarang menebak status kontrak tanpa memanggil `scripts/audits/check_sync_status.cjs`.
 - Dilarang berasumsi tier user tanpa memanggil `get_user_nft_tiers`.
 - Dilarang melompati tier sequential (N+1 Mandate).
-- **PARITY AUDIT MANDATE (v3.59.2)**: Wajib memverifikasi status drift XP/Tier via `/api/admin/parity-audit` sebelum menutup task arsitektural.
+- **PARITY AUDIT MANDATE (v3.63.5-Hardened)**: Wajib memverifikasi status drift XP/Tier via `/api/admin/parity-audit` sebelum menutup task arsitektural.
 - **ZERO-HARDCODE LOCK**: Dilarang menggunakan alamat kontrak statis dalam logika pemikiran. Selalu gunakan placeholder lingkungan.
 
 ## 5. Ecosystem Documentation Synchronization Mandate
@@ -64,4 +64,4 @@ Saat menerima perintah `> sync end to end` atau `sinkronisasi total`, agen WAJIB
 8. **Documentation Sync**: Jalankan alur `update docs` sebagai langkah final.
 
 ---
-*Status: ACTIVE. Cognitive Sync: ENABLED. v3.59.2 Locked.*
+*Status: ACTIVE. Cognitive Sync: ENABLED. v3.63.5-Hardened Locked.*
