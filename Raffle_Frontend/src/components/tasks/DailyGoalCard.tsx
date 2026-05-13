@@ -16,7 +16,7 @@ export function DailyGoalCard() {
     const fetchProgress = async () => {
         if (!address) return;
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/get-daily-progress?wallet=${address.toLowerCase()}`);
+            const res = await axios.get(`/api/user-bundle?action=get-daily-progress&wallet=${address.toLowerCase()}`);
             if (res.data.success) {
                 setProgress(res.data.progress);
                 setBonusAmount(res.data.bonus_amount);

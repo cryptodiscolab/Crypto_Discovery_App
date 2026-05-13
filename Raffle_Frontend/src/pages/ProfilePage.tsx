@@ -178,10 +178,20 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 gap-3 px-4 mt-6">
           <button 
             onClick={() => setActiveModal('claim')}
-            className="flex flex-col items-center justify-center p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl hover:bg-emerald-500/20 transition-all group active:scale-95"
+            className={`flex flex-col items-center justify-center p-4 border rounded-3xl transition-all group active:scale-95 ${
+              onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
+                ? 'bg-slate-500/10 border-slate-500/20 opacity-60'
+                : 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20'
+            }`}
           >
-            <Zap className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
-            <span className="text-[10px] font-black text-white uppercase tracking-widest">DAILY CLAIM</span>
+            <Zap className={`mb-2 group-hover:scale-110 transition-transform ${
+              onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
+                ? 'text-slate-400' : 'text-emerald-400'
+            }`} size={24} />
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">
+              {onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
+                ? 'CLAIMED ✓' : 'DAILY CLAIM'}
+            </span>
           </button>
           <button 
             onClick={() => setActiveModal('task')}

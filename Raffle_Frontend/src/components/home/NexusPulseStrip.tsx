@@ -11,7 +11,7 @@ export const NexusPulseStrip = () => {
 
     const fetchStats = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_VERIFY_SERVER_URL}/api/verify/ecosystem-stats`);
+            const res = await fetch('/api/user-bundle?action=ecosystem-stats');
             const data = await res.json();
             if (data.success) {
                 setStats(data.stats);

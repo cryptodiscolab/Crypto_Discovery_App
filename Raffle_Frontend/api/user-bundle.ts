@@ -181,6 +181,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'generate-sync-signature': await handleGenerateSyncSignature(req, res); break;
         case 'social-status': await handleSocialStatus(req, res); break;
         case 'get-daily-progress': await handleGetDailyProgress(req, res); break;
+        case 'ecosystem-stats': await handleEcosystemStats(req, res); break;
+        case 'check-reputation': await handleCheckReputation(req, res); break;
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -358,6 +360,17 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
         const result = { success: true, xp_synced: 0, current_tier: currentTierOnChain };
 
         if (xpDelta > 0) {
+            // Rule 60: COOLDOWN ENFORCEMENT for Daily Claim — check BEFORE incrementing
+            if (xpDelta === standardDailyReward || (tx_hash && skipSignature)) {
+                if (profile?.last_streak_claim) {
+                    const lastDate = new Date(profile.last_streak_claim);
+                    const hoursSince = (new Date().getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+                    if (hoursSince < 20) {
+                        return res.status(429).json({ error: 'Daily claim cooldown still active', cooldown_remaining_hours: Math.ceil(20 - hoursSince) });
+                    }
+                }
+            }
+
             const { error: rpcErr } = await getSupabaseAdmin().rpc('fn_increment_xp', {
                 p_wallet: cleanAddress,
                 p_amount: xpDelta
@@ -374,22 +387,8 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 })
                 .eq('wallet_address', cleanAddress);
 
-            // Rule 60: COOLDOWN ENFORCEMENT for Daily Claim
+            // Streak tracking for Daily Claim
             if (xpDelta === standardDailyReward || (tx_hash && skipSignature)) {
-                const { data: lastClaim } = await getSupabaseAdmin()
-                    .from('user_profiles')
-                    .select('last_streak_claim')
-                    .eq('wallet_address', cleanAddress)
-                    .maybeSingle();
-
-                if (lastClaim?.last_streak_claim) {
-                    const lastDate = new Date(lastClaim.last_streak_claim);
-                    const hoursSince = (new Date().getTime() - lastDate.getTime()) / (1000 * 60 * 60);
-                    if (hoursSince < 20) {
-                        return res.status(429).json({ error: 'Daily claim cooldown still active' });
-                    }
-                }
-
                 const now = new Date();
                 const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
                 let currentStreak = profile?.streak_count || 0;
@@ -516,7 +515,7 @@ async function handleGetProfile(req: VercelRequest, res: VercelResponse) {
 
     try {
         const { data, error } = await getSupabaseAdmin()
-            .from('user_profiles')
+            .from('v_user_full_profile')
             .select('*')
             .eq('wallet_address', wallet.toLowerCase())
             .maybeSingle();
@@ -1000,7 +999,78 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
     }
 }
 
-async function handleSyncOAuth(req: VercelRequest, res: VercelResponse) {
+async function handleEcosystemStats(_req: VercelRequest, res: VercelResponse) {
+    try {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+
+        const [
+            { count: totalMembers },
+            { count: dau },
+            { count: totalTx }
+        ] = await Promise.all([
+            getSupabaseAdmin().from('user_profiles').select('*', { count: 'exact', head: true }),
+            getSupabaseAdmin().from('user_profiles').select('*', { count: 'exact', head: true }).gte('updated_at', todayStart),
+            getSupabaseAdmin().from('user_activity_logs').select('*', { count: 'exact', head: true })
+        ]);
+
+        // Online = users active in last 15 minutes
+        const fifteenMinAgo = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
+        const { count: online } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('*', { count: 'exact', head: true })
+            .gte('updated_at', fifteenMinAgo);
+
+        return res.status(200).json({
+            success: true,
+            stats: {
+                totalMembers: totalMembers || 0,
+                dau: dau || 0,
+                online: online || 0,
+                totalTx: totalTx || 0
+            }
+        });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleCheckReputation(req: VercelRequest, res: VercelResponse) {
+    const { wallet } = req.query as { wallet: string };
+    if (!wallet) return res.status(400).json({ error: 'Missing wallet' });
+
+    try {
+        const cleanAddress = wallet.toLowerCase();
+        const { data: profile } = await getSupabaseAdmin()
+            .from('v_user_full_profile')
+            .select('total_xp, tier, rank_name, streak_count, is_admin')
+            .eq('wallet_address', cleanAddress)
+            .maybeSingle();
+
+        if (!profile) return res.status(200).json({ success: true, reputation: null });
+
+        const { count: taskCount } = await getSupabaseAdmin()
+            .from('user_task_claims')
+            .select('*', { count: 'exact', head: true })
+            .eq('wallet_address', cleanAddress);
+
+        return res.status(200).json({
+            success: true,
+            reputation: {
+                total_xp: profile.total_xp || 0,
+                tier: profile.tier || 0,
+                rank_name: profile.rank_name || 'Rookie',
+                streak_count: profile.streak_count || 0,
+                tasks_completed: taskCount || 0,
+                is_admin: profile.is_admin || false
+            }
+        });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}async function handleSyncOAuth(req: VercelRequest, res: VercelResponse) {
     const { wallet_address, signature, message, provider, oauth_data } = req.body;
     if (!wallet_address || !signature || !message || !provider || !oauth_data) return res.status(400).json({ error: 'Missing fields' });
 
