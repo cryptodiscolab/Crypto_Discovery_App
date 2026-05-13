@@ -187,6 +187,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // -----------------------------------------------------------------------------
+// HELPERS
+// -----------------------------------------------------------------------------
+
+async function checkIdentityStatus(wallet: string): Promise<boolean> {
+    try {
+        const { data: profile } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('fid, twitter_id, is_base_social_verified')
+            .eq('wallet_address', wallet.toLowerCase())
+            .maybeSingle();
+        
+        return !!(profile?.fid || profile?.twitter_id || profile?.is_base_social_verified);
+    } catch (e) {
+        return false;
+    }
+}
+
+// -----------------------------------------------------------------------------
 // CORE HANDLERS
 // -----------------------------------------------------------------------------
 
@@ -306,6 +324,10 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             if (!valid) return res.status(401).json({ error: 'Invalid signature' });
         }
 
+        // Rule 61: IDENTITY GATING MANDATE
+        const isVerified = await checkIdentityStatus(cleanAddress);
+        if (!isVerified) return res.status(403).json({ error: 'Identity verification required (Farcaster/Twitter/Base)' });
+
         const { data: profile } = await getSupabaseAdmin()
             .from('user_profiles')
             .select('last_onchain_xp, total_xp, streak_count, last_streak_claim')
@@ -352,7 +374,22 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 })
                 .eq('wallet_address', cleanAddress);
 
+            // Rule 60: COOLDOWN ENFORCEMENT for Daily Claim
             if (xpDelta === standardDailyReward || (tx_hash && skipSignature)) {
+                const { data: lastClaim } = await getSupabaseAdmin()
+                    .from('user_profiles')
+                    .select('last_streak_claim')
+                    .eq('wallet_address', cleanAddress)
+                    .maybeSingle();
+
+                if (lastClaim?.last_streak_claim) {
+                    const lastDate = new Date(lastClaim.last_streak_claim);
+                    const hoursSince = (new Date().getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+                    if (hoursSince < 20) {
+                        return res.status(429).json({ error: 'Daily claim cooldown still active' });
+                    }
+                }
+
                 const now = new Date();
                 const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
                 let currentStreak = profile?.streak_count || 0;
@@ -801,6 +838,10 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
+        // Rule 61: IDENTITY GATING MANDATE
+        const isVerified = await checkIdentityStatus(wallet);
+        if (!isVerified) return res.status(403).json({ error: 'Identity verification required for tier upgrades' });
+
         const { tierName, ethSpent, txHash } = payload;
         
         const { data: thresholds } = await getSupabaseAdmin().from('sbt_thresholds').select('level, tier_name, min_xp');
@@ -871,6 +912,10 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
     try {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        // Rule 61: IDENTITY GATING MANDATE
+        const isVerified = await checkIdentityStatus(wallet);
+        if (!isVerified) return res.status(403).json({ error: 'Identity verification required for rewards' });
 
         const { amountETH, tier, txHash } = payload;
 
