@@ -1,10 +1,11 @@
-import { useAccount, useBalance, useSignMessage, useConfig } from 'wagmi';
+import { useAccount, useBalance, useSignMessage, useConfig, useReadContract } from 'wagmi';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import { useNFTTiers } from '../../../hooks/useNFTTiers';
 import { useCMS } from '../../../hooks/useCMS';
 import { usePoints } from '../../../shared/context/PointsContext';
 import { useSBT } from '../../../hooks/useSBT';
 import { useUserInfo, useSyncXP } from '../../../hooks/useContract';
+import { CONTRACTS, ABIS } from '../../../lib/contracts';
 import { formatEther } from 'viem';
 import { Sparkles, ArrowUpCircle, Lock, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -35,12 +36,26 @@ export function SBTUpgradeCard() {
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
     const isSbtFeatureEnabled = !isMainnet || (ecosystemSettings as any)?.active_features?.sbt_minting === true;
 
-
     // Find current and next tier (Sync on-chain tier to bypass DB delay)
     const dbTier = userTier || 0;
     const chainTier = userOnChainStats?.currentTier || 0;
     const currentTierIndex = Math.max(dbTier, chainTier);
-    const nextTier = tiers.find(t => t.id === currentTierIndex + 1);
+    const nextTierId = currentTierIndex + 1;
+    const nextTier = tiers.find(t => t.id === nextTierId);
+
+    // Read MasterX tier fee as fallback (admin may set fee there instead of DailyApp)
+    const { data: masterXFee } = useReadContract({
+        address: CONTRACTS.MASTER_X as `0x${string}`,
+        abi: ABIS.MASTER_X as any,
+        functionName: 'tierUpgradeFeeWei',
+        args: [nextTierId],
+        query: { enabled: nextTierId <= 5 }
+    });
+
+    // Resolve effective mint price: prefer DailyApp nftConfigs, fallback to MasterX tierUpgradeFeeWei
+    const effectiveMintPrice = (nextTier?.mintPrice && nextTier.mintPrice > 0n)
+        ? nextTier.mintPrice
+        : (masterXFee ? BigInt(masterXFee.toString()) : 0n);
 
     // Safety check for Max Level
     if (currentTierIndex >= 5) {
@@ -72,7 +87,7 @@ export function SBTUpgradeCard() {
     // SECURITY: DEV-only bypass — import.meta.env.DEV is false in production builds
     const hasEnoughETH = (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase())
         ? true
-        : (balanceData?.value ?? 0n) >= nextTier.mintPrice;
+        : (balanceData?.value ?? 0n) >= effectiveMintPrice;
     
     const xpShortfall = nextTier.pointsRequired - Number(userPoints);
     const syncShortfall = nextTier.pointsRequired - Number(dailyAppXP);
@@ -94,14 +109,14 @@ export function SBTUpgradeCard() {
         }
 
         if (!hasEnoughETH) {
-            return toast.error(`Insufficient ETH. You need ${formatEther(nextTier.mintPrice)} ETH to mint.`);
+            return toast.error(`Insufficient ETH. You need ${formatEther(effectiveMintPrice)} ETH to mint.`);
         }
 
         const tid = toast.loading(`Minting ${nextTier.name} NFT...`);
         try {
             // FIX v3.47.1: Use mintNFT from useNFTTiers (calls DAILY_APP.mintNFT)
             // NOT upgradeTier from useSBT (which calls MASTER_X.upgradeTier — wrong contract!)
-            const hash = await mintTier(nextTier.id, nextTier.mintPrice);
+            const hash = await mintTier(nextTier.id, effectiveMintPrice);
             
             toast.loading(`Waiting for confirmation...`, { id: tid });
             
@@ -133,7 +148,7 @@ export function SBTUpgradeCard() {
                         message,
                         payload: {
                             tierName: nextTier.name,
-                            ethSpent: formatEther(nextTier.mintPrice),
+                            ethSpent: formatEther(effectiveMintPrice),
                             txHash: hash
                         }
                     })
@@ -152,7 +167,7 @@ export function SBTUpgradeCard() {
             // Provide specific error messages based on error type
             const errMsg = e?.shortMessage || e?.message || '';
             if (errMsg.includes('insufficient funds') || errMsg.includes('exceeds balance')) {
-                toast.error(`Insufficient ETH balance. Need ${formatEther(nextTier.mintPrice)} ETH + gas.`, { id: tid });
+                toast.error(`Insufficient ETH balance. Need ${formatEther(effectiveMintPrice)} ETH + gas.`, { id: tid });
             } else if (errMsg.includes('user rejected') || e?.code === 4001) {
                 toast.error('Transaction cancelled by user.', { id: tid });
             } else if (errMsg.includes('gas')) {
@@ -274,8 +289,8 @@ export function SBTUpgradeCard() {
                             <div className="flex flex-col">
                                 <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Fee</span>
                                 <span className="text-[11px] font-black text-white uppercase tracking-widest">
-                                    {formatEther(nextTier.mintPrice)} ETH 
-                                    {ethPrice > 0 && <span className="ml-1 text-slate-500 text-[9px] normal-case">(${(parseFloat(formatEther(nextTier.mintPrice)) * ethPrice).toFixed(2)})</span>}
+                                    {formatEther(effectiveMintPrice)} ETH 
+                                    {ethPrice > 0 && <span className="ml-1 text-slate-500 text-[9px] normal-case">(${(parseFloat(formatEther(effectiveMintPrice)) * ethPrice).toFixed(2)})</span>}
                                 </span>
                             </div>
                         </div>
@@ -368,11 +383,11 @@ export function SBTUpgradeCard() {
                         <div className="flex flex-col items-center gap-0.5">
                             <div className="flex items-center gap-2">
                                 <Sparkles size={14} />
-                                MINT {nextTier.name.toUpperCase()} NOW — {formatEther(nextTier.mintPrice)} ETH
+                                MINT {nextTier.name.toUpperCase()} NOW — {formatEther(effectiveMintPrice)} ETH
                             </div>
                             {ethPrice > 0 && (
                                 <span className="text-[9px] opacity-70 font-bold tracking-widest">
-                                    EST. COST: ${(parseFloat(formatEther(nextTier.mintPrice)) * ethPrice).toFixed(2)} USDC
+                                    EST. COST: ${(parseFloat(formatEther(effectiveMintPrice)) * ethPrice).toFixed(2)} USDC
                                 </span>
                             )}
                         </div>
