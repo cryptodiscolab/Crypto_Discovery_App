@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { createWalletClient, createPublicClient, http, encodeFunctionData } from 'viem';
+import { createWalletClient, createPublicClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia, base } from 'viem/chains';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, getEnv, sanitizeError } from './_shared/constants.js';

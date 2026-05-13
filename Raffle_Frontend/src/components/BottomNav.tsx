@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet, Megaphone } from 'lucide-react';
+import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet } from 'lucide-react';
 import { useCMS } from '../hooks/useCMS';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 
 export function BottomNav() {
-    const { address, isConnected } = useAccount();
+    const { isConnected } = useAccount();
     const { isAdmin: isCMSAdmin } = useCMS();
     const location = useLocation();
     const { isFrame, safeAreaInsets, client } = useFarcaster();

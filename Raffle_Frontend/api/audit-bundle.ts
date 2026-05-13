@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { verifyMessage, keccak256, toBytes, formatEther, formatUnits } from 'viem';
+import { verifyMessage, keccak256, toBytes, formatEther } from 'viem';
 import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
@@ -110,7 +111,7 @@ async function handleSyncEvents(req: VercelRequest, res: VercelResponse) {
         const fromBlock = lastBlock + 1n;
         const toBlock = latestBlock > fromBlock + 2000n ? fromBlock + 2000n : latestBlock;
 
-        const [pointLogs, taskLogs, upgradeLogs, seasonLogs, rewardLogs] = await Promise.all([
+        const [pointLogs, taskLogs, upgradeLogs, , rewardLogs] = await Promise.all([
             rpcClient.getLogs({ address: MASTER_X_ADDRESS as `0x${string}`, event: MASTER_X_EVENT_ABI[0], fromBlock, toBlock }),
             rpcClient.getLogs({ address: DAILY_APP_ADDRESS as `0x${string}`, event: DAILY_APP_EVENT_ABI[0], fromBlock, toBlock }),
             rpcClient.getLogs({ address: MASTER_X_ADDRESS as `0x${string}`, event: MASTER_X_EVENT_ABI[1], fromBlock, toBlock }),

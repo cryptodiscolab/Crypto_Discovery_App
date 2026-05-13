@@ -91,17 +91,41 @@ export function AccountantLedgerTab() {
     const fetchLedger = async () => {
         setLoading(true);
         try {
-            // TODO: migrate to signature-based auth (generate message with timestamp, sign with signMessageAsync, send signature + message instead of Bearer token)
-            const token = localStorage.getItem('adminToken');
+            const timestamp = new Date().toISOString();
+            const message = `Action: Accountant Ledger\nAdmin: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/accountant-ledger`, {
                 method: 'POST', 
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ action: 'accountant-ledger' })
+                body: JSON.stringify({ 
+                    action: 'accountant-ledger',
+                    wallet_address: address,
+                    signature,
+                    message
+                })
             });
-            const data = await res.json();
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Server Error (${res.status}): ${text || res.statusText || 'Unknown'}`);
+            }
+
+            const text = await res.text();
+            if (!text || text.trim() === '') {
+                throw new Error('Server returned an empty response');
+            }
+
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('[Ledger Parse Error] Raw text:', text);
+                throw new Error('Failed to parse server response as JSON');
+            }
+
             if (data.success) {
                 setAggregates(data.aggregates);
                 setLogs(data.logs);
@@ -150,16 +174,41 @@ export function AccountantLedgerTab() {
         setIsHardening(true);
         const toastId = toast.loading("Auditing ecosystem parity...");
         try {
-            // TODO: migrate to signature-based auth (generate message with timestamp, sign with signMessageAsync, send signature + message instead of Bearer token)
-            const token = localStorage.getItem('adminToken');
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/parity-audit`, {
+            const timestamp = new Date().toISOString();
+            const message = `Action: Parity Audit\nAdmin: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/parity-audit`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'parity-audit',
+                    wallet_address: address,
+                    signature,
+                    message
+                })
             });
-            const data = await res.json();
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Audit Server Error (${res.status}): ${text || res.statusText || 'Unknown'}`);
+            }
+
+            const text = await res.text();
+            if (!text || text.trim() === '') {
+                throw new Error('Audit server returned an empty response');
+            }
+
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('[Audit Parse Error] Raw text:', text);
+                throw new Error('Failed to parse audit response as JSON');
+            }
+
             if (data.success) {
                 setParityResults(data.summary);
                 toast.success("Parity audit completed", { id: toastId });

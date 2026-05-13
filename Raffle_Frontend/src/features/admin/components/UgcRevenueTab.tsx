@@ -23,12 +23,18 @@ export function UgcRevenueTab() {
     const fetchRevenue = async () => {
         setLoading(true);
         try {
+            const timestamp = new Date().toISOString();
+            const message = `Action: Fetch UGC Revenue\nAdmin: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
             const response = await fetch('/api/admin/bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     action: 'GET_UGC_REVENUE', 
-                    wallet_address: address 
+                    wallet_address: address,
+                    signature,
+                    message
                 })
             });
             const result = await response.json();
@@ -40,9 +46,9 @@ export function UgcRevenueTab() {
                 const total = pending.reduce((sum: number, r: any) => sum + parseFloat(String(r.sbt_share_amount || 0)), 0);
                 setStats({ totalPending: total, count: pending.length });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Fetch revenue failed:', error);
-            toast.error("Failed to load revenue tracking");
+            toast.error(error.message || "Failed to load revenue tracking");
         } finally {
             setLoading(false);
         }
@@ -52,34 +58,34 @@ export function UgcRevenueTab() {
         if (address) fetchRevenue();
     }, [address]);
 
-    const handleMarkAllocated = async (missionId: string | number) => {
+    const handleMarkAllocated = async (id: string | number) => {
         const tid = toast.loading("Updating revenue status...");
         try {
             const timestamp = new Date().toISOString();
-            const message = `Allocate UGC Revenue\nMission: ${missionId}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const message = `Action: Mark Revenue Allocated\nID: ${id}\nTimestamp: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
             const response = await fetch('/api/admin/bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'MARK_REVENUE_ALLOCATED',
+                body: JSON.stringify({ 
+                    action: 'MARK_REVENUE_ALLOCATED', 
+                    payload: { mission_id: id },
                     wallet_address: address,
                     signature,
-                    message,
-                    payload: { mission_id: missionId }
+                    message
                 })
             });
-
             const result = await response.json();
             if (result.success) {
                 toast.success("Revenue marked as allocated!", { id: tid });
                 fetchRevenue();
             } else {
-                throw new Error(result.error || "Update failed");
+                throw new Error(result.error || "Failed to update status");
             }
         } catch (error: any) {
-            toast.error(error.message, { id: tid });
+            console.error('Allocation marking failed:', error);
+            toast.error(error.message || "Failed to mark as allocated", { id: tid });
         }
     };
 

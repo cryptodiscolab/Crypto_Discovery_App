@@ -13,7 +13,6 @@ import {
     RAFFLE_ADDRESS,
     RAFFLE_ABI,
     DAILY_APP_USER_STATS_ABI,
-    TASK_IDS,
     PROFILE_LIMITS,
     MASTER_ADMINS,
     WALLET_BOT_SIGNER,
@@ -23,8 +22,6 @@ import {
 } from './_shared/constants.js';
 import type { 
     UserProfile, 
-    DbUserProfile,
-    UserActivityLog, 
     SyncPayload, 
     XpSyncPayload, 
     UpdateProfilePayload, 
@@ -336,7 +333,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             xpDelta = standardDailyReward;
         }
 
-        let result = { success: true, xp_synced: 0, current_tier: currentTierOnChain };
+        const result = { success: true, xp_synced: 0, current_tier: currentTierOnChain };
 
         if (xpDelta > 0) {
             const { error: rpcErr } = await getSupabaseAdmin().rpc('fn_increment_xp', {
@@ -612,7 +609,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             payment_token: payment_token || null,
             reward_symbol: reward_symbol || 'TOKEN',
             creation_tx_hash: txHash,
-            duration_days: 30, // Default duration if not specified
+            duration_days: Number(ugcConfig.mission_duration_days) || 30, // Zero-Hardcode: reads from ugc_config
             reward_token_address: payment_token || '0x0000000000000000000000000000000000000000',
             total_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
             remaining_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
@@ -646,7 +643,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
 
         try {
             const { data: sponsorPoints } = await getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'sponsor_task').maybeSingle();
-            let creatorXp = sponsorPoints?.points_value || 0;
+            const creatorXp = sponsorPoints?.points_value || 0;
 
             const { error: claimErr } = await getSupabaseAdmin().from('user_task_claims').insert({
                 wallet_address: wallet.toLowerCase(),

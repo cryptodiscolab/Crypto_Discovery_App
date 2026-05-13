@@ -1,14 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { verifyMessage, decodeEventLog } from 'viem';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
 import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     rpcClient,
-    isMainnet,
     USDC_ADDRESS,
     MASTER_X_ADDRESS,
     MASTER_X_ABI,
@@ -17,7 +15,6 @@ import {
     VALID_ACTION_TYPES,
     getEnv,
     DAILY_APP_ADDRESS,
-    RAFFLE_ADDRESS,
     SAFE_MULTISIG,
     sanitizeError
 } from './_shared/constants.js';
@@ -195,6 +192,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'UPDATE_UGC_CONFIG': await handleGenericUpsert('ugc_config', payload, targetAddress, 'UPDATE_UGC_CONFIG', res); break;
             case 'CREATE_UGC_MISSION': await handleCreateUgcMission(payload, targetAddress, res); break;
             case 'VERIFY_UGC_PAYMENT_ONCHAIN': await handleVerifyUgcPaymentOnchain(req, res, targetAddress); break;
+            case 'GET_UGC_REVENUE': await handleGetUgcRevenue(res); break;
+            case 'MARK_REVENUE_ALLOCATED': await handleMarkRevenueAllocated(payload.mission_id, targetAddress, res); break;
+            case 'UPDATE_THRESHOLDS': {
+                const { error } = await supabaseAdmin.from('sbt_thresholds').upsert(payload, { onConflict: 'level' });
+                if (error) throw error;
+                await logAdminAction(targetAddress, 'UPDATE_THRESHOLDS', { count: payload.length });
+                return res.status(200).json({ success: true });
+            }
+            case 'UPDATE_TIER_CONFIG': await handleGenericUpsert('tier_config', payload, targetAddress, 'UPDATE_TIER_CONFIG', res); break;
+            case 'MANUAL_TIER_OVERRIDE': {
+                const { error } = await supabaseAdmin.from('user_profiles').update({ tier_override: payload.tier }).eq('wallet_address', payload.target_address.toLowerCase());
+                if (error) throw error;
+                await logAdminAction(targetAddress, 'MANUAL_TIER_OVERRIDE', payload);
+                return res.status(200).json({ success: true });
+            }
             default:
                 return res.status(400).json({ error: `Invalid action: ${action}` });
         }
@@ -493,5 +505,29 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
     await supabaseAdmin.from('daily_tasks').update({ is_active: true }).eq('onchain_id', mission_id);
     await logAdminAction(admin, 'VERIFY_UGC_PAYMENT_ONCHAIN', { mission_id });
 
+    return res.status(200).json({ success: true });
+}
+
+async function handleGetUgcRevenue(res: VercelResponse) {
+    const { data, error } = await supabaseAdmin
+        .from('campaigns')
+        .select('id, title, listing_fee_usdc, sbt_share_amount, is_revenue_allocated')
+        .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return res.status(200).json({ success: true, data });
+}
+
+async function handleMarkRevenueAllocated(missionId: string, admin: string, res: VercelResponse) {
+    if (!missionId) throw new Error("Mission ID required");
+    
+    const { error } = await supabaseAdmin
+        .from('campaigns')
+        .update({ is_revenue_allocated: true })
+        .eq('id', missionId);
+        
+    if (error) throw error;
+    
+    await logAdminAction(admin, 'MARK_REVENUE_ALLOCATED', { mission_id: missionId });
     return res.status(200).json({ success: true });
 }

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSwitchChain } from 'wagmi';
+import { Link, useLocation } from 'react-router-dom';
 import { Sparkles, Shield, Wallet, Fuel } from 'lucide-react';
 import { baseSepolia } from 'wagmi/chains';
 import { usePoints } from './shared/context/PointsContext';
@@ -8,7 +8,6 @@ import { useCMS } from './hooks/useCMS';
 import { useFarcaster } from './shared/context/FarcasterContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
-import { ABIS, CONTRACTS } from './lib/contracts';
 
 interface NavItem {
   path: string;
@@ -17,12 +16,9 @@ interface NavItem {
 }
 
 export function Header() {
-  const { address, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
   const { frameUser } = useFarcaster();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { disconnect } = useDisconnect();
   const { isAdmin: isSBTAdmin, gasTracker } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
 

@@ -49,7 +49,6 @@ const OAuthCallbackPage = lazy(async () => {
 });
 const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage'));
 
-const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const AdminGuard = lazy(async () => {
   const { default: AdminGuard } = await import('./features/admin/components/AdminGuard');
   return { default: AdminGuard };

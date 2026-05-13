@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { History, Cpu, Zap, ChevronDown, ChevronUp, Terminal, Shield, AlertCircle, Search, Filter } from 'lucide-react';
 
 export function AuditLogsSection({ logs }: { logs: any[] }) {
@@ -203,4 +203,3 @@ export function AuditLogsSection({ logs }: { logs: any[] }) {
     );
 }
 
-import React from 'react';

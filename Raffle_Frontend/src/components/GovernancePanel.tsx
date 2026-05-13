@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
-import { ShieldCheck, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { cleanWallet } from '../utils/cleanWallet';
+import { ShieldCheck, Clock, RefreshCw } from 'lucide-react';
 
 interface PendingMission {
     id: string | number;
@@ -13,12 +12,10 @@ export function GovernancePanel() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const [pendingMissions, setPendingMissions] = useState<PendingMission[]>([]);
-    const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | number | null>(null);
 
     const fetchPending = async () => {
         if (!address) return;
-        setLoading(true);
         try {
             const timestamp = new Date().toISOString();
             const message = `Fetch Pending Missions\nAdmin: ${address}\nTime: ${timestamp}`;
@@ -32,7 +29,6 @@ export function GovernancePanel() {
         } catch (err) {
             console.error('[GovPanel] Fetch error:', err);
         } finally {
-            setLoading(false);
         }
     };
 

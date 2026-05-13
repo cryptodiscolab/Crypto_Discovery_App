@@ -4,7 +4,6 @@ import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     rpcClient,
-    isMainnet,
     MASTER_X_ADDRESS,
     DAILY_APP_ADDRESS,
     RAFFLE_ADDRESS,
