@@ -1,8 +1,8 @@
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, fallback } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 
 // 1. ENVIRONMENT VALIDATION
-export const getEnv = (key: string, fallback: string = ''): string => (process.env[key] || fallback).trim();
+export const getEnv = (key: string, fallbackVal: string = ''): string => (process.env[key] || fallbackVal).trim();
 
 export const SUPABASE_URL = getEnv('VITE_SUPABASE_URL', getEnv('NEXT_PUBLIC_SUPABASE_URL', getEnv('SUPABASE_URL')));
 export const SUPABASE_SERVICE_ROLE_KEY = getEnv('SUPABASE_SERVICE_ROLE_KEY', getEnv('SUPABASE_SECRET_KEY'));
@@ -18,10 +18,14 @@ export const RPC_URL = IS_MAINNET
 
 export const VIEM_CHAIN = IS_MAINNET ? base : baseSepolia;
 
-// RPC Client singleton — used by all serverless bundles
+// RPC Client singleton — used by all serverless bundles with robust fallback
 export const rpcClient = createPublicClient({
     chain: VIEM_CHAIN,
-    transport: http(RPC_URL),
+    transport: fallback([
+        http(RPC_URL),
+        http(IS_MAINNET ? 'https://mainnet.base.org' : 'https://sepolia.base.org'),
+        http(IS_MAINNET ? 'https://base.llamarpc.com' : 'https://base-sepolia.publicnode.com'),
+    ], { rank: true }),
 });
 
 // 2. ZERO-HARDCODE ADDRESS RESOLVER
