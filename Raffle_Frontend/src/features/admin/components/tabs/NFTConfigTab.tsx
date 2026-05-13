@@ -562,10 +562,11 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                             <input
                                                 type="number"
                                                 value={tier.multiplierBP}
+                                                min="0"
                                                 className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-xs focus:border-indigo-500/50 outline-none transition-all"
                                                 onChange={(e) => {
                                                     const updated = [...localConfigs];
-                                                    updated[idx].multiplierBP = Math.max(10000, parseInt(e.target.value) || 10000);
+                                                    updated[idx].multiplierBP = parseInt(e.target.value) || 0;
                                                     setLocalConfigs(updated);
                                                 }}
                                             />
