@@ -100,9 +100,16 @@ export function RaffleRow({ raffleId, filter = 'all' }: RaffleRowProps) {
               <span className={`text-[10px] font-black px-2 py-0.5 rounded border leading-none ${raffle.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
                 {raffle.isActive ? 'LIVE' : 'CLOSED'}
               </span>
-              <span className="text-[11px] text-indigo-400 font-mono font-bold">
-                {ticketPriceETH ? parseFloat(formatEther(ticketPriceETH)).toFixed(6) : '...'} ETH
-              </span>
+              {raffle.category && (
+                <span className="text-[10px] font-black px-2 py-0.5 rounded border leading-none bg-blue-500/10 text-blue-400 border-blue-500/20">
+                  {raffle.category.toUpperCase()}
+                </span>
+              )}
+              {raffle.min_sbt_level > 0 && (
+                <span className="text-[10px] font-black px-2 py-0.5 rounded border leading-none bg-purple-500/10 text-purple-400 border-purple-500/20">
+                  LVL {raffle.min_sbt_level}+
+                </span>
+              )}
             </div>
           </div>
         </div>

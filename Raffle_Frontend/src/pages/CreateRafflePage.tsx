@@ -38,6 +38,16 @@ const RafflePreview = ({ data }: { data: any }) => {
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest line-clamp-2 min-h-[32px]">
                     {data.description || 'ADD A STORY TO YOUR RAFFLE!'}
                 </p>
+                {(data.twitterLink || data.externalLink) && (
+                    <div className="flex items-center gap-3 pt-1">
+                        {data.twitterLink && (
+                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest truncate max-w-[120px]">🐦 {data.twitterLink.replace(/https?:\/\/(www\.)?(x|twitter)\.com\/?/, '')}</span>
+                        )}
+                        {data.externalLink && (
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[120px]">🔗 LINK</span>
+                        )}
+                    </div>
+                )}
                 <div className="flex justify-between items-end pt-2 border-t border-white/5">
                     <div>
                         <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">PRIZE POOL</p>
