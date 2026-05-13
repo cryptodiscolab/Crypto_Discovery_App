@@ -91,7 +91,8 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
 
     const handleUpdate = async (tier: Tier) => {
         if (Number(tier.multiplierBP) > 15000) {
-            return toast.error("CRITICAL: Multiplier cannot exceed 1.5x (15000 BP) per V2 Economics");
+            const proceed = confirm(`Warning: ${tier.name} multiplier (${tier.multiplierBP} BP = ${(Number(tier.multiplierBP)/10000).toFixed(2)}x) exceeds recommended 1.5x limit. Proceed anyway?`);
+            if (!proceed) return;
         }
 
         const tid = toast.loading(`Updating ${tier.name} Config...`);
@@ -127,9 +128,11 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
     };
 
     const handleSaveBatch = async () => {
-        const hasInvalidMultiplier = localConfigs.some(t => Number(t.multiplierBP) > 15000);
-        if (hasInvalidMultiplier) {
-            return toast.error("CRITICAL: One or more tiers exceed the 1.5x (15000 BP) max multiplier limit!");
+        const invalidTiers = localConfigs.filter(t => Number(t.multiplierBP) > 15000);
+        if (invalidTiers.length > 0) {
+            const names = invalidTiers.map(t => `${t.name} (${t.multiplierBP} BP)`).join(', ');
+            const proceed = confirm(`Warning: ${names} exceed recommended 1.5x (15000 BP) multiplier limit. Proceed with batch update anyway?`);
+            if (!proceed) return;
         }
 
         const tid = toast.loading("Finalizing Master Parameters (Batch)...");
