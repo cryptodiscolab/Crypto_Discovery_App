@@ -6,6 +6,12 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.63.5-Hardened (Serverless API Stabilization & ESM Module Resolution)
+- **Native ESM Compliance**: Fixed persistent 500 (`ERR_MODULE_NOT_FOUND`) errors in Vercel Node runtime by appending `.js` extensions to all relative imports within the `api/` directory.
+- **Type Segregation**: Segregated TypeScript type imports using `import type` across `user-bundle.ts`, `tasks-bundle.ts`, and `admin-bundle.ts` to prevent runtime crashes when stripping types.
+- **Protocol Update**: Added Rule 73 (ESM RUNTIME RESOLUTION MANDATE) to `CLAUDE.md`.
+- **Ecosystem Audit**: Full pipeline audit via `check_sync_status.cjs` passed with 100% integrity.
+
 ## 🟢 v3.63.0 (Admin Component Consolidation & Repository Hygiene)
 - **Unified TaskManager Architecture**: Successfully merged `TaskManagerTab.tsx` and `TaskManager.tsx` into a single, type-safe `TaskManager` component. This consolidation eliminates architectural redundancy and ensures consistent logic for both "Quick Forge" and "Smart Batch" task creation.
 - **Modular Component Refactoring**: Deconstructed the monolithic admin dashboard into specialized sub-components (`ActiveCampaignsSection`, `EconomyConfigSection`, `TaskBatchCreatorSection`, etc.) for improved maintainability and cleaner Hot Module Replacement (HMR).
