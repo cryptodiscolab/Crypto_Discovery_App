@@ -27,7 +27,7 @@ export function UgcRevenueTab() {
             const message = `Action: Fetch UGC Revenue\nAdmin: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await fetch('/api/admin/bundle', {
+            const response = await fetch('/api/admin-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -65,7 +65,7 @@ export function UgcRevenueTab() {
             const message = `Action: Mark Revenue Allocated\nID: ${id}\nTimestamp: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await fetch('/api/admin/bundle', {
+            const response = await fetch('/api/admin-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 

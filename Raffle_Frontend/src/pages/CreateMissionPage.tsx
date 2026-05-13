@@ -226,7 +226,7 @@ export function CreateMissionPage() {
                 min_neynar_score: parseInt(formData.minNeynarScore) || 0
             };
 
-            const response = await fetch('/api/admin/bundle', {
+            const response = await fetch('/api/admin-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

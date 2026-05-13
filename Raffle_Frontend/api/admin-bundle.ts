@@ -238,6 +238,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await logAdminAction(targetAddress, 'MANUAL_TIER_OVERRIDE', payload);
                 return res.status(200).json({ success: true });
             }
+            case 'NEXUS_DISPATCH': {
+                const { task_name, task_description, target_agent } = req.body;
+                if (!task_name || !target_agent) return res.status(400).json({ error: 'Missing task_name or target_agent' });
+                const { error } = await supabaseAdmin.from('agents_vault').insert({
+                    task_name,
+                    task_description: task_description || '',
+                    target_agent,
+                    requested_by_wallet: targetAddress,
+                    status: 'pending',
+                    created_at: new Date().toISOString()
+                });
+                if (error) throw error;
+                await logAdminAction(targetAddress, 'NEXUS_DISPATCH', { task_name, target_agent });
+                return res.status(200).json({ success: true, message: `Task dispatched to ${target_agent}` });
+            }
             default:
                 return res.status(400).json({ error: `Invalid action: ${action}` });
         }

@@ -187,7 +187,7 @@ export function ModerationCenterTab() {
             const message = `Verify UGC Payment\nMission: ${missionId}\nAdmin: ${address}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await fetch('/api/admin/bundle', {
+            const response = await fetch('/api/admin-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
