@@ -182,7 +182,7 @@ export function useSBT() {
         return await writeAndWait({
             address: MASTER_X_ADDRESS as `0x${string}`,
             abi: ABIS.MASTER_X,
-            functionName: 'withdrawTreasury',
+            functionName: 'emergencyWithdraw',
             args: [amount],
         });
     };

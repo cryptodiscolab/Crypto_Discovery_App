@@ -95,7 +95,7 @@ export function AccountantLedgerTab() {
             const message = `Action: Accountant Ledger\nAdmin: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/accountant-ledger`, {
+            const res = await fetch(`/api/admin/accountant-ledger`, {
                 method: 'POST', 
                 headers: {
                     'Content-Type': 'application/json'
@@ -149,7 +149,7 @@ export function AccountantLedgerTab() {
             const message = `Trigger Blockchain Sync at ${new Date().toISOString()}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/admin/accountant-sync`, {
+            const response = await axios.post(`/api/admin/accountant-sync`, {
                 address: address.toLowerCase(),
                 signature,
                 message,
@@ -178,7 +178,7 @@ export function AccountantLedgerTab() {
             const message = `Action: Parity Audit\nAdmin: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/parity-audit`, {
+            const res = await fetch(`/api/admin/parity-audit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

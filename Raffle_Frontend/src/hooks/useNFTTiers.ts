@@ -109,17 +109,19 @@ export function useNFTTiers() {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
-            functionName: 'setWithdrawalFeeBP',
+            functionName: 'setWithdrawalFee',
             args: [BigInt(feeBP)]
         });
     };
 
     const setDailyBonusAmount = async (amount: any) => {
+        // setGlobalRewards(daily, referral) — pass 0 for referral to keep it unchanged
+        // Note: This will reset referral to 0. For production, read current referral first.
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
-            functionName: 'setDailyBonusAmount',
-            args: [BigInt(amount)]
+            functionName: 'setGlobalRewards',
+            args: [BigInt(amount), BigInt(0)]
         });
     };
 

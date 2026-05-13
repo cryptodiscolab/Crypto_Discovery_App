@@ -76,13 +76,13 @@ export function UnifiedDashboard() {
     const { data: dailyTaskIds } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
-        functionName: 'getDailyTasks',
+        functionName: 'nextTaskId',
     });
 
     const { data: nextSponsorId } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
-        functionName: 'nextSponsorId',
+        functionName: 'totalSponsorRequests',
     });
 
     const sponsorshipIds: number[] = [];
