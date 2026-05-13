@@ -337,13 +337,9 @@ export function useSBT() {
     const syncMetadataToContract = async () => {
         const toastId = toast.loading('Fetching NFT metadata from DB...');
         try {
-            const token = localStorage.getItem('adminToken');
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/system-settings`, {
+            const response = await fetch('/api/admin-bundle', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'GET_SBT_CONFIG' })
             });
 

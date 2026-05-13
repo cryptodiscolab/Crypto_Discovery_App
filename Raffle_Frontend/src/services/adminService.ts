@@ -35,7 +35,7 @@ class AdminService {
     }
 
     async announceWinner(raffleId: number | string) {
-        const res = await fetch('/api/raffle', {
+        const res = await fetch('/api/raffle/announce-winner', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'announce-winner', raffle_id: raffleId })
