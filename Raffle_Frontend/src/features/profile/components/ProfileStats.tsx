@@ -34,8 +34,8 @@ export const ProfileStats = ({
                         </div>
                     </div>
                     <div className="text-right">
-                        <span className={`text-2xl font-mono font-black italic tracking-tighter ${(profileData.neynarScore ?? 0) >= 0.9 ? 'text-green-400' : 'text-yellow-400'}`}>
-                            {((profileData.neynarScore ?? 0) * 100).toFixed(1)}%
+                        <span className={`text-2xl font-mono font-black italic tracking-tighter ${((profileData.neynarScore ?? profileData.neynar_score ?? 0)) >= 0.9 ? 'text-green-400' : 'text-yellow-400'}`}>
+                            {(((profileData.neynarScore ?? profileData.neynar_score ?? 0)) * 100).toFixed(1)}%
                         </span>
                     </div>
                 </div>
@@ -64,7 +64,7 @@ export const ProfileStats = ({
                         </div>
                     </div>
                     <div className="text-right">
-                        <span className="text-2xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent italic tracking-tighter">{profileData.rankName?.toUpperCase() || 'ROOKIE'}</span>
+                        <span className="text-2xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent italic tracking-tighter">{(profileData.rankName || profileData.rank_name || 'ROOKIE').toUpperCase()}</span>
                     </div>
                 </div>
             </div>

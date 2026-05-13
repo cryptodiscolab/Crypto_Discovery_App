@@ -10,7 +10,7 @@ export const userService = {
      */
     getProfile: async (address: string) => {
         const { data } = await axios.get(`/api/user-bundle?action=get-profile&wallet=${address}`);
-        return data;
+        return data?.data || data;
     },
 
     /**
@@ -37,7 +37,7 @@ export const userService = {
      */
     getReputationStatus: async (address: string) => {
         const { data } = await axios.get(`/api/user-bundle?action=check-reputation&wallet=${address}`);
-        return data;
+        return data?.reputation || data;
     },
 
     /**

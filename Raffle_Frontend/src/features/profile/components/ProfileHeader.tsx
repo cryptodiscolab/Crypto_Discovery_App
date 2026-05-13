@@ -40,8 +40,8 @@ export const ProfileHeader = ({
                 <div className="flex justify-between items-start mb-4">
                     <div className="relative">
                         <div className="w-20 h-20 rounded-full bg-[#050505] overflow-hidden border-2 border-white/10 shadow-xl">
-                            {profileData.avatarUrl ? (
-                                <img src={profileData.avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
+                            {(profileData.avatarUrl || profileData.pfp_url) ? (
+                                <img src={profileData.avatarUrl || profileData.pfp_url} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-900">
                                     <Users size={32} />
@@ -115,7 +115,7 @@ export const ProfileHeader = ({
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-black text-white uppercase tracking-tighter italic leading-none">{profileData.displayName || 'ANONYMOUS DISCO'}</h2>
+                            <h2 className="text-lg font-black text-white uppercase tracking-tighter italic leading-none">{profileData.displayName || profileData.display_name || 'ANONYMOUS DISCO'}</h2>
                             {profileData.is_base_social_verified && (
                                 <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-600">
                                     <ShieldCheck size={12} className="text-white" />

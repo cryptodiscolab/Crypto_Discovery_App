@@ -213,7 +213,7 @@ export default function ProfilePage() {
               refetchOnChainStats();
               refetchSBT();
             }}
-            streakCount={(profileData as { streakCount?: number }).streakCount || 0}
+            streakCount={(profileData as any)?.streakCount || (profileData as any)?.streak_count || 0}
           />
         )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}

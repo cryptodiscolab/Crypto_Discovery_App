@@ -7,17 +7,23 @@ export interface ProfileData {
     id?: string;
     wallet_address?: string;
     avatarUrl?: string;
+    pfp_url?: string;
     powerBadge?: boolean;
     fid?: string | number | null;
     displayName?: string;
+    display_name?: string;
     username?: string;
     is_base_social_verified?: boolean;
     neynarScore?: number;
+    neynar_score?: number;
     total_xp?: number;
     rankName?: string;
+    rank_name?: string;
+    tier?: number;
     google_id?: string | null;
     twitter_id?: string | null;
     streakCount?: number;
+    streak_count?: number;
     created_at?: string;
     updated_at?: string;
 }
