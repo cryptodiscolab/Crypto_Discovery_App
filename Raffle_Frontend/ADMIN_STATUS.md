@@ -24,6 +24,7 @@
 4.  **Replay Protection**: API routes verify a 5-minute timestamp window in the signed message to prevent replay attacks.
 5.  **Service Role Isolation**: `SERVICE_ROLE_KEY` is strictly used only within server-side API routes.
 6.  **Multi-Win Integrity**: Claims are accumulation-safe, ensuring platform fees are deducted per transaction.
+7.  **Database Hardening (v3.63.6)**: 15 critical `SECURITY DEFINER` functions revoked from public roles; core views converted to `SECURITY INVOKER` to enforce strict RLS.
 
 ## 🗄️ Database & Sync Status
 
@@ -37,6 +38,7 @@
 
 ## 🚀 Future Roadmap Items
 - [x] Implement live event indexing for Raffle List.
+- [x] Hardened Database Security (SECURITY DEFINER cleanup).
 - [ ] Add session-based auth (JWT) to reduce signature frequency.
 - [ ] Enhance Reputation Table with Sybil detection logic.
 - [ ] Implement Batch Winner Notifications via Push Protocol.

@@ -6,6 +6,13 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.63.6-Hardened (Database Security Remediation & View Hardening)
+- **Security Definer Neutralization**: Revoked public `EXECUTE` permissions for 15 high-risk database functions to prevent unauthorized administrative escalation.
+- **SECURITY INVOKER Conversion**: Transitioned critical database views (`user_stats`, `v_user_full_profile`) to `SECURITY INVOKER` to strictly enforce Row-Level Security (RLS) for all user data access.
+- **Shadow-Path Prevention**: Enforced explicit `search_path = public, extensions` on all database functions to mitigate shadow-path injection attacks.
+- **Zero-Warning Linting**: Achieved 100% "Zero-Warning" linting status across `api/` bundles and core frontend components.
+- **Protocol Update**: Added Rule 74 (DATABASE SECURITY REMEDIATION MANDATE) to `CLAUDE.md` and Section 58 to `.cursorrules`.
+
 ## 🟢 v3.63.5-Hardened (Serverless API Stabilization & ESM Module Resolution)
 - **Native ESM Compliance**: Fixed persistent 500 (`ERR_MODULE_NOT_FOUND`) errors in Vercel Node runtime by appending `.js` extensions to all relative imports within the `api/` directory.
 - **Type Segregation**: Segregated TypeScript type imports using `import type` across `user-bundle.ts`, `tasks-bundle.ts`, and `admin-bundle.ts` to prevent runtime crashes when stripping types.

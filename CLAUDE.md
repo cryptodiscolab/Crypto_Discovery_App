@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.63.5-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.63.6-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.5-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.5).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.6-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.6).
 
 ---
 
@@ -146,7 +146,10 @@ If you think something should be optimized, explain the trade-offs and ask permi
 70. **GIT HYGIENE ENFORCEMENT**: Strictly prohibit untracked `.env.vercel*` and audit artifacts (`tsc_output*.txt`, `tsc-errors*.txt`). RUN `Remove-Item tsc-errors*.txt` before each commit (v3.61.0).
 71. **RETENTION HARDENING MANDATE**: All daily retention mechanisms MUST use identity gating (`is_base_social_verified`) and concurrent transitions for UI smoothness. UGC campaigns MUST use signature-based verification hooks for audit integrity (v3.61.0).
 72. **LURAH CRON HARDENING MANDATE**: All ecosystem cron jobs MUST use individual task timeouts (runWithTimeout) and parallel isolation (allSettled) to prevent 504 Vercel timeouts. Heartbeat updates MUST be atomic and final to ensure accurate system health visibility (v3.63.1).
-73. **ESM RUNTIME RESOLUTION MANDATE**: If `"type": "module"` is configured in `package.json`, ALL relative imports within Serverless functions (Node.js/Vercel) MUST include explicit file extensions (`.js`) or be strongly segregated as `import type` (if TypeScript interface) to prevent `ERR_MODULE_NOT_FOUND` deployment crashes (v3.63.5).
+## Rule 73 — ESM RUNTIME RESOLUTION MANDATE.
+If `"type": "module"` is configured in `package.json`, ALL relative imports within Serverless functions (Node.js/Vercel) MUST include explicit file extensions (`.js`) or be strongly segregated as `import type` (if TypeScript interface) to prevent `ERR_MODULE_NOT_FOUND` deployment crashes (v3.63.5).
+## Rule 74 — DATABASE SECURITY REMEDIATION MANDATE.
+Strictly enforce `SECURITY INVOKER` for all public-facing database views. Revoke `EXECUTE` on sensitive `SECURITY DEFINER` functions from public roles. Enforce explicit `search_path = public, extensions` on all functions to prevent shadowing attacks (v3.63.6).
 
 ---
 
@@ -210,5 +213,6 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.63.5 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.63.6 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
+*Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
