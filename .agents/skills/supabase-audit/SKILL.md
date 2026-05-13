@@ -1,10 +1,17 @@
 name: Supabase Database Audit & Architecture Manager
 description: Protokol khusus untuk melakukan audit struktur, kebijakan RLS, integritas data, dan manajemen arsitektur multi-schema (public & auth) di Supabase.
+version: v3.63.5-Hardened
 ---
 
-# Supabase Database Audit & Master Protocol Architect
+# Supabase Database Audit & Master Protocol Architect (v3.63.5-Hardened)
 
 Skill ini menetapkan protokol wajib bagi Agent untuk memantau, memvalidasi, dan mengamankan infrastruktur database Supabase dengan menjadikan **.cursorrules (Master Architect Protocol)** sebagai panduan utama.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## 📜 Otoritas Data: Master Architect Protocol (.cursorrules)
 

@@ -1,6 +1,18 @@
-# DeepSeek Specialist Skill (Complex Logic & Security Architecture)
+---
+name: deepseek-specialist
+description: "Specializes in high-level logic and security architecture. Optimizes algorithms, backend structures, and security audits."
+version: v3.63.5-Hardened
+---
+
+# DeepSeek Specialist Skill (v3.63.5-Hardened)
 
 Skill ini mendefinisikan peran DeepSeek sebagai spesialis logika tingkat tinggi dan keamanan arsitektur.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## 🧠 Peran Utama
 DeepSeek bertanggung jawab atas optimasi algoritma, struktur backend, dan audit keamanan mendalam.

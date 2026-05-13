@@ -1,6 +1,18 @@
-# Design Protocol Skill
+---
+name: design-protocol
+description: "SSOT for all UI/UX development within the Crypto Disco DailyApp ecosystem. Enforces DESIGN.md compliance."
+version: v3.63.5-Hardened
+---
+
+# Design Protocol Skill (v3.63.5-Hardened)
 
 This skill enforces the use of `DESIGN.md` as the Single Source of Truth (SSOT) for all UI/UX development within the Crypto Disco DailyApp ecosystem.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## Core Mandate
 Every agent MUST read `DESIGN.md` before:

@@ -25,7 +25,8 @@ export function GovernancePanel() {
             const signature = await signMessageAsync({ message });
             const res = await fetch(`/api/user-bundle?action=pending-missions&wallet=${address}&signature=${encodeURIComponent(signature)}&message=${encodeURIComponent(message)}`);
             if (res.ok) {
-                const data = await res.json();
+                const result = await res.json();
+                const data = result.success ? (result.data || []) : (Array.isArray(result) ? result : []);
                 setPendingMissions(data);
             }
         } catch (err) {
@@ -67,7 +68,7 @@ export function GovernancePanel() {
         if (address) fetchPending();
     }, [address]);
 
-    if (!pendingMissions || pendingMissions.length === 0) return null;
+    if (!pendingMissions || !Array.isArray(pendingMissions) || pendingMissions.length === 0) return null;
 
     return (
         <div className="bg-indigo-900/10 border border-indigo-500/20 rounded-2xl p-6 space-y-4">

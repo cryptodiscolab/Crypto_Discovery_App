@@ -1,6 +1,7 @@
 ---
 name: 30-seconds-of-code
 description: "WORKFLOW SKILL — Gunakan referensi 30-seconds-of-code untuk membangun, meninjau, dan mengadaptasi snippet JavaScript/CSS/HTML kecil dengan pendekatan yang cepat, aman, dan lisensi-aware."
+version: v3.63.5-Hardened
 ---
 
 # Skill: 30-seconds-of-code
@@ -13,6 +14,12 @@ description: "WORKFLOW SKILL — Gunakan referensi 30-seconds-of-code untuk memb
 
 ## Goal
 Bantu agent bekerja dengan cepat menggunakan prinsip singkat, teruji, dan mudah dipahami dari 30-seconds-of-code, sambil menjaga kualitas, keamanan, dan kepatuhan lisensi.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## Recommended Workflow
 1. Pahami konteks penggunaan snippet sebelum menyalin:

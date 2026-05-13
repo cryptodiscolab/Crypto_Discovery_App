@@ -1,10 +1,17 @@
 name: Secure Infrastructure & Contract Manager
 description: Manages smart contract lifecycle, environmental synchronization, and absolute privacy for sensitive data. Includes ABI Proxy architecture and build safety protocols.
+version: v3.63.5-Hardened
 ---
 
-# Secure Infrastructure & Master Protocol Architect
+# Secure Infrastructure & Master Protocol Architect (v3.63.5-Hardened)
 
 Skill ini adalah landasan keamanan teknis yang mewajibkan Agent untuk tunduk sepenuhnya pada **.cursorrules (Master Architect Protocol)** sebagai panduan utama.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## 📜 Fondasi Utama: Master Architect Protocol (.cursorrules)
 

@@ -1,6 +1,18 @@
-# Economy & Master Architect Protocol Manager
+---
+name: economy-profitability-manager
+description: "Manages economy and profitability oversight using .cursorrules as the primary protocol."
+version: v3.63.5-Hardened
+---
+
+# Economy & Master Architect Protocol Manager (v3.63.5-Hardened)
 
 Skill ini dirancang untuk mengotomatisasi pengawasan ekonomi aplikasi Crypto Disco dengan menjadikan **.cursorrules (Master Architect Protocol)** sebagai hukum tertinggi.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## 📜 Konstitusi Ekonomi: Master Architect Protocol (.cursorrules)
 

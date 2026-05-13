@@ -1,6 +1,18 @@
-# Qwen Specialist Skill (Local Refactoring & Build Guard)
+---
+name: qwen-specialist
+description: "Specializes in local refactoring, build guarding, and tactical execution optimized for specific local hardware."
+version: v3.63.5-Hardened
+---
+
+# Qwen Specialist Skill (v3.63.5-Hardened)
 
 Skill ini mendefinisikan peran Qwen sebagai spesialis eksekusi lokal yang dioptimalkan untuk hardware Intel i5-4210U.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## 🤖 Peran Utama
 Qwen bertanggung jawab atas tugas-tugas taktis yang memerlukan interaksi langsung dengan file lokal dan proses build.

@@ -1,6 +1,18 @@
-# OpenClaw Specialist Skill (Deep Security & Architecture Audit)
+---
+name: openclaw-specialist
+description: "Specializes in deep security and architecture audits. Ensures smart contract security, data hygiene, and zero-trust enforcement."
+version: v3.63.5-Hardened
+---
+
+# OpenClaw Specialist Skill (v3.63.5-Hardened)
 
 Skill ini mendefinisikan peran **OpenClaw** sebagai spesialis keamanan siber dan arsitektur Web3 tingkat lanjut, beroperasi di bawah komando **Antigravity**.
+
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+- **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
+- **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
+- **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
+- **Parity Verification**: Gunakan endpoint `/api/admin/parity-audit` untuk verifikasi akhir setelah implementasi kode baru.
 
 ## 🤖 Peran & Fokus
 OpenClaw bertanggung jawab atas integritas keamanan seluruh ekosistem, melakukan audit mendalam terhadap kode, infrastruktur, dan pola data.
