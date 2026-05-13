@@ -274,29 +274,21 @@ export function CreateRafflePage() {
                                         <div>
                                             <label className="text-[11px] font-black text-indigo-400/60 uppercase tracking-widest">Prize Reward (ETH)</label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <DollarSign className="w-4 h-4 text-indigo-500/50 group-focus-within:text-indigo-400 transition-colors" />
-                                                </div>
                                                 <input
                                                     type="number"
                                                     step="0.001"
-                                                    className="input-native pl-10 font-mono text-lg"
+                                                    className="input-native font-mono text-base pr-4"
                                                     value={formData.prizeDeposit}
                                                     onChange={e => setFormData({ ...formData, prizeDeposit: e.target.value })}
                                                 />
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <span className="text-[11px] font-black text-indigo-300/40 uppercase tracking-widest">
-                                                        ≈ ${stats.depositUsd}
-                                                    </span>
-                                                </div>
                                             </div>
+                                            <p className="text-[10px] font-bold text-indigo-300/50 mt-1">≈ ${stats.depositUsd}</p>
                                         </div>
                                         <div>
                                             <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Duration</label>
                                             <div className="select-wrapper">
-                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                                                 <select
-                                                    className="select-native pl-10"
+                                                    className="select-native"
                                                     value={formData.durationDays}
                                                     onChange={e => setFormData({ ...formData, durationDays: e.target.value })}
                                                 >
@@ -316,63 +308,37 @@ export function CreateRafflePage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-[11px] font-black uppercase text-indigo-400/60 tracking-widest mb-1.5 block">Ticket Price (ETH)</label>
-                                            <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <Ticket className="w-4 h-4 text-indigo-500/50 group-focus-within:text-indigo-400 transition-colors" />
-                                                </div>
-                                                <input
-                                                    type="number"
-                                                    step="0.0001"
-                                                    readOnly
-                                                    className="w-full bg-black/20 border border-white/5 rounded-2xl py-4 pl-10 pr-4 text-slate-400 focus:outline-none font-mono"
-                                                    value={formData.ticketPrice}
-                                                />
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <span className="text-[11px] font-black text-indigo-300/40 uppercase tracking-widest">
-                                                        FIXED
-                                                    </span>
-                                                </div>
-                                            </div>
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="w-full bg-black/20 border border-white/5 rounded-2xl py-3 px-4 text-slate-400 focus:outline-none font-mono text-sm"
+                                                value={formData.ticketPrice}
+                                            />
+                                            <p className="text-[10px] font-bold text-indigo-300/40 mt-1">FIXED BY ADMIN</p>
                                         </div>
                                         <div>
-                                            <label className="text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1 block">MAX TICKETS</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    className="input-native font-mono"
-                                                    value={formData.maxTickets}
-                                                    onChange={e => setFormData({ ...formData, maxTickets: e.target.value })}
-                                                />
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                                                        CAP
-                                                    </span>
-                                                </div>
-                                            </div>
+                                            <label className="text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 block">MAX TICKETS</label>
+                                            <input
+                                                type="number"
+                                                className="input-native font-mono text-sm"
+                                                value={formData.maxTickets}
+                                                onChange={e => setFormData({ ...formData, maxTickets: e.target.value })}
+                                            />
+                                            <p className="text-[10px] font-bold text-slate-500/50 mt-1">CAP</p>
                                         </div>
                                     </div>
 
                                     {/* WINNER COUNT OPTION */}
                                     <div className="pt-4 border-t border-white/5">
                                         <label className="text-[11px] font-black uppercase text-amber-400/60 tracking-widest mb-1.5 block">Number of Winners</label>
-                                        <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Trophy className="w-4 h-4 text-amber-500/50 group-focus-within:text-amber-400 transition-colors" />
-                                            </div>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max="10"
-                                                className="input-native pl-10 font-mono text-lg"
-                                                value={formData.winnerCount}
-                                                onChange={e => setFormData({ ...formData, winnerCount: e.target.value })}
-                                            />
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                <span className="text-[11px] font-black text-amber-300/40 uppercase tracking-widest">
-                                                    SLOTS
-                                                </span>
-                                            </div>
-                                        </div>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="10"
+                                            className="input-native font-mono text-base"
+                                            value={formData.winnerCount}
+                                            onChange={e => setFormData({ ...formData, winnerCount: e.target.value })}
+                                        />
                                         <p className="text-[9px] font-bold text-slate-600 uppercase mt-2 tracking-tight">Prize pool will be split equally among all winners.</p>
                                     </div>
                                 </div>
