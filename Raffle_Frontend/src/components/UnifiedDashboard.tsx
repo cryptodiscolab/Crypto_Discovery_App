@@ -73,11 +73,22 @@ export function UnifiedDashboard() {
         query: { enabled: !!address },
     });
 
-    const { data: dailyTaskIds } = useReadContract({
+    const { data: nextTaskIdRaw } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
         functionName: 'nextTaskId',
     });
+
+    // Build task ID array from nextTaskId (replaces legacy getDailyTasks)
+    const dailyTaskIds: number[] = [];
+    if (nextTaskIdRaw) {
+        const total = Number(nextTaskIdRaw);
+        const maxDisplay = 10; // Show last 10 tasks
+        const start = Math.max(0, total - maxDisplay);
+        for (let i = start; i < total; i++) {
+            dailyTaskIds.push(i);
+        }
+    }
 
     const { data: nextSponsorId } = useReadContract({
         address: CONTRACTS.DAILY_APP,
@@ -191,10 +202,10 @@ export function UnifiedDashboard() {
                     {/* Daily Admin Tasks */}
                     <div className="space-y-4">
                         <div className="space-y-3">
-                            {((dailyTaskIds as unknown as bigint[]) || [])?.map((tid) => (
+                            {(dailyTaskIds || []).map((tid) => (
                                 <DailyTaskItem
-                                    key={Number(tid)}
-                                    taskId={Number(tid)}
+                                    key={tid}
+                                    taskId={tid}
                                     isDisabled={!fcUser || isBaseVerified === false}
                                     isBaseVerified={isBaseVerified}
                                     address={address}
