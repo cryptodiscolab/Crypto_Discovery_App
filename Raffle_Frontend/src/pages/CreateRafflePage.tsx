@@ -82,8 +82,8 @@ export function CreateRafflePage() {
         functionName: 'surchargeBP',
     });
 
-    const { prices } = usePriceOracle(['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee']);
-    const ethPrice = prices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || prices['0x4200000000000000000000000000000000000006'] || 0;
+    const { prices } = usePriceOracle(['0x4200000000000000000000000000000000000006']);
+    const ethPrice = prices['0x4200000000000000000000000000000000000006'] || 0;
 
     const [formData, setFormData] = useState({
         prizeDeposit: '0.1',

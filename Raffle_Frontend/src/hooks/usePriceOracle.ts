@@ -75,14 +75,27 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
       addrsToFetch.forEach(addr => {
         const lowerAddr = addr.toLowerCase();
         if (!newPrices[lowerAddr]) {
-          // If it's WETH or ETH on Base
-          if (lowerAddr === '0x4200000000000000000000000000000000000006' || lowerAddr === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-              // Try to find WETH if we fetched it, or just leave as 0 for now
-          }
           newPrices[lowerAddr] = newPrices[lowerAddr] || 0;
           PRICE_CACHE.set(lowerAddr, { price: newPrices[lowerAddr], timestamp: now });
         }
       });
+
+      // Fallback: If WETH price is still 0, fetch from Binance
+      const wethAddr = '0x4200000000000000000000000000000000000006';
+      if (addrsToFetch.some(a => a.toLowerCase() === wethAddr) && !newPrices[wethAddr]) {
+        try {
+          const binRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDC');
+          const binData = await binRes.json();
+          if (binData.price) {
+            const ethUsd = parseFloat(binData.price);
+            newPrices[wethAddr] = ethUsd;
+            PRICE_CACHE.set(wethAddr, { price: ethUsd, timestamp: now });
+            // Also set for native ETH placeholder
+            newPrices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] = ethUsd;
+            PRICE_CACHE.set('0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', { price: ethUsd, timestamp: now });
+          }
+        } catch (e) { /* Binance fallback failed, leave as 0 */ }
+      }
 
       setPrices(prev => ({ ...prev, ...newPrices }));
     } catch (err: any) {
