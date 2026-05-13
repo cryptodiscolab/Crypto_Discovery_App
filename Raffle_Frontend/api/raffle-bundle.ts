@@ -11,7 +11,7 @@ import {
     TELEGRAM_CHAT_ID,
     isMainnet,
     sanitizeError
-} from './_shared/constants';
+} from './_shared/constants.js';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getEnv, sanitizeError } from './_shared/constants';
+import { getEnv, sanitizeError } from './_shared/constants.js';
 
 const PINATA_JWT = getEnv('PINATA_JWT');
 

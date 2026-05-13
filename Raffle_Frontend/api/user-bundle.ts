@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from './_shared/database.types';
+import type { Database } from './_shared/database.types';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { verifyMessage, keccak256, encodePacked } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -20,8 +20,8 @@ import {
     CHAIN_ID,
     isMainnet,
     sanitizeError
-} from './_shared/constants';
-import { 
+} from './_shared/constants.js';
+import type { 
     UserProfile, 
     DbUserProfile,
     UserActivityLog, 

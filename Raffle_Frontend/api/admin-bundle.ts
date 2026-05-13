@@ -20,8 +20,8 @@ import {
     RAFFLE_ADDRESS,
     SAFE_MULTISIG,
     sanitizeError
-} from './_shared/constants';
-import { Database, Json } from './_shared/database.types';
+} from './_shared/constants.js';
+import type { Database, Json } from './_shared/database.types';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

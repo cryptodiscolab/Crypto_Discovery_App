@@ -10,8 +10,8 @@ import {
     RAFFLE_EVENT_ABI,
     IS_MAINNET,
     sanitizeError
-} from './_shared/constants';
-import { 
+} from './_shared/constants.js';
+import type { 
     PointSetting,
     Database,
     DbDailyTask,

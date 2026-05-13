@@ -11,7 +11,7 @@ import {
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
     getEnv
-} from './_shared/constants';
+} from './_shared/constants.js';
 
 // Move initialization inside handler to prevent top-level invocation failures
 let supabase: ReturnType<typeof createClient> | null = null;

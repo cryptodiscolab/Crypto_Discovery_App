@@ -1,5 +1,5 @@
 import { VercelRequest } from '@vercel/node';
-import { Database, Json } from './database.types';
+import type { Database, Json } from './database.types';
 
 export type { Json, Database };
 export type DbUserProfile = Database['public']['Tables']['user_profiles']['Row'];

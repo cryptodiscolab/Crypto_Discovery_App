@@ -4,7 +4,7 @@ import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     getEnv
-} from './_shared/constants';
+} from './_shared/constants.js';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
