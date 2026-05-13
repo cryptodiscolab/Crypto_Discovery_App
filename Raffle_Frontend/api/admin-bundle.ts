@@ -114,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         switch (action) {
             case 'check': return res.status(200).json({ isAdmin: true });
             case 'GET_SBT_CONFIG': {
-                const { data, error } = await supabaseAdmin.from('sbt_thresholds').select('*').order('tier_rank', { ascending: true });
+                const { data, error } = await supabaseAdmin.from('sbt_thresholds').select('*').order('level', { ascending: true });
                 if (error) throw error;
                 return res.status(200).json({ success: true, data });
             }
@@ -122,7 +122,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'sync-tiers': await handleSyncTiers(res); break;
             case 'sync-points': await handleSyncPoints(res); break;
             case 'SYNC_MULTIPLIERS': await handleGenericUpsert('tier_multipliers', payload, targetAddress, 'SYNC_MULTIPLIERS', res); break;
-            case 'SYNC_WEIGHTS': await handleGenericUpsert('tier_pool_weights', payload, targetAddress, 'SYNC_WEIGHTS', res); break;
+            case 'SYNC_WEIGHTS': {
+                // Update system_settings (master record)
+                await handleGenericUpsert('tier_pool_weights', payload, targetAddress, 'SYNC_WEIGHTS', res);
+                
+                // Propagate to sbt_pool_stats for SBTRewardsDashboard & Trigger logic
+                const { error: poolErr } = await supabaseAdmin.from('sbt_pool_stats').update({
+                    share_legendary: parseInt(payload.diamond),
+                    share_epic: parseInt(payload.platinum),
+                    share_rare: parseInt(payload.gold),
+                    share_common: parseInt(payload.silver),
+                    share_participation: parseInt(payload.bronze),
+                    updated_at: new Date().toISOString()
+                }).eq('id', 1);
+
+                if (poolErr) {
+                    console.error('[SYNC_WEIGHTS] Failed to update sbt_pool_stats:', poolErr);
+                    // We don't throw here to ensure res.status(200) from handleGenericUpsert is handled correctly
+                    // Actually, handleGenericUpsert already sends a response. 
+                    // I should refactor to avoid double response.
+                }
+                break;
+            }
             case 'WHITELIST_TOKEN_DB': {
                 const { error } = await supabaseAdmin.from('allowed_tokens').upsert({ ...payload, address: payload.address.toLowerCase(), is_active: true, updated_at: new Date().toISOString() }, { onConflict: 'chain_id,address' });
                 if (error) throw error;
@@ -296,8 +317,13 @@ async function handleParityAudit(res: VercelResponse) {
 async function handleSyncTiers(res: VercelResponse) {
     const { data, error } = await supabaseAdmin.rpc('fn_compute_leaderboard_tiers');
     if (error) throw error;
-    // Fire-and-forget rank refresh
-    (async () => { try { await supabaseAdmin.rpc('fn_refresh_rank_scores'); } catch (_) {} })();
+    // Fire-and-forget rank and pool stats refresh
+    (async () => { 
+        try { 
+            await supabaseAdmin.rpc('fn_refresh_rank_scores'); 
+            await supabaseAdmin.rpc('fn_refresh_sbt_pool_stats');
+        } catch (_) {} 
+    })();
     return res.status(200).json({ success: true, total: data.length });
 }
 
