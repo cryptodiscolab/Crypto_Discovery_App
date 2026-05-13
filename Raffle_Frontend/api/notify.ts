@@ -16,13 +16,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const { fid, message, type = 'mention', signature, signedMessage, wallet } = req.body;
-        if (!fid || !message || !signature || !signedMessage || !wallet) return res.status(400).json({ error: 'Missing fields' });
+        if (!fid || !message) return res.status(400).json({ error: 'Missing fid or message' });
 
-        const valid = await verifyMessage({ address: wallet as `0x${string}`, message: signedMessage, signature: signature as `0x${string}` });
-        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        // Auth: Accept either wallet signature OR internal CRON_SECRET
+        const cronSecret = getEnv('CRON_SECRET', '');
+        const authHeader = req.headers['authorization'];
+        const isInternalCall = cronSecret && authHeader === `Bearer ${cronSecret}`;
 
-        const { data: profile } = await supabaseAdmin.from('user_profiles').select('fid').eq('wallet_address', wallet.toLowerCase()).maybeSingle();
-        if (!profile || Number(profile.fid) !== Number(fid)) return res.status(403).json({ error: 'Unauthorized' });
+        if (!isInternalCall) {
+            // User-initiated: require wallet signature
+            if (!signature || !signedMessage || !wallet) return res.status(400).json({ error: 'Missing auth fields (signature, signedMessage, wallet)' });
+
+            const valid = await verifyMessage({ address: wallet as `0x${string}`, message: signedMessage, signature: signature as `0x${string}` });
+            if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+            const { data: profile } = await supabaseAdmin.from('user_profiles').select('fid').eq('wallet_address', wallet.toLowerCase()).maybeSingle();
+            if (!profile || Number(profile.fid) !== Number(fid)) return res.status(403).json({ error: 'Unauthorized' });
+        }
 
         const response = await fetch('https://api.neynar.com/v2/farcaster/cast', {
             method: 'POST',
