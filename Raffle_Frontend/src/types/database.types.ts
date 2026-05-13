@@ -1411,6 +1411,7 @@ export type Database = {
         Returns: undefined
       }
       fn_refresh_rank_scores: { Args: never; Returns: undefined }
+      fn_refresh_sbt_pool_stats: { Args: never; Returns: undefined }
       get_auth_wallet: { Args: never; Returns: string }
       is_admin_wallet: { Args: { wallet: string }; Returns: boolean }
     }
