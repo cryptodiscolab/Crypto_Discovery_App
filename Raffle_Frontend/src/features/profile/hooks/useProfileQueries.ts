@@ -20,7 +20,8 @@ export const useActivityLogs = (address: string | undefined, category?: string) 
         queryKey: ['activity-logs', address, category],
         queryFn: () => userService.getActivityLogs(address!, category),
         enabled: !!address,
-        staleTime: 1000 * 30, // 30 seconds
+        staleTime: 0, // Always refetch on mount/category change
+        refetchOnWindowFocus: true,
     });
 };
 

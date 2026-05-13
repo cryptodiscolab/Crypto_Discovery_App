@@ -532,25 +532,82 @@ async function handleGetProfile(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
-    const { wallet, category, limit = '20' } = req.query as { wallet: string, category?: string, limit?: string };
+    const { wallet, category, limit = '50' } = req.query as { wallet: string, category?: string, limit?: string };
     if (!wallet) return res.status(400).json({ error: 'Missing wallet' });
 
     try {
-        let query = getSupabaseAdmin()
+        const cleanWallet = wallet.toLowerCase();
+        const parsedLimit = Math.min(parseInt(limit) || 50, 100);
+
+        // 1. Fetch from user_activity_logs (explicit logs)
+        let logsQuery = getSupabaseAdmin()
             .from('user_activity_logs')
-            .select('*')
-            .eq('wallet_address', wallet.toLowerCase())
+            .select('id, wallet_address, category, activity_type, description, value_amount, value_symbol, tx_hash, created_at, metadata')
+            .eq('wallet_address', cleanWallet)
             .order('created_at', { ascending: false })
-            .limit(parseInt(limit));
+            .limit(parsedLimit);
 
         if (category && category !== 'ALL') {
-            query = query.eq('category', category);
+            logsQuery = logsQuery.eq('category', category);
         }
 
-        const { data, error } = await query;
-        if (error) throw error;
+        // 2. Fetch from user_task_claims (task completions that may not have explicit logs)
+        let claimsQuery = getSupabaseAdmin()
+            .from('user_task_claims')
+            .select('id, wallet_address, task_id, xp_earned, platform, action_type, target_id, claimed_at')
+            .eq('wallet_address', cleanWallet)
+            .order('claimed_at', { ascending: false })
+            .limit(parsedLimit);
 
-        return res.status(200).json({ success: true, logs: data });
+        const [logsResult, claimsResult] = await Promise.all([
+            logsQuery,
+            (category && category !== 'ALL' && category !== 'XP') ? Promise.resolve({ data: [], error: null }) : claimsQuery
+        ]);
+
+        if (logsResult.error) throw logsResult.error;
+
+        const activityLogs = (logsResult.data || []).map((log: any) => ({
+            id: log.id,
+            category: log.category,
+            activity_type: log.activity_type,
+            description: log.description,
+            value_amount: log.value_amount || 0,
+            value_symbol: log.value_symbol || 'XP',
+            tx_hash: log.tx_hash,
+            created_at: log.created_at,
+            source: 'log'
+        }));
+
+        // Convert task claims to activity log format (fill gaps)
+        const claimLogs = (claimsResult.data || []).map((claim: any) => ({
+            id: `claim_${claim.id}`,
+            category: 'XP',
+            activity_type: claim.task_id?.startsWith('raffle_') ? 'Raffle Activity' :
+                           claim.task_id?.startsWith('ugc_') ? 'UGC Campaign' :
+                           claim.task_id === 'daily_task_completion' ? 'Daily Bonus' :
+                           claim.action_type === 'daily_bonus' ? 'Daily Bonus' :
+                           'Task Claim',
+            description: claim.task_id?.startsWith('raffle_buy_') ? `Purchased raffle tickets` :
+                         claim.task_id?.startsWith('raffle_win_') ? `Won raffle prize` :
+                         claim.task_id?.startsWith('ugc_campaign_') ? `Completed UGC campaign` :
+                         claim.task_id === 'daily_task_completion' ? `Earned ${claim.xp_earned} XP from daily bonus` :
+                         `Claimed ${claim.xp_earned} XP for ${claim.task_id}`,
+            value_amount: claim.xp_earned || 0,
+            value_symbol: 'XP',
+            tx_hash: null,
+            created_at: claim.claimed_at,
+            source: 'claim'
+        }));
+
+        // Merge and deduplicate (prefer explicit logs over claim-derived entries)
+        const logTimestamps = new Set(activityLogs.map((l: any) => l.created_at?.slice(0, 16)));
+        const uniqueClaimLogs = claimLogs.filter((c: any) => !logTimestamps.has(c.created_at?.slice(0, 16)));
+
+        const combined = [...activityLogs, ...uniqueClaimLogs]
+            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, parsedLimit);
+
+        return res.status(200).json({ success: true, logs: combined });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });

@@ -111,7 +111,7 @@ export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) =
             </div>
 
             <div className="p-4 bg-white/[0.02] text-center border-t border-white/5">
-                <button onClick={() => refetch()} className="label-native text-white/30 hover:text-white flex items-center gap-2 mx-auto transition-all group">
+                <button onClick={() => { refetch(); }} className="label-native text-white/30 hover:text-white flex items-center gap-2 mx-auto transition-all group">
                     REFRESH LOGS <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>
