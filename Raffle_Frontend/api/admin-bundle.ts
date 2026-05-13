@@ -90,9 +90,19 @@ function validateUgcMission(payload: MissionPayload) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const action = req.body?.action || req.query?.action || req.body?.action_type;
 
-    const action = req.body.action || req.query.action || req.body.action_type;
+    // Public read actions (no auth required)
+    if (req.method === 'GET' || action === 'get-ugc-config') {
+        switch (action) {
+            case 'get-ugc-config': {
+                const { data } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
+                return res.status(200).json({ success: true, value: data?.value || { listing_fee_usdc: '5', is_active: true, treasury_address: '' } });
+            }
+        }
+    }
+
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
         const { address, wallet_address, wallet, signature, message, payload, task_data, tasks, tx_hash } = req.body;
