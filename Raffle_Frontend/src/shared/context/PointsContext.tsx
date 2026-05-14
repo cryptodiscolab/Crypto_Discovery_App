@@ -39,6 +39,8 @@ interface PointsContextType {
     manualAddPoints: (amount: number) => void;
     sbtThresholds: any[];
     ecosystemSettings: EcosystemSettings;
+    /** True once ecosystem settings have been loaded from backend. False = degraded/fallback state. */
+    settingsLoaded: boolean;
     fid: number | null;
     offChainPoints: number;
     offChainLevel: number;
@@ -82,6 +84,9 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
         referral_bonus_percent: 10,
         referral_active_threshold: 500
     });
+    // Tracks if ecosystem settings were successfully loaded from backend.
+    // When false, the values above are display-only fallback defaults — financial actions should treat them as degraded.
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     // Anti-Halu Central State
     const [fid, setFid] = useState(null);
@@ -201,9 +206,11 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 setEcosystemSettings(prev => ({ ...prev, ...settings }));
+                setSettingsLoaded(true);
             }
         } catch (err) {
             console.error('[PointsContext] Failed to fetch settings:', err);
+            // settingsLoaded stays false → consumers can show degraded state
         }
     }, []);
 
@@ -312,6 +319,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
         manualAddPoints,
         sbtThresholds,
         ecosystemSettings,
+        settingsLoaded,
         fid,
         offChainPoints,
         offChainLevel,

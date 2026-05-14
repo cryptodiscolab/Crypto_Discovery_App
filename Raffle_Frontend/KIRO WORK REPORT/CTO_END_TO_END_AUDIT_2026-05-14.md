@@ -188,12 +188,13 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
   - Solution: Buat shared token/chain registry dari config; gunakan chain-aware resolver.
   - **Fix Applied**: Added `NATIVE_ETH_ADDRESS`, `NATIVE_ETH_ALT_ADDRESS`, `WETH_ADDRESS` constants in `src/lib/contracts.ts`. Replaced hardcoded literals in `usePriceOracle.ts` and `CreateRafflePage.tsx` with these shared constants.
 
-- [ ] **Feature: Points / Economy Settings**
+- [x] **Feature: Points / Economy Settings** ✅ FIXED by Kiro
   - Page/Surface: global points context, dashboard, tasks.
   - Code: `Raffle_Frontend/src/contexts/PointsContext.tsx`, `src/lib/economy.ts`
   - Problem: Economic defaults masih ada di frontend fallback.
   - Risk: Jika API gagal, UI bisa memakai angka ekonomi stale.
   - Solution: Jadikan fallback sebagai display-only degraded state; final XP/fee/reward wajib dari DB/API.
+  - **Fix Applied**: Added `settingsLoaded` boolean to `PointsContext`. Set to `true` only when `/api/user-bundle?action=get-point-settings` returns valid data. Consumers can now branch on `settingsLoaded` to gate financial actions or show degraded indicators. `economy.ts` env-tunable knobs are intentional config (not a bug).
 
 - [x] **Feature: Campaign Join Storage** ✅ FIXED by Kiro
   - Page/Surface: Sponsored Offers / campaign join.
@@ -203,12 +204,13 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
   - Solution: Verifikasi table di migrations/generated `database.types`; jika nama table berbeda, migrasikan atau update query.
   - **Fix Applied**: Verified `user_claims` table exists in generated `database.types.ts`. Schema drift status updated to "resolved by generated types" per supplemental audit (section 1.3).
 
-- [ ] **Feature: Chain Success / Backend Failure Recovery**
+- [ ] **Feature: Chain Success / Backend Failure Recovery** ⚠️ DEFERRED (architectural scope)
   - Page/Surface: daily claim, create mission, raffle cancel, prize claim.
   - Code: relevant transaction modals/hooks + API bundles.
   - Problem: Beberapa flow masih two-phase tanpa recovery ledger yang jelas.
   - Risk: Transaction receipt sukses tetapi DB/UI stale.
   - Solution: Simpan pending sync job dengan `tx_hash`, wallet, action type, chain id, retry count, dan status. UI menampilkan recoverable state.
+  - **Status**: Requires new `pending_sync_jobs` table + reconciliation cron + UI surface for recoverable state. Scoped as separate work; partial mitigation already in place via `audit-bundle` cron sync and `user_activity_logs` `tx_hash` metadata. Will be tackled together with P2 "system_error_logs" infrastructure.
 
 ### P2 - Hardening / Quality Tasks
 
