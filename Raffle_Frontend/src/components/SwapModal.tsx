@@ -180,7 +180,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         const config = { address: address as `0x${string}`, message };
         // We use a separate signature for logging security
         const { signMessage } = await import('wagmi/actions');
-        const { config: wagmiConfigActual } = await import('../lib/wagmi');
+        const { config: wagmiConfigActual } = await import('../wagmiConfig');
         const signature = await signMessage(wagmiConfigActual, config);
 
         await fetch('/api/user-bundle?action=log-activity', {
