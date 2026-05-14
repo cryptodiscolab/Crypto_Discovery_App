@@ -7,7 +7,9 @@ import { CONTRACTS } from '../../../lib/contracts';
 interface RevenueItem {
     id: string | number;
     title: string;
+    listing_fee?: string | number;
     listing_fee_usdc: string | number;
+    reward_symbol?: string;
     sbt_share_amount: string | number;
     is_revenue_allocated: boolean;
 }
@@ -17,7 +19,7 @@ export function UgcRevenueTab() {
     const { signMessageAsync } = useSignMessage();
     const [revenueData, setRevenueData] = useState<RevenueItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({ totalPending: 0, count: 0 });
+    const [stats, setStats] = useState<{ totals: Record<string, number>; count: number }>({ totals: {}, count: 0 });
     const [filterTab, setFilterTab] = useState('PENDING');
 
     const fetchRevenue = async () => {
@@ -43,8 +45,12 @@ export function UgcRevenueTab() {
                 setRevenueData(data);
                 
                 const pending = data.filter((r: any) => !r.is_revenue_allocated);
-                const total = pending.reduce((sum: number, r: any) => sum + parseFloat(String(r.sbt_share_amount || 0)), 0);
-                setStats({ totalPending: total, count: pending.length });
+                const totals: Record<string, number> = {};
+                pending.forEach((r: any) => {
+                    const symbol = r.reward_symbol || 'USDC';
+                    totals[symbol] = (totals[symbol] || 0) + parseFloat(String(r.sbt_share_amount || 0));
+                });
+                setStats({ totals, count: pending.length });
             }
         } catch (error: any) {
             console.error('Fetch revenue failed:', error);
@@ -114,7 +120,18 @@ export function UgcRevenueTab() {
                 <div className="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-3xl relative overflow-hidden">
                     <DollarSign className="absolute -right-4 -bottom-4 w-24 h-24 text-indigo-500/10 rotate-12" />
                     <p className="admin-label !text-indigo-400 !mb-1 !text-[11px]">Pending SBT Funding</p>
-                    <h3 className="text-3xl font-black text-white">{stats.totalPending.toFixed(2)} <span className="text-sm font-bold text-slate-500">USDC</span></h3>
+                    <div className="space-y-1">
+                        {Object.entries(stats.totals).length === 0 ? (
+                            <h3 className="text-3xl font-black text-white">0.00 <span className="text-sm font-bold text-slate-500">USDC</span></h3>
+                        ) : (
+                            Object.entries(stats.totals).map(([symbol, amount]) => (
+                                <h3 key={symbol} className="text-3xl font-black text-white">
+                                    {amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} 
+                                    <span className="text-sm font-bold text-slate-500 ml-1">{symbol}</span>
+                                </h3>
+                            ))
+                        )}
+                    </div>
                     <p className="text-[11px] text-slate-500 font-bold mt-2 uppercase tracking-tighter">From {stats.count} Missions</p>
                 </div>
 
@@ -134,14 +151,19 @@ export function UgcRevenueTab() {
                             </button>
                         </div>
                         <div className="space-y-2">
-                            <p className="admin-label !mb-0 !text-[11px]">2. Batch Amount (USDC)</p>
-                            <button 
-                                onClick={() => copyToClipboard(stats.totalPending.toString(), 'Amount')}
-                                className="w-full flex items-center justify-between px-3 py-2 bg-black/40 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group"
-                            >
-                                <span className="text-[11px] font-mono text-slate-300">{stats.totalPending.toFixed(2)} USDC</span>
-                                <Copy className="w-3 h-3 text-slate-500 group-hover:text-indigo-400" />
-                            </button>
+                            <p className="admin-label !mb-0 !text-[11px]">2. Batch Amount</p>
+                            <div className="space-y-1">
+                                {Object.entries(stats.totals).map(([symbol, amount]) => (
+                                    <button 
+                                        key={symbol}
+                                        onClick={() => copyToClipboard(amount.toString(), `Amount (${symbol})`)}
+                                        className="w-full flex items-center justify-between px-3 py-2 bg-black/40 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group"
+                                    >
+                                        <span className="text-[11px] font-mono text-slate-300">{amount.toFixed(symbol === 'USDC' ? 2 : 6)} {symbol}</span>
+                                        <Copy className="w-3 h-3 text-slate-500 group-hover:text-indigo-400" />
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -174,8 +196,8 @@ export function UgcRevenueTab() {
                         <thead>
                             <tr className="border-b border-white/5 bg-white/2">
                                 <th className="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Mission</th>
-                                <th className="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Fee (USDC)</th>
-                                <th className="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">SBT Share</th>
+                                <th className="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Listing Fee</th>
+                                <th className="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">SBT Share (USDC)</th>
                                 <th className="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
                                 <th className="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest text-right">Action</th>
                             </tr>
@@ -195,7 +217,14 @@ export function UgcRevenueTab() {
                                             <p className="text-[11px] font-black uppercase tracking-widest">{mission.id}</p>
                                         </td>
                                         <td className="px-6 py-4 text-xs font-mono text-slate-300">
-                                            {parseFloat(String(mission.listing_fee_usdc || 0)).toFixed(2)}
+                                            {mission.listing_fee ? (
+                                                <span className="flex items-center gap-1">
+                                                    {parseFloat(String(mission.listing_fee)).toFixed(4)} 
+                                                    <span className="text-[10px] text-slate-500 font-bold">{mission.reward_symbol || 'ETH'}</span>
+                                                </span>
+                                            ) : (
+                                                <span>{parseFloat(String(mission.listing_fee_usdc || 0)).toFixed(2)} USDC</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-xs font-bold text-indigo-400 font-mono">
                                             {parseFloat(String(mission.sbt_share_amount || 0)).toFixed(2)}

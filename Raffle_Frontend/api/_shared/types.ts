@@ -80,6 +80,7 @@ export interface UgcMissionPayload {
     reward_symbol: string;
     payment_token: string;
     is_base_social_required?: boolean;
+    listing_fee?: number;
 }
 
 export interface UgcRafflePayload {

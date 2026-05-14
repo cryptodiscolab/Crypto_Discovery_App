@@ -24,6 +24,7 @@ import { DailyClaimModal } from '../features/profile/components/modals/DailyClai
 import { RevenueClaimModal, RenewSponsorshipModal } from '../features/profile/components/modals/ExtraModals';
 import { SwapModal } from '../components/SwapModal';
 import { ProfileData } from '../features/profile/types';
+import { WalletPortfolio } from '../components/WalletPortfolio';
 
 /**
  * ProfilePage Component
@@ -250,6 +251,7 @@ export default function ProfilePage() {
         {/* TIER & ACHIEVEMENTS */}
         <div className="px-4 space-y-6">
           <SBTUpgradeCard />
+          <WalletPortfolio />
           <SBTGallery />
           <ReferralCard />
         </div>

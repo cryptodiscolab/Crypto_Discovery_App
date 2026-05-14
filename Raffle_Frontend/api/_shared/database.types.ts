@@ -235,6 +235,7 @@ export type Database = {
           is_refunded: boolean | null
           is_revenue_allocated: boolean | null
           is_verified_payment: boolean | null
+          listing_fee: number | null
           listing_fee_usdc: number | null
           max_participants: number
           payment_tx_hash: string | null
@@ -268,6 +269,7 @@ export type Database = {
           is_refunded?: boolean | null
           is_revenue_allocated?: boolean | null
           is_verified_payment?: boolean | null
+          listing_fee?: number | null
           listing_fee_usdc?: number | null
           max_participants: number
           payment_tx_hash?: string | null
@@ -301,6 +303,7 @@ export type Database = {
           is_refunded?: boolean | null
           is_revenue_allocated?: boolean | null
           is_verified_payment?: boolean | null
+          listing_fee?: number | null
           listing_fee_usdc?: number | null
           max_participants?: number
           payment_tx_hash?: string | null

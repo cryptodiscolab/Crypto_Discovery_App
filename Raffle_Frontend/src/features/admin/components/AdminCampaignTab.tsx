@@ -17,7 +17,15 @@ interface Campaign {
     current_participants?: number;
     status: 'active' | 'ended';
     platform_code: string;
+    reward_symbol?: string;
     created_at?: string;
+}
+
+interface Token {
+    address: string;
+    symbol: string;
+    decimals: number;
+    name?: string;
 }
 
 export default function AdminCampaignTab() {
@@ -40,7 +48,7 @@ export default function AdminCampaignTab() {
         platform_code: 'farcaster'
     });
 
-    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
+    const [whitelistedTokens, setWhitelistedTokens] = useState<Token[]>([]);
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
     const selectedToken = whitelistedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase()) || { symbol: 'ETH', decimals: 18 };
 
@@ -52,8 +60,8 @@ export default function AdminCampaignTab() {
     async function fetchTokens() {
         const { data } = await supabase.from('allowed_tokens').select('*').eq('is_active', true);
         if (data) {
-            setWhitelistedTokens(data);
-            const eth = data.find(t => t.symbol === 'ETH');
+            setWhitelistedTokens(data as Token[]);
+            const eth = (data as Token[]).find(t => t.symbol === 'ETH');
             if (eth) setSelectedTokenAddr(eth.address);
         }
     }
@@ -89,6 +97,7 @@ export default function AdminCampaignTab() {
                 reward_amount_per_user: (parseFloat(formData.reward_amount_per_user) * (10 ** decimals)).toString(),
                 total_reward_pool: (parseFloat(formData.total_reward_pool) * (10 ** decimals)).toString(),
                 reward_token_address: selectedTokenAddr,
+                reward_symbol: selectedToken?.symbol || 'ETH',
                 current_participants: 0,
                 created_at: new Date().toISOString()
             };
@@ -323,7 +332,7 @@ export default function AdminCampaignTab() {
                                 <div>
                                     <h4 className="text-sm font-bold text-white mb-1">{c.title}</h4>
                                     <p className="text-[10px] text-slate-500">
-                                        {c.current_participants || 0} / {c.max_participants} joined • {Number(c.reward_amount_per_user) / 1e18} ETH reward
+                                        {c.current_participants || 0} / {c.max_participants} joined • {Number(c.reward_amount_per_user) / (c.reward_symbol === 'USDC' ? 1e6 : 1e18)} {c.reward_symbol || 'ETH'} reward
                                     </p>
                                 </div>
                             </div>

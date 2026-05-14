@@ -21,6 +21,7 @@ interface Mission {
     is_verified_payment: boolean;
     reward_amount_per_user: string | number;
     reward_symbol?: string;
+    listing_fee?: string | number;
     max_participants: number | string;
     sponsor_address: string;
     payment_tx_hash?: string;
@@ -367,7 +368,19 @@ export function ModerationCenterTab() {
                                             )}
                                         </div>
                                         <h3 className="text-lg font-black text-white truncate max-w-md">{mission.title}</h3>
-                                        <p className="text-[10px] text-slate-500 font-mono mt-1">Reward: {mission.reward_amount_per_user} {mission.reward_symbol || 'USDC'} | Participants: {mission.max_participants}</p>
+                                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                            <p className="text-[10px] text-slate-500 font-mono">
+                                                Reward: <span className="text-purple-400">{mission.reward_amount_per_user}</span> {mission.reward_symbol || 'USDC'}
+                                            </p>
+                                            {mission.listing_fee && (
+                                                <p className="text-[10px] text-slate-500 font-mono">
+                                                    Fee: <span className="text-indigo-400">{mission.listing_fee}</span> {mission.reward_symbol || 'USDC'}
+                                                </p>
+                                            )}
+                                            <p className="text-[10px] text-slate-500 font-mono">
+                                                Users: <span className="text-slate-300">{mission.max_participants}</span>
+                                            </p>
+                                        </div>
                                         
                                         <div className="mt-3 flex flex-wrap gap-3">
                                             <div className="px-3 py-1.5 bg-white/5 rounded-xl border border-white/5">

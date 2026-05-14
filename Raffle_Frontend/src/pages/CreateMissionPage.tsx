@@ -10,7 +10,9 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { CONTRACTS } from '../lib/contracts';
 import { SwapModal } from '../components/SwapModal';
+import { WalletPortfolio } from '../components/WalletPortfolio';
 import { supabase } from '../lib/supabaseClient';
+import { usePriceOracle } from '../hooks/usePriceOracle';
 
 // Platform-specific action terms
 const PLATFORM_ACTIONS = {
@@ -66,6 +68,8 @@ interface UgcConfig {
     listing_fee_usdc: string;
     treasury_address: `0x${string}`;
     is_active: boolean;
+    min_reward_amount: string;
+    max_participants_limit: number;
 }
 
 interface MissionFormData {
@@ -95,7 +99,9 @@ export function CreateMissionPage() {
     const [ugcConfig, setUgcConfig] = useState<UgcConfig>({
         listing_fee_usdc: '5',
         treasury_address: CONTRACTS.MASTER_X as `0x${string}`,
-        is_active: true
+        is_active: true,
+        min_reward_amount: '0.1',
+        max_participants_limit: 10000
     });
     const [isConfigLoading, setIsConfigLoading] = useState(true);
 
@@ -115,10 +121,18 @@ export function CreateMissionPage() {
         minNeynarScore: '0'
     });
 
-    // Asset Management [v3.62.0]
+    // Asset Management & Pricing [v3.63.8]
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+    const [showPortfolio, setShowPortfolio] = useState(false);
+
+    // Initial state matching design spec
     const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
+    
+    // Fetch prices for all whitelisted tokens
+    const tokenAddresses = useMemo(() => whitelistedTokens.map(t => t.address), [whitelistedTokens]);
+    const { prices: tokenPrices } = usePriceOracle(tokenAddresses);
+
     const selectedToken = whitelistedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
 
@@ -204,19 +218,35 @@ export function CreateMissionPage() {
     const stats = useMemo(() => {
         const rewardPerUser = parseFloat(formData.reward_amount_per_user) || 0;
         const participants = parseInt(formData.max_participants) || 0;
-        const listingFee = parseFloat(ugcConfig.listing_fee_usdc) || 0;
+        const baseListingFeeUsdc = parseFloat(ugcConfig.listing_fee_usdc) || 0;
 
         const rewardPool = rewardPerUser * participants;
-        const totalAmount = rewardPool + listingFee;
+        
+        // Calculate dynamic listing fee based on token price [v3.63.8]
+        // USDC is the baseline (price = 1)
+        const isUsdc = selectedToken?.symbol === 'USDC';
+        const priceKey = selectedTokenAddr === '0x0000000000000000000000000000000000000000' 
+            ? '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' 
+            : selectedTokenAddr.toLowerCase();
+        
+        const tokenPrice = isUsdc ? 1 : (tokenPrices[priceKey] || 0);
+        const isPriceLoading = !isUsdc && tokenPrice === 0;
+        
+        // If price is loading, we treat the fee as 0 temporarily to avoid UX flicker/insufficient balance alerts
+        const listingFeeToken = isPriceLoading ? 0 : (tokenPrice > 0 ? (baseListingFeeUsdc / tokenPrice) : baseListingFeeUsdc);
+
+        const totalAmount = rewardPool + listingFeeToken;
         const decimals = selectedToken?.decimals || 6;
+        const displayDecimals = decimals > 6 ? 6 : 2;
 
         return {
-            rewardPool: rewardPool.toFixed(2),
-            listingFee: listingFee.toFixed(2),
-            totalAmount: totalAmount.toFixed(2),
-            totalAmountRaw: parseUnits(totalAmount.toString(), decimals)
+            rewardPool: rewardPool.toFixed(displayDecimals),
+            listingFee: listingFeeToken.toFixed(displayDecimals),
+            totalAmount: totalAmount.toFixed(displayDecimals),
+            totalAmountRaw: parseUnits(totalAmount.toFixed(decimals), decimals),
+            tokenPrice
         };
-    }, [formData, ugcConfig, selectedToken]);
+    }, [formData, ugcConfig, selectedToken, selectedTokenAddr, tokenPrices]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -232,8 +262,21 @@ export function CreateMissionPage() {
         if (selectedActions.length === 0) return toast.error('Pilih minimal 1 aksi.');
         if (selectedActions.length > 3) return toast.error('[Multi-Action Bound] Maksimal 3 aksi per misi.');
 
+        // [v3.63.8] Hardened Budget Validations
+        const minRewardUsdc = parseFloat(ugcConfig.min_reward_amount) || 0.1;
+        const rewardAmountUsdc = parseFloat(formData.reward_amount_per_user) * (selectedToken?.symbol === 'USDC' ? 1 : (stats.tokenPrice || 1));
+        
+        if (rewardAmountUsdc < minRewardUsdc) {
+            return toast.error(`[Budget Guard] Reward per user must be at least $${minRewardUsdc} USDC equivalent.`);
+        }
+
+        if (parseInt(formData.max_participants) > (ugcConfig.max_participants_limit || 10000)) {
+            return toast.error(`[Scale Guard] Maksimal peserta adalah ${ugcConfig.max_participants_limit}.`);
+        }
+
         setIsSubmitting(true);
-        const tid = toast.loading("Processing USDC Payment...");
+        const assetSymbol = selectedToken?.symbol || 'USDC';
+        const tid = toast.loading(`Processing ${assetSymbol} Payment...`);
         let txHash: `0x${string}` | undefined;
 
         try {
@@ -286,6 +329,7 @@ export function CreateMissionPage() {
                 is_active: false,
                 is_verified_payment: false,
                 is_base_social_required: formData.isBaseSocialRequired,
+                listing_fee: parseFloat(stats.listingFee),
                 min_followers: parseInt(formData.minFollowers) || 0,
                 account_age_requirement: parseInt(formData.minAccountAge) || 0,
                 min_neynar_score: parseInt(formData.minNeynarScore) || 0
@@ -595,17 +639,20 @@ export function CreateMissionPage() {
                                     <div className="space-y-4">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
-                                            <select 
-                                                value={selectedTokenAddr}
-                                                onChange={(e) => setSelectedTokenAddr(e.target.value)}
-                                                className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer"
-                                            >
-                                                {whitelistedTokens.map((t, i) => (
-                                                    <option key={i} value={t.address} className="bg-zinc-900">
-                                                        {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <div className="relative group">
+                                                <select 
+                                                    value={selectedTokenAddr}
+                                                    onChange={(e) => setSelectedTokenAddr(e.target.value)}
+                                                    className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer pr-12"
+                                                >
+                                                    {whitelistedTokens.map((t, i) => (
+                                                        <option key={i} value={t.address} className="bg-[#0B0E14]">
+                                                            {t.symbol} — {t.address === '0x0000000000000000000000000000000000000000' ? 'NATIVE' : `${t.address.slice(0,6)}...${t.address.slice(-4)}`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none group-hover:text-white transition-colors" />
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2">
@@ -655,9 +702,12 @@ export function CreateMissionPage() {
                                 {!ugcConfig.is_active ? (
                                     <>SYSTEM MAINTENANCE <Lock className="w-5 h-5" /></>
                                 ) : isSubmitting ? (
-                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <div className="flex items-center gap-3">
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                        <span>VERIFYING PAYMENT...</span>
+                                    </div>
                                 ) : (
-                                    <>PAY & DEPLOY MISSION <ArrowRight className="w-5 h-5" /></>
+                                    <>LAUNCH MISSION — {stats.totalAmount} {selectedToken?.symbol || 'USDC'} <ArrowRight className="w-5 h-5" /></>
                                 )}
                             </button>
                         </form>
@@ -679,7 +729,7 @@ export function CreateMissionPage() {
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
                                         <span className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">REWARD POOL</span>
-                                        <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest">{formData.reward_amount_per_user} × {formData.max_participants} USERS</p>
+                                        <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest">{formData.reward_amount_per_user} {selectedToken?.symbol || 'USDC'} × {formData.max_participants} USERS</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-2xl font-black text-white font-mono tracking-tighter">{stats.rewardPool} <span className="text-xs text-slate-500 font-bold">{selectedToken?.symbol || 'USDC'}</span></p>
@@ -692,7 +742,19 @@ export function CreateMissionPage() {
                                         <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest italic">DYNAMIC LISTING FEE</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-2xl font-black text-indigo-400 font-mono tracking-tighter">{stats.listingFee} <span className="text-xs text-slate-500 font-bold">USDC</span></p>
+                                        <p className="text-2xl font-black text-indigo-400 font-mono tracking-tighter">
+                                            {(!selectedToken || (selectedToken.symbol !== 'USDC' && stats.tokenPrice === 0)) ? (
+                                                <span className="animate-pulse opacity-50">...</span>
+                                            ) : (
+                                                stats.listingFee
+                                            )} 
+                                            <span className="text-xs text-slate-500 font-bold ml-1">{selectedToken?.symbol || 'USDC'}</span>
+                                        </p>
+                                        {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-tight">
+                                                ≈ {ugcConfig.listing_fee_usdc} USDC
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -735,6 +797,10 @@ export function CreateMissionPage() {
 
                                     <div className="p-5 bg-black/60 rounded-[2rem] border border-white/5 space-y-3 group/wallet overflow-hidden relative">
                                         <div className="absolute inset-0 bg-indigo-600/5 opacity-0 group-hover/wallet:opacity-100 transition-opacity" />
+                                        <div className="flex justify-between items-center py-4 border-t border-white/5 mb-2">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Targeting</p>
+                                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Score {formData.minNeynarScore}+ Only</p>
+                                        </div>
                                         <div className="flex items-start gap-3 relative">
                                             <Wallet className="w-4 h-4 text-indigo-500 mt-1 shrink-0" />
                                             <div className="space-y-1">
@@ -747,6 +813,29 @@ export function CreateMissionPage() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* [v3.63.9] Wallet Assets Peek */}
+                        <div className="space-y-4">
+                            <button 
+                                type="button"
+                                onClick={() => setShowPortfolio(!showPortfolio)}
+                                className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-3xl hover:bg-white/10 transition-all group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Wallet className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                                    <span className="text-[10px] font-black text-slate-400 group-hover:text-white transition-colors uppercase tracking-widest">
+                                        {showPortfolio ? 'HIDE WALLET ASSETS' : 'VIEW WALLET ASSETS'}
+                                    </span>
+                                </div>
+                                <div className={`w-2 h-2 rounded-full ${showPortfolio ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-slate-700'}`} />
+                            </button>
+
+                            {showPortfolio && (
+                                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <WalletPortfolio highlightSymbol={selectedToken?.symbol} />
+                                </div>
+                            )}
                         </div>
 
                         {/* Protocol Assurance */}

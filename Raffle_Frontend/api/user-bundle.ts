@@ -678,7 +678,12 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { title, description, sponsor_address, platform_code, reward_amount_per_user, max_participants, txHash, tasks_batch, reward_symbol, payment_token, is_base_social_required } = payload;
+        const { 
+            title, description, sponsor_address, platform_code, 
+            reward_amount_per_user, max_participants, txHash, 
+            tasks_batch, reward_symbol, payment_token, 
+            is_base_social_required, listing_fee 
+        } = payload;
 
         const [{ data: ugcConfigRes }, { data: sysSetting }, { data: pointSetting }] = await Promise.all([
             getSupabaseAdmin().from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle(),
@@ -706,10 +711,11 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             reward_symbol: reward_symbol || 'TOKEN',
             creation_tx_hash: txHash,
             duration_days: Number(ugcConfig.mission_duration_days) || 30, // Zero-Hardcode: reads from ugc_config
-            reward_token_address: payment_token || '0x0000000000000000000000000000000000000000',
+            reward_token_address: (payment_token || '0x0000000000000000000000000000000000000000').toLowerCase(),
             total_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
             remaining_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
-            platform_fee_paid: platformFee,
+            listing_fee: listing_fee || platformFee,
+            platform_fee_paid: platformFee, // Legacy tracking
             chain_id: Number(CHAIN_ID)
         }).select().maybeSingle();
 
@@ -773,8 +779,8 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             category: 'PURCHASE',
             type: 'UGC Mission Creation',
             description: `Paid fees for sponsorship: ${title}`,
-            amount: platformFee,
-            symbol: 'USDC',
+            amount: listing_fee || platformFee,
+            symbol: reward_symbol || 'USDC',
             txHash,
             metadata: { campaign_id: campaign.id }
         });
@@ -1253,7 +1259,12 @@ async function handleFetchPendingMissions(req: VercelRequest, res: VercelRespons
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid || !(await isAuthorizedAdmin(wallet))) return res.status(403).json({ error: 'Unauthorized' });
 
-        const { data, error } = await getSupabaseAdmin().from('daily_tasks').select('*').eq('is_active', false).not('creator_address', 'is', null);
+        const { data, error } = await getSupabaseAdmin()
+            .from('campaigns')
+            .select('id, title, created_at, is_verified_payment, reward_amount_per_user, reward_symbol, listing_fee, max_participants, sponsor_address, payment_tx_hash')
+            .eq('is_active', false)
+            .order('created_at', { ascending: false });
+        
         if (error) throw error;
         return res.status(200).json({ success: true, data });
     } catch (error: unknown) {

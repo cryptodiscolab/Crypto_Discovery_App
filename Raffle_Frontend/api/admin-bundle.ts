@@ -544,9 +544,11 @@ interface UgcMissionCreatePayload {
     reward_amount_per_user: string;
     max_participants: string;
     reward_token_address?: string;
+    reward_symbol?: string;
+    listing_fee?: string | number;
     total_reward_pool: string;
     duration_days: number;
-    creation_tx_hash: string;
+    payment_tx_hash: string;
 }
 
 async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: string, res: VercelResponse) {
@@ -563,9 +565,13 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
         total_reward_pool: parseFloat(payload.total_reward_pool) || 0,
         remaining_reward_pool: parseFloat(payload.total_reward_pool) || 0,
         reward_token_address: (payload.reward_token_address || (payload as any).payment_token || USDC_ADDRESS).toLowerCase(),
+        reward_symbol: payload.reward_symbol || (payload as any).reward_symbol || 'TOKEN',
+        listing_fee: parseFloat(String(payload.listing_fee || 0)),
         duration_days: payload.duration_days || 7,
-        creation_tx_hash: payload.creation_tx_hash || '',
-        platform_fee_paid: 0,
+        creation_tx_hash: payload.payment_tx_hash || '',
+        payment_tx_hash: payload.payment_tx_hash || '',
+        platform_fee_paid: parseFloat(String(payload.listing_fee || 0)), // Support legacy field
+        sbt_share_amount: parseFloat(String(payload.listing_fee || 0)),
         chain_id: 8453, // Default to Base
         is_active: false, 
         is_verified_payment: false, 
@@ -604,36 +610,61 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
 
     const { data: ugcConfigRes } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
     const ugcConfig = (ugcConfigRes?.value || {}) as Record<string, string>;
-    const treasury = ugcConfig.treasury_address || SAFE_MULTISIG;
+    const treasury = (ugcConfig.treasury_address || SAFE_MULTISIG).toLowerCase();
+    
+    // Support Multi-Asset Verification [v3.63.8]
+    const tokenAddress = (mission.reward_token_address || USDC_ADDRESS).toLowerCase();
+    const isNative = tokenAddress === '0x0000000000000000000000000000000000000000';
+    
+    let totalPaid = BigInt(0);
 
-    let totalUsdcTransferred = BigInt(0);
-    for (const log of receipt.logs) {
-        if (log.address.toLowerCase() === USDC_ADDRESS.toLowerCase()) {
-            try {
-                const decoded = decodeEventLog({ abi: ERC20_ABI, eventName: 'Transfer', data: log.data, topics: log.topics }) as { args: { to: string, value: bigint } };
-                if (decoded.args.to.toLowerCase() === treasury.toLowerCase()) totalUsdcTransferred += decoded.args.value;
-            } catch (e) { continue; }
+    if (isNative) {
+        // For Native ETH, we check the transaction value and recipient
+        const tx = await rpcClient.getTransaction({ hash: mission.payment_tx_hash as `0x${string}` });
+        if (tx.to?.toLowerCase() === treasury) {
+            totalPaid = tx.value;
+        }
+    } else {
+        // For ERC20, we scan logs for transfers to treasury
+        for (const log of receipt.logs) {
+            if (log.address.toLowerCase() === tokenAddress) {
+                try {
+                    const decoded = decodeEventLog({ abi: ERC20_ABI, eventName: 'Transfer', data: log.data, topics: log.topics }) as { args: { to: string, value: bigint } };
+                    if (decoded.args.to.toLowerCase() === treasury) totalPaid += decoded.args.value;
+                } catch (e) { continue; }
+            }
         }
     }
 
-    const rewardPerUserRaw = BigInt(Math.floor(Number(mission.reward_amount_per_user || 0) * 1e6));
-    const totalRewardPoolRaw = rewardPerUserRaw * BigInt(mission.max_participants || 0);
-    const listingFeeRaw = BigInt(Math.floor(parseFloat(ugcConfig.listing_fee_usdc || '0') * 1e6));
-    const expectedTotalRaw = totalRewardPoolRaw + listingFeeRaw;
+    // Dynamic Precision handling based on token symbol
+    // Defaulting to 6 for USDC, 18 for others
+    const decimals = mission.reward_symbol === 'USDC' ? 6 : 18;
+    const listingFeeValue = parseFloat(String(mission.listing_fee || ugcConfig.listing_fee_usdc || '5'));
+    const rewardPoolValue = parseFloat(String(mission.total_reward_pool || '0'));
+    
+    const listingFeeUnits = BigInt(Math.round(listingFeeValue * Math.pow(10, decimals)));
+    const rewardPoolUnits = BigInt(Math.round(rewardPoolValue * Math.pow(10, decimals)));
+    const expectedTotal = listingFeeUnits + rewardPoolUnits;
 
-    if (totalUsdcTransferred < expectedTotalRaw) return res.status(400).json({ error: 'Payment insufficient' });
+    // Allow 1% slippage for price oracle rounding if needed, but here it should be exact
+    if (totalPaid < expectedTotal) {
+        return res.status(400).json({ 
+            error: 'Payment insufficient', 
+            details: `Expected ${expectedTotal.toString()} units, found ${totalPaid.toString()} units in ${mission.reward_symbol || 'USDC'}` 
+        });
+    }
 
     await supabaseAdmin.from('campaigns').update({ is_verified_payment: true, status: 'active', is_active: true }).eq('id', mission_id);
-    await supabaseAdmin.from('daily_tasks').update({ is_active: true }).eq('onchain_id', mission_id);
-    await logAdminAction(admin, 'VERIFY_UGC_PAYMENT_ONCHAIN', { mission_id });
+    await supabaseAdmin.from('daily_tasks').update({ is_active: true }).eq('target_id', mission_id);
+    await logAdminAction(admin, 'VERIFY_UGC_PAYMENT_ONCHAIN', { mission_id, amount_paid: totalPaid.toString(), symbol: mission.reward_symbol });
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: true, message: `Payment verified for ${mission.reward_symbol || 'USDC'}` });
 }
 
 async function handleGetUgcRevenue(res: VercelResponse) {
     const { data, error } = await supabaseAdmin
         .from('campaigns')
-        .select('id, title, listing_fee_usdc, sbt_share_amount, is_revenue_allocated')
+        .select('id, title, listing_fee, listing_fee_usdc, sbt_share_amount, is_revenue_allocated, reward_symbol')
         .order('created_at', { ascending: false });
     
     if (error) throw error;
