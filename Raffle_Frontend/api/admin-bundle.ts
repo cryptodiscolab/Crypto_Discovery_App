@@ -239,7 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(200).json({ success: true });
             }
             case 'RESET_SEASON': await handleResetSeason(payload.new_season_id, targetAddress, res); break;
-            case 'task-sync': await handleTaskSync(tasks, res); break;
+            case 'task-sync': await handleTaskSync((tasks || []) as TaskSyncData[], res); break;
             case 'GRANT_PRIVILEGE': {
                 await supabaseAdmin.from('user_privileges').upsert({ wallet_address: payload.target_address.toLowerCase(), feature_id: payload.feature_id, granted_at: new Date().toISOString() }, { onConflict: 'wallet_address,feature_id' });
                 await logAdminAction(targetAddress, 'GRANT_PRIVILEGE', payload);
@@ -408,7 +408,7 @@ async function handleSyncPoints(res: VercelResponse) {
 
 async function handleGenericUpsert(key: string, value: Json, admin: string, action: string, res: VercelResponse, conflictCol = 'key') {
     const row = conflictCol === 'key' ? { key, value, updated_at: new Date().toISOString() } : (value as Record<string, Json>);
-    const { error } = await supabaseAdmin.from('system_settings').upsert(row, { onConflict: conflictCol });
+    const { error } = await supabaseAdmin.from('system_settings').upsert(row as any, { onConflict: conflictCol as any });
     if (error) throw error;
     await logAdminAction(admin, action, value);
     return res.status(200).json({ success: true });
@@ -541,6 +541,12 @@ interface UgcMissionCreatePayload {
     platform_code?: string;
     link?: string;
     sponsor_address: string;
+    reward_amount_per_user: string;
+    max_participants: string;
+    reward_token_address?: string;
+    total_reward_pool: string;
+    duration_days: number;
+    creation_tx_hash: string;
 }
 
 async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: string, res: VercelResponse) {
@@ -548,7 +554,19 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
     if (errors.length > 0) return res.status(400).json({ error: 'Validation failed', details: errors });
 
     const missionData: Database['public']['Tables']['campaigns']['Insert'] = { 
-        ...payload, 
+        title: payload.title,
+        description: payload.description || '',
+        platform_code: payload.platform_code || 'farcaster',
+        sponsor_address: payload.sponsor_address.toLowerCase(),
+        reward_amount_per_user: parseFloat(payload.reward_amount_per_user) || 0,
+        max_participants: parseInt(payload.max_participants) || 0,
+        total_reward_pool: parseFloat(payload.total_reward_pool) || 0,
+        remaining_reward_pool: parseFloat(payload.total_reward_pool) || 0,
+        reward_token_address: (payload.reward_token_address || USDC_ADDRESS).toLowerCase(),
+        duration_days: payload.duration_days || 7,
+        creation_tx_hash: payload.creation_tx_hash || '',
+        platform_fee_paid: 0,
+        chain_id: 8453, // Default to Base
         is_active: false, 
         is_verified_payment: false, 
         created_at: new Date().toISOString() 
