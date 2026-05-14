@@ -916,12 +916,20 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 - **ZERO-BLOAT MANDATE**: Hindari menginstal paket pihak ketiga (NPM) untuk fungsi-fungsi utilitas kecil. Tulis kode sendiri atau lakukan vendorizing ke `src/lib/` untuk meminimalkan *attack surface*.
 - **MONITORING & ANTI-TYPOSQUATTING**: Selalu pastikan ejaan paket NPM disalin langsung dari dokumen resmi. Pertimbangkan integrasi Snyk / Socket.dev untuk mendeteksi anomali pada paket (seperti akses file sensitif di luar batasan wajar).
 
-## 58. DATABASE SECURITY REMEDIATION MANDATE (v3.63.6)
-- **RLS ENFORCEMENT**: Strictly enforce `SECURITY INVOKER` for all public-facing database views.
-- **PRIVILEGE REVOCATION**: Revoke `EXECUTE` on sensitive `SECURITY DEFINER` functions from public roles (anon/authenticated).
 - **SHADOWING PROTECTION**: Enforce explicit `search_path = public, extensions` on all database functions to prevent shadowing attacks and ensure deterministic execution (v3.63.6).
 
+## 59. MILLISECOND AUDIT PRECISION MANDATE (v3.63.7)
+- **PRECISION**: All high-fidelity activity logging MUST use 23-character ISO-8601 timestamps (`YYYY-MM-DDTHH:MM:SS.mmmZ`) to ensure millisecond-level deduplication.
+- **PURPOSE**: Prevent event collapsing during high-frequency transactions (e.g., rapid swaps or task claims) and ensure a perfect forensic audit trail.
+- **IMPLEMENTATION**: Update all `logActivity` calls and deduplication logic in `user-bundle.ts` and `tasks-bundle.ts` to respect this precision.
+
+## 60. MULTI-ASSET UI PARITY MANDATE (v3.63.7)
+- **DYNAMIC ASSETS**: All financial UI components (Missions, Sponsorships, Claims) MUST handle Native ETH, WETH, and USDC dynamically.
+- **NORMALIZATION**: Implementation MUST strictly follow the 18/6 decimal normalization standard (18 for ETH/WETH, 6 for USDC) using dynamic lookups from the `allowed_tokens` database table.
+- **SYMBOL RESOLUTION**: Currency symbols and labels MUST be resolved from metadata, never hardcoded. Use `formatUnits` and `parseUnits` from `viem` to handle conversions safely.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.63.6-Hardened. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.63.6.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.63.7-Hardened. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.63.7.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
+*Audit Precision Hardened: 2026-05-14. v3.63.7 MILLISECOND PRECISION & MULTI-ASSET.*

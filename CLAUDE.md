@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.63.6-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.63.7-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.6-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.6).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.63.7-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.63.7).
 
 ---
 
@@ -150,6 +150,10 @@ If you think something should be optimized, explain the trade-offs and ask permi
 If `"type": "module"` is configured in `package.json`, ALL relative imports within Serverless functions (Node.js/Vercel) MUST include explicit file extensions (`.js`) or be strongly segregated as `import type` (if TypeScript interface) to prevent `ERR_MODULE_NOT_FOUND` deployment crashes (v3.63.5).
 ## Rule 74 — DATABASE SECURITY REMEDIATION MANDATE.
 Strictly enforce `SECURITY INVOKER` for all public-facing database views. Revoke `EXECUTE` on sensitive `SECURITY DEFINER` functions from public roles. Enforce explicit `search_path = public, extensions` on all functions to prevent shadowing attacks (v3.63.6).
+## Rule 75 — MILLISECOND AUDIT PRECISION MANDATE.
+All high-fidelity activity logging MUST use 23-character ISO-8601 timestamps (YYYY-MM-DDTHH:MM:SS.mmmZ) to ensure millisecond-level deduplication and prevent event collapsing during high-frequency transactions. (v3.63.7-Hardened).
+## Rule 76 — MULTI-ASSET UI PARITY MANDATE.
+All financial UI components (Missions, Sponsorships, Claims) MUST handle Native ETH, WETH, and USDC dynamically. This includes fetching allowed tokens from the database, handling 18/6 decimal normalization, and displaying accurate currency symbols. Hardcoding "USDC" or "ETH" labels is strictly forbidden. (v3.63.7-Hardened).
 
 ---
 
@@ -213,6 +217,7 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.63.6 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.63.7 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
+*Audit Precision Hardened: 2026-05-14. v3.63.7 MILLISECOND PRECISION & MULTI-ASSET.*
