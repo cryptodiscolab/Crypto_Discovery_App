@@ -108,7 +108,6 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                 }
             } finally { setIsLoadingPoints(false); }
         };
-        };
         const fetchTokens = async () => {
             if (!chainId) return;
             const { data } = await supabase.from('allowed_tokens').select('*').eq('chain_id', chainId).eq('is_active', true);
