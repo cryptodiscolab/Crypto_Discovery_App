@@ -214,12 +214,13 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
 
 ### P2 - Hardening / Quality Tasks
 
-- [ ] **Feature: App Security Headers**
+- [x] **Feature: App Security Headers** ✅ FIXED by Kiro
   - Page/Surface: all frontend pages.
   - Code: `Raffle_Frontend/vercel.json`
   - Problem: CSP masih mengizinkan `unsafe-inline`, `unsafe-eval`, dan broad `connect-src`.
   - Risk: XSS/exfiltration blast radius lebih besar.
   - Solution: Batasi `connect-src` ke domain resmi, hilangkan `unsafe-eval` jika dependency sudah aman, gunakan nonce/hash untuk inline needs.
+  - **Fix Applied**: Tightened CSP — removed wildcards `https: http: wss: ws:` from `connect-src`, replaced with explicit allowlist (Base RPC, Supabase, WalletConnect, Coinbase, Pinata, IPFS, DexScreener, Binance, LiFi, Neynar, Farcaster). Added `default-src 'self'`, `style-src`, `img-src`, `font-src`, `frame-ancestors 'none'`, `form-action 'self'`, `base-uri 'self'`, `object-src 'none'`. Kept `unsafe-eval`/`unsafe-inline` for script-src (still needed by wagmi/viem WASM and inline React DevTools).
 
 - [ ] **Feature: Secret Scanning / Git Hygiene**
   - Page/Surface: repo release pipeline.
@@ -228,12 +229,13 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
   - Risk: Secret di working tree atau skill docs bisa lolos.
   - Solution: Tambahkan full-tree gitleaks job sebelum release; review allowlist agar tidak terlalu luas.
 
-- [ ] **Feature: Health / Ping Diagnostics**
+- [x] **Feature: Health / Ping Diagnostics** ✅ FIXED by Kiro
   - Page/Surface: `/api/ping`.
   - Code: `Raffle_Frontend/api/ping.ts`
   - Problem: Endpoint bisa mengungkap daftar env key names.
   - Risk: Info disclosure level rendah tetapi tidak ideal di production.
   - Solution: Batasi output production ke status minimal; detail env inventory hanya untuk admin/authed debug.
+  - **Fix Applied**: Default response now only returns `message` + `time`. Debug fields (`node_version`, `env_keys`) require either non-production environment OR `Authorization: Bearer ${CRON_SECRET}` header.
 
 - [ ] **Feature: Route / Action Contract Safety**
   - Page/Surface: all frontend fetch calls and API bundles.
