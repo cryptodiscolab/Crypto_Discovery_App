@@ -28,7 +28,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!RAFFLE_ADDRESS || RAFFLE_ADDRESS === '[RESERVED]') return res.status(500).json({ error: "Config missing" });
 
     try {
-        const { data: syncState } = await supabase.from('raffle_sync_state').select('last_synced_block').eq('id', 'primary_sync').single();
+        const { data: syncState, error: syncErr } = await supabase.from('raffle_sync_state').select('last_synced_block').eq('id', 'primary_sync').maybeSingle();
+        if (syncErr) console.warn('[raffle-sync] sync state read error:', syncErr.message);
+        // If state row doesn't exist, initialize it
+        if (!syncState) {
+            await supabase.from('raffle_sync_state').upsert({ id: 'primary_sync', last_synced_block: 0 });
+        }
         let fromBlock = BigInt(syncState?.last_synced_block || 0);
         const latestBlock = await rpcClient.getBlockNumber();
 

@@ -23,7 +23,7 @@ import {
     SAFE_MULTISIG,
     sanitizeError
 } from './_shared/constants.js';
-import type { Database, Json } from './_shared/database.types';
+import type { Database, Json } from './_shared/database.types.js';
 import type { AdminActionPayload } from './_shared/types.js';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

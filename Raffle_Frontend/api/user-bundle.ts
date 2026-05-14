@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './_shared/database.types';
+import type { Database } from './_shared/database.types.js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { verifyMessage, keccak256, encodePacked } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -28,7 +28,7 @@ import type {
     UgcMissionPayload, 
     UgcRafflePayload,
     Json
-} from './_shared/types';
+} from './_shared/types.js';
 
 // Move initialization inside helper to prevent top-level invocation failures
 let supabaseAdminInstance: ReturnType<typeof createClient<Database>> | null = null;
@@ -224,9 +224,10 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
             .from('user_profiles')
             .select('total_xp')
             .eq('wallet_address', cleanAddress)
-            .single();
+            .maybeSingle();
 
-        if (error || !profile) return res.status(404).json({ error: 'User not found' });
+        if (error) return res.status(500).json({ error: 'Database error' });
+        if (!profile) return res.status(404).json({ error: 'User not found' });
 
         const totalXp = profile.total_xp || 0;
         const deadline = Math.floor(Date.now() / 1000) + (10 * 60);

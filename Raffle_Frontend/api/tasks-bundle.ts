@@ -17,7 +17,7 @@ import type {
     DbDailyTask,
     ExtendedVercelRequest,
     TaskClaimResponse
-} from './_shared/types';
+} from './_shared/types.js';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

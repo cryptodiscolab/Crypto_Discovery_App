@@ -140,26 +140,29 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
 
 ### P1 - Production Stability Tasks
 
-- [ ] **Feature: Sync Signature Generation**
+- [x] **Feature: Sync Signature Generation** ✅ FIXED by Kiro
   - Page/Surface: backend user sync/signature flow.
   - Code: `Raffle_Frontend/api/user-bundle.ts`
   - Problem: Nullable singleton query memakai `.single()`.
   - Risk: PGRST116 saat row kosong bisa memutus flow.
   - Solution: Ganti ke `.maybeSingle()`, handle `null`, dan return response eksplisit.
+  - **Fix Applied**: Changed `.single()` → `.maybeSingle()` in `handleGenerateSyncSignature`. Now returns 500 on DB error vs 404 on missing user — distinct error paths instead of generic catch.
 
-- [ ] **Feature: Raffle Event Sync**
+- [x] **Feature: Raffle Event Sync** ✅ FIXED by Kiro
   - Page/Surface: backend raffle sync.
   - Code: `Raffle_Frontend/api/raffle-sync.ts`
   - Problem: Sync state fetch memakai `.single()`.
   - Risk: Cron sync bisa gagal ketika state row belum ada.
   - Solution: Ganti ke `.maybeSingle()`, buat initial sync state jika kosong.
+  - **Fix Applied**: Changed `.single()` → `.maybeSingle()`. If `raffle_sync_state` row missing, auto-creates initial state with `last_synced_block: 0`.
 
-- [ ] **Feature: API Runtime Import Hygiene**
+- [x] **Feature: API Runtime Import Hygiene** ✅ FIXED by Kiro
   - Page/Surface: Vercel API bundles.
   - Code: `api/_shared/types.ts`, `api/user-bundle.ts`, `api/admin-bundle.ts`, `api/tasks-bundle.ts`
   - Problem: Relative imports di API belum konsisten memakai `.js` extension.
   - Risk: Runtime brittle saat import berubah dari type-only ke runtime import.
   - Solution: Normalisasi ke `import type ... from './x.js'` untuk type-only dan `.js` untuk relative runtime imports.
+  - **Fix Applied**: Normalized all relative imports across `admin-bundle.ts`, `user-bundle.ts`, `tasks-bundle.ts` — type-only imports now consistently use `.js` extension (`./_shared/types.js`, `./_shared/database.types.js`).
 
 - [ ] **Feature: Token Balances**
   - Page/Surface: `/raffles`, wallet balance widgets.
