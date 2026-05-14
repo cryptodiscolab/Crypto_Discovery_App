@@ -13,9 +13,9 @@ Achieved millisecond-level audit parity across the ecosystem by upgrading activi
 ### Key Implementation Details
 1. **Millisecond Auditing**: Upgraded `logActivity` deduplication to 23-char precision (ISO-8601 with ms) in `user-bundle.ts`, ensuring high-frequency transaction transparency.
 2. **Multi-Asset Support**: Integrated full support for Native ETH, WETH, and USDC in `AdminCampaignTab` and `CreateMissionPage`. Handled asset-specific decimals (18 for ETH/WETH, 6 for USDC) dynamically.
-3. **TS Compilation Stability**: Resolved implicit `any` errors and missing prop declarations in `SponsorshipPortalSection.tsx` and `QuickSponsorPortalSection.tsx`.
+3. **TS Compilation Stability**: Resolved implicit `any` errors, missing prop declarations, and a redundant syntax brace in `TaskManager.tsx`, `SponsorshipPortalSection.tsx`, and `QuickSponsorPortalSection.tsx`.
 4. **Transaction Logic Fixes**: Migrated `CreateMissionPage.tsx` to `useSendTransaction` for native ETH payments and fixed the broken `supabaseClient` import path.
-5. **Audit Coverage Expansion**: Added automated activity hooks for Token Swaps, Raffle Wins, and UGC Campaign claims in `tasks-bundle.ts` and `SwapModal.tsx`.
+5. **Audit Coverage Expansion**: Added automated activity hooks for Token Swaps, Raffle Wins, and UGC Campaign claims in `tasks-bundle.ts` and `SwapModal.tsx`. Fixed an incorrect `wagmiConfig` module resolution path in `SwapModal.tsx` to restore logging functionality.
 
 ### Verification Matrix
 - [x] **Audit Precision**: Log deduplication confirmed at millisecond level.
