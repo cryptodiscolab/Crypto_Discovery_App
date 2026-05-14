@@ -225,7 +225,8 @@ export function BlockchainConfigSection() {
     const handleSyncTokenToDb = async (action: string, payload: any) => {
         const tid = toast.loading("Syncing Database...");
         try {
-            const message = `${action}: ${payload.symbol || payload.address}`;
+            const timestamp = new Date().toISOString();
+            const message = `${action}: ${payload.symbol || payload.address} [${timestamp}]`;
             const signature = await signMessageAsync({ message });
             await axios.post('/api/admin-bundle', {
                 wallet_address: address,
