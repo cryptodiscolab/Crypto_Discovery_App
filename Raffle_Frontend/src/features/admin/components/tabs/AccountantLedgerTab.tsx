@@ -127,9 +127,9 @@ export function AccountantLedgerTab() {
             }
 
             if (data.success) {
-                setAggregates(data.aggregates);
-                setLogs(data.logs);
-                setSyncState(data.syncState);
+                if (data.aggregates) setAggregates(data.aggregates);
+                setLogs(data.logs || []);
+                setSyncState(data.syncState || null);
             } else {
                 throw new Error(data.error || 'Failed to fetch ledger');
             }
@@ -288,7 +288,9 @@ export function AccountantLedgerTab() {
         }
     };
 
-    const MetricCard = ({ title, aggregate, icon: Icon }: { title: string; aggregate: Aggregate; icon: any }) => (
+    const MetricCard = ({ title, aggregate, icon: Icon }: { title: string; aggregate?: Aggregate; icon: any }) => {
+        const safeAggregate = aggregate || { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } };
+        return (
         <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-emerald-500/10 transition-colors" />
             <div className="flex items-center gap-3 mb-4 relative z-10">
@@ -305,13 +307,13 @@ export function AccountantLedgerTab() {
                     <div className="flex justify-between items-end">
                         <span className="text-xs font-bold text-slate-500 uppercase">USDC</span>
                         <span className="text-lg font-black text-emerald-400 font-mono">
-                            ${Number(aggregate.income.USDC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ${Number(safeAggregate.income.USDC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
                     <div className="flex justify-between items-end">
                         <span className="text-xs font-bold text-slate-500 uppercase">ETH</span>
                         <span className="text-sm font-bold text-emerald-400 font-mono">
-                            {Number(aggregate.income.ETH).toFixed(4)} ETH
+                            {Number(safeAggregate.income.ETH).toFixed(4)} ETH
                         </span>
                     </div>
                 </div>
@@ -322,19 +324,20 @@ export function AccountantLedgerTab() {
                     <div className="flex justify-between items-end">
                         <span className="text-xs font-bold text-slate-500 uppercase">USDC</span>
                         <span className="text-lg font-black text-red-400 font-mono">
-                            ${Number(aggregate.expense.USDC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ${Number(safeAggregate.expense.USDC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
                     <div className="flex justify-between items-end">
                         <span className="text-xs font-bold text-slate-500 uppercase">ETH</span>
                         <span className="text-sm font-bold text-red-400 font-mono">
-                            {Number(aggregate.expense.ETH).toFixed(4)} ETH
+                            {Number(safeAggregate.expense.ETH).toFixed(4)} ETH
                         </span>
                     </div>
                 </div>
             </div>
         </div>
     );
+    };
 
     return (
         <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto pb-32">
@@ -400,9 +403,9 @@ export function AccountantLedgerTab() {
 
             {/* Aggregates Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCard title="Last 24 Hours" aggregate={aggregates.daily} icon={TrendingUp} />
-                <MetricCard title="Last 7 Days" aggregate={aggregates.weekly} icon={Calendar} />
-                <MetricCard title="Last 30 Days" aggregate={aggregates.monthly} icon={Landmark} />
+                <MetricCard title="Last 24 Hours" aggregate={aggregates?.daily} icon={TrendingUp} />
+                <MetricCard title="Last 7 Days" aggregate={aggregates?.weekly} icon={Calendar} />
+                <MetricCard title="Last 30 Days" aggregate={aggregates?.monthly} icon={Landmark} />
             </div>
 
             {/* Balancing Report (On-Chain) */}
