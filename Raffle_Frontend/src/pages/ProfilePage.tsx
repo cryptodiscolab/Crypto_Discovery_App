@@ -175,7 +175,7 @@ export default function ProfilePage() {
 
       <main className="max-w-screen-md mx-auto space-y-6">
         {/* QUICK ACTIONS */}
-        <div className="grid grid-cols-2 gap-3 px-4 mt-6">
+        <div className="grid grid-cols-3 gap-3 px-4 mt-6">
           <button 
             onClick={() => setActiveModal('claim')}
             className={`flex flex-col items-center justify-center p-4 border rounded-3xl transition-all group active:scale-95 ${
@@ -188,11 +188,20 @@ export default function ProfilePage() {
               onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
                 ? 'text-slate-400' : 'text-emerald-400'
             }`} size={24} />
-            <span className="text-[10px] font-black text-white uppercase tracking-widest">
+            <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">
               {onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
                 ? 'CLAIMED ✓' : 'DAILY CLAIM'}
             </span>
           </button>
+          
+          <button 
+            onClick={() => setActiveModal('swap')}
+            className="flex flex-col items-center justify-center p-4 bg-amber-500/10 border border-amber-500/20 rounded-3xl hover:bg-amber-500/20 transition-all group active:scale-95"
+          >
+            <Coins className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">QUICK SWAP</span>
+          </button>
+
           <button 
             onClick={() => setActiveModal('task')}
             className="flex flex-col items-center justify-center p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl hover:bg-indigo-500/20 transition-all group active:scale-95"

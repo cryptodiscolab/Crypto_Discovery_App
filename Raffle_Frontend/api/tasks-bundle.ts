@@ -194,15 +194,15 @@ async function validateAndCalculateXP(wallet_address: string, signature: string,
     return { xp, targetId };
 }
 
-async function logActivity(wallet: string, category: string, type: string, description: string) {
+async function logActivity(wallet: string, category: string, type: string, description: string, amount: number = 0, symbol: string = 'XP') {
     try {
         await supabaseAdmin.from('user_activity_logs').insert({
             wallet_address: wallet.toLowerCase(),
             category,
             activity_type: type,
             description,
-            value_amount: 0,
-            value_symbol: 'XP',
+            value_amount: amount,
+            value_symbol: symbol,
             created_at: new Date().toISOString()
         });
     } catch (err: unknown) {
@@ -354,7 +354,7 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
             if (xpErr) throw xpErr;
         }
 
-        await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`);
+        await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`, xp, 'XP');
 
         await checkAndGrantDailyBonus(wallet_address);
         triggerOnchainSync();
@@ -408,9 +408,9 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
             p_amount: ticketCount
         });
 
-        await logActivity(wallet_address, 'PURCHASE', 'Raffle Ticket Buy', `Purchased ${ticketCount} Tickets for Raffle`);
+        await logActivity(wallet_address, 'PURCHASE', 'Raffle Ticket Buy', `Purchased ${ticketCount} Tickets for Raffle`, ticketCount, 'TICKET');
     } else {
-        await logActivity(wallet_address, 'XP', 'Task Verify', `Verified ${task_id} on ${platform}`);
+        await logActivity(wallet_address, 'XP', 'Task Verify', `Verified ${task_id} on ${platform}`, xp, 'XP');
     }
 
     await checkAndGrantDailyBonus(wallet_address);
@@ -448,7 +448,7 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
         }
     }
 
-    await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`);
+    await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`, xp, 'XP');
 
     await checkAndGrantDailyBonus(wallet_address);
     return res.status(200).json({ success: true, xp, message: `Task verified.` });
@@ -540,7 +540,14 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             if (xpErr) throw xpErr;
         }
 
-        await logActivity(wallet_address, 'XP', 'UGC Campaign Complete', `Completed UGC Campaign: ${campaign?.title || campaign_id}`);
+        await logActivity(
+            wallet_address, 
+            'XP', 
+            'UGC Campaign Complete', 
+            `Completed UGC Campaign: ${campaign?.title || campaign_id}`, 
+            Number(campaign?.reward_amount_per_user || 0), 
+            campaign?.reward_symbol || 'USDC'
+        );
 
         return res.status(200).json({
             success: true,

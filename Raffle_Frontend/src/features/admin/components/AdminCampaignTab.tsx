@@ -40,9 +40,23 @@ export default function AdminCampaignTab() {
         platform_code: 'farcaster'
     });
 
+    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
+    const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
+    const selectedToken = whitelistedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase()) || { symbol: 'ETH', decimals: 18 };
+
     useEffect(() => {
         fetchCampaigns();
+        fetchTokens();
     }, []);
+
+    async function fetchTokens() {
+        const { data } = await supabase.from('allowed_tokens').select('*').eq('is_active', true);
+        if (data) {
+            setWhitelistedTokens(data);
+            const eth = data.find(t => t.symbol === 'ETH');
+            if (eth) setSelectedTokenAddr(eth.address);
+        }
+    }
 
     async function fetchCampaigns() {
         setLoading(true);
@@ -69,10 +83,12 @@ export default function AdminCampaignTab() {
         const tid = toast.loading('Requesting signature for Campaign creation...');
 
         try {
+            const decimals = selectedToken?.decimals || 18;
             const payload = {
                 ...formData,
-                reward_amount_per_user: (parseFloat(formData.reward_amount_per_user) * 1e18).toString(),
-                total_reward_pool: (parseFloat(formData.total_reward_pool) * 1e18).toString(),
+                reward_amount_per_user: (parseFloat(formData.reward_amount_per_user) * (10 ** decimals)).toString(),
+                total_reward_pool: (parseFloat(formData.total_reward_pool) * (10 ** decimals)).toString(),
+                reward_token_address: selectedTokenAddr,
                 current_participants: 0,
                 created_at: new Date().toISOString()
             };
@@ -244,8 +260,25 @@ export default function AdminCampaignTab() {
                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white h-20 focus:outline-none focus:border-indigo-500"
                             />
                         </div>
+                        
+                        {/* Token Selector [v3.62.0] */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reward per User (ETH)</label>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reward Token</label>
+                            <select 
+                                value={selectedTokenAddr}
+                                onChange={e => setSelectedTokenAddr(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                            >
+                                {whitelistedTokens.map(t => (
+                                    <option key={t.address} value={t.address} className="bg-slate-900">
+                                        {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reward per User ({selectedToken.symbol})</label>
                             <input
                                 type="number" step="0.0001"
                                 value={formData.reward_amount_per_user}
@@ -269,10 +302,11 @@ export default function AdminCampaignTab() {
                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                        {saving ? 'Processing...' : 'Create Secure Reward Campaign'}
+                        {saving ? 'Processing...' : `Create Secure ${selectedToken.symbol} Reward Campaign`}
                     </button>
                 </form>
-            )}
+            )
+}
 
             <div className="space-y-3">
                 {loading ? (

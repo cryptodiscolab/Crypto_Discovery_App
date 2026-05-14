@@ -20,6 +20,9 @@ interface QuickSponsorPortalSectionProps {
     minPoolUSD?: bigint;
     totalPoolUSD: number;
     requiredTokens: bigint;
+    whitelistedTokens: any[];
+    selectedTokenAddr: string;
+    onTokenChange: (val: string) => void;
     buildSponsorCall: () => any;
     handleTxSuccess: () => void;
 }
@@ -36,9 +39,13 @@ export function QuickSponsorPortalSection({
     minPoolUSD,
     totalPoolUSD,
     requiredTokens,
+    whitelistedTokens,
+    selectedTokenAddr,
+    onTokenChange,
     buildSponsorCall,
     handleTxSuccess
 }: QuickSponsorPortalSectionProps) {
+    const selectedToken = whitelistedTokens.find((t: any) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     return (
         <div className="bg-[#121214] p-5 rounded-2xl border border-white/5 space-y-4 text-left relative overflow-hidden">
             <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
@@ -95,6 +102,22 @@ export function QuickSponsorPortalSection({
                         <input type="number" step="0.01" value={sponsorRewardPerUser} onChange={e => onSponsorRewardPerUserChange(e.target.value)} className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] text-green-500 font-black outline-none" />
                     </div>
                 </div>
+
+                {/* ASSET SELECTOR */}
+                <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-[0.2em] px-1">Sponsorship Asset</label>
+                    <select 
+                        value={selectedTokenAddr} 
+                        onChange={e => onTokenChange(e.target.value)}
+                        className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500/50"
+                    >
+                        {whitelistedTokens.map((t: any, i: number) => (
+                            <option key={i} value={t.address} className="bg-[#121214]">
+                                {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             <div className="p-4 bg-[#0a0a0c] rounded-xl border-2 border-indigo-500/30 flex justify-between items-center relative overflow-hidden group">
@@ -105,7 +128,9 @@ export function QuickSponsorPortalSection({
                 </div>
                 <div className="flex flex-col items-end relative z-10">
                     <span className="text-[11px] font-black text-slate-600 uppercase tracking-[0.2em]">Token Requirement</span>
-                    <span className="text-[13px] font-black text-indigo-400 font-mono">{formatUnits(requiredTokens, 18)} $DISCO</span>
+                    <span className="text-[13px] font-black text-indigo-400 font-mono">
+                        {formatUnits(requiredTokens, selectedToken?.decimals || 18)} ${selectedToken?.symbol || 'ETH'}
+                    </span>
                 </div>
             </div>
 

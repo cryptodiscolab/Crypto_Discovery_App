@@ -2,13 +2,15 @@ import { useState, useMemo, useEffect } from 'react';
 import { 
     Zap, Users, DollarSign, Calculator, Info, 
     CheckCircle2, ArrowRight, Loader2, 
-    Link as LinkIcon, Shield, Wallet, ChevronDown, Lock, Clock
+    Link as LinkIcon, Shield, Wallet, ChevronDown, Lock, Clock, AlertCircle, Coins
 } from 'lucide-react';
-import { useAccount, useWriteContract, usePublicClient, useSignMessage } from 'wagmi';
-import { parseUnits, erc20Abi } from 'viem';
+import { useAccount, useWriteContract, usePublicClient, useSignMessage, useChainId, useSendTransaction } from 'wagmi';
+import { parseUnits, formatUnits, erc20Abi } from 'viem';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { CONTRACTS } from '../lib/contracts';
+import { SwapModal } from '../components/SwapModal';
+import { supabase } from '../lib/supabaseClient';
 
 // Platform-specific action terms
 const PLATFORM_ACTIONS = {
@@ -82,10 +84,12 @@ interface MissionFormData {
 
 export function CreateMissionPage() {
     const { address, isConnected } = useAccount();
+    const chainId = useChainId();
     const navigate = useNavigate();
     const publicClient = usePublicClient();
     const { writeContractAsync } = useWriteContract();
     const { signMessageAsync } = useSignMessage();
+    const { sendTransactionAsync } = useSendTransaction();
 
     // System Config State
     const [ugcConfig, setUgcConfig] = useState<UgcConfig>({
@@ -110,6 +114,13 @@ export function CreateMissionPage() {
         minAccountAge: '0',
         minNeynarScore: '0'
     });
+
+    // Asset Management [v3.62.0]
+    const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
+    const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
+    const selectedToken = whitelistedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
 
     // Reset actions when platform changes
     const handlePlatformChange = (newPlatform: string) => {
@@ -145,6 +156,50 @@ export function CreateMissionPage() {
         }
     };
 
+    // Fetch whitelisted tokens & user balance [v3.62.0]
+    useEffect(() => {
+        const init = async () => {
+            if (!address || !publicClient || !chainId) return;
+            try {
+                const { data: tokens } = await supabase.from('allowed_tokens').select('*').eq('chain_id', chainId).eq('is_active', true);
+                if (tokens && tokens.length > 0) {
+                    setWhitelistedTokens(tokens);
+                    const defaultToken = tokens.find((t: any) => t.symbol === 'USDC') || tokens[0];
+                    setSelectedTokenAddr(defaultToken.address);
+                }
+                fetchCurrentBalance();
+            } catch (err) {
+                console.error('Initialization failed:', err);
+            }
+        };
+        init();
+    }, [address, chainId]);
+
+    const fetchCurrentBalance = async () => {
+        if (!address || !publicClient || !selectedTokenAddr) return;
+        try {
+            if (selectedTokenAddr === '0x0000000000000000000000000000000000000000') {
+                const bal = await publicClient.getBalance({ address });
+                setTokenBalance(bal);
+            } else {
+                const bal = await publicClient.readContract({
+                    address: selectedTokenAddr as `0x${string}`,
+                    abi: erc20Abi,
+                    functionName: 'balanceOf',
+                    args: [address]
+                });
+                setTokenBalance(bal as bigint);
+            }
+        } catch (err) {
+            console.error('Balance fetch failed:', err);
+        }
+    };
+
+    useEffect(() => {
+        const interval = setInterval(fetchCurrentBalance, 10000);
+        return () => clearInterval(interval);
+    }, [address, selectedTokenAddr]);
+
     // Calculator Logic
     const stats = useMemo(() => {
         const rewardPerUser = parseFloat(formData.reward_amount_per_user) || 0;
@@ -153,14 +208,15 @@ export function CreateMissionPage() {
 
         const rewardPool = rewardPerUser * participants;
         const totalAmount = rewardPool + listingFee;
+        const decimals = selectedToken?.decimals || 6;
 
         return {
             rewardPool: rewardPool.toFixed(2),
             listingFee: listingFee.toFixed(2),
             totalAmount: totalAmount.toFixed(2),
-            totalAmountRaw: parseUnits(totalAmount.toString(), 6)
+            totalAmountRaw: parseUnits(totalAmount.toString(), decimals)
         };
-    }, [formData, ugcConfig]);
+    }, [formData, ugcConfig, selectedToken]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -181,20 +237,28 @@ export function CreateMissionPage() {
         let txHash: `0x${string}` | undefined;
 
         try {
-            if (!CONTRACTS.USDC) throw new Error("USDC address not configured");
+            const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
             
-            // 1. USDC Payment (Transfer to Treasury)
-            txHash = await writeContractAsync({
-                address: CONTRACTS.USDC as `0x${string}`,
-                abi: erc20Abi,
-                functionName: 'transfer',
-                args: [ugcConfig.treasury_address, stats.totalAmountRaw]
-            });
+            // 1. Payment (Transfer to Treasury)
+            if (isNative) {
+                txHash = await sendTransactionAsync({
+                    to: ugcConfig.treasury_address as `0x${string}`,
+                    value: stats.totalAmountRaw
+                });
+            } else {
+                txHash = await writeContractAsync({
+                    address: selectedTokenAddr as `0x${string}`,
+                    abi: erc20Abi,
+                    functionName: 'transfer',
+                    args: [ugcConfig.treasury_address, stats.totalAmountRaw]
+                });
+            }
 
             toast.loading("Verifying transaction on blockchain...", { id: tid });
             
             // Wait for tx confirmation
             if (!publicClient) throw new Error("RPC Client not found");
+            if (!txHash) throw new Error("Transaction hash not generated");
             await publicClient.waitForTransactionReceipt({ hash: txHash });
 
             toast.loading("Synchronizing Mission with Discovery Engine...", { id: tid });
@@ -216,7 +280,8 @@ export function CreateMissionPage() {
                 sponsor_address: address?.toLowerCase() || '',
                 duration_days: parseInt(formData.duration_days),
                 status: 'pending',
-                reward_symbol: 'USDC',
+                reward_symbol: selectedToken?.symbol || 'USDC',
+                payment_token: selectedTokenAddr,
                 payment_tx_hash: txHash,
                 is_active: false,
                 is_verified_payment: false,
@@ -528,19 +593,36 @@ export function CreateMissionPage() {
                             <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-6 rounded-[2.5rem]">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-4">
-                                        <label className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4" /> REWARD PER USER (USDC)
-                                        </label>
-                                        <div className="bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[2rem] group focus-within:border-emerald-500/30 transition-all">
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0.01"
-                                                className="w-full bg-transparent text-white font-black text-3xl outline-none font-mono"
-                                                value={formData.reward_amount_per_user}
-                                                onChange={e => setFormData(prev => ({ ...prev, reward_amount_per_user: e.target.value }))}
-                                            />
-                                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-2">Paid in USDC via Base</p>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
+                                            <select 
+                                                value={selectedTokenAddr}
+                                                onChange={(e) => setSelectedTokenAddr(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer"
+                                            >
+                                                {whitelistedTokens.map((t, i) => (
+                                                    <option key={i} value={t.address} className="bg-zinc-900">
+                                                        {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <DollarSign className="w-4 h-4" /> REWARD PER USER ({selectedToken?.symbol || 'USDC'})
+                                            </label>
+                                            <div className="bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[2rem] group focus-within:border-emerald-500/30 transition-all">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    className="w-full bg-transparent text-white font-black text-3xl outline-none font-mono"
+                                                    value={formData.reward_amount_per_user}
+                                                    onChange={e => setFormData(prev => ({ ...prev, reward_amount_per_user: e.target.value }))}
+                                                />
+                                                <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-2">Paid in {selectedToken?.symbol || 'USDC'} via Base</p>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="space-y-4">
@@ -600,7 +682,7 @@ export function CreateMissionPage() {
                                         <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest">{formData.reward_amount_per_user} × {formData.max_participants} USERS</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-2xl font-black text-white font-mono tracking-tighter">{stats.rewardPool} <span className="text-xs text-slate-500 font-bold">USDC</span></p>
+                                        <p className="text-2xl font-black text-white font-mono tracking-tighter">{stats.rewardPool} <span className="text-xs text-slate-500 font-bold">{selectedToken?.symbol || 'USDC'}</span></p>
                                     </div>
                                 </div>
 
@@ -617,13 +699,36 @@ export function CreateMissionPage() {
                                 <div className="h-px bg-white/5" />
 
                                 <div className="pt-2">
+                                    {/* [v3.62.0] Balance Verification Guard */}
+                                    {tokenBalance < stats.totalAmountRaw && (
+                                        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl border-dashed">
+                                            <div className="flex items-start gap-3">
+                                                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                                <div className="space-y-2">
+                                                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Insufficient Balance</p>
+                                                    <p className="text-[9px] font-bold text-amber-400/70 uppercase tracking-tight leading-relaxed">
+                                                        Saldo Anda ({formatUnits(tokenBalance, selectedToken?.decimals || 18)} {selectedToken?.symbol || 'USDC'}) tidak cukup untuk membayar total biaya ({stats.totalAmount} {selectedToken?.symbol || 'USDC'}).
+                                                    </p>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setIsSwapModalOpen(true)}
+                                                        className="w-full mt-2 py-2 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/30 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <Coins className="w-3.5 h-3.5" />
+                                                        GET {selectedToken?.symbol || 'USDC'} via SWAP
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="flex justify-between items-end mb-6">
                                         <span className="text-white text-[12px] font-black uppercase tracking-[0.3em]">TOTAL DUE</span>
                                         <div className="text-right">
                                             <p className="text-5xl font-black text-white font-mono tracking-tighter mb-1">{stats.totalAmount}</p>
                                             <div className="flex items-center justify-end gap-2 text-indigo-500">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                                                <span className="text-[11px] font-black uppercase tracking-widest">USDC ON BASE</span>
+                                                <span className="text-[11px] font-black uppercase tracking-widest">{selectedToken?.symbol || 'USDC'} ON BASE</span>
                                             </div>
                                         </div>
                                     </div>
@@ -666,6 +771,7 @@ export function CreateMissionPage() {
                     </div>
                 </div>
             </div>
+            {isSwapModalOpen && <SwapModal isOpen={true} onClose={() => setIsSwapModalOpen(false)} />}
         </div>
     );
 }

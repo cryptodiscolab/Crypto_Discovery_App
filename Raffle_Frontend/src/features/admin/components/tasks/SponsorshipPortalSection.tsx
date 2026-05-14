@@ -1,4 +1,5 @@
 import { Share2, RefreshCw } from 'lucide-react';
+import { formatUnits, parseUnits } from 'viem';
 
 interface SponsorshipPortalSectionProps {
     sponsorTitle: string;
@@ -15,6 +16,9 @@ interface SponsorshipPortalSectionProps {
     onIsBaseSocialRequiredChange: (val: boolean) => void;
     currentTokenPrice?: bigint;
     currentPlatformFee?: bigint;
+    whitelistedTokens: any[];
+    selectedTokenAddr: string;
+    onTokenChange: (addr: string) => void;
     onCreateSponsorship: () => void;
     isSponsorSaving: boolean;
 }
@@ -28,9 +32,13 @@ export function SponsorshipPortalSection({
     isBaseSocialRequired, onIsBaseSocialRequiredChange,
     currentTokenPrice,
     currentPlatformFee,
+    whitelistedTokens,
+    selectedTokenAddr,
+    onTokenChange,
     onCreateSponsorship,
     isSponsorSaving
 }: SponsorshipPortalSectionProps) {
+    const selectedToken = whitelistedTokens.find((t: any) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     return (
         <div className="glass-card p-10 bg-emerald-950/5 border border-emerald-500/10 rounded-[3rem] relative overflow-hidden group/main">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/5 blur-[120px] rounded-full -mr-48 -mt-48 transition-all duration-1000 group-hover/main:bg-emerald-600/10" />
@@ -66,6 +74,22 @@ export function SponsorshipPortalSection({
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Internal Contact</label>
                             <input value={sponsorEmail} onChange={(e) => onSponsorEmailChange(e.target.value)} placeholder="sponsor@example.com" className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-white font-black uppercase tracking-widest focus:border-emerald-500/50 outline-none transition-all text-sm" />
+                        </div>
+
+                        {/* ASSET SELECTOR [v3.62.0] */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
+                            <select 
+                                value={selectedTokenAddr} 
+                                onChange={e => onTokenChange(e.target.value)}
+                                className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-white text-sm font-black uppercase tracking-widest focus:border-emerald-500/50 outline-none appearance-none"
+                            >
+                                {whitelistedTokens.map((t: any, i: number) => (
+                                    <option key={i} value={t.address} className="bg-zinc-900">
+                                        {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -121,9 +145,15 @@ export function SponsorshipPortalSection({
                                     <span className="text-sm font-black text-white">${(parseFloat(rewardPerUserUSD) * parseFloat(targetClaims)).toLocaleString()} USD</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Native Liquidity</span>
-                                    <span className="text-sm font-black text-emerald-400">
-                                        {currentTokenPrice ? ((parseFloat(rewardPerUserUSD) * parseFloat(targetClaims) * 1e18) / Number(currentTokenPrice)).toFixed(2) : '0.00'} CT
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sponsorship Asset</span>
+                                    <span className="text-sm font-black text-emerald-400 uppercase">
+                                        {selectedToken?.symbol || 'ETH'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Asset Requirement</span>
+                                    <span className="text-sm font-black text-emerald-400 font-mono">
+                                        {formatUnits(parseUnits((parseFloat(rewardPerUserUSD || '0') * parseFloat(targetClaims || '0')).toString(), selectedToken?.decimals || 18), selectedToken?.decimals || 18)}
                                     </span>
                                 </div>
                                 <div className="pt-4 border-t border-white/5 flex justify-between items-center">

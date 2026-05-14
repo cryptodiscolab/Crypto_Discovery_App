@@ -30,10 +30,12 @@ interface LiFiQuote {
 const FALLBACK_TOKENS: Record<number, Token[]> = {
   8453: [
     { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' },
+    { address: '0x4200000000000000000000000000000000000006', decimals: 18, symbol: 'WETH', logo: 'Ξ' },
     { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6, symbol: 'USDC', logo: '$' },
   ],
   84532: [
     { address: '0x0000000000000000000000000000000000000000', decimals: 18, symbol: 'ETH', logo: 'Ξ' },
+    { address: '0x4200000000000000000000000000000000000006', decimals: 18, symbol: 'WETH', logo: 'Ξ' },
     { address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6, symbol: 'USDC', logo: '$' },
   ]
 };
@@ -170,6 +172,35 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           
         },
       });
+      
+      // Log Swap to User Activity History [v3.63.7]
+      try {
+        const timestamp = new Date().toISOString();
+        const message = `Log Swap Activity\nFrom: ${amountIn} ${fromToken.symbol}\nTo: ${estimatedOut} ${toToken.symbol}\nUser: ${address?.toLowerCase()}\nTime: ${timestamp}`;
+        const config = { address: address as `0x${string}`, message };
+        // We use a separate signature for logging security
+        const { signMessage } = await import('wagmi/actions');
+        const { config: wagmiConfigActual } = await import('../lib/wagmi');
+        const signature = await signMessage(wagmiConfigActual, config);
+
+        await fetch('/api/user-bundle?action=log-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet_address: address,
+            signature,
+            message,
+            category: 'SWAP',
+            type: 'Token Conversion',
+            description: `Swapped ${amountIn} ${fromToken.symbol} for ${estimatedOut} ${toToken.symbol}`,
+            amount: parseFloat(amountIn),
+            symbol: fromToken.symbol
+          })
+        });
+      } catch (logErr) {
+        console.warn("Swap logging skipped:", logErr);
+      }
+
       toast.success("Swap Successful!", { id: tid });
       setAmountIn('');
       setQuote(null);

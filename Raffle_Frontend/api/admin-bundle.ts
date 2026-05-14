@@ -562,7 +562,7 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
         max_participants: parseInt(payload.max_participants) || 0,
         total_reward_pool: parseFloat(payload.total_reward_pool) || 0,
         remaining_reward_pool: parseFloat(payload.total_reward_pool) || 0,
-        reward_token_address: (payload.reward_token_address || USDC_ADDRESS).toLowerCase(),
+        reward_token_address: (payload.reward_token_address || (payload as any).payment_token || USDC_ADDRESS).toLowerCase(),
         duration_days: payload.duration_days || 7,
         creation_tx_hash: payload.creation_tx_hash || '',
         platform_fee_paid: 0,

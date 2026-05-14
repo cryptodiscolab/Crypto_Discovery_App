@@ -537,7 +537,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
 
     try {
         const cleanWallet = wallet.toLowerCase();
-        const parsedLimit = Math.min(parseInt(limit) || 50, 100);
+        const parsedLimit = Math.min(parseInt(limit) || 100, 200);
 
         // 1. Fetch from user_activity_logs (explicit logs)
         let logsQuery = getSupabaseAdmin()
@@ -600,8 +600,9 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
         }));
 
         // Merge and deduplicate (prefer explicit logs over claim-derived entries)
-        const logTimestamps = new Set(activityLogs.map((l: { created_at: string }) => l.created_at?.slice(0, 16)));
-        const uniqueClaimLogs = claimLogs.filter((c: { created_at: string }) => !logTimestamps.has(c.created_at?.slice(0, 16)));
+        // [FIX v3.63.7] Use 23 chars (millisecond precision) for deduplication to prevent collapsing multiple actions in same second.
+        const logTimestamps = new Set(activityLogs.map((l: { created_at: string }) => l.created_at?.slice(0, 23)));
+        const uniqueClaimLogs = claimLogs.filter((c: { created_at: string }) => !logTimestamps.has(c.created_at?.slice(0, 23)));
 
         const combined = [...activityLogs, ...uniqueClaimLogs]
             .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())

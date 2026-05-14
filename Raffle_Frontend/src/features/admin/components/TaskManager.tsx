@@ -91,6 +91,11 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     const [batchTargetClaims, setBatchTargetClaims] = useState('500');
     const [batchIsBaseSocialRequired, setBatchIsBaseSocialRequired] = useState(false);
 
+    // --- TOKEN WHITELIST ---
+    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
+    const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
+    const selectedToken = whitelistedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+
     // --- INITIALIZATION ---
     useEffect(() => {
         const fetchPoints = async () => {
@@ -103,8 +108,19 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                 }
             } finally { setIsLoadingPoints(false); }
         };
+        };
+        const fetchTokens = async () => {
+            if (!chainId) return;
+            const { data } = await supabase.from('allowed_tokens').select('*').eq('chain_id', chainId).eq('is_active', true);
+            if (data) {
+                setWhitelistedTokens(data);
+                const eth = data.find(t => t.symbol === 'ETH');
+                if (eth) setSelectedTokenAddr(eth.address);
+            }
+        };
         fetchPoints();
-    }, []);
+        fetchTokens();
+    }, [chainId]);
 
     const getGlobalPoints = (platform: string, action: string, currentSettings: PointSetting[] = pointSettings) => {
         if (!currentSettings || currentSettings.length === 0) return 0;
@@ -152,13 +168,18 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     };
 
     const buildQuickSponsorCall = () => {
-        const totalPool = parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), 6);
+        const decimals = selectedToken?.decimals || 18;
+        const totalPool = parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), decimals);
+        const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
+        
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any, functionName: 'buySponsorshipWithToken',
-                args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, totalPool, (CONTRACTS.CREATOR_TOKEN as `0x${string}`) || '0x0000000000000000000000000000000000000000']
+                abi: DAILY_APP_ABI as any, 
+                functionName: 'buySponsorshipWithToken',
+                args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, isNative ? 0n : totalPool, selectedTokenAddr]
             }),
+            value: isNative ? totalPool : 0n
         }];
     };
 
@@ -192,12 +213,16 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         if (!batchSponsorTitle || !batchSponsorLink) return toast.error("Missing fields");
         const tid = toast.loading("Processing Batch Sponsorship...");
         try {
-            const totalPool = BigInt(Math.round(parseFloat(batchRewardPerUserUSD) * Number(batchTargetClaims) * 1e6));
+            const decimals = selectedToken?.decimals || 18;
+            const totalPool = parseUnits((parseFloat(batchRewardPerUserUSD) * Number(batchTargetClaims)).toString(), decimals);
+            const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
+            
             await writeContractAsync({
                 address: DAILY_APP_ADDRESS as `0x${string}`,
                 abi: DAILY_APP_ABI,
                 functionName: 'buySponsorshipWithToken',
-                args: [0n, [batchSponsorTitle], [batchSponsorLink], batchSponsorEmail, totalPool, CONTRACTS.CREATOR_TOKEN as `0x${string}`]
+                args: [0n, [batchSponsorTitle], [batchSponsorLink], batchSponsorEmail, isNative ? 0n : totalPool, selectedTokenAddr],
+                value: isNative ? totalPool : 0n
             });
             toast.success("Sponsorship transaction submitted!", { id: tid });
         } catch (e: unknown) {
@@ -247,6 +272,27 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
+                    });
+
+                    // Log to User Activity History [v3.63.7]
+                    await fetch('/api/user-bundle?action=log-activity', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            wallet_address: address,
+                            signature,
+                            message,
+                            category: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL' ? 'Sponsorship' : 'Task',
+                            type: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL' ? 'Sponsor Hub' : 'Task Forge',
+                            description: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL' 
+                                ? `Created Sponsorship: ${quickSponsorTitle || batchSponsorTitle}` 
+                                : `Created Task Batch: ${tasksBatch.filter(t => t.title.trim() !== '').length} tasks`,
+                            amount: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL'
+                                ? parseFloat(quickSponsorRewardPerUser || batchRewardPerUserUSD) * parseFloat(quickSponsorTotalClaims || batchTargetClaims)
+                                : 0,
+                            symbol: selectedToken?.symbol || 'ETH',
+                            txHash: receipt.transactionHash
+                        })
                     });
 
                     toast.success("Ecosystem Hardened & Synced", { id: tid });
@@ -318,11 +364,14 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                                 sponsorTotalClaims={quickSponsorTotalClaims} onSponsorTotalClaimsChange={setQuickSponsorTotalClaims}
                                 sponsorRewardPerUser={quickSponsorRewardPerUser} onSponsorRewardPerUserChange={setQuickSponsorRewardPerUser}
                                 sponsorIsBaseSocialRequired={quickSponsorIsBaseSocialRequired} onSponsorIsBaseSocialRequiredChange={setQuickSponsorIsBaseSocialRequired}
+                                whitelistedTokens={whitelistedTokens}
+                                selectedTokenAddr={selectedTokenAddr}
+                                onTokenChange={setSelectedTokenAddr}
                                 platformFee={platformFee}
                                 minRewardUSD={minRewardUSD}
                                 minPoolUSD={minPoolUSD}
                                 totalPoolUSD={Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)}
-                                requiredTokens={0n} // TODO: calculate based on price
+                                requiredTokens={parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), selectedToken?.decimals || 18)}
                                 buildSponsorCall={buildQuickSponsorCall}
                                 handleTxSuccess={handleTxSuccess}
                             />
@@ -349,6 +398,9 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                                 isBaseSocialRequired={batchIsBaseSocialRequired} onIsBaseSocialRequiredChange={setBatchIsBaseSocialRequired}
                                 currentTokenPrice={tokenPrice}
                                 currentPlatformFee={platformFee}
+                                whitelistedTokens={whitelistedTokens}
+                                selectedTokenAddr={selectedTokenAddr}
+                                onTokenChange={setSelectedTokenAddr}
                                 onCreateSponsorship={handleCreateBatchSponsorship}
                                 isSponsorSaving={isWaiting}
                             />
