@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-05-12*
-*PRD Version: v3.63.5-Hardened (TypeScript Hardening & Node.js Supply Chain Security)*
+*Last Updated: 2026-05-14*
+*PRD Version: v3.63.7-Hardened (High-Fidelity Auditing & Multi-Asset Infrastructure)*
 
 ---
 
@@ -240,6 +240,8 @@ State sharing via `agents_vault` table di Supabase.
 - 🚫 **Permission-Seeking for Maintenance**: DILARANG KERAS meminta izin (asking for permission) untuk melakukan update dokumentasi (PRD, SOT, Task Workflow) atau pemeliharaan memori (agents_vault). Tugas-tugas ini adalah **MANDATORY & ATOMIC**—jika kode berubah, dokumen WAJIB diupdate secara otonom.
 - 🚫 **SBT Tier Jumping (v3.56.4)**: DILARANG KERAS berasumsi user bisa melompati tier. Kontrak menolak `Rookie -> Gold`. Wajib `Rookie -> Bronze -> Silver -> Gold`.
 - 🚫 **SBT Transfer Assumption (v3.56.4)**: DILARANG KERAS berasumsi SBT bisa dipindahkan. NFT Tier adalah **Non-Transferable**.
+- **Rule 75 (Millisecond Audit Precision)**: Seluruh activity logs WAJIB menggunakan 23-character ISO-8601 timestamps (e.g., `2024-05-14T12:00:00.000Z`) untuk menjamin deduplikasi level milidetik.
+- **Rule 76 (Multi-Asset UI Parity)**: Seluruh mission dan sponsorship dashboards WAJIB mendukung ETH, WETH, dan USDC. Dilarang keras menggunakan hardcoded currency labels; ambil data symbol dan decimals secara dinamis dari `allowed_tokens`.
 
 ### Section 4.1: THE NATIVE+ BALANCED DESIGN STANDARD (v3.41.0)
 - **Primary Standard (Labels)**: Exactly `text-[11px] font-black uppercase tracking-widest` (`.label-native`).
@@ -506,5 +508,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.63.5 - Hardened & Synchronized.*
+*Constitution v3.63.7 - Hardened & Synchronized.*
 *Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened.*

@@ -5,10 +5,10 @@ description: >
   - **Anti-Hallucination Mandate (v3.63.5-Hardened)**: Mandatory **Parity Audit** via `parity-audit` endpoint before closing any architectural task. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.63.5-Hardened
+version: v3.63.7-Hardened
 ---
 
-## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.5-Hardened)
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.7-Hardened)
 - **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
 - **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
 - **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
@@ -94,7 +94,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.63.5-Hardened
+- **Versi Terakhir:** v3.63.7-Hardened
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -144,6 +144,8 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 130. **RPC INDEXING FALLBACK MANDATE (v3.26.0)**: APIs MUST support `tx_hash` as a final verification fallback for claims and XP sync to bypass indexer lag.
 131. **VIEW SYNC MANDATE (v3.26.0)**: Re-align `v_user_full_profile` SQL View whenever columns are added to `user_profiles`.
 132. **TIER PRECISION (v3.26.0)**: Prohibit the use of `xp_required` in code logic; always use `min_xp` from `sbt_thresholds`.
+133. **Rule 75 (Millisecond Audit Precision)**: Seluruh activity logs WAJIB menggunakan 23-character ISO-8601 timestamps (e.g., `2024-05-14T12:00:00.000Z`) untuk menjamin deduplikasi level milidetik.
+134. **Rule 76 (Multi-Asset UI Parity)**: Seluruh mission dan sponsorship dashboards WAJIB mendukung ETH, WETH, dan USDC. Dilarang keras menggunakan hardcoded currency labels; ambil data symbol dan decimals secara dinamis dari `allowed_tokens`.
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
@@ -151,7 +153,7 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
-| **PRD v3.63.5-Hardened** | `2026-05-08T22:45:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
+| **PRD v3.63.7-Hardened** | `2026-05-14T12:45:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |
 
 ## 🧭 Workspace Navigation & Data Flow (MANDATORY)
