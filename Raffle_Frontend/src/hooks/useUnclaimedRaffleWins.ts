@@ -48,8 +48,8 @@ export function useUnclaimedRaffleWins() {
             }
 
             // 2. Check which ones the user already claimed (from user_task_claims)
-            const raffleIds = finalizedRaffles.map(r => r.id);
-            const claimTaskIds = raffleIds.map(id => `raffle_win_${id}`);
+            const raffleIds = finalizedRaffles.map((r: { id: number }) => r.id);
+            const claimTaskIds = raffleIds.map((id: number) => `raffle_win_${id}`);
             
             const { data: existingClaims } = await supabase
                 .from('user_task_claims')
@@ -57,11 +57,11 @@ export function useUnclaimedRaffleWins() {
                 .eq('wallet_address', address.toLowerCase())
                 .in('task_id', claimTaskIds);
 
-            const claimedSet = new Set((existingClaims || []).map(c => c.task_id));
+            const claimedSet = new Set((existingClaims || []).map((c: { task_id: string }) => c.task_id));
 
             // 3. Filter to unclaimed finalized raffles
             const potentialWins = finalizedRaffles.filter(
-                r => !claimedSet.has(`raffle_win_${r.id}`)
+                (r: { id: number }) => !claimedSet.has(`raffle_win_${r.id}`)
             );
 
             if (potentialWins.length === 0) {
@@ -156,13 +156,13 @@ export function useUnclaimedRaffleWins() {
                                 fetch('/api/notify', {
                                     method: 'POST',
                                     headers: { 
-                                        'content-type': 'application/json',
-                                        'authorization': `Bearer ${import.meta.env.VITE_CRON_SECRET || ''}`
+                                        'content-type': 'application/json'
                                     },
                                     body: JSON.stringify({
                                         fid: profile.fid,
                                         message: `🏆 Congratulations! You won ${win.title || `Raffle #${win.raffleId}`}! Prize: ${prizeETH.toFixed(4)} ETH. Claim now at https://crypto-discovery-app.vercel.app/raffles`,
-                                        type: 'mention'
+                                        type: 'mention',
+                                        wallet: address
                                     })
                                 }).catch(() => {}); // fire-and-forget
                             }

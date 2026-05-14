@@ -99,7 +99,8 @@ async function handleFarcasterCheck(req: VercelRequest, res: VercelResponse) {
 async function handleSyncEvents(req: VercelRequest, res: VercelResponse) {
     const startTime = Date.now();
     const authHeader = req.headers['authorization'];
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) return res.status(401).json({ error: "Unauthorized" });
+    if (!CRON_SECRET) return res.status(500).json({ error: "CRON_SECRET not configured" });
+    if (authHeader !== `Bearer ${CRON_SECRET}`) return res.status(401).json({ error: "Unauthorized" });
 
     try {
         const { data: state } = await supabase.from("sync_state").select("last_synced_block").eq("id", "main").maybeSingle();

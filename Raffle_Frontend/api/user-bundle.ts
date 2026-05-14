@@ -463,7 +463,19 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleUpdateProfile(req: VercelRequest, res: VercelResponse) {
-    const { wallet, signature, message, payload } = req.body as UpdateProfilePayload;
+    const { wallet, wallet_address, signature, message, payload, heartbeat } = req.body;
+
+    // Lightweight heartbeat: just update updated_at (no signature required for non-sensitive timestamp)
+    if (heartbeat && (wallet_address || wallet)) {
+        const addr = (wallet_address || wallet).toLowerCase();
+        const { error } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('wallet_address', addr);
+        if (error) return res.status(500).json({ error: 'Heartbeat failed' });
+        return res.status(200).json({ success: true });
+    }
+
     if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing update data' });
 
     try {

@@ -9,8 +9,11 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const CHAIN_ID = Number(getEnv('VITE_CHAIN_ID', '84532'));
 const chain = CHAIN_ID === 8453 ? base : baseSepolia;
-const RPC_URL = getEnv('BASE_SEPOLIA_RPC_URL', 'https://sepolia.base.org');
-const V15_ADDRESS = getEnv('VITE_V12_CONTRACT_ADDRESS_SEPOLIA') as `0x${string}`;
+const RPC_URL = CHAIN_ID === 8453 
+    ? getEnv('BASE_MAINNET_RPC_URL', 'https://mainnet.base.org')
+    : getEnv('BASE_SEPOLIA_RPC_URL', 'https://sepolia.base.org');
+// Server-side env: prefer V15_CONTRACT_ADDRESS, fallback to legacy VITE_V12 naming
+const V15_ADDRESS = getEnv('V15_CONTRACT_ADDRESS', getEnv('VITE_V12_CONTRACT_ADDRESS_SEPOLIA', '')) as `0x${string}`;
 const PRIVATE_KEY = getEnv('PRIVATE_KEY') as `0x${string}`;
 
 const BATCH_MIGRATE_ABI = [{
@@ -41,16 +44,26 @@ const USER_STATS_ABI = [{
 }];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // Auth: cron secret or admin
+    // Auth: cron secret (fail-closed)
     const authHeader = req.headers.authorization;
     const cronSecret = getEnv('CRON_SECRET');
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+        return res.status(500).json({ error: 'CRON_SECRET not configured' });
+    }
+    if (authHeader !== `Bearer ${cronSecret}`) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
     try {
         if (!V15_ADDRESS || !PRIVATE_KEY) {
             return res.status(500).json({ error: 'Missing V15_ADDRESS or PRIVATE_KEY' });
+        }
+
+        // Chain ID assertion: verify we're targeting the expected network
+        const publicClient = createPublicClient({ chain, transport: http(RPC_URL) });
+        const liveChainId = await publicClient.getChainId();
+        if (liveChainId !== CHAIN_ID) {
+            return res.status(500).json({ error: `Chain ID mismatch: expected ${CHAIN_ID}, got ${liveChainId}` });
         }
 
         // 1. Fetch all users from DB
@@ -64,7 +77,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // 2. Read on-chain XP for each user
-        const publicClient = createPublicClient({ chain, transport: http(RPC_URL) });
         const drifted: { address: string; dbXp: number; onchainXp: number; tier: number }[] = [];
 
         for (const u of users) {

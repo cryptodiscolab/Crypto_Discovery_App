@@ -140,11 +140,11 @@ export function OffersList() {
             const message = `Join Campaign: ${campaign.title}\nWallet: ${address}\nTimestamp: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const res = await fetch('/api/campaigns', {
+            const res = await fetch('/api/raffle-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'join',
+                    action: 'campaign-join',
                     campaign_id: campaign.id,
                     wallet: address,
                     signature,

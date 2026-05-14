@@ -11,7 +11,9 @@
 export const NotificationService = {
     /**
      * Kirim notifikasi ke Farcaster user via server endpoint /api/notify.
-     * System-level call (no wallet signature needed — uses internal auth).
+     * NOTE: System-level notifications should ideally be triggered server-side (cron/backend).
+     * This client-side call relies on the /api/notify endpoint to validate the request
+     * without requiring a cron secret from the browser.
      * @param {number|string} fid - Farcaster ID penerima.
      * @param {string} message - Isi pesan (max 500 karakter).
      * @param {"mention"|"cast"} type - Tipe notifikasi.
@@ -26,10 +28,9 @@ export const NotificationService = {
             const response = await fetch('/api/notify', {
                 method: 'POST',
                 headers: {
-                    'content-type': 'application/json',
-                    'authorization': `Bearer ${import.meta.env.VITE_CRON_SECRET || ''}`
+                    'content-type': 'application/json'
                 },
-                body: JSON.stringify({ fid, message, type })
+                body: JSON.stringify({ fid, message, type, source: 'client' })
             });
 
             if (!response.ok) {

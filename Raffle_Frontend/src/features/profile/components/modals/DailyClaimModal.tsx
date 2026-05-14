@@ -59,14 +59,7 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
         setIsClaiming(true);
         const tid = toast.loading("Preparing claim...");
         try {
-            const estimated = await publicClient!.estimateContractGas({
-                address: CONTRACTS.DAILY_APP as any,
-                abi: DAILY_APP_ABI,
-                functionName: 'claimDailyBonus',
-                account: address,
-            });
-            const gasLimit = (estimated * 120n) / 100n;
-            const hash = await writeContractAsync({ address: CONTRACTS.DAILY_APP as any, abi: DAILY_APP_ABI, functionName: 'claimDailyBonus', gas: gasLimit });
+            const hash = await writeContractAsync({ address: CONTRACTS.DAILY_APP as any, abi: DAILY_APP_ABI, functionName: 'claimDailyBonus' });
             toast.loading('Mining transaction...', { id: tid });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.loading('Syncing XP...', { id: tid });

@@ -22,7 +22,8 @@ const RAFFLE_ADDRESS = isMainnet
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const startTime = Date.now();
     const authHeader = req.headers['authorization'];
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) return res.status(401).json({ error: "Unauthorized" });
+    if (!CRON_SECRET) return res.status(500).json({ error: "CRON_SECRET not configured" });
+    if (authHeader !== `Bearer ${CRON_SECRET}`) return res.status(401).json({ error: "Unauthorized" });
 
     if (!RAFFLE_ADDRESS || RAFFLE_ADDRESS === '[RESERVED]') return res.status(500).json({ error: "Config missing" });
 

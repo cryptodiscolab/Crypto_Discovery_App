@@ -259,6 +259,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'UPDATE_UGC_CONFIG': await handleGenericUpsert('ugc_config', payload, targetAddress, 'UPDATE_UGC_CONFIG', res); break;
             case 'CREATE_UGC_MISSION': await handleCreateUgcMission(payload, targetAddress, res); break;
             case 'VERIFY_UGC_PAYMENT_ONCHAIN': await handleVerifyUgcPaymentOnchain(req, res, targetAddress); break;
+            case 'reject-mission': await handleRejectMission(req, res, targetAddress); break;
             case 'GET_UGC_REVENUE': await handleGetUgcRevenue(res); break;
             case 'MARK_REVENUE_ALLOCATED': await handleMarkRevenueAllocated(payload.mission_id, targetAddress, res); break;
             case 'UPDATE_THRESHOLDS': {
@@ -659,6 +660,39 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
     await logAdminAction(admin, 'VERIFY_UGC_PAYMENT_ONCHAIN', { mission_id, amount_paid: totalPaid.toString(), symbol: mission.reward_symbol });
 
     return res.status(200).json({ success: true, message: `Payment verified for ${mission.reward_symbol || 'USDC'}` });
+}
+
+async function handleRejectMission(req: VercelRequest, res: VercelResponse, admin: string) {
+    const { mission_id, reason } = req.body;
+    if (!mission_id) return res.status(400).json({ error: 'mission_id required' });
+
+    const { data: mission, error: mErr } = await supabaseAdmin
+        .from('campaigns')
+        .select('id, title, status, sponsor_address')
+        .eq('id', mission_id)
+        .maybeSingle();
+
+    if (mErr || !mission) return res.status(404).json({ error: 'Mission not found' });
+    if (mission.status === 'rejected') return res.status(400).json({ error: 'Mission already rejected' });
+
+    const { error: updateErr } = await supabaseAdmin
+        .from('campaigns')
+        .update({ status: 'rejected', is_active: false })
+        .eq('id', mission_id);
+
+    if (updateErr) throw updateErr;
+
+    // Deactivate associated tasks
+    await supabaseAdmin.from('daily_tasks').update({ is_active: false }).eq('target_id', mission_id);
+
+    await logAdminAction(admin, 'REJECT_MISSION', {
+        mission_id,
+        title: mission.title,
+        reason: reason || 'No reason provided',
+        sponsor_address: mission.sponsor_address
+    });
+
+    return res.status(200).json({ success: true, message: 'Mission rejected' });
 }
 
 async function handleGetUgcRevenue(res: VercelResponse) {

@@ -32,13 +32,17 @@ export function UnifiedDashboard() {
     const { refetch: refetchStats, stats: userStats } = useUserV12Stats(address);
     const { totalUsers } = useV12Stats();
     
-    // Heartbeat logic for CCU/DAU
+    // Heartbeat logic for CCU/DAU - routed through backend
     useEffect(() => {
         if (!address) return;
         const heartbeat = async () => {
-            const signupDate = new Date().toISOString();
-            // Just update updated_at every session
-            await supabase.from('user_profiles').update({ updated_at: signupDate }).eq('wallet_address', address.toLowerCase());
+            try {
+                await fetch('/api/user-bundle', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ action: 'update-profile', wallet_address: address, heartbeat: true })
+                });
+            } catch { /* heartbeat is best-effort */ }
         };
         heartbeat();
     }, [address]);

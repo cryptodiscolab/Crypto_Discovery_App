@@ -54,11 +54,12 @@ export function ModerationCenterTab() {
             const signature = await signMessageAsync({ message });
 
             // Fetch Raffles
-            const raffResponse = await fetch('/api/user/bundle', {
+            const raffResponse = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'pending-raffles', wallet: address, signature, message })
             });
+            if (!raffResponse.ok) throw new Error(`Fetch pending raffles failed: ${raffResponse.status}`);
             const raffData = await raffResponse.json();
             if (Array.isArray(raffData)) {
                  setPendingRaffles(raffData);
@@ -67,7 +68,7 @@ export function ModerationCenterTab() {
             }
 
             // Fetch Missions
-            const missResponse = await fetch('/api/user/bundle', {
+            const missResponse = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'pending-missions', wallet: address, signature, message })
@@ -119,7 +120,7 @@ export function ModerationCenterTab() {
             const message = `Reject UGC Raffle\nID: ${selectedItem.id}\nAdmin: ${address}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await fetch('/api/user/bundle', {
+            const response = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -157,7 +158,7 @@ export function ModerationCenterTab() {
             const message = `Approve UGC Raffle\nID: ${raffleId}\nAdmin: ${address}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await fetch('/api/user/bundle', {
+            const response = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -242,7 +243,7 @@ export function ModerationCenterTab() {
             const message = `Approve UGC Mission\nID: ${missionId}\nAdmin: ${address}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
-            const response = await fetch('/api/user/bundle', {
+            const response = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
