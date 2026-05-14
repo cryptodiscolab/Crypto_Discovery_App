@@ -10,6 +10,7 @@ interface EcosystemSettings {
     max_gas_price_gwei: number;
     raffle_ticket_price_usdc: number;
     sponsorship_listing_fee_usdc: number;
+    swap_fee: number;
     ugc_config: {
         listing_fee_usdc: string;
         min_reward_amount: string;
@@ -70,6 +71,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
         max_gas_price_gwei: 100,
         raffle_ticket_price_usdc: 0.15,
         sponsorship_listing_fee_usdc: 1.0,
+        swap_fee: 0.005,
         ugc_config: {
             listing_fee_usdc: "1.0",
             min_reward_amount: "0.1",

@@ -6,7 +6,7 @@ import { useRaffle } from '../hooks/useRaffle';
 import { usePoints } from '../shared/context/PointsContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI } from '../lib/contracts';
+import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI, WETH_ADDRESS } from '../lib/contracts';
 import { usePriceOracle } from '../hooks/usePriceOracle';
 
 const RafflePreview = ({ data }: { data: any }) => {
@@ -92,8 +92,8 @@ export function CreateRafflePage() {
         functionName: 'surchargeBP',
     });
 
-    const { prices } = usePriceOracle(['0x4200000000000000000000000000000000000006']);
-    const ethPrice = prices['0x4200000000000000000000000000000000000006'] || 0;
+    const { prices } = usePriceOracle([WETH_ADDRESS]);
+    const ethPrice = prices[WETH_ADDRESS] || 0;
 
     const [formData, setFormData] = useState({
         prizeDeposit: '0.1',

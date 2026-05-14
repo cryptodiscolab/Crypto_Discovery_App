@@ -4,6 +4,7 @@ import { useAccount, useWalletClient, useConfig } from 'wagmi';
 import { createConfig, getQuote, executeRoute } from '@lifi/sdk';
 import { parseUnits, formatUnits } from 'viem';
 import toast from 'react-hot-toast';
+import { usePoints } from '../shared/context/PointsContext';
 
 const NETWORKS = [
   { id: 8453, name: 'Base Mainnet' },
@@ -55,6 +56,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const { address, chainId: activeChainId } = useAccount();
   const { data: walletClient } = useWalletClient();
   const wagmiConfig = useConfig();
+  const { ecosystemSettings } = usePoints();
   
   // States - default to activeChainId from wallet, fallback to env or 8453
   const [selectedChainId, setSelectedChainId] = useState<number>(() => {
@@ -135,8 +137,8 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           fromAmount: amountWei,
           fromAddress: address,
           toAddress: address,
-          // v3.45.0+: Use raw object for better compatibility across SDK updates
-          fee: Number(import.meta.env.VITE_SWAP_FEE || 0.005),
+          // Use swap fee from backend ecosystem settings (default 0.005 if unavailable)
+          fee: ecosystemSettings?.swap_fee ?? 0.005,
           integrator: 'crypto-disco-app'
         });
         setQuote(result as unknown as LiFiQuote);

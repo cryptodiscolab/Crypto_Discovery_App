@@ -113,6 +113,13 @@ export const CREATOR_TOKEN_ADDRESS = getAddr('CREATOR_TOKEN', 'VITE_CREATOR_TOKE
 export const PRICE_FEED_ADDRESS = cleanAddr(import.meta.env.VITE_PRICE_FEED_ADDRESS);
 export const SAFE_MULTISIG = cleanAddr(import.meta.env.VITE_SAFE_MULTISIG);
 
+// Native ETH placeholder address (used by some price oracles).
+export const NATIVE_ETH_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+// Alt placeholder used by some aggregators (Li.Fi, 1inch).
+export const NATIVE_ETH_ALT_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' as const;
+// WETH (Wrapped ETH) on Base chains. Same on mainnet (8453) and sepolia (84532).
+export const WETH_ADDRESS = '0x4200000000000000000000000000000000000006' as const;
+
 // Removed purely static Admin constants to prevent them from being bundled in the frontend.
 
 // PROXY CONSTANTS (The "Cheat Code")

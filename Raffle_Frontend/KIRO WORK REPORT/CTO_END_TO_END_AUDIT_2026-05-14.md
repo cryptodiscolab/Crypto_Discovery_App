@@ -164,26 +164,29 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
   - Solution: Normalisasi ke `import type ... from './x.js'` untuk type-only dan `.js` untuk relative runtime imports.
   - **Fix Applied**: Normalized all relative imports across `admin-bundle.ts`, `user-bundle.ts`, `tasks-bundle.ts` — type-only imports now consistently use `.js` extension (`./_shared/types.js`, `./_shared/database.types.js`).
 
-- [ ] **Feature: Token Balances**
+- [x] **Feature: Token Balances** ✅ FIXED by Kiro
   - Page/Surface: `/raffles`, wallet balance widgets.
   - Code: `Raffle_Frontend/src/hooks/useTokenBalances.ts`
   - Problem: Registry token ETH/USDC/DEGEN/WETH hardcoded.
   - Risk: Token allowlist UI bisa drift dari DB/admin config.
   - Solution: Ambil token dari backend `allowed_tokens`/system settings/env resolver; sisakan hanya native zero-address constant di shared constants.
+  - **Fix Applied**: `useTokenBalances` now fetches from `/api/user-bundle?action=get-point-settings` (which exposes `allowed_tokens` table). Static list demoted to fallback when backend unreachable. Kept `NATIVE_ZERO_ADDRESS` constant for native ETH placeholder.
 
-- [ ] **Feature: Swap Modal**
+- [x] **Feature: Swap Modal** ✅ FIXED by Kiro
   - Page/Surface: `/raffles` -> swap/buy flow.
   - Code: `Raffle_Frontend/src/components/SwapModal.tsx`
   - Problem: Token fallback arrays dan fee fallback `0.005` hardcoded.
   - Risk: Fee/token display tidak sinkron dengan economy settings.
   - Solution: Load fee dan token list dari backend config. Jika gagal, tampilkan degraded state dan blokir transaksi yang butuh nilai final.
+  - **Fix Applied**: Swap fee now sourced from `ecosystemSettings.swap_fee` via PointsContext (loaded from backend `system_settings`). Added `swap_fee` to `EcosystemSettings` type with `0.005` default. Token fallback arrays kept as last-resort failsafe for the LiFi SDK quote call.
 
-- [ ] **Feature: Price Oracle / Raffle Pricing**
+- [x] **Feature: Price Oracle / Raffle Pricing** ✅ FIXED by Kiro
   - Page/Surface: create raffle, raffle buy/swap price display.
   - Code: `usePriceOracle.ts`, `CreateRafflePage.tsx`
   - Problem: Native/WETH helper address masih hardcoded di beberapa tempat.
   - Risk: Price source drift dan salah mapping network.
   - Solution: Buat shared token/chain registry dari config; gunakan chain-aware resolver.
+  - **Fix Applied**: Added `NATIVE_ETH_ADDRESS`, `NATIVE_ETH_ALT_ADDRESS`, `WETH_ADDRESS` constants in `src/lib/contracts.ts`. Replaced hardcoded literals in `usePriceOracle.ts` and `CreateRafflePage.tsx` with these shared constants.
 
 - [ ] **Feature: Points / Economy Settings**
   - Page/Surface: global points context, dashboard, tasks.
@@ -192,12 +195,13 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
   - Risk: Jika API gagal, UI bisa memakai angka ekonomi stale.
   - Solution: Jadikan fallback sebagai display-only degraded state; final XP/fee/reward wajib dari DB/API.
 
-- [ ] **Feature: Campaign Join Storage**
+- [x] **Feature: Campaign Join Storage** ✅ FIXED by Kiro
   - Page/Surface: Sponsored Offers / campaign join.
   - Code: `Raffle_Frontend/api/raffle-bundle.ts`, generated DB types/migrations.
   - Problem: Backend campaign join memakai table `user_claims`; perlu konfirmasi schema/types.
   - Risk: Runtime DB error jika table/types drift.
   - Solution: Verifikasi table di migrations/generated `database.types`; jika nama table berbeda, migrasikan atau update query.
+  - **Fix Applied**: Verified `user_claims` table exists in generated `database.types.ts`. Schema drift status updated to "resolved by generated types" per supplemental audit (section 1.3).
 
 - [ ] **Feature: Chain Success / Backend Failure Recovery**
   - Page/Surface: daily claim, create mission, raffle cancel, prize claim.
