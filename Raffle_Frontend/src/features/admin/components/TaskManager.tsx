@@ -37,6 +37,15 @@ interface PointSetting {
     is_active: boolean;
 }
 
+interface AllowedToken {
+    id: string;
+    symbol: string;
+    address: string;
+    decimals: number;
+    chain_id: number;
+    is_active: boolean;
+}
+
 export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     const { address, chainId } = useAccount();
     const { signMessageAsync } = useSignMessage();
@@ -92,9 +101,9 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     const [batchIsBaseSocialRequired, setBatchIsBaseSocialRequired] = useState(false);
 
     // --- TOKEN WHITELIST ---
-    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
+    const [whitelistedTokens, setWhitelistedTokens] = useState<AllowedToken[]>([]);
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
-    const selectedToken = whitelistedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const selectedToken = whitelistedTokens.find((t: AllowedToken) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
 
     // --- INITIALIZATION ---
     useEffect(() => {
@@ -112,8 +121,8 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             if (!chainId) return;
             const { data } = await supabase.from('allowed_tokens').select('*').eq('chain_id', chainId).eq('is_active', true);
             if (data) {
-                setWhitelistedTokens(data);
-                const eth = data.find(t => t.symbol === 'ETH');
+                setWhitelistedTokens(data as AllowedToken[]);
+                const eth = (data as AllowedToken[]).find((t: AllowedToken) => t.symbol === 'ETH');
                 if (eth) setSelectedTokenAddr(eth.address);
             }
         };
