@@ -1,4 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * ADMIN BUNDLE API (v3.63.6-Hardened)
+ * -----------------------------------------------------------------------------
+ * Hardened administrative oversight for the Crypto Disco DailyApp ecosystem.
+ * Enforces Zero-Hardcode Mandate and Strict ESM Resolution.
+ */
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { verifyMessage, decodeEventLog } from 'viem';
@@ -19,6 +24,7 @@ import {
     sanitizeError
 } from './_shared/constants.js';
 import type { Database, Json } from './_shared/database.types';
+import type { AdminActionPayload } from './_shared/types.js';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -60,7 +66,10 @@ interface MissionPayload {
     max_participants: string;
 }
 
-function validateUgcMission(payload: MissionPayload) {
+/**
+ * Validates UGC Mission payloads against strict platform and amount constraints.
+ */
+function validateUgcMission(payload: MissionPayload): string[] {
     const errors: string[] = [];
     if (!payload.title || payload.title.trim().length < 5) errors.push('Mission title must be at least 5 characters.');
     if (!payload.link || payload.link.trim().length < 10) errors.push('Mission link is required.');
@@ -105,7 +114,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { address, wallet_address, wallet, signature, message, payload, task_data, tasks, tx_hash } = req.body;
+        const { 
+            address, 
+            wallet_address, 
+            wallet, 
+            signature, 
+            message, 
+            payload, 
+            task_data, 
+            tasks, 
+            tx_hash,
+            task_name,
+            task_description,
+            target_agent
+        } = req.body as { 
+            address?: string; 
+            wallet_address?: string; 
+            wallet?: string; 
+            signature?: string; 
+            message?: string; 
+            payload?: any; 
+            task_data?: any; 
+            tasks?: any[]; 
+            tx_hash?: string;
+            task_name?: string;
+            task_description?: string;
+            target_agent?: string;
+        };
         const targetAddress = (address || wallet_address || wallet || '').toLowerCase();
 
         if (!targetAddress || !signature || !message) return res.status(400).json({ error: 'Missing auth fields' });
@@ -137,12 +172,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await handleGenericUpsert('tier_pool_weights', payload, targetAddress, 'SYNC_WEIGHTS', res);
                 
                 // Propagate to sbt_pool_stats for SBTRewardsDashboard & Trigger logic
+                const weightPayload = payload as Record<string, string>;
                 const { error: poolErr } = await supabaseAdmin.from('sbt_pool_stats').update({
-                    share_legendary: parseInt(payload.diamond),
-                    share_epic: parseInt(payload.platinum),
-                    share_rare: parseInt(payload.gold),
-                    share_common: parseInt(payload.silver),
-                    share_participation: parseInt(payload.bronze),
+                    share_legendary: parseInt(weightPayload.diamond || '0'),
+                    share_epic: parseInt(weightPayload.platinum || '0'),
+                    share_rare: parseInt(weightPayload.gold || '0'),
+                    share_common: parseInt(weightPayload.silver || '0'),
+                    share_participation: parseInt(weightPayload.bronze || '0'),
                     updated_at: new Date().toISOString()
                 }).eq('id', 1);
 
@@ -155,13 +191,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 break;
             }
             case 'WHITELIST_TOKEN_DB': {
-                const { error } = await supabaseAdmin.from('allowed_tokens').upsert({ ...payload, address: payload.address.toLowerCase(), is_active: true, updated_at: new Date().toISOString() }, { onConflict: 'chain_id,address' });
+                const { error } = await supabaseAdmin.from('allowed_tokens').upsert({ ...payload, address: payload.address.toLowerCase(), is_active: true }, { onConflict: 'chain_id,address' });
                 if (error) throw error;
                 await logAdminAction(targetAddress, 'WHITELIST_TOKEN_DB', payload);
                 return res.status(200).json({ success: true });
             }
             case 'REMOVE_TOKEN_DB': {
-                const { error } = await supabaseAdmin.from('allowed_tokens').update({ is_active: false, updated_at: new Date().toISOString() }).match({ chain_id: payload.chain_id, address: payload.address.toLowerCase() });
+                const { error } = await supabaseAdmin.from('allowed_tokens').update({ is_active: false }).match({ chain_id: payload.chain_id, address: payload.address.toLowerCase() });
                 if (error) throw error;
                 await logAdminAction(targetAddress, 'REMOVE_TOKEN_DB', payload);
                 return res.status(200).json({ success: true });
@@ -239,7 +275,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(200).json({ success: true });
             }
             case 'NEXUS_DISPATCH': {
-                const { task_name, task_description, target_agent } = req.body;
                 if (!task_name || !target_agent) return res.status(400).json({ error: 'Missing task_name or target_agent' });
                 const { error } = await supabaseAdmin.from('agents_vault').insert({
                     task_name,
@@ -250,7 +285,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     created_at: new Date().toISOString()
                 });
                 if (error) throw error;
-                await logAdminAction(targetAddress, 'NEXUS_DISPATCH', { task_name, target_agent });
+                await logAdminAction(targetAddress, 'NEXUS_DISPATCH', { task_name, target_agent } as Json);
                 return res.status(200).json({ success: true, message: `Task dispatched to ${target_agent}` });
             }
             default:
@@ -310,10 +345,23 @@ async function handleParityAudit(res: VercelResponse) {
         }
     }));
 
+    interface AuditResult {
+        address: string;
+        db_xp?: number;
+        onchain_xp?: number;
+        db_tier?: number;
+        onchain_tier?: number;
+        xp_drift_value?: number;
+        tier_drift?: boolean;
+        error?: string;
+    }
+
+    const typedAuditResults = auditResults as AuditResult[];
+
     const summary = {
         total_users: users.length,
-        xp_drift: auditResults.filter(r => (r as any).xp_drift_value !== 0).length,
-        tier_drift: auditResults.filter(r => (r as any).tier_drift).length,
+        xp_drift: typedAuditResults.filter(r => r.xp_drift_value !== 0).length,
+        tier_drift: typedAuditResults.filter(r => r.tier_drift).length,
         last_audit_at: new Date().toISOString()
     };
 
@@ -359,7 +407,7 @@ async function handleSyncPoints(res: VercelResponse) {
 }
 
 async function handleGenericUpsert(key: string, value: Json, admin: string, action: string, res: VercelResponse, conflictCol = 'key') {
-    const row = conflictCol === 'key' ? { key, value, updated_at: new Date().toISOString() } : (value as any);
+    const row = conflictCol === 'key' ? { key, value, updated_at: new Date().toISOString() } : (value as Record<string, Json>);
     const { error } = await supabaseAdmin.from('system_settings').upsert(row, { onConflict: conflictCol });
     if (error) throw error;
     await logAdminAction(admin, action, value);
@@ -499,25 +547,30 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
     const errors = validateUgcMission(payload as unknown as MissionPayload);
     if (errors.length > 0) return res.status(400).json({ error: 'Validation failed', details: errors });
 
-    const missionData = { ...payload, is_active: false, is_verified_payment: false, created_at: new Date().toISOString() };
-    const { data: campaign, error: cErr } = await supabaseAdmin.from('campaigns').insert([missionData as any]).select().maybeSingle();
+    const missionData: Database['public']['Tables']['campaigns']['Insert'] = { 
+        ...payload, 
+        is_active: false, 
+        is_verified_payment: false, 
+        created_at: new Date().toISOString() 
+    };
+    const { data: campaign, error: cErr } = await supabaseAdmin.from('campaigns').insert([missionData]).select().maybeSingle();
     if (cErr || !campaign) throw cErr || new Error('Failed to create campaign');
 
-    const taskRows = payload.action_types.map((action: string) => ({
-        title: `${missionData.title} (${action.toUpperCase()})`,
-        description: missionData.title,
+    const taskRows: Database['public']['Tables']['daily_tasks']['Insert'][] = payload.action_types.map((action: string) => ({
+        title: `${payload.title} (${action.toUpperCase()})`,
+        description: payload.description || '',
         xp_reward: 0,
-        platform: missionData.platform_code || 'farcaster',
+        platform: payload.platform_code || 'farcaster',
         action_type: action,
-        link: missionData.link || '',
+        link: payload.link || '',
         is_active: false,
         task_type: 'ugc',
-        onchain_id: campaign.id,
-        creator_address: missionData.sponsor_address,
+        target_id: campaign.id,
+        creator_address: payload.sponsor_address || '',
         created_at: new Date().toISOString()
     }));
 
-    await supabaseAdmin.from('daily_tasks').insert(taskRows as any);
+    await supabaseAdmin.from('daily_tasks').insert(taskRows);
     await logAdminAction(admin, 'CREATE_UGC_MISSION', { campaign_id: campaign.id, ...missionData } as unknown as Json);
     return res.status(200).json({ success: true, data: campaign });
 }

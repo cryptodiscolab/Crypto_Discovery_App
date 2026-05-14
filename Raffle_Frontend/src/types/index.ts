@@ -59,6 +59,7 @@ export interface Raffle {
     image_url?: string;
     prizeName?: string;
     floorPrice?: string;
+    category?: string;
     // Extension fields for mission/reputation guards
     min_sbt_level?: number;
     is_base_social_required?: boolean;

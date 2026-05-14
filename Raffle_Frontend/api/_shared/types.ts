@@ -101,6 +101,16 @@ export interface UgcRafflePayload {
     txHash: string;
 }
 
+export interface AdminActionPayload {
+    action: string;
+    payload?: any;
+    target_wallet?: string;
+    amount?: string | number;
+    activity_key?: string;
+    value?: any;
+    tx_hash?: string;
+}
+
 export type ExtendedVercelRequest = VercelRequest & {
     body: {
         action?: string;
@@ -111,6 +121,7 @@ export type ExtendedVercelRequest = VercelRequest & {
         platform?: string;
         action_type?: string;
         campaign_id?: string;
+        payload?: any;
         [key: string]: any;
     };
 };

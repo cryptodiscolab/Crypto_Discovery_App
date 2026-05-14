@@ -105,7 +105,7 @@ export function RaffleRow({ raffleId, filter = 'all' }: RaffleRowProps) {
                   {raffle.category.toUpperCase()}
                 </span>
               )}
-              {raffle.min_sbt_level > 0 && (
+              {(raffle.min_sbt_level ?? 0) > 0 && (
                 <span className="text-[10px] font-black px-2 py-0.5 rounded border leading-none bg-purple-500/10 text-purple-400 border-purple-500/20">
                   LVL {raffle.min_sbt_level}+
                 </span>

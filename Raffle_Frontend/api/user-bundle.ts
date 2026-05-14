@@ -118,7 +118,7 @@ async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promi
             .eq('key', 'active_features')
             .maybeSingle();
         
-        const activeFeatures = (data?.value || {}) as Record<string, any>;
+        const activeFeatures = (data?.value || {}) as Record<string, boolean>;
         if (activeFeatures[featureKey] !== true) {
             res.status(403).json({ error: `Feature [${featureKey}] is currently disabled.` });
             return false;
@@ -438,8 +438,8 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
         const response = await fetchWithRetry(
             () => neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [address] }),
             'neynar-api'
-        ) as Record<string, any[]>;
-        const fcUser = response?.[address.toLowerCase()]?.[0] as any;
+        ) as Record<string, { fid: number; username: string; pfp_url: string; experimental?: { neynar_user_score: number } }[]>;
+        const fcUser = response?.[address.toLowerCase()]?.[0];
 
         if (fcUser) {
             const { data, error } = await getSupabaseAdmin()
@@ -600,8 +600,8 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
         }));
 
         // Merge and deduplicate (prefer explicit logs over claim-derived entries)
-        const logTimestamps = new Set(activityLogs.map((l: any) => l.created_at?.slice(0, 16)));
-        const uniqueClaimLogs = claimLogs.filter((c: any) => !logTimestamps.has(c.created_at?.slice(0, 16)));
+        const logTimestamps = new Set(activityLogs.map((l: { created_at: string }) => l.created_at?.slice(0, 16)));
+        const uniqueClaimLogs = claimLogs.filter((c: { created_at: string }) => !logTimestamps.has(c.created_at?.slice(0, 16)));
 
         const combined = [...activityLogs, ...uniqueClaimLogs]
             .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -656,7 +656,9 @@ async function handleGetPointSettings(req: VercelRequest, res: VercelResponse) {
             settings[s.key] = s.value;
         });
 
-        const tokenList = (allowedTokens && allowedTokens.length > 0) ? allowedTokens : (settings.whitelisted_tokens_json as any || []);
+        const tokenList = (allowedTokens && allowedTokens.length > 0) 
+            ? allowedTokens 
+            : ((settings.whitelisted_tokens_json as unknown as any[]) || []);
         settings.allowed_tokens = tokenList;
         settings.whitelisted_tokens = tokenList;
 
@@ -814,7 +816,7 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
             }
         }
 
-        const sysSettingData = (sysSetting?.value || {}) as Record<string, any>;
+        const sysSettingData = (sysSetting?.value || {}) as Record<string, string | number | boolean>;
         const platformFeePercent = sysSettingData.raffle_platform_fee_percent ? parseFloat(String(sysSettingData.raffle_platform_fee_percent)) : 5;
         const feeMultiplier = 1 + (platformFeePercent / 100);
         const prizePool = depositETH ? parseFloat(depositETH) / feeMultiplier : 0;
