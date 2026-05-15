@@ -289,6 +289,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await logAdminAction(targetAddress, 'NEXUS_DISPATCH', { task_name, target_agent } as Json);
                 return res.status(200).json({ success: true, message: `Task dispatched to ${target_agent}` });
             }
+            case 'GET_ERROR_LOGS': {
+                const limit = payload?.limit || 100;
+                const severity = payload?.severity || null;
+                let query = (supabaseAdmin as any).from('system_error_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(limit);
+                if (severity) query = query.eq('severity', severity);
+                if (payload?.bundle) query = query.eq('bundle', payload.bundle);
+                if (payload?.wallet_address) query = query.eq('wallet_address', payload.wallet_address.toLowerCase());
+                const { data, error: qErr } = await query;
+                if (qErr) return res.status(200).json({ success: true, logs: [], error: 'Table may not exist yet' });
+                return res.status(200).json({ success: true, logs: data || [] });
+            }
             default:
                 return res.status(400).json({ error: `Invalid action: ${action}` });
         }

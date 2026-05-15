@@ -18,7 +18,8 @@ import {
     WALLET_BOT_SIGNER,
     CHAIN_ID,
     isMainnet,
-    sanitizeError
+    sanitizeError,
+    logSystemError
 } from './_shared/constants.js';
 import type { 
     UserProfile, 
@@ -651,6 +652,17 @@ async function handleFrontendLogActivity(req: VercelRequest, res: VercelResponse
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
+        // For financial activities (PURCHASE/REWARD) with tx_hash, verify receipt on-chain
+        let receiptVerified = false;
+        if (txHash && (category === 'PURCHASE' || category === 'REWARD' || category === 'SWAP')) {
+            try {
+                const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+                receiptVerified = receipt?.status === 'success' && receipt.from.toLowerCase() === wallet_address.toLowerCase();
+            } catch {
+                // Receipt verification is best-effort; log anyway with unverified flag
+            }
+        }
+
         await logActivity({
             wallet: wallet_address,
             category: category || 'PURCHASE',
@@ -659,12 +671,14 @@ async function handleFrontendLogActivity(req: VercelRequest, res: VercelResponse
             amount,
             symbol: symbol || 'XP',
             txHash,
-            metadata
+            metadata: { ...(metadata || {}), receipt_verified: receiptVerified || undefined }
         });
 
-        return res.status(200).json({ success: true });
+        return res.status(200).json({ success: true, receipt_verified: receiptVerified });
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error); return res.status(500).json({ error: sanitizeError(msg) });
+        const msg = error instanceof Error ? error.message : String(error);
+        await logSystemError({ surface: 'api', bundle: 'user-bundle', action: 'log-activity', wallet_address, message: msg });
+        return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
 

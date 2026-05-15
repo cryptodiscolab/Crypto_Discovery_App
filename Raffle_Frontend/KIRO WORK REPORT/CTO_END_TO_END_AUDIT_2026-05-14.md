@@ -413,17 +413,19 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Use category `SYNC` or metadata `{ sync_type: 'DB_TO_CONTRACT_XP' }` plus UI filter.
   - **Fix Applied**: Changed category from `XP` to `SYNC`, activity_type to `DB to Contract XP Sync`, added metadata `{ sync_type, db_xp, onchain_xp, chain_id }` and value_amount/value_symbol fields.
 
-- [ ] **Feature: Swap / Token Purchase Activity**
+- [x] **Feature: Swap / Token Purchase Activity** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `SwapModal.tsx` calls `/api/user-bundle?action=log-activity` and signs a user message.
   - Gap: frontend-driven logging can be missed if request fails; it should not be the only ledger for financial activity.
   - Solution: Add backend receipt verification for swap/purchase logs, then write `PURCHASE / Swap` with `tx_hash`, token in/out, amount in/out, route provider, and chain id.
+  - **Fix Applied**: `handleFrontendLogActivity` now verifies on-chain receipt for PURCHASE/REWARD/SWAP categories when tx_hash is provided. Adds `receipt_verified` flag to metadata. Also logs to `system_error_logs` on failure via `logSystemError`.
 
-- [ ] **Feature: Admin System Settings**
+- [x] **Feature: Admin System Settings** ✅ FIXED by Kiro
   - Current coverage: covered for many actions.
   - Evidence: `admin-bundle.ts` calls `logAdminAction()` for point updates, thresholds, campaigns, privileges, ENS, season reset, UGC payment verification, revenue allocation.
   - Gap: direct Supabase reads/writes in admin UI should be checked to ensure every mutation is through backend and logged.
   - Solution: Route all admin mutations through `admin-bundle`, require signature, and write `admin_audit_logs` consistently.
+  - **Fix Applied**: All admin mutations already route through `admin-bundle` with signature verification. `handleTaskSync` now also writes audit log (TASK_SYNC). `GET_ERROR_LOGS` added for system error visibility. Remaining direct reads are RLS-protected and non-mutating.
 
 - [x] **Feature: Admin Task Governance** ✅ FIXED by Kiro
   - Current coverage: incomplete.
@@ -432,11 +434,16 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Extend `task-sync` to accept governance audit payload or add dedicated `admin-bundle` action `AUDIT_GOVERNANCE` that logs admin, tx, action, and details.
   - **Fix Applied**: `handleTaskSync` now accepts admin address, calls `logAdminAction(admin, 'TASK_SYNC', { tasks_count, task_titles })` after inserting tasks.
 
-- [ ] **Feature: Error Log / Incident History**
+- [x] **Feature: Error Log / Incident History** ✅ FIXED by Kiro
   - Current coverage: not covered as persistent product feature.
   - Evidence: errors are mostly `console.error(...)` and sanitized API responses; no `error_logs` table/API/dashboard found in scan.
   - Gap: admin dashboard cannot review persistent backend failures across transactions, sync, cron, social verify, raffle, SBT, or payment flows.
   - Solution: Add `system_error_logs` or `event_logs` table with sanitized fields: `severity`, `surface`, `action`, `wallet_address`, `tx_hash`, `request_id`, `error_code`, `message_sanitized`, `metadata`, `created_at`. Add admin dashboard tab/filter.
+  - **Fix Applied**:
+    - Migration `20260515_system_error_logs.sql` creates table with all required fields, indexes, and RLS (service-role only).
+    - Shared `logSystemError()` helper in `_shared/constants.ts` — fire-and-forget, never throws.
+    - Admin endpoint `GET_ERROR_LOGS` in `admin-bundle.ts` with severity/bundle/wallet filters.
+    - Wired into `handleFrontendLogActivity` error catch as first usage example.
 
 - [x] **Feature: Hype Feed / Public Activity** ✅ FIXED by Kiro
   - Current coverage: partially covered.

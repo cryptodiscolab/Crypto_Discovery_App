@@ -1,5 +1,6 @@
 import { createPublicClient, http, fallback } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
+import { createClient } from '@supabase/supabase-js';
 
 // 1. ENVIRONMENT VALIDATION
 export const getEnv = (key: string, fallbackVal: string = ''): string => (process.env[key] || fallbackVal).trim();
@@ -190,4 +191,50 @@ export function sanitizeError(err: unknown): string {
     if (safePatterns.some(p => lower.includes(p))) return msg;
     console.error('[API Error]', msg);
     return 'An unexpected error occurred. Please try again.';
+}
+
+// ─── System Error Logger ─────────────────────────────────────────────────────
+// Writes sanitized error records to system_error_logs for admin dashboard.
+// Fire-and-forget: never blocks the response or throws.
+
+let _errorLogClient: ReturnType<typeof createClient> | null = null;
+function getErrorLogClient() {
+    if (!_errorLogClient && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+        _errorLogClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    }
+    return _errorLogClient;
+}
+
+export interface SystemErrorParams {
+    severity?: 'error' | 'warn' | 'critical' | 'info';
+    surface: 'api' | 'cron' | 'frontend' | 'contract';
+    bundle?: string;
+    action?: string;
+    wallet_address?: string;
+    tx_hash?: string;
+    request_id?: string;
+    error_code?: string;
+    message: string;
+    metadata?: Record<string, unknown>;
+}
+
+export async function logSystemError(params: SystemErrorParams): Promise<void> {
+    try {
+        const client = getErrorLogClient();
+        if (!client) return;
+        await client.from('system_error_logs').insert({
+            severity: params.severity || 'error',
+            surface: params.surface,
+            bundle: params.bundle || null,
+            action: params.action || null,
+            wallet_address: params.wallet_address?.toLowerCase() || null,
+            tx_hash: params.tx_hash || null,
+            request_id: params.request_id || null,
+            error_code: params.error_code || null,
+            message_sanitized: params.message.slice(0, 1000),
+            metadata: params.metadata || {}
+        });
+    } catch {
+        // Never throw from error logger
+    }
 }
