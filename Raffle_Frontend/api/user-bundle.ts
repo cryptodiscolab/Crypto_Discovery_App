@@ -598,7 +598,14 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
             .limit(parsedLimit);
 
         if (category && category !== 'ALL') {
-            logsQuery = logsQuery.eq('category', category);
+            // PURCHASE filter also includes SWAP and EXPENSE categories (all spending actions)
+            if (category === 'PURCHASE') {
+                logsQuery = logsQuery.in('category', ['PURCHASE', 'SWAP', 'EXPENSE']);
+            } else if (category === 'REWARD') {
+                logsQuery = logsQuery.in('category', ['REWARD', 'PAYOUT']);
+            } else {
+                logsQuery = logsQuery.eq('category', category);
+            }
         }
 
         // 2. Fetch from user_task_claims (task completions that may not have explicit logs)
