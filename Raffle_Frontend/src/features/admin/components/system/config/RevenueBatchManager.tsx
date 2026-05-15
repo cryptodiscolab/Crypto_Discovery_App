@@ -41,3 +41,4 @@ export function RevenueBatchManager({ qLastDist, handleDistribute, isSaving }: R
         </div>
     );
 }
+

@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { Cpu } from 'lucide-react';
 import { useAccount, useSignMessage, usePublicClient } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI } from '../../../../../lib/contracts';
@@ -174,3 +174,4 @@ export function SystemPointersCard({
         </div>
     );
 }
+

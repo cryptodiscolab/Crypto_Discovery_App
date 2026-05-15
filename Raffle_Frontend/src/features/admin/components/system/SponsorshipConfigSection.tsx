@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../hooks/useAdminContract';
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { useReadContract, usePublicClient } from 'wagmi';

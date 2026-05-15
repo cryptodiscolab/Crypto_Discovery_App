@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { Activity } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { CONTRACTS, MASTER_X_ABI } from '../../../../../lib/contracts';
@@ -146,3 +146,4 @@ export function MasterXDistributionCard({
         </div>
     );
 }
+

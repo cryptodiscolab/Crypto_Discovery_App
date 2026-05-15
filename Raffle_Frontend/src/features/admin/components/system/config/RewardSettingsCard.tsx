@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { Zap, Save } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
@@ -83,3 +83,4 @@ export function RewardSettingsCard({ rewards, setRewards, drift }: RewardSetting
         </div>
     );
 }
+

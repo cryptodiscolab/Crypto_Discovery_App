@@ -92,3 +92,4 @@ export function EconomicStats({ totalPoolBalance, rewards, drift, raffleXp, tier
         </div>
     );
 }
+

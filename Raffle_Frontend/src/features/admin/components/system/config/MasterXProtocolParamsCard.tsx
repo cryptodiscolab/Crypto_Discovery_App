@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { Cpu } from 'lucide-react';
 import { CONTRACTS, MASTER_X_ABI } from '../../../../../lib/contracts';
 import toast from 'react-hot-toast';
@@ -70,3 +70,4 @@ export function MasterXProtocolParamsCard({
         </div>
     );
 }
+

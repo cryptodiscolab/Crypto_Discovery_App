@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { TrendingUp } from 'lucide-react';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
 import toast from 'react-hot-toast';
@@ -111,3 +111,4 @@ export function EconomicIndicatorsCard({
         </div>
     );
 }
+

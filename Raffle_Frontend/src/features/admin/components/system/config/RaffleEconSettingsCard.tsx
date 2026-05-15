@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { ShieldCheck } from 'lucide-react';
 import { useAccount, useSignMessage, usePublicClient } from 'wagmi';
 import { CONTRACTS, RAFFLE_ABI } from '../../../../../lib/contracts';
@@ -145,3 +145,4 @@ export function RaffleEconSettingsCard({
         </div>
     );
 }
+

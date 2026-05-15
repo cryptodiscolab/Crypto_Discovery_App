@@ -1,4 +1,4 @@
-import { useAdminContract } from '../../../../../hooks/useAdminContract';
+import { useAdminContract } from '../../../../hooks/useAdminContract';
 import { useState, useEffect } from 'react';
 import { useAccount, useSignMessage, useReadContract, usePublicClient } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI, RAFFLE_ABI } from '../../../../lib/contracts';
