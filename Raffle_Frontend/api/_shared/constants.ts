@@ -137,6 +137,8 @@ export const MASTER_X_ABI = [
     { name: 'goldWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
     { name: 'silverWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
     { name: 'bronzeWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'batchUpdateUserTiers', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_users', type: 'address[]' }, { name: '_tiers', type: 'uint8[]' }], outputs: [] },
+    { name: 'updateUserTier', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'user', type: 'address' }, { name: 'newTier', type: 'uint8' }], outputs: [] },
 ] as const;
 
 export const ERC20_ABI = [

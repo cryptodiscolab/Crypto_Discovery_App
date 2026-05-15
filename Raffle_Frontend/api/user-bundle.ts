@@ -15,9 +15,12 @@ import {
     DAILY_APP_USER_STATS_ABI,
     PROFILE_LIMITS,
     MASTER_ADMINS,
+    MASTER_X_ADDRESS,
+    MASTER_X_ABI,
     WALLET_BOT_SIGNER,
     CHAIN_ID,
     isMainnet,
+    getEnv,
     sanitizeError,
     logSystemError
 } from './_shared/constants.js';
@@ -1128,19 +1131,57 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             }
         });
 
-        // IMPORTANT: DailyApp mint does NOT auto-sync to MasterX.
-        // MasterX holder counts and user tier must be synced separately via admin sync-tiers.
-        // Log a SYNC warning so admin knows to run batchUpdateUserTiers.
-        await logActivity({
-            wallet,
-            category: 'SYNC',
-            type: 'MasterX Tier Sync Required',
-            description: `User upgraded to tier ${actualTierOnChain} on DailyApp. MasterX tier sync pending (admin action required).`,
-            amount: 0,
-            symbol: 'XP',
-            txHash,
-            metadata: { dailyapp_tier: actualTierOnChain, action_needed: 'admin sync-tiers or batchUpdateUserTiers' }
-        });
+        // PERMANENT FIX: Auto-sync DailyApp tier to MasterX after mint.
+        // Uses WALLET_BOT_SIGNER (must be MasterX owner) to call batchUpdateUserTiers.
+        // If the signer is not the owner, this will fail gracefully (fire-and-forget).
+        try {
+            if (WALLET_BOT_SIGNER && MASTER_X_ADDRESS) {
+                const { createWalletClient, http } = await import('viem');
+                const { privateKeyToAccount } = await import('viem/accounts');
+                const { base, baseSepolia } = await import('viem/chains');
+                
+                const chain = isMainnet ? base : baseSepolia;
+                const rpcUrl = isMainnet 
+                    ? getEnv('BASE_MAINNET_RPC_URL', 'https://mainnet.base.org')
+                    : getEnv('BASE_SEPOLIA_RPC_URL', 'https://sepolia.base.org');
+                
+                const account = privateKeyToAccount(WALLET_BOT_SIGNER as `0x${string}`);
+                const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
+                
+                const syncHash = await walletClient.writeContract({
+                    address: MASTER_X_ADDRESS as `0x${string}`,
+                    abi: MASTER_X_ABI,
+                    functionName: 'batchUpdateUserTiers',
+                    args: [[wallet.toLowerCase() as `0x${string}`], [actualTierOnChain]]
+                });
+                
+                await logActivity({
+                    wallet,
+                    category: 'SYNC',
+                    type: 'MasterX Tier Synced',
+                    description: `Auto-synced tier ${actualTierOnChain} to MasterX contract`,
+                    amount: 0,
+                    symbol: 'XP',
+                    txHash: syncHash,
+                    metadata: { masterx_sync_tx: syncHash, tier: actualTierOnChain }
+                });
+            }
+        } catch (masterXErr: unknown) {
+            // Fire-and-forget: if bot signer is not MasterX owner, this fails gracefully.
+            // Log warning so admin knows manual sync is needed.
+            const errMsg = masterXErr instanceof Error ? masterXErr.message : String(masterXErr);
+            console.warn('[handleSyncSbtUpgrade] MasterX auto-sync failed (bot may not be owner):', errMsg);
+            await logActivity({
+                wallet,
+                category: 'SYNC',
+                type: 'MasterX Tier Sync Failed',
+                description: `Auto-sync to MasterX failed. Admin batchUpdateUserTiers needed.`,
+                amount: 0,
+                symbol: 'XP',
+                txHash,
+                metadata: { dailyapp_tier: actualTierOnChain, error: errMsg.slice(0, 200) }
+            });
+        }
 
         return res.status(200).json({ success: true, tier: actualTierOnChain });
     } catch (error: unknown) {

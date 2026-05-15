@@ -168,11 +168,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'sync-points': await handleSyncPoints(res); break;
             case 'SYNC_MULTIPLIERS': await handleGenericUpsert('tier_multipliers', payload, targetAddress, 'SYNC_MULTIPLIERS', res); break;
             case 'SYNC_WEIGHTS': {
-                // Update system_settings (master record)
-                await handleGenericUpsert('tier_pool_weights', payload, targetAddress, 'SYNC_WEIGHTS', res);
-                
-                // Propagate to sbt_pool_stats for SBTRewardsDashboard & Trigger logic
+                // Refactored: inline upsert to avoid double-response from handleGenericUpsert
                 const weightPayload = payload as Record<string, string>;
+                
+                // 1. Update system_settings (master record)
+                const { error: settingsErr } = await supabaseAdmin.from('system_settings').upsert(
+                    { key: 'tier_pool_weights', value: weightPayload, updated_at: new Date().toISOString() },
+                    { onConflict: 'key' }
+                );
+                if (settingsErr) throw settingsErr;
+                
+                // 2. Propagate to sbt_pool_stats for SBTRewardsDashboard
                 const { error: poolErr } = await supabaseAdmin.from('sbt_pool_stats').update({
                     share_legendary: parseInt(weightPayload.diamond || '0'),
                     share_epic: parseInt(weightPayload.platinum || '0'),
@@ -183,12 +189,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }).eq('id', 1);
 
                 if (poolErr) {
-                    console.error('[SYNC_WEIGHTS] Failed to update sbt_pool_stats:', poolErr);
-                    // We don't throw here to ensure res.status(200) from handleGenericUpsert is handled correctly
-                    // Actually, handleGenericUpsert already sends a response. 
-                    // I should refactor to avoid double response.
+                    console.error('[SYNC_WEIGHTS] Failed to update sbt_pool_stats:', poolErr.message);
                 }
-                break;
+
+                await logAdminAction(targetAddress, 'SYNC_WEIGHTS', weightPayload);
+                return res.status(200).json({ success: true, pool_stats_synced: !poolErr });
             }
             case 'WHITELIST_TOKEN_DB': {
                 const { error } = await supabaseAdmin.from('allowed_tokens').upsert({ ...payload, address: payload.address.toLowerCase(), is_active: true }, { onConflict: 'chain_id,address' });
