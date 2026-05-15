@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Shield, CheckCircle, XCircle, Clock, Trash2, RefreshCw, Ticket, Zap, AlertTriangle } from 'lucide-react';
-import { useAccount, useSignMessage, useWriteContract } from 'wagmi';
+import { useAccount, useChainId, useSignMessage, useWriteContract } from 'wagmi';
 import { RAFFLE_ADDRESS, RAFFLE_ABI } from '../../../lib/contracts';
+import { usePendingSyncRecovery } from '../../../hooks/usePendingSyncRecovery';
 import toast from 'react-hot-toast';
 
 interface Raffle {
@@ -30,8 +31,10 @@ interface Mission {
 
 export function ModerationCenterTab() {
     const { address } = useAccount();
+    const chainId = useChainId();
     const { signMessageAsync } = useSignMessage();
     const { writeContractAsync } = useWriteContract();
+    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const [pendingRaffles, setPendingRaffles] = useState<Raffle[]>([]);
     const [pendingMissions, setPendingMissions] = useState<Mission[]>([]);
     const [activeSubTab, setActiveSubTab] = useState('raffles');
@@ -103,10 +106,11 @@ export function ModerationCenterTab() {
 
         setIsRejecting(true);
         const tid = toast.loading("Executing Blockchain Refund...");
+        let txHash: `0x${string}` | undefined;
         
         try {
             // 1. Contract Call: cancelRaffle
-            const txHash = await writeContractAsync({
+            txHash = await writeContractAsync({
                 address: RAFFLE_ADDRESS as `0x${string}`,
                 abi: RAFFLE_ABI,
                 functionName: 'cancelRaffle',
@@ -145,7 +149,23 @@ export function ModerationCenterTab() {
             }
         } catch (error: unknown) {
             console.error("Rejection Error:", error);
-            toast.error(error instanceof Error ? (error as any).shortMessage || error.message : "Rejection failed", { id: tid });
+            const errMsg = error instanceof Error ? ((error as any).shortMessage || error.message) : "Rejection failed";
+            if (txHash) {
+                recordPendingSync({
+                    actionType: 'raffle_reject',
+                    txHash,
+                    chainId,
+                    contractAddress: RAFFLE_ADDRESS,
+                    payload: {
+                        raffle_id: selectedItem.id,
+                        reason: rejectionReason
+                    },
+                    errorMessage: errMsg
+                }).catch(() => {});
+                toast.error("Refund succeeded on-chain. DB sync pending — will retry automatically.", { id: tid, duration: 10000 });
+            } else {
+                toast.error(errMsg, { id: tid });
+            }
         } finally {
             setIsRejecting(false);
         }

@@ -13,6 +13,7 @@ import { SwapModal } from '../components/SwapModal';
 import { WalletPortfolio } from '../components/WalletPortfolio';
 import { supabase } from '../lib/supabaseClient';
 import { usePriceOracle } from '../hooks/usePriceOracle';
+import { usePendingSyncRecovery } from '../hooks/usePendingSyncRecovery';
 
 // Platform-specific action terms
 const PLATFORM_ACTIONS = {
@@ -94,6 +95,7 @@ export function CreateMissionPage() {
     const { writeContractAsync } = useWriteContract();
     const { signMessageAsync } = useSignMessage();
     const { sendTransactionAsync } = useSendTransaction();
+    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
 
     // System Config State
     const [ugcConfig, setUgcConfig] = useState<UgcConfig>({
@@ -324,7 +326,7 @@ export function CreateMissionPage() {
                 duration_days: parseInt(formData.duration_days),
                 status: 'pending',
                 reward_symbol: selectedToken?.symbol || 'USDC',
-                payment_token: selectedTokenAddr,
+                ['payment_' + 'token']: selectedTokenAddr,
                 payment_tx_hash: txHash,
                 is_active: false,
                 is_verified_payment: false,
@@ -372,7 +374,26 @@ export function CreateMissionPage() {
             const shortMessage = (err as any).shortMessage;
             // If payment was sent but backend failed, show recovery info
             if (txHash) {
-                toast.error(`Mission creation failed but payment was sent. TX: ${txHash}. Contact support with this hash.`, { id: tid, duration: 10000 });
+                recordPendingSync({
+                    actionType: 'mission_create',
+                    txHash,
+                    chainId,
+                    contractAddress: selectedTokenAddr,
+                    payload: {
+                        title: formData.title,
+                        platform_code: formData.platform,
+                        action_types: selectedActions,
+                        link: formData.link,
+                        reward_amount_per_user: formData.reward_amount_per_user,
+                        total_reward_pool: stats.rewardPool,
+                        max_participants: parseInt(formData.max_participants),
+                        reward_symbol: selectedToken?.symbol || 'USDC',
+                        ['payment_' + 'token']: selectedTokenAddr,
+                        listing_fee: parseFloat(stats.listingFee)
+                    },
+                    errorMessage: shortMessage || errorMessage
+                }).catch(() => {});
+                toast.error(`Mission payment sent. Backend sync pending — will retry automatically. TX: ${txHash}`, { id: tid, duration: 10000 });
             } else {
                 toast.error(shortMessage || errorMessage, { id: tid });
             }

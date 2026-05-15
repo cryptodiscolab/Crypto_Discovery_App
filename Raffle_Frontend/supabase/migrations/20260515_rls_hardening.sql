@@ -52,9 +52,26 @@ CREATE POLICY "Users read own privileges"
 
 ALTER TABLE public.user_privileges ENABLE ROW LEVEL SECURITY;
 
--- ─── agents_vault (service-role only) ────────────────────────────────────────
+-- ─── agent vault tables (service-role only) ──────────────────────────────────
+DROP POLICY IF EXISTS "Public read agent vault" ON public.agent_vault;
+ALTER TABLE public.agent_vault ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Public read agents vault" ON public.agents_vault;
 ALTER TABLE public.agents_vault ENABLE ROW LEVEL SECURITY;
+DO $$
+DECLARE r record;
+BEGIN
+    FOR r IN
+        SELECT policyname
+        FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'agents_vault'
+          AND cmd = 'SELECT'
+          AND qual = 'true'
+    LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.agents_vault', r.policyname);
+    END LOOP;
+END $$;
 
 -- ─── system_settings (read-only public for non-secret keys via VIEW) ─────────
 -- Direct table read allowed for public settings only via a sanitized view.

@@ -8,7 +8,7 @@
 CREATE TABLE IF NOT EXISTS public.pending_sync_jobs (
     id BIGSERIAL PRIMARY KEY,
     wallet_address TEXT NOT NULL,
-    action_type TEXT NOT NULL,            -- 'raffle_buy' | 'raffle_claim' | 'daily_claim' | 'sbt_upgrade' | 'sbt_mint' | 'mission_create' | 'raffle_create'
+    action_type TEXT NOT NULL,            -- 'raffle_buy' | 'raffle_claim' | 'daily_claim' | 'sbt_upgrade' | 'sbt_mint' | 'mission_create' | 'raffle_create' | 'raffle_reject'
     tx_hash TEXT,                          -- on-chain receipt hash (may be null if pre-receipt failure)
     chain_id INTEGER,
     contract_address TEXT,
