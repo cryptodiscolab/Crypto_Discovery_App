@@ -239,7 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(200).json({ success: true });
             }
             case 'RESET_SEASON': await handleResetSeason(payload.new_season_id, targetAddress, res); break;
-            case 'task-sync': await handleTaskSync((tasks || []) as TaskSyncData[], res); break;
+            case 'task-sync': await handleTaskSync((tasks || []) as TaskSyncData[], targetAddress, res); break;
             case 'GRANT_PRIVILEGE': {
                 await supabaseAdmin.from('user_privileges').upsert({ wallet_address: payload.target_address.toLowerCase(), feature_id: payload.feature_id, granted_at: new Date().toISOString() }, { onConflict: 'wallet_address,feature_id' });
                 await logAdminAction(targetAddress, 'GRANT_PRIVILEGE', payload);
@@ -519,7 +519,7 @@ interface TaskSyncData {
     link: string;
 }
 
-async function handleTaskSync(tasks: TaskSyncData[], res: VercelResponse) {
+async function handleTaskSync(tasks: TaskSyncData[], admin: string, res: VercelResponse) {
     for (const task of tasks) {
         await supabaseAdmin.from('daily_tasks').insert([{
             title: task.title,
@@ -532,6 +532,7 @@ async function handleTaskSync(tasks: TaskSyncData[], res: VercelResponse) {
             created_at: new Date().toISOString()
         }]);
     }
+    await logAdminAction(admin, 'TASK_SYNC', { tasks_count: tasks.length, task_titles: tasks.map(t => t.title).slice(0, 10) });
     return res.status(200).json({ success: true });
 }
 

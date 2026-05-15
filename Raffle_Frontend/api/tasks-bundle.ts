@@ -194,7 +194,7 @@ async function validateAndCalculateXP(wallet_address: string, signature: string,
     return { xp, targetId };
 }
 
-async function logActivity(wallet: string, category: string, type: string, description: string, amount: number = 0, symbol: string = 'XP') {
+async function logActivity(wallet: string, category: string, type: string, description: string, amount: number = 0, symbol: string = 'XP', metadata?: Record<string, unknown>, txHash?: string | null) {
     try {
         await supabaseAdmin.from('user_activity_logs').insert({
             wallet_address: wallet.toLowerCase(),
@@ -203,6 +203,8 @@ async function logActivity(wallet: string, category: string, type: string, descr
             description,
             value_amount: amount,
             value_symbol: symbol,
+            tx_hash: txHash || null,
+            metadata: metadata || {},
             created_at: new Date().toISOString()
         });
     } catch (err: unknown) {
@@ -341,6 +343,8 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
 
         if (error) {
             if (error.code === '23505') {
+                // Dedup audit: log that a duplicate claim was attempted (no XP increment)
+                await logActivity(wallet_address, 'SYNC', 'Duplicate Claim Attempt', `Task ${task_id} already claimed`, 0, 'XP');
                 return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
             }
             throw error;
@@ -402,13 +406,16 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
     if (task_id.startsWith('raffle_buy_')) {
         const amountMatch = message.match(/Amount:\s*(\d+)/i);
         const ticketCount = amountMatch ? parseInt(amountMatch[1], 10) : 1;
+        const parts = task_id.split('_');
+        const raffleId = parts[2] || null;
+        const txHashFromId = parts[parts.length - 1] || null;
         
         await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
             p_wallet: wallet_address.toLowerCase(),
             p_amount: ticketCount
         });
 
-        await logActivity(wallet_address, 'PURCHASE', 'Raffle Ticket Buy', `Purchased ${ticketCount} Tickets for Raffle`, ticketCount, 'TICKET');
+        await logActivity(wallet_address, 'RAFFLE', 'Ticket Purchase', `Purchased ${ticketCount} ticket(s) for Raffle #${raffleId}`, ticketCount, 'TICKET', { raffle_id: raffleId, ticket_count: ticketCount }, txHashFromId);
     } else {
         await logActivity(wallet_address, 'XP', 'Task Verify', `Verified ${task_id} on ${platform}`, xp, 'XP');
     }

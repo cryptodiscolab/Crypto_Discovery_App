@@ -315,11 +315,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Tambah kategori/filter `SBT`, `RAFFLE`, `UGC`, `DAILY`, `IDENTITY`, `SYNC`, `ERROR`, dan render `metadata` detail seperti `tx_hash`, `chain_id`, `contract_address`, `task_id`, `campaign_id`, `raffle_id`.
   - **Fix Applied**: Expanded `ActivityLogSection.tsx` categories from 4 to 10: ALL, XP, DAILY, PURCHASES, REWARDS, RAFFLE, SBT, UGC, IDENTITY, SYNC. Added matching icons and color coding for each category.
 
-- [ ] **Feature: XP Task Claim**
+- [x] **Feature: XP Task Claim** ✅ FIXED by Kiro
   - Current coverage: covered.
   - Evidence: `tasks-bundle.ts` inserts `user_task_claims`, calls `fn_increment_xp`, then `logActivity(... 'XP', 'Claim Success' ...)`.
   - Gap: duplicate/already-claimed path returns success but does not always write a dedup audit event.
   - Solution: For already-claimed responses, optionally log `SYNC` or `INFO` event with metadata `{ already_claimed: true, task_id }` without incrementing XP.
+  - **Fix Applied**: Added `SYNC / Duplicate Claim Attempt` log on 23505 duplicate key error before returning `already_claimed: true`.
 
 - [x] **Feature: Social Verification XP** ✅ FIXED by Kiro
   - Current coverage: covered.
@@ -349,11 +350,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: On successful receipt, backend sync must write `user_activity_logs` event `DAILY / On-chain Daily Claim` with `tx_hash`, `chain_id`, `contract_address`, `xp_awarded`, and `sync_status`.
   - **Fix Applied**: `handleXpSync` now distinguishes daily claims from generic XP syncs. Daily claims log as `DAILY / On-chain Daily Claim` with metadata `{ chain_id, contract_address, on_chain_xp, sync_status }`. Generic syncs remain `XP / Ledger Sync`.
 
-- [ ] **Feature: Raffle Ticket Purchase**
+- [x] **Feature: Raffle Ticket Purchase** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `tasks-bundle.ts` logs `PURCHASE / Raffle Ticket Buy` when task id starts with `raffle_buy_`.
   - Gap: current log amount is ticket count and symbol `TICKET`; purchase cost, token, raffle id, and tx hash are not guaranteed in this log.
   - Solution: Add metadata `{ raffle_id, ticket_count, payment_token, payment_amount, tx_hash }` and ensure route that records ticket purchase always passes the receipt.
+  - **Fix Applied**: Changed category to `RAFFLE / Ticket Purchase` with metadata `{ raffle_id, ticket_count }` and tx_hash extracted from task_id. Also added metadata + txHash params to tasks-bundle `logActivity` function.
 
 - [x] **Feature: Raffle Prize Claim** ✅ FIXED by Kiro
   - Current coverage: partially covered.
@@ -397,11 +399,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Add `SBT` category or metadata tag, and add admin filter by `activity_type = Pool Sharing Claim`.
   - **Fix Applied**: Changed category from `REWARD` to `SBT` and added `feature: 'sbt_pool'` metadata. Now appears under the SBT filter in profile activity.
 
-- [ ] **Feature: On-chain Event Sync**
+- [x] **Feature: On-chain Event Sync** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `audit-bundle.ts` logs `XP / Reward`, `XP / Task`, and `REWARD / Payout`; it upserts `user_task_claims`.
   - Gap: tier upgrade event path updates `user_profiles.tier` but does not write `user_activity_logs`.
   - Solution: Add log for `SBT / Tier Upgrade Synced` inside the `upgradeLogs` loop.
+  - **Fix Applied**: Already done in SBT Tier Upgrade fix above — `SBT / Tier Upgrade Synced` log added in `upgradeLogs` loop.
 
 - [x] **Feature: XP DB-to-Contract Sync** ✅ FIXED by Kiro
   - Current coverage: covered.
@@ -422,11 +425,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: direct Supabase reads/writes in admin UI should be checked to ensure every mutation is through backend and logged.
   - Solution: Route all admin mutations through `admin-bundle`, require signature, and write `admin_audit_logs` consistently.
 
-- [ ] **Feature: Admin Task Governance**
+- [x] **Feature: Admin Task Governance** ✅ FIXED by Kiro
   - Current coverage: incomplete.
   - Evidence: `TaskManager.tsx` sends `AUDIT_GOVERNANCE` to `/api/admin/tasks/sync`, but `handleTaskSync()` only inserts tasks and returns success; no audit log observed there.
   - Gap: governance tx/action may not be persisted in `admin_audit_logs`.
   - Solution: Extend `task-sync` to accept governance audit payload or add dedicated `admin-bundle` action `AUDIT_GOVERNANCE` that logs admin, tx, action, and details.
+  - **Fix Applied**: `handleTaskSync` now accepts admin address, calls `logAdminAction(admin, 'TASK_SYNC', { tasks_count, task_titles })` after inserting tasks.
 
 - [ ] **Feature: Error Log / Incident History**
   - Current coverage: not covered as persistent product feature.
@@ -434,11 +438,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: admin dashboard cannot review persistent backend failures across transactions, sync, cron, social verify, raffle, SBT, or payment flows.
   - Solution: Add `system_error_logs` or `event_logs` table with sanitized fields: `severity`, `surface`, `action`, `wallet_address`, `tx_hash`, `request_id`, `error_code`, `message_sanitized`, `metadata`, `created_at`. Add admin dashboard tab/filter.
 
-- [ ] **Feature: Hype Feed / Public Activity**
+- [x] **Feature: Hype Feed / Public Activity** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `HypeFeed.tsx` reads recent `user_activity_logs`.
   - Gap: if categories are inconsistent, public feed may show misleading reward/purchase labels.
   - Solution: Normalize category taxonomy before feeding public activity components.
+  - **Fix Applied**: All category taxonomy has been normalized across all bundles (DAILY, SBT, RAFFLE, UGC, SYNC, ERROR, IDENTITY, REWARD, XP, PURCHASE). HypeFeed will now display consistent labels.
 
 ### Recommended Unified Event Taxonomy
 
