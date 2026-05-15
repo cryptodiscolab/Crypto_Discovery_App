@@ -149,6 +149,19 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
 
         const normalizedWallet = wallet_address.toLowerCase();
 
+        // Verify tx_hash on-chain if provided (data integrity check)
+        let txVerified = false;
+        if (tx_hash) {
+            try {
+                const receipt = await rpcClient.getTransactionReceipt({ hash: tx_hash as `0x${string}` });
+                txVerified = receipt?.status === 'success' && receipt.from.toLowerCase() === normalizedWallet;
+            } catch {
+                // tx_hash verification is best-effort — claim still proceeds based on winner array check
+            }
+        }
+
+        // Read raffle info to verify winner AND get prize amount
+        let prizePerWinner = 0;
         try {
             const raffleInfo: any = await rpcClient.readContract({
                 address: RAFFLE_ADDRESS as `0x${string}`,
@@ -161,6 +174,8 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
             if (!winners.includes(normalizedWallet)) {
                 return res.status(403).json({ error: `Not a registered winner for Raffle #${raffle_id}` });
             }
+            // Extract prize per winner (field index 14 in RaffleInfo struct)
+            prizePerWinner = Number(raffleInfo.prizePerWinner || raffleInfo[14] || 0) / 1e18;
         } catch (onChainErr: any) {
             return res.status(500).json({ error: sanitizeError(onChainErr) });
         }
@@ -208,19 +223,19 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
             txHash: tx_hash
         });
 
-        // Raffle-specific prize claim log for RAFFLE filter
+        // Raffle-specific prize claim log with actual ETH prize amount
         await logActivity({
             wallet: normalizedWallet,
             category: 'RAFFLE',
             type: 'Prize Claim',
-            description: `Claimed prize for Raffle #${raffle_id}`,
-            amount: 0,
+            description: `Claimed ${prizePerWinner.toFixed(4)} ETH prize for Raffle #${raffle_id}`,
+            amount: prizePerWinner,
             symbol: 'ETH',
             txHash: tx_hash,
-            metadata: { raffle_id, xp_awarded: xpAwarded }
+            metadata: { raffle_id, xp_awarded: xpAwarded, prize_eth: prizePerWinner, tx_verified: txVerified }
         });
 
-        return res.status(200).json({ success: true, xpAwarded });
+        return res.status(200).json({ success: true, xpAwarded, prizeETH: prizePerWinner });
     } catch (error: any) {
         return res.status(500).json({ error: sanitizeError(error) });
     }

@@ -59,24 +59,6 @@ export function useRaffle() {
                 // 1. Award XP (Internal Logic) - appended hash to allow multiple purchases
                 await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${hash}`, 0);
 
-                // 2. Log Activity (User History)
-                const response = await fetch('/api/user-bundle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'log-activity',
-                        wallet_address: address,
-                        signature,
-                        message,
-                        category: 'PURCHASE',
-                        type: 'Raffle Ticket Buy',
-                        description: `Purchased ${amount} ticket(s) for Raffle #${raffleId}`,
-                        amount: Number(amount),
-                        symbol: 'TICKET',
-                        txHash: hash
-                    })
-                });
-
                 if (refetch) refetch();
             } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : String(e);

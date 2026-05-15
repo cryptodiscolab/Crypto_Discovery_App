@@ -41,9 +41,10 @@ export function useVerifiedAction() {
     const execute = useCallback(async (action: string, payload: VerifiedActionPayload) => {
         if (!address) throw new Error('Wallet not connected');
 
-        // Build a deterministic, human-readable message
+        // Build a deterministic, human-readable message including task ID for security verification
         const timestamp = Math.floor(Date.now() / 1000);
-        const message = `Crypto Disco App\nAction: ${action}\nWallet: ${address?.toLowerCase()}\nTimestamp: ${timestamp}`;
+        const taskIdStr = payload.task_id ? `\nID: ${payload.task_id}` : '';
+        const message = `Crypto Disco App\nAction: ${action}\nWallet: ${address?.toLowerCase()}${taskIdStr}\nTimestamp: ${timestamp}`;
 
         // Sign the message via wagmi
         const signature = await signMessageAsync({ message });
