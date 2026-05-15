@@ -1,0 +1,4 @@
+interface:
+  display_name: "Disco Codebase Builder"
+  short_description: "Build and audit Crypto Disco codebase with token discipline."
+  default_prompt: "Use this skill to build, fix, audit, or document the Crypto Disco DailyApp codebase while following PRD, .cursorrules, and token-efficient workflows."

@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   public: {
     Tables: {
       admin_audit_logs: {
@@ -459,7 +464,7 @@ export type Database = {
           id?: string
           message: string
           resolved_at?: string | null
-          status: string
+          status?: string
           target_file?: string | null
         }
         Update: {
@@ -471,6 +476,54 @@ export type Database = {
           resolved_at?: string | null
           status?: string
           target_file?: string | null
+        }
+        Relationships: []
+      }
+      pending_sync_jobs: {
+        Row: {
+          action_type: string
+          chain_id: number | null
+          contract_address: string | null
+          created_at: string
+          error_message: string | null
+          id: number
+          last_attempted_at: string | null
+          payload: Json | null
+          resolved_at: string | null
+          retry_count: number
+          status: string
+          tx_hash: string | null
+          wallet_address: string
+        }
+        Insert: {
+          action_type: string
+          chain_id?: number | null
+          contract_address?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: number
+          last_attempted_at?: string | null
+          payload?: Json | null
+          resolved_at?: string | null
+          retry_count?: number
+          status?: string
+          tx_hash?: string | null
+          wallet_address: string
+        }
+        Update: {
+          action_type?: string
+          chain_id?: number | null
+          contract_address?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: number
+          last_attempted_at?: string | null
+          payload?: Json | null
+          resolved_at?: string | null
+          retry_count?: number
+          status?: string
+          tx_hash?: string | null
+          wallet_address?: string
         }
         Relationships: []
       }
@@ -756,6 +809,7 @@ export type Database = {
           level: number
           level_name: string | null
           min_xp: number
+          reward_weight: number | null
           tier_name: string | null
         }
         Insert: {
@@ -765,6 +819,7 @@ export type Database = {
           level: number
           level_name?: string | null
           min_xp: number
+          reward_weight?: number | null
           tier_name?: string | null
         }
         Update: {
@@ -774,6 +829,7 @@ export type Database = {
           level?: number
           level_name?: string | null
           min_xp?: number
+          reward_weight?: number | null
           tier_name?: string | null
         }
         Relationships: []
@@ -838,6 +894,51 @@ export type Database = {
           id?: string
           last_synced_block?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      system_error_logs: {
+        Row: {
+          action: string | null
+          bundle: string | null
+          created_at: string
+          error_code: string | null
+          id: number
+          message_sanitized: string
+          metadata: Json | null
+          request_id: string | null
+          severity: string
+          surface: string
+          tx_hash: string | null
+          wallet_address: string | null
+        }
+        Insert: {
+          action?: string | null
+          bundle?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: number
+          message_sanitized: string
+          metadata?: Json | null
+          request_id?: string | null
+          severity?: string
+          surface: string
+          tx_hash?: string | null
+          wallet_address?: string | null
+        }
+        Update: {
+          action?: string | null
+          bundle?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: number
+          message_sanitized?: string
+          metadata?: Json | null
+          request_id?: string | null
+          severity?: string
+          surface?: string
+          tx_hash?: string | null
+          wallet_address?: string | null
         }
         Relationships: []
       }
@@ -1283,11 +1384,18 @@ export type Database = {
         Row: {
           badge_url: string | null
           display_name: string | null
+          fid: number | null
+          global_rank: number | null
+          is_admin: boolean | null
+          is_operator: boolean | null
+          last_daily_bonus_claim: string | null
           pfp_url: string | null
           rank_name: string | null
+          referred_by: string | null
           streak_count: number | null
           tier: number | null
           total_xp: number | null
+          updated_at: string | null
           username: string | null
           wallet_address: string | null
         }
@@ -1326,30 +1434,19 @@ export type Database = {
       v_user_full_profile: {
         Row: {
           badge_url: string | null
-          bio: string | null
           display_name: string | null
           fid: number | null
-          follower_count: number | null
-          following_count: number | null
-          google_email: string | null
-          google_id: string | null
+          global_rank: number | null
           is_admin: boolean | null
           is_operator: boolean | null
           last_daily_bonus_claim: string | null
-          last_onchain_xp: number | null
-          neynar_score: number | null
-          oauth_provider: string | null
           pfp_url: string | null
-          power_badge: boolean | null
-          raffle_wins: number | null
-          raffles_created: number | null
           rank_name: string | null
           referred_by: string | null
+          reward_weight: number | null
           streak_count: number | null
           tier: number | null
           total_xp: number | null
-          twitter_id: string | null
-          twitter_username: string | null
           updated_at: string | null
           username: string | null
           wallet_address: string | null
@@ -1409,10 +1506,16 @@ export type Database = {
         Args: { p_wallet: string; p_xp: number }
         Returns: undefined
       }
-      fn_increment_xp: {
-        Args: { p_amount: number; p_is_dividend?: boolean; p_wallet: string }
-        Returns: undefined
-      }
+      fn_increment_xp:
+        | { Args: { p_amount: number; p_wallet: string }; Returns: undefined }
+        | {
+            Args: {
+              p_amount: number
+              p_is_dividend?: boolean
+              p_wallet: string
+            }
+            Returns: undefined
+          }
       fn_refresh_rank_scores: { Args: never; Returns: undefined }
       fn_refresh_sbt_pool_stats: { Args: never; Returns: undefined }
       get_auth_wallet: { Args: never; Returns: string }
@@ -1426,3 +1529,127 @@ export type Database = {
     }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+

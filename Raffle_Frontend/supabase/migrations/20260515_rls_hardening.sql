@@ -37,6 +37,7 @@ ALTER TABLE public.user_task_claims ENABLE ROW LEVEL SECURITY;
 -- ─── admin_audit_logs (service-role only) ────────────────────────────────────
 DROP POLICY IF EXISTS "Public read admin logs" ON public.admin_audit_logs;
 DROP POLICY IF EXISTS "Anon read admin logs" ON public.admin_audit_logs;
+DROP POLICY IF EXISTS "Public can view audit logs" ON public.admin_audit_logs;
 -- No SELECT policy → only service role can read.
 ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 

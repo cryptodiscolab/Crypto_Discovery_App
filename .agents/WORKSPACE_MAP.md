@@ -21,6 +21,7 @@ e:\Disco Gacha\Disco_DailyApp
 │   │   ├── deepseek-specialist       # High-logic & Security (v3.56.3)
 │   │   ├── deploy-to-vercel          # CI/CD deployment workflows
 │   │   ├── design-protocol           # UI/UX "Midnight Cyber" standards
+│   │   ├── disco-codebase-builder    # Token-efficient repo build/fix/audit protocol
 │   │   ├── economy-profitability-manager # PnL & Zero-Riba Logic
 │   │   ├── ecosystem-sentinel        # Audit & Nexus Orchestration
 │   │   ├── git-hygiene               # Clean Git Tree Mandate

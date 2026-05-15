@@ -1,5 +1,6 @@
+import { useAdminContract } from '../../../../../../hooks/useAdminContract';
 import { ShieldCheck } from 'lucide-react';
-import { useAccount, useSignMessage, useWriteContract, usePublicClient } from 'wagmi';
+import { useAccount, useSignMessage, usePublicClient } from 'wagmi';
 import { CONTRACTS, RAFFLE_ABI } from '../../../../../lib/contracts';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -25,7 +26,7 @@ export function RaffleEconSettingsCard({
 }: RaffleEconSettingsCardProps) {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { writeContractAsync } = useWriteContract();
+    const { writeContractAsync } = useAdminContract();
     const publicClient = usePublicClient();
 
     const handleSaveRaffleFees = async () => {

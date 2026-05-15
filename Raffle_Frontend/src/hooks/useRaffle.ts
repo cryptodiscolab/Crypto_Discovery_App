@@ -17,7 +17,6 @@ export function useRaffle() {
     const { address } = useAccount();
     const chainId = useChainId();
     const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
-    const { address } = useAccount();
     const { refetch } = usePoints();
     const { signMessageAsync } = useSignMessage();
     const [isDrawing, setIsDrawing] = useState(false);

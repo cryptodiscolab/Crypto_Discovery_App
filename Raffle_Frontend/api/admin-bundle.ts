@@ -289,6 +289,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await logAdminAction(targetAddress, 'NEXUS_DISPATCH', { task_name, target_agent } as Json);
                 return res.status(200).json({ success: true, message: `Task dispatched to ${target_agent}` });
             }
+            case 'LOG_ONCHAIN_TX': {
+                await logAdminAction(targetAddress, `ONCHAIN_TX: ${payload?.functionName || 'unknown'}`, payload || {});
+                return res.status(200).json({ success: true });
+            }
+            case 'GET_AUDIT_LOGS': {
+                const { data } = await supabaseAdmin.from('admin_audit_logs').select('*').order('created_at', { ascending: false }).limit(100);
+                return res.status(200).json({ success: true, logs: data || [] });
+            }
             case 'GET_ERROR_LOGS': {
                 const limit = payload?.limit || 100;
                 const severity = payload?.severity || null;

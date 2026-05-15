@@ -1,5 +1,6 @@
+import { useAdminContract } from '../../../../../../hooks/useAdminContract';
 import { Activity } from 'lucide-react';
-import { useAccount, useSignMessage, useWriteContract } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { CONTRACTS, MASTER_X_ABI } from '../../../../../lib/contracts';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -22,7 +23,7 @@ export function MasterXDistributionCard({
 }: MasterXDistributionCardProps) {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { writeContractAsync } = useWriteContract();
+    const { writeContractAsync } = useAdminContract();
 
     const handleSaveEconShares = async () => {
         setIsSaving(true);

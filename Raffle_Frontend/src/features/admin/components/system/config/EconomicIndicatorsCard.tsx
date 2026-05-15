@@ -1,5 +1,5 @@
+import { useAdminContract } from '../../../../../../hooks/useAdminContract';
 import { TrendingUp } from 'lucide-react';
-import { useWriteContract } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
 import toast from 'react-hot-toast';
 import { SponsorSettings } from '../../../../types/admin';
@@ -23,7 +23,7 @@ export function EconomicIndicatorsCard({
     getUsdValue,
     isSaving, setIsSaving
 }: EconomicIndicatorsCardProps) {
-    const { writeContractAsync } = useWriteContract();
+    const { writeContractAsync } = useAdminContract();
 
     const handleSaveEconomical = async () => {
         setIsSaving(true);

@@ -1,6 +1,7 @@
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { useReadContract, useWriteContract, usePublicClient } from 'wagmi';
+import { useReadContract, usePublicClient } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../lib/contracts';
 import toast from 'react-hot-toast';
 
@@ -27,7 +28,7 @@ export function SponsorshipConfigSection() {
         if (currentMinPool) setMinPool((Number(currentMinPool) / 1e18).toString()); // minRewardPoolValue is in wei
     }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
-    const { writeContractAsync } = useWriteContract();
+    const { writeContractAsync } = useAdminContract();
     const publicClient = usePublicClient();
 
     const handleSaveSponsorshipConfig = async () => {

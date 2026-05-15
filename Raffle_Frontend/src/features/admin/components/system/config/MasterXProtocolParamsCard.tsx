@@ -1,5 +1,5 @@
+import { useAdminContract } from '../../../../../../hooks/useAdminContract';
 import { Cpu } from 'lucide-react';
-import { useWriteContract } from 'wagmi';
 import { CONTRACTS, MASTER_X_ABI } from '../../../../../lib/contracts';
 import toast from 'react-hot-toast';
 import { MasterParams } from '../../../../types/admin';
@@ -15,7 +15,7 @@ export function MasterXProtocolParamsCard({
     masterParams, setMasterParams,
     isSaving, setIsSaving
 }: MasterXProtocolParamsCardProps) {
-    const { writeContractAsync } = useWriteContract();
+    const { writeContractAsync } = useAdminContract();
 
     const handleSaveMasterParams = async () => {
         setIsSaving(true);

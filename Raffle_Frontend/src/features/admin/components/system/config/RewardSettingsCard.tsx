@@ -1,5 +1,6 @@
+import { useAdminContract } from '../../../../../../hooks/useAdminContract';
 import { Zap, Save } from 'lucide-react';
-import { useAccount, useSignMessage, useWriteContract } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -14,7 +15,7 @@ interface RewardSettingsCardProps {
 export function RewardSettingsCard({ rewards, setRewards, drift }: RewardSettingsCardProps) {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { writeContractAsync } = useWriteContract();
+    const { writeContractAsync } = useAdminContract();
 
     const handleSaveRewards = async () => {
         const tid = toast.loading('Updating Global Rewards on-chain...');

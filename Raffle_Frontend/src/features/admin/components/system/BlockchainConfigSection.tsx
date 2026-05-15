@@ -1,5 +1,6 @@
+import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { useState, useEffect } from 'react';
-import { useAccount, useSignMessage, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
+import { useAccount, useSignMessage, useReadContract, usePublicClient } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI, RAFFLE_ABI } from '../../../../lib/contracts';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -29,7 +30,7 @@ import {
 export function BlockchainConfigSection() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { writeContractAsync } = useWriteContract();
+    const { writeContractAsync } = useAdminContract();
     const publicClient = usePublicClient();
     const { ecosystemSettings } = usePoints();
     const [isSaving, setIsSaving] = useState(false);
