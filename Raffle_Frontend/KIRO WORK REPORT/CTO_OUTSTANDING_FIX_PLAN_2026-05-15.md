@@ -39,7 +39,7 @@ Dokumen ini adalah task list terstruktur untuk pekerjaan yang **belum selesai** 
 |---|---|---|---|---|---|
 | CTO-P0-01 | P0 | Clean release branch / dirty worktree governance | **Done** | Release Engineer | Blocks clean release sign-off |
 | CTO-P0-02 | P0 | Live contract ABI selector parity | Done for Base Sepolia | Contract/Frontend | Mainnet still needs chain-specific proof if released |
-| CTO-P0-03 | P0 | Production-like E2E high-risk flows | Open | QA/Frontend/Web3 | Blocks public release confidence |
+| CTO-P0-03 | P0 | Production-like E2E high-risk flows | **Partial** — API/page smoke done | QA/Frontend/Web3 | Wallet flows need manual QA |
 | CTO-P1-01 | P1 | Verification server health + social verifier smoke test | Health done, scenario test open | Backend/Verifier | Blocks social-task release confidence |
 | CTO-P1-02 | P1 | Live Supabase DB/RLS operator proof | Done | Backend/DB Operator | Cleared for current target env |
 | CTO-P2-01 | P2 | Bundle optimization and warning suppression cleanup | Deferred | Frontend Performance | Can ship with waiver |
@@ -168,9 +168,31 @@ Live selector parity passed for 125 selector(s).
 
 ### CTO-P0-03 - Production-Like Browser E2E High-Risk Flows
 
-**Status:** Health done, scenario test open  
+**Status:** Partial — API/page smoke done, wallet flows require manual QA  
 **Owner:** QA/Frontend/Web3  
 **Area:** Runtime behavior, wallet, admin, raffle, UGC  
+
+**Live Server Smoke Test Results (2026-05-15 automated):**
+
+| Test | URL | Result |
+|---|---|---|
+| Homepage load | `https://crypto-discovery-app.vercel.app/` | ✅ PASS — renders full UI with SBT pool, nav links |
+| Tasks page | `/tasks` | ✅ PASS — renders "Connect Wallet" gate |
+| Raffles page | `/raffles` | ✅ PASS — renders "Connect Wallet" gate |
+| Leaderboard page | `/leaderboard` | ✅ PASS — renders "Connect Wallet" gate |
+| API ping | `/api/ping` | ✅ PASS — `{"message":"Pong!"}` |
+| API leaderboard | `/api/user/leaderboard` | ✅ PASS — returns 5 users with XP/tier/rank |
+| API user-bundle (no action) | `/api/user-bundle` | ✅ PASS — 400 Bad Request (expected) |
+| API admin-bundle (GET) | `/api/admin-bundle` | ✅ PASS — 405 Method Not Allowed (expected) |
+| API is-admin (no wallet) | `/api/is-admin` | ✅ PASS — 400 Bad Request (expected) |
+| API notify (GET) | `/api/notify` | ✅ PASS — 405 Method Not Allowed (expected) |
+| Cron sync-xp-onchain (no auth) | `/api/sync-xp-onchain` | ✅ PASS — 401 Unauthorized (fail-closed) |
+| Cron lurah-cron (no auth) | `/api/lurah-cron` | ✅ PASS — 401 Unauthorized (fail-closed) |
+| Cron raffle-sync (no auth) | `/api/raffle-sync` | ✅ PASS — 401 Unauthorized (fail-closed) |
+| Verification server health | `dailyapp-verification-server.vercel.app/api/verify/health` | ✅ PASS — `{"success":true}` |
+| Verification server root | `dailyapp-verification-server.vercel.app/` | ✅ PASS — lists all endpoints |
+
+**Wallet-dependent flows (require manual QA):**
 
 **Problem:**  
 TypeScript dan build pass, tetapi belum ada bukti E2E browser untuk high-risk wallet/admin flows.
