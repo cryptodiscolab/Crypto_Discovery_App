@@ -10,6 +10,8 @@
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives",
     "check-routes": "node scripts/check-api-routes.cjs",
     "check-abi": "node scripts/check-abi-parity.cjs",
+    "check-live-abi": "node scripts/check-live-abi-selectors.cjs --chain base-sepolia",
+    "check-live-rls": "node scripts/check-live-rls.cjs",
     "audit-checks": "npm run check-routes && npm run check-abi",
     "postinstall": "patch-package"
   },

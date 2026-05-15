@@ -32,10 +32,13 @@ function extractApiPaths(content) {
     // Match string literals that start with /api/ inside fetch / axios / direct calls.
     // Captures both single and double quoted strings, plus template literals without interpolation.
     const paths = new Set();
+    const withoutComments = content
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '');
     // Match '...'  "..." or `...` (template literals without ${})
     const regex = /(['"`])(\/api\/[^'"`\s${]+)\1/g;
     let m;
-    while ((m = regex.exec(content)) !== null) {
+    while ((m = regex.exec(withoutComments)) !== null) {
         let p = m[2];
         // Strip query strings
         p = p.split('?')[0];

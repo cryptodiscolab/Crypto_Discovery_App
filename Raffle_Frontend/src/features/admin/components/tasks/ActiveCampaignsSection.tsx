@@ -12,6 +12,7 @@ interface ActiveCampaignsSectionProps {
     onToggleTaskStatus: (id: bigint, isActive: boolean) => void;
     onApproveSponsor: (id: string) => void;
     onRejectSponsor: (id: string) => void;
+    isSponsorModerationEnabled?: boolean;
     onRefetchSponsors: () => void;
 }
 
@@ -27,7 +28,7 @@ interface SponsorDbMeta {
     expires_at?: string;
 }
 
-export function ActiveCampaignsSection({ nextSponsorId, nextTaskId, onToggleTaskStatus, onApproveSponsor, onRejectSponsor, onRefetchSponsors }: ActiveCampaignsSectionProps) {
+export function ActiveCampaignsSection({ nextSponsorId, nextTaskId, onToggleTaskStatus, onApproveSponsor, onRejectSponsor, isSponsorModerationEnabled = true, onRefetchSponsors }: ActiveCampaignsSectionProps) {
     const [auditSubMode, setAuditSubMode] = useState('SPONSORS');
     return (
         <div className="space-y-10 animate-in fade-in duration-700 text-left relative">
@@ -57,7 +58,7 @@ export function ActiveCampaignsSection({ nextSponsorId, nextTaskId, onToggleTask
                         </div>
                         <div className="space-y-6">
                             {nextSponsorId && Number(nextSponsorId) > 1 ? Array.from({ length: Number(nextSponsorId) - 1 }).map((_, i) => (
-                                <AuditRequestRow key={i + 1} id={BigInt(i + 1)} onApprove={onApproveSponsor} onReject={onRejectSponsor} />
+                                <AuditRequestRow key={i + 1} id={BigInt(i + 1)} onApprove={onApproveSponsor} onReject={onRejectSponsor} isModerationEnabled={isSponsorModerationEnabled} />
                             )) : (
                                 <div className="py-20 flex flex-col items-center justify-center opacity-40">
                                     <div className="w-20 h-20 rounded-full border-4 border-slate-800 border-t-indigo-500 animate-spin mb-6" />
@@ -134,7 +135,7 @@ function OrganicTaskRow({ id, onToggle }: { id: bigint; onToggle: (id: bigint, i
     );
 }
 
-function AuditRequestRow({ id, onApprove, onReject }: { id: bigint; onApprove: (id: string) => void; onReject: (id: string) => void }) {
+function AuditRequestRow({ id, onApprove, onReject, isModerationEnabled }: { id: bigint; onApprove: (id: string) => void; onReject: (id: string) => void; isModerationEnabled: boolean }) {
     const { data: request } = useReadContract({ address: DAILY_APP_ADDRESS, abi: ABIS.DAILY_APP, functionName: 'sponsorRequests', args: [id] });
     if (!request || Number((request as any[])[8]) === 2) return null;
     const [sponsor, , title, link, , , rewardPerUserUSD, targetClaims, statusRaw] = request as any[];
@@ -155,8 +156,8 @@ function AuditRequestRow({ id, onApprove, onReject }: { id: bigint; onApprove: (
             </div>
             {status === 0 && (
                 <div className="flex items-center gap-4 w-full lg:w-auto">
-                    <button onClick={() => onReject(id.toString())} className="flex-1 lg:flex-none px-10 py-4 border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-red-500 hover:text-white transition-all">REJECT</button>
-                    <button onClick={() => onApprove(id.toString())} className="flex-1 lg:flex-none px-10 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-500 transition-all shadow-2xl shadow-indigo-500/40">APPROVE</button>
+                    <button disabled={!isModerationEnabled} onClick={() => onReject(id.toString())} className={`flex-1 lg:flex-none px-10 py-4 border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all ${isModerationEnabled ? 'hover:bg-red-500 hover:text-white' : 'opacity-40 cursor-not-allowed'}`}>REJECT</button>
+                    <button disabled={!isModerationEnabled} onClick={() => onApprove(id.toString())} className={`flex-1 lg:flex-none px-10 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-2xl shadow-indigo-500/40 ${isModerationEnabled ? 'hover:bg-indigo-500' : 'opacity-40 cursor-not-allowed'}`}>APPROVE</button>
                 </div>
             )}
         </div>

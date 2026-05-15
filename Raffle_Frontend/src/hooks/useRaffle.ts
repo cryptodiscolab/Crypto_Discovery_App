@@ -60,7 +60,7 @@ export function useRaffle() {
                 await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${hash}`, 0);
 
                 // 2. Log Activity (User History)
-                await fetch('/api/user-bundle', {
+                const response = await fetch('/api/user-bundle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -340,7 +340,7 @@ export function useRaffle() {
                     console.error("Failed to extract raffle ID:", e);
                 }
 
-                await fetch('/api/user-bundle', {
+                const response = await fetch('/api/user-bundle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -360,9 +360,30 @@ export function useRaffle() {
                         }
                     })
                 });
+                const result = await response.json();
+                if (!response.ok || !result?.success) {
+                    throw new Error(result?.error || 'Raffle DB sync failed');
+                }
                 toast.success("Raffle synced to explorer!");
             } catch (logErr: any) {
-                console.warn('Logging UGC Raffle failed:', logErr.message);
+                const errMsg = logErr instanceof Error ? logErr.message : String(logErr);
+                console.warn('Logging UGC Raffle failed:', errMsg);
+                recordPendingSync({
+                    actionType: 'raffle_create',
+                    txHash: hash,
+                    chainId,
+                    contractAddress: RAFFLE_ADDRESS,
+                    payload: {
+                        winnerCount,
+                        maxTickets,
+                        durationDays,
+                        metadataURI,
+                        depositETH: formatEther(totalValue),
+                        extraMetadata
+                    },
+                    errorMessage: errMsg
+                }).catch(() => {});
+                toast.success("Raffle created on-chain. Sync pending — will retry automatically.");
             }
         }
         return hash;

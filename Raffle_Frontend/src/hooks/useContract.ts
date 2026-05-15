@@ -187,25 +187,7 @@ export function useDailyAppAdmin() {
         });
     };
 
-    const approveSponsorship = async (requestId: any) => {
-        return await writeContractAsync({
-            address: V12_ADDRESS,
-            abi: ABIS.DAILY_APP,
-            functionName: 'approveSponsorship',
-            args: [BigInt(requestId)],
-        });
-    };
-
-    const rejectSponsorship = async (requestId: any, reason: any) => {
-        return await writeContractAsync({
-            address: V12_ADDRESS,
-            abi: ABIS.DAILY_APP,
-            functionName: 'rejectSponsorship',
-            args: [BigInt(requestId), reason],
-        });
-    };
-
-    return { grantRole, revokeRole, approveSponsorship, rejectSponsorship };
+    return { grantRole, revokeRole };
 }
 
 export function useSyncXP() {

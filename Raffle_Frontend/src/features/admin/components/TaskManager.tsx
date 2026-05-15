@@ -9,7 +9,6 @@ import {
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
 import { DAILY_APP_ABI, CONTRACTS } from '../../../lib/contracts';
-import { useDailyAppAdmin } from '../../../hooks/useContract';
 import { TaskBatchItem } from '../types/tasks';
 
 // Sub-sections
@@ -51,7 +50,6 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     const { signMessageAsync } = useSignMessage();
     const { writeContractAsync, data: hash, error: writeError } = useWriteContract();
     const { data: receipt, isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
-    const { approveSponsorship, rejectSponsorship } = useDailyAppAdmin();
 
     const [controlMode, setControlMode] = useState<'batch' | 'quick'>(initialMode);
     const [subTab, setSubTab] = useState('daily');
@@ -432,8 +430,9 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                                 nextSponsorId={nextSponsorId}
                                 nextTaskId={nextTaskId}
                                 onToggleTaskStatus={async () => {}}
-                                onApproveSponsor={async (id) => { await approveSponsorship(id); refetchSponsors(); }}
-                                onRejectSponsor={async (id) => { const r = prompt("Reason?"); if(r) await rejectSponsorship(id, r); refetchSponsors(); }}
+                                onApproveSponsor={async () => { toast.error('On-chain sponsorship moderation is unavailable on the deployed DailyApp contract.'); }}
+                                onRejectSponsor={async () => { toast.error('On-chain sponsorship moderation is unavailable on the deployed DailyApp contract.'); }}
+                                isSponsorModerationEnabled={false}
                                 onRefetchSponsors={refetchSponsors}
                             />
                         )}

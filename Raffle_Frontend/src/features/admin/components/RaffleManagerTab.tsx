@@ -293,18 +293,16 @@ function CreatorEarningsCard() {
 
 function AdminRaffleSettings() {
     const { address } = useAccount();
-    const [fees, setFees] = useState({ rake: '20', claim: '5', surcharge: '10' });
+    const [fees, setFees] = useState({ rake: '20', surcharge: '10' });
     
     // Fetch current settings
     const { data: rake } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'maintenanceFeeBP' });
-    const { data: claim } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'claimFeeBP' });
     const { data: surcharge } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'surchargeBP' });
 
     useEffect(() => {
         if (rake !== undefined) setFees(f => ({ ...f, rake: (Number(rake) / 100).toString() }));
-        if (claim !== undefined) setFees(f => ({ ...f, claim: (Number(claim) / 100).toString() }));
         if (surcharge !== undefined) setFees(f => ({ ...f, surcharge: (Number(surcharge) / 100).toString() }));
-    }, [rake, claim, surcharge]);
+    }, [rake, surcharge]);
 
     const calls = [{
         to: RAFFLE_ADDRESS,
@@ -312,7 +310,6 @@ function AdminRaffleSettings() {
         functionName: 'setRaffleFees',
         args: [
             BigInt(Number(fees.rake) * 100),
-            BigInt(Number(fees.claim) * 100),
             BigInt(Number(fees.surcharge) * 100)
         ]
     }];
@@ -333,21 +330,13 @@ function AdminRaffleSettings() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Project Rake (%)</label>
                     <div className="relative">
                         <input type="number" value={fees.rake} onChange={e => setFees({...fees, rake: e.target.value})}
                             className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-black focus:border-indigo-500/50 outline-none" />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">BP: {Number(fees.rake)*100}</span>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Claim Fee (%)</label>
-                    <div className="relative">
-                        <input type="number" value={fees.claim} onChange={e => setFees({...fees, claim: e.target.value})}
-                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-black focus:border-emerald-500/50 outline-none" />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">BP: {Number(fees.claim)*100}</span>
                     </div>
                 </div>
                 <div className="space-y-2">

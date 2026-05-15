@@ -5,6 +5,7 @@ export type PendingSyncAction =
     | 'raffle_buy'
     | 'raffle_claim'
     | 'raffle_create'
+    | 'raffle_reject'
     | 'daily_claim'
     | 'sbt_upgrade'
     | 'sbt_mint'

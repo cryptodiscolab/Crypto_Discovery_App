@@ -106,18 +106,28 @@ export function BlockchainConfigSection() {
     // Contract Reads
     const { data: qDaily } = useReadContract({ address: CONTRACTS.DAILY_APP as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'dailyBonusAmount' });
     const { data: qReferral } = useReadContract({ address: CONTRACTS.DAILY_APP as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'baseReferralReward' });
-    const { data: qRake } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'rakeBP' });
+    const { data: qRake } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'maintenanceFeeBP' });
     const { data: qSurcharge } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'surchargeBP' });
     const { data: qMaxUser } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'maxTicketsPerUser' });
     const { data: qMaxPart } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'maxParticipants' });
-    const { data: qXpCreate } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'xpPerCreate' });
-    const { data: qXpClaim } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'xpPerClaim' });
-    const { data: qXpBuy } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'xpPerTicket' });
-    const { data: qShares } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'getShares' });
-    const { data: qWeights } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'getTierWeights' });
-    const { data: qLastDist } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'lastDistribution' });
+    const { data: qXpCreate } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'raffleCreateXP' });
+    const { data: qXpClaim } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'raffleClaimXP' });
+    const { data: qXpBuy } = useReadContract({ address: CONTRACTS.RAFFLE as `0x${string}`, abi: RAFFLE_ABI, functionName: 'pointsRaffleTicket' });
+    const { data: qOwnerShare } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'ownerShare' });
+    const { data: qOpsShare } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'opsShare' });
+    const { data: qTreasuryShare } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'treasuryShare' });
+    const { data: qSbtShare } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'sbtPoolShare' });
+    const { data: qDiamondWeight } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'diamondWeight' });
+    const { data: qPlatinumWeight } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'platinumWeight' });
+    const { data: qGoldWeight } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'goldWeight' });
+    const { data: qSilverWeight } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'silverWeight' });
+    const { data: qBronzeWeight } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'bronzeWeight' });
+    const { data: qLastDist } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'lastDistributeTimestamp' });
     const { data: qWithdrawFee } = useReadContract({ address: CONTRACTS.DAILY_APP as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'withdrawalFeeBP' });
-    const { data: qMasterParams } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'params' });
+    const { data: qTicketPriceUSDC } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'ticketPriceUSDC' });
+    const { data: qMaxGasPrice } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'maxGasPrice' });
+    const { data: qPointsPerTicket } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'pointsPerTicket' });
+    const { data: qTicketDescription } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'ticketDescription' });
 
     // Sync contract data to local state
     useEffect(() => {
@@ -132,19 +142,32 @@ export function BlockchainConfigSection() {
         if (qXpBuy) setRaffleXp(prev => ({ ...prev, purchase: String(qXpBuy) }));
         if (qWithdrawFee) setWithdrawFee(String(qWithdrawFee));
         
-        if (qShares) {
-            const [owner, ops, treasury, sbt] = qShares as [bigint, bigint, bigint, bigint];
-            setEconShares({ owner: owner.toString(), ops: ops.toString(), treasury: treasury.toString(), sbt: sbt.toString() });
+        if (qOwnerShare !== undefined || qOpsShare !== undefined || qTreasuryShare !== undefined || qSbtShare !== undefined) {
+            setEconShares(prev => ({
+                owner: qOwnerShare !== undefined ? String(qOwnerShare) : prev.owner,
+                ops: qOpsShare !== undefined ? String(qOpsShare) : prev.ops,
+                treasury: qTreasuryShare !== undefined ? String(qTreasuryShare) : prev.treasury,
+                sbt: qSbtShare !== undefined ? String(qSbtShare) : prev.sbt
+            }));
         }
-        if (qWeights) {
-            const [d, p, g, s, b] = qWeights as [bigint, bigint, bigint, bigint, bigint];
-            setTierWeights({ diamond: d.toString(), platinum: p.toString(), gold: g.toString(), silver: s.toString(), bronze: b.toString() });
+        if (qDiamondWeight !== undefined || qPlatinumWeight !== undefined || qGoldWeight !== undefined || qSilverWeight !== undefined || qBronzeWeight !== undefined) {
+            setTierWeights(prev => ({
+                diamond: qDiamondWeight !== undefined ? String(qDiamondWeight) : prev.diamond,
+                platinum: qPlatinumWeight !== undefined ? String(qPlatinumWeight) : prev.platinum,
+                gold: qGoldWeight !== undefined ? String(qGoldWeight) : prev.gold,
+                silver: qSilverWeight !== undefined ? String(qSilverWeight) : prev.silver,
+                bronze: qBronzeWeight !== undefined ? String(qBronzeWeight) : prev.bronze
+            }));
         }
-        if (qMasterParams) {
-            const [t, g, p, desc] = qMasterParams as [bigint, bigint, bigint, string];
-            setMasterParams({ tUSDC: t.toString(), mGas: g.toString(), pPerTicket: p.toString(), desc });
+        if (qTicketPriceUSDC !== undefined || qMaxGasPrice !== undefined || qPointsPerTicket !== undefined || qTicketDescription !== undefined) {
+            setMasterParams(prev => ({
+                tUSDC: qTicketPriceUSDC !== undefined ? String(qTicketPriceUSDC) : prev.tUSDC,
+                mGas: qMaxGasPrice !== undefined ? String(qMaxGasPrice) : prev.mGas,
+                pPerTicket: qPointsPerTicket !== undefined ? String(qPointsPerTicket) : prev.pPerTicket,
+                desc: qTicketDescription !== undefined ? String(qTicketDescription) : prev.desc
+            }));
         }
-    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpBuy, qShares, qWeights, qWithdrawFee, qMasterParams]);
+    }, [qDaily, qReferral, qRake, qSurcharge, qMaxUser, qMaxPart, qXpCreate, qXpClaim, qXpBuy, qOwnerShare, qOpsShare, qTreasuryShare, qSbtShare, qDiamondWeight, qPlatinumWeight, qGoldWeight, qSilverWeight, qBronzeWeight, qWithdrawFee, qTicketPriceUSDC, qMaxGasPrice, qPointsPerTicket, qTicketDescription]);
 
     // Drift Detection
     useEffect(() => {
@@ -210,8 +233,7 @@ export function BlockchainConfigSection() {
             const hash = await writeContractAsync({
                 address: CONTRACTS.MASTER_X as `0x${string}`,
                 abi: MASTER_X_ABI,
-                functionName: 'withdrawTreasury',
-                args: [amount],
+                functionName: 'emergencyWithdraw',
             });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Funds Withdrawn to Safe!", { id: tid });

@@ -38,12 +38,12 @@ export function SponsorshipConfigSection() {
             const hash1 = await writeContractAsync({
                 address: CONTRACTS.DAILY_APP as any,
                 abi: DAILY_APP_ABI,
-                functionName: 'setSettings',
+                functionName: 'setSponsorshipParams',
                 args: [
-                    BigInt(Math.floor(Number(fee) * 1e6)),
-                    BigInt(Math.floor(Number(minPool) * 1e18)),
                     BigInt(Math.floor(Number(rewardPerClaim) * 1e18)),
-                    BigInt(tasksForReward)
+                    BigInt(tasksForReward),
+                    BigInt(Math.floor(Number(minPool) * 1e18)),
+                    BigInt(Math.floor(Number(fee) * 1e6))
                 ],
             });
             await publicClient!.waitForTransactionReceipt({ hash: hash1 });

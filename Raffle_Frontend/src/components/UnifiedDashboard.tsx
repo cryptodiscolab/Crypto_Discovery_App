@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { MASTER_X_ABI, DAILY_APP_ABI, CONTRACTS } from '../lib/contracts';
-import { Trophy, Star, Zap, ShieldCheck, ShieldAlert, Check, Calendar, ChevronRight } from 'lucide-react';
+import { Zap, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useSocialGuard } from '../hooks/useSocialGuard';
 import { useVerification } from '../hooks/useVerification';
 import { useTaskInfo } from '../hooks/useTaskInfo';
@@ -256,7 +256,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
     const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
-        functionName: 'hasDoneTask',
+        functionName: 'hasCompletedTask',
         args: [address, BigInt(taskId)],
     });
 
@@ -370,215 +370,14 @@ function SponsorCard({ sponsorId, isDisabled, isBaseVerified, address, onSuccess
     onSuccess: (hash: string) => void;
     multipliers: Multipliers;
 }) {
-    const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+    void sponsorId;
+    void isDisabled;
+    void isBaseVerified;
+    void address;
+    void onSuccess;
+    void multipliers;
 
-    const { data: sponsorData } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'sponsorships',
-        args: [BigInt(sponsorId)],
-    });
-
-    const { data: taskIds } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'getSponsorTasks',
-        args: [BigInt(sponsorId)],
-    });
-
-    const toggleTask = (taskId: number, isCompleted: boolean) => {
-        if (isCompleted) return;
-        setSelectedTasks((prev) =>
-            prev.includes(taskId) ? prev.filter((t) => t !== taskId) : [...prev, taskId]
-        );
-    };
-
-    // v3.42.2: Hard Hide for completed cards
-    if (!sponsorData || !taskIds || (selectedTasks.length === 0 && (taskIds as bigint[]).length > 0 && false)) return null; 
-
-    // We need to check if all subtasks are done
-    // Let's refine the return logic below
-
-    const sponsorName = (sponsorData as [string])?.[0];
-    const cardsDisabled = isDisabled || selectedTasks.length === 0;
-
-    return (
-        <div className={`glass-card p-5 relative overflow-hidden transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-zinc-800/60'}`}>
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <span className="text-[11px] font-black uppercase text-indigo-500 tracking-widest block mb-1">PARTNER MISSION</span>
-                    <h4 className="font-black text-lg uppercase tracking-tighter text-white">{String(sponsorName || 'PARTNER').toUpperCase()}</h4>
-                </div>
-                <Zap className="w-4 h-4 text-indigo-500 fill-indigo-500/20" />
-            </div>
-
-            <div className="space-y-2 mb-6">
-                {(taskIds as bigint[])?.map((tid) => (
-                    <SubTaskItem
-                        key={Number(tid)}
-                        taskId={Number(tid)}
-                        isSelected={selectedTasks.includes(Number(tid))}
-                        onToggle={(id, comp) => toggleTask(id, comp)}
-                        address={address}
-                        isBaseVerified={isBaseVerified}
-                        multipliers={multipliers}
-                    />
-                ))}
-            </div>
-
-            <div className="relative z-[9999] pointer-events-auto">
-                <BatchClaimButton 
-                    selectedTasks={selectedTasks} 
-                    isDisabled={cardsDisabled} 
-                    onSuccess={(hash) => {
-                        setSelectedTasks([]);
-                        onSuccess(hash);
-                    }} 
-                />
-            </div>
-        </div>
-    );
-}
-
-function BatchClaimButton({ selectedTasks, isDisabled, onSuccess }: {
-    selectedTasks: number[];
-    isDisabled: boolean;
-    onSuccess: (hash: string) => void;
-}) {
-    const { writeContract, data: hash, isPending } = useWriteContract();
-    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-    useEffect(() => {
-        if (isSuccess && hash) {
-            onSuccess(hash);
-        }
-    }, [isSuccess, hash, onSuccess]);
-
-    const handleBatchClaim = () => {
-        if (selectedTasks.length === 0) return;
-        writeContract({
-            address: CONTRACTS.DAILY_APP as `0x${string}`,
-            abi: DAILY_APP_ABI,
-            functionName: 'doBatchTasks',
-            args: [selectedTasks.map((t) => BigInt(t))],
-        });
-    };
-
-    return (
-        <button
-            onClick={handleBatchClaim}
-            disabled={isPending || isConfirming || isDisabled}
-            className={`w-full btn-primary py-3 text-[11px] font-black uppercase tracking-widest ${isDisabled || isPending || isConfirming ? 'opacity-50 grayscale' : ''}`}
-        >
-            {isPending ? 'SIGNING...' : isConfirming ? 'CONFIRMING...' : isDisabled ? 'SELECT MISSIONS' : `VERIFY ${selectedTasks.length} MISSIONS`}
-        </button>
-    );
-}
-
-function SubTaskItem({ taskId, isBaseVerified, isSelected, onToggle, address, multipliers }: {
-    taskId: number;
-    isBaseVerified: boolean;
-    isSelected: boolean;
-    onToggle: (id: number, comp: boolean) => void;
-    address: `0x${string}` | undefined;
-    multipliers: Multipliers;
-}) {
-    const { refetch: refetchPoints } = usePoints();
-    const { task, isLoading } = useTaskInfo(taskId);
-    const { verifyTask, isVerifying } = useVerification(refetchPoints);
-
-    const { data: isCompleted, refetch: refetchCompletion } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'hasCompletedTask',
-        args: [address, BigInt(taskId)],
-        query: { enabled: !!address && !!task }
-    });
-
-    // v3.42.2: Hard Hide for completed subtasks
-    if (isLoading || !task || isCompleted) return null;
-
-    const t = task;
-    const isBaseLocked = t.isBaseSocialRequired && !isBaseVerified;
-    const needsVerify = t.requiresVerification && !isCompleted;
-
-    const handleAction = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (isBaseLocked) {
-            toast.error("Base.app Social Link required for this mission!");
-            return;
-        }
-        if (needsVerify) {
-            window.open(t.link, '_blank');
-            const success = await verifyTask(t, address || '', taskId);
-            if (success) {
-                refetchCompletion();
-            }
-        } else {
-            onToggle(taskId, !!isCompleted);
-        }
-    };
-
-    return (
-        <div
-            onClick={handleAction}
-            className={`flex items-center justify-between p-3 rounded-xl transition-colors cursor-pointer select-none ${isCompleted
-                    ? 'bg-zinc-800/50 opacity-60'
-                    : isBaseLocked
-                        ? 'bg-blue-600/5 border border-blue-500/20 opacity-50 grayscale'
-                        : isSelected
-                            ? 'bg-indigo-600'
-                            : 'bg-zinc-800 hover:bg-zinc-700/80'
-                }`}
-        >
-            <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-colors ${isCompleted
-                    ? 'bg-emerald-500 border-emerald-500'
-                    : isBaseLocked
-                        ? 'bg-blue-500/10 border-blue-500/30'
-                        : isSelected
-                            ? 'bg-white border-white'
-                            : 'border-white/10 bg-slate-900'
-                    }`}>
-                    {isBaseLocked ? (
-                        <ShieldAlert className="w-3 h-3 text-blue-400" />
-                    ) : (isCompleted || isSelected) && (
-                        <Check
-                            className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-indigo-500'}`}
-                            strokeWidth={4}
-                        />
-                    )}
-                </div>
-                <div>
-                    <div className="flex items-center gap-2">
-                        <p className={`text-[11px] font-black uppercase tracking-widest leading-tight ${isCompleted ? 'line-through text-slate-500'
-                            : isSelected ? 'text-white'
-                                : 'text-slate-300'
-                            }`}>{String(t.title || '').toUpperCase()}</p>
-                        {t.requiresVerification && (
-                            <ShieldCheck className={`w-3 h-3 ${isCompleted ? 'text-emerald-400' : 'text-amber-400'}`} />
-                        )}
-                    </div>
-                    <p className={`text-[11px] font-black uppercase tracking-widest ${isSelected ? 'text-white' : 'text-indigo-400'}`}>
-                        +{estimateXP(task.baseReward, multipliers as MultiplierResult)} XP
-                    </p>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-                {needsVerify ? (
-                    <button
-                        disabled={isVerifying}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest py-1.5 px-3 rounded-lg transition-all"
-                    >
-                        {isVerifying ? 'WAIT...' : 'VERIFY'}
-                    </button>
-                ) : isCompleted ? (
-                    <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
-                        DONE
-                    </span>
-                ) : null}
-            </div>
-        </div>
-    );
+    // Legacy on-chain sponsor cards require sponsor task lookup selectors that are not in the deployed ABI.
+    // Sponsored missions are rendered through the UGC campaign pipeline instead.
+    return null;
 }
