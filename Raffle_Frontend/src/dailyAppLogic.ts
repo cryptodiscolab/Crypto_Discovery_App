@@ -35,6 +35,23 @@ export async function ensureUserProfile(walletAddress: string, signature: string
         return result.profile;
     } catch (err: any) {
         console.error('[Ensure Profile] Critical Error:', err.message);
+        // Persist error for admin visibility (fire-and-forget)
+        try {
+            fetch('/api/user-bundle', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'log-activity',
+                    wallet_address: normalizedAddress,
+                    signature: 'system-error',
+                    message: 'Profile Sync Failure',
+                    category: 'ERROR',
+                    type: 'Profile Sync Failed',
+                    description: (err.message || 'Unknown error').slice(0, 200),
+                    metadata: { source: 'ensureUserProfile' }
+                })
+            }).catch(() => {});
+        } catch { /* never throw from error reporter */ }
         return null;
     }
 }
@@ -67,6 +84,23 @@ export async function awardTaskXP(walletAddress: string, signature: string, mess
         return { success: true, ...result };
     } catch (err: any) {
         console.error('[Award XP Error]', err);
+        // Persist XP award error for admin visibility (fire-and-forget)
+        try {
+            fetch('/api/user-bundle', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'log-activity',
+                    wallet_address: walletAddress,
+                    signature: 'system-error',
+                    message: 'XP Award Failure',
+                    category: 'ERROR',
+                    type: 'XP Award Failed',
+                    description: (err.message || 'Unknown error').slice(0, 200),
+                    metadata: { source: 'awardTaskXP', task_id: String(taskId) }
+                })
+            }).catch(() => {});
+        } catch { /* never throw */ }
         return { success: false, error: err.message };
     }
 }

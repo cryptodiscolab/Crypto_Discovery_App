@@ -188,10 +188,12 @@ export function CreateRafflePage() {
                 metadataURI = data.uri;
                 toast.success("Metadata pinned to IPFS!", { id: tid });
             } else {
-                console.warn("IPFS pin failed. Falling back to inline base64.");
-                const metadataStr = JSON.stringify(fullMetadata);
-                metadataURI = `data:application/json;base64,${btoa(unescape(encodeURIComponent(metadataStr)))}`;
-                toast.success("Using inline metadata.", { id: tid });
+                // Pinata pin failed → block raffle creation rather than silently using non-permanent base64.
+                // Inline base64 metadata is not durable and breaks on-chain NFT/raffle metadata expectations.
+                console.error("[CreateRaffle] IPFS pin failed:", res.status, await res.text().catch(() => ''));
+                toast.error("Metadata pin failed. Please retry or contact support.", { id: tid, duration: 8000 });
+                setIsSubmitting(false);
+                return;
             }
 
             toast.loading("Sending on-chain transaction...", { id: tid });

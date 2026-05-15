@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives",
     "check-routes": "node scripts/check-api-routes.cjs",
+    "check-abi": "node scripts/check-abi-parity.cjs",
+    "audit-checks": "npm run check-routes && npm run check-abi",
     "postinstall": "patch-package"
   },
   "dependencies": {

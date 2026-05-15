@@ -9,12 +9,23 @@ const CACHE_DURATION = 60000; // 1 minute
  * usePriceOracle
  * Fetches real-time prices for ERC20 tokens or ETH using DexScreener.
  * @param {string[]} tokenAddresses - Array of token addresses to fetch prices for.
- * @returns {object} { prices, isLoading, error, refetch }
+ * @returns {object} { prices, isLoading, error, refetch, priceStale, lastFetchedAt }
+ *
+ * `priceStale` is true if:
+ * - No price has been fetched yet, OR
+ * - Latest fetch returned 0/missing prices for requested tokens, OR
+ * - Last successful fetch is older than STALE_THRESHOLD (10 minutes).
+ *
+ * Financial actions (buy/swap/raffle creation) should block on `priceStale === true`
+ * and show a degraded state to the user.
  */
+const STALE_THRESHOLD = 10 * 60 * 1000; // 10 minutes
+
 export function usePriceOracle(tokenAddresses: string[] = []) {
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetchedAt, setLastFetchedAt] = useState<number>(0);
 
   // Memoize the stringified addresses to prevent unnecessary re-fetches
   const joinedAddresses = useMemo(() => 
@@ -99,6 +110,7 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
       }
 
       setPrices(prev => ({ ...prev, ...newPrices }));
+      setLastFetchedAt(Date.now());
     } catch (err: any) {
       console.error('[PriceOracle] Fetch error:', err);
       setError(err.message || "Unknown error");
@@ -114,5 +126,18 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
     return () => clearInterval(interval);
   }, [fetchPrices]);
 
-  return { prices, isLoading, error, refetch: fetchPrices };
+  // Stale detection: no fetch yet OR last fetch too old OR all requested tokens have 0 price
+  const priceStale = useMemo(() => {
+    if (lastFetchedAt === 0) return true;
+    if (Date.now() - lastFetchedAt > STALE_THRESHOLD) return true;
+    const requested = joinedAddresses.split(',').filter(Boolean);
+    if (requested.length === 0) return false;
+    const allZero = requested.every(addr => {
+      const p = prices[addr.toLowerCase()];
+      return !p || p === 0;
+    });
+    return allZero;
+  }, [lastFetchedAt, prices, joinedAddresses]);
+
+  return { prices, isLoading, error, refetch: fetchPrices, priceStale, lastFetchedAt };
 }
