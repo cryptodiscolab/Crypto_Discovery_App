@@ -113,12 +113,30 @@ export function SystemPointersCard({
                                         <td className="px-4 py-2 font-mono text-[9px]">{token.address.slice(0,6)}...{token.address.slice(-4)}</td>
                                         <td className="px-4 py-2">
                                             <button 
-                                                onClick={() => {
-                                                    const p = { address: token.address, chain_id: token.chain_id };
-                                                    handleUpdatePointer(CONTRACTS.DAILY_APP as `0x${string}`, DAILY_APP_ABI, 'setAllowedToken', [p.address, false, 18, '']);
-                                                    handleSyncTokenToDb('REMOVE_TOKEN_DB', p);
+                                                disabled={isSaving}
+                                                onClick={async () => {
+                                                    setIsSaving(true);
+                                                    const tid = toast.loading(`Removing ${token.symbol}...`);
+                                                    try {
+                                                        // Sequential: 1. Contract call with correct decimals
+                                                        const hash = await writeContractAsync({
+                                                            address: CONTRACTS.DAILY_APP as `0x${string}`,
+                                                            abi: DAILY_APP_ABI,
+                                                            functionName: 'setAllowedToken',
+                                                            args: [token.address, false, token.decimals || 18, token.symbol || ''],
+                                                        });
+                                                        await publicClient!.waitForTransactionReceipt({ hash });
+
+                                                        // Sequential: 2. DB sync only after contract success
+                                                        await handleSyncTokenToDb('REMOVE_TOKEN_DB', { address: token.address, chain_id: token.chain_id });
+                                                        toast.success(`${token.symbol} removed!`, { id: tid });
+                                                    } catch (e: any) {
+                                                        toast.error(e.shortMessage || e.message || "Remove failed", { id: tid });
+                                                    } finally {
+                                                        setIsSaving(false);
+                                                    }
                                                 }}
-                                                className="text-red-400 hover:text-red-300 font-bold uppercase"
+                                                className={`font-bold uppercase ${isSaving ? 'text-slate-500 cursor-not-allowed' : 'text-red-400 hover:text-red-300'}`}
                                             >
                                                 Remove
                                             </button>
@@ -155,18 +173,66 @@ export function SystemPointersCard({
                             </div>
                         </div>
                         <button 
-                            onClick={() => {
-                                if (!newTokenWhitelist.address || !newTokenWhitelist.symbol) return toast.error("Missing fields");
-                                handleUpdatePointer(CONTRACTS.DAILY_APP as `0x${string}`, DAILY_APP_ABI, 'setAllowedToken', [newTokenWhitelist.address, true, parseInt(newTokenWhitelist.decimals) || 18, newTokenWhitelist.symbol || '']);
-                                handleSyncTokenToDb('WHITELIST_TOKEN_DB', {
-                                    ...newTokenWhitelist,
-                                    decimals: parseInt(newTokenWhitelist.decimals),
-                                    chain_id: parseInt(newTokenWhitelist.chain_id)
-                                });
+                            disabled={isSaving}
+                            onClick={async () => {
+                                // Validation: check address format
+                                const addr = newTokenWhitelist.address?.trim();
+                                if (!addr || !addr.startsWith('0x') || addr.length !== 42) {
+                                    return toast.error("Invalid token address. Must be 0x + 40 hex chars.");
+                                }
+                                if (!newTokenWhitelist.symbol?.trim()) {
+                                    return toast.error("Token symbol is required.");
+                                }
+                                const decimals = parseInt(newTokenWhitelist.decimals) || 18;
+                                if (decimals < 0 || decimals > 18) {
+                                    return toast.error("Decimals must be 0-18.");
+                                }
+                                const chainId = parseInt(newTokenWhitelist.chain_id);
+                                if (!chainId || (chainId !== 8453 && chainId !== 84532)) {
+                                    return toast.error("Chain ID must be 8453 (mainnet) or 84532 (sepolia).");
+                                }
+
+                                // Validate: check if address is a contract (has code)
+                                setIsSaving(true);
+                                const tid = toast.loading("Validating token contract...");
+                                try {
+                                    const code = await publicClient!.getCode({ address: addr as `0x${string}` });
+                                    if (!code || code === '0x') {
+                                        toast.error("Address is not a contract (no bytecode found).", { id: tid });
+                                        setIsSaving(false);
+                                        return;
+                                    }
+
+                                    // Sequential: 1. Contract call first
+                                    toast.loading("Setting on-chain allowlist...", { id: tid });
+                                    const hash = await writeContractAsync({
+                                        address: CONTRACTS.DAILY_APP as `0x${string}`,
+                                        abi: DAILY_APP_ABI,
+                                        functionName: 'setAllowedToken',
+                                        args: [addr, true, decimals, newTokenWhitelist.symbol.trim()],
+                                    });
+                                    await publicClient!.waitForTransactionReceipt({ hash });
+
+                                    // Sequential: 2. DB sync only after contract success
+                                    toast.loading("Syncing to database...", { id: tid });
+                                    await handleSyncTokenToDb('WHITELIST_TOKEN_DB', {
+                                        address: addr.toLowerCase(),
+                                        symbol: newTokenWhitelist.symbol.trim().toUpperCase(),
+                                        decimals,
+                                        chain_id: chainId
+                                    });
+
+                                    toast.success("Token whitelisted on-chain & synced to DB!", { id: tid });
+                                    setNewTokenWhitelist({ address: '', symbol: '', decimals: '18', chain_id: String(chainId) });
+                                } catch (e: any) {
+                                    toast.error(e.shortMessage || e.message || "Whitelist failed", { id: tid });
+                                } finally {
+                                    setIsSaving(false);
+                                }
                             }}
-                            className="w-full bg-green-600/20 hover:bg-green-600/40 border border-green-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-green-400"
+                            className={`w-full py-2 rounded-xl text-[9px] font-black uppercase transition-all ${isSaving ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-green-600/20 hover:bg-green-600/40 border border-green-600/20 text-green-400'}`}
                         >
-                            Whitelist & Sync to Database
+                            {isSaving ? 'PROCESSING...' : 'WHITELIST & SYNC TO DATABASE'}
                         </button>
                     </div>
                 </div>
