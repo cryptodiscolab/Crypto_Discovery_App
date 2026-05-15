@@ -115,7 +115,7 @@
         },
         {
             "path": "/api/audit-bundle?action=reconcile-pending",
-            "schedule": "0 */6 * * *"
+            "schedule": "0 3 * * *"
         }
     ]
 }
