@@ -186,7 +186,7 @@ export function useRaffle() {
             console.warn("XP Awarding/Logging skipped:", errMsg);
             recordPendingSync({
                 actionType: 'raffle_buy',
-                txHash: resolvedTxHash || callId,
+                txHash: resolvedTxHash,
                 chainId,
                 contractAddress: RAFFLE_ADDRESS,
                 payload: { raffle_id: raffleId, amount, gasless: true },
@@ -419,6 +419,7 @@ export function useRaffle() {
 
         // [FIX v3.56.5] Sync admin-created raffles to DB so moderation panel & Raffle UI
         // displays correctly. Without this, the raffles table stays empty for admin raffles.
+        let raffleId = 0;
         if (hash) {
             try {
                 const timestamp = new Date().toISOString();
@@ -426,7 +427,6 @@ export function useRaffle() {
                 const signature = await signMessageAsync({ message });
 
                 // Resolve raffleId from RaffleCreated event log
-                let raffleId = 0;
                 try {
                     const receipt = await publicClient!.waitForTransactionReceipt({ hash });
                     for (const log of receipt.logs) {

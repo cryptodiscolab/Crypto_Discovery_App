@@ -214,7 +214,7 @@ async function logActivity(wallet: string, category: string, type: string, descr
             value_amount: amount,
             value_symbol: symbol,
             tx_hash: txHash || null,
-            metadata: metadata || {},
+            metadata: (metadata || {}) as import('./_shared/database.types.js').Json,
             created_at: new Date().toISOString()
         });
     } catch (err: unknown) {

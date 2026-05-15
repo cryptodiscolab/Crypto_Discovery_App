@@ -1,6 +1,7 @@
 import { createPublicClient, http, fallback } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types.js';
 
 // 1. ENVIRONMENT VALIDATION
 export const getEnv = (key: string, fallbackVal: string = ''): string => (process.env[key] || fallbackVal).trim();
@@ -197,10 +198,10 @@ export function sanitizeError(err: unknown): string {
 // Writes sanitized error records to system_error_logs for admin dashboard.
 // Fire-and-forget: never blocks the response or throws.
 
-let _errorLogClient: ReturnType<typeof createClient> | null = null;
+let _errorLogClient: ReturnType<typeof createClient<Database>> | null = null;
 function getErrorLogClient() {
     if (!_errorLogClient && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-        _errorLogClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        _errorLogClient = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     }
     return _errorLogClient;
 }
@@ -232,7 +233,7 @@ export async function logSystemError(params: SystemErrorParams): Promise<void> {
             request_id: params.request_id || null,
             error_code: params.error_code || null,
             message_sanitized: params.message.slice(0, 1000),
-            metadata: params.metadata || {}
+            metadata: (params.metadata || {}) as import('./database.types.js').Json
         });
     } catch {
         // Never throw from error logger
