@@ -436,6 +436,26 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             });
 
             result.xp_synced = xpDelta;
+        } else if (tx_hash) {
+            // xpDelta is 0 but user submitted a valid tx_hash — this means the on-chain XP
+            // was already synced (race condition) or RPC returned stale data.
+            // Still log the daily claim event so user history is not empty.
+            await logActivity({
+                wallet: cleanAddress,
+                category: 'DAILY',
+                type: 'On-chain Daily Claim',
+                description: `Daily claim confirmed (XP already synced, delta: 0)`,
+                amount: 0,
+                symbol: 'XP',
+                txHash: tx_hash,
+                metadata: {
+                    chain_id: isMainnet ? 8453 : 84532,
+                    contract_address: DAILY_APP_ADDRESS,
+                    on_chain_xp: currentOnChainXp,
+                    sync_status: 'already_synced',
+                    note: 'xpDelta was 0 — on-chain state already matched DB'
+                }
+            });
         }
 
         return res.status(200).json(result);
