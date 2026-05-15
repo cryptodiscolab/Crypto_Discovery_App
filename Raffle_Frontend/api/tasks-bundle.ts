@@ -397,6 +397,8 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
 
     if (error) {
         if (error.code === '23505') {
+            // Dedup audit: log that a duplicate verify was attempted
+            await logActivity(wallet_address, 'SYNC', 'Duplicate Verify Attempt', `Task ${task_id} already verified on ${platform || 'unknown'}`, 0, 'XP');
             return res.status(200).json({ success: true, message: "Already verified.", already_claimed: true });
         }
         throw error;

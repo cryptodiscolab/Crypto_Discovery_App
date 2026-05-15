@@ -847,7 +847,18 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             }
         } catch (xpErr: unknown) {
             const msg = xpErr instanceof Error ? xpErr.message : String(xpErr);
-            console.warn('[SyncUgcMission] XP error:', msg); 
+            console.warn('[SyncUgcMission] XP error:', msg);
+            // Log the XP award failure so it's visible in admin/profile history
+            await logActivity({
+                wallet,
+                category: 'ERROR',
+                type: 'UGC Mission XP Failed',
+                description: `XP bonus for mission "${title}" failed: ${msg.slice(0, 150)}`,
+                amount: 0,
+                symbol: 'XP',
+                txHash,
+                metadata: { campaign_id: campaign.id, error: msg.slice(0, 200) }
+            });
         }
 
         await logActivity({
@@ -948,6 +959,18 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
                     amount: creatorXp,
                     symbol: 'XP',
                     txHash
+                });
+            } else if (claimErr.code === '23505') {
+                // Duplicate claim — XP already awarded on a previous sync attempt
+                await logActivity({
+                    wallet,
+                    category: 'SYNC',
+                    type: 'Raffle Create XP Already Awarded',
+                    description: `Raffle #${raffle_id} creation XP already claimed (duplicate sync)`,
+                    amount: 0,
+                    symbol: 'XP',
+                    txHash,
+                    metadata: { raffle_id, duplicate: true }
                 });
             }
         }
