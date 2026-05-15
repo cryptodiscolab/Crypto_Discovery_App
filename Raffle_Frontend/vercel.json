@@ -112,6 +112,10 @@
         {
             "path": "/api/lurah-cron",
             "schedule": "0 1 * * *"
+        },
+        {
+            "path": "/api/audit-bundle?action=reconcile-pending",
+            "schedule": "0 */6 * * *"
         }
     ]
 }

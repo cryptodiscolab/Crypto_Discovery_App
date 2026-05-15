@@ -44,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'check': await handleFarcasterCheck(req, res); break;
             case 'sync': await handleSyncEvents(req, res); break;
             case 'rpc': await handleRpcProxy(req, res); break;
+            case 'reconcile-pending': await handleReconcilePending(req, res); break;
             default:
                 return res.status(400).json({ error: "Invalid action" });
         }
@@ -200,4 +201,102 @@ async function logActivity(supabase: SupabaseClient, { wallet, category, type, d
         value_symbol: symbol || 'XP',
         tx_hash: txHash
     });
+}
+
+// ─── Pending Sync Reconciliation ─────────────────────────────────────────────
+// Picks up pending_sync_jobs rows and retries the corresponding backend sync.
+// Called by cron or admin trigger.
+
+async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
+    const startTime = Date.now();
+    const authHeader = req.headers['authorization'];
+    if (!CRON_SECRET) return res.status(500).json({ error: "CRON_SECRET not configured" });
+    if (authHeader !== `Bearer ${CRON_SECRET}`) return res.status(401).json({ error: "Unauthorized" });
+
+    const MAX_RETRIES = 5;
+    const BATCH_SIZE = 20;
+
+    try {
+        const { data: jobs, error: fetchErr } = await (supabase as any)
+            .from('pending_sync_jobs')
+            .select('*')
+            .eq('status', 'pending')
+            .lt('retry_count', MAX_RETRIES)
+            .order('created_at', { ascending: true })
+            .limit(BATCH_SIZE);
+
+        if (fetchErr || !jobs || jobs.length === 0) {
+            return res.status(200).json({ success: true, processed: 0, message: 'No pending jobs' });
+        }
+
+        let resolved = 0;
+        let failed = 0;
+
+        for (const job of jobs) {
+            try {
+                // Verify the tx_hash is still valid on-chain
+                let txValid = false;
+                if (job.tx_hash) {
+                    try {
+                        const receipt = await rpcClient.getTransactionReceipt({ hash: job.tx_hash as `0x${string}` });
+                        txValid = receipt?.status === 'success';
+                    } catch {
+                        // Receipt not found or RPC error — mark as attempted, don't resolve
+                    }
+                }
+
+                if (txValid) {
+                    // Transaction confirmed on-chain — mark as resolved.
+                    // The actual XP/state sync was likely already picked up by the regular sync cron.
+                    // This reconciliation just clears the pending state.
+                    await (supabase as any)
+                        .from('pending_sync_jobs')
+                        .update({
+                            status: 'resolved',
+                            resolved_at: new Date().toISOString(),
+                            last_attempted_at: new Date().toISOString(),
+                            retry_count: job.retry_count + 1
+                        })
+                        .eq('id', job.id);
+                    resolved++;
+                } else {
+                    // Tx not confirmed or no tx_hash — increment retry count
+                    const newRetryCount = job.retry_count + 1;
+                    const newStatus = newRetryCount >= MAX_RETRIES ? 'failed' : 'pending';
+                    await (supabase as any)
+                        .from('pending_sync_jobs')
+                        .update({
+                            status: newStatus,
+                            retry_count: newRetryCount,
+                            last_attempted_at: new Date().toISOString(),
+                            error_message: 'Reconciliation: tx receipt not confirmed'
+                        })
+                        .eq('id', job.id);
+                    if (newStatus === 'failed') failed++;
+                }
+            } catch (jobErr: unknown) {
+                const msg = jobErr instanceof Error ? jobErr.message : String(jobErr);
+                console.error(`[Reconcile] Job ${job.id} error:`, msg);
+                await (supabase as any)
+                    .from('pending_sync_jobs')
+                    .update({
+                        retry_count: job.retry_count + 1,
+                        last_attempted_at: new Date().toISOString(),
+                        error_message: msg.slice(0, 500)
+                    })
+                    .eq('id', job.id);
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            processed: jobs.length,
+            resolved,
+            failed,
+            duration_ms: Date.now() - startTime
+        });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
 }

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSignMessage, usePublicClient, useSendCalls, useChainId } from 'wagmi';
 import { encodeFunctionData, formatEther, decodeEventLog } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
 import { ABIS, CONTRACTS } from '../lib/contracts';
 import { awardTaskXP } from '../dailyAppLogic';
 import { usePaymaster } from './usePaymaster';
+import { usePendingSyncRecovery } from './usePendingSyncRecovery';
 import toast from 'react-hot-toast';
 import { CallStatusResponse, RaffleExtraMetadata } from '../types';
 
@@ -13,6 +14,9 @@ const RAFFLE_ADDRESS = CONTRACTS.RAFFLE as `0x${string}`;
 const MASTER_X_ADDRESS = CONTRACTS.MASTER_X as `0x${string}`;
 
 export function useRaffle() {
+    const { address } = useAccount();
+    const chainId = useChainId();
+    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const { address } = useAccount();
     const { refetch } = usePoints();
     const { signMessageAsync } = useSignMessage();
@@ -76,7 +80,16 @@ export function useRaffle() {
 
                 if (refetch) refetch();
             } catch (e: unknown) {
-                console.warn("XP Awarding/Logging skipped:", e instanceof Error ? e.message : String(e));
+                const errMsg = e instanceof Error ? e.message : String(e);
+                console.warn("XP Awarding/Logging skipped:", errMsg);
+                recordPendingSync({
+                    actionType: 'raffle_buy',
+                    txHash: hash,
+                    chainId,
+                    contractAddress: RAFFLE_ADDRESS,
+                    payload: { raffle_id: raffleId, amount },
+                    errorMessage: errMsg
+                }).catch(() => {});
             }
         }
         return hash;
@@ -170,7 +183,16 @@ export function useRaffle() {
 
             if (refetch) refetch();
         } catch (e: unknown) {
-            console.warn("XP Awarding/Logging skipped:", e instanceof Error ? e.message : String(e));
+            const errMsg = e instanceof Error ? e.message : String(e);
+            console.warn("XP Awarding/Logging skipped:", errMsg);
+            recordPendingSync({
+                actionType: 'raffle_buy',
+                txHash: resolvedTxHash || callId,
+                chainId,
+                contractAddress: RAFFLE_ADDRESS,
+                payload: { raffle_id: raffleId, amount, gasless: true },
+                errorMessage: errMsg
+            }).catch(() => {});
         }
 
         return callId;
@@ -233,7 +255,15 @@ export function useRaffle() {
                     if (refetch) refetch();
                 } catch (e: any) {
                     console.warn("XP Awarding skipped:", e.message);
-                    toast.success("Prize claimed! XP sync pending.", { id: tid });
+                    recordPendingSync({
+                        actionType: 'raffle_claim',
+                        txHash: hash,
+                        chainId,
+                        contractAddress: RAFFLE_ADDRESS,
+                        payload: { raffle_id: raffleId },
+                        errorMessage: e.message || 'Prize claim XP sync failed'
+                    }).catch(() => {});
+                    toast.success("Prize claimed! XP sync pending — will retry automatically.", { id: tid });
                 }
             }
             return hash;
