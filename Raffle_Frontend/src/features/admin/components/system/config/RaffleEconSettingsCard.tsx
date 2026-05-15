@@ -73,7 +73,7 @@ export function RaffleEconSettingsCard({
             const hash = await writeContractAsync({
                 address: CONTRACTS.RAFFLE as `0x${string}`,
                 abi: RAFFLE_ABI,
-                functionName: 'setXpRewards',
+                functionName: 'setRaffleXP',
                 args: [BigInt(raffleXp.create), BigInt(raffleXp.claim), BigInt(raffleXp.purchase)],
             });
             await publicClient!.waitForTransactionReceipt({ hash });

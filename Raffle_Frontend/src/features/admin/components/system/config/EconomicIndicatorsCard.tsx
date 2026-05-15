@@ -33,7 +33,7 @@ export function EconomicIndicatorsCard({
             await writeContractAsync({
                 address: CONTRACTS.DAILY_APP as `0x${string}`,
                 abi: DAILY_APP_ABI,
-                functionName: 'setWithdrawalFeeBP',
+                functionName: 'setWithdrawalFee',
                 args: [BigInt(withdrawFee)],
             });
             
@@ -41,12 +41,12 @@ export function EconomicIndicatorsCard({
             await writeContractAsync({
                 address: CONTRACTS.DAILY_APP as `0x${string}`,
                 abi: DAILY_APP_ABI,
-                functionName: 'setSettings',
+                functionName: 'setSponsorshipParams',
                 args: [
-                    BigInt(Math.floor(Number(sponsorSettings.fee) * 1e6)), 
-                    BigInt(Math.floor(Number(sponsorSettings.minPool) * 1e18)), 
                     BigInt(Math.floor(Number(sponsorSettings.reward) * 1e18)), 
-                    BigInt(sponsorSettings.tasks)
+                    BigInt(sponsorSettings.tasks),
+                    BigInt(Math.floor(Number(sponsorSettings.minPool) * 1e18)),
+                    BigInt(Math.floor(Number(sponsorSettings.fee) * 1e6))
                 ],
             });
 

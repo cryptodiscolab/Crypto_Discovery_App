@@ -1,8 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Award, Loader2, CheckCircle2 } from 'lucide-react';
-import { useAccount, useReadContract } from 'wagmi';
-import { useAllTasks, useUserV12Stats } from '../hooks/useContract';
-import { CONTRACTS, DAILY_APP_ABI } from '../lib/contracts';
+import { useState, useEffect } from 'react';
+import { Award, Loader2 } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { useUserV12Stats } from '../hooks/useContract';
 import { TaskList } from '../components/tasks/TaskList';
 import { OffersList } from '../components/tasks/OffersList';
 import { UGCCampaignCard } from '../components/UGCCampaignCard';
@@ -11,10 +10,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { usePoints } from '../shared/context/PointsContext';
 
-// New Modular Components
-import { TaskRow } from './tasks/TaskRow';
-import { SponsoredTaskCard } from './tasks/SponsoredTaskCard';
-import { Task, UGCCampaign, ContractTask } from '../types/tasks';
+import { Task, UGCCampaign } from '../types/tasks';
 import { Database } from '../types/database.types';
 
 type DailyTask = Database['public']['Tables']['daily_tasks']['Row'];
@@ -22,8 +18,6 @@ type DailyTask = Database['public']['Tables']['daily_tasks']['Row'];
 export function TasksPage() {
     const navigate = useNavigate();
     const { address, isConnected } = useAccount();
-    const { totalTasks: tasksCount } = useAllTasks();
-    const totalTasks = Number(tasksCount || 0);
     const { userPoints, userTier, rankName } = usePoints();
     const { refetch } = useUserV12Stats(address);
     const [activeTab, setActiveTab] = useState<'tasks' | 'offers'>('tasks');
@@ -129,44 +123,6 @@ export function TasksPage() {
         }
     }, [isConnected, address, profileData, isSyncing, syncUser]);
 
-    const { data: allTasksRaw, isLoading: isTasksLoading } = useReadContract({
-        address: CONTRACTS.DAILY_APP as `0x${string}`,
-        abi: DAILY_APP_ABI,
-        functionName: 'getTasksInRange',
-        args: [BigInt(1), BigInt(totalTasks)],
-        query: { enabled: totalTasks > 0 }
-    });
-
-    const taskGroups = useMemo(() => {
-        if (!allTasksRaw) return { regulars: [] as Task[], sponsored: {} as Record<string, Task[]> };
-        const regs: Task[] = [];
-        const spons: Record<string, Task[]> = {};
-
-        (allTasksRaw as ContractTask[]).forEach((t, index) => {
-            const taskId = index + 1;
-            const taskObj: Task = {
-                id: taskId,
-                baseReward: Number(t[0]),
-                isActive: t[1],
-                cooldown: Number(t[2]),
-                minTier: Number(t[3]),
-                title: t[4],
-                link: t[5],
-                requiresVerification: t[7],
-                sponsorshipId: Number(t[8])
-            };
-
-            if (taskObj.sponsorshipId === 0) {
-                regs.push(taskObj);
-            } else {
-                const sId = String(taskObj.sponsorshipId);
-                if (!spons[sId]) spons[sId] = [];
-                spons[sId].push(taskObj);
-            }
-        });
-        return { regulars: regs, sponsored: spons };
-    }, [allTasksRaw]);
-
     return (
         <div className="w-full bg-[#050505] min-h-screen">
             <div className="max-w-screen-lg mx-auto pb-28 md:pb-8">
@@ -242,44 +198,6 @@ export function TasksPage() {
                         )}
 
                         <TaskList />
-
-                        {taskGroups.regulars.length > 0 && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {taskGroups.regulars.map(task => (
-                                    <TaskRow
-                                        key={task.id}
-                                        taskId={task.id}
-                                        refetchStats={refetch}
-                                        offChainClaims={offChainClaims}
-                                    />
-                                ))}
-                            </div>
-                        )}
-
-                        {Object.entries(taskGroups.sponsored).map(([sId, tasks]) => (
-                            <SponsoredTaskCard
-                                key={sId}
-                                sponsorshipId={sId}
-                                tasks={tasks}
-                                refetchStats={refetch}
-                                offChainClaims={offChainClaims}
-                            />
-                        ))}
-
-                        {isTasksLoading && (
-                            <div className="py-24 text-center">
-                                <Loader2 className="w-10 h-10 text-indigo-500 mx-auto animate-spin mb-4" />
-                                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">CHECKING REWARDS...</p>
-                            </div>
-                        )}
-
-                        {!isTasksLoading && taskGroups.regulars.length === 0 && Object.keys(taskGroups.sponsored).length === 0 && (
-                            <div className="py-24 text-center glass-card border-dashed bg-indigo-500/5 transition-all animate-in fade-in zoom-in duration-500">
-                                <CheckCircle2 className="w-12 h-12 text-green-500/30 mx-auto mb-4" />
-                                <h3 className="text-white font-black text-[11px] uppercase tracking-widest">YOU ARE ALL CAUGHT UP!</h3>
-                                <p className="text-slate-500 text-[10px] uppercase font-bold mt-2">Check back later for new sponsored missions</p>
-                            </div>
-                        )}
                     </div>
                 ) : (
                     <div className="px-4 mt-6">

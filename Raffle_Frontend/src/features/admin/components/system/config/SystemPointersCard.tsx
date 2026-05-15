@@ -1,7 +1,7 @@
 import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { Cpu } from 'lucide-react';
 import { useAccount, useSignMessage, usePublicClient } from 'wagmi';
-import { CONTRACTS, DAILY_APP_ABI, MASTER_X_ABI } from '../../../../../lib/contracts';
+import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { SystemPointers, TokenWhitelist } from '../../../../types/admin';
@@ -71,7 +71,7 @@ export function SystemPointersCard({
                         <label className="text-[9px] font-black text-slate-500 uppercase">MasterX → Raffle Pointer</label>
                         <input type="text" value={pointers.raffleContract} onChange={e => setPointers({ ...pointers, raffleContract: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white" placeholder="0x..." />
                     </div>
-                    <button onClick={() => handleUpdatePointer(CONTRACTS.MASTER_X as `0x${string}`, MASTER_X_ABI, 'setRaffleContract', pointers.raffleContract)} className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/20 py-2 rounded-xl text-[9px] font-black uppercase text-red-400">Update Raffle Link</button>
+                    <button disabled className="bg-red-600/10 border border-red-600/10 py-2 rounded-xl text-[9px] font-black uppercase text-red-400 opacity-40 cursor-not-allowed">Managed by deploy</button>
                 </div>
 
                 {/* DailyApp Tokens */}

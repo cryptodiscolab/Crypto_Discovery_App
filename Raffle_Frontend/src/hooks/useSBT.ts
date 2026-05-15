@@ -196,15 +196,6 @@ export function useSBT() {
         });
     };
 
-    const setRaffleContract = async (raffleAddr: string) => {
-        return await writeAndWait({
-            address: MASTER_X_ADDRESS as `0x${string}`,
-            abi: ABIS.MASTER_X,
-            functionName: 'setRaffleContract',
-            args: [raffleAddr],
-        });
-    };
-
     const setDailyApp = async (dailyAddr: `0x${string}`, isSatellite: boolean) => {
         return await writeContractAsync({
             address: MASTER_X_ADDRESS,
@@ -272,43 +263,13 @@ export function useSBT() {
 
     /**
      * Leaderboard -> Contract Points Sync
-     * Fetches XP from DB and batch updates contract
+     * Disabled until deployed MasterX exposes a bulk XP sync selector.
      */
     const syncPointsToContract = async (signMessageAsync: (args: { message: string }) => Promise<`0x${string}`>) => {
         const toastId = toast.loading('Fetching points data...');
         try {
-            const timestamp = new Date().toISOString();
-            const message = `Sync XP Points\nTime: ${timestamp}`;
-            const signature = await signMessageAsync({ message });
-
-            const response = await fetch('/api/admin-bundle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    wallet_address: address,
-                    signature,
-                    message,
-                    action: 'SYNC_POINTS'
-                })
-            });
-
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error || 'API Points Sync failed');
-
-            toast.loading(`Syncing XP for ${result.data.length} users...`, { id: toastId });
-
-            const userAddresses = result.data.map((item: { wallet_address: string }) => item.wallet_address);
-            const userPoints = result.data.map((item: { total_xp: string | number }) => BigInt(item.total_xp));
-
-            const tx = await writeContractAsync({
-                address: MASTER_X_ADDRESS,
-                abi: ABIS.MASTER_X,
-                functionName: 'batchAddPoints',
-                args: [userAddresses, userPoints, "Mass DB Sync"],
-            });
-
-            toast.success(`Successfully synced ${result.data.length} users' XP!`, { id: toastId });
-            return { success: true, count: result.data.length, tx };
+            void signMessageAsync;
+            throw new Error('Live MasterX bytecode does not expose bulk XP sync. Use syncOffchainXP or deploy a contract version with bulk sync support.');
 
         } catch (error: unknown) {
             console.error('[SyncPoints] Error:', error);
@@ -433,7 +394,6 @@ export function useSBT() {
         updateTier,
         withdrawTreasury,
         setMasterParams,
-        setRaffleContract,
         setDailyApp,
         setTierWeights,
         syncTiersToContract,
