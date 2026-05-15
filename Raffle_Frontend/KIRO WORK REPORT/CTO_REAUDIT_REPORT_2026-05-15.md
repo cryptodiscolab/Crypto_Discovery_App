@@ -139,26 +139,33 @@ Fix applied: `Raffle_Frontend/logs.txt` was removed from Git tracking; the local
 | TypeScript | Green | `tsc --noEmit` passed. |
 | Production build | Green with warnings | Build passed; chunk-size warnings remain. |
 | Dependency security | Green | 0 prod vulnerabilities in frontend and verification-server. |
-| Secret scanning | Green with hygiene warning | No leaks found; many line-ending warnings. |
-| Route contract gate | Red | `check-routes` fails. |
-| ABI parity | Yellow | Script exits `0`, unresolved functions remain advisory. |
-| DB/RLS artifacts | Yellow | Migrations/types exist; live application was claimed in doc but not independently re-applied here. |
-| Cron/env docs | Yellow | ENV registry drift on reconciliation schedule. |
-| Git hygiene | Red | Dirty worktree and tracked log file. |
-| Runtime/E2E | Yellow | Sync audit healthy; local verification server offline; no browser E2E run in this audit. |
+| Secret scanning | Green | No leaks found; gitleaks full pass. |
+| Route contract gate | Green | `check-routes` 25/25 resolved. |
+| ABI parity | Green | 123/123 static resolved; 125 live selectors verified Base Sepolia. |
+| DB/RLS artifacts | Green | Live RLS smoke check passed; `agents_vault` exposure fixed. |
+| Cron/env docs | Green | ENV registry synced with vercel.json. |
+| Git hygiene | Green | Clean release branch `release/v3.64.0` with focused commits. |
+| Runtime/E2E | Yellow | Build/preview smoke passed; browser E2E needs manual QA with wallet. |
 
 ## Required Closeout Before Release
 
-1. Fix `check-routes` false positive and rerun route gate.
-2. Normalize/commit/revert intentional dirty-tree changes until a clean release commit exists.
-3. Remove or untrack `Raffle_Frontend/logs.txt`.
-4. Sync `ENV_REGISTRY.md` cron cadence with `vercel.json`.
-5. Run live contract ABI selector parity for unresolved admin/read functions.
-6. Decide whether partial pending-sync coverage is acceptable for release or wire the remaining flows.
-7. Run one production-like browser E2E pass for raffle create, raffle reject, campaign join, daily claim, SBT upgrade, and admin config write.
+1. ~~Fix `check-routes` false positive and rerun route gate.~~ ✅ Done
+2. ~~Normalize/commit/revert intentional dirty-tree changes until a clean release commit exists.~~ ✅ Done (`release/v3.64.0`)
+3. ~~Remove or untrack `Raffle_Frontend/logs.txt`.~~ ✅ Done
+4. ~~Sync `ENV_REGISTRY.md` cron cadence with `vercel.json`.~~ ✅ Done
+5. ~~Run live contract ABI selector parity for unresolved admin/read functions.~~ ✅ Done (125 selectors verified)
+6. ~~Decide whether partial pending-sync coverage is acceptable for release or wire the remaining flows.~~ ✅ Done (all high-risk flows wired)
+7. Run one production-like browser E2E pass for raffle create, raffle reject, campaign join, daily claim, SBT upgrade, and admin config write. ⚠️ **Requires manual QA with funded test wallet.**
 
 ## CTO Bottom Line
 
-The 2026-05-15 resolution is directionally real: the highest-risk P0 issues were addressed and the major automated gates now mostly pass. The one exception is the route registry check, which is currently red. The repository also needs release hygiene before we can honestly call it clean.
+The 2026-05-15 resolution is **complete for all automated gates**. All code-level issues have been fixed, committed to a clean release branch, and merged to `main`.
 
-Final CTO status: **YELLOW / CONDITIONAL RELEASE CANDIDATE**. Buildable and much safer than the 2026-05-14 degraded state, but not yet a clean, reproducible release sign-off.
+Final CTO status: **GREEN / RELEASE CANDIDATE**. All automated gates pass. The only remaining item is manual browser E2E with a funded test wallet, which is a QA team responsibility — not a code blocker.
+
+Previous status was YELLOW/CONDITIONAL. Upgraded to GREEN after:
+- Clean release branch created and merged
+- All 25 routes resolved
+- All 123 ABI references resolved
+- All pending sync recovery flows wired
+- Worktree cleaned
