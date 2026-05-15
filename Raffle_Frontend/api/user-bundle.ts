@@ -183,6 +183,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'get-daily-progress': await handleGetDailyProgress(req, res); break;
         case 'ecosystem-stats': await handleEcosystemStats(req, res); break;
         case 'check-reputation': await handleCheckReputation(req, res); break;
+        case 'record-pending-sync': await handleRecordPendingSync(req, res); break;
+        case 'get-pending-syncs': await handleGetPendingSyncs(req, res); break;
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
@@ -1147,6 +1149,92 @@ async function handleCheckReputation(req: VercelRequest, res: VercelResponse) {
         });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+// ─── Pending Sync Recovery Ledger ────────────────────────────────────────────
+// Records two-phase failures where a chain tx succeeded but the backend sync did not.
+// A reconciliation cron should later pick up status='pending' rows and retry.
+
+const VALID_PENDING_SYNC_ACTIONS = new Set([
+    'raffle_buy',
+    'raffle_claim',
+    'raffle_create',
+    'daily_claim',
+    'sbt_upgrade',
+    'sbt_mint',
+    'mission_create',
+    'campaign_join'
+]);
+
+async function handleRecordPendingSync(req: VercelRequest, res: VercelResponse) {
+    const { wallet, signature, message, action_type, tx_hash, chain_id, contract_address, payload, error_message } = req.body;
+    if (!wallet || !signature || !message || !action_type) {
+        return res.status(400).json({ error: 'Missing required fields (wallet, signature, message, action_type)' });
+    }
+    if (!VALID_PENDING_SYNC_ACTIONS.has(action_type)) {
+        return res.status(400).json({ error: `Invalid action_type. Allowed: ${[...VALID_PENDING_SYNC_ACTIONS].join(', ')}` });
+    }
+
+    try {
+        const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const cleanWallet = (wallet as string).toLowerCase();
+        const sanitizedError = error_message ? String(error_message).slice(0, 500) : null;
+
+        const { data, error } = await (getSupabaseAdmin() as any)
+            .from('pending_sync_jobs')
+            .insert({
+                wallet_address: cleanWallet,
+                action_type,
+                tx_hash: tx_hash || null,
+                chain_id: chain_id || null,
+                contract_address: contract_address ? String(contract_address).toLowerCase() : null,
+                payload: payload || null,
+                error_message: sanitizedError,
+                status: 'pending'
+            })
+            .select('id')
+            .single();
+
+        if (error) {
+            // Table may not exist yet in environments where migration has not run.
+            // Don't block the user — log and return success:false so the caller can fall back.
+            console.warn('[record-pending-sync] insert failed:', error.message);
+            return res.status(200).json({ success: false, error: 'Could not record recovery job' });
+        }
+
+        return res.status(200).json({ success: true, job_id: data?.id });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
+    const wallet = (req.query?.wallet || req.body?.wallet) as string | undefined;
+    if (!wallet) return res.status(400).json({ error: 'Missing wallet' });
+
+    try {
+        const cleanWallet = wallet.toLowerCase();
+        const { data, error } = await (getSupabaseAdmin() as any)
+            .from('pending_sync_jobs')
+            .select('id, action_type, tx_hash, chain_id, status, retry_count, created_at, last_attempted_at, error_message')
+            .eq('wallet_address', cleanWallet)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            // Table missing — return empty list rather than error so UI degrades gracefully.
+            return res.status(200).json({ success: true, jobs: [] });
+        }
+
+        return res.status(200).json({ success: true, jobs: data || [] });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }async function handleSyncOAuth(req: VercelRequest, res: VercelResponse) {

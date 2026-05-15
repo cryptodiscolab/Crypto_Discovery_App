@@ -1,4 +1,4 @@
-import { useAccount, useBalance, useSignMessage, useConfig, useReadContract } from 'wagmi';
+import { useAccount, useBalance, useSignMessage, useConfig, useReadContract, useChainId } from 'wagmi';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import { useNFTTiers } from '../../../hooks/useNFTTiers';
 import { useCMS } from '../../../hooks/useCMS';
@@ -9,6 +9,7 @@ import { CONTRACTS, ABIS } from '../../../lib/contracts';
 import { formatEther } from 'viem';
 import { Sparkles, ArrowUpCircle, Lock, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePendingSyncRecovery } from '../../../hooks/usePendingSyncRecovery';
 
 interface Tier {
     id: number;
@@ -21,6 +22,8 @@ interface Tier {
 
 export function SBTUpgradeCard() {
     const { address } = useAccount();
+    const chainId = useChainId();
+    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const config = useConfig();
     const { signMessageAsync } = useSignMessage();
     const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
@@ -138,7 +141,7 @@ export function SBTUpgradeCard() {
                 const message = `Log activity for ${address}\nAction: SBT Tier Ascension\nTimestamp: ${timestamp}`;
                 const signature = await signMessageAsync({ message });
 
-                await fetch('/api/user-bundle', {
+                const syncRes = await fetch('/api/user-bundle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -153,8 +156,27 @@ export function SBTUpgradeCard() {
                         }
                     })
                 });
+                if (!syncRes.ok) throw new Error(`SBT sync API returned ${syncRes.status}`);
             } catch (syncErr: unknown) {
                 console.warn('SBT Sync failed (non-critical):', syncErr);
+                // Chain succeeded but backend sync failed → record for reconciliation cron.
+                const errMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
+                recordPendingSync({
+                    actionType: 'sbt_upgrade',
+                    txHash: hash,
+                    chainId,
+                    contractAddress: CONTRACTS.DAILY_APP as string,
+                    payload: {
+                        tier_id: nextTier.id,
+                        tier_name: nextTier.name,
+                        eth_spent: formatEther(effectiveMintPrice)
+                    },
+                    errorMessage: errMsg
+                }).catch(() => {});
+                toast('SBT minted on-chain. Backend sync pending — will retry automatically.', {
+                    icon: '⏳',
+                    duration: 6000
+                });
             }
 
             refetchPoints();

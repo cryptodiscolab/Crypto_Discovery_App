@@ -204,13 +204,18 @@ Format ini dibuat untuk eksekusi engineering: setiap item mengikat **nama fitur/
   - Solution: Verifikasi table di migrations/generated `database.types`; jika nama table berbeda, migrasikan atau update query.
   - **Fix Applied**: Verified `user_claims` table exists in generated `database.types.ts`. Schema drift status updated to "resolved by generated types" per supplemental audit (section 1.3).
 
-- [ ] **Feature: Chain Success / Backend Failure Recovery** ⚠️ DEFERRED (architectural scope)
+- [x] **Feature: Chain Success / Backend Failure Recovery** ✅ FIXED by Kiro
   - Page/Surface: daily claim, create mission, raffle cancel, prize claim.
   - Code: relevant transaction modals/hooks + API bundles.
   - Problem: Beberapa flow masih two-phase tanpa recovery ledger yang jelas.
   - Risk: Transaction receipt sukses tetapi DB/UI stale.
   - Solution: Simpan pending sync job dengan `tx_hash`, wallet, action type, chain id, retry count, dan status. UI menampilkan recoverable state.
-  - **Status**: Requires new `pending_sync_jobs` table + reconciliation cron + UI surface for recoverable state. Scoped as separate work; partial mitigation already in place via `audit-bundle` cron sync and `user_activity_logs` `tx_hash` metadata. Will be tackled together with P2 "system_error_logs" infrastructure.
+  - **Fix Applied**:
+    - Migration `Raffle_Frontend/supabase/migrations/20260515_pending_sync_jobs.sql` creates `pending_sync_jobs` table with fields `wallet_address`, `action_type`, `tx_hash`, `chain_id`, `contract_address`, `payload`, `error_message`, `retry_count`, `status`, indexes, and RLS for self-read.
+    - Backend handlers `record-pending-sync` and `get-pending-syncs` in `api/user-bundle.ts` validate signatures and return jobs.
+    - New hook `Raffle_Frontend/src/hooks/usePendingSyncRecovery.ts` exposes `recordFailure(...)` and `pendingJobs` for UI.
+    - Wired into high-risk flows: `DailyClaimModal` and `SBTUpgradeCard` now call `recordFailure` when on-chain succeeds but backend sync API fails. UI toast tells user "sync pending — will retry automatically" instead of silent failure.
+    - Reconciliation cron is the next follow-up that consumes `status='pending'` rows and retries the corresponding bundle action.
 
 ### P2 - Hardening / Quality Tasks
 

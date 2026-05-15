@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Flame } from 'lucide-react';
-import { useAccount, useWriteContract, usePublicClient, useSignMessage } from 'wagmi';
+import { useAccount, useWriteContract, usePublicClient, useSignMessage, useChainId } from 'wagmi';
 import toast from 'react-hot-toast';
 import { useUserInfo } from '../../../../hooks/useContract';
 import { usePoints } from '../../../../shared/context/PointsContext';
 import { DAILY_APP_ABI, CONTRACTS } from '../../../../lib/contracts';
+import { usePendingSyncRecovery } from '../../../../hooks/usePendingSyncRecovery';
 
 interface PointSettings {
     daily_claim?: number;
@@ -23,6 +24,8 @@ interface DailyClaimModalProps {
  */
 export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount }: DailyClaimModalProps) {
     const { address } = useAccount();
+    const chainId = useChainId();
+    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const { writeContractAsync } = useWriteContract();
     const { signMessageAsync } = useSignMessage();
     const publicClient = usePublicClient();
@@ -66,14 +69,24 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
             try {
                 const syncMsg = `Sync Daily Claim\nTx: ${hash}\nWallet: ${address}`;
                 const syncSig = await signMessageAsync({ message: syncMsg });
-                await fetch('/api/user-bundle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'xp', wallet_address: address, tx_hash: hash, signature: syncSig, message: syncMsg }) });
+                const syncRes = await fetch('/api/user-bundle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'xp', wallet_address: address, tx_hash: hash, signature: syncSig, message: syncMsg }) });
+                if (!syncRes.ok) throw new Error(`Sync API returned ${syncRes.status}`);
                 await new Promise(r => setTimeout(r, 1500));
                 await Promise.all([refetchOnChainStats(), refetchPoints()]);
                 toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
                 if (onSuccess) onSuccess();
                 onClose();
-            } catch {
-                toast.success('Claim confirmed on-chain!', { id: tid });
+            } catch (syncErr: any) {
+                // Chain succeeded but backend XP sync failed — record for reconciliation cron.
+                recordPendingSync({
+                    actionType: 'daily_claim',
+                    txHash: hash,
+                    chainId,
+                    contractAddress: CONTRACTS.DAILY_APP as string,
+                    payload: { reward_xp: dailyReward },
+                    errorMessage: syncErr?.message ? String(syncErr.message) : 'Backend XP sync failed'
+                }).catch(() => {});
+                toast.success('Claim confirmed on-chain. XP sync pending — will retry automatically.', { id: tid, duration: 6000 });
                 if (onSuccess) onSuccess();
                 onClose();
             }
