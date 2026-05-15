@@ -308,11 +308,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
 
 ### Feature-by-Feature Coverage Tasks
 
-- [ ] **Feature: User Profile Activity History**
+- [x] **Feature: User Profile Activity History** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `handleGetActivityLogs()` reads `user_activity_logs` and merges `user_task_claims`.
   - Missing detail: profile UI only exposes `ALL`, `XP`, `PURCHASE`, `REWARD`.
   - Solution: Tambah kategori/filter `SBT`, `RAFFLE`, `UGC`, `DAILY`, `IDENTITY`, `SYNC`, `ERROR`, dan render `metadata` detail seperti `tx_hash`, `chain_id`, `contract_address`, `task_id`, `campaign_id`, `raffle_id`.
+  - **Fix Applied**: Expanded `ActivityLogSection.tsx` categories from 4 to 10: ALL, XP, DAILY, PURCHASES, REWARDS, RAFFLE, SBT, UGC, IDENTITY, SYNC. Added matching icons and color coding for each category.
 
 - [ ] **Feature: XP Task Claim**
   - Current coverage: covered.
@@ -338,11 +339,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: "Daily Mojo" as a named product concept is not explicitly represented as category/type; daily claim and daily bonus are not separated clearly in profile filters.
   - Solution: Standardize event names: `DAILY / Daily Mojo Claim`, `DAILY / Daily Goal Bonus`, and map them to a dedicated profile/admin filter.
 
-- [ ] **Feature: On-chain Daily Claim**
+- [x] **Feature: On-chain Daily Claim** ✅ FIXED by Kiro
   - Current coverage: unclear/partial.
   - Evidence: daily claim has frontend/backend sync paths, but current confirmed persistent logs are stronger for task bonus and on-chain sync than for the exact daily claim receipt.
   - Gap: receipt-level daily claim log with `tx_hash`, `chain_id`, gas, reward, and sync status is not clearly guaranteed.
   - Solution: On successful receipt, backend sync must write `user_activity_logs` event `DAILY / On-chain Daily Claim` with `tx_hash`, `chain_id`, `contract_address`, `xp_awarded`, and `sync_status`.
+  - **Fix Applied**: `handleXpSync` now distinguishes daily claims from generic XP syncs. Daily claims log as `DAILY / On-chain Daily Claim` with metadata `{ chain_id, contract_address, on_chain_xp, sync_status }`. Generic syncs remain `XP / Ledger Sync`.
 
 - [ ] **Feature: Raffle Ticket Purchase**
   - Current coverage: partially covered.
@@ -368,11 +370,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: if task insertion fails but campaign creation succeeds, log may not expose partial failure clearly.
   - Solution: Add `SYNC_WARN` log when sub-task insert fails, plus metadata `{ campaign_id, tasks_inserted, tasks_failed }`.
 
-- [ ] **Feature: SBT Minting**
+- [x] **Feature: SBT Minting** ✅ FIXED by Kiro
   - Current coverage: incomplete.
   - Evidence: code logs `PURCHASE / SBT Tier Ascension` in `handleSyncSbtUpgrade()`, but the explicit SBT mint event itself is not separated.
   - Gap: no dedicated `SBT / Mint` activity type found for successful `mintNFT`, token id, tier id, mint price, or contract address.
   - Solution: Add dedicated log `SBT / Mint` when mint receipt is confirmed, with metadata `{ tier, token_id, mint_price_eth, tx_hash, contract_address, chain_id }`.
+  - **Fix Applied**: `handleSyncSbtUpgrade` now writes a second log `SBT / Mint` with metadata `{ tier, tier_name, mint_price_eth, contract_address, chain_id }` alongside the existing `PURCHASE / SBT Tier Ascension`.
 
 - [ ] **Feature: SBT Tier Upgrade**
   - Current coverage: partially covered.

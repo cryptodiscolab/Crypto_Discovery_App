@@ -410,14 +410,28 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                     .eq('wallet_address', cleanAddress);
             }
 
+            // Determine if this is a daily claim vs generic XP sync
+            const isDailyClaim = xpDelta === standardDailyReward || (tx_hash && skipSignature);
+            const logCategory = isDailyClaim ? 'DAILY' : 'XP';
+            const logType = isDailyClaim ? 'On-chain Daily Claim' : 'Ledger Sync';
+            const logDescription = isDailyClaim
+                ? `Daily claim: +${xpDelta} XP (streak: ${profile?.streak_count || 1})`
+                : `Synced ${xpDelta} XP from Base Ledger (Parity: ${currentOnChainXp})`;
+
             await logActivity({
                 wallet: cleanAddress,
-                category: 'XP',
-                type: 'Ledger Sync',
-                description: `Synced ${xpDelta} XP from Base Ledger (Parity: ${currentOnChainXp})`,
+                category: logCategory,
+                type: logType,
+                description: logDescription,
                 amount: xpDelta,
                 symbol: 'XP',
-                txHash: tx_hash || null
+                txHash: tx_hash || null,
+                metadata: {
+                    chain_id: isMainnet ? 8453 : 84532,
+                    contract_address: DAILY_APP_ADDRESS,
+                    on_chain_xp: currentOnChainXp,
+                    sync_status: 'synced'
+                }
             });
 
             result.xp_synced = xpDelta;
@@ -976,6 +990,24 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             symbol: 'ETH',
             txHash,
             metadata: { tierName, onchain_tier: actualTierOnChain }
+        });
+
+        // Dedicated SBT / Mint event for profile/admin filter
+        await logActivity({
+            wallet,
+            category: 'SBT',
+            type: 'Mint',
+            description: `Minted ${tierName} SBT NFT`,
+            amount: parseFloat(ethSpent),
+            symbol: 'ETH',
+            txHash,
+            metadata: {
+                tier: actualTierOnChain,
+                tier_name: tierName,
+                mint_price_eth: ethSpent,
+                contract_address: DAILY_APP_ADDRESS,
+                chain_id: isMainnet ? 8453 : 84532
+            }
         });
 
         return res.status(200).json({ success: true, tier: actualTierOnChain });

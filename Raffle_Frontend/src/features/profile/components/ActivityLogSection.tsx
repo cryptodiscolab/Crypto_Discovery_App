@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { History, Zap, ShoppingCart, Award, Clock, ArrowRight, ExternalLink } from 'lucide-react';
+import { History, Zap, ShoppingCart, Award, Clock, ArrowRight, ExternalLink, Gem, Ticket, Users, Fingerprint, RefreshCw, Calendar } from 'lucide-react';
 import { useActivityLogs } from '../hooks/useProfileQueries';
 import { ActivityLog } from '../types';
 
@@ -17,10 +17,16 @@ export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) =
     const logs: ActivityLog[] = logsData?.logs || [];
 
     const categories = [
-        { id: 'ALL', label: 'ALL ACTIVITY', icon: History },
-        { id: 'XP', label: 'XP GAINS', icon: Zap },
+        { id: 'ALL', label: 'ALL', icon: History },
+        { id: 'XP', label: 'XP', icon: Zap },
+        { id: 'DAILY', label: 'DAILY', icon: Calendar },
         { id: 'PURCHASE', label: 'PURCHASES', icon: ShoppingCart },
-        { id: 'REWARD', label: 'REWARDS', icon: Award }
+        { id: 'REWARD', label: 'REWARDS', icon: Award },
+        { id: 'RAFFLE', label: 'RAFFLE', icon: Ticket },
+        { id: 'SBT', label: 'SBT', icon: Gem },
+        { id: 'UGC', label: 'UGC', icon: Users },
+        { id: 'IDENTITY', label: 'IDENTITY', icon: Fingerprint },
+        { id: 'SYNC', label: 'SYNC', icon: RefreshCw }
     ];
 
     const formatDate = (dateString: string) => {
@@ -74,10 +80,22 @@ export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) =
                                 <div className="flex items-center gap-4">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${log.category === 'XP' ? 'bg-purple-500/20 text-purple-400' :
                                             log.category === 'PURCHASE' ? 'bg-blue-500/20 text-blue-400' :
+                                            log.category === 'SBT' ? 'bg-indigo-500/20 text-indigo-400' :
+                                            log.category === 'DAILY' ? 'bg-green-500/20 text-green-400' :
+                                            log.category === 'RAFFLE' ? 'bg-pink-500/20 text-pink-400' :
+                                            log.category === 'UGC' ? 'bg-cyan-500/20 text-cyan-400' :
+                                            log.category === 'IDENTITY' ? 'bg-teal-500/20 text-teal-400' :
+                                            log.category === 'SYNC' ? 'bg-slate-500/20 text-slate-400' :
                                                 'bg-amber-500/20 text-amber-400'
                                         }`}>
                                         {log.category === 'XP' ? <Zap className="w-5 h-5" /> :
                                             log.category === 'PURCHASE' ? <ShoppingCart className="w-5 h-5" /> :
+                                            log.category === 'SBT' ? <Gem className="w-5 h-5" /> :
+                                            log.category === 'DAILY' ? <Calendar className="w-5 h-5" /> :
+                                            log.category === 'RAFFLE' ? <Ticket className="w-5 h-5" /> :
+                                            log.category === 'UGC' ? <Users className="w-5 h-5" /> :
+                                            log.category === 'IDENTITY' ? <Fingerprint className="w-5 h-5" /> :
+                                            log.category === 'SYNC' ? <RefreshCw className="w-5 h-5" /> :
                                                 <Award className="w-5 h-5" />}
                                     </div>
                                     <div className="min-w-0">
