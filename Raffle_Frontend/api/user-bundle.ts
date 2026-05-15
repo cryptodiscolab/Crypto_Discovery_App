@@ -611,7 +611,8 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
 
         const [logsResult, claimsResult] = await Promise.all([
             logsQuery,
-            (category && category !== 'ALL' && category !== 'XP') ? Promise.resolve({ data: [], error: null }) : claimsQuery
+            // Always fetch claims — they now have proper category mapping for DAILY, RAFFLE, UGC, SBT
+            claimsQuery
         ]);
 
         if (logsResult.error) throw logsResult.error;
@@ -629,30 +630,52 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
         }));
 
         // Convert task claims to activity log format (fill gaps)
-        const claimLogs = (claimsResult.data || []).map((claim: any) => ({
-            id: `claim_${claim.id}`,
-            category: 'XP',
-            activity_type: claim.task_id?.startsWith('raffle_') ? 'Raffle Activity' :
-                           claim.task_id?.startsWith('ugc_') ? 'UGC Campaign' :
-                           claim.task_id === 'daily_task_completion' ? 'Daily Bonus' :
-                           claim.action_type === 'daily_bonus' ? 'Daily Bonus' :
-                           'Task Claim',
-            description: claim.task_id?.startsWith('raffle_buy_') ? `Purchased raffle tickets` :
-                         claim.task_id?.startsWith('raffle_win_') ? `Won raffle prize` :
-                         claim.task_id?.startsWith('ugc_campaign_') ? `Completed UGC campaign` :
-                         claim.task_id === 'daily_task_completion' ? `Earned ${claim.xp_earned} XP from daily bonus` :
-                         `Claimed ${claim.xp_earned} XP for ${claim.task_id}`,
-            value_amount: claim.xp_earned || 0,
-            value_symbol: 'XP',
-            tx_hash: null,
-            created_at: claim.claimed_at,
-            source: 'claim'
-        }));
+        const claimLogs = (claimsResult.data || []).map((claim: any) => {
+            // Determine proper category based on task type
+            let claimCategory = 'XP';
+            if (claim.task_id === 'daily_task_completion' || claim.action_type === 'daily_bonus') {
+                claimCategory = 'DAILY';
+            } else if (claim.task_id?.startsWith('raffle_buy_')) {
+                claimCategory = 'RAFFLE';
+            } else if (claim.task_id?.startsWith('raffle_win_')) {
+                claimCategory = 'RAFFLE';
+            } else if (claim.task_id?.startsWith('ugc_')) {
+                claimCategory = 'UGC';
+            } else if (claim.task_id?.startsWith('sbt_upgrade_burn_')) {
+                claimCategory = 'SBT';
+            }
+
+            return {
+                id: `claim_${claim.id}`,
+                category: claimCategory,
+                activity_type: claim.task_id?.startsWith('raffle_buy_') ? 'Ticket Purchase' :
+                               claim.task_id?.startsWith('raffle_win_') ? 'Raffle Win' :
+                               claim.task_id?.startsWith('ugc_') ? 'UGC Campaign' :
+                               claim.task_id === 'daily_task_completion' ? 'Daily Goal Bonus' :
+                               claim.action_type === 'daily_bonus' ? 'Daily Goal Bonus' :
+                               claim.task_id?.startsWith('sbt_upgrade_burn_') ? 'SBT XP Burn' :
+                               'Task Claim',
+                description: claim.task_id?.startsWith('raffle_buy_') ? `Purchased raffle tickets (+${claim.xp_earned} XP)` :
+                             claim.task_id?.startsWith('raffle_win_') ? `Won raffle prize (+${claim.xp_earned} XP)` :
+                             claim.task_id?.startsWith('ugc_campaign_') ? `Completed UGC campaign (+${claim.xp_earned} XP)` :
+                             claim.task_id === 'daily_task_completion' ? `Daily Goal Bonus: +${claim.xp_earned} XP` :
+                             claim.action_type === 'daily_bonus' ? `Daily Bonus: +${claim.xp_earned} XP` :
+                             claim.task_id?.startsWith('sbt_upgrade_burn_') ? `SBT Upgrade XP Burn: ${claim.xp_earned} XP` :
+                             `Claimed ${claim.xp_earned} XP for ${claim.task_id}`,
+                value_amount: claim.xp_earned || 0,
+                value_symbol: 'XP',
+                tx_hash: null,
+                created_at: claim.claimed_at,
+                source: 'claim'
+            };
+        });
 
         // Merge and deduplicate (prefer explicit logs over claim-derived entries)
         // [FIX v3.63.7] Use 23 chars (millisecond precision) for deduplication to prevent collapsing multiple actions in same second.
         const logTimestamps = new Set(activityLogs.map((l: { created_at: string }) => l.created_at?.slice(0, 23)));
-        const uniqueClaimLogs = claimLogs.filter((c: { created_at: string }) => !logTimestamps.has(c.created_at?.slice(0, 23)));
+        const uniqueClaimLogs = claimLogs
+            .filter((c: { created_at: string }) => !logTimestamps.has(c.created_at?.slice(0, 23)))
+            .filter((c: { category: string }) => !category || category === 'ALL' || c.category === category);
 
         const combined = [...activityLogs, ...uniqueClaimLogs]
             .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
