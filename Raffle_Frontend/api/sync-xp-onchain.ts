@@ -129,10 +129,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await supabaseAdmin.from('user_activity_logs').insert(
             drifted.map(d => ({
                 wallet_address: d.address.toLowerCase(),
-                category: 'XP',
-                activity_type: 'onchain_sync',
+                category: 'SYNC',
+                activity_type: 'DB to Contract XP Sync',
                 description: `Auto-sync DB→V15: ${d.dbXp} XP (was ${d.onchainXp})`,
-                tx_hash: hash
+                value_amount: d.dbXp - d.onchainXp,
+                value_symbol: 'XP',
+                tx_hash: hash,
+                metadata: { sync_type: 'DB_TO_CONTRACT_XP', db_xp: d.dbXp, onchain_xp: d.onchainXp, chain_id: CHAIN_ID }
             }))
         );
 

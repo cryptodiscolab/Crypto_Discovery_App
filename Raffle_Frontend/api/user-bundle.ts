@@ -769,7 +769,20 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             }));
 
             const { error: tasksErr } = await getSupabaseAdmin().from('daily_tasks').insert(tasksToInsert);
-            if (tasksErr) console.warn('[SyncUgcMission] Failed tasks insertion:', tasksErr);
+            if (tasksErr) {
+                console.warn('[SyncUgcMission] Failed tasks insertion:', tasksErr);
+                // Persistent warning log for partial failure
+                await logActivity({
+                    wallet,
+                    category: 'SYNC',
+                    type: 'UGC Mission Task Insert Failed',
+                    description: `Campaign ${campaign.id} created but ${tasksToInsert.length} task(s) failed to insert`,
+                    amount: 0,
+                    symbol: 'XP',
+                    txHash,
+                    metadata: { campaign_id: campaign.id, tasks_attempted: tasksToInsert.length, error: tasksErr.message?.slice(0, 200) }
+                });
+            }
         }
 
         try {
@@ -914,7 +927,7 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
             amount: parseFloat(depositETH),
             symbol: 'ETH',
             txHash,
-            metadata: { raffle_id, winnerCount }
+            metadata: { raffle_id, winnerCount, sync_status: 'synced', contract_verified: true }
         });
 
         return res.status(200).json({ success: true });
@@ -1033,13 +1046,13 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
 
         await logActivity({
             wallet,
-            category: 'REWARD',
+            category: 'SBT',
             type: 'Pool Sharing Claim',
-            description: `Claimed ${parseFloat(amountETH).toFixed(6)} ETH`,
+            description: `Claimed ${parseFloat(amountETH).toFixed(6)} ETH from SBT pool (Tier ${tier})`,
             amount: parseFloat(amountETH),
             symbol: 'ETH',
             txHash,
-            metadata: { userTier: tier }
+            metadata: { userTier: tier, feature: 'sbt_pool' }
         });
 
         return res.status(200).json({ success: true });

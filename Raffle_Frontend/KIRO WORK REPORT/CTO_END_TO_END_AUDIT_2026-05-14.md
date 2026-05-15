@@ -328,11 +328,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Add persistent `ERROR` or `VERIFY_FAIL` log for failed social verification attempts with sanitized metadata.
   - **Fix Applied**: `handleSocialVerify` now wraps `validateAndCalculateXP` in try/catch. On failure, writes `ERROR / Social Verify Failed` log with sanitized error message before re-throwing.
 
-- [ ] **Feature: UGC Campaign Final Claim**
+- [x] **Feature: UGC Campaign Final Claim** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `handleClaimUgcCampaign()` inserts campaign claim and logs `XP / UGC Campaign Complete`.
   - Gap: log amount uses `reward_amount_per_user` and `reward_symbol`, while XP amount is returned separately; this can confuse Activity History because category is `XP` but symbol can be `USDC`.
   - Solution: Split into two logs if both exist: `XP / UGC Campaign XP` and `REWARD / UGC Campaign Reward`, or set category/symbol consistently.
+  - **Fix Applied**: Split into `UGC / Campaign Complete` (XP amount) + `REWARD / UGC Campaign Reward` (token amount with symbol). Category/symbol now consistent.
 
 - [x] **Feature: Daily Goal / Daily Mojo** ✅ FIXED by Kiro
   - Current coverage: partially covered.
@@ -361,17 +362,19 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Split into `XP / Raffle Win XP` and `REWARD / Raffle Prize Claim` with prize token/amount metadata.
   - **Fix Applied**: Split into `XP / Raffle Win XP` (XP amount) and `RAFFLE / Prize Claim` (with raffle_id metadata). Added `metadata` support to raffle-bundle's `logActivity`.
 
-- [ ] **Feature: Raffle Create / Sponsored Raffle Launch**
+- [x] **Feature: Raffle Create / Sponsored Raffle Launch** ✅ FIXED by Kiro
   - Current coverage: covered but can be improved.
   - Evidence: `handleSyncUgcRaffle()` logs `XP / UGC Raffle Creation` and `PURCHASE / UGC Raffle Launch`.
   - Gap: risk remains if frontend route/API sync fails after chain success.
   - Solution: Add reconciliation status fields in metadata: `{ raffle_id, tx_hash, sync_status, contract_verified: true }`.
+  - **Fix Applied**: Added `sync_status: 'synced'` and `contract_verified: true` to UGC Raffle Launch metadata.
 
-- [ ] **Feature: UGC Mission Creation / Sponsorship Purchase**
+- [x] **Feature: UGC Mission Creation / Sponsorship Purchase** ✅ FIXED by Kiro
   - Current coverage: covered but can be improved.
   - Evidence: `handleSyncUgcMission()` logs `XP / UGC Mission Bonus` and `PURCHASE / UGC Mission Creation`.
   - Gap: if task insertion fails but campaign creation succeeds, log may not expose partial failure clearly.
   - Solution: Add `SYNC_WARN` log when sub-task insert fails, plus metadata `{ campaign_id, tasks_inserted, tasks_failed }`.
+  - **Fix Applied**: Added persistent `SYNC / UGC Mission Task Insert Failed` log when task insertion fails, with metadata `{ campaign_id, tasks_attempted, error }`.
 
 - [x] **Feature: SBT Minting** ✅ FIXED by Kiro
   - Current coverage: incomplete.
@@ -387,11 +390,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Add `SBT / Tier Upgrade` log in both user-triggered sync and cron event sync. Include `old_tier`, `new_tier`, `xp_burned`, `eth_spent`, and `tx_hash`.
   - **Fix Applied**: Added `SBT / Tier Upgrade Synced` log inside the `upgradeLogs` loop in `audit-bundle.ts` with old→new tier, XP burned, and tx_hash.
 
-- [ ] **Feature: SBT Pool Reward Claim**
+- [x] **Feature: SBT Pool Reward Claim** ✅ FIXED by Kiro
   - Current coverage: covered.
   - Evidence: `handleSyncPoolClaim()` logs `REWARD / Pool Sharing Claim` with ETH amount and tier metadata.
   - Gap: profile UI does not provide SBT-specific filter, and admin ledger only sees it as generic `REWARD`.
   - Solution: Add `SBT` category or metadata tag, and add admin filter by `activity_type = Pool Sharing Claim`.
+  - **Fix Applied**: Changed category from `REWARD` to `SBT` and added `feature: 'sbt_pool'` metadata. Now appears under the SBT filter in profile activity.
 
 - [ ] **Feature: On-chain Event Sync**
   - Current coverage: partially covered.
@@ -399,11 +403,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: tier upgrade event path updates `user_profiles.tier` but does not write `user_activity_logs`.
   - Solution: Add log for `SBT / Tier Upgrade Synced` inside the `upgradeLogs` loop.
 
-- [ ] **Feature: XP DB-to-Contract Sync**
+- [x] **Feature: XP DB-to-Contract Sync** ✅ FIXED by Kiro
   - Current coverage: covered.
   - Evidence: `sync-xp-onchain.ts` writes `user_activity_logs` rows with `activity_type: 'onchain_sync'`.
   - Gap: category is `XP`, but admin/profile cannot filter by `SYNC`.
   - Solution: Use category `SYNC` or metadata `{ sync_type: 'DB_TO_CONTRACT_XP' }` plus UI filter.
+  - **Fix Applied**: Changed category from `XP` to `SYNC`, activity_type to `DB to Contract XP Sync`, added metadata `{ sync_type, db_xp, onchain_xp, chain_id }` and value_amount/value_symbol fields.
 
 - [ ] **Feature: Swap / Token Purchase Activity**
   - Current coverage: partially covered.

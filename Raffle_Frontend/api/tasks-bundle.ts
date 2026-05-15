@@ -553,12 +553,25 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
 
         await logActivity(
             wallet_address, 
-            'XP', 
-            'UGC Campaign Complete', 
+            'UGC', 
+            'Campaign Complete', 
             `Completed UGC Campaign: ${campaign?.title || campaign_id}`, 
-            Number(campaign?.reward_amount_per_user || 0), 
-            campaign?.reward_symbol || 'USDC'
+            totalXp, 
+            'XP'
         );
+
+        // Separate reward log if token reward exists
+        const rewardAmount = Number(campaign?.reward_amount_per_user || 0);
+        if (rewardAmount > 0) {
+            await logActivity(
+                wallet_address,
+                'REWARD',
+                'UGC Campaign Reward',
+                `Earned ${rewardAmount} ${campaign?.reward_symbol || 'USDC'} from campaign: ${campaign?.title || campaign_id}`,
+                rewardAmount,
+                campaign?.reward_symbol || 'USDC'
+            );
+        }
 
         return res.status(200).json({
             success: true,
