@@ -9,7 +9,8 @@ import {
     getContractAddr,
     RAFFLE_EVENT_ABI,
     IS_MAINNET,
-    sanitizeError
+    sanitizeError,
+    logSystemError
 } from './_shared/constants.js';
 import type { 
     PointSetting,
@@ -35,7 +36,16 @@ function triggerOnchainSync() {
     fetch(`${baseUrl}/api/sync-xp-onchain`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || ''}` }
-    }).catch(() => {}); // fire-and-forget, don't block response
+    }).catch((err) => {
+        // Fire-and-forget but persist error for admin visibility
+        logSystemError({
+            severity: 'warn',
+            surface: 'api',
+            bundle: 'tasks-bundle',
+            action: 'triggerOnchainSync',
+            message: err?.message || 'Onchain sync trigger failed'
+        }).catch(() => {});
+    });
 }
 
 async function getPointValue(activityKey: string): Promise<number> {
