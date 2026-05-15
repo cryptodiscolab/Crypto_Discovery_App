@@ -246,9 +246,33 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                 }
 
                 if (txValid) {
-                    // Transaction confirmed on-chain — mark as resolved.
-                    // The actual XP/state sync was likely already picked up by the regular sync cron.
-                    // This reconciliation just clears the pending state.
+                    // Transaction confirmed on-chain — perform action-specific sync before marking resolved.
+                    
+                    // For SBT upgrade jobs: read on-chain tier and update DB
+                    if (job.action_type === 'sbt_upgrade' || job.action_type === 'sbt_mint') {
+                        try {
+                            const wallet = job.wallet_address.toLowerCase();
+                            const stats = await rpcClient.readContract({
+                                address: DAILY_APP_ADDRESS as `0x${string}`,
+                                abi: [{ name: 'userStats', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'address' }], outputs: [{ name: 'points', type: 'uint256' }, { name: 'totalTasksCompleted', type: 'uint256' }, { name: 'referralCount', type: 'uint256' }, { name: 'currentTier', type: 'uint8' }, { name: 'tasksForReferralProgress', type: 'uint256' }, { name: 'lastDailyBonusClaim', type: 'uint256' }, { name: 'isBlacklisted', type: 'bool' }] }],
+                                functionName: 'userStats',
+                                args: [wallet as `0x${string}`]
+                            }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
+                            
+                            const onChainTier = Number(stats[3]);
+                            const onChainXp = Number(stats[0]);
+                            
+                            await (supabase as any).from('user_profiles').update({
+                                tier: onChainTier,
+                                total_xp: onChainXp,
+                                last_onchain_xp: onChainXp,
+                                updated_at: new Date().toISOString()
+                            }).eq('wallet_address', wallet);
+                        } catch (syncErr) {
+                            console.warn(`[Reconcile] SBT tier sync for job ${job.id} failed:`, syncErr);
+                        }
+                    }
+
                     await (supabase as any)
                         .from('pending_sync_jobs')
                         .update({

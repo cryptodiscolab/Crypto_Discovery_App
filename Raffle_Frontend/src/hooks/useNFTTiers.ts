@@ -180,13 +180,15 @@ export function useNFTTiers() {
     };
 
     const mintTier = async (id: any, price: any) => {
-        return await writeAndWait({
+        // Return hash only — caller (SBTUpgradeCard) handles receipt wait + confirmation check
+        const hash = await writeContractAsync({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'mintNFT',
             args: [id],
             value: price
         });
+        return hash;
     };
 
     const refetch = () => { r1(); r2(); r3(); r4(); r5(); };

@@ -1061,7 +1061,22 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             const { data: existingBurn } = await getSupabaseAdmin().from('user_task_claims').select('id').eq('task_id', `sbt_upgrade_burn_${txHash}`).maybeSingle();
             
             if (!existingBurn) {
-                const burnedXP = minXpMap[actualTierOnChain] || 0;
+                // Read actual pointsRequired from contract nftConfigs for accuracy
+                // (sbt_thresholds.min_xp is a fallback if contract read fails)
+                let burnedXP = minXpMap[actualTierOnChain] || 0;
+                try {
+                    const nftConfig = await rpcClient.readContract({
+                        address: DAILY_APP_ADDRESS as `0x${string}`,
+                        abi: [{ name: 'nftConfigs', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint8' }], outputs: [{ name: 'pointsRequired', type: 'uint256' }, { name: 'mintPrice', type: 'uint256' }, { name: 'dailyBonus', type: 'uint256' }, { name: 'multiplierBP', type: 'uint256' }, { name: 'maxSupply', type: 'uint256' }, { name: 'currentSupply', type: 'uint256' }, { name: 'isOpen', type: 'bool' }] }],
+                        functionName: 'nftConfigs',
+                        args: [actualTierOnChain]
+                    }) as unknown as [bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+                    const contractBurn = Number(nftConfig[0]);
+                    if (contractBurn > 0) burnedXP = contractBurn;
+                } catch {
+                    // Fallback to sbt_thresholds.min_xp if contract read fails
+                }
+
                 if (burnedXP > 0) {
                     await getSupabaseAdmin().from('user_task_claims').insert({
                         wallet_address: wallet.toLowerCase(),

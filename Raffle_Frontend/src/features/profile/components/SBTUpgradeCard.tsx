@@ -87,6 +87,7 @@ export function SBTUpgradeCard() {
         ? true 
         : Number(dailyAppXP) >= nextTier.pointsRequired;
     const isSoldOut = nextTier.maxSupply > 0 && nextTier.currentSupply >= nextTier.maxSupply;
+    const isTierClosed = nextTier.isOpen === false;
     // SECURITY: DEV-only bypass — import.meta.env.DEV is false in production builds
     const hasEnoughETH = (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase())
         ? true
@@ -95,7 +96,7 @@ export function SBTUpgradeCard() {
     const xpShortfall = nextTier.pointsRequired - Number(userPoints);
     const syncShortfall = nextTier.pointsRequired - Number(dailyAppXP);
 
-    const isReady = isSbtFeatureEnabled && hasTotalXP && hasOnChainXP && !isSoldOut && hasEnoughETH;
+    const isReady = isSbtFeatureEnabled && hasTotalXP && hasOnChainXP && !isSoldOut && !isTierClosed && hasEnoughETH;
 
     const handleUpgrade = async () => {
         if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high. Please wait.", { icon: '⛽' });
@@ -109,6 +110,10 @@ export function SBTUpgradeCard() {
 
         if (isSoldOut) {
             return toast.error("This tier is currently sold out!");
+        }
+
+        if (isTierClosed) {
+            return toast.error("This tier is not currently open for minting.");
         }
 
         if (!hasEnoughETH) {
