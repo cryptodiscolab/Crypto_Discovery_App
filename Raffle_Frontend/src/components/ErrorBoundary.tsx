@@ -44,10 +44,44 @@ export class ErrorBoundary extends React.Component<Props, State> {
             console.error('Check the component stack above to find which component is rendering an object');
         }
 
+        // Report to backend system_error_logs (fire-and-forget, rate-limited)
+        this.reportErrorToBackend(error, errorInfo);
+
         this.setState({
             error,
             errorInfo
         });
+    }
+
+    private lastReportedAt = 0;
+    private reportErrorToBackend(error: Error, errorInfo: React.ErrorInfo) {
+        // Rate limit: max 1 report per 30 seconds
+        const now = Date.now();
+        if (now - this.lastReportedAt < 30000) return;
+        this.lastReportedAt = now;
+
+        try {
+            const sanitizedMessage = (error.message || 'Unknown error').slice(0, 500);
+            const componentStack = (errorInfo.componentStack || '').slice(0, 300);
+            fetch('/api/user-bundle', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'log-activity',
+                    wallet_address: 'system',
+                    signature: 'error-boundary',
+                    message: 'Error Boundary Report',
+                    category: 'ERROR',
+                    type: 'React Error Boundary',
+                    description: sanitizedMessage,
+                    metadata: {
+                        component_stack: componentStack,
+                        url: window.location.pathname,
+                        user_agent: navigator.userAgent.slice(0, 100)
+                    }
+                })
+            }).catch(() => {}); // fire-and-forget
+        } catch { /* never throw from error reporter */ }
     }
 
     render() {

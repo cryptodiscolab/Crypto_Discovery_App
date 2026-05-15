@@ -209,6 +209,23 @@ export function useRaffle() {
                 args: [BigInt(raffleId)],
             });
             toast.success("Winner draw requested!", { id: tid });
+            // Log admin action for draw winner
+            try {
+                const timestamp = new Date().toISOString();
+                const message = `Admin Draw Winner\nRaffle: ${raffleId}\nAdmin: ${address}\nTime: ${timestamp}`;
+                const signature = await signMessageAsync({ message });
+                await fetch('/api/admin-bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'SYNC_RAFFLE',
+                        wallet: address,
+                        signature,
+                        message,
+                        payload: { raffle_id: raffleId, tx_hash: hash, action_type: 'draw_winner' }
+                    })
+                });
+            } catch { /* admin log is best-effort */ }
             setIsDrawing(false);
             return hash;
         } catch (e: any) {
@@ -403,28 +420,50 @@ export function useRaffle() {
                     console.error('[adminCreateRaffle] Failed to extract raffleId from receipt:', e);
                 }
 
-                await fetch('/api/user-bundle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'sync-ugc-raffle',
-                        wallet: address,
-                        signature,
-                        message,
-                        payload: {
-                            raffle_id: raffleId || 0,
-                            end_time: Math.floor(Date.now() / 1000) + (durationDays * 86400),
-                            max_tickets: Number(maxTickets),
-                            winnerCount: Number(winnerCount),
-                            txHash: hash,
-                            depositETH: '0', // Admin raffles are free (no deposit)
-                            metadata_uri: metadataURI,
-                            extra_metadata: extraMetadata
-                        }
-                    })
-                });
+                // Guard: do not sync raffle_id: 0 to DB — store pending recovery instead
+                if (!raffleId || raffleId === 0) {
+                    recordPendingSync({
+                        actionType: 'raffle_create',
+                        txHash: hash,
+                        chainId,
+                        contractAddress: RAFFLE_ADDRESS,
+                        payload: { max_tickets: maxTickets, winner_count: winnerCount, admin: true },
+                        errorMessage: 'Failed to extract raffle_id from receipt'
+                    }).catch(() => {});
+                    toast('Raffle created on-chain. ID extraction failed — sync pending.', { icon: '⏳', duration: 6000 });
+                } else {
+                    await fetch('/api/user-bundle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'sync-ugc-raffle',
+                            wallet: address,
+                            signature,
+                            message,
+                            payload: {
+                                raffle_id: raffleId,
+                                end_time: Math.floor(Date.now() / 1000) + (durationDays * 86400),
+                                max_tickets: Number(maxTickets),
+                                winnerCount: Number(winnerCount),
+                                txHash: hash,
+                                depositETH: '0', // Admin raffles are free (no deposit)
+                                metadata_uri: metadataURI,
+                                extra_metadata: extraMetadata
+                            }
+                        })
+                    });
+                }
             } catch (syncErr: unknown) {
-                console.warn('[adminCreateRaffle] DB sync skipped:', syncErr instanceof Error ? syncErr.message : String(syncErr));
+                const errMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
+                console.warn('[adminCreateRaffle] DB sync skipped:', errMsg);
+                recordPendingSync({
+                    actionType: 'raffle_create',
+                    txHash: hash,
+                    chainId,
+                    contractAddress: RAFFLE_ADDRESS,
+                    payload: { raffle_id: raffleId, max_tickets: maxTickets, admin: true },
+                    errorMessage: errMsg
+                }).catch(() => {});
             }
         }
 

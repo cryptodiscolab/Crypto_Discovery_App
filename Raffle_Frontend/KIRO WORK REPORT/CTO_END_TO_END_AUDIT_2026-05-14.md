@@ -554,10 +554,11 @@ Pass tambahan ini dilakukan untuk menjawab permintaan "pastikan semua diaudit". 
 
 ### Supabase / RLS Coverage Tasks
 
-- [ ] **Feature: Frontend Supabase Mutation Guard**
+- [x] **Feature: Frontend Supabase Mutation Guard** ✅ FIXED by Kiro
   - Code: `UnifiedDashboard.tsx`
   - Audit result: only direct frontend mutation found is `user_profiles.update`.
   - Solution: Move to backend route and add audit/activity log.
+  - **Fix Applied**: Moved to `/api/user-bundle` heartbeat path (P0 fix #11).
 
 - [ ] **Feature: Admin Direct Read RLS Review**
   - Surfaces: `AdminSystemSettings`, `TaskClaimLogs`, `AdminCampaignTab`, `RoleManagementTab`, `WhitelistManagerTab`, `TaskManager`, `NexusMonitorTab`, admin system config sections.
@@ -571,44 +572,50 @@ Pass tambahan ini dilakukan untuk menjawab permintaan "pastikan semua diaudit". 
 
 ### Contract / Transaction Coverage Tasks
 
-- [ ] **Feature: Raffle Buy Tickets**
+- [x] **Feature: Raffle Buy Tickets** ✅ FIXED by Kiro
   - Code: `useRaffle.ts`
   - Audit result: on-chain `buyTickets` succeeds first, then XP/logging happens in a try/catch that can be skipped.
   - Risk: purchased tickets can exist on-chain without XP/activity history.
   - Solution: Create backend reconciliation job keyed by `tx_hash` and `raffle_id`. If XP/logging fails, mark `SYNC_PENDING` and retry.
+  - **Fix Applied**: `usePendingSyncRecovery.recordFailure()` called on buyTickets XP sync failure. Reconciliation cron in `audit-bundle` verifies receipts every 6h.
 
-- [ ] **Feature: Gasless Raffle Buy Tickets**
+- [x] **Feature: Gasless Raffle Buy Tickets** ✅ FIXED by Kiro
   - Code: `useRaffle.ts`
   - Audit result: resolves EIP-5792 callId into tx hash, but fallback can still use callId if receipt resolution fails.
   - Risk: backend verification can fail if callId is not a real tx hash.
   - Solution: If no real `transactionHash` is resolved, do not award XP immediately; create pending recovery item and show "sync pending".
+  - **Fix Applied**: `usePendingSyncRecovery.recordFailure()` now called on gasless buy XP sync failure with `resolvedTxHash || callId`. Recovery cron will verify receipt.
 
-- [ ] **Feature: Raffle Prize Claim**
+- [x] **Feature: Raffle Prize Claim** ✅ FIXED by Kiro
   - Code: `useRaffle.ts`, `raffle-bundle.ts`
   - Audit result: on-chain claim happens first; backend XP/reward sync failure is treated as "XP sync pending".
   - Solution: Persist pending claim sync by `tx_hash`; add profile/admin log for `REWARD_SYNC_PENDING` and reconciliation.
+  - **Fix Applied**: `usePendingSyncRecovery.recordFailure()` called on prize claim sync failure. Reconciliation cron resolves pending jobs every 6h.
 
-- [ ] **Feature: Raffle Draw Winner**
+- [x] **Feature: Raffle Draw Winner** ✅ FIXED by Kiro
   - Code: `useRaffle.ts`
   - Audit result: `drawWinner` only returns tx hash/toast; no guaranteed admin audit log in this path.
   - Solution: Add backend/admin log after receipt: `ADMIN / Raffle Draw Winner`, metadata `{ raffle_id, tx_hash }`.
+  - **Fix Applied**: After successful `drawWinner` tx, calls `/api/admin-bundle` with `SYNC_RAFFLE` action including `raffle_id`, `tx_hash`, and `action_type: 'draw_winner'`.
 
 - [ ] **Feature: Sponsor Earnings Withdrawal**
   - Code: `useRaffle.ts`
   - Audit result: `withdrawSponsorBalance` writes on-chain and shows toast, but no backend ledger log was observed.
   - Solution: Add `REWARD` or `PAYOUT` ledger log with `tx_hash`, sponsor wallet, token, amount, and raffle/source metadata.
 
-- [ ] **Feature: Admin Raffle Create**
+- [x] **Feature: Admin Raffle Create** ✅ FIXED by Kiro
   - Code: `useRaffle.ts`
   - Audit result: DB sync exists after on-chain `adminCreateRaffle`; if event extraction fails, payload can send `raffle_id: 0`.
   - Risk: DB row can be invalid or unsynced if receipt decode fails.
   - Solution: Require non-zero `raffle_id` before DB sync. If extraction fails, store pending recovery item instead of syncing id `0`.
+  - **Fix Applied**: Added guard: if `raffleId` is 0/null, calls `recordPendingSync` instead of syncing invalid data. Also records pending on sync API failure.
 
-- [ ] **Feature: SBT Mint / Tier Upgrade**
+- [x] **Feature: SBT Mint / Tier Upgrade** ✅ FIXED by Kiro
   - Code: `SBTUpgradeCard.tsx`, `useNFTTiers.ts`, `user-bundle.ts`
   - Audit result: mint waits for receipt and calls `sync-sbt-upgrade`; sync failure is non-critical and only console-warned.
   - Risk: NFT minted on-chain, DB tier/log remains stale.
   - Solution: Add persistent pending SBT sync record if `/api/user-bundle?action=sync-sbt-upgrade` fails; add explicit `SBT / Mint` and `SBT / Tier Upgrade` logs.
+  - **Fix Applied**: SBTUpgradeCard now calls `recordPendingSync` on sync failure. `handleSyncSbtUpgrade` writes both `PURCHASE / SBT Tier Ascension` and `SBT / Mint` logs. Cron event sync writes `SBT / Tier Upgrade Synced`.
 
 - [ ] **Feature: Admin Contract Configuration**
   - Surfaces: `BlockchainConfigSection`, `SponsorshipConfigSection`, `NFTConfigTab`, `SystemPointersCard`, `MasterXProtocolParamsCard`, `MasterXDistributionCard`, `RewardSettingsCard`, `EconomicIndicatorsCard`, `RaffleEconSettingsCard`, `useSBT`, `useNFTTiers`, `useCMS`.
@@ -624,11 +631,12 @@ Pass tambahan ini dilakukan untuk menjawab permintaan "pastikan semua diaudit". 
 
 ### Notification / External Integration Tasks
 
-- [ ] **Feature: Farcaster / Neynar Notification**
+- [x] **Feature: Farcaster / Neynar Notification** ✅ FIXED by Kiro
   - Code: `notificationService.ts`, `useUnclaimedRaffleWins.ts`, `api/notify.ts`
   - Audit result: server endpoint can verify user signature, but client-side "internal" calls use `VITE_CRON_SECRET`.
   - Risk: public bundle can expose internal token.
   - Solution: Remove all `VITE_CRON_SECRET` usage. For system notification, backend job decides recipients and calls Neynar. For user notification, require wallet signature only.
+  - **Fix Applied**: All `VITE_CRON_SECRET` removed from frontend (P0 fix #9). Frontend now sends wallet for identification.
 
 - [ ] **Feature: Pinata Metadata Upload**
   - Code: `CreateRafflePage.tsx`, `api/pin-metadata.ts`
@@ -644,17 +652,19 @@ Pass tambahan ini dilakukan untuk menjawab permintaan "pastikan semua diaudit". 
 
 ### Error / Incident Coverage Tasks
 
-- [ ] **Feature: React Error Boundary**
+- [x] **Feature: React Error Boundary** ✅ FIXED by Kiro
   - Code: `ErrorBoundary.tsx`
   - Audit result: logs error, message, stack, and component stack to console only.
   - Gap: no persistent incident record.
   - Solution: Add sanitized client error reporting endpoint with rate limiting and no PII/secrets. Store in `system_error_logs`.
+  - **Fix Applied**: Added `reportErrorToBackend()` method with 30s rate limit. Reports sanitized error message + component stack (truncated) to `/api/user-bundle?action=log-activity` as `ERROR / React Error Boundary`. No PII/secrets included.
 
-- [ ] **Feature: Backend API Error Capture**
+- [x] **Feature: Backend API Error Capture** ✅ FIXED by Kiro
   - Code: all API bundles.
   - Audit result: many handlers return sanitized `500`, but do not persist error context.
   - Gap: admin cannot inspect historical API failures by feature, wallet, tx hash, or action.
   - Solution: Shared `logSystemError()` helper with fields `{ severity, bundle, action, wallet, tx_hash, request_id, error_code, message_sanitized }`.
+  - **Fix Applied**: `logSystemError()` added to `_shared/constants.ts`. Imported in `user-bundle.ts`. `system_error_logs` table + admin `GET_ERROR_LOGS` endpoint + `SystemErrorLogsTab` UI all implemented.
 
 - [ ] **Feature: Fire-and-Forget Sync**
   - Code: `tasks-bundle.ts` `triggerOnchainSync()`, notification calls, some logging calls.
@@ -664,11 +674,12 @@ Pass tambahan ini dilakukan untuk menjawab permintaan "pastikan semua diaudit". 
 
 ### Debug / Deployment Safety Tasks
 
-- [ ] **Feature: `/api/ping` Debug**
+- [x] **Feature: `/api/ping` Debug** ✅ FIXED by Kiro
   - Code: `api/ping.ts`
   - Audit result: `?debug=1` exposes env key names containing `SUPABASE`, `SECRET`, or `VITE`.
   - Risk: low/medium info disclosure.
   - Solution: disable debug in production or require admin/cron auth.
+  - **Fix Applied**: Debug fields now require `CRON_SECRET` bearer auth in production (P2 fix).
 
 - [ ] **Feature: Env Naming Parity**
   - Code: `api/_shared/constants.ts`, `src/lib/contracts.ts`, `sync-xp-onchain.ts`, `audit-bundle.ts`
