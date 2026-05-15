@@ -435,6 +435,9 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 }
             });
 
+            // Award referral bonus to referrer (fire-and-forget)
+            awardReferralBonus(cleanAddress, xpDelta, logType).catch(() => {});
+
             result.xp_synced = xpDelta;
         } else if (tx_hash) {
             // xpDelta is 0 but user submitted a valid tx_hash — this means the on-chain XP
@@ -1175,6 +1178,79 @@ async function logActivity({ wallet, category, type, description, amount, symbol
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('[logActivity Error]', msg);
+    }
+}
+
+/**
+ * awardReferralBonus — Awards passive XP dividend to the referrer when a referred user earns XP.
+ * Fire-and-forget: never blocks the main flow.
+ * @param userWallet - The wallet that just earned XP
+ * @param xpEarned - Amount of XP the user earned
+ * @param source - Description of what triggered the XP (for log)
+ */
+async function awardReferralBonus(userWallet: string, xpEarned: number, source: string) {
+    if (!xpEarned || xpEarned <= 0) return;
+    try {
+        const cleanWallet = userWallet.toLowerCase();
+
+        // 1. Check if user has a referrer
+        const { data: profile } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('referred_by')
+            .eq('wallet_address', cleanWallet)
+            .maybeSingle();
+
+        if (!profile?.referred_by) return;
+        const referrerWallet = profile.referred_by.toLowerCase();
+
+        // 2. Check if user has reached the active threshold (referrer only earns from active referrals)
+        const { data: userProfile } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('total_xp')
+            .eq('wallet_address', cleanWallet)
+            .maybeSingle();
+
+        // Get threshold from system settings
+        const { data: thresholdSetting } = await getSupabaseAdmin()
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'referral_active_threshold')
+            .maybeSingle();
+        const threshold = thresholdSetting?.value ? Number(thresholdSetting.value) : 500;
+
+        if ((userProfile?.total_xp || 0) < threshold) return; // User not yet "active"
+
+        // 3. Get bonus percentage from system settings
+        const { data: bonusSetting } = await getSupabaseAdmin()
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'referral_bonus_percent')
+            .maybeSingle();
+        const bonusPercent = bonusSetting?.value ? Number(bonusSetting.value) : 10;
+
+        // 4. Calculate and award bonus
+        const bonusXp = Math.floor(xpEarned * (bonusPercent / 100));
+        if (bonusXp <= 0) return;
+
+        await getSupabaseAdmin().rpc('fn_increment_xp', {
+            p_wallet: referrerWallet,
+            p_amount: bonusXp
+        });
+
+        // 5. Log the referral bonus in activity history
+        await logActivity({
+            wallet: referrerWallet,
+            category: 'XP',
+            type: 'Referral Bonus',
+            description: `Referral Bonus: +${bonusXp} XP (${bonusPercent}% of ${xpEarned} XP earned by ${cleanWallet.slice(0, 6)}...${cleanWallet.slice(-4)})`,
+            amount: bonusXp,
+            symbol: 'XP',
+            metadata: { source, referred_user: cleanWallet, original_xp: xpEarned, bonus_percent: bonusPercent }
+        });
+    } catch (err: unknown) {
+        // Fire-and-forget: never block the main flow
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn('[ReferralBonus] Error:', msg);
     }
 }
 

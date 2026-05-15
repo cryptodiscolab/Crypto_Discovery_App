@@ -223,6 +223,33 @@ async function logActivity(wallet: string, category: string, type: string, descr
     }
 }
 
+/**
+ * awardReferralBonus — Awards passive XP to referrer. Fire-and-forget.
+ */
+async function awardReferralBonus(userWallet: string, xpEarned: number, source: string) {
+    if (!xpEarned || xpEarned <= 0) return;
+    try {
+        const cleanWallet = userWallet.toLowerCase();
+        const { data: profile } = await supabaseAdmin.from('user_profiles').select('referred_by, total_xp').eq('wallet_address', cleanWallet).maybeSingle();
+        if (!profile?.referred_by) return;
+
+        const { data: thresholdSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'referral_active_threshold').maybeSingle();
+        const threshold = thresholdSetting?.value ? Number(thresholdSetting.value) : 500;
+        if ((profile.total_xp || 0) < threshold) return;
+
+        const { data: bonusSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'referral_bonus_percent').maybeSingle();
+        const bonusPercent = bonusSetting?.value ? Number(bonusSetting.value) : 10;
+        const bonusXp = Math.floor(xpEarned * (bonusPercent / 100));
+        if (bonusXp <= 0) return;
+
+        const referrerWallet = profile.referred_by.toLowerCase();
+        await supabaseAdmin.rpc('fn_increment_xp', { p_wallet: referrerWallet, p_amount: bonusXp });
+        await logActivity(referrerWallet, 'XP', 'Referral Bonus', `Referral Bonus: +${bonusXp} XP (${bonusPercent}% from ${cleanWallet.slice(0, 6)}...${cleanWallet.slice(-4)})`, bonusXp, 'XP', { source, referred_user: cleanWallet, bonus_percent: bonusPercent });
+    } catch (err: unknown) {
+        console.warn('[ReferralBonus]', err instanceof Error ? err.message : String(err));
+    }
+}
+
 async function checkAndGrantDailyBonus(wallet_address: string) {
     try {
         const wallet = wallet_address.toLowerCase();
@@ -370,6 +397,9 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
 
         await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`, xp, 'XP');
 
+        // Award referral bonus to referrer (fire-and-forget)
+        awardReferralBonus(wallet_address, xp, 'Task Claim').catch(() => {});
+
         await checkAndGrantDailyBonus(wallet_address);
         triggerOnchainSync();
         return res.status(200).json({ success: true, xp });
@@ -479,6 +509,9 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
     }
 
     await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`, xp, 'XP');
+
+    // Award referral bonus to referrer (fire-and-forget)
+    awardReferralBonus(wallet_address, xp, 'Social Verify').catch(() => {});
 
     await checkAndGrantDailyBonus(wallet_address);
     return res.status(200).json({ success: true, xp, message: `Task verified.` });
