@@ -168,6 +168,8 @@ async function handleSyncEvents(req: VercelRequest, res: VercelResponse) {
                 source: `TierUpgrade:${oldTier}->${newTier}`
             });
             await supabase.from('user_profiles').update({ tier: Number(newTier) }).eq('wallet_address', wallet);
+            // Persistent SBT / Tier Upgrade log for profile and admin filters
+            await logActivity(supabase, { wallet, category: 'SBT', type: 'Tier Upgrade Synced', description: `Tier ${Number(oldTier)} → ${Number(newTier)} (XP burned: ${burn})`, amount: burn, symbol: 'XP', txHash: log.transactionHash });
         }
 
         for (const log of rewardLogs) {

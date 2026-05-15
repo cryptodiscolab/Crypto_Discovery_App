@@ -255,7 +255,7 @@ async function checkAndGrantDailyBonus(wallet_address: string) {
             p_amount: bonusXp
         });
 
-        await logActivity(wallet, 'XP', 'Daily Goal Reached', `Unlocked 3-Task Daily Bonus!`);
+        await logActivity(wallet, 'DAILY', 'Daily Goal Bonus', `Unlocked 3-Task Daily Bonus! +${bonusXp} XP`, bonusXp, 'XP');
 
         console.log(`[DailyBonus] Granted ${bonusXp} XP to ${wallet} (Verified)`);
     } catch (e: unknown) {
@@ -421,7 +421,18 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
     const { wallet_address, signature, message, task_id, platform, action_type } = req.body;
     if (!wallet_address || !signature || !message || !task_id) throw new Error('Missing fields');
 
-    const { xp, targetId } = await validateAndCalculateXP(wallet_address, signature, message, task_id);
+    let xp: number;
+    let targetId: string | null;
+    try {
+        const result = await validateAndCalculateXP(wallet_address, signature, message, task_id);
+        xp = result.xp;
+        targetId = result.targetId;
+    } catch (verifyErr: unknown) {
+        const errMsg = verifyErr instanceof Error ? verifyErr.message : String(verifyErr);
+        // Persistent error log for failed social verification
+        await logActivity(wallet_address, 'ERROR', 'Social Verify Failed', `Verification failed for ${action_type || 'task'} on ${platform || 'unknown'}: ${errMsg.slice(0, 200)}`);
+        throw verifyErr;
+    }
 
     const { error } = await supabaseAdmin.from('user_task_claims').insert({
         wallet_address: wallet_address.toLowerCase(),

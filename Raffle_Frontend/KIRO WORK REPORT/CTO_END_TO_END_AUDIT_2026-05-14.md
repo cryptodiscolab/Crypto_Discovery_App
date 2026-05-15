@@ -321,11 +321,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: duplicate/already-claimed path returns success but does not always write a dedup audit event.
   - Solution: For already-claimed responses, optionally log `SYNC` or `INFO` event with metadata `{ already_claimed: true, task_id }` without incrementing XP.
 
-- [ ] **Feature: Social Verification XP**
+- [x] **Feature: Social Verification XP** ✅ FIXED by Kiro
   - Current coverage: covered.
   - Evidence: `handleSocialVerify()` logs `XP / Social Verify`.
   - Gap: external verification failure is only returned/logged to console, not persistent.
   - Solution: Add persistent `ERROR` or `VERIFY_FAIL` log for failed social verification attempts with sanitized metadata.
+  - **Fix Applied**: `handleSocialVerify` now wraps `validateAndCalculateXP` in try/catch. On failure, writes `ERROR / Social Verify Failed` log with sanitized error message before re-throwing.
 
 - [ ] **Feature: UGC Campaign Final Claim**
   - Current coverage: partially covered.
@@ -333,11 +334,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: log amount uses `reward_amount_per_user` and `reward_symbol`, while XP amount is returned separately; this can confuse Activity History because category is `XP` but symbol can be `USDC`.
   - Solution: Split into two logs if both exist: `XP / UGC Campaign XP` and `REWARD / UGC Campaign Reward`, or set category/symbol consistently.
 
-- [ ] **Feature: Daily Goal / Daily Mojo**
+- [x] **Feature: Daily Goal / Daily Mojo** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `checkAndGrantDailyBonus()` inserts `daily_task_completion` and logs `XP / Daily Goal Reached`.
   - Gap: "Daily Mojo" as a named product concept is not explicitly represented as category/type; daily claim and daily bonus are not separated clearly in profile filters.
   - Solution: Standardize event names: `DAILY / Daily Mojo Claim`, `DAILY / Daily Goal Bonus`, and map them to a dedicated profile/admin filter.
+  - **Fix Applied**: Changed `checkAndGrantDailyBonus` log from `XP / Daily Goal Reached` to `DAILY / Daily Goal Bonus` with amount and XP symbol. Now appears under the DAILY filter in profile activity.
 
 - [x] **Feature: On-chain Daily Claim** ✅ FIXED by Kiro
   - Current coverage: unclear/partial.
@@ -352,11 +354,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Gap: current log amount is ticket count and symbol `TICKET`; purchase cost, token, raffle id, and tx hash are not guaranteed in this log.
   - Solution: Add metadata `{ raffle_id, ticket_count, payment_token, payment_amount, tx_hash }` and ensure route that records ticket purchase always passes the receipt.
 
-- [ ] **Feature: Raffle Prize Claim**
+- [x] **Feature: Raffle Prize Claim** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `raffle-bundle.ts` logs `REWARD / NFT Raffle Win` after validating winner and inserting `raffle_win_*`.
   - Gap: amount logged is XP awarded, not prize asset amount; category `REWARD` with symbol `XP` is semantically mixed.
   - Solution: Split into `XP / Raffle Win XP` and `REWARD / Raffle Prize Claim` with prize token/amount metadata.
+  - **Fix Applied**: Split into `XP / Raffle Win XP` (XP amount) and `RAFFLE / Prize Claim` (with raffle_id metadata). Added `metadata` support to raffle-bundle's `logActivity`.
 
 - [ ] **Feature: Raffle Create / Sponsored Raffle Launch**
   - Current coverage: covered but can be improved.
@@ -377,11 +380,12 @@ Jawaban CTO: **belum mencakup semua fitur secara detail**. Codebase sudah memili
   - Solution: Add dedicated log `SBT / Mint` when mint receipt is confirmed, with metadata `{ tier, token_id, mint_price_eth, tx_hash, contract_address, chain_id }`.
   - **Fix Applied**: `handleSyncSbtUpgrade` now writes a second log `SBT / Mint` with metadata `{ tier, tier_name, mint_price_eth, contract_address, chain_id }` alongside the existing `PURCHASE / SBT Tier Ascension`.
 
-- [ ] **Feature: SBT Tier Upgrade**
+- [x] **Feature: SBT Tier Upgrade** ✅ FIXED by Kiro
   - Current coverage: partially covered.
   - Evidence: `handleSyncSbtUpgrade()` logs `PURCHASE / SBT Tier Ascension` and inserts negative XP burn claim `sbt_upgrade_burn_${txHash}`.
   - Gap: `audit-bundle.ts` updates tier on chain events but does not write a user activity log for tier upgrade in the event-sync path.
   - Solution: Add `SBT / Tier Upgrade` log in both user-triggered sync and cron event sync. Include `old_tier`, `new_tier`, `xp_burned`, `eth_spent`, and `tx_hash`.
+  - **Fix Applied**: Added `SBT / Tier Upgrade Synced` log inside the `upgradeLogs` loop in `audit-bundle.ts` with old→new tier, XP burned, and tx_hash.
 
 - [ ] **Feature: SBT Pool Reward Claim**
   - Current coverage: covered.

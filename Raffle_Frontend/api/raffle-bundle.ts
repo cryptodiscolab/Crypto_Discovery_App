@@ -197,14 +197,27 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
         await supabaseAdmin.rpc('fn_increment_raffle_wins', { p_wallet: normalizedWallet });
         await notifyTelegramWinner(normalizedWallet, raffle_id, xpAwarded);
 
+        // XP reward log
         await logActivity({
             wallet: normalizedWallet,
-            category: 'REWARD',
-            type: 'NFT Raffle Win',
-            description: `Claimed prize for Raffle #${raffle_id}`,
+            category: 'XP',
+            type: 'Raffle Win XP',
+            description: `Earned ${xpAwarded} XP for winning Raffle #${raffle_id}`,
             amount: xpAwarded,
             symbol: 'XP',
             txHash: tx_hash
+        });
+
+        // Raffle-specific prize claim log for RAFFLE filter
+        await logActivity({
+            wallet: normalizedWallet,
+            category: 'RAFFLE',
+            type: 'Prize Claim',
+            description: `Claimed prize for Raffle #${raffle_id}`,
+            amount: 0,
+            symbol: 'ETH',
+            txHash: tx_hash,
+            metadata: { raffle_id, xp_awarded: xpAwarded }
         });
 
         return res.status(200).json({ success: true, xpAwarded });
@@ -232,7 +245,7 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
     }
 }
 
-async function logActivity({ wallet, category, type, description, amount, symbol, txHash }: any) {
+async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }: any) {
     try {
         await supabaseAdmin.from('user_activity_logs').insert({
             wallet_address: wallet.toLowerCase(),
@@ -241,7 +254,8 @@ async function logActivity({ wallet, category, type, description, amount, symbol
             description,
             value_amount: amount || 0,
             value_symbol: symbol || 'XP',
-            tx_hash: txHash
+            tx_hash: txHash,
+            metadata: metadata || {}
         });
     } catch (err: any) {
         console.error('[logActivity Error]', err.message);
