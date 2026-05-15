@@ -9,6 +9,7 @@ WITH required_rls AS (
         'user_task_claims',
         'admin_audit_logs',
         'user_privileges',
+        'agent_vault',
         'agents_vault',
         'system_settings',
         'point_settings',
@@ -43,7 +44,7 @@ SELECT
     p.tablename
 FROM pg_policies p
 WHERE p.schemaname = 'public'
-  AND p.tablename IN ('admin_audit_logs', 'agents_vault', 'pending_sync_jobs', 'system_error_logs')
+  AND p.tablename IN ('admin_audit_logs', 'agent_vault', 'agents_vault', 'pending_sync_jobs', 'system_error_logs')
   AND p.cmd = 'SELECT'
   AND p.qual = 'true'
 

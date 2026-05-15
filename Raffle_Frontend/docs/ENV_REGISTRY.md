@@ -67,7 +67,7 @@ These are kept for backwards compatibility. **Do NOT use in new code.**
 | `/api/cron/sync-events` | `0 0 * * *` (daily midnight) | `CRON_SECRET` |
 | `/api/sync-xp-onchain` | `0 2 * * *` (daily 2am) | `CRON_SECRET` |
 | `/api/lurah-cron` | `0 1 * * *` (daily 1am) | `CRON_SECRET` |
-| `/api/audit-bundle?action=reconcile-pending` | `0 */6 * * *` (every 6h) | `CRON_SECRET` |
+| `/api/audit-bundle?action=reconcile-pending` | `0 3 * * *` (daily 3am) | `CRON_SECRET` |
 
 ## Runtime Assertion
 
