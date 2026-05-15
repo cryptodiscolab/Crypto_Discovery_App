@@ -9,7 +9,10 @@ paths = [
     '''cache''',
     '''tools/nexus-monitor''',
     '''\.gitleaks\.toml$''',
-    '''\.agents/skills/'''
+    # Narrowed: only allow markdown documentation in skills, not config/scripts
+    '''\.agents/skills/.*\.md$''',
+    '''\.agents/skills/.*/references/.*\.md$''',
+    '''\.agents/skills/.*/CHECKLIST\.md$'''
 ]
 
 [[rules]]

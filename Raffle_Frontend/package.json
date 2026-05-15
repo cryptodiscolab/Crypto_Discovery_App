@@ -8,6 +8,7 @@
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives",
+    "check-routes": "node scripts/check-api-routes.cjs",
     "postinstall": "patch-package"
   },
   "dependencies": {

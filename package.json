@@ -3,6 +3,8 @@
   "scripts": {
     "lurah": "node test-lurah.cjs",
     "gitleaks-check": "gitleaks-secret-scanner",
+    "gitleaks-full": "gitleaks-secret-scanner --diff-mode all",
+    "gitleaks-history": "gitleaks-secret-scanner --diff-mode history",
     "prepare": "husky",
     "orchestron": "node scripts/orchestrator/nexus_orchestrator.cjs",
     "ncc-sentinel": "node scripts/nexus/ncc-sentinel.cjs",
