@@ -27,7 +27,7 @@ Dokumen ini adalah task list terstruktur untuk pekerjaan yang **belum selesai** 
 
 ### Belum Beres
 
-- [ ] Clean release branch / dirty worktree governance.
+- [x] Clean release branch / dirty worktree governance.
 - [ ] Production-like browser E2E untuk high-risk flows.
 - [ ] Social verifier scenario test berbasis akun/task fixture, jika social tasks masuk scope release.
 - [ ] Bundle optimization / treeshake restoration.
@@ -37,7 +37,7 @@ Dokumen ini adalah task list terstruktur untuk pekerjaan yang **belum selesai** 
 
 | ID | Priority | Task | Status | Owner | Release Impact |
 |---|---|---|---|---|---|
-| CTO-P0-01 | P0 | Clean release branch / dirty worktree governance | Open | Release Engineer | Blocks clean release sign-off |
+| CTO-P0-01 | P0 | Clean release branch / dirty worktree governance | **Done** | Release Engineer | Blocks clean release sign-off |
 | CTO-P0-02 | P0 | Live contract ABI selector parity | Done for Base Sepolia | Contract/Frontend | Mainnet still needs chain-specific proof if released |
 | CTO-P0-03 | P0 | Production-like E2E high-risk flows | Open | QA/Frontend/Web3 | Blocks public release confidence |
 | CTO-P1-01 | P1 | Verification server health + social verifier smoke test | Health done, scenario test open | Backend/Verifier | Blocks social-task release confidence |
@@ -49,12 +49,24 @@ Dokumen ini adalah task list terstruktur untuk pekerjaan yang **belum selesai** 
 
 ### CTO-P0-01 - Clean Release Branch / Dirty Worktree Governance
 
-**Status:** Open  
+**Status:** Done ✅
 **Owner:** Release Engineer  
 **Area:** Git hygiene, release governance  
 
 **Problem:**  
 `git status --short` masih menunjukkan banyak file modified di luar patch remediation, termasuk `.agents`, docs, frontend, contracts, scripts, dan verification-server. Kondisi ini belum bisa disebut clean release candidate.
+
+**Fix Applied 2026-05-15:**
+- [x] Created `release/v3.64.0` branch from `main` HEAD.
+- [x] Committed changes in 4 focused thematic commits:
+  1. `fix(abi)`: disable phantom contract calls, align admin UI with deployed selectors
+  2. `fix(recovery)`: wire pending sync into sponsorship raffle, reject, mission create
+  3. `chore(tooling)`: add live ABI/RLS check scripts, update package scripts
+  4. `docs`: CTO re-audit report, outstanding fix plan, final release signoff
+- [x] Merged to `main` with `--no-ff`.
+- [x] `git status --short` is clean (only untracked gitignored files remain).
+- [x] All release gates pass from clean checkout.
+- [x] No env, log, dump, screenshot, or build artifact tracked.
 
 **Impact:**  
 - Audit tidak reproducible dari commit bersih.
