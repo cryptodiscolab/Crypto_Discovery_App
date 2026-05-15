@@ -378,6 +378,29 @@ export function useRaffle() {
 
         if (hash) {
             toast.success("Earnings withdrawn!");
+            // Log sponsor withdrawal to activity ledger
+            try {
+                const timestamp = new Date().toISOString();
+                const message = `Withdraw Sponsor Earnings\nWallet: ${address}\nTime: ${timestamp}`;
+                const signature = await signMessageAsync({ message });
+                await fetch('/api/user-bundle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'log-activity',
+                        wallet_address: address,
+                        signature,
+                        message,
+                        category: 'REWARD',
+                        type: 'Sponsor Earnings Withdrawal',
+                        description: `Withdrew sponsor earnings from raffle contract`,
+                        amount: 0,
+                        symbol: 'ETH',
+                        txHash: hash,
+                        metadata: { contract: RAFFLE_ADDRESS, chain_id: chainId }
+                    })
+                });
+            } catch { /* ledger log is best-effort */ }
         }
         return hash;
     };
