@@ -137,8 +137,9 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           fromAmount: amountWei,
           fromAddress: address,
           toAddress: address,
-          // Use swap fee from backend ecosystem settings (default 0.005 if unavailable)
-          fee: ecosystemSettings?.swap_fee ?? 0.005,
+          // [FIX] Integrator 'crypto-disco-app' is not configured for fees in LI.FI portal yet.
+          // Defaulting to 0 to avoid 400 ValidationError.
+          fee: ecosystemSettings?.swap_fee || 0,
           integrator: 'crypto-disco-app'
         });
         setQuote(result as unknown as LiFiQuote);
@@ -355,8 +356,8 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                <span className="text-indigo-400">{activeNetworkName}</span>
              </div>
              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-               <span>Provider Fee</span>
-               <span className="text-slate-400">0.5% + Gas</span>
+                <span>Provider Fee</span>
+                <span className="text-slate-400">{((ecosystemSettings?.swap_fee || 0) * 100).toFixed(1)}% + Gas</span>
              </div>
              {quote?.estimate?.gasCosts && quote.estimate.gasCosts.length > 0 && quote.estimate.gasCosts[0]?.amount && (
                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">

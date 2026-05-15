@@ -300,4 +300,10 @@ Seluruh sisa tugas telah diselesaikan dengan tindakan berikut:
 - **Zero-Error Mandate**: Verifikasi akhir menggunakan `tsc --noEmit` mengonfirmasi **0 errors**. Seluruh kode kini memenuhi standar *Strict TypeScript* untuk produksi.
 
 **Status Akhir Sesi**: Seluruh tugas audit telah **SELESAI (100%)**. Repositori dalam kondisi bersih, tersinkronisasi, dan terverifikasi secara penuh.
+
+### Hotfix: LI.FI Swap Fee (2026-05-15)
+
+- **Issue**: Error 400 pada `SwapModal` karena integrator `crypto-disco-app` meminta fee 0.5% tanpa konfigurasi wallet di portal LI.FI.
+- **Resolution**: Menonaktifkan fee default (set ke 0) pada `getQuote` call di `SwapModal.tsx` dan membuat tampilan fee di UI menjadi dinamis.
+- **Result**: Fitur Swap kembali operasional sepenuhnya.
 - **Operational Ready**: Seluruh task dari CTO Audit (P0, P1, P2) kini berstatus **RESOLVED** secara teknis dan operasional.

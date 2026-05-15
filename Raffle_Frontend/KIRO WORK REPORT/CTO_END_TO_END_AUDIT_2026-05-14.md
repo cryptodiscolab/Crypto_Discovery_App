@@ -1490,4 +1490,12 @@ Menyusul perbaikan *import paths*, dilakukan audit mendalam terhadap integritas 
     *   Memperbaiki *scope leak* variabel `raffleId` pada blok penanganan error di hook `adminCreateRaffle`.
 4.  **Final Build Zero-Error**: Eksekusi `npx tsc --noEmit` memberikan hasil **Exit code: 0**. Seluruh ekosistem kini bebas dari kesalahan kompilasi (*Zero Compiler Errors*).
 
-**Project Milestone**: Arsitektur telah mencapai **FULL TYPE SAFETY PARITY**. Sistem kini 100% stabil, aman, dan siap untuk rilis operasional tanpa pengecualian.
+## Update: 2026-05-15 (LI.FI Swap Fee Configuration Fix)
+
+Ditemukan kegagalan pada fitur Swap (`SwapModal`) yang disebabkan oleh parameter biaya (*fee*) yang tidak sesuai dengan status registrasi integrator di portal LI.FI. Masalah ini telah diatasi:
+
+1.  **Fee Parameter Correction**: Mengubah *default fee* dari 0.5% (0.005) menjadi 0% pada `SwapModal.tsx`. Hal ini dilakukan karena integrator `crypto-disco-app` belum dikonfigurasi dengan *fee wallet* di portal LI.FI, yang menyebabkan error 400 (ValidationError) saat meminta *quote*.
+2.  **Dynamic UI Update**: Memperbarui tampilan "Provider Fee" di UI agar secara dinamis merefleksikan nilai dari `ecosystemSettings`, sehingga pengguna mendapatkan informasi biaya yang akurat.
+3.  **Restoration of Service**: Fitur Swap kini kembali berfungsi normal tanpa gangguan pesan error teknis.
+
+**Rekomendasi**: Jika tim ingin mengaktifkan penarikan biaya swap di masa depan, silakan daftarkan integrator `crypto-disco-app` di [portal.li.fi](https://portal.li.fi/) dan konfigurasikan alamat wallet penerima biaya.
