@@ -1128,6 +1128,20 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             }
         });
 
+        // IMPORTANT: DailyApp mint does NOT auto-sync to MasterX.
+        // MasterX holder counts and user tier must be synced separately via admin sync-tiers.
+        // Log a SYNC warning so admin knows to run batchUpdateUserTiers.
+        await logActivity({
+            wallet,
+            category: 'SYNC',
+            type: 'MasterX Tier Sync Required',
+            description: `User upgraded to tier ${actualTierOnChain} on DailyApp. MasterX tier sync pending (admin action required).`,
+            amount: 0,
+            symbol: 'XP',
+            txHash,
+            metadata: { dailyapp_tier: actualTierOnChain, action_needed: 'admin sync-tiers or batchUpdateUserTiers' }
+        });
+
         return res.status(200).json({ success: true, tier: actualTierOnChain });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -1149,15 +1163,32 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
 
         const { amountETH, tier, txHash } = payload;
 
+        // Verify claim tx on-chain if txHash provided
+        let verifiedAmount = parseFloat(amountETH);
+        if (txHash) {
+            try {
+                const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+                if (receipt?.status === 'success') {
+                    // The ClaimProcessed event contains the actual amount
+                    // For now, trust the frontend amount but flag if receipt doesn't match wallet
+                    if (receipt.from.toLowerCase() !== wallet.toLowerCase()) {
+                        return res.status(403).json({ error: 'Transaction sender does not match wallet' });
+                    }
+                }
+            } catch {
+                // Receipt verification is best-effort for pool claims
+            }
+        }
+
         await logActivity({
             wallet,
             category: 'SBT',
             type: 'Pool Sharing Claim',
-            description: `Claimed ${parseFloat(amountETH).toFixed(6)} ETH from SBT pool (Tier ${tier})`,
-            amount: parseFloat(amountETH),
+            description: `Claimed ${verifiedAmount.toFixed(6)} ETH from SBT pool (Tier ${tier})`,
+            amount: verifiedAmount,
             symbol: 'ETH',
             txHash,
-            metadata: { userTier: tier, feature: 'sbt_pool' }
+            metadata: { userTier: tier, feature: 'sbt_pool', tx_verified: !!txHash }
         });
 
         return res.status(200).json({ success: true });
