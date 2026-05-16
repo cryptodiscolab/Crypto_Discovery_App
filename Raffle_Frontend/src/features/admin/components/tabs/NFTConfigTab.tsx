@@ -49,7 +49,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
     } = useSBT();
 
     const [localConfigs, setLocalConfigs] = useState<Tier[]>([]);
-    const [localEco, setLocalEco] = useState({ 
+    const [localEco, setLocalEco] = useState({
         tokenP: "0",
         p1: "0",
         p2: "0",
@@ -62,20 +62,20 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
 
     useEffect(() => {
         if (tiers && tiers.length > 0) {
-            setLocalConfigs(tiers.map((t: any) => ({
+            setLocalConfigs(tiers.map((t: unknown) => ({
                 ...t,
                 mintPriceETH: formatEther(t.mintPrice || 0n),
                 localURI: t.uri || ''
             })));
         }
-        if (economy && (tiers as any[]).length >= 5) {
+        if (economy && (tiers as unknown[]).length >= 5) {
             setLocalEco({
                 tokenP: (economy as Economy).tokenPriceUSD,
-                p1: getUSD(formatEther((tiers as any[])[0].mintPrice)),
-                p2: getUSD(formatEther((tiers as any[])[1].mintPrice)),
-                p3: getUSD(formatEther((tiers as any[])[2].mintPrice)),
-                p4: getUSD(formatEther((tiers as any[])[3].mintPrice)),
-                p5: getUSD(formatEther((tiers as any[])[4].mintPrice))
+                p1: getUSD(formatEther((tiers as unknown[])[0].mintPrice)),
+                p2: getUSD(formatEther((tiers as unknown[])[1].mintPrice)),
+                p3: getUSD(formatEther((tiers as unknown[])[2].mintPrice)),
+                p4: getUSD(formatEther((tiers as unknown[])[3].mintPrice)),
+                p5: getUSD(formatEther((tiers as unknown[])[4].mintPrice))
             });
         }
         if (diamondWeight !== undefined) {
@@ -109,7 +109,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             );
             toast.success(`${tier.name} Config Updated!`, { id: tid });
             refetch();
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || "Update failed", { id: tid });
         } finally {
             setIsSaving(null);
@@ -122,7 +122,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await updateTierURI(tier.id, tier.localURI || '');
             toast.success(`${tier.name} Metadata URI Updated!`, { id: tid });
             refetch();
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || "URI Update failed", { id: tid });
         }
     };
@@ -148,7 +148,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await updateBatchConfig(ids, points, prices, bonuses, multipliers, supplies, opens);
             toast.success("Master Economic Parameters Finalized!", { id: tid });
             refetch();
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || "Batch update failed", { id: tid });
         }
     };
@@ -159,7 +159,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await toggleTier(tier.id, !tier.isOpen);
             toast.success(`${tier.name} status updated!`, { id: tid });
             refetch();
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || "Action failed", { id: tid });
         }
     };
@@ -189,7 +189,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             if (ethPrice && ethPrice > 0) {
                 const ids = [1, 2, 3, 4, 5];
                 const points = localConfigs.map(t => BigInt(t.pointsRequired));
-                
+
                 // Inverse calculation: USD / ethPrice = ETH
                 const prices = [
                     parseEther((parseLocalFloat(localEco.p1) / ethPrice).toFixed(6)),
@@ -198,7 +198,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                     parseEther((parseLocalFloat(localEco.p4) / ethPrice).toFixed(6)),
                     parseEther((parseLocalFloat(localEco.p5) / ethPrice).toFixed(6))
                 ];
-                
+
                 const bonuses = localConfigs.map(t => BigInt(t.dailyBonus));
                 const multipliers = localConfigs.map(t => BigInt(t.multiplierBP));
                 const supplies = localConfigs.map(t => BigInt(t.maxSupply));
@@ -226,7 +226,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
 
             toast.success("Global Economics & SBT Multipliers Updated!", { id: tid });
             refetch();
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || "Update failed", { id: tid });
         }
     };
@@ -242,7 +242,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await setTierWeights(localWeights.d, localWeights.p, localWeights.g, localWeights.s, localWeights.b);
             toast.success("Revenue Weights Updated!", { id: tid });
             refetchMaster();
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || "Weight update failed", { id: tid });
         }
     };
@@ -342,7 +342,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                 const tid = toast.loading("Syncing Multipliers...");
                                 try {
                                     const multiplierMap: Record<number, number> = {};
-                                    tiers.forEach((t: any) => { multiplierMap[t.id] = Number(t.multiplierBP); });
+                                    tiers.forEach((t: unknown) => { multiplierMap[t.id] = Number(t.multiplierBP); });
                                     const syncMsg = `Action: SYNC_MULTIPLIERS\nTimestamp: ${Date.now()}`;
                                     const sig = await signMessageAsync({ message: syncMsg });
                                     await axios.post('/api/admin-bundle', { action: 'SYNC_MULTIPLIERS', wallet_address: address, signature: sig, message: syncMsg, payload: multiplierMap });

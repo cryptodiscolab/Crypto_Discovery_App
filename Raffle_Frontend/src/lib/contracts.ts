@@ -1,15 +1,15 @@
 /**
  * SUPREME OPAQUE BYPASS V4 - THE PROXY CONSTANT
  * We export constants that are actually PROXIES.
- * This prevents Rollup from binding to the internal structure of the ABIs 
+ * This prevents Rollup from binding to the internal structure of the ABIs
  * while maintaining 100% backward compatibility with existing imports.
  */
 
-// @ts-ignore
+// @ts-expect-error Vite raw text imports are provided by the bundler.
 import abisDataRaw from './abis_data.txt?raw';
 import { getAddress } from 'viem';
 
-let _cache: any = null;
+let _cache: unknown = null;
 const _get = () => {
   if (!_cache) {
     try {
@@ -34,7 +34,7 @@ const createAbiProxy = (name: string) => {
       const realAbi = _get().ABIS[name] || [];
       return Object.getOwnPropertyDescriptor(realAbi, prop);
     },
-    ownKeys: (target) => {
+    ownKeys: (_target) => {
       const realAbi = _get().ABIS[name] || [];
       return Reflect.ownKeys(realAbi);
     }
@@ -45,11 +45,11 @@ const createAbiProxy = (name: string) => {
 const chainId = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
 const isSepolia = chainId === 84532;
 
-const cleanAddr = (addr: any) => {
+const cleanAddr = (addr: unknown) => {
   if (!addr || typeof addr !== 'string') return undefined;
-  
+
   let cleaned = addr.replace(/["'\s\r\n\t\0]/g, '').trim();
-  
+
   // 🛡️ Anti-Parsing Drift: Strip any "KEY=" prefix if it accidentally leaked from .env
   if (cleaned.includes('=')) {
     const parts = cleaned.split('=');
@@ -73,24 +73,24 @@ const cleanAddr = (addr: any) => {
 const getAddr = (key: string, envKey: string, envKeySepolia?: string) => {
   let addr;
   if (isSepolia && envKeySepolia) {
-    addr = import.meta.env[envKeySepolia] 
-      || _get().ABIS[key + '_SEPOLIA'] 
+    addr = import.meta.env[envKeySepolia]
+      || _get().ABIS[key + '_SEPOLIA']
       || _get()[key + '_SEPOLIA']
       || _get()[key + '_ADDRESS_SEPOLIA']
       || _get()[key + '_CONTRACT_ADDRESS_SEPOLIA']
-      || import.meta.env[envKey] 
-      || _get()[key] 
-      || _get()[key + '_ADDRESS'] 
+      || import.meta.env[envKey]
+      || _get()[key]
+      || _get()[key + '_ADDRESS']
       || _get()[key + '_CONTRACT_ADDRESS'];
   } else {
-    addr = import.meta.env[envKey] 
-      || _get()[key] 
-      || _get()[key + '_ADDRESS'] 
+    addr = import.meta.env[envKey]
+      || _get()[key]
+      || _get()[key + '_ADDRESS']
       || _get()[key + '_CONTRACT_ADDRESS'];
   }
-  
+
   const resolved = cleanAddr(addr);
-  
+
   // 🛡️ Mainnet Fallback: If Mainnet address is [RESERVED]/missing, fall back to Sepolia for dev/preview
   if (!resolved && !isSepolia && envKeySepolia) {
     const sepoliaAddr = import.meta.env[envKeySepolia];
@@ -100,7 +100,7 @@ const getAddr = (key: string, envKey: string, envKeySepolia?: string) => {
       return sepoliaResolved;
     }
   }
-  
+
   return resolved;
 };
 

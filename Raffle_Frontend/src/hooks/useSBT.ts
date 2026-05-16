@@ -1,4 +1,3 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { ABIS, MASTER_X_ADDRESS as MX_ADDR, DAILY_APP_ADDRESS as DA_ADDR } from '../lib/contracts';
 
@@ -22,7 +21,7 @@ export function useSBT() {
         address: MASTER_X_ADDRESS,
         abi: ABIS.MASTER_X,
         functionName: 'totalSBTPoolBalance',
-        query: { 
+        query: {
             staleTime: 0,
             refetchInterval: 30000 // Poll every 30 seconds for real-time accuracy
         }
@@ -32,9 +31,9 @@ export function useSBT() {
         address: MASTER_X_ADDRESS,
         abi: ABIS.MASTER_X,
         functionName: 'totalLockedRewards',
-        query: { 
+        query: {
             staleTime: 0,
-            refetchInterval: 30000 
+            refetchInterval: 30000
         }
     });
 
@@ -90,7 +89,7 @@ export function useSBT() {
         }
     });
 
-    const claimableAmount = (accReward !== undefined && userRewardDebt !== undefined) 
+    const claimableAmount = (accReward !== undefined && userRewardDebt !== undefined)
         ? ((BigInt(accReward as bigint) - BigInt(userRewardDebt as bigint)) * 1n) / 1000000000000000000n
         : 0n;
 
@@ -218,7 +217,7 @@ export function useSBT() {
      * Leaderboard -> Contract Tier Sync
      * Fetches calculated tiers from API and batch updates contract
      */
-    const syncTiersToContract = async (signMessageAsync: (args: { message: string }) => Promise<`0x${string}`>) => {
+    const syncTiersToContract = async (signMessageAsync: (_args: { message: string }) => Promise<`0x${string}`>) => {
         const toastId = toast.loading('Calculating tiers and preparing sync...');
         try {
             const timestamp = new Date().toISOString();
@@ -265,7 +264,7 @@ export function useSBT() {
      * Leaderboard -> Contract Points Sync
      * Disabled until deployed MasterX exposes a bulk XP sync selector.
      */
-    const syncPointsToContract = async (signMessageAsync: (args: { message: string }) => Promise<`0x${string}`>) => {
+    const syncPointsToContract = async (signMessageAsync: (_args: { message: string }) => Promise<`0x${string}`>) => {
         const toastId = toast.loading('Fetching points data...');
         try {
             void signMessageAsync;
@@ -310,7 +309,7 @@ export function useSBT() {
             toast.loading(`Found ${result.data.length} tiers. Starting on-chain update...`, { id: toastId });
 
             // We sync them one by one since setTierURI is a single operation
-            // but we can wrap them in a promise all if the user wants, 
+            // but we can wrap them in a promise all if the user wants,
             // though better to do it one by one for clarity in logs.
             for (const tier of result.data) {
                 if (tier.badge_url) {
@@ -362,7 +361,7 @@ export function useSBT() {
         });
     };
 
-    const getSeasonPeak = async (userAddr: string, seasonId: number | string | bigint) => {
+    const _getSeasonPeak = async (userAddr: string, seasonId: number | string | bigint) => {
         // Implementation pending...
         console.log("Fetching peak for", userAddr, "in season", seasonId);
     };

@@ -9,7 +9,7 @@ export function useVerification(refetchStats?: () => void) {
     const lastActionTimeRef = useRef<Record<string | number, number>>({});
     const { signMessageAsync } = useSignMessage();
 
-    const verifyTask = async (task: any, address: string, taskId: string | number, userFid: number | null = null) => {
+    const verifyTask = async (task: unknown, address: string, taskId: string | number, userFid: number | null = null) => {
         // 0. Anti-Fraud: 30s Delay Check
         const now = Date.now();
         const lastTime = lastActionTimeRef.current[taskId] || 0;
@@ -105,7 +105,7 @@ export function useVerification(refetchStats?: () => void) {
                 toast.error(detail, { id: tid, duration: 5000 });
                 return false;
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[Verification Error]', error);
             const errMsg = error.message || "Unknown Verification error";
 

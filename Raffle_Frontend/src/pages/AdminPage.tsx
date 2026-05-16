@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Shield, Award, Landmark, Settings, Database,
+    Shield, Award, Landmark, _Settings, Database,
     AlertTriangle, ExternalLink, RefreshCw,
     Edit3, UserCog, Newspaper,
     Trophy, Zap, LayoutList, ClipboardList, Sliders, Megaphone,
@@ -11,7 +11,6 @@ import { useAccount } from 'wagmi';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import toast from 'react-hot-toast';
-import { cleanWallet } from '../utils/cleanWallet';
 
 // Lazy Load Admin Tabs
 const RoleManagementTab = React.lazy(() => import('../features/admin/components/RoleManagementTab').then(m => ({ default: m.RoleManagementTab })));
@@ -31,7 +30,7 @@ const UgcRevenueTab = React.lazy(() => import('../features/admin/components/UgcR
 const AnnouncementTab = React.lazy(() => import('../features/admin/components/tabs/AnnouncementTab').then(m => ({ default: m.AnnouncementTab })));
 const NewsTab = React.lazy(() => import('../features/admin/components/tabs/NewsTab').then(m => ({ default: m.NewsTab })));
 const PoolTab = React.lazy(() => import('../features/admin/components/tabs/PoolTab').then(m => ({ default: m.PoolTab })));
-const ContentTab = React.lazy(() => import('../features/admin/components/tabs/ContentTab').then(m => ({ default: m.ContentTab })));
+const _ContentTab = React.lazy(() => import('../features/admin/components/tabs/ContentTab').then(m => ({ default: m.ContentTab })));
 const SyncLogTab = React.lazy(() => import('../features/admin/components/tabs/SyncLogTab').then(m => ({ default: m.SyncLogTab })));
 const NFTConfigTab = React.lazy(() => import('../features/admin/components/tabs/NFTConfigTab').then(m => ({ default: m.NFTConfigTab })));
 const NexusMonitorTab = React.lazy(() => import('../features/admin/components/tabs/NexusMonitorTab').then(m => ({ default: m.NexusMonitorTab })));
@@ -40,7 +39,7 @@ const AccountantLedgerTab = React.lazy(() => import('../features/admin/component
 export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
     const navigate = useNavigate();
     const { address, isConnected } = useAccount();
-    const { totalPoolBalance, contractOwner, distributeRevenue, updateTier, withdrawTreasury, refetchAll } = useSBT();
+    const { totalPoolBalance, contractOwner, distributeRevenue, _updateTier, _withdrawTreasury, refetchAll } = useSBT();
     const {
         isAdmin: isCMSAdmin,
         isOperator,
@@ -240,10 +239,10 @@ export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
                     </div>
 
                     <button
-                        onClick={async () => { 
+                        onClick={async () => {
                             const id = toast.loading("Performing Global Protocol Sync...");
                             try {
-                                await Promise.all([refetchAll(), refetchCMS()]); 
+                                await Promise.all([refetchAll(), refetchCMS()]);
                                 toast.success("SBT & CMS Systems Synchronized", { id });
                             } catch (e) {
                                 toast.error("Global Sync Partial Failure", { id });

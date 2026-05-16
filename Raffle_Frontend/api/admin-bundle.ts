@@ -24,7 +24,6 @@ import {
     sanitizeError
 } from './_shared/constants.js';
 import type { Database, Json } from './_shared/database.types.js';
-import type { AdminActionPayload } from './_shared/types.js';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -83,7 +82,7 @@ function validateUgcMission(payload: MissionPayload): string[] {
     const actionTypes = Array.isArray(payload.action_types) ? payload.action_types : [];
     if (actionTypes.length === 0) errors.push('At least 1 action type is required.');
     if (actionTypes.length > 3) errors.push(`[Multi-Action Bound] Maximum 3 action types allowed. Received: ${actionTypes.length}.`);
-    
+
     const invalidActions = actionTypes.filter((a: string) => !VALID_ACTION_TYPES.has(a));
     if (invalidActions.length > 0) errors.push(`[Action Guard] Invalid action type(s): ${invalidActions.join(', ')}.`);
 
@@ -114,28 +113,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { 
-            address, 
-            wallet_address, 
-            wallet, 
-            signature, 
-            message, 
-            payload, 
-            task_data, 
-            tasks, 
-            tx_hash,
+        const {
+            address,
+            wallet_address,
+            wallet,
+            signature,
+            message,
+            payload,
+            task_data,
+            tasks,
+            _tx_hash,
             task_name,
             task_description,
             target_agent
-        } = req.body as { 
-            address?: string; 
-            wallet_address?: string; 
-            wallet?: string; 
-            signature?: string; 
-            message?: string; 
-            payload?: any; 
-            task_data?: any; 
-            tasks?: any[]; 
+        } = req.body as {
+            address?: string;
+            wallet_address?: string;
+            wallet?: string;
+            signature?: string;
+            message?: string;
+            payload?: unknown;
+            task_data?: unknown;
+            tasks?: unknown[];
             tx_hash?: string;
             task_name?: string;
             task_description?: string;
@@ -150,7 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const isoMatch = message.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/);
         if (!isoMatch) return res.status(401).json({ error: 'Invalid message format: Missing timestamp' });
-        
+
         const messageTime = new Date(isoMatch[0]).getTime();
         if (Math.abs(Date.now() - messageTime) / (1000 * 60) > 5) return res.status(401).json({ error: 'Signature expired' });
 
@@ -170,14 +169,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'SYNC_WEIGHTS': {
                 // Refactored: inline upsert to avoid double-response from handleGenericUpsert
                 const weightPayload = payload as Record<string, string>;
-                
+
                 // 1. Update system_settings (master record)
                 const { error: settingsErr } = await supabaseAdmin.from('system_settings').upsert(
                     { key: 'tier_pool_weights', value: weightPayload, updated_at: new Date().toISOString() },
                     { onConflict: 'key' }
                 );
                 if (settingsErr) throw settingsErr;
-                
+
                 // 2. Propagate to sbt_pool_stats for SBTRewardsDashboard
                 const { error: poolErr } = await supabaseAdmin.from('sbt_pool_stats').update({
                     share_legendary: parseInt(weightPayload.diamond || '0'),
@@ -305,7 +304,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'GET_ERROR_LOGS': {
                 const limit = payload?.limit || 100;
                 const severity = payload?.severity || null;
-                let query = (supabaseAdmin as any).from('system_error_logs')
+                let query = (supabaseAdmin as unknown).from('system_error_logs')
                     .select('*')
                     .order('created_at', { ascending: false })
                     .limit(limit);
@@ -320,7 +319,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(400).json({ error: `Invalid action: ${action}` });
         }
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
+        const _msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(error) });
     }
 }
@@ -419,11 +418,13 @@ async function handleSyncTiers(res: VercelResponse) {
     const { data, error } = await supabaseAdmin.rpc('fn_compute_leaderboard_tiers');
     if (error) throw error;
     // Fire-and-forget rank and pool stats refresh
-    (async () => { 
-        try { 
-            await supabaseAdmin.rpc('fn_refresh_rank_scores'); 
+    (async () => {
+        try {
+            await supabaseAdmin.rpc('fn_refresh_rank_scores');
             await supabaseAdmin.rpc('fn_refresh_sbt_pool_stats');
-        } catch (_) {} 
+        } catch (_) {
+            // Best-effort refresh only; tier sync already succeeded.
+        }
     })();
     return res.status(200).json({ success: true, total: data.length });
 }
@@ -436,7 +437,7 @@ async function handleSyncPoints(res: VercelResponse) {
 
 async function handleGenericUpsert(key: string, value: Json, admin: string, action: string, res: VercelResponse, conflictCol = 'key') {
     const row = conflictCol === 'key' ? { key, value, updated_at: new Date().toISOString() } : (value as Record<string, Json>);
-    const { error } = await supabaseAdmin.from('system_settings').upsert(row as any, { onConflict: conflictCol as any });
+    const { error } = await supabaseAdmin.from('system_settings').upsert(row as unknown, { onConflict: conflictCol as unknown });
     if (error) throw error;
     await logAdminAction(admin, action, value);
     return res.status(200).json({ success: true });
@@ -468,7 +469,7 @@ async function handleAccountantSync(req: VercelRequest, res: VercelResponse, adm
         await logAdminAction(admin, 'ACCOUNTANT_SYNC_TRIGGER', syncRes.data);
         return res.status(200).json({ success: true, details: syncRes.data });
     } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
+        const _msg = e instanceof Error ? e.message : String(e);
         return res.status(500).json({ error: sanitizeError(e) });
     }
 }
@@ -584,7 +585,7 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
     const errors = validateUgcMission(payload as unknown as MissionPayload);
     if (errors.length > 0) return res.status(400).json({ error: 'Validation failed', details: errors });
 
-    const missionData: Database['public']['Tables']['campaigns']['Insert'] = { 
+    const missionData: Database['public']['Tables']['campaigns']['Insert'] = {
         title: payload.title,
         description: payload.description || '',
         platform_code: payload.platform_code || 'farcaster',
@@ -593,8 +594,8 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
         max_participants: parseInt(payload.max_participants) || 0,
         total_reward_pool: parseFloat(payload.total_reward_pool) || 0,
         remaining_reward_pool: parseFloat(payload.total_reward_pool) || 0,
-        reward_token_address: (payload.reward_token_address || (payload as any).payment_token || USDC_ADDRESS).toLowerCase(),
-        reward_symbol: payload.reward_symbol || (payload as any).reward_symbol || 'TOKEN',
+        reward_token_address: (payload.reward_token_address || (payload as unknown).payment_token || USDC_ADDRESS).toLowerCase(),
+        reward_symbol: payload.reward_symbol || (payload as unknown).reward_symbol || 'TOKEN',
         listing_fee: parseFloat(String(payload.listing_fee || 0)),
         duration_days: payload.duration_days || 7,
         creation_tx_hash: payload.payment_tx_hash || '',
@@ -602,9 +603,9 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
         platform_fee_paid: parseFloat(String(payload.listing_fee || 0)), // Support legacy field
         sbt_share_amount: parseFloat(String(payload.listing_fee || 0)),
         chain_id: 8453, // Default to Base
-        is_active: false, 
-        is_verified_payment: false, 
-        created_at: new Date().toISOString() 
+        is_active: false,
+        is_verified_payment: false,
+        created_at: new Date().toISOString()
     };
     const { data: campaign, error: cErr } = await supabaseAdmin.from('campaigns').insert([missionData]).select().maybeSingle();
     if (cErr || !campaign) throw cErr || new Error('Failed to create campaign');
@@ -640,11 +641,11 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
     const { data: ugcConfigRes } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle();
     const ugcConfig = (ugcConfigRes?.value || {}) as Record<string, string>;
     const treasury = (ugcConfig.treasury_address || SAFE_MULTISIG).toLowerCase();
-    
+
     // Support Multi-Asset Verification [v3.63.8]
     const tokenAddress = (mission.reward_token_address || USDC_ADDRESS).toLowerCase();
     const isNative = tokenAddress === '0x0000000000000000000000000000000000000000';
-    
+
     let totalPaid = BigInt(0);
 
     if (isNative) {
@@ -670,16 +671,16 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
     const decimals = mission.reward_symbol === 'USDC' ? 6 : 18;
     const listingFeeValue = parseFloat(String(mission.listing_fee || ugcConfig.listing_fee_usdc || '5'));
     const rewardPoolValue = parseFloat(String(mission.total_reward_pool || '0'));
-    
+
     const listingFeeUnits = BigInt(Math.round(listingFeeValue * Math.pow(10, decimals)));
     const rewardPoolUnits = BigInt(Math.round(rewardPoolValue * Math.pow(10, decimals)));
     const expectedTotal = listingFeeUnits + rewardPoolUnits;
 
     // Allow 1% slippage for price oracle rounding if needed, but here it should be exact
     if (totalPaid < expectedTotal) {
-        return res.status(400).json({ 
-            error: 'Payment insufficient', 
-            details: `Expected ${expectedTotal.toString()} units, found ${totalPaid.toString()} units in ${mission.reward_symbol || 'USDC'}` 
+        return res.status(400).json({
+            error: 'Payment insufficient',
+            details: `Expected ${expectedTotal.toString()} units, found ${totalPaid.toString()} units in ${mission.reward_symbol || 'USDC'}`
         });
     }
 
@@ -728,21 +729,21 @@ async function handleGetUgcRevenue(res: VercelResponse) {
         .from('campaigns')
         .select('id, title, listing_fee, listing_fee_usdc, sbt_share_amount, is_revenue_allocated, reward_symbol')
         .order('created_at', { ascending: false });
-    
+
     if (error) throw error;
     return res.status(200).json({ success: true, data });
 }
 
 async function handleMarkRevenueAllocated(missionId: string, admin: string, res: VercelResponse) {
     if (!missionId) throw new Error("Mission ID required");
-    
+
     const { error } = await supabaseAdmin
         .from('campaigns')
         .update({ is_revenue_allocated: true })
         .eq('id', missionId);
-        
+
     if (error) throw error;
-    
+
     await logAdminAction(admin, 'MARK_REVENUE_ALLOCATED', { mission_id: missionId });
     return res.status(200).json({ success: true });
 }

@@ -34,7 +34,7 @@ export interface CallStatusResponse {
 }
 
 export interface RaffleExtraMetadata {
-    [key: string]: any; // Flexibel for UGC metadata
+    [key: string]: unknown; // Flexibel for UGC metadata
 }
 
 export interface Raffle {

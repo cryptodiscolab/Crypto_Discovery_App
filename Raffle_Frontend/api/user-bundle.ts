@@ -24,12 +24,12 @@ import {
     sanitizeError,
     logSystemError
 } from './_shared/constants.js';
-import type { 
-    UserProfile, 
-    SyncPayload, 
-    XpSyncPayload, 
-    UpdateProfilePayload, 
-    UgcMissionPayload, 
+import type {
+    UserProfile,
+    SyncPayload,
+    XpSyncPayload,
+    _UpdateProfilePayload,
+    UgcMissionPayload,
     UgcRafflePayload,
     Json
 } from './_shared/types.js';
@@ -60,7 +60,7 @@ async function checkBreaker(serviceKey: string): Promise<boolean> {
         .select('*')
         .eq('service_key', serviceKey)
         .maybeSingle();
-    
+
     if (data?.status === 'failed') {
         const lastUpdate = new Date(data.updated_at || 0).getTime();
         if (Date.now() - lastUpdate < BREAK_COOLDOWN) {
@@ -80,9 +80,9 @@ async function reportHealth(serviceKey: string, status: string, error: string | 
             last_error: error,
             updated_at: new Date().toISOString()
         }, { onConflict: 'service_key' });
-    } catch (e: unknown) { 
+    } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        console.error(`[Health] Failed to report for ${serviceKey}`, msg); 
+        console.error(`[Health] Failed to report for ${serviceKey}`, msg);
     }
 }
 
@@ -114,14 +114,14 @@ async function fetchWithRetry<T>(fn: () => Promise<T>, serviceKey: string, retri
 // -----------------------------------------------------------------------------
 async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promise<boolean> {
     if (!isMainnet) return true;
-    
+
     try {
         const { data } = await getSupabaseAdmin()
             .from('system_settings')
             .select('value')
             .eq('key', 'active_features')
             .maybeSingle();
-        
+
         const activeFeatures = (data?.value || {}) as Record<string, boolean>;
         if (activeFeatures[featureKey] !== true) {
             res.status(403).json({ error: `Feature [${featureKey}] is currently disabled.` });
@@ -145,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (['xp', 'sync-pool-claim'].includes(action)) {
         if (!(await checkFeatureGuard('daily_claim', res))) return;
     }
-    
+
     if (['sync-sbt-upgrade'].includes(action)) {
         if (!(await checkFeatureGuard('sbt_minting', res))) return;
     }
@@ -205,7 +205,7 @@ async function checkIdentityStatus(wallet: string): Promise<boolean> {
             .select('fid, twitter_id, is_base_social_verified')
             .eq('wallet_address', wallet.toLowerCase())
             .maybeSingle();
-        
+
         return !!(profile?.fid || profile?.twitter_id || profile?.is_base_social_verified);
     } catch (e) {
         return false;
@@ -239,7 +239,7 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
         const deadline = Math.floor(Date.now() / 1000) + (10 * 60);
 
         if (!WALLET_BOT_SIGNER) return res.status(500).json({ error: 'Signer wallet not configured' });
-        
+
         const account = privateKeyToAccount(WALLET_BOT_SIGNER as `0x${string}`);
         const messageHash = keccak256(
             encodePacked(
@@ -354,7 +354,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
 
         const currentOnChainXp = Number(contractStats?.[0] || 0);
         const currentTierOnChain = Number(contractStats?.[3] || 0);
-        
+
         let xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
 
         const { data: dailySetting } = await getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'daily_claim').maybeSingle();
@@ -387,7 +387,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
 
             await getSupabaseAdmin()
                 .from('user_profiles')
-                .update({ 
+                .update({
                     last_onchain_xp: currentOnChainXp,
                     tier: currentTierOnChain,
                     updated_at: new Date().toISOString()
@@ -407,7 +407,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                     if (diffHours >= 20 && diffHours <= 48) currentStreak += 1;
                     else if (diffHours > 48) currentStreak = 1;
                 }
-                
+
                 await getSupabaseAdmin()
                     .from('user_profiles')
                     .update({ streak_count: currentStreak, last_streak_claim: now.toISOString() })
@@ -478,7 +478,7 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
     try {
         const valid = await verifyMessage({ address: address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
-        
+
         const response = await fetchWithRetry(
             () => neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [address] }),
             'neynar-api'
@@ -615,7 +615,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
         }
 
         // 2. Fetch from user_task_claims (task completions that may not have explicit logs)
-        let claimsQuery = getSupabaseAdmin()
+        const claimsQuery = getSupabaseAdmin()
             .from('user_task_claims')
             .select('id, wallet_address, task_id, xp_earned, platform, action_type, target_id, claimed_at')
             .eq('wallet_address', cleanWallet)
@@ -630,7 +630,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
 
         if (logsResult.error) throw logsResult.error;
 
-        const activityLogs = (logsResult.data || []).map((log: any) => ({
+        const activityLogs = (logsResult.data || []).map((log: unknown) => ({
             id: log.id,
             category: log.category,
             activity_type: log.activity_type,
@@ -643,7 +643,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
         }));
 
         // Convert task claims to activity log format (fill gaps)
-        const claimLogs = (claimsResult.data || []).map((claim: any) => {
+        const claimLogs = (claimsResult.data || []).map((claim: unknown) => {
             // Determine proper category based on task type
             let claimCategory = 'XP';
             if (claim.task_id === 'daily_task_completion' || claim.action_type === 'daily_bonus') {
@@ -691,7 +691,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
             .filter((c: { category: string }) => !category || category === 'ALL' || c.category === category);
 
         const combined = [...activityLogs, ...uniqueClaimLogs]
-            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .sort((a: unknown, b: unknown) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             .slice(0, parsedLimit);
 
         return res.status(200).json({ success: true, logs: combined });
@@ -745,7 +745,7 @@ async function handleGetPointSettings(req: VercelRequest, res: VercelResponse) {
             getSupabaseAdmin().from('system_settings').select('key, value'),
             getSupabaseAdmin().from('allowed_tokens').select('*').eq('is_active', true)
         ]);
-        
+
         type SettingValue = string | number | boolean | Json;
         const settings: Record<string, SettingValue> = points?.reduce((acc, curr) => {
             acc[curr.activity_key] = curr.points_value;
@@ -756,9 +756,9 @@ async function handleGetPointSettings(req: VercelRequest, res: VercelResponse) {
             settings[s.key] = s.value;
         });
 
-        const tokenList = (allowedTokens && allowedTokens.length > 0) 
-            ? allowedTokens 
-            : ((settings.whitelisted_tokens_json as unknown as any[]) || []);
+        const tokenList = (allowedTokens && allowedTokens.length > 0)
+            ? allowedTokens
+            : ((settings.whitelisted_tokens_json as unknown as unknown[]) || []);
         settings.allowed_tokens = tokenList;
         settings.whitelisted_tokens = tokenList;
 
@@ -777,11 +777,11 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        const { 
-            title, description, sponsor_address, platform_code, 
-            reward_amount_per_user, max_participants, txHash, 
-            tasks_batch, reward_symbol, payment_token, 
-            is_base_social_required, listing_fee 
+        const {
+            title, description, sponsor_address, platform_code,
+            reward_amount_per_user, max_participants, txHash,
+            tasks_batch, reward_symbol, payment_token,
+            is_base_social_required, listing_fee
         } = payload;
 
         const [{ data: ugcConfigRes }, { data: sysSetting }, { data: pointSetting }] = await Promise.all([
@@ -789,12 +789,12 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             getSupabaseAdmin().from('system_settings').select('value').eq('key', 'sponsorship_listing_fee_usdc').maybeSingle(),
             getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'ugc_task_completion').maybeSingle()
         ]);
-        
-        const ugcConfig = (ugcConfigRes?.value || {}) as Record<string, any>;
-        const platformFee = ugcConfig.listing_fee_usdc 
-            ? parseFloat(String(ugcConfig.listing_fee_usdc)) 
+
+        const ugcConfig = (ugcConfigRes?.value || {}) as Record<string, unknown>;
+        const platformFee = ugcConfig.listing_fee_usdc
+            ? parseFloat(String(ugcConfig.listing_fee_usdc))
             : (sysSetting?.value ? parseFloat(String(sysSetting.value)) : 0);
-            
+
         const taskXpReward = pointSetting?.points_value || 0;
 
         const { data: campaign, error: campaignErr } = await getSupabaseAdmin().from('campaigns').insert({
@@ -924,14 +924,14 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount, txHash } = payload;
-        
+
         const { data: sysSetting } = await getSupabaseAdmin().from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
         const isAdminWallet = MASTER_ADMINS.includes(wallet.toLowerCase());
 
         if (!isAdminWallet) {
             try {
                 const raffleInfo = await rpcClient.readContract({
-                    address: RAFFLE_ADDRESS as `0x${string}`, 
+                    address: RAFFLE_ADDRESS as `0x${string}`,
                     abi: RAFFLE_ABI,
                     functionName: 'getRaffleInfo',
                     args: [BigInt(raffle_id)]
@@ -1043,7 +1043,7 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         if (!isVerified) return res.status(403).json({ error: 'Identity verification required for tier upgrades' });
 
         const { tierName, ethSpent, txHash } = payload;
-        
+
         const { data: thresholds } = await getSupabaseAdmin().from('sbt_thresholds').select('level, tier_name, min_xp');
         const tierMap: Record<string, number> = thresholds?.reduce((acc, t) => { if (t.tier_name) acc[t.tier_name] = t.level; return acc; }, {} as Record<string, number>) || {};
         const minXpMap: Record<number, number> = thresholds?.reduce((acc, t) => { acc[t.level] = t.min_xp; return acc; }, {} as Record<number, number>) || {};
@@ -1062,7 +1062,7 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         if (actualTierOnChain >= tierIndex && tierIndex > 0) {
             // Check if burn already logged to prevent double-burn on retry
             const { data: existingBurn } = await getSupabaseAdmin().from('user_task_claims').select('id').eq('task_id', `sbt_upgrade_burn_${txHash}`).maybeSingle();
-            
+
             if (!existingBurn) {
                 // Read actual pointsRequired from contract nftConfigs for accuracy
                 // (sbt_thresholds.min_xp is a fallback if contract read fails)
@@ -1093,8 +1093,8 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
 
             await getSupabaseAdmin()
                 .from('user_profiles')
-                .update({ 
-                    tier: actualTierOnChain, 
+                .update({
+                    tier: actualTierOnChain,
                     total_xp: actualPointsOnChain, // Force parity with on-chain burned balance
                     last_onchain_xp: actualPointsOnChain,
                     updated_at: new Date().toISOString()
@@ -1139,22 +1139,22 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
                 const { createWalletClient, http } = await import('viem');
                 const { privateKeyToAccount } = await import('viem/accounts');
                 const { base, baseSepolia } = await import('viem/chains');
-                
+
                 const chain = isMainnet ? base : baseSepolia;
-                const rpcUrl = isMainnet 
+                const rpcUrl = isMainnet
                     ? getEnv('BASE_MAINNET_RPC_URL', 'https://mainnet.base.org')
                     : getEnv('BASE_SEPOLIA_RPC_URL', 'https://sepolia.base.org');
-                
+
                 const account = privateKeyToAccount(WALLET_BOT_SIGNER as `0x${string}`);
                 const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
-                
+
                 const syncHash = await walletClient.writeContract({
                     address: MASTER_X_ADDRESS as `0x${string}`,
                     abi: MASTER_X_ABI,
                     functionName: 'batchUpdateUserTiers',
                     args: [[wallet.toLowerCase() as `0x${string}`], [actualTierOnChain]]
                 });
-                
+
                 await logActivity({
                     wallet,
                     category: 'SYNC',
@@ -1205,7 +1205,7 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
         const { amountETH, tier, txHash } = payload;
 
         // Verify claim tx on-chain if txHash provided
-        let verifiedAmount = parseFloat(amountETH);
+        const verifiedAmount = parseFloat(amountETH);
         if (txHash) {
             try {
                 const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
@@ -1247,7 +1247,7 @@ interface LogActivityParams {
     amount?: number;
     symbol?: string;
     txHash?: string | null;
-    metadata?: any;
+    metadata?: unknown;
 }
 
 async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }: LogActivityParams) {
@@ -1345,9 +1345,9 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
     try {
         // Force initialization check
         getSupabaseAdmin();
-    } catch (initErr: any) {
-        return res.status(500).json({ 
-            error: "Initialization Failed", 
+    } catch (initErr: unknown) {
+        return res.status(500).json({
+            error: "Initialization Failed",
             message: initErr.message,
             env_status: {
                 has_url: !!SUPABASE_URL,
@@ -1480,7 +1480,7 @@ async function handleRecordPendingSync(req: VercelRequest, res: VercelResponse) 
         const cleanWallet = (wallet as string).toLowerCase();
         const sanitizedError = error_message ? String(error_message).slice(0, 500) : null;
 
-        const { data, error } = await (getSupabaseAdmin() as any)
+        const { data, error } = await (getSupabaseAdmin() as unknown)
             .from('pending_sync_jobs')
             .insert({
                 wallet_address: cleanWallet,
@@ -1515,7 +1515,7 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
 
     try {
         const cleanWallet = wallet.toLowerCase();
-        const { data, error } = await (getSupabaseAdmin() as any)
+        const { data, error } = await (getSupabaseAdmin() as unknown)
             .from('pending_sync_jobs')
             .select('id, action_type, tx_hash, chain_id, status, retry_count, created_at, last_attempted_at, error_message')
             .eq('wallet_address', cleanWallet)
@@ -1571,13 +1571,13 @@ async function isAuthorizedAdmin(walletAddress: string): Promise<boolean> {
     if (!walletAddress) return false;
     const clean = walletAddress.toLowerCase();
     if (MASTER_ADMINS.includes(clean)) return true;
-    
+
     const { data, error } = await getSupabaseAdmin()
         .from('user_profiles')
         .select('is_admin')
         .eq('wallet_address', clean)
         .maybeSingle();
-    
+
     if (error || !data) return false;
     return !!data.is_admin;
 }
@@ -1626,11 +1626,11 @@ async function handleRejectRaffle(req: VercelRequest, res: VercelResponse) {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid || !(await isAuthorizedAdmin(wallet))) return res.status(403).json({ error: 'Unauthorized' });
 
-        const { error } = await getSupabaseAdmin().from('raffles').update({ 
-            is_active: false, 
+        const { error } = await getSupabaseAdmin().from('raffles').update({
+            is_active: false,
             rejection_reason: reason || 'Violation',
             cancellation_tx: txHash || null,
-            updated_at: new Date().toISOString() 
+            updated_at: new Date().toISOString()
         }).eq('id', raffle_id);
         if (error) throw error;
 
@@ -1661,7 +1661,7 @@ async function handleFetchPendingMissions(req: VercelRequest, res: VercelRespons
             .select('id, title, created_at, is_verified_payment, reward_amount_per_user, reward_symbol, listing_fee, max_participants, sponsor_address, payment_tx_hash')
             .eq('is_active', false)
             .order('created_at', { ascending: false });
-        
+
         if (error) throw error;
         return res.status(200).json({ success: true, data });
     } catch (error: unknown) {
@@ -1727,7 +1727,7 @@ async function handleSyncBaseSocial(req: VercelRequest, res: VercelResponse) {
             basename = await rpcClient.getEnsName({ address: normalizedWallet as `0x${string}` });
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
-            console.warn('[Basename Sync] Error:', msg); 
+            console.warn('[Basename Sync] Error:', msg);
         }
 
         if (!basename) return res.status(404).json({ error: 'No Basename found' });

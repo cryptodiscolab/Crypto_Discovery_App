@@ -8,21 +8,21 @@ import { RaffleFees, RaffleLimits, RaffleXp } from '../../../../types/admin';
 
 interface RaffleEconSettingsCardProps {
     raffleFees: RaffleFees;
-    setRaffleFees: (f: RaffleFees) => void;
+    setRaffleFees: (_f: RaffleFees) => void;
     raffleLimits: RaffleLimits;
-    setRaffleLimits: (l: RaffleLimits) => void;
+    setRaffleLimits: (_l: RaffleLimits) => void;
     raffleXp: RaffleXp;
-    setRaffleXp: (x: RaffleXp) => void;
+    setRaffleXp: (_x: RaffleXp) => void;
     drift: boolean;
     isSaving: boolean;
-    setIsSaving: (s: boolean) => void;
+    setIsSaving: (_s: boolean) => void;
 }
 
-export function RaffleEconSettingsCard({ 
-    raffleFees, setRaffleFees, 
-    raffleLimits, setRaffleLimits, 
-    raffleXp, setRaffleXp, 
-    drift, isSaving, setIsSaving 
+export function RaffleEconSettingsCard({
+    raffleFees, setRaffleFees,
+    raffleLimits, setRaffleLimits,
+    raffleXp, _setRaffleXp,
+    drift, isSaving, setIsSaving
 }: RaffleEconSettingsCardProps) {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
@@ -41,10 +41,10 @@ export function RaffleEconSettingsCard({
             });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Raffle Fees Updated!", { id: tid });
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -60,10 +60,10 @@ export function RaffleEconSettingsCard({
             });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Raffle Limits Updated!", { id: tid });
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -95,7 +95,7 @@ export function RaffleEconSettingsCard({
             });
 
             toast.success('Raffle XP updated on-chain & in DB!', { id: tid });
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.message, { id: tid });
         }
     };

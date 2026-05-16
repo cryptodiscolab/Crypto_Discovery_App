@@ -6,19 +6,19 @@ import { useAccount } from 'wagmi';
 import { usePoints } from '../../shared/context/PointsContext';
 import { useSocialGuard } from '../../hooks/useSocialGuard';
 import { formatEther } from 'viem';
-import { 
-    Calendar, 
-    Users, 
-    Trophy, 
-    ChevronLeft, 
-    ExternalLink, 
-    Twitter, 
-    Globe, 
+import {
+    _Calendar,
+    Users,
+    Trophy,
+    ChevronLeft,
+    ExternalLink,
+    Twitter,
+    Globe,
     ShieldCheck,
     Ticket,
     Info,
     AlertCircle,
-    ArrowRight,
+    _ArrowRight,
     Loader2,
     Lock
 } from 'lucide-react';
@@ -39,11 +39,11 @@ const RaffleDetailPage = () => {
 
     useEffect(() => {
         if (!raffle?.endTime) return;
-        
+
         const timer = setInterval(() => {
             const now = Math.floor(Date.now() / 1000);
             const diff = Number(raffle.endTime) - now;
-            
+
             if (diff <= 0) {
                 setTimeLeft('Ended');
                 clearInterval(timer);
@@ -86,7 +86,7 @@ const RaffleDetailPage = () => {
 
         setIsBuying(true);
         const tid = toast.loading(isGaslessSupported ? "Processing gasless purchase..." : "Preparing transaction...");
-        
+
         try {
             if (isGaslessSupported) {
                 await buyTicketsGasless(id || 0, ticketAmount);
@@ -95,7 +95,7 @@ const RaffleDetailPage = () => {
             }
             toast.success(`Success! Purchased ${ticketAmount} entry(s)`, { id: tid });
             refetch();
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || e.message || "Purchase failed", { id: tid });
         } finally {
             setIsBuying(false);
@@ -129,7 +129,7 @@ const RaffleDetailPage = () => {
                 <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
                 <h1 className="text-2xl font-bold text-white mb-2">Raffle Not Found</h1>
                 <p className="text-zinc-400 mb-6">The raffle you are looking for doesn&apos;t exist or hasn&apos;t been synced yet.</p>
-                <button 
+                <button
                     onClick={() => navigate('/raffles')}
                     className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all"
                 >
@@ -148,7 +148,7 @@ const RaffleDetailPage = () => {
             {/* Header / Navigation */}
             <div className="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <button 
+                    <button
                         onClick={() => navigate('/raffles')}
                         className="p-2 hover:bg-white/10 rounded-full transition-all group"
                     >
@@ -166,15 +166,15 @@ const RaffleDetailPage = () => {
 
             <div className="max-w-7xl mx-auto px-4 pt-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
+
                     {/* Left Column: Media & Content */}
                     <div className="lg:col-span-8 space-y-8">
                         {/* Image Hero */}
                         <div className="relative aspect-video rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 group shadow-2xl">
                             {raffle.image_url ? (
-                                <img 
-                                    src={raffle.image_url} 
-                                    alt={raffle.title} 
+                                <img
+                                    src={raffle.image_url}
+                                    alt={raffle.title}
                                     className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
                                 />
                             ) : (
@@ -222,9 +222,9 @@ const RaffleDetailPage = () => {
                             {/* Social Links */}
                             <div className="mt-10 flex flex-wrap gap-4">
                                 {raffle.twitter_link && (
-                                    <a 
-                                        href={raffle.twitter_link} 
-                                        target="_blank" 
+                                    <a
+                                        href={raffle.twitter_link}
+                                        target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20 text-[#1DA1F2] px-4 py-2 rounded-xl transition-all border border-[#1DA1F2]/20"
                                     >
@@ -233,9 +233,9 @@ const RaffleDetailPage = () => {
                                     </a>
                                 )}
                                 {raffle.external_link && (
-                                    <a 
-                                        href={raffle.external_link} 
-                                        target="_blank" 
+                                    <a
+                                        href={raffle.external_link}
+                                        target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl transition-all border border-white/10"
                                     >
@@ -251,7 +251,7 @@ const RaffleDetailPage = () => {
                     {/* Right Column: Action Card */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sticky top-24 shadow-2xl">
-                            
+
                             {/* Prize Pool Display */}
                             <div className="text-center mb-8">
                                 <span className="text-zinc-500 text-sm font-medium uppercase tracking-widest mb-1 block">Total Prize Pool</span>
@@ -289,7 +289,7 @@ const RaffleDetailPage = () => {
                                     <span className="text-white text-sm font-bold">{raffle.totalTickets} / {raffle.maxTickets}</span>
                                 </div>
                                 <div className="h-3 w-full bg-zinc-800 rounded-full overflow-hidden border border-white/5 p-0.5">
-                                    <div 
+                                    <div
                                         className="h-full bg-gradient-to-r from-primary-600 to-primary-400 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(var(--primary-rgb),0.4)]"
                                         style={{ width: `${Math.min(progress, 100)}%` }}
                                     />
@@ -303,7 +303,7 @@ const RaffleDetailPage = () => {
                                         <p className="text-green-400 font-bold mb-1">Raffle Finalized</p>
                                         <p className="text-green-400/70 text-xs">Winners have been drawn and prizes distributed.</p>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => navigate('/raffles')}
                                         className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-2xl transition-all"
                                     >
@@ -316,7 +316,7 @@ const RaffleDetailPage = () => {
                                         <div className="flex items-center justify-between bg-white/5 border border-white/10 p-2 rounded-2xl">
                                             <span className="text-zinc-400 text-sm font-bold ml-3 uppercase tracking-widest">Quantity</span>
                                             <div className="flex items-center bg-black/40 rounded-xl border border-white/5 p-1">
-                                                <button 
+                                                <button
                                                     onClick={() => setTicketAmount(p => Math.max(1, p - 1))}
                                                     disabled={ticketAmount <= 1 || isBuying}
                                                     aria-label="Decrease quantity"
@@ -327,7 +327,7 @@ const RaffleDetailPage = () => {
                                                 <span className="w-10 text-center font-mono font-black text-lg text-primary-400">
                                                     {ticketAmount}
                                                 </span>
-                                                <button 
+                                                <button
                                                     onClick={() => setTicketAmount(p => p + 1)}
                                                     disabled={isBuying || ticketAmount >= (raffle.maxTickets - raffle.totalTickets)}
                                                     aria-label="Increase quantity"
@@ -342,8 +342,8 @@ const RaffleDetailPage = () => {
                                         onClick={handleBuy}
                                         disabled={isBuying || isEnded || !raffle.isActive}
                                         className={`w-full py-5 rounded-2xl font-black text-lg transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 ${
-                                            isBuying 
-                                                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
+                                            isBuying
+                                                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                                                 : isEnded
                                                     ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
                                                     : !raffle.isActive
@@ -444,7 +444,7 @@ const RaffleDetailPage = () => {
                                     </p>
                                     <p className="text-zinc-500 text-sm">Raffle Sponsor</p>
                                 </div>
-                                <a 
+                                <a
                                     href={`https://sepolia.basescan.org/address/${raffle.sponsor}`}
                                     target="_blank"
                                     rel="noopener noreferrer"

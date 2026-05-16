@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSignMessage, useConfig } from 'wagmi';
-import { encodeFunctionData, formatUnits, parseUnits } from 'viem';
 import {
-    Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle,
-    Star, Database, RefreshCw, Settings, TrendingUp,
-    Share2, List, Clock, Send
+    _Plus, _Zap, _Calendar, Loader2, _CheckCircle2, AlertCircle,
+    _Star, _Database, _RefreshCw, _Settings, _TrendingUp,
+    _Share2, _List, _Clock, _Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
@@ -14,7 +12,6 @@ import { TaskBatchItem } from '../types/tasks';
 // Sub-sections
 import { QuickTaskForgeSection } from './tasks/QuickTaskForgeSection';
 import { QuickSponsorPortalSection } from './tasks/QuickSponsorPortalSection';
-import { QuickEconConfigSection } from './tasks/QuickEconConfigSection';
 import { TaskBatchCreatorSection } from './tasks/TaskBatchCreatorSection';
 import { SponsorshipPortalSection } from './tasks/SponsorshipPortalSection';
 import { EconomyConfigSection } from './tasks/EconomyConfigSection';
@@ -136,7 +133,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         let actKey = actMap[action] || action.toLowerCase();
         if (platKey === 'x' && actKey === 'recast') actKey = 'repost';
 
-        const match = currentSettings.find(s => 
+        const match = currentSettings.find(s =>
             (s.platform?.toLowerCase() === platKey && s.action_type?.toLowerCase() === actKey) ||
             [`task_${platKey}_${actKey}`, `${platKey}_${actKey}`].includes(s.activity_key?.toLowerCase())
         );
@@ -148,7 +145,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         toast.success('Blockchain confirmation received!');
     };
 
-    const syncAuditAction = async (tx: string, action: string, details: Record<string, unknown>) => {
+    const _syncAuditAction = async (tx: string, action: string, details: Record<string, unknown>) => {
         try {
             const timestamp = new Date().toISOString();
             const message = `Governance Audit Log\nTX: ${tx}\nAdmin: ${address}\nAction: ${action}\nTime: ${timestamp}`;
@@ -167,7 +164,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any, functionName: 'addTask',
+                abi: DAILY_APP_ABI as unknown, functionName: 'addTask',
                 args: [BigInt(dailyPoints || 0), BigInt(cd), BigInt(dailyMinTier), dailyDesc, '', dailyRequiresVerify]
             }),
         }];
@@ -177,11 +174,11 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         const decimals = selectedToken?.decimals || 18;
         const totalPool = parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), decimals);
         const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
-        
+
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any, 
+                abi: DAILY_APP_ABI as unknown,
                 functionName: 'buySponsorshipWithToken',
                 args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, isNative ? 0n : totalPool, selectedTokenAddr]
             }),
@@ -193,7 +190,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     const handleBatchSave = async () => {
         const validTasks = tasksBatch.filter(t => t.title.trim() !== '');
         if (validTasks.length === 0) return toast.error("Enter Task Names");
-        
+
         const tid = toast.loading("Deploying batch...");
         try {
             await writeContractAsync({
@@ -211,7 +208,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             });
             toast.success("Batch transaction submitted!", { id: tid });
         } catch (e: unknown) {
-            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Batch deployment failed", { id: tid });
+            toast.error(e instanceof Error ? (e as unknown).shortMessage || e.message : "Batch deployment failed", { id: tid });
         }
     };
 
@@ -222,7 +219,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             const decimals = selectedToken?.decimals || 18;
             const totalPool = parseUnits((parseFloat(batchRewardPerUserUSD) * Number(batchTargetClaims)).toString(), decimals);
             const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
-            
+
             await writeContractAsync({
                 address: DAILY_APP_ADDRESS as `0x${string}`,
                 abi: DAILY_APP_ABI,
@@ -232,7 +229,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             });
             toast.success("Sponsorship transaction submitted!", { id: tid });
         } catch (e: unknown) {
-            toast.error(e instanceof Error ? (e as any).shortMessage || "Deployment failed" : "Deployment failed", { id: tid });
+            toast.error(e instanceof Error ? (e as unknown).shortMessage || "Deployment failed" : "Deployment failed", { id: tid });
         }
     };
 
@@ -290,8 +287,8 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                             message,
                             category: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL' ? 'Sponsorship' : 'Task',
                             type: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL' ? 'Sponsor Hub' : 'Task Forge',
-                            description: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL' 
-                                ? `Created Sponsorship: ${quickSponsorTitle || batchSponsorTitle}` 
+                            description: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL'
+                                ? `Created Sponsorship: ${quickSponsorTitle || batchSponsorTitle}`
                                 : `Created Task Batch: ${tasksBatch.filter(t => t.title.trim() !== '').length} tasks`,
                             amount: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL'
                                 ? parseFloat(quickSponsorRewardPerUser || batchRewardPerUserUSD) * parseFloat(quickSponsorTotalClaims || batchTargetClaims)
@@ -317,13 +314,13 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             {/* Mode Toggle */}
             <div className="flex justify-center">
                 <div className="flex p-1 bg-black/40 rounded-2xl border border-white/5">
-                    <button 
+                    <button
                         onClick={() => setControlMode('quick')}
                         className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${controlMode === 'quick' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Quick Forge
                     </button>
-                    <button 
+                    <button
                         onClick={() => setControlMode('batch')}
                         className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${controlMode === 'batch' ? 'bg-purple-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                     >
@@ -335,9 +332,9 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             {/* Sub-Tabs */}
             <div className="flex gap-2 p-1 bg-[#121214] border border-white/5 rounded-xl">
                 {(controlMode === 'quick' ? ['daily', 'sponsor', 'config', 'analytics'] : ['BATCH_CREATOR', 'SPONSOR_PORTAL', 'ADMIN_CONFIG', 'VIEW_TASKS']).map(t => (
-                    <button 
-                        key={t} 
-                        onClick={() => setSubTab(t)} 
+                    <button
+                        key={t}
+                        onClick={() => setSubTab(t)}
                         className={`flex-1 py-3 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${subTab === t ? 'bg-[#0a0a0c] text-indigo-400 border border-white/5' : 'text-slate-600 hover:text-slate-400'}`}
                     >
                         {t.replace('_', ' ').replace('daily', 'Single Task').replace('sponsor', 'Sponsor').replace('analytics', 'Analytics')}
@@ -387,11 +384,11 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                 ) : (
                     <>
                         {subTab === 'BATCH_CREATOR' && (
-                            <TaskBatchCreatorSection 
-                                tasksBatch={tasksBatch} 
-                                onUpdateTask={updateTaskLine as any} 
-                                onDeploy={handleBatchSave} 
-                                isSaving={isWaiting} 
+                            <TaskBatchCreatorSection
+                                tasksBatch={tasksBatch}
+                                onUpdateTask={updateTaskLine as unknown}
+                                onDeploy={handleBatchSave}
+                                isSaving={isWaiting}
                             />
                         )}
                         {subTab === 'SPONSOR_PORTAL' && (
@@ -447,7 +444,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                         {isWaiting ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
                         <div>
                             <p className="text-[11px] font-black text-white uppercase tracking-widest">{isWaiting ? "Protocol Engagement Active" : "Authorization Error"}</p>
-                            <p className="text-[9px] text-slate-500 mt-0.5">{isWaiting ? "Awaiting block confirmation..." : (writeError as any)?.shortMessage || writeError?.message}</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">{isWaiting ? "Awaiting block confirmation..." : (writeError as unknown)?.shortMessage || writeError?.message}</p>
                         </div>
                     </div>
                 </div>

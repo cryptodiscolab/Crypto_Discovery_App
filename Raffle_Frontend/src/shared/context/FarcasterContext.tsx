@@ -2,12 +2,12 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { sdk } from '@farcaster/miniapp-sdk';
 
 interface FarcasterContextType {
-    frameUser: any | null;
-    client: any | null;
-    safeAreaInsets: any | null;
+    frameUser: unknown | null;
+    client: unknown | null;
+    safeAreaInsets: unknown | null;
     isFrame: boolean;
     isLoading: boolean;
-    error: any | null;
+    error: unknown | null;
 }
 
 const FarcasterContext = createContext<FarcasterContextType>({
@@ -20,12 +20,12 @@ const FarcasterContext = createContext<FarcasterContextType>({
 });
 
 export function FarcasterProvider({ children }: { children: ReactNode }) {
-    const [frameUser, setFrameUser] = useState<any | null>(null);
-    const [client, setClient] = useState<any | null>(null);
-    const [safeAreaInsets, setSafeAreaInsets] = useState<any | null>(null);
+    const [frameUser, setFrameUser] = useState<unknown | null>(null);
+    const [client, setClient] = useState<unknown | null>(null);
+    const [safeAreaInsets, setSafeAreaInsets] = useState<unknown | null>(null);
     const [isFrame, setIsFrame] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<any | null>(null);
+    const [error, _setError] = useState<unknown | null>(null);
 
     useEffect(() => {
         const loadContext = async () => {
@@ -37,8 +37,8 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
                 if (context) {
                     setIsFrame(true);
                     setClient(context.client);
-                    setSafeAreaInsets((context.client as any).config?.safeAreaInsets || null);
-                    
+                    setSafeAreaInsets((context.client as unknown).config?.safeAreaInsets || null);
+
                     if (context.user) {
                         setFrameUser({
                             fid: context.user.fid,

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSBT } from '../../../../hooks/useSBT';
-import { 
+import {
     Landmark, RefreshCw, Calendar, TrendingUp, AlertTriangle, ExternalLink, Activity, Database
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { parseEther, formatUnits } from 'viem';
 import { useAccount, useBalance, useSignMessage } from 'wagmi';
-import { 
+import {
     MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS
 } from '../../../../lib/contracts';
 import { ShieldCheck, HardDrive, DatabaseZap, FileJson, Award, Wallet } from 'lucide-react';
@@ -49,13 +49,13 @@ interface ParitySummary {
 export function AccountantLedgerTab() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { 
-        withdrawTreasury, 
-        syncPointsToContract, 
-        syncTiersToContract, 
-        syncMetadataToContract 
+    const {
+        withdrawTreasury,
+        syncPointsToContract,
+        syncTiersToContract,
+        syncMetadataToContract
     } = useSBT();
-    
+
     const [loading, setLoading] = useState(true);
     const [isHardening, setIsHardening] = useState(false);
     const [parityResults, setParityResults] = useState<ParitySummary | null>(null);
@@ -67,20 +67,20 @@ export function AccountantLedgerTab() {
     const [logs, setLogs] = useState<LedgerLog[]>([]);
     const [syncState, setSyncState] = useState<SyncState | null>(null);
     const [syncLoading, setSyncLoading] = useState(false);
-    
+
     const [withdrawAmount, setWithdrawAmount] = useState<string>('');
     const [isWithdrawing, setIsWithdrawing] = useState(false);
 
     // On-Chain Balances
     const { data: dailyAppEth, refetch: rf1 } = useBalance({ address: DAILY_APP_ADDRESS });
     const { data: dailyAppUsdc, refetch: rf2 } = useBalance({ address: DAILY_APP_ADDRESS, token: USDC_ADDRESS });
-    
+
     const { data: raffleEth, refetch: rf3 } = useBalance({ address: RAFFLE_ADDRESS });
     const { data: raffleUsdc, refetch: rf4 } = useBalance({ address: RAFFLE_ADDRESS, token: USDC_ADDRESS });
-    
+
     const { data: masterXEth, refetch: rf5 } = useBalance({ address: MASTER_X_ADDRESS });
     const { data: masterXUsdc, refetch: rf6 } = useBalance({ address: MASTER_X_ADDRESS, token: USDC_ADDRESS });
-    
+
     const { data: safeEth, refetch: rf7 } = useBalance({ address: SAFE_MULTISIG });
     const { data: safeUsdc, refetch: rf8 } = useBalance({ address: SAFE_MULTISIG, token: USDC_ADDRESS });
 
@@ -96,11 +96,11 @@ export function AccountantLedgerTab() {
             const signature = await signMessageAsync({ message });
 
             const res = await fetch(`/api/admin/accountant-ledger`, {
-                method: 'POST', 
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'accountant-ledger',
                     wallet_address: address,
                     signature,
@@ -134,7 +134,7 @@ export function AccountantLedgerTab() {
                 throw new Error(data.error || 'Failed to fetch ledger');
             }
             refetchBalances();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[Ledger Fetch]', error);
             toast.error(error.message);
         } finally {
@@ -162,7 +162,7 @@ export function AccountantLedgerTab() {
             } else {
                 toast.error(response.data.error || 'Sync failed');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Sync Error:', err);
             toast.error(err.response?.data?.error || err.message);
         } finally {
@@ -215,7 +215,7 @@ export function AccountantLedgerTab() {
             } else {
                 throw new Error(data.error || "Audit failed");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error(error.message, { id: toastId });
         } finally {
             setIsHardening(false);
@@ -257,7 +257,7 @@ export function AccountantLedgerTab() {
         }
     };
 
-    const formatBal = (data: any, decimals = 4) => {
+    const formatBal = (data: unknown, decimals = 4) => {
         if (!data) return '0.0000';
         return Number(formatUnits(data.value, data.decimals)).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     };
@@ -280,7 +280,7 @@ export function AccountantLedgerTab() {
             await withdrawTreasury(parseEther(withdrawAmount.toString()));
             toast.success("Withdrawal executed successfully!");
             setWithdrawAmount('');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[Withdrawal Error]', error);
             toast.error(error.shortMessage || error.message || "Transaction failed");
         } finally {
@@ -288,7 +288,7 @@ export function AccountantLedgerTab() {
         }
     };
 
-    const MetricCard = ({ title, aggregate, icon: Icon }: { title: string; aggregate?: Aggregate; icon: any }) => {
+    const MetricCard = ({ title, aggregate, icon: Icon }: { title: string; aggregate?: Aggregate; icon: unknown }) => {
         const safeAggregate = aggregate || { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } };
         return (
         <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
@@ -299,7 +299,7 @@ export function AccountantLedgerTab() {
                 </div>
                 <h3 className="text-sm font-black text-white uppercase tracking-wider">{title}</h3>
             </div>
-            
+
             <div className="space-y-4 relative z-10">
                 {/* INCOME */}
                 <div className="space-y-1">
@@ -484,7 +484,7 @@ export function AccountantLedgerTab() {
             {/* Ecosystem Hardening Center */}
             <div className="bg-[#0a0a0c] border border-emerald-500/10 rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-                
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                     <div className="space-y-2">
                         <div className="flex items-center gap-3">
@@ -494,7 +494,7 @@ export function AccountantLedgerTab() {
                             <h2 className="text-xl font-black text-white uppercase tracking-wider">Ecosystem Hardening Center</h2>
                         </div>
                         <p className="text-slate-400 text-sm max-w-xl">
-                            Ensure 1:1 parity between the Accountant Ledger (Supabase) and the On-Chain Smart Contracts. 
+                            Ensure 1:1 parity between the Accountant Ledger (Supabase) and the On-Chain Smart Contracts.
                             Use these tools to fix drift and sync metadata URIs.
                         </p>
                     </div>
@@ -572,7 +572,7 @@ export function AccountantLedgerTab() {
                 <div className="flex flex-col md:flex-row items-end gap-4">
                     <div className="flex-1 space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Withdraw Amount (ETH)</label>
-                        <input 
+                        <input
                             type="number"
                             value={withdrawAmount}
                             onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -596,7 +596,7 @@ export function AccountantLedgerTab() {
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">Recent Transactions</h3>
                     <span className="text-xs font-bold text-slate-500 uppercase">{logs.length} Records</span>
                 </div>
-                
+
                 <div className="flex-1 overflow-auto">
                     {loading && logs.length === 0 ? (
                         <div className="flex items-center justify-center h-full">
@@ -620,7 +620,7 @@ export function AccountantLedgerTab() {
                             <tbody className="divide-y divide-white/5">
                                 {logs.map((log) => {
                                     const isIncome = log.category === 'PURCHASE';
-                                    const colorClass = isIncome 
+                                    const colorClass = isIncome
                                         ? (log.value_symbol === 'USDC' ? 'text-emerald-400' : 'text-indigo-400')
                                         : 'text-red-400';
                                     const sign = isIncome ? '+' : '-';
@@ -644,7 +644,7 @@ export function AccountantLedgerTab() {
                                                 </div>
                                             </td>
                                             <td className="p-4">
-                                                <a 
+                                                <a
                                                     href={`https://basescan.org/address/${log.wallet_address}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"

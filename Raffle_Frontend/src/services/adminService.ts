@@ -4,14 +4,14 @@ class AdminService {
     // -----------------------------------------
     // Raffle Management
     // -----------------------------------------
-    
+
     async fetchRecentRaffles(limit = 50) {
         const { data, error } = await supabase
             .from('raffles')
             .select('*')
             .order('id', { ascending: false })
             .limit(limit);
-            
+
         if (error) throw error;
         return data;
     }
@@ -22,7 +22,7 @@ class AdminService {
             .select('raffle_id, wallet_address, ticket_count, created_at')
             .order('created_at', { ascending: false })
             .limit(limit);
-            
+
         if (error) throw error;
         return data;
     }
@@ -45,7 +45,7 @@ class AdminService {
         return data;
     }
 
-    async syncAdminRaffle(payload: any) {
+    async syncAdminRaffle(payload: unknown) {
         const res = await fetch('/api/admin/system/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

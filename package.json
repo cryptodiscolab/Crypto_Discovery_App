@@ -7,6 +7,7 @@
     "gitleaks-history": "gitleaks-secret-scanner --diff-mode history",
     "prepare": "husky",
     "orchestron": "node scripts/orchestrator/nexus_orchestrator.cjs",
+    "orchestrate-freemodel": "node scripts/orchestrator/freemodel_hermes_bridge.cjs",
     "ncc-sentinel": "node scripts/nexus/ncc-sentinel.cjs",
     "ncc-generate": "node scripts/nexus/ncc-generator.cjs",
     "gemini": "gemini",

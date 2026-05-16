@@ -1,5 +1,4 @@
 import { createConfig, http, fallback } from 'wagmi';
-import { mock, baseAccount } from 'wagmi/connectors';
 import { base, baseSepolia } from 'wagmi/chains';
 // IMPORT WAJIB DARI RAINBOWKIT:
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
@@ -24,7 +23,7 @@ const connectors = connectorsForWallets(
                 (opts) => coinbaseWallet({
                     ...opts,
                     preference: 'smartWalletOnly'
-                } as any),
+                } as unknown),
                 metaMaskWallet,
                 rainbowWallet,
                 walletConnectWallet,
@@ -35,7 +34,7 @@ const connectors = connectorsForWallets(
                     name: 'Mock Wallet',
                     iconUrl: 'https://avatars.githubusercontent.com/u/106669223?v=4',
                     iconBackground: '#fff',
-                    createConnector: (details: any) => mock({
+                    createConnector: (_details: unknown) => mock({
                         accounts: [import.meta.env.VITE_DEV_WALLET || ''],
                     }),
                 })] : []),
@@ -49,7 +48,7 @@ const connectors = connectorsForWallets(
 );
 
 const activeChainId = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
-const activeChain = activeChainId === 84532 ? baseSepolia : base;
+const _activeChain = activeChainId === 84532 ? baseSepolia : base;
 
 export const config = createConfig({
     chains: [base, baseSepolia],
@@ -69,6 +68,6 @@ export const config = createConfig({
     batch: {
         multicall: false,
     },
-    pollingInterval: 12000, 
+    pollingInterval: 12000,
     ssr: false,
 });

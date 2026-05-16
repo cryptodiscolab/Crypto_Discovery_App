@@ -46,7 +46,7 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
 
     const progressCount = Number(progress || 0);
     const isGlobalCompleted = progressCount >= tasks.length;
-    
+
     const hasGatedTask = tasks.some(t => t.isBaseSocialRequired);
     const isIdentityBlocked = hasGatedTask && !profileData?.is_base_social_verified;
 
@@ -102,16 +102,16 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
             toast.loading("Mining & Syncing XP...", { id: tid });
             const syncMsg = `Sync Claim Rewards\nTx: ${hash}\nWallet: ${address}`;
             const syncSig = await signMessageAsync({ message: syncMsg });
-            
+
             const res = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
                     action: 'xp',
                     wallet_address: address,
-                    signature: syncSig, 
+                    signature: syncSig,
                     message: syncMsg,
-                    tx_hash: hash, 
+                    tx_hash: hash,
                 }),
             });
 
@@ -124,7 +124,7 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
 
             toast.success("Mission Reward Claimed! 🎉", { id: tid });
             setVerifyingStatus(null);
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.shortMessage || "Claim failed", { id: tid });
         } finally {
             setIsClaiming(false);
@@ -194,9 +194,9 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
                             navigate('/profile');
                         } : handleVerifyCard}
                         disabled={isVerifying}
-                        className={`w-full py-3.5 rounded-xl text-white label-native transition-all active:scale-95 disabled:opacity-50 shadow-xl 
-                          ${isIdentityBlocked 
-                            ? 'bg-blue-600/10 border border-blue-500/30 text-[#0052FF] hover:bg-blue-600/20' 
+                        className={`w-full py-3.5 rounded-xl text-white label-native transition-all active:scale-95 disabled:opacity-50 shadow-xl
+                          ${isIdentityBlocked
+                            ? 'bg-blue-600/10 border border-blue-500/30 text-[#0052FF] hover:bg-blue-600/20'
                             : 'bg-[#0052FF] premium-glow shadow-blue-500/20'}`}
                     >
                         {isVerifying ? "SYSTEM CHECKING..." : isIdentityBlocked ? "VERIFY IDENTITY TO UNLOCK" : "VERIFY MISSION"}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Megaphone, Clock, Gift, ChevronRight, Search, Loader2 } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
+import { Clock, Gift, Loader2, Megaphone, Search } from 'lucide-react';
 
 const STATUS_COLORS = {
     active: 'text-green-400 bg-green-400/10 border-green-400/20',
@@ -10,7 +10,7 @@ const STATUS_COLORS = {
     upcoming: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
 };
 
-function CampaignCard({ campaign, onClaim, userAddress }: { campaign: any; onClaim: (c: any) => void; userAddress?: string }) {
+function CampaignCard({ campaign, onClaim, userAddress }: { campaign: unknown; onClaim: (_c: unknown) => void; userAddress?: string }) {
     const now = Date.now();
     const startAt = campaign.start_at ? new Date(campaign.start_at).getTime() : 0;
     const endAt = campaign.end_at ? new Date(campaign.end_at).getTime() : Infinity;
@@ -97,7 +97,7 @@ export function OffersList() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('active');
     const [search, setSearch] = useState('');
-    const [joiningId, setJoiningId] = useState(null);
+    const [_joiningId, setJoiningId] = useState(null);
 
     useEffect(() => {
         fetchCampaigns();
@@ -109,7 +109,7 @@ export function OffersList() {
             let query = supabase
                 .from('campaigns')
                 .select('*')
-                .order('created_at', { ascending: false }) as any;
+                .order('created_at', { ascending: false }) as unknown;
 
             if (filter === 'active') {
                 query = query.eq('status', 'active');
@@ -117,21 +117,21 @@ export function OffersList() {
 
             const { data, error } = await query;
             if (error) throw error;
-            
+
             // v3.59.6: Robust Defaulting
-            const normalized = (data || []).map((c: any) => ({
+            const normalized = (data || []).map((c: unknown) => ({
                 ...c,
                 reward_symbol: c.reward_symbol || 'USDC'
             }));
-            setCampaigns(normalized as any);
-        } catch (err: any) {
+            setCampaigns(normalized as unknown);
+        } catch (err: unknown) {
             console.error('[OffersList] fetch error:', err.message);
         } finally {
             setLoading(false);
         }
     }
 
-    async function handleClaim(campaign: any) {
+    async function handleClaim(campaign: unknown) {
         if (!address) return;
         setJoiningId(campaign.id);
         const tid = toast.loading(`JOINING ${campaign.title.toUpperCase()}...`);
@@ -154,7 +154,7 @@ export function OffersList() {
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || 'Failed to join');
             toast.success(`Successfully joined "${campaign.title}"!`, { id: tid });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             toast.error(err.shortMessage || err.message, { id: tid });
         } finally {
@@ -162,7 +162,7 @@ export function OffersList() {
         }
     }
 
-    const filtered = (campaigns as any[]).filter((c: any) =>
+    const filtered = (campaigns as unknown[]).filter((c: unknown) =>
         !search || c.title?.toLowerCase().includes(search.toLowerCase())
     );
 

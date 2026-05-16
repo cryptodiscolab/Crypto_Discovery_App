@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Shield, UserPlus, UserMinus, AlertCircle, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { useCMS } from '../../../hooks/useCMS';
 import { FEATURE_IDS, FEATURE_NAMES } from '../../../shared/constants/cmsFeatures';
 import { supabase } from '../../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { isAddress } from 'viem';
+import { AlertCircle, CheckCircle, RefreshCw, Shield, UserMinus, UserPlus } from 'lucide-react';
 
 interface WhitelistedUser {
     address: string;
@@ -47,7 +47,7 @@ export function WhitelistManagerTab() {
                 }
 
                 if (data) {
-                    setWhitelistedUsers(data.map((u: any) => ({
+                    setWhitelistedUsers(data.map((u: unknown) => ({
                         address: u.wallet_address,
                         featureId: u.feature_id,
                         featureName: FEATURE_NAMES[u.feature_id] || u.feature_id
@@ -118,7 +118,7 @@ export function WhitelistManagerTab() {
 
             setUserAddress('');
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -184,7 +184,7 @@ export function WhitelistManagerTab() {
 
             setBatchAddresses('');
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -230,7 +230,7 @@ export function WhitelistManagerTab() {
             ));
 
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -278,7 +278,7 @@ export function WhitelistManagerTab() {
                             onChange={(e) => setSelectedFeature(e.target.value)}
                             className="w-full bg-slate-900 border border-white/5 p-3 rounded-xl text-white focus:border-purple-500/50 outline-none cursor-pointer"
                         >
-                            {Object.entries(FEATURE_IDS).map(([key, id]) => (
+                            {Object.entries(FEATURE_IDS).map(([_key, id]) => (
                                 <option key={id} value={id}>{FEATURE_NAMES[id]}</option>
                             ))}
                         </select>
@@ -326,7 +326,7 @@ export function WhitelistManagerTab() {
                         onChange={(e) => setBatchFeature(e.target.value)}
                         className="w-full bg-slate-900 border border-white/5 p-3 rounded-xl text-white focus:border-indigo-500/50 outline-none cursor-pointer"
                     >
-                        {Object.entries(FEATURE_IDS).map(([key, id]) => (
+                        {Object.entries(FEATURE_IDS).map(([_key, id]) => (
                             <option key={id} value={id}>{FEATURE_NAMES[id]}</option>
                         ))}
                     </select>

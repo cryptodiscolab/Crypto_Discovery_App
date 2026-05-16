@@ -39,7 +39,7 @@ export function SyncLogTab() {
                                     </td>
                                 </tr>
                             ) : (
-                                syncLogs.map((log: any) => (
+                                syncLogs.map((log: unknown) => (
                                     <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex flex-col">

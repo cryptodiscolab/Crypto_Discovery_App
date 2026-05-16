@@ -28,7 +28,7 @@ export function SBTRewardsDashboard() {
     const [currentGasPrice, setCurrentGasPrice] = useState(0n);
     const [isClaiming, setIsClaiming] = useState(false);
 
-    const isLoading = loadingSBT || loadingCMS;
+    const _isLoading = loadingSBT || loadingCMS;
 
     // Monitor Network Gas Price (for Transparency & Safety)
     useEffect(() => {
@@ -107,7 +107,7 @@ export function SBTRewardsDashboard() {
             } catch (syncErr) {
                 console.warn('Pool Sync failed:', syncErr);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             toast.error(err.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -197,9 +197,9 @@ export function SBTRewardsDashboard() {
                                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                                 }`}
                         >
-                            {isClaiming ? "PROCESSING..." : 
-                             (parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice < (poolSettings?.targetUSDC || 5000)) 
-                             ? "POOL FUNDING..." 
+                            {isClaiming ? "PROCESSING..." :
+                             (parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice < (poolSettings?.targetUSDC || 5000))
+                             ? "POOL FUNDING..."
                              : "CLAIM REWARDS"}
                             {!isClaiming && claimableAmount > 0n && (parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice >= (poolSettings?.targetUSDC || 5000)) && <DollarSign className="w-4 h-4" />}
                         </button>
@@ -247,7 +247,7 @@ interface PoolStats {
     share_common: number;
     share_participation: number;
     last_distribution_at: string;
-    [key: string]: any; // For dynamic key access
+    [key: string]: unknown; // For dynamic key access
 }
 
 function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; totalPoolBalance: bigint }) {
@@ -264,7 +264,7 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
                     .select('*')
                     .maybeSingle();
                 if (!error && data && mounted) setStats(data);
-            } catch (e: any) {
+            } catch (e: unknown) {
                 console.warn('[SBTTierBreakdown] fetch error:', e.message);
             } finally {
                 if (mounted) setLoading(false);
@@ -310,7 +310,7 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
                         const count = stats?.[t.key] || 0;
                         const sharePct = stats?.[t.shareKey] || 0;
                         const poolShare = ((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) * (sharePct / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 });
-                        
+
                         return (
                             <div key={t.key} className={`flex flex-col items-center justify-center gap-1 p-3 rounded-xl border relative overflow-hidden ${t.bg} ${t.border}`}>
                                 <div className="absolute top-1 right-2 text-[8px] font-black uppercase opacity-40">{t.rank}</div>

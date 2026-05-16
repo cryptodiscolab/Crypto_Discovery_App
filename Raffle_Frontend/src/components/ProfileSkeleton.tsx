@@ -1,4 +1,4 @@
-import { ShieldCheck, Zap } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export function ProfileSkeleton() {
     return (

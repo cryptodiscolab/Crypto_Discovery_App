@@ -1,4 +1,3 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { useReadContract } from 'wagmi';
 import { ABIS, CONTRACTS } from '../../../lib/contracts';
 import { raffleService } from '../../../services/raffleService';
@@ -30,7 +29,7 @@ export function useRaffleList(): RaffleListResult {
     // Fetch Total Raffle Count from Blockchain
     const contractQuery = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: ABIS.RAFFLE as any,
+        abi: ABIS.RAFFLE as unknown,
         functionName: 'currentRaffleId',
     });
 
@@ -53,7 +52,7 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
     // 1. Fetch On-Chain Raffle State
     const { data: chainData, isLoading: chainLoading, refetch: refetchChain } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: ABIS.RAFFLE as any,
+        abi: ABIS.RAFFLE as unknown,
         functionName: 'getRaffleInfo',
         args: [BigInt(raffleId || 0)],
         query: {
@@ -77,7 +76,7 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
 
     if (!chainData || isLoading) return { raffle: null, isLoading, refetch: refetchAll };
 
-    const c = chainData as any;
+    const c = chainData as unknown;
 
     // Merge on-chain truth with off-chain rich metadata
     return {
@@ -98,7 +97,7 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
             endTime: Number(c.endTime),
             prizePerWinner: c.prizePerWinner,
             ...(dbData || {}) // Spread title, image_url, description, etc.
-        } as any,
+        } as unknown,
         isLoading,
         refetch: refetchAll
     };

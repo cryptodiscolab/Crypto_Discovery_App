@@ -38,7 +38,7 @@ export interface ActivityLog {
     value_amount: number;
     value_symbol: string;
     tx_hash?: string;
-    metadata?: any;
+    metadata?: unknown;
 }
 
 export interface OnChainUserData {

@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 export function UgcConfigSection() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    
+
     const [config, setConfig] = useState({
         listing_fee_usdc: '5',
         sbt_pool_share_pct: '10',
@@ -41,7 +41,7 @@ export function UgcConfigSection() {
     async function fetchConfig() {
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            const { data, _error } = await supabase
                 .from('system_settings')
                 .select('value')
                 .eq('key', 'ugc_config')
@@ -59,9 +59,9 @@ export function UgcConfigSection() {
         }
     }
 
-    function performAudit(currentConfig: any) {
+    function performAudit(currentConfig: unknown) {
         const newDrifts: Record<string, string> = {};
-        
+
         // Audit Listing Fee vs Contract minRewardPool (assuming Listing Fee >= minRewardPool)
         if (minRewardPool) {
             const contractMin = parseFloat(formatUnits(minRewardPool, 6)); // Assuming 6 decimals for USDC/Points
@@ -84,7 +84,7 @@ export function UgcConfigSection() {
 
     async function handleEmergencySync() {
         if (!minRewardPool) return toast.error("Contract data not available");
-        
+
         const contractMin = formatUnits(minRewardPool, 6);
         const updated = {
             ...config,
@@ -125,9 +125,9 @@ export function UgcConfigSection() {
                 }
                 throw new Error(errorMsg);
             }
-            
+
             toast.success('UGC Configuration updated!', { id: tid });
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error('Save failed: ' + error.message, { id: tid });
         } finally {
             setSaving(false);

@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useReadContract, useWriteContract, useAccount, useConfig, usePublicClient } from 'wagmi';
 import { ABIS, CONTRACTS, PRICE_FEED_ADDRESS, APP_CONFIG } from '../lib/contracts';
-import { FEATURE_IDS, FEATURE_NAMES } from '../shared/constants/cmsFeatures';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
@@ -12,7 +11,7 @@ const DEFAULT_ADMIN_ROLE = "0x00000000000000000000000000000000000000000000000000
 // Default fallback states
 const DEFAULT_ANNOUNCEMENT = { visible: false, title: "", message: "", type: "info" };
 const DEFAULT_POOL_SETTINGS = { targetUSDC: 0, claimTimestamp: 0 };
-const DEFAULT_NEWS: any[] = [];
+const DEFAULT_NEWS: unknown[] = [];
 
 /**
  * Custom hook for interacting with ContentCMSV2 contract
@@ -21,7 +20,7 @@ const DEFAULT_NEWS: any[] = [];
 export function useCMS() {
     const { address } = useAccount();
     const { writeContractAsync } = useWriteContract();
-    const config = useConfig();
+    const _config = useConfig();
     const publicClient = usePublicClient();
 
     const writeAndWait = async (params: Parameters<typeof writeContractAsync>[0]) => {
@@ -186,7 +185,7 @@ export function useCMS() {
                 if (!error && data && isMounted && currentAddress === address) {
                     setIsDbAdmin(!!data.is_admin);
                 }
-            } catch (e: any) {
+            } catch (e: unknown) {
                 console.warn('[useCMS] DB Admin check failed:', e.message);
                 if (isMounted) setIsDbAdmin(false);
             }
@@ -197,7 +196,7 @@ export function useCMS() {
                     const json = await res.json();
                     if (isMounted && currentAddress === address && json.isAdmin) setIsEnvAdmin(true);
                 }
-            } catch (e: any) {
+            } catch (e: unknown) {
                 console.warn('[useCMS] ENV Admin check failed:', e.message);
             } finally {
                 if (isMounted) setIsCheckingRoles(false);
@@ -221,7 +220,7 @@ export function useCMS() {
         let announcement = DEFAULT_ANNOUNCEMENT;
         let poolSettings = DEFAULT_POOL_SETTINGS;
         let news = DEFAULT_NEWS;
-        let featureCards: any[] = [];
+        let featureCards: unknown[] = [];
 
         // Parse Announcement and Pool Settings
         try {
@@ -303,7 +302,7 @@ export function useCMS() {
     // WRITE FUNCTIONS - CONTENT MANAGEMENT
     // ============================================
 
-    const updateAnnouncement = useCallback(async (newAnnouncement: any) => {
+    const updateAnnouncement = useCallback(async (newAnnouncement: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
 
         const newSettings = {
@@ -321,7 +320,7 @@ export function useCMS() {
         return hash;
     }, [poolSettings, writeContractAsync]);
 
-    const updatePoolSettings = useCallback(async (newPoolSettings: any) => {
+    const updatePoolSettings = useCallback(async (newPoolSettings: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
 
         const newSettings = {
@@ -339,7 +338,7 @@ export function useCMS() {
         return hash;
     }, [announcement, writeContractAsync]);
 
-    const updateNews = useCallback(async (newNews: any) => {
+    const updateNews = useCallback(async (newNews: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newNews);
         const hash = await writeAndWait({
@@ -352,7 +351,7 @@ export function useCMS() {
         return hash;
     }, [writeContractAsync]);
 
-    const updateFeatureCards = useCallback(async (newCards: any) => {
+    const updateFeatureCards = useCallback(async (newCards: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const jsonString = JSON.stringify(newCards);
         const hash = await writeAndWait({
@@ -365,7 +364,7 @@ export function useCMS() {
         return hash;
     }, [writeContractAsync]);
 
-    const batchUpdate = useCallback(async (newAnnouncement: any, newNews: any, newCards: any) => {
+    const batchUpdate = useCallback(async (newAnnouncement: unknown, newNews: unknown, newCards: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         const hash = await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
@@ -385,7 +384,7 @@ export function useCMS() {
     // WRITE FUNCTIONS - ROLE MANAGEMENT
     // ============================================
 
-    const grantOperator = useCallback(async (operatorAddress: any) => {
+    const grantOperator = useCallback(async (operatorAddress: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
@@ -395,7 +394,7 @@ export function useCMS() {
         });
     }, [writeContractAsync]);
 
-    const revokeOperator = useCallback(async (operatorAddress: any) => {
+    const revokeOperator = useCallback(async (operatorAddress: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
@@ -409,7 +408,7 @@ export function useCMS() {
     // WRITE FUNCTIONS - SPONSORED ACCESS WHITELIST
     // ============================================
 
-    const grantPrivilege = useCallback(async (userAddress: any, featureId: any) => {
+    const grantPrivilege = useCallback(async (userAddress: unknown, featureId: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
@@ -419,7 +418,7 @@ export function useCMS() {
         });
     }, [writeContractAsync]);
 
-    const revokePrivilege = useCallback(async (userAddress: any, featureId: any) => {
+    const revokePrivilege = useCallback(async (userAddress: unknown, featureId: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
@@ -429,7 +428,7 @@ export function useCMS() {
         });
     }, [writeContractAsync]);
 
-    const batchGrantPrivileges = useCallback(async (userAddresses: any, featureIds: any) => {
+    const batchGrantPrivileges = useCallback(async (userAddresses: unknown, featureIds: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) throw new Error("Contract address missing");
         return await writeAndWait({
             address: CMS_CONTRACT_ADDRESS,
@@ -447,7 +446,7 @@ export function useCMS() {
      * Check if a user has access to a specific feature
      * FIXED: Removed useReadContract hook from inside function
      */
-    const checkAccess = useCallback(async (userAddress: any, featureId: any) => {
+    const _checkAccess = useCallback(async (userAddress: unknown, featureId: unknown) => {
         if (!CMS_CONTRACT_ADDRESS) return false;
         try {
             if (!publicClient) return false;
@@ -467,7 +466,7 @@ export function useCMS() {
     /**
      * Show success toast with BaseScan link
      */
-    const showSuccessToast = (message: any, txHash: any) => {
+    const showSuccessToast = (message: unknown, txHash: unknown) => {
         toast.success(
             `${message} - View on Explorer: ${APP_CONFIG.EXPLORER_URL}/tx/${txHash}`,
             { duration: 6000 }

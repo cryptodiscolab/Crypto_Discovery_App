@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Trophy, Zap, TrendingUp, Users } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { Users, Zap } from 'lucide-react';
 
 /**
  * HypeFeed: 24/7 AI-Driven Movement Feed

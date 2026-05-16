@@ -29,9 +29,9 @@ export function TasksPage() {
                 .from('user_task_claims')
                 .select('task_id')
                 .eq('wallet_address', address.toLowerCase())
-                .then(({ data, error }: { data: any; error: any }) => {
+                .then(({ data, error }: { data: unknown; error: unknown }) => {
                     if (data && !error) {
-                        setOffChainClaims(new Set(data.map((d: any) => String(d.task_id).toLowerCase())));
+                        setOffChainClaims(new Set(data.map((d: unknown) => String(d.task_id).toLowerCase())));
                     }
                 });
         } else {
@@ -45,9 +45,9 @@ export function TasksPage() {
                 .from('user_task_claims')
                 .select('task_id')
                 .eq('wallet_address', address.toLowerCase())
-                .then(({ data, error }: { data: any; error: any }) => {
+                .then(({ data, error }: { data: unknown; error: unknown }) => {
                     if (data && !error) {
-                        setOffChainClaims(new Set(data.map((d: any) => String(d.task_id).toLowerCase())));
+                        setOffChainClaims(new Set(data.map((d: unknown) => String(d.task_id).toLowerCase())));
                     }
                 });
         }
@@ -69,7 +69,7 @@ export function TasksPage() {
 
                 if (!campaigns || campaigns.length === 0) { setUgcCampaigns([]); return; }
 
-                const campaignIds = campaigns.map((c: any) => c.id);
+                const campaignIds = campaigns.map((c: unknown) => c.id);
                 const { data: subTasks } = await supabase
                     .from('daily_tasks')
                     .select('id, title, action_type, platform, link, onchain_id, is_base_social_required')
@@ -86,7 +86,7 @@ export function TasksPage() {
                         id: t.id,
                         title: t.title || '',
                         link: t.link || '',
-                        baseReward: 0, 
+                        baseReward: 0,
                         isActive: true,
                         cooldown: 0,
                         minTier: 0,
@@ -97,7 +97,7 @@ export function TasksPage() {
                     });
                 });
 
-                setUgcCampaigns(campaigns.map((c: any) => ({
+                setUgcCampaigns(campaigns.map((c: unknown) => ({
                     id: String(c.id),
                     title: c.title || '',
                     platform_code: c.platform_code || '',
@@ -133,7 +133,7 @@ export function TasksPage() {
                                 <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">EARN REWARDS</h1>
                                 <p className="label-native text-slate-500">COMPLETE MISSIONS AND LEVEL UP YOUR STATUS.</p>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => navigate('/create-mission')}
                                 className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white label-native transition-all flex items-center justify-center w-fit"
                             >
@@ -189,7 +189,7 @@ export function TasksPage() {
                                     <UGCCampaignCard
                                         key={campaign.id}
                                         campaign={campaign}
-                                        subTasks={(campaign.subTasks || []) as any}
+                                        subTasks={(campaign.subTasks || []) as unknown}
                                         userClaimedTaskIds={offChainClaims}
                                         refetchStats={() => { refetch(); refetchClaims(); }}
                                     />

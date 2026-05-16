@@ -16,7 +16,7 @@ export function RaffleCard() {
     const latestId = raffleIds.length > 0 ? raffleIds[raffleIds.length - 1] : null;
     const { raffle, isLoading } = useRaffleInfo(latestId || 0);
     const { buyTickets, buyTicketsGasless, claimPrize, isGaslessSupported } = useRaffle();
-    const { data: socialProfile, isLoading: isSocialLoading } = useSocialGuard(address);
+    const { data: socialProfile, isLoading: _isSocialLoading } = useSocialGuard(address);
     const [isBuying, setIsBuying] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
     const [ticketAmount, setTicketAmount] = useState(1);
@@ -78,7 +78,7 @@ export function RaffleCard() {
     }
 
     // Default if no raffle found
-    const displayedRaffle: any = raffle || {
+    const displayedRaffle: unknown = raffle || {
         id: 0,
         title: "No Active Raffle",
         description: "Stay tuned for the next blue-chip NFT drop!",
@@ -233,7 +233,7 @@ export function RaffleCard() {
                 <div className="mt-auto">
                     {displayedRaffle.isActive && timeLeft > 0 && (
                         <div className="flex items-center gap-3 mb-3 bg-white/5 rounded-xl p-1.5 border border-white/10">
-                            <button 
+                            <button
                                 onClick={() => setTicketAmount(prev => Math.max(1, prev - 1))}
                                 className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-white font-bold transition-colors"
                                 disabled={ticketAmount <= 1 || isBuying}
@@ -241,7 +241,7 @@ export function RaffleCard() {
                             <div className="flex-1 text-center font-mono font-bold text-white text-lg">
                                 {ticketAmount} <span className="text-xs text-slate-400 font-sans">TICKET{ticketAmount > 1 ? 'S' : ''}</span>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setTicketAmount(prev => prev + 1)}
                                 className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-white font-bold transition-colors"
                                 disabled={isBuying || ticketAmount >= (displayedRaffle.maxTickets - displayedRaffle.totalTickets)}

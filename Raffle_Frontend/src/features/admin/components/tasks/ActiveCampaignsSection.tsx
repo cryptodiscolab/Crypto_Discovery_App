@@ -9,9 +9,9 @@ const DAILY_APP_ADDRESS = CONTRACTS.DAILY_APP;
 interface ActiveCampaignsSectionProps {
     nextSponsorId?: bigint;
     nextTaskId?: bigint;
-    onToggleTaskStatus: (id: bigint, isActive: boolean) => void;
-    onApproveSponsor: (id: string) => void;
-    onRejectSponsor: (id: string) => void;
+    onToggleTaskStatus: (_id: bigint, _isActive: boolean) => void;
+    onApproveSponsor: (_id: string) => void;
+    onRejectSponsor: (_id: string) => void;
     isSponsorModerationEnabled?: boolean;
     onRefetchSponsors: () => void;
 }
@@ -104,15 +104,15 @@ export function ActiveCampaignsSection({ nextSponsorId, nextTaskId, onToggleTask
     );
 }
 
-function OrganicTaskRow({ id, onToggle }: { id: bigint; onToggle: (id: bigint, isActive: boolean) => void }) {
+function OrganicTaskRow({ _id, onToggle }: { _id: bigint; onToggle: (id: bigint, _isActive: boolean) => void }) {
     const { data: task } = useReadContract({ address: DAILY_APP_ADDRESS, abi: ABIS.DAILY_APP, functionName: 'tasks', args: [id] });
     const [dbMeta, setDbMeta] = React.useState<TaskDbMeta | null>(null);
     useEffect(() => {
         if (!id) return;
-        supabase.from('daily_tasks').select('is_base_social_required, reward_symbol, reward_amount_per_user').eq('id', Number(id)).maybeSingle().then(({ data }: any) => { if (data) setDbMeta(data as TaskDbMeta); });
+        supabase.from('daily_tasks').select('is_base_social_required, reward_symbol, reward_amount_per_user').eq('id', Number(id)).maybeSingle().then(({ data }: unknown) => { if (data) setDbMeta(data as TaskDbMeta); });
     }, [id]);
-    if (!task || (task as any[])[0] === "") return null;
-    const [baseReward, isActive, , , title, , , requiresVerification] = task as any[];
+    if (!task || (task as unknown[])[0] === "") return null;
+    const [baseReward, isActive, , , title, , , requiresVerification] = task as unknown[];
     return (
         <div className="p-6 rounded-[2rem] border border-white/5 bg-white/5 flex items-center justify-between hover:bg-white/10 hover:border-indigo-500/30 transition-all duration-500">
             <div className="flex items-center gap-6">
@@ -135,10 +135,10 @@ function OrganicTaskRow({ id, onToggle }: { id: bigint; onToggle: (id: bigint, i
     );
 }
 
-function AuditRequestRow({ id, onApprove, onReject, isModerationEnabled }: { id: bigint; onApprove: (id: string) => void; onReject: (id: string) => void; isModerationEnabled: boolean }) {
+function AuditRequestRow({ _id, onApprove, onReject, isModerationEnabled }: { _id: bigint; onApprove: (_id: string) => void; onReject: (_id: string) => void; isModerationEnabled: boolean }) {
     const { data: request } = useReadContract({ address: DAILY_APP_ADDRESS, abi: ABIS.DAILY_APP, functionName: 'sponsorRequests', args: [id] });
-    if (!request || Number((request as any[])[8]) === 2) return null;
-    const [sponsor, , title, link, , , rewardPerUserUSD, targetClaims, statusRaw] = request as any[];
+    if (!request || Number((request as unknown[])[8]) === 2) return null;
+    const [sponsor, , title, _link, , , rewardPerUserUSD, targetClaims, statusRaw] = request as unknown[];
     const status = Number(statusRaw);
     return (
         <div className="p-8 rounded-[2.5rem] border border-white/5 bg-black/40 flex flex-col lg:flex-row justify-between items-center gap-8 hover:bg-black/60 hover:border-indigo-500/40 transition-all duration-500">
@@ -169,10 +169,10 @@ function SponsorCardItem({ id }: { id: bigint }) {
     const [dbMeta, setDbMeta] = React.useState<SponsorDbMeta | null>(null);
     useEffect(() => {
         if (!id) return;
-        supabase.from('daily_tasks').select('is_base_social_required, created_at, expires_at').eq('onchain_id', Number(id)).maybeSingle().then(({ data }: any) => { if (data) setDbMeta(data as SponsorDbMeta); });
+        supabase.from('daily_tasks').select('is_base_social_required, created_at, expires_at').eq('onchain_id', Number(id)).maybeSingle().then(({ data }: unknown) => { if (data) setDbMeta(data as SponsorDbMeta); });
     }, [id]);
-    if (!request || Number((request as any[])[8]) !== 1) return null;
-    const [, , title, link, , , rewardPerUserUSD, targetClaims] = request as any[];
+    if (!request || Number((request as unknown[])[8]) !== 1) return null;
+    const [, , title, link, , , rewardPerUserUSD, targetClaims] = request as unknown[];
     return (
         <div className="p-8 bg-black/40 border border-white/5 rounded-[2.5rem] relative overflow-hidden hover:bg-black/60 hover:border-emerald-500/30 transition-all duration-500 text-left">
             <div className="flex items-center gap-4 mb-8">

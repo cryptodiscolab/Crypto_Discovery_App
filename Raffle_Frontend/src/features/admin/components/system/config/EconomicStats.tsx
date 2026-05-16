@@ -1,4 +1,3 @@
-import { ShieldCheck } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -25,7 +24,7 @@ export function EconomicStats({ totalPoolBalance, rewards, drift, raffleXp, tier
         try {
             const message = `Emergency Parity Sync\nTime: ${new Date().toISOString()}`;
             const signature = await signMessageAsync({ message });
-            
+
             await axios.post('/api/admin-bundle', {
                 wallet_address: address,
                 signature,
@@ -49,7 +48,7 @@ export function EconomicStats({ totalPoolBalance, rewards, drift, raffleXp, tier
             });
 
             toast.success('Full System Parity Restored!', { id: tid });
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.message, { id: tid });
         }
     };
@@ -82,7 +81,7 @@ export function EconomicStats({ totalPoolBalance, rewards, drift, raffleXp, tier
             </div>
 
             <div className="flex flex-col gap-2">
-                <button 
+                <button
                     onClick={handleEmergencySync}
                     className="h-full bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
                 >

@@ -41,7 +41,7 @@ export interface UserActivityLog {
     value_amount: number;
     value_symbol: string;
     tx_hash?: string | null;
-    metadata?: any;
+    metadata?: unknown;
     created_at?: string;
 }
 
@@ -50,7 +50,7 @@ export interface SyncPayload {
     signature: string;
     message: string;
     fid?: number;
-    metadata?: any;
+    metadata?: unknown;
     referred_by?: string;
 }
 
@@ -76,7 +76,7 @@ export interface UgcMissionPayload {
     reward_amount_per_user: string;
     max_participants: number;
     txHash: string;
-    tasks_batch: any[];
+    tasks_batch: unknown[];
     reward_symbol: string;
     payment_token: string;
     is_base_social_required?: boolean;
@@ -104,11 +104,11 @@ export interface UgcRafflePayload {
 
 export interface AdminActionPayload {
     action: string;
-    payload?: any;
+    payload?: unknown;
     target_wallet?: string;
     amount?: string | number;
     activity_key?: string;
-    value?: any;
+    value?: unknown;
     tx_hash?: string;
 }
 
@@ -122,7 +122,7 @@ export type ExtendedVercelRequest = VercelRequest & {
         platform?: string;
         action_type?: string;
         campaign_id?: string;
-        payload?: any;
-        [key: string]: any;
+        payload?: unknown;
+        [key: string]: unknown;
     };
 };

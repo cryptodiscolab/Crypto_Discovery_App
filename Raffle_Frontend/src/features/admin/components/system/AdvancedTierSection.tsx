@@ -6,14 +6,14 @@ interface TierConfig {
 }
 
 interface AdvancedTierSectionProps {
-    tierDistribution: any[];
+    tierDistribution: unknown[];
     tierConfig: TierConfig;
-    onTierConfigChange: (category: keyof TierConfig, key: string, val: number) => void;
+    onTierConfigChange: (_category: keyof TierConfig, _key: string, _val: number) => void;
     onSaveTierConfig: () => void;
     targetWallet: string;
-    onTargetWalletChange: (val: string) => void;
+    onTargetWalletChange: (_val: string) => void;
     overrideTier: number;
-    onOverrideTierChange: (tier: number) => void;
+    onOverrideTierChange: (_tier: number) => void;
     onApplyOverride: () => void;
     onSyncTiers: () => void;
     saving: boolean;
@@ -52,7 +52,7 @@ export function AdvancedTierSection({
                         { key: 'SILVER', color: 'text-slate-300', bg: 'bg-slate-400/10' },
                         { key: 'BRONZE', color: 'text-amber-700', bg: 'bg-amber-800/10' }
                     ].map(t => {
-                        const dist = tierDistribution.find((d: any) => d.tier_label === t.key);
+                        const dist = tierDistribution.find((d: unknown) => d.tier_label === t.key);
                         return (
                             <div key={t.key} className={`${t.bg} p-3 rounded-2xl border border-white/5 flex flex-col items-center sm:items-start`}>
                                 <p className={`text-[9px] font-black tracking-widest ${t.color}`}>{t.key}</p>
@@ -80,13 +80,13 @@ export function AdvancedTierSection({
                         ].map(t => (
                             <div key={t.key} className="space-y-3 bg-black/20 p-3 rounded-2xl border border-white/5">
                                 <label className={`text-[10px] font-black ${t.color} uppercase tracking-widest block text-center`}>{t.label}</label>
-                                
+
                                 <div className="space-y-1">
                                     <span className="text-[8px] text-slate-500 uppercase font-black tracking-tighter">Top %</span>
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={(((tierConfig.percentiles as any)?.[t.key] || (tierConfig as any)[t.key] || 0) * 100).toFixed(2)}
+                                        value={(((tierConfig.percentiles as unknown)?.[t.key] || (tierConfig as unknown)[t.key] || 0) * 100).toFixed(2)}
                                         onChange={(e) => onTierConfigChange('percentiles', t.key, parseFloat(e.target.value) / 100)}
                                         className={`w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-xs ${t.border} outline-none`}
                                     />

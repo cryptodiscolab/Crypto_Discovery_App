@@ -46,7 +46,7 @@ export const ReferralCard = () => {
             if (activeError) throw activeError;
 
             setStats({ total: count || 0, active: activeCount || 0 });
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('[ReferralStats] Error:', e);
         } finally {
             setIsLoading(false);
@@ -69,7 +69,7 @@ export const ReferralCard = () => {
         window.open(`https://warpcast.com/~/compose?text=${text}&embeds[]=${encodeURIComponent(refLink)}`, '_blank');
     };
 
-    const shareTwitter = () => {
+    const _shareTwitter = () => {
         const text = encodeURIComponent(`Stop being exit liquidity. 🕺💃\n\nJoin the Nexus Pulse Economy v3.42.0 at Crypto Disco. Real-time yield, real identity, real XP.\n\nClaim your spot here: ${refLink}\n\n#Base #CryptoDisco #NexusPulse`);
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     };
@@ -160,7 +160,7 @@ export const ReferralCard = () => {
                         <div className="text-3xl font-black text-white">{isLoading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.total}</div>
                         <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2">Invites</div>
                     </div>
-                    
+
                     <div className="p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-[2rem] text-center min-w-[160px] relative overflow-hidden group/card shadow-2xl">
                         <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
                         <div className="flex justify-center mb-2 text-emerald-400">

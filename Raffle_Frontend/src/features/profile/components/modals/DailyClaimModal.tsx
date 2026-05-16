@@ -35,11 +35,11 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
     const [isCooldown, setIsCooldown] = useState(false);
 
     const { stats: userData, refetch: refetchOnChainStats, isLoading: isStatsLoading } = useUserInfo(address);
-    const dailyReward = pointSettings?.daily_claim || (ecosystemSettings as any)?.daily_claim || 0;
+    const dailyReward = pointSettings?.daily_claim || (ecosystemSettings as unknown)?.daily_claim || 0;
 
     const lastDailyClaim = userData?.lastDailyBonusClaim ? Number(userData.lastDailyBonusClaim) : 0;
     const nextClaimTime = lastDailyClaim > 0
-        ? (lastDailyClaim + ((ecosystemSettings as any)?.daily_claim_cooldown_sec || 86400)) * 1000
+        ? (lastDailyClaim + ((ecosystemSettings as unknown)?.daily_claim_cooldown_sec || 86400)) * 1000
         : 0;
 
     useEffect(() => {
@@ -62,7 +62,7 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
         setIsClaiming(true);
         const tid = toast.loading("Preparing claim...");
         try {
-            const hash = await writeContractAsync({ address: CONTRACTS.DAILY_APP as any, abi: DAILY_APP_ABI, functionName: 'claimDailyBonus' });
+            const hash = await writeContractAsync({ address: CONTRACTS.DAILY_APP as unknown, abi: DAILY_APP_ABI, functionName: 'claimDailyBonus' });
             toast.loading('Mining transaction...', { id: tid });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.loading('Syncing XP...', { id: tid });
@@ -76,7 +76,7 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
                 toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
                 if (onSuccess) onSuccess();
                 onClose();
-            } catch (syncErr: any) {
+            } catch (syncErr: unknown) {
                 // Chain succeeded but backend XP sync failed — record for reconciliation cron.
                 recordPendingSync({
                     actionType: 'daily_claim',
@@ -90,7 +90,7 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
                 if (onSuccess) onSuccess();
                 onClose();
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error('Claim failed: ' + (err.shortMessage || 'Try again'), { id: tid });
         } finally {
             setIsClaiming(false);

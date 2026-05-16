@@ -7,11 +7,11 @@ import { useSBT } from '../../../hooks/useSBT';
 import { useUserInfo, useSyncXP } from '../../../hooks/useContract';
 import { CONTRACTS, ABIS } from '../../../lib/contracts';
 import { formatEther } from 'viem';
-import { Sparkles, ArrowUpCircle, Lock, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePendingSyncRecovery } from '../../../hooks/usePendingSyncRecovery';
+import { AlertCircle, ArrowUpCircle, CheckCircle2, Loader2, Lock, Sparkles } from 'lucide-react';
 
-interface Tier {
+interface _Tier {
     id: number;
     name: string;
     pointsRequired: number;
@@ -26,18 +26,18 @@ export function SBTUpgradeCard() {
     const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const config = useConfig();
     const { signMessageAsync } = useSignMessage();
-    const { userPoints, userTier, rankName, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
+    const { userPoints, userTier, _rankName, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
     const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { ethPrice } = useCMS();
-    const { userOnChainXP, currentSeasonId, refetchAll } = useSBT();
+    const { _userOnChainXP, _currentSeasonId, refetchAll } = useSBT();
     const { stats: userOnChainStats, refetch: refetchUserInfo } = useUserInfo(address);
-    const { syncXP, syncOffchainXP, isLoading: isSyncing } = useSyncXP();
+    const { _syncXP, syncOffchainXP, isLoading: isSyncing } = useSyncXP();
     const { data: balanceData } = useBalance({ address });
 
     // Feature Flags Check
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
-    const isSbtFeatureEnabled = !isMainnet || (ecosystemSettings as any)?.active_features?.sbt_minting === true;
+    const isSbtFeatureEnabled = !isMainnet || (ecosystemSettings as unknown)?.active_features?.sbt_minting === true;
 
     // Find current and next tier (Sync on-chain tier to bypass DB delay)
     const dbTier = userTier || 0;
@@ -49,7 +49,7 @@ export function SBTUpgradeCard() {
     // Read MasterX tier fee as fallback (admin may set fee there instead of DailyApp)
     const { data: masterXFee } = useReadContract({
         address: CONTRACTS.MASTER_X as `0x${string}`,
-        abi: ABIS.MASTER_X as any,
+        abi: ABIS.MASTER_X as unknown,
         functionName: 'tierUpgradeFeeWei',
         args: [nextTierId],
         query: { enabled: nextTierId <= 5 }
@@ -83,8 +83,8 @@ export function SBTUpgradeCard() {
 
     const hasTotalXP = Number(userPoints) >= nextTier.pointsRequired;
     // SECURITY: DEV-only bypass — import.meta.env.DEV is false in production builds
-    const hasOnChainXP = (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase()) 
-        ? true 
+    const hasOnChainXP = (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase())
+        ? true
         : Number(dailyAppXP) >= nextTier.pointsRequired;
     const isSoldOut = nextTier.maxSupply > 0 && nextTier.currentSupply >= nextTier.maxSupply;
     const isTierClosed = nextTier.isOpen === false;
@@ -92,7 +92,7 @@ export function SBTUpgradeCard() {
     const hasEnoughETH = (import.meta.env.DEV && import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase())
         ? true
         : (balanceData?.value ?? 0n) >= effectiveMintPrice;
-    
+
     const xpShortfall = nextTier.pointsRequired - Number(userPoints);
     const syncShortfall = nextTier.pointsRequired - Number(dailyAppXP);
 
@@ -125,19 +125,19 @@ export function SBTUpgradeCard() {
             // FIX v3.47.1: Use mintNFT from useNFTTiers (calls DAILY_APP.mintNFT)
             // NOT upgradeTier from useSBT (which calls MASTER_X.upgradeTier — wrong contract!)
             const hash = await mintTier(nextTier.id, effectiveMintPrice);
-            
+
             toast.loading(`Waiting for confirmation...`, { id: tid });
-            
+
             // FIX v3.47.4: Wait for the transaction receipt to avoid optimistic UI state when tx reverts
-            const receipt = await waitForTransactionReceipt(config, { 
+            const receipt = await waitForTransactionReceipt(config, {
                 hash,
                 confirmations: 1
             });
-            
+
             if (receipt.status !== 'success') {
                 throw new Error("Transaction reverted on-chain");
             }
-            
+
             toast.success(`NFT Minted! Welcome to ${nextTier.name} Tier! 🎉`, { id: tid });
 
             // Sync to DB Log
@@ -189,7 +189,7 @@ export function SBTUpgradeCard() {
             refetchAll();
             refetchUserInfo?.(); // FIX v3.56.1: Force update on-chain user stats for instant UI feedback
         } catch (err: unknown) {
-            const e = err as any;
+            const e = err as unknown;
             console.error('[SBTUpgradeCard] Mint error:', e);
             // Provide specific error messages based on error type
             const errMsg = e?.shortMessage || e?.message || '';
@@ -207,7 +207,7 @@ export function SBTUpgradeCard() {
 
     const handleSync = async () => {
         if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high.", { icon: '⛽' });
-        
+
         const tid = toast.loading("Requesting Sync Signature from server...");
         try {
             // 1. Request signature from user to authenticate
@@ -231,25 +231,25 @@ export function SBTUpgradeCard() {
             if (!res.ok) throw new Error(data.error || "Failed to generate sync signature");
 
             toast.loading("Broadcasting sync transaction to network...", { id: tid });
-            
+
             // 3. Call Contract with signature payload
             const hash = await syncOffchainXP(data.total_xp, data.deadline, data.signature);
-            
+
             toast.loading("Waiting for confirmation...", { id: tid });
-            
-            const receipt = await waitForTransactionReceipt(config, { 
+
+            const receipt = await waitForTransactionReceipt(config, {
                 hash,
                 confirmations: 1
             });
-            
+
             if (receipt.status !== 'success') {
                 throw new Error("Transaction reverted on-chain");
             }
-            
+
             toast.success("XP Synced to Blockchain Successfully! 🎉", { id: tid });
             refetchUserInfo?.();
             refetchPoints();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Sync error:", error);
             const msg = error?.shortMessage || error?.message || "Sync failed";
             if (error?.code === 4001) {
@@ -316,7 +316,7 @@ export function SBTUpgradeCard() {
                             <div className="flex flex-col">
                                 <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Fee</span>
                                 <span className="text-[11px] font-black text-white uppercase tracking-widest">
-                                    {formatEther(effectiveMintPrice)} ETH 
+                                    {formatEther(effectiveMintPrice)} ETH
                                     {ethPrice > 0 && <span className="ml-1 text-slate-500 text-[9px] normal-case">(${(parseFloat(formatEther(effectiveMintPrice)) * ethPrice).toFixed(2)})</span>}
                                 </span>
                             </div>
@@ -429,7 +429,7 @@ export function SBTUpgradeCard() {
                             Awaiting On-Chain Sync
                         </div>
                         <p className="text-[10px] font-bold opacity-80 leading-relaxed uppercase">
-                            Your social XP is recorded in our database but not yet committed to the blockchain. 
+                            Your social XP is recorded in our database but not yet committed to the blockchain.
                             Click &quot;FORCE SYNC&quot; above to push your points on-chain immediately.
                         </p>
                     </div>

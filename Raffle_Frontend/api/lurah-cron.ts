@@ -42,7 +42,7 @@ interface AuditResults {
  * Executes a task with an individual timeout and error boundary
  */
 async function runWithTimeout<T>(name: string, promise: Promise<T>, timeoutMs: number, results: AuditResults): Promise<void> {
-    const timeoutPromise = new Promise((_, reject) => 
+    const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`TIMEOUT_${name.toUpperCase().replace(/\s/g, '_')}`)), timeoutMs)
     );
 
@@ -71,9 +71,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         // Force initialization check
         getSupabase();
-    } catch (initErr: any) {
-        return res.status(500).json({ 
-            error: "Initialization Failed", 
+    } catch (initErr: unknown) {
+        return res.status(500).json({
+            error: "Initialization Failed",
             message: initErr.message,
             env_status: {
                 has_url: !!SUPABASE_URL,
@@ -116,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // 3. Parity & State Audit
             runWithTimeout("Parity & State Audit", (async () => {
                 // Check XP Parity for Top User
-                const { data: topUser } = await (getSupabase() as any).from('user_profiles')
+                const { data: topUser } = await (getSupabase() as unknown).from('user_profiles')
                     .select('wallet_address, total_xp')
                     .order('total_xp', { ascending: false })
                     .limit(1)
@@ -129,12 +129,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         abi: [{ name: 'users', type: 'function', inputs: [{ name: '', type: 'address' }], outputs: [{ name: 'points', type: 'uint256' }, { name: 'lastClaimTimestamp', type: 'uint64' }, { name: 'referralCount', type: 'uint32' }, { name: 'tier', type: 'uint8' }, { name: 'isVerified', type: 'bool' }, { name: 'referrer', type: 'address' }, { name: 'lastUpdateSeasonId', type: 'uint32' }] }],
                         functionName: 'users',
                         args: [typedTopUser.wallet_address as `0x${string}`]
-                    }) as any[];
-                    
+                    }) as unknown[];
+
                     const onchainXp = Number(masterStats[0]);
                     const dbXp = Number(typedTopUser.total_xp || 0);
                     const drift = Math.abs(onchainXp - dbXp);
-                    
+
                     if (drift > 10000) {
                         auditResults.alerts.push(`🚨 XP Drift: User ${typedTopUser.wallet_address.slice(0,6)} mismatch ${drift.toLocaleString()}`);
                         if (auditResults.status !== "CRITICAL") auditResults.status = "DEGRADED";
@@ -165,7 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Update Global Health State (Essential Heartbeat)
         try {
-            await (getSupabase() as any).from('system_health').upsert({
+            await (getSupabase() as unknown).from('system_health').upsert({
                 service_key: 'lurah_ekosistem',
                 status: auditResults.status.toLowerCase(),
                 last_heartbeat: new Date().toISOString(),
@@ -190,11 +190,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
-        return res.status(500).json({ 
-            ...auditResults, 
+        return res.status(500).json({
+            ...auditResults,
             status: "CRITICAL",
             error: errorMessage,
-            duration: Date.now() - startTime 
+            duration: Date.now() - startTime
         });
     }
 }

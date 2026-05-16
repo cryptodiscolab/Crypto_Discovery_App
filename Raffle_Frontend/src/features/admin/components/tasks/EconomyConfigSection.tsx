@@ -2,16 +2,16 @@ import { Shield, BarChart3, Zap, RefreshCw } from 'lucide-react';
 
 interface EconomyConfigSectionProps {
     newPlatformFee: string;
-    onNewPlatformFeeChange: (val: string) => void;
+    onNewPlatformFeeChange: (_val: string) => void;
     newMinPoolUSD: string;
-    onNewMinPoolUSDChange: (val: string) => void;
+    onNewMinPoolUSDChange: (_val: string) => void;
     newMinRewardUSD: string;
-    onNewMinRewardUSDChange: (val: string) => void;
+    onNewMinRewardUSDChange: (_val: string) => void;
     newTokenPriceUSD: string;
-    onNewTokenPriceUSDChange: (val: string) => void;
+    onNewTokenPriceUSDChange: (_val: string) => void;
     currentPlatformFee?: bigint;
     currentTokenPrice?: bigint;
-    pendingPrice?: any[];
+    pendingPrice?: unknown[];
     onUpdateEconomy: () => void;
     onSchedulePrice: () => void;
     onExecutePrice: () => void;
@@ -27,7 +27,7 @@ export function EconomyConfigSection({
     pendingPrice,
     onUpdateEconomy,
     onSchedulePrice,
-    onExecutePrice
+    _onExecutePrice
 }: EconomyConfigSectionProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700 text-left relative">

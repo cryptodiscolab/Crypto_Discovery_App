@@ -6,7 +6,7 @@ import { Users, Zap, Activity, Globe, Loader2 } from 'lucide-react';
  * (v3.42.0 Identity & Growth Release)
  */
 export const NexusPulseStrip = () => {
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<unknown>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchStats = async () => {
@@ -41,7 +41,7 @@ export const NexusPulseStrip = () => {
     return (
         <div className="w-full bg-[#0B0E14]/80 border-b border-white/5 backdrop-blur-xl sticky top-0 z-50 overflow-hidden">
             <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between gap-12 overflow-x-auto no-scrollbar">
-                
+
                 {/* Live Indicator */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="relative flex h-2 w-2">
@@ -53,7 +53,7 @@ export const NexusPulseStrip = () => {
 
                 {/* Metrics Row */}
                 <div className="flex items-center gap-8 md:gap-12 flex-grow justify-end">
-                    
+
                     {/* DAU */}
                     <div className="flex items-center gap-2 group cursor-help transition-all hover:scale-105">
                         <Zap className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500/20" />

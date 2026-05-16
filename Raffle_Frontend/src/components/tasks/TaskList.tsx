@@ -1,29 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { supabase } from '../../lib/supabaseClient';
-import { Loader2, CheckCircle2, Zap, Clock, AlertCircle, Coins, ExternalLink, ArrowRight, Gift, Share2, Hash, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePoints } from '../../shared/context/PointsContext';
 import { useVerifiedAction } from '../../hooks/useVerifiedAction';
 import { useFarcaster } from '../../hooks/useFarcaster';
 import { DailyGoalCard } from './DailyGoalCard';
+import { AlertCircle, CheckCircle2, Clock, Coins, ExternalLink, Gift, Hash, Loader2, Share2, ShieldCheck, Zap } from 'lucide-react';
 
 
 export function TaskList() {
     const { address, isConnected } = useAccount();
-    const { signMessageAsync } = useSignMessage();
-    const [tasks, setTasks] = useState<any[]>([]);
+    const { _signMessageAsync } = useSignMessage();
+    const [tasks, setTasks] = useState<unknown[]>([]);
     const [userScore, setUserScore] = useState(0);
-    const [userClaims, setUserClaims] = useState<any[]>([]); // Array of {task_id, claimed_at}
+    const [userClaims, setUserClaims] = useState<unknown[]>([]); // Array of {task_id, claimed_at}
     const [isLoading, setIsLoading] = useState(false);
-    const [hasProfile, setHasProfile] = useState(false);
+    const [_hasProfile, setHasProfile] = useState(false);
     const [isBaseVerified, setIsBaseVerified] = useState(false); // v3.42.0
     const [claimingTask, setClaimingTask] = useState<string | number | null>(null);
     const { profileData, syncUser, isLoading: isSyncing } = useFarcaster();
     // Two-Step Task Flow: track which tasks have been started (link opened)
     const [startedTasks, setStartedTasks] = useState<Record<string, number>>({}); // { task_id: timestamp }
     const [countdowns, setCountdowns] = useState<Record<string, number>>({}); // { task_id: secondsLeft }
-    const countdownRefs = useRef({});
+    const _countdownRefs = useRef({});
     const { execute: executeClaim } = useVerifiedAction();
     const { refetch, gasTracker } = usePoints();
     const { isGasExpensive, isGasHigh } = gasTracker || {};
@@ -49,7 +49,7 @@ export function TaskList() {
         return () => clearInterval(interval);
     }, [startedTasks]);
 
-    const handleGoToTask = (task: any) => {
+    const handleGoToTask = (task: unknown) => {
         if (!isConnected || !address) {
             toast.error('Please connect wallet first');
             return;
@@ -97,7 +97,7 @@ export function TaskList() {
 
                 if (claimsResult.data) {
                     setUserClaims(prev => {
-                        const dbClaimIds = new Set((claimsResult.data || []).map((c: any) => String(c.task_id).toLowerCase()));
+                        const dbClaimIds = new Set((claimsResult.data || []).map((c: unknown) => String(c.task_id).toLowerCase()));
                         const recentOptimistic = prev.filter(c =>
                             !dbClaimIds.has(String(c.task_id).toLowerCase()) &&
                             (Date.now() - new Date(c.claimed_at).getTime() < 15000)
@@ -124,7 +124,7 @@ export function TaskList() {
                 setHasProfile(false);
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.group("TaskList Fetch Error");
             console.error('Error fetching tasks:', error.message);
             console.debug('Full error context:', error);
@@ -142,12 +142,12 @@ export function TaskList() {
     // v3.59.6: Automatic Identity Sync Mandate
     useEffect(() => {
         if (isConnected && address && !profileData && !isSyncing) {
-            
+
             syncUser(address);
         }
     }, [isConnected, address, profileData, isSyncing, syncUser]);
 
-    const handleClaim = async (task: any) => {
+    const handleClaim = async (task: unknown) => {
         if (!isConnected || !address) {
             toast.error("Please connect wallet first");
             return;
@@ -198,7 +198,7 @@ export function TaskList() {
             // Server-sync after a small delay to ensure DB is committed
             setTimeout(() => fetchData(), 1500);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Claim error:", err);
             const errMsg = err.message || "Unknown error";
             if (err.code === 4001 || errMsg.toLowerCase().includes("rejected")) {
@@ -226,7 +226,7 @@ export function TaskList() {
     // Filter Tasks (Zero-Assumption Mandate Applied)
     const activeTasks = tasks.filter(task => {
         const taskIdStr = String(task.id).toLowerCase();
-        
+
         // 1. Hide if claimed (One-time logic per interval/task)
         const hasClaimed = userClaims.some(c => String(c.task_id).toLowerCase() === taskIdStr);
         if (hasClaimed) return false;
@@ -281,7 +281,7 @@ export function TaskList() {
             )}
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {activeTasks.map((task: any) => {
+                {activeTasks.map((task: unknown) => {
                     const taskId = String(task.id);
                     const hasStarted = !!startedTasks[taskId];
                     const countdown = countdowns[taskId] ?? (hasStarted ? 0 : null);
@@ -294,12 +294,12 @@ export function TaskList() {
 
                     // Task link (support multiple field names from DB)
                     const taskLink = task.task_link || task.action_url || task.link;
-                    
+
                     // Metadata helpers
                     const creator = task.task_type === 'daily' ? 'ADMIN' : (task.creator_address ? `${task.creator_address.slice(0, 6)}...${task.creator_address.slice(-4)}` : task.platform?.toUpperCase() || 'SYSTEM');
                     const createdAt = new Date(task.created_at);
                     const expiresAt = task.expires_at ? new Date(task.expires_at) : new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
-                    
+
                     return (
                         <div
                             key={task.id}
@@ -348,7 +348,7 @@ export function TaskList() {
                             <h4 className="text-[11px] font-black uppercase tracking-widest leading-relaxed mb-1 text-white">
                                 {task.description?.toUpperCase()}
                             </h4>
-                            
+
                             {/* Task Metadata Stamps */}
                             <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
                                 <div className="flex items-center gap-1.5">

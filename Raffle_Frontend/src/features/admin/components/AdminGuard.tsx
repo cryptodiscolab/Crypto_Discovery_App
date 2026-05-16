@@ -8,7 +8,7 @@ import { useCMS } from '../../../hooks/useCMS';
  * AdminGuard: BUILD-READY Security Gate.
  * Zero-Hardcode Mandate: Inherits from centralized contracts.js
  */
-const AdminGuard: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+const AdminGuard: React.FC<React.PropsWithChildren> = ({ children }) => {
     const { address, isConnected } = useAccount();
     const { isAdmin, isLoading, isLoadingRoles } = useCMS();
     const navigate = useNavigate();

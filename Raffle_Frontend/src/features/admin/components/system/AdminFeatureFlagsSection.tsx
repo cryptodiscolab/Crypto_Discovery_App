@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { Power, ShieldAlert, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -12,7 +11,7 @@ interface FeatureFlags {
 
 interface AdminFeatureFlagsSectionProps {
     address: `0x${string}` | undefined;
-    signMessageAsync: (args: { message: string }) => Promise<string>;
+    signMessageAsync: (_args: { message: string }) => Promise<string>;
 }
 
 export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFeatureFlagsSectionProps) {
@@ -42,7 +41,7 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
             if (data?.value) {
                 setFlags(data.value as FeatureFlags);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to fetch flags:', err);
             toast.error('Sync Error: Failed to fetch system flags');
         } finally {
@@ -71,10 +70,10 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    wallet_address: address, 
-                    signature, 
-                    message, 
-                    action_type: 'UPDATE_FEATURE_FLAGS', 
+                    wallet_address: address,
+                    signature,
+                    message,
+                    action_type: 'UPDATE_FEATURE_FLAGS',
                     payload: flags
                 })
             });
@@ -86,7 +85,7 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
 
             toast.success('Phased Rollout Updated! UI auto-locked on Mainnet.', { id: tid });
             await fetchFlags();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Save error:', err);
             toast.error('Update failed: ' + (err.message || 'Unknown error'), { id: tid });
         } finally {
@@ -138,8 +137,8 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
                 {flagDetails.map(({ key, label, desc, color }) => {
                     const isEnabled = flags[key];
                     return (
-                        <div 
-                            key={key} 
+                        <div
+                            key={key}
                             onClick={() => toggleFlag(key)}
                             className={`p-4 rounded-2xl border transition-all cursor-pointer select-none group ${isEnabled ? 'bg-white/5 border-emerald-500/30 hover:border-emerald-500/60' : 'bg-black/50 border-red-500/30 hover:border-red-500/60 opacity-80'}`}
                         >

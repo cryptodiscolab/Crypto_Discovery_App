@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   Plus, Zap, Shield, ArrowUpCircle, Coins, Lock, Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -33,10 +33,10 @@ import { WalletPortfolio } from '../components/WalletPortfolio';
  */
 export default function ProfilePage() {
   const { address } = useAccount();
-  const navigate = useNavigate();
-  const { disconnect } = useDisconnect();
+  const _navigate = useNavigate();
+  const { _disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
-  const { ecosystemSettings, refetch: refetchPoints } = usePoints();
+  const { _ecosystemSettings, refetch: refetchPoints } = usePoints();
   const { linkGoogle, linkX, isLinking: isOAuthLinking } = useOAuth();
 
   // Modular Data Fetching (TanStack Query)
@@ -65,7 +65,7 @@ export default function ProfilePage() {
       const signature = await signMessageAsync({ message });
 
       toast.loading("Persisting changes...", { id: tid });
-      
+
       await userService.updateProfile({
         wallet: address,
         signature,
@@ -80,27 +80,27 @@ export default function ProfilePage() {
       toast.success("Profile updated! 🎉", { id: tid });
       setIsEditing(false);
       refetchProfile();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Update failed", { id: tid });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSyncUser = async (addr: string, force = false) => {
+  const handleSyncUser = async (addr: string, _force = false) => {
     if (!addr) return;
     try {
       const timestamp = new Date().toISOString();
       const message = `Sync Farcaster Identity\nWallet: ${addr}\nTimestamp: ${timestamp}`;
       const signature = await signMessageAsync({ message });
-      
+
       const res = await userService.syncFarcaster({ address: addr, signature, message });
       if (res?.profile) {
         refetchProfile();
         return res.profile;
       }
       return null;
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("[handleSyncUser] Error:", e);
       throw e;
     }
@@ -117,16 +117,16 @@ export default function ProfilePage() {
                 <Shield size={20} className="text-emerald-400" />
             </div>
         </div>
-        
+
         <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-2">
             DISCO <span className="text-indigo-500">IDENTITY</span>
         </h2>
         <p className="text-slate-500 text-[11px] font-black uppercase tracking-[0.2em] max-w-xs mb-8 leading-relaxed">
             PLEASE CONNECT YOUR WALLET TO UNLOCK YOUR ON-CHAIN PROGRESS & SOCIAL DISCOVERY.
         </p>
-        
-        <button 
-            onClick={() => (window as any).rainbowContext?.openConnectModal?.()}
+
+        <button
+            onClick={() => (window as unknown).rainbowContext?.openConnectModal?.()}
             className="group relative flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-indigo-50 transition-all active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.1)]"
         >
             <Wallet size={18} />
@@ -158,7 +158,7 @@ export default function ProfilePage() {
 
   return (
     <div className="pb-24 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <ProfileHeader 
+      <ProfileHeader
         profileData={editableProfileData || (profileData as ProfileData)}
         isEditing={isEditing}
         setIsEditing={setIsEditing}
@@ -177,7 +177,7 @@ export default function ProfilePage() {
       <main className="max-w-screen-md mx-auto space-y-6">
         {/* QUICK ACTIONS */}
         <div className="grid grid-cols-3 gap-3 px-4 mt-6">
-          <button 
+          <button
             onClick={() => setActiveModal('claim')}
             className={`flex flex-col items-center justify-center p-4 border rounded-3xl transition-all group active:scale-95 ${
               onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
@@ -194,8 +194,8 @@ export default function ProfilePage() {
                 ? 'CLAIMED ✓' : 'DAILY CLAIM'}
             </span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setActiveModal('swap')}
             className="flex flex-col items-center justify-center p-4 bg-amber-500/10 border border-amber-500/20 rounded-3xl hover:bg-amber-500/20 transition-all group active:scale-95"
           >
@@ -203,7 +203,7 @@ export default function ProfilePage() {
             <span className="text-[10px] font-black text-white uppercase tracking-widest">QUICK SWAP</span>
           </button>
 
-          <button 
+          <button
             onClick={() => setActiveModal('task')}
             className="flex flex-col items-center justify-center p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl hover:bg-indigo-500/20 transition-all group active:scale-95"
           >
@@ -215,7 +215,7 @@ export default function ProfilePage() {
         {/* MODALS */}
         {activeModal === 'task' && <CreateTaskModal onClose={() => setActiveModal(null)} onRequestSwap={() => setActiveModal('swap')} />}
         {activeModal === 'claim' && (
-          <DailyClaimModal 
+          <DailyClaimModal
             onClose={() => setActiveModal(null)}
             onSuccess={() => {
               refetchProfile();
@@ -223,13 +223,13 @@ export default function ProfilePage() {
               refetchOnChainStats();
               refetchSBT();
             }}
-            streakCount={(profileData as any)?.streakCount || (profileData as any)?.streak_count || 0}
+            streakCount={(profileData as unknown)?.streakCount || (profileData as unknown)?.streak_count || 0}
           />
         )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}
         {activeModal === 'revenue' && (
-          <RevenueClaimModal 
-            onClose={() => setActiveModal(null)} 
+          <RevenueClaimModal
+            onClose={() => setActiveModal(null)}
             claimable={claimableAmount}
             onSuccess={() => {
               refetchOnChainStats();
@@ -240,8 +240,8 @@ export default function ProfilePage() {
         {activeModal === 'swap' && <SwapModal isOpen={true} onClose={() => setActiveModal(null)} />}
 
         {/* STATS & IDENTITY */}
-        <ProfileStats 
-          profileData={profileData} 
+        <ProfileStats
+          profileData={profileData}
           linkGoogle={linkGoogle}
           linkX={linkX}
           isOAuthLinking={isOAuthLinking}
@@ -265,7 +265,7 @@ export default function ProfilePage() {
       {/* REVENUE BAR (Floating Mini) */}
       {claimableAmount > 0n && (
         <div className="fixed bottom-20 left-4 right-4 z-40 animate-in slide-in-from-bottom-4">
-          <button 
+          <button
             onClick={() => setActiveModal('revenue')}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-2xl flex items-center justify-between shadow-xl border border-white/20"
           >

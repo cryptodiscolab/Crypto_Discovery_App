@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
-import { ShieldCheck, Lock, ArrowRight, AlertTriangle, RefreshCw, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSIWE } from '../hooks/useSIWE';
 import { useNavigate } from 'react-router-dom';
+import { Lock, RefreshCw, ShieldCheck } from 'lucide-react';
 
 /**
  * SignatureGuard: Senior Security Layer.
@@ -66,7 +66,7 @@ export const SignatureGuard = ({ children }: { children: React.ReactNode }) => {
             // SECURITY: DEV-only bypass — import.meta.env.DEV is false in production builds
             const isMockWallet = import.meta.env.VITE_DEV_WALLET && address?.toLowerCase() === import.meta.env.VITE_DEV_WALLET.toLowerCase();
             if (import.meta.env.DEV && isMockWallet) {
-                
+
                 // Artificial delay for UX "Verified" feel
                 await new Promise(r => setTimeout(r, 800));
             } else {
@@ -76,7 +76,7 @@ export const SignatureGuard = ({ children }: { children: React.ReactNode }) => {
             localStorage.setItem(AUTH_KEY, JSON.stringify({ status: 'AUTHENTICATED', timestamp }));
             setIsApproved(true);
             toast.success("Identity Verified", { icon: '🛡️' });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[Security Node] Signature Rejected:', err.message);
             toast.error("Signature required to enter.", { icon: '⚠️' });
         } finally {
@@ -123,7 +123,7 @@ export const SignatureGuard = ({ children }: { children: React.ReactNode }) => {
                         </>
                     )}
                 </button>
-                <button 
+                <button
                     onClick={handleReject}
                     className="text-[11px] text-slate-500 font-black uppercase tracking-widest hover:text-red-400 transition-colors pt-2"
                 >

@@ -7,11 +7,11 @@ export function useAdminContract() {
 
     const writeContractAsync = async (params: Parameters<typeof originalWriteContractAsync>[0]) => {
         if (!address) throw new Error("Wallet not connected");
-        
+
         // 1. Sign Audit Log
         const message = `Authorize Admin Onchain Tx\nTime: ${new Date().toISOString()}`;
         const signature = await signMessageAsync({ message });
-        
+
         // 2. Send Audit Log to backend
         const res = await fetch('/api/admin-bundle?action=LOG_ONCHAIN_TX', {
             method: 'POST',
@@ -20,14 +20,14 @@ export function useAdminContract() {
                 address,
                 message,
                 signature,
-                payload: { functionName: (params as any).functionName || 'unknown_tx' }
+                payload: { functionName: (params as unknown).functionName || 'unknown_tx' }
             })
         });
 
         if (!res.ok) {
             throw new Error("Failed to authorize admin action with backend");
         }
-        
+
         // 3. Execute On-chain
         return await originalWriteContractAsync(params);
     };

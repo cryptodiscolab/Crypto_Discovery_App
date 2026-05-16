@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Link } from 'react-router-dom';
 
 export function TaskCard() {
-    const [tasks, setTasks] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<unknown[]>([]);
     const [totalActive, setTotalActive] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -38,7 +38,7 @@ export function TaskCard() {
         <GridCard delay={0.1} className="h-full flex flex-col relative overflow-hidden group">
             {/* Background Glow */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[100px] pointer-events-none group-hover:bg-blue-500/20 transition-colors duration-700" />
-            
+
             <div className="flex items-center justify-between mb-6 relative z-10">
                 <div className="p-3 bg-blue-500/20 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-500/5">
                     <Zap size={20} className="text-blue-400 animate-pulse" />
@@ -66,7 +66,7 @@ export function TaskCard() {
                         <div key={i} className="h-14 bg-white/5 rounded-xl border border-white/5 animate-pulse" />
                     ))
                 ) : tasks.length > 0 ? (
-                    tasks.map((task: any, i: number) => (
+                    tasks.map((task: unknown, _i: number) => (
                         <div key={task.id} className="group/item flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/40 border border-white/5 hover:border-blue-500/30 hover:bg-zinc-900/60 transition-all duration-300">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-lg group-hover/item:scale-110 transition-transform">

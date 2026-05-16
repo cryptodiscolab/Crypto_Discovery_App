@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
-import { Plus, Trash2, Edit2, Loader2, Megaphone, CheckCircle, XCircle, Save } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import toast from 'react-hot-toast';
+import { CheckCircle, Loader2, Megaphone, Plus, Save, Trash2, XCircle } from 'lucide-react';
 
 interface Campaign {
     id: string | number;
@@ -269,11 +269,11 @@ export default function AdminCampaignTab() {
                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white h-20 focus:outline-none focus:border-indigo-500"
                             />
                         </div>
-                        
+
                         {/* Token Selector [v3.62.0] */}
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reward Token</label>
-                            <select 
+                            <select
                                 value={selectedTokenAddr}
                                 onChange={e => setSelectedTokenAddr(e.target.value)}
                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"

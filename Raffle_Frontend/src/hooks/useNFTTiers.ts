@@ -6,7 +6,7 @@ import { formatEther, parseEther } from 'viem';
 const V12 = CONTRACTS.DAILY_APP as `0x${string}`;
 
 export function useNFTTiers() {
-    const { address } = useAccount();
+    const { _address } = useAccount();
     const { writeContractAsync } = useWriteContract();
     const publicClient = usePublicClient();
 
@@ -58,7 +58,7 @@ export function useNFTTiers() {
         dailyBonusAmount: dailyBonus ? Number(dailyBonus) : 0
     }), [tokenPrice, withdrawalFee, dailyBonus]);
 
-    const updateEconomy = async (tokenP: any) => {
+    const updateEconomy = async (tokenP: unknown) => {
         if (tokenP) {
             await writeAndWait({
                 address: V12,
@@ -69,7 +69,7 @@ export function useNFTTiers() {
         }
     };
 
-    const setCreatorToken = async (tokenAddr: any) => {
+    const setCreatorToken = async (tokenAddr: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -78,7 +78,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setUSDCToken = async (tokenAddr: any) => {
+    const setUSDCToken = async (tokenAddr: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -87,7 +87,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setMasterX = async (masterAddr: any) => {
+    const setMasterX = async (masterAddr: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -96,7 +96,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setPaymentTokenStatus = async (tokenAddr: any, status: any, decimals = 18, symbol = '') => {
+    const setPaymentTokenStatus = async (tokenAddr: unknown, status: unknown, decimals = 18, symbol = '') => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -105,7 +105,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setWithdrawalFeeBP = async (feeBP: any) => {
+    const setWithdrawalFeeBP = async (feeBP: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -114,7 +114,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setDailyBonusAmount = async (amount: any) => {
+    const setDailyBonusAmount = async (amount: unknown) => {
         // setGlobalRewards(daily, referral) — pass 0 for referral to keep it unchanged
         // Note: This will reset referral to 0. For production, read current referral first.
         return await writeAndWait({
@@ -125,7 +125,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setAutoApproveSponsorship = async (status: any) => {
+    const setAutoApproveSponsorship = async (status: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -134,7 +134,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setSponsorshipSettings = async (rewardClaim: any, tasksGoal: any, minPool: any, fee: any) => {
+    const setSponsorshipSettings = async (rewardClaim: unknown, tasksGoal: unknown, minPool: unknown, fee: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -143,7 +143,7 @@ export function useNFTTiers() {
         });
     };
 
-    const updateTierConfig = async (id: any, points: any, price: any, multiplier: any, bonus: any, maxSupply: any, isOpen: any) => {
+    const updateTierConfig = async (id: unknown, points: unknown, price: unknown, multiplier: unknown, bonus: unknown, maxSupply: unknown, isOpen: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -152,7 +152,7 @@ export function useNFTTiers() {
         });
     };
 
-    const updateBatchConfig = async (tiersArr: any, pointsArr: any, pricesArr: any, bonusesArr: any, multipliersArr: any, suppliesArr: any, openArr: any) => {
+    const updateBatchConfig = async (tiersArr: unknown, pointsArr: unknown, pricesArr: unknown, bonusesArr: unknown, multipliersArr: unknown, suppliesArr: unknown, openArr: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -161,7 +161,7 @@ export function useNFTTiers() {
         });
     };
 
-    const updateTierURI = async (id: any, uri: any) => {
+    const updateTierURI = async (id: unknown, uri: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -170,7 +170,7 @@ export function useNFTTiers() {
         });
     };
 
-    const toggleTier = async (id: any, status: any) => {
+    const toggleTier = async (id: unknown, status: unknown) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -179,7 +179,7 @@ export function useNFTTiers() {
         });
     };
 
-    const mintTier = async (id: any, price: any) => {
+    const mintTier = async (id: unknown, price: unknown) => {
         // Return hash only — caller (SBTUpgradeCard) handles receipt wait + confirmation check
         const hash = await writeContractAsync({
             address: V12,
@@ -193,15 +193,15 @@ export function useNFTTiers() {
 
     const refetch = () => { r1(); r2(); r3(); r4(); r5(); };
 
-    return { 
-        tiers, 
-        economy, 
-        updateTierConfig, 
-        updateBatchConfig, 
-        updateTierURI, 
-        toggleTier, 
-        updateEconomy, 
-        mintTier, 
+    return {
+        tiers,
+        economy,
+        updateTierConfig,
+        updateBatchConfig,
+        updateTierURI,
+        toggleTier,
+        updateEconomy,
+        mintTier,
         setCreatorToken,
         setUSDCToken,
         setMasterX,
@@ -210,6 +210,6 @@ export function useNFTTiers() {
         setDailyBonusAmount,
         setAutoApproveSponsorship,
         setSponsorshipSettings,
-        refetch 
+        refetch
     };
 }

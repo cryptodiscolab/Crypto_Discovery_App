@@ -94,11 +94,11 @@ export default function AdminSystemSettings() {
     const [saving, setSaving] = useState(false);
 
     // Advanced Tier States
-    const [tierConfig, setTierConfig] = useState<TierConfig>({ 
+    const [tierConfig, setTierConfig] = useState<TierConfig>({
         percentiles: { diamond: 0.01, platinum: 0.05, gold: 0.15, silver: 0.40, bronze: 0.80 },
         floors: { diamond: 5000, platinum: 2500, gold: 1000, silver: 500, bronze: 100 }
     });
-    const [tierDistribution, setTierDistribution] = useState<any[]>([]);
+    const [tierDistribution, setTierDistribution] = useState<unknown[]>([]);
     const [targetWallet, setTargetWallet] = useState('');
     const [overrideTier, setOverrideTier] = useState<number>(0);
 
@@ -218,7 +218,7 @@ export default function AdminSystemSettings() {
         setSaving(true);
         const tid = toast.loading('Requesting signature for SBT Sync...');
         try {
-            const dataToSave = sbtThresholds.map(({ id, ...rest }) => rest);
+            const dataToSave = sbtThresholds.map(({ _id, ...rest }) => rest);
             const timestamp = new Date().toISOString();
             const message = `Update SBT Thresholds\nAdmin: ${address?.toLowerCase()}\nTime: ${timestamp}\nLevels: ${dataToSave.length}`;
             const signature = await signMessageAsync({ message });
@@ -299,7 +299,7 @@ export default function AdminSystemSettings() {
         const nextSeason = currentSeasonId + 1;
         const input = window.prompt('Type RESET to confirm season reset. This is IRREVERSIBLE.');
         if (input !== 'RESET') return;
-        
+
         setSaving(true);
         const tid = toast.loading(`Resetting Season to ${nextSeason}...`);
         try {
@@ -307,7 +307,7 @@ export default function AdminSystemSettings() {
             toast.success(`Season ${nextSeason} Started!`, { id: tid });
             fetchTierDistribution();
         } catch (e: unknown) {
-            const errMsg = e instanceof Error ? (e as any).shortMessage || e.message : String(e);
+            const errMsg = e instanceof Error ? (e as unknown).shortMessage || e.message : String(e);
             toast.error(errMsg || "Reset failed", { id: tid });
         } finally {
             setSaving(false);
@@ -392,7 +392,7 @@ export default function AdminSystemSettings() {
             {activeTab === 'settings' && (
                 <div className="space-y-6">
                     <AdminFeatureFlagsSection address={address} signMessageAsync={signMessageAsync} />
-                    
+
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                         <PointSettingsSection
                             pointSettings={pointSettings}

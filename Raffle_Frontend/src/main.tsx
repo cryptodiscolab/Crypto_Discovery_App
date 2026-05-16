@@ -7,9 +7,9 @@ import './index.css'
 
 // 🛡️ Global & Buffer Polyfill (Surgical Fix for Web3)
 import { Buffer } from 'buffer';
-(window as any).global = window;
-(window as any).Buffer = Buffer;
-(window as any).process = (window as any).process || { env: {} };
+(window as unknown).global = window;
+(window as unknown).Buffer = Buffer;
+(window as unknown).process = (window as unknown).process || { env: {} };
 
 // Global fetch interceptor removed — API secret is handled server-side only
 

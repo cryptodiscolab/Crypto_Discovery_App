@@ -5,12 +5,12 @@ import { create } from 'zustand';
  * [v3.60.0] Modular Feature-Based Architecture
  */
 interface ProfileState {
-    profileData: any;
+    profileData: unknown;
     isLoading: boolean;
-    error: any;
-    setProfileData: (data: any) => void;
-    setLoading: (loading: boolean) => void;
-    setError: (err: any) => void;
+    error: unknown;
+    setProfileData: (_data: unknown) => void;
+    setLoading: (_loading: boolean) => void;
+    setError: (_err: unknown) => void;
     reset: () => void;
 }
 

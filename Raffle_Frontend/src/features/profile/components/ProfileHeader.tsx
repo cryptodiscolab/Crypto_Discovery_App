@@ -5,16 +5,16 @@ import { ProfileData, OnChainUserData } from '../types';
 interface ProfileHeaderProps {
     profileData: ProfileData;
     isEditing: boolean;
-    setIsEditing: (val: boolean) => void;
+    setIsEditing: (_val: boolean) => void;
     isSaving: boolean;
     handleSaveProfile: () => void;
-    syncUser: (address: string, force?: boolean) => Promise<any>;
+    syncUser: (_address: string, _force?: boolean) => Promise<unknown>;
     isFarcasterLoading: boolean;
     address?: string;
     onChainUserData?: OnChainUserData;
     potentialTier?: number;
-    setActiveModal: (modal: string | null) => void;
-    setProfileData: (data: ProfileData) => void;
+    setActiveModal: (_modal: string | null) => void;
+    setProfileData: (_data: ProfileData) => void;
 }
 
 /**
@@ -31,7 +31,7 @@ export const ProfileHeader = ({
     isFarcasterLoading,
     address,
     onChainUserData,
-    setActiveModal,
+    _setActiveModal,
     setProfileData
 }: ProfileHeaderProps) => {
     return (
@@ -69,7 +69,7 @@ export const ProfileHeader = ({
                                             } else {
                                                 toast.error("Farcaster account not found.", { id: toastId });
                                             }
-                                        } catch (e: any) {
+                                        } catch (e: unknown) {
                                             toast.error("Sync failed: " + (e.message || "Unknown error"), { id: toastId });
                                         }
                                     }}

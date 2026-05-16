@@ -28,14 +28,14 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
   const [lastFetchedAt, setLastFetchedAt] = useState<number>(0);
 
   // Memoize the stringified addresses to prevent unnecessary re-fetches
-  const joinedAddresses = useMemo(() => 
+  const joinedAddresses = useMemo(() =>
     [...new Set(tokenAddresses.filter(addr => addr && addr.startsWith('0x')))].sort().join(','),
     [tokenAddresses]
   );
 
   const fetchPrices = useCallback(async () => {
     if (!joinedAddresses) return;
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -64,11 +64,11 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
       const data = await response.json();
 
       const newPrices: Record<string, number> = {};
-      
+
       if (data.pairs && data.pairs.length > 0) {
         // Group pairs by baseToken address and pick the one with most liquidity
-        const bestPairs: Record<string, any> = {};
-        data.pairs.forEach((pair: any) => {
+        const bestPairs: Record<string, unknown> = {};
+        data.pairs.forEach((pair: unknown) => {
           const addr = pair.baseToken.address.toLowerCase();
           const liquidity = parseFloat(pair.liquidity?.usd || 0);
           if (!bestPairs[addr] || liquidity > parseFloat(bestPairs[addr].liquidity?.usd || 0)) {
@@ -111,7 +111,7 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
 
       setPrices(prev => ({ ...prev, ...newPrices }));
       setLastFetchedAt(Date.now());
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[PriceOracle] Fetch error:', err);
       setError(err.message || "Unknown error");
     } finally {

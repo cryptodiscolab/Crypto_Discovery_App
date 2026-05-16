@@ -24,7 +24,7 @@ export const userService = {
     /**
      * Sync UGC Mission metadata after contract creation
      */
-    syncUgcMission: async (payload: any) => {
+    syncUgcMission: async (payload: unknown) => {
         const { data } = await axios.post('/api/user-bundle', {
             action: 'sync-ugc-mission',
             ...payload
@@ -51,7 +51,7 @@ export const userService = {
     /**
      * Update User Profile (display name, bio, etc.)
      */
-    updateProfile: async (payload: { wallet: string; signature: string; message: string; payload: any }) => {
+    updateProfile: async (payload: { wallet: string; signature: string; message: string; payload: unknown }) => {
         const { data } = await axios.post('/api/user-bundle?action=update-profile', payload);
         return data;
     }

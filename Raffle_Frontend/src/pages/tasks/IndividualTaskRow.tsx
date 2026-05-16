@@ -1,7 +1,7 @@
-import { Shield, Zap, CheckCircle, ExternalLink } from 'lucide-react';
 import { useReadContract } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../lib/contracts';
 import { Task } from '../../types/tasks';
+import { CheckCircle, ExternalLink, Zap } from 'lucide-react';
 
 interface IndividualTaskRowProps {
     task: Task;

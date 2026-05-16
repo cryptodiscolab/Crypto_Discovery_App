@@ -41,11 +41,11 @@ const FALLBACK_TOKENS: Record<number, Token[]> = {
   ]
 };
 const TOKENS: Record<number, Token[]> = (() => {
-  try { 
-    const parsed = JSON.parse(import.meta.env.VITE_SWAP_TOKENS || ''); 
-    return Object.keys(parsed).length > 0 ? { ...FALLBACK_TOKENS, ...parsed } : FALLBACK_TOKENS; 
-  } catch { 
-    return FALLBACK_TOKENS; 
+  try {
+    const parsed = JSON.parse(import.meta.env.VITE_SWAP_TOKENS || '');
+    return Object.keys(parsed).length > 0 ? { ...FALLBACK_TOKENS, ...parsed } : FALLBACK_TOKENS;
+  } catch {
+    return FALLBACK_TOKENS;
   }
 })();
 
@@ -57,13 +57,13 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const { data: walletClient } = useWalletClient();
   const wagmiConfig = useConfig();
   const { ecosystemSettings } = usePoints();
-  
+
   // States - default to activeChainId from wallet, fallback to env or 8453
   const [selectedChainId, setSelectedChainId] = useState<number>(() => {
     const envChain = import.meta.env.VITE_CHAIN_ID ? parseInt(import.meta.env.VITE_CHAIN_ID) : 8453;
     return envChain;
   });
-  
+
   // Helper function to safely get token with fallback
   const getSafeToken = (chainId: number, index: number, fallbackChainId: number = 8453): Token => {
     const chainTokens = TOKENS[chainId] || TOKENS[fallbackChainId] || FALLBACK_TOKENS[8453];
@@ -73,7 +73,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   const [fromToken, setFromToken] = useState<Token>(getSafeToken(selectedChainId, 0));
   const [toToken, setToToken] = useState<Token>(getSafeToken(selectedChainId, 1));
-  
+
   const [amountIn, setAmountIn] = useState('');
   const [quote, setQuote] = useState<LiFiQuote | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
@@ -165,17 +165,17 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   const handleSwap = async () => {
     if (!quote || !walletClient) return;
-    
+
     setIsSwapping(true);
     const tid = toast.loading("Executing Swap via Li.Fi...");
-    
+
     try {
-      await executeRoute(quote as any, {
+      await executeRoute(quote as unknown, {
         updateRouteHook: () => {
-          
+
         },
       });
-      
+
       // Log Swap to User Activity History [v3.63.7]
       try {
         const timestamp = new Date().toISOString();
@@ -246,7 +246,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   return (
     <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose} />
-      
+
       <div className="relative w-full max-w-[400px] bg-[#0B0E14] border border-white/10 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 shadow-2xl shadow-indigo-500/10 flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-5 border-b border-white/5 bg-black/20 shrink-0">
           <h2 className="text-[12px] font-black text-white italic tracking-tighter flex items-center gap-2">
@@ -279,7 +279,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           <div className="p-4 bg-black/40 rounded-2xl border border-white/5 relative">
             <div className="text-[10px] text-slate-500 font-bold tracking-widest mb-2 uppercase">You Pay</div>
             <div className="flex items-center justify-between gap-2">
-              <input 
+              <input
                 type="number"
                 value={amountIn}
                 onChange={(e) => setAmountIn(e.target.value)}
@@ -307,7 +307,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
           {/* TOGGLE */}
           <div className="relative flex justify-center -my-2 z-10">
-            <button 
+            <button
               onClick={handleToggleDirection}
               className="p-2.5 bg-[#161B22] rounded-xl border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors text-slate-400 hover:text-indigo-400"
             >
@@ -381,28 +381,28 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             onClick={handleSwap}
             disabled={!quote || isSwapping || isLoadingQuote || fromToken.address === toToken.address}
             className={`w-full py-4 mt-2 rounded-xl text-[12px] font-black tracking-widest uppercase transition-all shrink-0
-              ${(!quote || fromToken.address === toToken.address) ? 'bg-white/5 text-slate-500 cursor-not-allowed' 
+              ${(!quote || fromToken.address === toToken.address) ? 'bg-white/5 text-slate-500 cursor-not-allowed'
                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}
             `}
           >
-            {fromToken.address === toToken.address 
-              ? "SAME TOKEN SELECTED" 
-              : isSwapping 
-                ? "SWAPPING..." 
-                : !amountIn 
-                  ? "ENTER AMOUNT" 
-                  : isLoadingQuote 
-                    ? "FETCHING QUOTE..." 
-                    : !quote 
-                      ? "NO ROUTE FOUND" 
+            {fromToken.address === toToken.address
+              ? "SAME TOKEN SELECTED"
+              : isSwapping
+                ? "SWAPPING..."
+                : !amountIn
+                  ? "ENTER AMOUNT"
+                  : isLoadingQuote
+                    ? "FETCHING QUOTE..."
+                    : !quote
+                      ? "NO ROUTE FOUND"
                       : "SWAP NOW"}
           </button>
 
           {/* Jumper Fallback / Bridge */}
           <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-white/5">
-            <a 
-              href="https://jumper.exchange/?integrator=crypto-disco-app" 
-              target="_blank" 
+            <a
+              href="https://jumper.exchange/?integrator=crypto-disco-app"
+              target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1.5 text-[9px] text-indigo-400/70 hover:text-indigo-400 uppercase tracking-widest font-black transition-colors"
             >

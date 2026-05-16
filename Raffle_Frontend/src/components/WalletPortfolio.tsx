@@ -17,7 +17,7 @@ export const WalletPortfolio = ({ highlightSymbol }: { highlightSymbol?: string 
                         <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Base Network</p>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={() => refetch()}
                     disabled={isLoading}
                     className="p-2 hover:bg-white/5 rounded-xl transition-all active:scale-95 text-slate-500 hover:text-indigo-400"
@@ -27,10 +27,10 @@ export const WalletPortfolio = ({ highlightSymbol }: { highlightSymbol?: string 
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-                {balances.map((token: any, i: number) => {
+                {balances.map((token: unknown, i: number) => {
                     const isHighlighted = token.symbol === highlightSymbol;
                     return (
-                        <div 
+                        <div
                             key={token.symbol || i}
                             className={`group flex items-center justify-between p-4 bg-black/40 border rounded-[1.5rem] transition-all ${isHighlighted ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_20px_rgba(99,102,241,0.1)]' : 'border-white/5 hover:border-indigo-500/30'}`}
                         >
@@ -52,9 +52,9 @@ export const WalletPortfolio = ({ highlightSymbol }: { highlightSymbol?: string 
                                 {token.balance ? Number(formatUnits(token.balance.value, token.balance.decimals)).toLocaleString(undefined, { maximumFractionDigits: 6 }) : '0.00'}
                             </p>
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <a 
-                                    href={token.address ? `https://basescan.org/token/${token.address}` : 'https://basescan.org'} 
-                                    target="_blank" 
+                                <a
+                                    href={token.address ? `https://basescan.org/token/${token.address}` : 'https://basescan.org'}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-[8px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
                                 >
@@ -66,7 +66,7 @@ export const WalletPortfolio = ({ highlightSymbol }: { highlightSymbol?: string 
                 );
             })}
             </div>
-            
+
             {isLoading && (
                 <div className="flex items-center justify-center py-4">
                     <div className="w-4 h-4 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />

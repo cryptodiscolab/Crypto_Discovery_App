@@ -7,7 +7,7 @@ const formatAddress = (addr: string) => {
   return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
 };
 
-function LeaderboardRow({ user, rank, isCurrentUser }: { user: any, rank: number, isCurrentUser: boolean | string | undefined }) {
+function LeaderboardRow({ user, rank, isCurrentUser }: { user: unknown, rank: number, isCurrentUser: boolean | string | undefined }) {
   const getDisplayAddress = (name: string, addr: string) => {
     if (name && name.startsWith('0x') && name.length > 20) {
       return formatAddress(name);
@@ -63,7 +63,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }: { user: any, rank: number
             {displayName}
           </span>
           <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-2">
-            {user.rank_name || 'ROOKIE'} 
+            {user.rank_name || 'ROOKIE'}
             {isCurrentUser && <span className="text-blue-500 font-black">(YOU)</span>}
             {streakCount > 0 && (
               <span className="flex items-center gap-0.5 text-orange-500 font-black italic text-[11px] uppercase tracking-widest">
@@ -94,8 +94,8 @@ function LeaderboardRow({ user, rank, isCurrentUser }: { user: any, rank: number
 
 export function LeaderboardPage() {
   const { address } = useAccount();
-  const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<unknown[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('All'); // 'All', 'Elite', 'Gold', 'Silver', 'Rookie'
@@ -120,7 +120,7 @@ export function LeaderboardPage() {
     if (activeTab === 'All') {
       setFilteredUsers(allUsers);
     } else {
-      setFilteredUsers(allUsers.filter((u: any) => u.rank_name === activeTab));
+      setFilteredUsers(allUsers.filter((u: unknown) => u.rank_name === activeTab));
     }
   }, [activeTab, allUsers]);
 
@@ -132,7 +132,7 @@ export function LeaderboardPage() {
       const data = await response.json();
       setAllUsers(data || []);
       setFilteredUsers(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err.name === 'AbortError') return;
       console.error("Error fetching leaderboard:", err);
       setFetchError('Failed to load leaderboard. Please try again.');

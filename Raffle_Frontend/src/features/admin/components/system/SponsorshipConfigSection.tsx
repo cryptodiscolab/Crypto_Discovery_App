@@ -24,7 +24,7 @@ export function SponsorshipConfigSection() {
         if (currentFee) setFee((Number(currentFee) / 1e6).toString());
         if (currentAutoApprove !== undefined) setAutoApprove(currentAutoApprove as boolean);
         if (currentReward) setRewardPerClaim((Number(currentReward) / 1e18).toString());
-        if (currentTasks) setTasksForReward((currentTasks as any).toString());
+        if (currentTasks) setTasksForReward((currentTasks as unknown).toString());
         if (currentMinPool) setMinPool((Number(currentMinPool) / 1e18).toString()); // minRewardPoolValue is in wei
     }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
@@ -36,7 +36,7 @@ export function SponsorshipConfigSection() {
         const tid = toast.loading("Updating Sponsorship Params...");
         try {
             const hash1 = await writeContractAsync({
-                address: CONTRACTS.DAILY_APP as any,
+                address: CONTRACTS.DAILY_APP as unknown,
                 abi: DAILY_APP_ABI,
                 functionName: 'setSponsorshipParams',
                 args: [
@@ -50,7 +50,7 @@ export function SponsorshipConfigSection() {
 
             if (autoApprove !== currentAutoApprove) {
                 const hash2 = await writeContractAsync({
-                    address: CONTRACTS.DAILY_APP as any,
+                    address: CONTRACTS.DAILY_APP as unknown,
                     abi: DAILY_APP_ABI,
                     functionName: 'setAutoApproveSponsorship',
                     args: [autoApprove],
@@ -59,7 +59,7 @@ export function SponsorshipConfigSection() {
             }
 
             toast.success("Sponsorship Settings Updated!", { id: tid });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             toast.error("Update Failed: " + (error.shortMessage || error.message), { id: tid });
         } finally {

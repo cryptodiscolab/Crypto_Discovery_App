@@ -6,16 +6,12 @@ import { useSocialGuard } from '../hooks/useSocialGuard';
 import { useVerification } from '../hooks/useVerification';
 import { useTaskInfo } from '../hooks/useTaskInfo';
 import { useUserV12Stats } from '../hooks/useContract';
-import { encodeFunctionData } from 'viem';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCMS } from '../hooks/useCMS';
 import { GovernancePanel } from './GovernancePanel';
 import { calculateMultipliers, estimateXP, MultiplierResult, UserStats } from '../lib/economy';
-import { useUserInfo, useV12Stats, ContractUserStats } from '../hooks/useContract';
 import { supabase } from '../lib/supabaseClient';
 import { NexusPulseStrip } from './home/NexusPulseStrip';
-import toast from 'react-hot-toast';
-import { usePoints } from '../shared/context/PointsContext';
 import { DailyGoalCard } from './tasks/DailyGoalCard';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -31,7 +27,7 @@ export function UnifiedDashboard() {
     const queryClient = useQueryClient();
     const { refetch: refetchStats, stats: userStats } = useUserV12Stats(address);
     const { totalUsers } = useV12Stats();
-    
+
     // Heartbeat logic for CCU/DAU - routed through backend
     useEffect(() => {
         if (!address) return;
@@ -120,28 +116,26 @@ export function UnifiedDashboard() {
         query: { enabled: !!address },
     });
 
-    const userPoints = userData ? Number((userData as [bigint])[0]) : 0;
-    const unsyncedPoints = unsyncedPointsRaw ? Number(unsyncedPointsRaw) : 0;
+    const _userPoints = userData ? Number((userData as [bigint])[0]) : 0;
+    const _unsyncedPoints = unsyncedPointsRaw ? Number(unsyncedPointsRaw) : 0;
 
     const handleTransactionSuccess = useCallback(async (txHash: string) => {
         // BUG-SYNC fix: Trigger backend XP sync immediately after transaction confirmation
         if (address) {
             try {
-                
+
                 // Call /api/user/xp — Vercel routes this to user-bundle?action=xp
                 fetch('/api/user/xp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         wallet_address: address,
-                        tx_hash: txHash 
+                        tx_hash: txHash
                     }),
                 }).then(async (res) => {
                     if (!res.ok) {
                         const err = await res.json();
                         console.warn('[Dashboard Sync] XP sync failed:', err.error);
-                    } else {
-                        
                     }
                     // Refetch local stats after backend updates
                     if (refetchStats) refetchStats();
@@ -161,7 +155,7 @@ export function UnifiedDashboard() {
         <div className="w-full bg-[#0B0E14] min-h-screen text-slate-300">
             <NexusPulseStrip />
             <div className="max-w-4xl mx-auto space-y-6 mb-12">
-            
+
                 {/* Admin Governance Panel (v3.20.0) */}
                 {isAdmin && <GovernancePanel />}
 
@@ -198,7 +192,7 @@ export function UnifiedDashboard() {
                         </div>
                     </div>
                 )}
-                
+
                 {/* [v3.59.4] Daily Retention Goal Component */}
                 <DailyGoalCard />
 
@@ -247,7 +241,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
     isDisabled: boolean;
     isBaseVerified: boolean;
     address: `0x${string}` | undefined;
-    onSucceed: (hash: string) => void;
+    onSucceed: (_hash: string) => void;
     multipliers: Multipliers;
 }) {
     const { task, isLoading } = useTaskInfo(taskId);
@@ -269,7 +263,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
     const finalDisabled = isDisabled || isBaseLocked;
 
     const needsVerify = t.requiresVerification && !isCompleted;
-    
+
     const handleVerifyOrClaim = async () => {
         if (needsVerify) {
             registerTaskStart(taskId);
@@ -313,13 +307,13 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
                             {isVerifying ? 'VERIFYING...' : isBaseLocked ? 'BASE REQ' : 'VERIFY'}
                         </button>
                     ) : (
-                        <ClaimButton 
-                            taskId={taskId} 
-                            isDisabled={!!finalDisabled} 
+                        <ClaimButton
+                            taskId={taskId}
+                            isDisabled={!!finalDisabled}
                             onSuccess={(hash) => {
                                 onSucceed(hash);
                                 refetchCompletion();
-                            }} 
+                            }}
                         />
                     )}
                 </div>
@@ -331,7 +325,7 @@ function DailyTaskItem({ taskId, isDisabled, isBaseVerified, address, onSucceed,
 function ClaimButton({ taskId, isDisabled, onSuccess }: {
     taskId: number;
     isDisabled: boolean;
-    onSuccess: (hash: string) => void;
+    onSuccess: (_hash: string) => void;
 }) {
     const { writeContract, data: hash, isPending } = useWriteContract();
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
@@ -367,7 +361,7 @@ function SponsorCard({ sponsorId, isDisabled, isBaseVerified, address, onSuccess
     isDisabled: boolean;
     isBaseVerified: boolean;
     address: `0x${string}` | undefined;
-    onSuccess: (hash: string) => void;
+    onSuccess: (_hash: string) => void;
     multipliers: Multipliers;
 }) {
     void sponsorId;

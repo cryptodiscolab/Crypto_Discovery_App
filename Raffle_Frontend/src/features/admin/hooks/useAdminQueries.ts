@@ -44,7 +44,7 @@ export function useAdminRaffleQueries() {
     });
 
     const syncRaffleMutation = useMutation({
-        mutationFn: (payload: any) => adminService.syncAdminRaffle(payload),
+        mutationFn: (payload: unknown) => adminService.syncAdminRaffle(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.raffles });
             toast.success('Raffle synced to DB successfully!');
@@ -59,18 +59,18 @@ export function useAdminRaffleQueries() {
         raffles: rafflesQuery.data || [],
         isLoadingRaffles: rafflesQuery.isLoading,
         refetchRaffles: rafflesQuery.refetch,
-        
+
         recentTickets: ticketsQuery.data || [],
         isLoadingTickets: ticketsQuery.isLoading,
         refetchTickets: ticketsQuery.refetch,
-        
+
         winners: leaderboardQuery.data || [],
         isLoadingWinners: leaderboardQuery.isLoading,
         refetchWinners: leaderboardQuery.refetch,
-        
+
         announceWinner: announceMutation.mutateAsync,
         isAnnouncing: announceMutation.isPending,
-        
+
         syncRaffle: syncRaffleMutation.mutateAsync,
     };
 }

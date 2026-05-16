@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { Home, Zap, Ticket, Trophy, ShieldAlert, Wallet } from 'lucide-react';
@@ -29,8 +28,8 @@ export function BottomNav() {
     return (
         <nav
             className="fixed bottom-0 left-0 right-0 w-full z-[10000] pointer-events-auto md:hidden pb-safe"
-            style={{ 
-                paddingBottom: isFrame ? `${safeAreaInsets?.bottom || 0}px` : 'env(safe-area-inset-bottom, 0px)' 
+            style={{
+                paddingBottom: isFrame ? `${safeAreaInsets?.bottom || 0}px` : 'env(safe-area-inset-bottom, 0px)'
             }}
         >
             {/* Top border separator — subtle */}

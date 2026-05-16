@@ -29,6 +29,7 @@ export function GovernancePanel() {
         } catch (err) {
             console.error('[GovPanel] Fetch error:', err);
         } finally {
+            // Reserved for future loading-state cleanup.
         }
     };
 

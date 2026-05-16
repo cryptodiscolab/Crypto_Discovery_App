@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Define the global type for the singleton
 declare global {
-    var supabaseInstance: SupabaseClient | any;
+    let supabaseInstance: SupabaseClient | unknown;
 }
 
 // Hardened Supabase Client Singleton

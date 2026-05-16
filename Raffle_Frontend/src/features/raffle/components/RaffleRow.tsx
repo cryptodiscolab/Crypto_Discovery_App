@@ -5,7 +5,6 @@ import { useAccount, useReadContract } from 'wagmi';
 import { useRaffleInfo } from '../hooks/useRaffleQueries';
 import { useRaffle } from '../../../hooks/useRaffle';
 import { useSocialGuard } from '../../../hooks/useSocialGuard';
-import { formatEther } from 'viem';
 import { CONTRACTS, MASTER_X_ABI } from '../../../lib/contracts';
 import toast from 'react-hot-toast';
 import { MouseEvent } from 'react';
@@ -24,7 +23,7 @@ export function RaffleRow({ raffleId, filter = 'all' }: RaffleRowProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [ticketAmount, setTicketAmount] = useState(1);
 
-  const { data: ticketPriceETH } = useReadContract({
+  const { data: _ticketPriceETH } = useReadContract({
     address: CONTRACTS.MASTER_X,
     abi: MASTER_X_ABI,
     functionName: 'getTicketPriceInETH',
@@ -64,7 +63,7 @@ export function RaffleRow({ raffleId, filter = 'all' }: RaffleRowProps) {
         }
         toast.dismiss(tid);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.shortMessage || e.message || "Action failed", { id: tid });
     } finally {
       setIsProcessing(false);
@@ -76,7 +75,7 @@ export function RaffleRow({ raffleId, filter = 'all' }: RaffleRowProps) {
   const progress = Math.min((currentTickets / maxTickets) * 100, 100);
 
   return (
-    <div 
+    <div
         onClick={() => navigate(`/raffles/${raffle.id}`)}
         className="flex flex-col p-4 border-b border-white/5 active:bg-white/5 md:border md:rounded-2xl md:mb-4 hover:border-indigo-500/50 transition-all cursor-pointer group bg-zinc-900/20"
     >

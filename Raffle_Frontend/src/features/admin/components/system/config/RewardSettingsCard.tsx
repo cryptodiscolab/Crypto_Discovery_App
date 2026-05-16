@@ -8,7 +8,7 @@ import { RewardSettings } from '../../../../types/admin';
 
 interface RewardSettingsCardProps {
     rewards: RewardSettings;
-    setRewards: (r: RewardSettings) => void;
+    setRewards: (_r: RewardSettings) => void;
     drift: boolean;
 }
 
@@ -26,7 +26,7 @@ export function RewardSettingsCard({ rewards, setRewards, drift }: RewardSetting
                 functionName: 'setGlobalRewards',
                 args: [BigInt(rewards.daily), BigInt(rewards.referral)],
             });
-            
+
             toast.loading('Syncing to Database...', { id: tid });
             const message = `Sync Rewards: Daily=${rewards.daily}, Ref=${rewards.referral}`;
             const signature = await signMessageAsync({ message });
@@ -43,7 +43,7 @@ export function RewardSettingsCard({ rewards, setRewards, drift }: RewardSetting
             });
 
             toast.success('Rewards updated on-chain & in DB!', { id: tid });
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.message, { id: tid });
         }
     };
@@ -63,20 +63,20 @@ export function RewardSettingsCard({ rewards, setRewards, drift }: RewardSetting
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-500 uppercase">Daily Claim XP</label>
-                    <input 
-                        type="number" 
-                        value={rewards.daily} 
-                        onChange={e => setRewards({ ...rewards, daily: e.target.value })} 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" 
+                    <input
+                        type="number"
+                        value={rewards.daily}
+                        onChange={e => setRewards({ ...rewards, daily: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none"
                     />
                 </div>
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-500 uppercase">Referral XP</label>
-                    <input 
-                        type="number" 
-                        value={rewards.referral} 
-                        onChange={e => setRewards({ ...rewards, referral: e.target.value })} 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" 
+                    <input
+                        type="number"
+                        value={rewards.referral}
+                        onChange={e => setRewards({ ...rewards, referral: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none"
                     />
                 </div>
             </div>

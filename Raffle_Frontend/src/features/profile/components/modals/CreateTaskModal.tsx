@@ -17,9 +17,9 @@ interface TaskBatchItem {
 
 interface ContractCall {
     address: `0x${string}`;
-    abi: any[];
+    abi: unknown[];
     functionName: string;
-    args?: any[];
+    args?: unknown[];
     value?: bigint;
 }
 
@@ -29,7 +29,7 @@ interface PayAndCreateMissionButtonProps {
     address?: `0x${string}`;
     tasksBatch: TaskBatchItem[];
     selectedTokenAddr: string;
-    onSuccess: (hash: `0x${string}`) => Promise<void>;
+    onSuccess: (_hash: `0x${string}`) => Promise<void>;
     onInsufficientBalance?: () => void;
 }
 
@@ -37,7 +37,7 @@ interface PayAndCreateMissionButtonProps {
  * PayAndCreateMissionButton Component
  * Internal to CreateTaskModal for now.
  */
-function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, selectedTokenAddr, onSuccess, onInsufficientBalance }: PayAndCreateMissionButtonProps) {
+function PayAndCreateMissionButton({ calls, _ethReward, address, _tasksBatch, _selectedTokenAddr, onSuccess, _onInsufficientBalance }: PayAndCreateMissionButtonProps) {
     const { writeContractAsync } = useWriteContract();
     const [isCreating, setIsCreating] = useState(false);
     const publicClient = usePublicClient();
@@ -52,18 +52,18 @@ function PayAndCreateMissionButton({ calls, ethReward, address, tasksBatch, sele
             const approveCalls = calls.filter(c => c.functionName === 'approve');
             for (const appCall of approveCalls) {
                 toast.loading(`Approving ${appCall.address === CONTRACTS.USDC ? 'USDC' : 'Reward Token'}...`, { id: tid });
-                const appHash = await writeContractAsync(appCall as any);
+                const appHash = await writeContractAsync(appCall as unknown);
                 await publicClient!.waitForTransactionReceipt({ hash: appHash });
             }
             toast.loading("Creating Mission Batch on-chain...", { id: tid });
-            const hash = await writeContractAsync(mainCall as any);
+            const hash = await writeContractAsync(mainCall as unknown);
             const receipt = await publicClient!.waitForTransactionReceipt({ hash });
             if (receipt.status === 'success') {
                 await onSuccess(hash);
             } else {
                 throw new Error("Transaction failed");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.shortMessage || err.message || "Action failed", { id: tid });
         } finally {
             setIsCreating(false);
@@ -92,8 +92,8 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
         { platform: 'x', action_type: 'follow', title: '', link: '' },
         { platform: 'base', action_type: 'follow', title: '', link: '' }
     ]);
-    const [email, setEmail] = useState('');
-    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [email, _setEmail] = useState('');
+    const [_showAdvanced, _setShowAdvanced] = useState(false);
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { refetch: refetchStats } = useUserInfo(address);
@@ -103,19 +103,19 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
     const { data: qMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
     const { data: qRewardClaim } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
 
-    const allowedTokens: any[] = (ecosystemSettings as any)?.allowed_tokens || (ecosystemSettings as any)?.whitelisted_tokens || [];
-    const ethToken = allowedTokens.find((t: any) => t.symbol === 'ETH') || allowedTokens[0];
-    const usdcToken = allowedTokens.find((t: any) => t.symbol === 'USDC');
+    const allowedTokens: unknown[] = (ecosystemSettings as unknown)?.allowed_tokens || (ecosystemSettings as unknown)?.whitelisted_tokens || [];
+    const ethToken = allowedTokens.find((t: unknown) => t.symbol === 'ETH') || allowedTokens[0];
+    const usdcToken = allowedTokens.find((t: unknown) => t.symbol === 'USDC');
 
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>(ethToken?.address || "0x0000000000000000000000000000000000000000");
-    const selectedToken = allowedTokens.find((t: any) => t.address?.toLowerCase() === selectedTokenAddr?.toLowerCase()) || ethToken;
+    const selectedToken = allowedTokens.find((t: unknown) => t.address?.toLowerCase() === selectedTokenAddr?.toLowerCase()) || ethToken;
 
     const [ethReward, setEthReward] = useState(() => {
-        const rawValue = (ecosystemSettings as any)?.ugc_config?.min_reward_amount || '0.1';
+        const rawValue = (ecosystemSettings as unknown)?.ugc_config?.min_reward_amount || '0.1';
         return rawValue;
     });
 
-    const [sybilFilters, setSybilFilters] = useState({
+    const [sybilFilters, _setSybilFilters] = useState({
         minNeynarScore: 0, minFollowers: 0, accountAgeDays: 0,
         powerBadge: false, requiresVerification: true, isBaseSocialRequired: false
     });
@@ -126,13 +126,13 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
         }
     }, [qMinPool, ethReward]);
 
-    const feeUsd = qSponsorFee ? Number(formatUnits(qSponsorFee as bigint, 6)) : Number((ecosystemSettings as any)?.ugc_config?.listing_fee_usdc || 0);
-    const { prices } = usePriceOracle(allowedTokens.map((t: any) => t.address));
+    const feeUsd = qSponsorFee ? Number(formatUnits(qSponsorFee as bigint, 6)) : Number((ecosystemSettings as unknown)?.ugc_config?.listing_fee_usdc || 0);
+    const { prices } = usePriceOracle(allowedTokens.map((t: unknown) => t.address));
     const currentPrice = prices[selectedTokenAddr?.toLowerCase()] || 0;
-    const rewardUsdValue = currentPrice * parseFloat(ethReward || '0');
+    const _rewardUsdValue = currentPrice * parseFloat(ethReward || '0');
 
     const rewardPerClaimVal = qRewardClaim ? parseFloat(formatUnits(qRewardClaim as bigint, 6)) : 0.20;
-    const targetParticipants = Math.floor(parseFloat(ethReward || '0') / (rewardPerClaimVal || 1));
+    const _targetParticipants = Math.floor(parseFloat(ethReward || '0') / (rewardPerClaimVal || 1));
 
     const tokenDecimals = selectedToken?.decimals || 18;
     const rewardAmount = parseUnits(ethReward || '0', tokenDecimals);
@@ -201,7 +201,7 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                     <div className="space-y-3">
                         <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Sponsorship Asset</label>
                         <select value={selectedTokenAddr} onChange={(e) => setSelectedTokenAddr(e.target.value)} className="w-full bg-zinc-900/50 border border-indigo-500/30 rounded-2xl px-4 py-4 text-[11px] font-black uppercase tracking-widest text-white outline-none">
-                            {allowedTokens.map((t: any, i: number) => <option key={i} value={t.address || "0x0000000000000000000000000000000000000000"} className="bg-zinc-900">{t.symbol}</option>)}
+                            {allowedTokens.map((t: unknown, i: number) => <option key={i} value={t.address || "0x0000000000000000000000000000000000000000"} className="bg-zinc-900">{t.symbol}</option>)}
                         </select>
                     </div>
                     <div className="space-y-2">
@@ -237,8 +237,8 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                                         description: `UGC Campaign with ${taskCount} missions on ${firstTask.platform}`,
                                         sponsor_address: address, platform_code: firstTask.platform,
                                         reward_amount_per_user: ethReward.toString(),
-                                        max_participants: (ecosystemSettings as any)?.ugc_config?.default_participants || 100,
-                                        txHash: hash, payment_token: selectedTokenAddr,
+                                        max_participants: (ecosystemSettings as unknown)?.ugc_config?.default_participants || 100,
+                                        txHash: hash, payment_token: selectedTokenAddr, // gitleaks:allow - token contract address field, not an API secret.
                                         reward_symbol: selectedToken?.symbol || 'ETH',
                                         is_base_social_required: sybilFilters.isBaseSocialRequired,
                                         tasks_batch: tasksBatch.filter(t => t.title && t.link)

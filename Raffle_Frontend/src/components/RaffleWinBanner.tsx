@@ -2,11 +2,10 @@ import { Trophy, ArrowRight, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnclaimedRaffleWins } from '../hooks/useUnclaimedRaffleWins';
-import { formatEther } from 'viem';
 
 /**
  * RaffleWinBanner
- * 
+ *
  * Persistent banner shown at the top of the app when user has unclaimed raffle prizes.
  * Dismissible per session but reappears on next visit if still unclaimed.
  */
@@ -23,7 +22,7 @@ export function RaffleWinBanner() {
     return (
         <div className="w-full bg-gradient-to-r from-emerald-600/20 via-emerald-500/10 to-emerald-600/20 border-b border-emerald-500/30 backdrop-blur-xl relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgxNiwxODUsMTI5LDAuMSkiLz48L3N2Zz4=')] opacity-50" />
-            
+
             <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 animate-pulse">

@@ -13,8 +13,8 @@ interface PointSetting {
 interface PointSettingsSectionProps {
     pointSettings: PointSetting[];
     onAddActivity: () => void;
-    onRemoveActivity: (id: string) => void;
-    onChange: (id: string, field: string, value: any) => void;
+    onRemoveActivity: (_id: string) => void;
+    onChange: (_id: string, _field: string, _value: unknown) => void;
     onSave: () => void;
     saving: boolean;
 }

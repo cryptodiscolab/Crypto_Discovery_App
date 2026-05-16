@@ -1,6 +1,6 @@
 /**
  * 💹 Nexus Hybrid Economy Utilities (v3.41.2)
- * 
+ *
  * Mirror of Supabase RPC: fn_increment_xp
  * Enforces:
  * 1. Logarithmic Global Scaling (Macro-Inflation Control)
@@ -21,7 +21,7 @@ export interface UserStats {
     points: number;
     currentTier: number;
     lastActivity: number;
-    [key: string]: any; // Allow other properties
+    [key: string]: unknown; // Allow other properties
 }
 
 export interface MultiplierResult {
@@ -53,7 +53,7 @@ export function calculateMultipliers(userStats: UserStats | null, totalUsers: nu
     const now = Math.floor(Date.now() / 1000);
     const lastActivity = userStats.lastActivity || 0;
     const isActiveRecently = (now - lastActivity) <= (48 * 3600);
-    
+
     const underdogMult = (isUnderdog && isActiveRecently) ? UNDERDOG_BONUS : 1.0;
 
     const total = globalMult * individualMult * underdogMult;

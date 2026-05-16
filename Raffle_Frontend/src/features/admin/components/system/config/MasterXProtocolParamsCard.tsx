@@ -6,9 +6,9 @@ import { MasterParams } from '../../../../types/admin';
 
 interface MasterXProtocolParamsCardProps {
     masterParams: MasterParams;
-    setMasterParams: (p: MasterParams) => void;
+    setMasterParams: (_p: MasterParams) => void;
     isSaving: boolean;
-    setIsSaving: (s: boolean) => void;
+    setIsSaving: (_s: boolean) => void;
 }
 
 export function MasterXProtocolParamsCard({
@@ -33,10 +33,10 @@ export function MasterXProtocolParamsCard({
                 ],
             });
             toast.success("MasterX Parameters Updated!", { id: tid });
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 

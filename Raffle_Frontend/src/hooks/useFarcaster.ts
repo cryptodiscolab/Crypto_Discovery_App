@@ -1,4 +1,3 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSignMessage } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
@@ -8,7 +7,7 @@ import { cleanWallet } from '../utils/cleanWallet';
  * Adheres to Anti-Riba and hardware optimization principles.
  */
 export const useFarcaster = () => {
-    const [profileData, setProfileData] = useState<any>(null);
+    const [profileData, setProfileData] = useState<unknown>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { signMessageAsync } = useSignMessage();
@@ -132,13 +131,13 @@ export const useFarcaster = () => {
 
             // 4. SKIP Client-Side Upsert (API already handled it via Service Role)
             // This prevents RLS 42501 errors and double-writes.
-            
+
 
             setProfileData(finalProfile);
             localStorage.setItem(storageKey, JSON.stringify(finalProfile));
             return finalProfile;
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err.name === 'AbortError') return null;
             setError(err.message || "Unknown error");
             console.error("[Sync Hook] Process Error:", err);

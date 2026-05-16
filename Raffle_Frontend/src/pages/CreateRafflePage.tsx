@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Gift, Ticket, Calendar, Calculator, Info, CheckCircle2, ArrowRight, Loader2, DollarSign, Image as ImageIcon, Link as LinkIcon, Twitter, Tag, Shield, Clock, ChevronDown, Lock, Trophy } from 'lucide-react';
 import { useAccount, useReadContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { useRaffle } from '../hooks/useRaffle';
@@ -8,8 +7,9 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI, WETH_ADDRESS } from '../lib/contracts';
 import { usePriceOracle } from '../hooks/usePriceOracle';
+import { ArrowRight, Calculator, CheckCircle2, ChevronDown, Clock, Gift, ImageIcon, Info, LinkIcon, Loader2, Lock, Shield, Tag, Twitter } from 'lucide-react';
 
-const RafflePreview = ({ data }: { data: any }) => {
+const RafflePreview = ({ data }: { data: unknown }) => {
     return (
         <div className="glass-card overflow-hidden border-white/5 bg-slate-900/40 group">
             <div className="relative aspect-video bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -72,7 +72,7 @@ export function CreateRafflePage() {
 
     // Feature Flags Check
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
-    const isUgcFeatureEnabled = !isMainnet || (ecosystemSettings as any)?.active_features?.ugc_payment === true;
+    const isUgcFeatureEnabled = !isMainnet || (ecosystemSettings as unknown)?.active_features?.ugc_payment === true;
 
     const { data: globalTicketPrice } = useReadContract({
         address: CONTRACTS.MASTER_X,
@@ -173,7 +173,7 @@ export function CreateRafflePage() {
 
             // Upload to IPFS via backend API (Pinata JWT never exposed to client)
             let metadataURI = '';
-            
+
             const res = await fetch("/api/pin-metadata", {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
@@ -182,7 +182,7 @@ export function CreateRafflePage() {
                     name: `Raffle_${formData.title.replace(/\s+/g, '_')}.json`
                 })
             });
-            
+
             if (res.ok) {
                 const data = await res.json();
                 metadataURI = data.uri;
@@ -207,7 +207,7 @@ export function CreateRafflePage() {
             });
             toast.success("Raffle Event Sponsored! 🎲", { id: tid });
             navigate('/raffles');
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.shortMessage || err.message || "Creation failed", { id: tid });
         } finally {
             setIsSubmitting(false);

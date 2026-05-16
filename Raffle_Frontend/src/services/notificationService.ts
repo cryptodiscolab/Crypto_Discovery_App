@@ -41,7 +41,7 @@ export const NotificationService = {
 
             return true;
         } catch (error) {
-            console.error('[NotificationService] Fetch error:', (error as any).message);
+            console.error('[NotificationService] Fetch error:', (error as unknown).message);
             return false;
         }
     },
@@ -76,7 +76,7 @@ export const NotificationService = {
 
             return true;
         } catch (error) {
-            console.error('[NotificationService] Fetch error:', (error as any).message);
+            console.error('[NotificationService] Fetch error:', (error as unknown).message);
             return false;
         }
     },
@@ -85,9 +85,9 @@ export const NotificationService = {
      * Cek deadline reward dan trigger notifikasi jika diperlukan.
      * Logika ini berjalan di client — hanya memeriksa, tidak kirim langsung ke Neynar.
      */
-    checkDeadlinesAndNotify(unclaimedRewards: any[]) {
+    checkDeadlinesAndNotify(unclaimedRewards: unknown[]) {
         const now = Date.now();
-        unclaimedRewards.forEach((reward: any) => {
+        unclaimedRewards.forEach((reward: unknown) => {
             if (!reward.isClaimed && reward.deadline) {
                 const timeLeft = reward.deadline - now;
                 // 1 jam sebelum deadline: trigger notification via server

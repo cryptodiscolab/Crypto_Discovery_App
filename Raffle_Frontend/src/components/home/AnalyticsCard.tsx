@@ -1,8 +1,8 @@
-import { TrendingUp, Gift, Sparkles } from 'lucide-react';
 import { GridCard } from './GridCard';
 import { useAccount } from 'wagmi';
 import { usePoints } from '../../shared/context/PointsContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { Gift, TrendingUp } from 'lucide-react';
 
 export function AnalyticsCard() {
     const { isConnected } = useAccount();

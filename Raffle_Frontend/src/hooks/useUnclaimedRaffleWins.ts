@@ -14,7 +14,7 @@ interface UnclaimedWin {
 
 /**
  * useUnclaimedRaffleWins
- * 
+ *
  * Polls finalized raffles to check if the connected user has unclaimed prizes.
  * Shows a toast notification on discovery and exposes the list for UI banners.
  */
@@ -28,10 +28,10 @@ export function useUnclaimedRaffleWins() {
 
     const checkForWins = useCallback(async () => {
         if (!address || !isConnected || !RAFFLE_ADDRESS || !publicClient) return;
-        
+
         // Throttle: don't check more than once per 2 minutes
         if (Date.now() - lastCheckedRef.current < 120000) return;
-        
+
         setIsChecking(true);
         try {
             // 1. Get all finalized raffles from DB
@@ -50,7 +50,7 @@ export function useUnclaimedRaffleWins() {
             // 2. Check which ones the user already claimed (from user_task_claims)
             const raffleIds = finalizedRaffles.map((r: { id: number }) => r.id);
             const claimTaskIds = raffleIds.map((id: number) => `raffle_win_${id}`);
-            
+
             const { data: existingClaims } = await supabase
                 .from('user_task_claims')
                 .select('task_id')
@@ -78,19 +78,19 @@ export function useUnclaimedRaffleWins() {
                 try {
                     const result = await publicClient.readContract({
                         address: RAFFLE_ADDRESS,
-                        abi: ABIS.RAFFLE as any,
+                        abi: ABIS.RAFFLE as unknown,
                         functionName: 'getRaffleInfo',
                         args: [BigInt(raffle.id)]
                     });
 
                     if (!result) continue;
-                    
-                    const raffleData = result as any;
+
+                    const raffleData = result as unknown;
                     const winners: string[] = raffleData.winners || raffleData[6] || [];
                     const prizePerWinner = raffleData.prizePerWinner || raffleData[14] || 0n;
-                    
+
                     const isWinner = winners.some(
-                        (w: string) => w.toLowerCase() === address.toLowerCase() && 
+                        (w: string) => w.toLowerCase() === address.toLowerCase() &&
                         w !== '0x0000000000000000000000000000000000000000'
                     );
 
@@ -100,7 +100,7 @@ export function useUnclaimedRaffleWins() {
                         try {
                             const claimed = await publicClient.readContract({
                                 address: RAFFLE_ADDRESS,
-                                abi: ABIS.RAFFLE as any,
+                                abi: ABIS.RAFFLE as unknown,
                                 functionName: 'hasClaimedPrize',
                                 args: [BigInt(raffle.id), address]
                             });
@@ -130,7 +130,7 @@ export function useUnclaimedRaffleWins() {
                     const prizeETH = Number(win.prizePerWinner) / 1e18;
                     toast(
                         `🏆 You won ${win.title ? `"${win.title}"` : `Raffle #${win.raffleId}`}! Claim your ${prizeETH.toFixed(4)} ETH prize!`,
-                        { 
+                        {
                             duration: 12000,
                             icon: '🎉',
                             style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(16,185,129,0.4)' }
@@ -155,7 +155,7 @@ export function useUnclaimedRaffleWins() {
                                 const prizeETH = Number(win.prizePerWinner) / 1e18;
                                 fetch('/api/notify', {
                                     method: 'POST',
-                                    headers: { 
+                                    headers: {
                                         'content-type': 'application/json'
                                     },
                                     body: JSON.stringify({
@@ -186,7 +186,7 @@ export function useUnclaimedRaffleWins() {
 
         // Initial check after 3 seconds (let wallet connect settle)
         const initialTimeout = setTimeout(checkForWins, 3000);
-        
+
         // Poll every 5 minutes
         const interval = setInterval(checkForWins, 5 * 60 * 1000);
 

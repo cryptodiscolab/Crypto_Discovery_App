@@ -9,7 +9,7 @@ import {
   TrendingUp,
   Timer as TimerIcon,
   CheckCircle,
-  DollarSign,
+  _DollarSign,
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { usePoints } from '../shared/context/PointsContext';
@@ -36,7 +36,7 @@ import { useFarcaster } from '../shared/context/FarcasterContext';
 
 export function HomePage() {
   const { isConnected, address } = useAccount();
-  const { userPoints, unclaimedRewards } = usePoints();
+  const { userPoints, _unclaimedRewards } = usePoints();
   const { totalPoolBalance } = useSBT();
   const { isFrame, frameUser, client } = useFarcaster();
   const {
@@ -114,7 +114,7 @@ export function HomePage() {
         </div>
 
         {/* ── Announcement Banner ───────────────────────────────────────── */}
-        <AnnouncementBanner announcement={announcement as any} />
+        <AnnouncementBanner announcement={announcement as unknown} />
 
         {/* ── Pool Widget ──────────────────────────────────────────────────── */}
         {/* Minimalist: bg-zinc-900, tanpa border warna, tanpa glow overlay berlapis */}
@@ -182,7 +182,7 @@ export function HomePage() {
               .filter(card => card.visible !== false)
               .map((card, index) => {
                 const isCustomImage = card.icon && typeof card.icon === 'string' && card.icon.startsWith('http');
-                const IconComponent = (iconMap as any)[card.icon] || Sparkles;
+                const IconComponent = (iconMap as unknown)[card.icon] || Sparkles;
 
                 return (
                   <Link key={index} to={card.link || '/'} className="group">

@@ -1,11 +1,10 @@
-import { useState, useMemo } from 'react';
-import { Trophy, Ticket, ArrowRight, Timer, RefreshCw, Zap, Gift, ExternalLink, Loader2, Share2, Clock, Hash, ShieldCheck } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
 import { useRaffleList } from '../features/raffle/hooks/useRaffleQueries';
 import { GaslessBadge } from '../components/GaslessBadge';
 import { SwapModal } from '../components/SwapModal';
 import { RaffleWinnersSection } from '../components/home/RaffleWinnersSection';
 import { RaffleRow } from '../features/raffle/components/RaffleRow';
+import { Gift, Loader2, Ticket } from 'lucide-react';
+import { Link } from 'react-router-dom';
 export function RafflesPage() {
   const [filter, setFilter] = useState('all');
   const [isSwapOpen, setIsSwapOpen] = useState(false);
@@ -29,7 +28,7 @@ export function RafflesPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => setIsSwapOpen(true)}
                   className="px-4 py-2 rounded-xl bg-indigo-600/10 border border-indigo-500/30 text-indigo-400 label-native hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
                 >

@@ -8,18 +8,18 @@ import { EconShares, TierWeights } from '../../../../types/admin';
 
 interface MasterXDistributionCardProps {
     econShares: EconShares;
-    setEconShares: (s: EconShares) => void;
+    setEconShares: (_s: EconShares) => void;
     tierWeights: TierWeights;
-    setTierWeights: (w: TierWeights) => void;
+    setTierWeights: (_w: TierWeights) => void;
     drift: boolean;
     isSaving: boolean;
-    setIsSaving: (s: boolean) => void;
+    setIsSaving: (_s: boolean) => void;
 }
 
-export function MasterXDistributionCard({ 
-    econShares, setEconShares, 
-    tierWeights, setTierWeights, 
-    drift, isSaving, setIsSaving 
+export function MasterXDistributionCard({
+    econShares, setEconShares,
+    tierWeights, setTierWeights,
+    drift, isSaving, setIsSaving
 }: MasterXDistributionCardProps) {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
@@ -36,10 +36,10 @@ export function MasterXDistributionCard({
                 args: [BigInt(econShares.owner), BigInt(econShares.ops), BigInt(econShares.treasury), BigInt(econShares.sbt)],
             });
             toast.success("Revenue Shares Updated!", { id: tid });
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -72,7 +72,7 @@ export function MasterXDistributionCard({
             });
 
             toast.success('Weights updated on-chain & in DB!', { id: tid });
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.message, { id: tid });
         }
     };

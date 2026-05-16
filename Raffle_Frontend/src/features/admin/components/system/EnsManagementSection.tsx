@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { UserCheck, CheckCircle, Globe } from 'lucide-react';
 
 export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, saving }: {
-    eligibleUsers: any[];
-    issuedSubnames: any[];
-    onIssue: (user: any, label: string) => void;
+    eligibleUsers: unknown[];
+    issuedSubnames: unknown[];
+    onIssue: (_user: unknown, _label: string) => void;
     saving: boolean;
 }) {
     const [labelMap, setLabelMap] = useState<Record<string, string>>({});
 
-    const handleLabelChange = (fid: any, value: string) => {
+    const handleLabelChange = (fid: unknown, value: string) => {
         setLabelMap(prev => ({ ...prev, [fid]: value }));
     };
 
@@ -21,7 +21,7 @@ export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, s
                     {eligibleUsers.length === 0 ? (
                         <p className="text-slate-500 italic text-center py-10">No eligible candidates found.</p>
                     ) : (
-                        eligibleUsers.map((user: any) => (
+                        eligibleUsers.map((user: unknown) => (
                             <div key={user.fid} className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl flex flex-col gap-3 group hover:border-indigo-500/30 transition-all">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-mono text-indigo-400 py-1 px-2 bg-indigo-500/10 rounded-lg">FID: {user.fid}</span>
@@ -63,7 +63,7 @@ export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, s
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {issuedSubnames.map((item: any) => (
+                                {issuedSubnames.map((item: unknown) => (
                                     <tr key={item.id} className="hover:bg-white/[0.02]">
                                         <td className="px-4 py-4">
                                             <p className="text-xs font-bold text-white">{item.full_name}</p>

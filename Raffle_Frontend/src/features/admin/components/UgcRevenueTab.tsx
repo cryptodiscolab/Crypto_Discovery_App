@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Landmark, CheckCircle, Copy, RefreshCw, AlertTriangle, ExternalLink, DollarSign, Wallet } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import toast from 'react-hot-toast';
 import { CONTRACTS } from '../../../lib/contracts';
+import { AlertTriangle, Copy, DollarSign, Landmark, RefreshCw } from 'lucide-react';
 
 interface RevenueItem {
     id: string | number;
@@ -32,8 +32,8 @@ export function UgcRevenueTab() {
             const response = await fetch('/api/admin-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'GET_UGC_REVENUE', 
+                body: JSON.stringify({
+                    action: 'GET_UGC_REVENUE',
                     wallet_address: address,
                     signature,
                     message
@@ -43,16 +43,16 @@ export function UgcRevenueTab() {
             if (result.success) {
                 const data = result.data || [];
                 setRevenueData(data);
-                
-                const pending = data.filter((r: any) => !r.is_revenue_allocated);
+
+                const pending = data.filter((r: unknown) => !r.is_revenue_allocated);
                 const totals: Record<string, number> = {};
-                pending.forEach((r: any) => {
+                pending.forEach((r: unknown) => {
                     const symbol = r.reward_symbol || 'USDC';
                     totals[symbol] = (totals[symbol] || 0) + parseFloat(String(r.sbt_share_amount || 0));
                 });
                 setStats({ totals, count: pending.length });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Fetch revenue failed:', error);
             toast.error(error.message || "Failed to load revenue tracking");
         } finally {
@@ -74,8 +74,8 @@ export function UgcRevenueTab() {
             const response = await fetch('/api/admin-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'MARK_REVENUE_ALLOCATED', 
+                body: JSON.stringify({
+                    action: 'MARK_REVENUE_ALLOCATED',
                     payload: { mission_id: id },
                     wallet_address: address,
                     signature,
@@ -89,7 +89,7 @@ export function UgcRevenueTab() {
             } else {
                 throw new Error(result.error || "Failed to update status");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Allocation marking failed:', error);
             toast.error(error.message || "Failed to mark as allocated", { id: tid });
         }
@@ -126,7 +126,7 @@ export function UgcRevenueTab() {
                         ) : (
                             Object.entries(stats.totals).map(([symbol, amount]) => (
                                 <h3 key={symbol} className="text-3xl font-black text-white">
-                                    {amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} 
+                                    {amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
                                     <span className="text-sm font-bold text-slate-500 ml-1">{symbol}</span>
                                 </h3>
                             ))
@@ -142,8 +142,8 @@ export function UgcRevenueTab() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <p className="admin-label !mb-0 !text-[11px]">1. Destination (MasterX)</p>
-                            <button 
-                                onClick={() => copyToClipboard(CONTRACTS.MASTER_X as any, 'MasterX Address')}
+                            <button
+                                onClick={() => copyToClipboard(CONTRACTS.MASTER_X as unknown, 'MasterX Address')}
                                 className="w-full flex items-center justify-between px-3 py-2 bg-black/40 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group"
                             >
                                 <span className="text-[11px] font-mono text-slate-300 truncate">{CONTRACTS.MASTER_X}</span>
@@ -154,7 +154,7 @@ export function UgcRevenueTab() {
                             <p className="admin-label !mb-0 !text-[11px]">2. Batch Amount</p>
                             <div className="space-y-1">
                                 {Object.entries(stats.totals).map(([symbol, amount]) => (
-                                    <button 
+                                    <button
                                         key={symbol}
                                         onClick={() => copyToClipboard(amount.toString(), `Amount (${symbol})`)}
                                         className="w-full flex items-center justify-between px-3 py-2 bg-black/40 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group"
@@ -171,13 +171,13 @@ export function UgcRevenueTab() {
 
             {/* Tab Filters */}
             <div className="flex items-center gap-2 mb-4">
-                <button 
+                <button
                     onClick={() => setFilterTab('PENDING')}
                     className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${filterTab === 'PENDING' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}
                 >
                     Pending
                 </button>
-                <button 
+                <button
                     onClick={() => setFilterTab('FUNDED')}
                     className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${filterTab === 'FUNDED' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}
                 >
@@ -219,7 +219,7 @@ export function UgcRevenueTab() {
                                         <td className="px-6 py-4 text-xs font-mono text-slate-300">
                                             {mission.listing_fee ? (
                                                 <span className="flex items-center gap-1">
-                                                    {parseFloat(String(mission.listing_fee)).toFixed(4)} 
+                                                    {parseFloat(String(mission.listing_fee)).toFixed(4)}
                                                     <span className="text-[10px] text-slate-500 font-bold">{mission.reward_symbol || 'ETH'}</span>
                                                 </span>
                                             ) : (
@@ -238,7 +238,7 @@ export function UgcRevenueTab() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             {!mission.is_revenue_allocated && (
-                                                <button 
+                                                <button
                                                     onClick={() => handleMarkAllocated(mission.id)}
                                                     className="btn-native bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white !py-1.5 !px-3 !text-[11px]"
                                                 >

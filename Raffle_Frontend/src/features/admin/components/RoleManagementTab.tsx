@@ -16,7 +16,7 @@ export function RoleManagementTab() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { grantOperator, revokeOperator, showSuccessToast, refetchAll, isAdmin, isLoading: loadingCMS } = useCMS();
-    const { grantRole, revokeRole } = useDailyAppAdmin();
+    const { grantRole, _revokeRole } = useDailyAppAdmin();
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
     const [verifierAddress, setVerifierAddress] = useState(import.meta.env.VITE_VERIFIER_ADDRESS || '0x52260c30697674a7C837FEB2af21bBf3606795C8');
@@ -106,7 +106,7 @@ export function RoleManagementTab() {
             refetchAll();
         } catch (e: unknown) {
             console.error(e);
-            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Transaction failed", { id: tid });
+            toast.error(e instanceof Error ? (e as unknown).shortMessage || e.message : "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -151,7 +151,7 @@ export function RoleManagementTab() {
             refetchAll();
         } catch (e: unknown) {
             console.error(e);
-            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Transaction failed", { id: tid });
+            toast.error(e instanceof Error ? (e as unknown).shortMessage || e.message : "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }

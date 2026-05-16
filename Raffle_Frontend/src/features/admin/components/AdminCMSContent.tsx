@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Database, Eye, EyeOff, CheckCircle, Edit3, AlertTriangle, Save, RefreshCw, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Database, Edit3, Eye, EyeOff, RefreshCw, Save, Trash2, Upload, XCircle } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { useCMS } from '../../../hooks/useCMS';
 import { supabase } from '../../../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { Upload, ImageIcon, Trash2 } from 'lucide-react';
 
 interface FeatureCard {
     id: number;
@@ -84,7 +83,7 @@ export default function AdminCMSContent() {
         setIsSaving(true);
         const tid = toast.loading("Saving feature cards to blockchain...");
         try {
-            const hash = await updateFeatureCards(cards);
+            const _hash = await updateFeatureCards(cards);
             toast.success(
                 `Feature Cards Updated! View on BaseScan`,
                 { id: tid, duration: 6000 }
@@ -92,7 +91,7 @@ export default function AdminCMSContent() {
             refetchAll();
         } catch (e: unknown) {
             console.error(e);
-            toast.error(e instanceof Error ? (e as any).shortMessage || e.message : "Transaction failed", { id: tid });
+            toast.error(e instanceof Error ? (e as unknown).shortMessage || e.message : "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -122,7 +121,7 @@ export default function AdminCMSContent() {
             const filePath = `cms/feature-cards/${fileName}`;
 
             // Upload to Supabase Storage (Assumes 'assets' bucket exists)
-            const { data, error: uploadError } = await supabase.storage
+            const { _data, error: uploadError } = await supabase.storage
                 .from('assets')
                 .upload(filePath, file);
 

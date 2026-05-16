@@ -25,7 +25,7 @@ interface UserProfile {
 interface MobileUserCardProps {
     user: UserProfile;
     sybilDetected: boolean;
-    onOverride: (addr: string, tier: number) => void;
+    onOverride: (_addr: string, _tier: number) => void;
 }
 
 /**

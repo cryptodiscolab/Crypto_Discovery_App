@@ -1,6 +1,6 @@
 # Session Report — CTO Audit Fixes & Feature Implementation
-**Date:** 2026-05-16  
-**Branch:** `main`  
+**Date:** 2026-05-16
+**Branch:** `main`
 **Commits:** 10 commits pushed this session
 
 ---
@@ -107,13 +107,20 @@ Continued from the CTO End-to-End Audit. This session focused on:
 
 ## Remaining Ops Actions
 
-| # | Action | Detail |
-|---|---|---|
-| 1 | **Set WALLET_BOT_SIGNER** | Must be MasterX owner private key on Vercel env vars for auto-sync to work |
-| 2 | **Verify MasterX auto-sync** | After setting env var, test an SBT upgrade and check if MasterX tier updates |
-| 3 | **Run admin sync-tiers** | One-time batch sync for existing users whose MasterX tier is stale |
-| 4 | **Apply SQL migrations** | `pending_sync_jobs`, `system_error_logs`, `rls_hardening` if not yet applied |
-| 5 | **Browser E2E** | Manual QA with funded test wallet for all high-risk flows |
+| # | Action | Detail | Status |
+|---|---|---|---|
+| 1 | **Set WALLET_BOT_SIGNER** | Must be MasterX owner private key on Vercel env vars for auto-sync to work | ✅ Completed via Vercel CLI |
+| 2 | **Verify MasterX auto-sync** | After setting env var, test an SBT upgrade and check if MasterX tier updates | ⏳ Pending Manual QA |
+| 3 | **Run admin sync-tiers** | One-time batch sync for existing users whose MasterX tier is stale | ✅ Completed (`admin_sync_masterx_tiers.cjs`) |
+| 4 | **Apply SQL migrations** | `pending_sync_jobs`, `system_error_logs`, `rls_hardening` if not yet applied | ✅ Verified Applied |
+| 5 | **Browser E2E** | Manual QA with funded test wallet for all high-risk flows | ⏳ Pending |
+
+---
+
+## 🚀 Post-Audit Actions Completed (Agent Update)
+- **Database Reconciliation**: Re-computed `fn_compute_leaderboard_tiers` and successfully recovered 100 XP for pending sync job #1 (`0x5226...95c8`).
+- **MasterX Batch Sync**: Created and executed `admin_sync_masterx_tiers.cjs` to force-sync tiers to MasterX. 4 users successfully updated on-chain (TX: `0x<redacted_tx_hash>`).
+- **Vercel Hardening**: Configured `WALLET_BOT_SIGNER` on the production environment via Vercel CLI and triggered a production redeploy (`dpl_ADCdmd7nH5W5iCeA2DWrYkVdiNpg`).
 
 ---
 

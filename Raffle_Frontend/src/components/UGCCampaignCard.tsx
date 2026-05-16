@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import toast from 'react-hot-toast';
-import { CheckCircle2, Loader2, Trophy, Share2, X, Zap, ExternalLink, Twitter, MessageCircle, Lock, ShieldCheck } from 'lucide-react';
 import { useVerification } from '../hooks/useVerification';
 import { useFarcaster } from '../hooks/useFarcaster';
 import { APP_CONFIG } from '../lib/contracts';
+import { CheckCircle2, ExternalLink, Loader2, Lock, MessageCircle, ShieldCheck, Trophy, Twitter, X, Zap } from 'lucide-react';
 
 // Platform display icon (text-based since we avoid external deps)
 const PLATFORM_ICON = {
@@ -154,11 +154,11 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     const [showModal, setShowModal] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
     const [claimed, setClaimed] = useState(false);
-    const [claimResult, setClaimResult] = useState<any>(null);
+    const [claimResult, setClaimResult] = useState<unknown>(null);
     const [localStarted, setLocalStarted] = useState<Record<string | number, boolean>>({});
 
     // Identity Verification Status (v3.42.1)
-    const isBaseVerified = useMemo(() => (profileData as any)?.is_base_social_verified === true, [profileData]);
+    const isBaseVerified = useMemo(() => (profileData as unknown)?.is_base_social_verified === true, [profileData]);
 
     const totalTasks = subTasks.length;
     const completedCount = subTasks.filter(t => userClaimedTaskIds.has(String(t.id))).length;
@@ -183,7 +183,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
 
     const handleVerifySubTask = async (task: UGCSubTask) => {
         if (!address) return toast.error("Connect wallet first.");
-        const success = await verifyTask(task, address, task.id, (profileData as any)?.fid);
+        const success = await verifyTask(task, address, task.id, (profileData as unknown)?.fid);
         if (success && refetchStats) refetchStats();
     };
 
@@ -198,23 +198,23 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
 
             const timestamp = new Date().toISOString();
             const message = `Claim UGC Campaign: ${campaign.title}\nID: ${campaign.id}\nWallet: ${address.toLowerCase()}\nTime: ${timestamp}`;
-            
+
             // Re-use unified verification logic for the campaign claim too
             const response = await fetch('/api/tasks-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'claim-ugc-campaign', 
-                    wallet_address: address, 
+                body: JSON.stringify({
+                    action: 'claim-ugc-campaign',
+                    wallet_address: address,
                     campaign_id: campaign.id,
                     signature: await signMessageAsync({ message }),
-                    message 
+                    message
                 })
             });
-            
+
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Claim failed");
-            
+
             if (data.already_claimed) {
                 toast.success('Already claimed!', { id: tid });
                 setClaimed(true);
@@ -223,7 +223,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
             setClaimResult(data);
             setClaimed(true);
             toast.success(`🎉 +${data.xp} XP & ${data.usdc_reward} ${data.reward_symbol} claimed!`, { id: tid, duration: 6000 });
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.message || 'Claim failed.', { id: tid });
         } finally {
             setIsClaiming(false);
@@ -271,7 +271,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                 <div className="px-6 pb-4 space-y-2 mt-2">
                     {subTasks.map((task, i) => {
                         const isDone = userClaimedTaskIds.has(String(task.id));
-                        const lastTime = (lastActionTime as any)[task.id] || 0;
+                        const lastTime = (lastActionTime as unknown)[task.id] || 0;
                         const diff = Math.floor((Date.now() - lastTime) / 1000);
                         const isCountingDown = lastTime > 0 && diff < APP_CONFIG.SOCIAL_INDEX_DELAY_SEC;
                         const timeLeft = Math.max(0, APP_CONFIG.SOCIAL_INDEX_DELAY_SEC - diff);

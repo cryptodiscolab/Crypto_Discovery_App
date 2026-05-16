@@ -4,26 +4,26 @@ import { formatUnits } from 'viem';
 
 interface QuickSponsorPortalSectionProps {
     sponsorTitle: string;
-    onSponsorTitleChange: (val: string) => void;
+    onSponsorTitleChange: (_val: string) => void;
     sponsorLink: string;
-    onSponsorLinkChange: (val: string) => void;
+    onSponsorLinkChange: (_val: string) => void;
     sponsorEmail: string;
-    onSponsorEmailChange: (val: string) => void;
+    onSponsorEmailChange: (_val: string) => void;
     sponsorTotalClaims: string;
-    onSponsorTotalClaimsChange: (val: string) => void;
+    onSponsorTotalClaimsChange: (_val: string) => void;
     sponsorRewardPerUser: string;
-    onSponsorRewardPerUserChange: (val: string) => void;
+    onSponsorRewardPerUserChange: (_val: string) => void;
     sponsorIsBaseSocialRequired: boolean;
-    onSponsorIsBaseSocialRequiredChange: (val: boolean) => void;
+    onSponsorIsBaseSocialRequiredChange: (_val: boolean) => void;
     platformFee?: bigint;
     minRewardUSD?: bigint;
     minPoolUSD?: bigint;
     totalPoolUSD: number;
     requiredTokens: bigint;
-    whitelistedTokens: any[];
+    whitelistedTokens: unknown[];
     selectedTokenAddr: string;
-    onTokenChange: (val: string) => void;
-    buildSponsorCall: () => any;
+    onTokenChange: (_val: string) => void;
+    buildSponsorCall: () => unknown;
     handleTxSuccess: () => void;
 }
 
@@ -45,7 +45,7 @@ export function QuickSponsorPortalSection({
     buildSponsorCall,
     handleTxSuccess
 }: QuickSponsorPortalSectionProps) {
-    const selectedToken = whitelistedTokens.find((t: any) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const selectedToken = whitelistedTokens.find((t: unknown) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     return (
         <div className="bg-[#121214] p-5 rounded-2xl border border-white/5 space-y-4 text-left relative overflow-hidden">
             <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
@@ -106,12 +106,12 @@ export function QuickSponsorPortalSection({
                 {/* ASSET SELECTOR */}
                 <div className="space-y-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-[0.2em] px-1">Sponsorship Asset</label>
-                    <select 
-                        value={selectedTokenAddr} 
+                    <select
+                        value={selectedTokenAddr}
                         onChange={e => onTokenChange(e.target.value)}
                         className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500/50"
                     >
-                        {whitelistedTokens.map((t: any, i: number) => (
+                        {whitelistedTokens.map((t: unknown, i: number) => (
                             <option key={i} value={t.address} className="bg-[#121214]">
                                 {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
                             </option>

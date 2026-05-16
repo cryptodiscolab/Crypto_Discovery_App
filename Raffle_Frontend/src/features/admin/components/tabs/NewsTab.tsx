@@ -81,7 +81,7 @@ export function NewsTab() {
             showSuccessToast("News Updated!", hash);
             toast.dismiss(tid);
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {

@@ -107,7 +107,7 @@ export function ModerationCenterTab() {
         setIsRejecting(true);
         const tid = toast.loading("Executing Blockchain Refund...");
         let txHash: `0x${string}` | undefined;
-        
+
         try {
             // 1. Contract Call: cancelRaffle
             txHash = await writeContractAsync({
@@ -149,7 +149,7 @@ export function ModerationCenterTab() {
             }
         } catch (error: unknown) {
             console.error("Rejection Error:", error);
-            const errMsg = error instanceof Error ? ((error as any).shortMessage || error.message) : "Rejection failed";
+            const errMsg = error instanceof Error ? ((error as unknown).shortMessage || error.message) : "Rejection failed";
             if (txHash) {
                 recordPendingSync({
                     actionType: 'raffle_reject',
@@ -346,13 +346,13 @@ export function ModerationCenterTab() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button 
+                                        <button
                                             onClick={() => handleApproveRaffle(raffle.id)}
                                             className="btn-native bg-emerald-600 hover:bg-emerald-500 text-white !py-2.5"
                                         >
                                             <CheckCircle className="w-3.5 h-3.5" /> Approve
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => handleRejectRaffle(raffle)}
                                             className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all"
                                             title="Reject & Refund"
@@ -402,7 +402,7 @@ export function ModerationCenterTab() {
                                                 Users: <span className="text-slate-300">{mission.max_participants}</span>
                                             </p>
                                         </div>
-                                        
+
                                         <div className="mt-3 flex flex-wrap gap-3">
                                             <div className="px-3 py-1.5 bg-white/5 rounded-xl border border-white/5">
                                                 <p className="admin-label !mb-1 !text-[9px]">Sponsor Wallet</p>
@@ -411,7 +411,7 @@ export function ModerationCenterTab() {
                                             {mission.payment_tx_hash && (
                                                 <div className="px-3 py-1.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
                                                     <p className="admin-label !mb-1 !text-[9px] !text-indigo-400">Payment Proof (TX)</p>
-                                                    <a 
+                                                    <a
                                                         href={isMainnet ? `https://basescan.org/tx/${mission.payment_tx_hash}` : `https://sepolia.basescan.org/tx/${mission.payment_tx_hash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
@@ -426,21 +426,21 @@ export function ModerationCenterTab() {
                                     </div>
                                     <div className="flex gap-2">
                                         {!mission.is_verified_payment ? (
-                                            <button 
+                                            <button
                                                 onClick={() => handleVerifyOnchain(mission.id)}
                                                 className="btn-native bg-indigo-600 hover:bg-indigo-500 text-white !py-2.5 shadow-lg shadow-indigo-500/20"
                                             >
                                                 <Shield className="w-3.5 h-3.5" /> Verify Payment
                                             </button>
                                         ) : (
-                                            <button 
+                                            <button
                                                 onClick={() => handleApproveMission(mission.id)}
                                                 className="btn-native bg-emerald-600 hover:bg-emerald-500 text-white !py-2.5 shadow-lg shadow-emerald-500/20"
                                             >
                                                 <CheckCircle className="w-3.5 h-3.5" /> Approve
                                             </button>
                                         )}
-                                        <button 
+                                        <button
                                             onClick={() => handleRejectMission(mission)}
                                             className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all"
                                         >
@@ -458,7 +458,7 @@ export function ModerationCenterTab() {
             {showRejectModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => !isRejecting && setShowRejectModal(false)} />
-                    
+
                     <div className="relative bg-[#1a1a1f] w-full max-w-lg rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                         {/* Header */}
                         <div className="p-8 pb-0 flex items-center justify-between">
@@ -471,7 +471,7 @@ export function ModerationCenterTab() {
                                     <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Moderation Action Required</p>
                                 </div>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setShowRejectModal(false)}
                                 className="p-2 hover:bg-white/5 rounded-xl transition-all"
                                 disabled={isRejecting}
@@ -499,7 +499,7 @@ export function ModerationCenterTab() {
 
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Reason for Rejection</label>
-                                <textarea 
+                                <textarea
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     placeholder="e.g. Inappropriate metadata or spam content..."
@@ -518,14 +518,14 @@ export function ModerationCenterTab() {
 
                         {/* Footer */}
                         <div className="p-8 pt-0 flex gap-3">
-                            <button 
+                            <button
                                 onClick={() => setShowRejectModal(false)}
                                 className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest transition-all"
                                 disabled={isRejecting}
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 onClick={confirmReject}
                                 disabled={isRejecting || !rejectionReason.trim()}
                                 className={`flex-[2] py-4 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${isRejecting || !rejectionReason.trim() ? 'bg-slate-800 text-slate-500' : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20'}`}

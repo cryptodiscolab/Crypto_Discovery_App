@@ -55,7 +55,7 @@ export function Header() {
   }
 
   return (
-    <header 
+    <header
       className="fixed top-0 left-0 right-0 z-[10000] pointer-events-auto bg-[#0B0E14] border-b border-white/[0.05] active:z-[10001]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
@@ -124,7 +124,7 @@ export function Header() {
                 account,
                 chain,
                 openAccountModal,
-                openChainModal,
+                _openChainModal,
                 openConnectModal,
                 authenticationStatus,
                 mounted,

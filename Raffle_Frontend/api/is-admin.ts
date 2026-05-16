@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const { data: profile } = await supabase.from('user_profiles').select('is_admin').eq('wallet_address', clean).maybeSingle();
         return res.status(200).json({ isAdmin: !!profile?.is_admin });
-    } catch (e: any) {
+    } catch (e: unknown) {
         return res.status(200).json({ isAdmin: false, error: e.message });
     }
 }

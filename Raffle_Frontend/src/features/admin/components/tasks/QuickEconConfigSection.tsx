@@ -3,12 +3,12 @@ import { AdminTransactionButton } from '../AdminTransactionButton';
 
 interface QuickEconConfigSectionProps {
     configPlatformFee: string;
-    onConfigPlatformFeeChange: (val: string) => void;
+    onConfigPlatformFeeChange: (_val: string) => void;
     configMinPool: string;
-    onConfigMinPoolChange: (val: string) => void;
+    onConfigMinPoolChange: (_val: string) => void;
     configMinReward: string;
-    onConfigMinRewardChange: (val: string) => void;
-    buildConfigCall: () => any;
+    onConfigMinRewardChange: (_val: string) => void;
+    buildConfigCall: () => unknown;
     handleTxSuccess: () => void;
 }
 

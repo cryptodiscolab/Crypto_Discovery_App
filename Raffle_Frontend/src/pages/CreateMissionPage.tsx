@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { 
-    Zap, Users, DollarSign, Calculator, Info, 
-    CheckCircle2, ArrowRight, Loader2, 
+import {
+    Zap, Users, DollarSign, Calculator, Info,
+    CheckCircle2, ArrowRight, Loader2,
     Link as LinkIcon, Shield, Wallet, ChevronDown, Lock, Clock, AlertCircle, Coins
 } from 'lucide-react';
 import { useAccount, useWriteContract, usePublicClient, useSignMessage, useChainId, useSendTransaction } from 'wagmi';
@@ -128,9 +128,9 @@ export function CreateMissionPage() {
     const [showPortfolio, setShowPortfolio] = useState(false);
 
     // Initial state matching design spec
-    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
+    const [whitelistedTokens, setWhitelistedTokens] = useState<unknown[]>([]);
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
-    
+
     // Fetch prices for all whitelisted tokens
     const tokenAddresses = useMemo(() => whitelistedTokens.map(t => t.address), [whitelistedTokens]);
     const { prices: tokenPrices } = usePriceOracle(tokenAddresses);
@@ -180,7 +180,7 @@ export function CreateMissionPage() {
                 const { data: tokens } = await supabase.from('allowed_tokens').select('*').eq('chain_id', chainId).eq('is_active', true);
                 if (tokens && tokens.length > 0) {
                     setWhitelistedTokens(tokens);
-                    const defaultToken = tokens.find((t: any) => t.symbol === 'USDC') || tokens[0];
+                    const defaultToken = tokens.find((t: unknown) => t.symbol === 'USDC') || tokens[0];
                     setSelectedTokenAddr(defaultToken.address);
                 }
                 fetchCurrentBalance();
@@ -223,17 +223,17 @@ export function CreateMissionPage() {
         const baseListingFeeUsdc = parseFloat(ugcConfig.listing_fee_usdc) || 0;
 
         const rewardPool = rewardPerUser * participants;
-        
+
         // Calculate dynamic listing fee based on token price [v3.63.8]
         // USDC is the baseline (price = 1)
         const isUsdc = selectedToken?.symbol === 'USDC';
-        const priceKey = selectedTokenAddr === '0x0000000000000000000000000000000000000000' 
-            ? '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' 
+        const priceKey = selectedTokenAddr === '0x0000000000000000000000000000000000000000'
+            ? '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
             : selectedTokenAddr.toLowerCase();
-        
+
         const tokenPrice = isUsdc ? 1 : (tokenPrices[priceKey] || 0);
         const isPriceLoading = !isUsdc && tokenPrice === 0;
-        
+
         // If price is loading, we treat the fee as 0 temporarily to avoid UX flicker/insufficient balance alerts
         const listingFeeToken = isPriceLoading ? 0 : (tokenPrice > 0 ? (baseListingFeeUsdc / tokenPrice) : baseListingFeeUsdc);
 
@@ -267,7 +267,7 @@ export function CreateMissionPage() {
         // [v3.63.8] Hardened Budget Validations
         const minRewardUsdc = parseFloat(ugcConfig.min_reward_amount) || 0.1;
         const rewardAmountUsdc = parseFloat(formData.reward_amount_per_user) * (selectedToken?.symbol === 'USDC' ? 1 : (stats.tokenPrice || 1));
-        
+
         if (rewardAmountUsdc < minRewardUsdc) {
             return toast.error(`[Budget Guard] Reward per user must be at least $${minRewardUsdc} USDC equivalent.`);
         }
@@ -283,7 +283,7 @@ export function CreateMissionPage() {
 
         try {
             const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
-            
+
             // 1. Payment (Transfer to Treasury)
             if (isNative) {
                 txHash = await sendTransactionAsync({
@@ -300,7 +300,7 @@ export function CreateMissionPage() {
             }
 
             toast.loading("Verifying transaction on blockchain...", { id: tid });
-            
+
             // Wait for tx confirmation
             if (!publicClient) throw new Error("RPC Client not found");
             if (!txHash) throw new Error("Transaction hash not generated");
@@ -370,8 +370,7 @@ export function CreateMissionPage() {
         } catch (err: unknown) {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : "Operation failed";
-            // @ts-ignore - Handle wagmi shortMessage if present
-            const shortMessage = (err as any).shortMessage;
+            const shortMessage = (err as { shortMessage?: string }).shortMessage;
             // If payment was sent but backend failed, show recovery info
             if (txHash) {
                 recordPendingSync({
@@ -449,7 +448,7 @@ export function CreateMissionPage() {
                             {/* Core Details */}
                             <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-8 rounded-[2.5rem] relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-                                
+
                                 <div className="grid grid-cols-1 gap-6 relative">
                                     <div className="space-y-3">
                                         <label className="label-native text-slate-500 flex items-center gap-2">
@@ -661,7 +660,7 @@ export function CreateMissionPage() {
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
                                             <div className="relative group">
-                                                <select 
+                                                <select
                                                     value={selectedTokenAddr}
                                                     onChange={(e) => setSelectedTokenAddr(e.target.value)}
                                                     className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer pr-12"
@@ -715,8 +714,8 @@ export function CreateMissionPage() {
                                 type="submit"
                                 disabled={isSubmitting || !ugcConfig.is_active}
                                 className={`w-full p-6 rounded-[2.5rem] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all transform active:scale-[0.98] ${
-                                    isSubmitting || !ugcConfig.is_active 
-                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                                    isSubmitting || !ugcConfig.is_active
+                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                                     : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-[0_0_40px_-10px_rgba(79,70,229,0.4)]'
                                 }`}
                             >
@@ -768,7 +767,7 @@ export function CreateMissionPage() {
                                                 <span className="animate-pulse opacity-50">...</span>
                                             ) : (
                                                 stats.listingFee
-                                            )} 
+                                            )}
                                             <span className="text-xs text-slate-500 font-bold ml-1">{selectedToken?.symbol || 'USDC'}</span>
                                         </p>
                                         {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
@@ -792,7 +791,7 @@ export function CreateMissionPage() {
                                                     <p className="text-[9px] font-bold text-amber-400/70 uppercase tracking-tight leading-relaxed">
                                                         Saldo Anda ({formatUnits(tokenBalance, selectedToken?.decimals || 18)} {selectedToken?.symbol || 'USDC'}) tidak cukup untuk membayar total biaya ({stats.totalAmount} {selectedToken?.symbol || 'USDC'}).
                                                     </p>
-                                                    <button 
+                                                    <button
                                                         type="button"
                                                         onClick={() => setIsSwapModalOpen(true)}
                                                         className="w-full mt-2 py-2 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/30 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
@@ -838,7 +837,7 @@ export function CreateMissionPage() {
 
                         {/* [v3.63.9] Wallet Assets Peek */}
                         <div className="space-y-4">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setShowPortfolio(!showPortfolio)}
                                 className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-3xl hover:bg-white/10 transition-all group"

@@ -3,7 +3,6 @@ import { TrendingUp, DollarSign, Activity, ShieldCheck, AlertCircle, RefreshCw }
 import { useAccount, useSignMessage, useReadContract } from 'wagmi';
 import { keccak256, toHex } from 'viem';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../lib/contracts';
-import toast from 'react-hot-toast';
 
 interface EconomyStats {
     totalRevenueUSDC: string | number;
@@ -54,7 +53,7 @@ export function EconomyMetrics() {
     useEffect(() => {
         // We no longer auto-fetch on mount to prevent annoying MetaMask popups
         // when navigating between admin tabs.
-        // fetchStats(); 
+        // fetchStats();
     }, [address]);
 
     return (

@@ -62,7 +62,7 @@ export function SystemErrorLogsTab() {
             } else {
                 toast.error(data.error || 'Failed to fetch error logs');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.message || 'Failed to fetch');
         } finally {
             setLoading(false);

@@ -1,18 +1,17 @@
 import { Database, Landmark, ArrowUpRight } from 'lucide-react';
 import { formatUnits, parseEther } from 'viem';
 import { SAFE_MULTISIG } from '../../../../../lib/contracts';
-import toast from 'react-hot-toast';
 import { PoolFormData } from '../../../../types/admin';
 
 interface PoolTreasuryConfigProps {
     totalPoolBalance: bigint;
     poolFormData: PoolFormData;
-    setPoolFormData: (f: PoolFormData) => void;
+    setPoolFormData: (_f: PoolFormData) => void;
     handleSavePoolSettings: () => Promise<void>;
     handleDistribute: () => Promise<void>;
-    handleWithdrawTreasury: (amount: bigint) => Promise<void>;
+    handleWithdrawTreasury: (_amount: bigint) => Promise<void>;
     withdrawAmount: string;
-    setWithdrawAmount: (a: string) => void;
+    setWithdrawAmount: (_a: string) => void;
     isSaving: boolean;
 }
 

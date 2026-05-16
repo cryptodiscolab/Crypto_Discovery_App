@@ -3,22 +3,22 @@ import { formatUnits, parseUnits } from 'viem';
 
 interface SponsorshipPortalSectionProps {
     sponsorTitle: string;
-    onSponsorTitleChange: (val: string) => void;
+    onSponsorTitleChange: (_val: string) => void;
     sponsorLink: string;
-    onSponsorLinkChange: (val: string) => void;
+    onSponsorLinkChange: (_val: string) => void;
     sponsorEmail: string;
-    onSponsorEmailChange: (val: string) => void;
+    onSponsorEmailChange: (_val: string) => void;
     rewardPerUserUSD: string;
-    onRewardPerUserUSDChange: (val: string) => void;
+    onRewardPerUserUSDChange: (_val: string) => void;
     targetClaims: string;
-    onTargetClaimsChange: (val: string) => void;
+    onTargetClaimsChange: (_val: string) => void;
     isBaseSocialRequired: boolean;
-    onIsBaseSocialRequiredChange: (val: boolean) => void;
+    onIsBaseSocialRequiredChange: (_val: boolean) => void;
     currentTokenPrice?: bigint;
     currentPlatformFee?: bigint;
-    whitelistedTokens: any[];
+    whitelistedTokens: unknown[];
     selectedTokenAddr: string;
-    onTokenChange: (addr: string) => void;
+    onTokenChange: (_addr: string) => void;
     onCreateSponsorship: () => void;
     isSponsorSaving: boolean;
 }
@@ -30,7 +30,7 @@ export function SponsorshipPortalSection({
     rewardPerUserUSD, onRewardPerUserUSDChange,
     targetClaims, onTargetClaimsChange,
     isBaseSocialRequired, onIsBaseSocialRequiredChange,
-    currentTokenPrice,
+    _currentTokenPrice,
     currentPlatformFee,
     whitelistedTokens,
     selectedTokenAddr,
@@ -38,7 +38,7 @@ export function SponsorshipPortalSection({
     onCreateSponsorship,
     isSponsorSaving
 }: SponsorshipPortalSectionProps) {
-    const selectedToken = whitelistedTokens.find((t: any) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const selectedToken = whitelistedTokens.find((t: unknown) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     return (
         <div className="glass-card p-10 bg-emerald-950/5 border border-emerald-500/10 rounded-[3rem] relative overflow-hidden group/main">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/5 blur-[120px] rounded-full -mr-48 -mt-48 transition-all duration-1000 group-hover/main:bg-emerald-600/10" />
@@ -79,12 +79,12 @@ export function SponsorshipPortalSection({
                         {/* ASSET SELECTOR [v3.62.0] */}
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
-                            <select 
-                                value={selectedTokenAddr} 
+                            <select
+                                value={selectedTokenAddr}
                                 onChange={e => onTokenChange(e.target.value)}
                                 className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-white text-sm font-black uppercase tracking-widest focus:border-emerald-500/50 outline-none appearance-none"
                             >
-                                {whitelistedTokens.map((t: any, i: number) => (
+                                {whitelistedTokens.map((t: unknown, i: number) => (
                                     <option key={i} value={t.address} className="bg-zinc-900">
                                         {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
                                     </option>

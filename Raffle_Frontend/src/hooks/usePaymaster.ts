@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
 import { useAccount, useCapabilities, useSendCalls } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
 import { encodeFunctionData } from 'viem';
 import toast from 'react-hot-toast';
 
@@ -31,7 +30,7 @@ export function usePaymaster() {
     // Periksa apakah wallet mendukung paymasterService di chain yang aktif
     const isGaslessSupported = useMemo(() => {
         if (!capabilities || !chainId) return false;
-        const chainCapabilities = (capabilities as any)[chainId];
+        const chainCapabilities = (capabilities as unknown)[chainId];
         if (!chainCapabilities) return false;
         // Wallet EIP-5792: key 'paymasterService' atau 'atomicBatch'
         return !!(
@@ -66,7 +65,7 @@ export function usePaymaster() {
  * @param {Object} contractConfig - { address, abi, functionName, args }
  * @param {string} label - Label untuk toast notification
  */
-export function useGaslessContractCall(contractConfig: any, label = 'Transaction') {
+export function useGaslessContractCall(contractConfig: unknown, label = 'Transaction') {
     const { isGaslessSupported, paymasterCapabilities } = usePaymaster();
     const { sendCallsAsync, isPending, isSuccess, data: callId } = useSendCalls();
 
@@ -76,7 +75,7 @@ export function useGaslessContractCall(contractConfig: any, label = 'Transaction
         }
 
         const args = overrideArgs ?? contractConfig.args ?? [];
-        let value = contractConfig.value ?? undefined;
+        const value = contractConfig.value ?? undefined;
 
         const callData = encodeFunctionData({
             abi: contractConfig.abi,
@@ -107,7 +106,7 @@ export function useGaslessContractCall(contractConfig: any, label = 'Transaction
                 { id: tid }
             );
             return result;
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.shortMessage || err.message || `${label} failed`, { id: tid });
             throw err;
         }

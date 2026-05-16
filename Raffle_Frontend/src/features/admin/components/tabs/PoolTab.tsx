@@ -13,7 +13,7 @@ interface PoolTabProps {
         claimTimestamp?: number;
     };
     onDistribute?: () => void;
-    onUpdateSettings?: (settings: any) => void;
+    onUpdateSettings?: (_settings: unknown) => void;
     onRefetch?: () => void;
 }
 
@@ -69,7 +69,7 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
             toast.success('Tier Weights Synchronized!', { id: tid });
             setIsEditingWeights(false);
             refetchAll();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[PoolTab] setTierWeights error:', err);
             toast.error(err.shortMessage || 'Sync failed. Check owner wallet & gas.', { id: tid });
         } finally {
@@ -119,7 +119,7 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                 { id: tid, duration: 8000 }
             );
             refetchAll();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[PoolTab] distributeRevenue error:', err);
             toast.error(err.shortMessage || 'Distribution failed. Check owner wallet & gas.', { id: tid });
         } finally {
@@ -156,7 +156,7 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                 <div className="flex items-center justify-between mb-4">
                     <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Tier Weight Configuration</p>
                     {isOwner && (
-                        <button 
+                        <button
                             onClick={() => {
                                 if (isEditingWeights) {
                                     handleUpdateWeights();
@@ -183,7 +183,7 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                         <div key={t.name} className="flex flex-col items-center p-3 rounded-xl bg-black/30 border border-white/5">
                             <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">{t.name}</span>
                             {isEditingWeights ? (
-                                <input 
+                                <input
                                     type="number"
                                     value={t.w}
                                     onChange={(e) => setTempWeights(prev => ({ ...prev, [t.key]: Number(e.target.value) }))}

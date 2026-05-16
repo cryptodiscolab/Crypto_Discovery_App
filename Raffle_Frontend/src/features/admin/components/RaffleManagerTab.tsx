@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Plus, Ticket, Trophy, RefreshCw, AlertCircle, Loader2, Medal, Users, Clock, ArrowRight, Megaphone, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wagmi';
 import { AdminTransactionButton } from './AdminTransactionButton';
-import { encodeFunctionData } from 'viem';
 import { RAFFLE_ABI, CONTRACTS } from '../../../lib/contracts';
 import { useRaffle } from '../../../hooks/useRaffle';
-import { useRaffleList, useRaffleInfo } from '../../raffle/hooks/useRaffleQueries';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAdminRaffleQueries } from '../hooks/useAdminQueries';
+import { ArrowRight, Clock, Loader2, Medal, Megaphone, Plus, RefreshCw, ShieldCheck, Ticket, Trophy, Users } from 'lucide-react';
 
 const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE;
 
 interface AdminRaffleCreateFormProps {
-    syncRaffle: (payload: {
+    syncRaffle: (_payload: {
         wallet_address: `0x${string}`;
         signature: string;
         message: string;
@@ -95,10 +93,10 @@ function AdminRaffleCreateForm({ syncRaffle }: AdminRaffleCreateFormProps) {
             }
 
             toast.success(`Raffle #${actualId} created successfully!`);
-            setForm({ 
-                winnerCount: '1', 
-                maxTickets: '100', 
-                durationDays: '3', 
+            setForm({
+                winnerCount: '1',
+                maxTickets: '100',
+                durationDays: '3',
                 metadataURI: '',
                 title: '',
                 description: '',
@@ -144,7 +142,7 @@ function AdminRaffleCreateForm({ syncRaffle }: AdminRaffleCreateFormProps) {
                 {/* Description */}
                 <div className="md:col-span-3 space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Description</label>
-                    <textarea 
+                    <textarea
                         value={form.description}
                         onChange={e => setForm({ ...form, description: e.target.value })}
                         className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm text-white font-medium outline-none focus:border-indigo-500/50 transition-all h-24 resize-none"
@@ -222,7 +220,7 @@ function AdminRaffleCreateForm({ syncRaffle }: AdminRaffleCreateFormProps) {
             </div>
 
             <div className="flex items-center gap-4 bg-white/3 border border-white/5 p-4 rounded-2xl">
-                <div 
+                <div
                     onClick={() => setForm({ ...form, is_base_social_required: !form.is_base_social_required })}
                     className={`w-12 h-6 rounded-full transition-all cursor-pointer relative ${form.is_base_social_required ? 'bg-blue-600' : 'bg-slate-700'}`}
                 >
@@ -234,8 +232,8 @@ function AdminRaffleCreateForm({ syncRaffle }: AdminRaffleCreateFormProps) {
                 </div>
             </div>
 
-            <AdminTransactionButton 
-                calls={calls} 
+            <AdminTransactionButton
+                calls={calls}
                 onSuccess={handleSuccess}
                 text="INITIALIZE ON-CHAIN RAFFLE"
                 className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 py-5 rounded-[2rem] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all"
@@ -248,7 +246,7 @@ function CreatorEarningsCard() {
     const { address } = useAccount();
     const { data: balance, refetch } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: RAFFLE_ABI as any,
+        abi: RAFFLE_ABI as unknown,
         functionName: 'sponsorBalances',
         args: [address],
         query: { enabled: !!address }
@@ -278,7 +276,7 @@ function CreatorEarningsCard() {
                 </div>
             </div>
 
-            <AdminTransactionButton 
+            <AdminTransactionButton
                 calls={calls}
                 onSuccess={() => {
                     toast.success("Earnings withdrawn successfully!");
@@ -292,9 +290,9 @@ function CreatorEarningsCard() {
 }
 
 function AdminRaffleSettings() {
-    const { address } = useAccount();
+    const { _address } = useAccount();
     const [fees, setFees] = useState({ rake: '20', surcharge: '10' });
-    
+
     // Fetch current settings
     const { data: rake } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'maintenanceFeeBP' });
     const { data: surcharge } = useReadContract({ address: RAFFLE_ADDRESS, abi: RAFFLE_ABI, functionName: 'surchargeBP' });
@@ -319,7 +317,7 @@ function AdminRaffleSettings() {
             <div className="absolute top-0 right-0 p-6 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000">
                 <ShieldCheck className="w-40 h-40 text-white" />
             </div>
-            
+
             <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-2xl bg-slate-800/50 flex items-center justify-center border border-white/10">
                     <ShieldCheck className="w-6 h-6 text-slate-400" />
@@ -349,7 +347,7 @@ function AdminRaffleSettings() {
                 </div>
             </div>
 
-            <AdminTransactionButton 
+            <AdminTransactionButton
                 calls={calls}
                 onSuccess={() => toast.success("Protocol fees updated!")}
                 text="UPDATE PROTOCOL FEES"
@@ -360,14 +358,14 @@ function AdminRaffleSettings() {
 }
 
 export function RaffleManagerTab() {
-    const { address } = useAccount();
+    const { _address } = useAccount();
     const {
         raffles, isLoadingRaffles, refetchRaffles,
-        recentTickets, isLoadingTickets, refetchTickets,
+        recentTickets, _isLoadingTickets, refetchTickets,
         winners, isLoadingWinners, refetchWinners
     } = useAdminRaffleQueries();
 
-    useEffect(() => { 
+    useEffect(() => {
         // Setup real-time subscription for new tickets
         const sub = supabase
             .channel('public:raffle_tickets')
@@ -376,14 +374,14 @@ export function RaffleManagerTab() {
                 toast(`New Ticket Purchased!`, { icon: '🎟️' });
             })
             .subscribe();
-            
+
         return () => supabase.removeChannel(sub);
     }, [refetchTickets]);
 
     return (
         <div className="space-y-8">
             <CreatorEarningsCard />
-            
+
             {/* Admin Controls - Only visible to admin/owner */}
             {/* For simplicity we show it, but usually you'd check if (address === CONTRACT_OWNER) */}
             <AdminRaffleSettings />
@@ -395,7 +393,7 @@ export function RaffleManagerTab() {
                     <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
                         <Plus className="w-48 h-48 text-indigo-500" />
                     </div>
-                    
+
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 flex items-center justify-center border border-indigo-500/30">
                             <Plus className="w-6 h-6 text-indigo-400" />
@@ -405,7 +403,7 @@ export function RaffleManagerTab() {
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Free deployment • No ETH required</p>
                         </div>
                     </div>
-                    
+
                     <AdminRaffleCreateForm syncRaffle={useAdminRaffleQueries().syncRaffle} />
                 </div>
 
@@ -417,11 +415,11 @@ export function RaffleManagerTab() {
                             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest">LIVE TICKET PURCHASES</h3>
                         </div>
                         <div className="flex flex-wrap gap-3">
-                            {recentTickets.map((t: any, i: number) => (
+                            {recentTickets.map((t: unknown, i: number) => (
                                 <div key={i} className="px-4 py-2 bg-black/40 border border-emerald-500/20 rounded-xl flex items-center gap-2">
                                     <Ticket size={12} className="text-emerald-500" />
-                                    <span className="text-[10px] font-mono text-white">{(t as any).wallet_address.slice(0, 6)}...</span>
-                                    <span className="text-[10px] text-slate-400">bought {(t as any).ticket_count} for #{(t as any).raffle_id}</span>
+                                    <span className="text-[10px] font-mono text-white">{(t as unknown).wallet_address.slice(0, 6)}...</span>
+                                    <span className="text-[10px] text-slate-400">bought {(t as unknown).ticket_count} for #{(t as unknown).raffle_id}</span>
                                 </div>
                             ))}
                         </div>
@@ -459,8 +457,8 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
-                            {raffles.map((r: any) => (
-                                <AdminRaffleRow key={(r as any).id.toString()} raffleId={(r as any).id} />
+                            {raffles.map((r: unknown) => (
+                                <AdminRaffleRow key={(r as unknown).id.toString()} raffleId={(r as unknown).id} />
                             ))}
                         </div>
                     )}
@@ -491,8 +489,8 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {winners.map((w: any, i: number) => (
-                                <div key={(w as any).wallet_address} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-yellow-500/20 transition-all group">
+                            {winners.map((w: unknown, i: number) => (
+                                <div key={(w as unknown).wallet_address} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-yellow-500/20 transition-all group">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-slate-900 text-slate-500'}`}>
                                             {i + 1}
@@ -583,7 +581,7 @@ function AdminRaffleRow({ raffleId }: AdminRaffleRowProps) {
     const handleDraw = async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!publicClient) return toast.error("Public Client not ready");
-        
+
         try {
             setDrawPending(true);
             const hash = await drawRaffle(raffleId);
@@ -609,8 +607,8 @@ function AdminRaffleRow({ raffleId }: AdminRaffleRowProps) {
 
             // Watch raffle.isFinalized via refetch
             const stopWhenDone = setInterval(async () => {
-                const result = await (refetch as any)();
-                const resData = result?.data as any;
+                const result = await (refetch as unknown)();
+                const resData = result?.data as unknown;
                 if (resData?.raffle?.isFinalized) {
                     clearInterval(stopWhenDone);
                     clearInterval(poll);
@@ -639,7 +637,7 @@ function AdminRaffleRow({ raffleId }: AdminRaffleRowProps) {
 
     return (
         <div className="space-y-4">
-            <div 
+            <div
                 onClick={() => navigate(`/raffles/${raffle.id}`)}
                 className="flex flex-col md:flex-row items-center justify-between p-6 bg-black/40 border border-white/5 rounded-[2rem] hover:border-indigo-500/20 transition-all gap-4 cursor-pointer group"
             >

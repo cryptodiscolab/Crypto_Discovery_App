@@ -21,10 +21,10 @@ import { RevenueBatchManager } from './config/RevenueBatchManager';
 import { SystemPointersCard } from './config/SystemPointersCard';
 
 // Types
-import { 
-    RewardSettings, RaffleFees, RaffleLimits, RaffleXp, 
-    EconShares, TierWeights, MasterParams, SponsorSettings, 
-    PoolFormData, SystemPointers, TokenWhitelist 
+import {
+    RewardSettings, RaffleFees, RaffleLimits, RaffleXp,
+    EconShares, TierWeights, MasterParams, SponsorSettings,
+    PoolFormData, SystemPointers, TokenWhitelist
 } from '../../types/admin';
 
 export function BlockchainConfigSection() {
@@ -71,17 +71,17 @@ export function BlockchainConfigSection() {
         desc: ''
     });
 
-    const allowedTokens = (ecosystemSettings as any)?.allowed_tokens || (ecosystemSettings as any)?.whitelisted_tokens || [];
-    const tokenAddresses = allowedTokens.map((t: any) => t.address as `0x${string}`);
+    const allowedTokens = (ecosystemSettings as unknown)?.allowed_tokens || (ecosystemSettings as unknown)?.whitelisted_tokens || [];
+    const tokenAddresses = allowedTokens.map((t: unknown) => t.address as `0x${string}`);
     const { prices } = usePriceOracle(tokenAddresses);
-    
+
     const getUsdValue = (humanAmount: string, isUsdc = false) => {
         if (!humanAmount) return 0;
         const amount = parseFloat(humanAmount);
         if (isUsdc) return amount;
-        
-        const ethPrice = (prices as Record<string, number>)['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] || 
-                         (prices as Record<string, number>)['0x4200000000000000000000000000000000000006'] || 
+
+        const ethPrice = (prices as Record<string, number>)['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] ||
+                         (prices as Record<string, number>)['0x4200000000000000000000000000000000000006'] ||
                          cmsEthPrice || 0;
         return amount * ethPrice;
     };
@@ -141,7 +141,7 @@ export function BlockchainConfigSection() {
         if (qXpClaim) setRaffleXp(prev => ({ ...prev, claim: String(qXpClaim) }));
         if (qXpBuy) setRaffleXp(prev => ({ ...prev, purchase: String(qXpBuy) }));
         if (qWithdrawFee) setWithdrawFee(String(qWithdrawFee));
-        
+
         if (qOwnerShare !== undefined || qOpsShare !== undefined || qTreasuryShare !== undefined || qSbtShare !== undefined) {
             setEconShares(prev => ({
                 owner: qOwnerShare !== undefined ? String(qOwnerShare) : prev.owner,
@@ -171,9 +171,9 @@ export function BlockchainConfigSection() {
 
     // Drift Detection
     useEffect(() => {
-        const dbRewards = (ecosystemSettings as any)?.points_settings?.find((s: any) => s.activity_key === 'daily_claim')?.points_value;
-        const dbXp = (ecosystemSettings as any)?.points_settings?.find((s: any) => s.activity_key === 'raffle_create')?.points_value;
-        
+        const dbRewards = (ecosystemSettings as unknown)?.points_settings?.find((s: unknown) => s.activity_key === 'daily_claim')?.points_value;
+        const dbXp = (ecosystemSettings as unknown)?.points_settings?.find((s: unknown) => s.activity_key === 'raffle_create')?.points_value;
+
         setDrift({
             rewards: dbRewards !== undefined && dbRewards !== parseInt(rewards.daily),
             raffleXp: dbXp !== undefined && dbXp !== parseInt(raffleXp.create),
@@ -200,7 +200,7 @@ export function BlockchainConfigSection() {
                 claim_timestamp: poolFormData.claimTimestamp
             });
             toast.success("Pool Settings Updated!", { id: tid });
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.message, { id: tid });
         } finally {
             setIsSaving(false);
@@ -219,14 +219,14 @@ export function BlockchainConfigSection() {
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Revenue Distributed!", { id: tid });
             refetchAll();
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const handleWithdrawTreasury = async (amount: bigint) => {
+    const handleWithdrawTreasury = async (_amount: bigint) => {
         setIsSaving(true);
         const tid = toast.loading("Withdrawing Treasury...");
         try {
@@ -238,14 +238,14 @@ export function BlockchainConfigSection() {
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Funds Withdrawn to Safe!", { id: tid });
             refetchAll();
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const handleSyncTokenToDb = async (action: string, payload: any) => {
+    const handleSyncTokenToDb = async (action: string, payload: unknown) => {
         const tid = toast.loading("Syncing Database...");
         try {
             const timestamp = new Date().toISOString();
@@ -259,7 +259,7 @@ export function BlockchainConfigSection() {
                 payload
             });
             toast.success("Database Synchronized!", { id: tid });
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.message, { id: tid });
         }
     };
@@ -267,22 +267,22 @@ export function BlockchainConfigSection() {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header / Stats */}
-            <EconomicStats 
-                totalPoolBalance={totalPoolBalance || 0n} 
-                rewards={rewards} 
-                drift={drift} 
-                raffleXp={raffleXp} 
-                tierWeights={tierWeights} 
+            <EconomicStats
+                totalPoolBalance={totalPoolBalance || 0n}
+                rewards={rewards}
+                drift={drift}
+                raffleXp={raffleXp}
+                tierWeights={tierWeights}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <RewardSettingsCard 
-                    rewards={rewards} 
-                    setRewards={setRewards} 
-                    drift={drift.rewards} 
+                <RewardSettingsCard
+                    rewards={rewards}
+                    setRewards={setRewards}
+                    drift={drift.rewards}
                 />
-                
-                <RaffleEconSettingsCard 
+
+                <RaffleEconSettingsCard
                     raffleFees={raffleFees} setRaffleFees={setRaffleFees}
                     raffleLimits={raffleLimits} setRaffleLimits={setRaffleLimits}
                     raffleXp={raffleXp} setRaffleXp={setRaffleXp}
@@ -290,7 +290,7 @@ export function BlockchainConfigSection() {
                     isSaving={isSaving} setIsSaving={setIsSaving}
                 />
 
-                <MasterXDistributionCard 
+                <MasterXDistributionCard
                     econShares={econShares} setEconShares={setEconShares}
                     tierWeights={tierWeights} setTierWeights={setTierWeights}
                     drift={drift.tierWeights}
@@ -298,7 +298,7 @@ export function BlockchainConfigSection() {
                 />
             </div>
 
-            <PoolTreasuryConfig 
+            <PoolTreasuryConfig
                 totalPoolBalance={totalPoolBalance || 0n}
                 poolFormData={poolFormData}
                 setPoolFormData={setPoolFormData}
@@ -311,7 +311,7 @@ export function BlockchainConfigSection() {
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <EconomicIndicatorsCard 
+                <EconomicIndicatorsCard
                     withdrawFee={withdrawFee} setWithdrawFee={setWithdrawFee}
                     sponsorSettings={sponsorSettings} setSponsorSettings={setSponsorSettings}
                     autoApprove={autoApprove} setAutoApprove={setAutoApprove}
@@ -319,19 +319,19 @@ export function BlockchainConfigSection() {
                     isSaving={isSaving} setIsSaving={setIsSaving}
                 />
 
-                <MasterXProtocolParamsCard 
+                <MasterXProtocolParamsCard
                     masterParams={masterParams} setMasterParams={setMasterParams}
                     isSaving={isSaving} setIsSaving={setIsSaving}
                 />
             </div>
 
-            <RevenueBatchManager 
+            <RevenueBatchManager
                 qLastDist={qLastDist as bigint | undefined}
                 handleDistribute={handleDistribute}
                 isSaving={isSaving}
             />
 
-            <SystemPointersCard 
+            <SystemPointersCard
                 pointers={pointers} setPointers={setPointers}
                 tokens={allowedTokens}
                 newTokenWhitelist={newTokenWhitelist} setNewTokenWhitelist={setNewTokenWhitelist}

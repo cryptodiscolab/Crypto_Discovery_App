@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
-import { 
-    Activity, 
-    CheckCircle2, 
-    AlertCircle, 
-    Clock, 
+import {
+    Activity,
+    CheckCircle2,
+    AlertCircle,
+    Clock,
     RefreshCw,
     ShieldAlert,
-    ExternalLink
+    _ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -18,7 +18,7 @@ interface HealthService {
     last_error?: string;
     metadata?: {
         consecutive_success?: number;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 }
 
@@ -68,7 +68,7 @@ export function HealthDashboardSection() {
             } else {
                 toast.error(data.error || 'Reset failed', { id: tid });
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error('Network error during reset', { id: tid });
         }
     };
@@ -76,11 +76,11 @@ export function HealthDashboardSection() {
     const getStatusColor = (status: string, lastHeartbeat: string) => {
         if (status === 'failed') return 'text-red-500 bg-red-500/10 border-red-500/20';
         if (status === 'recovering') return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-        
+
         // Stale check
         const lastHb = new Date(lastHeartbeat).getTime();
         if (Date.now() - lastHb > 2 * 60 * 60 * 1000) return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-        
+
         return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
     };
 
@@ -116,7 +116,7 @@ export function HealthDashboardSection() {
                         </div>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={fetchHealth}
                     disabled={refreshing}
                     className="p-1.5 hover:bg-white/5 rounded-lg transition-all text-slate-400 hover:text-white disabled:opacity-50"
@@ -134,7 +134,7 @@ export function HealthDashboardSection() {
                             </span>
                             <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase ${getStatusColor(svc.status, svc.last_heartbeat)}`}>
                                 {getStatusIcon(svc.status, svc.last_heartbeat)}
-                                {svc.status === 'recovering' ? `Healing ${svc.metadata?.consecutive_success || 0}/3` : 
+                                {svc.status === 'recovering' ? `Healing ${svc.metadata?.consecutive_success || 0}/3` :
                                  (svc.status === 'healthy' && (Date.now() - new Date(svc.last_heartbeat).getTime() > 2 * 60 * 60 * 1000) ? 'STALE' : svc.status)}
                             </div>
                         </div>
@@ -150,7 +150,7 @@ export function HealthDashboardSection() {
                                     <p className="text-[9px] text-red-400 font-mono break-all line-clamp-2">{svc.last_error}</p>
                                 </div>
                             )}
-                            
+
                             {(svc.status === 'failed' || svc.status === 'recovering' || (Date.now() - new Date(svc.last_heartbeat).getTime() > 2 * 60 * 60 * 1000)) && (
                                 <button
                                     onClick={() => handleReset(svc.service_key)}
@@ -172,8 +172,8 @@ export function HealthDashboardSection() {
                 <div>
                     <h3 className="text-xs font-black text-white uppercase tracking-wide">Circuit Breaker Policy</h3>
                     <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
-                        Services marked as <strong>FAILED</strong> will automatically trigger the Circuit Breaker in the API layer. 
-                        Connections to external providers (Neynar, X) will be suspended for 5 minutes after a failure to prevent account banning 
+                        Services marked as <strong>FAILED</strong> will automatically trigger the Circuit Breaker in the API layer.
+                        Connections to external providers (Neynar, X) will be suspended for 5 minutes after a failure to prevent account banning
                         and system overload. Manual intervention may be required if errors persist.
                     </p>
                 </div>

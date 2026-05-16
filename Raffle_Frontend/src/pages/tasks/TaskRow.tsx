@@ -108,7 +108,7 @@ export function TaskRow({ taskId, refetchStats, offChainClaims }: TaskRowProps) 
             await doTask(taskId);
             toast.success("Action registered! Wait 30s before Verification.", { id: `task-${taskId}` });
             refetchCompletion();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("DoTask error:", error);
             toast.error("Action failed: " + (error.shortMessage || error.message), { id: `task-${taskId}` });
         }

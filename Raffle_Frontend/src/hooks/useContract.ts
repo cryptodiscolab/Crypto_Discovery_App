@@ -152,7 +152,7 @@ export function useDoTask() {
                 const signature = await signMessageAsync({ message });
 
                 await awardTaskXP(userAddr, signature, message, taskId, 0); // Reward value handled by backend Activity Key
-            } catch (e: any) {
+            } catch (e: unknown) {
                 console.warn("XP Awarding skipped or failed:", e.message);
                 toast.error('XP recording failed. Your task is confirmed but XP may sync later.');
             }
@@ -169,7 +169,7 @@ export function useDoTask() {
 export function useDailyAppAdmin() {
     const { writeContractAsync } = useWriteContract();
 
-    const grantRole = async (role: any, account: any) => {
+    const grantRole = async (role: unknown, account: unknown) => {
         return await writeContractAsync({
             address: V12_ADDRESS,
             abi: ABIS.DAILY_APP,
@@ -178,7 +178,7 @@ export function useDailyAppAdmin() {
         });
     };
 
-    const revokeRole = async (role: any, account: any) => {
+    const revokeRole = async (role: unknown, account: unknown) => {
         return await writeContractAsync({
             address: V12_ADDRESS,
             abi: ABIS.DAILY_APP,
@@ -192,7 +192,7 @@ export function useDailyAppAdmin() {
 
 export function useSyncXP() {
     const { writeContractAsync, isPending: isConfirming } = useWriteContract();
-    
+
     // Legacy support (to be deprecated once V13 is fully live)
     const syncXP = async () => {
         return await writeContractAsync({
@@ -203,7 +203,7 @@ export function useSyncXP() {
     };
 
     // V13 Signature-based Sync
-    const syncOffchainXP = async (totalDbXp: any, deadline: any, signature: any) => {
+    const syncOffchainXP = async (totalDbXp: unknown, deadline: unknown, signature: unknown) => {
         return await writeContractAsync({
             address: V12_ADDRESS, // This will point to V13 once CONTRACTS.DAILY_APP is updated in lib/contracts
             abi: ABIS.DAILY_APP,

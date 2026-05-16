@@ -9,19 +9,19 @@ interface PointSetting {
 
 interface QuickTaskForgeSectionProps {
     dailyDesc: string;
-    onDailyDescChange: (val: string) => void;
+    onDailyDescChange: (_val: string) => void;
     dailyPoints: string | number;
-    onDailyPointsChange: (val: string | number) => void;
+    onDailyPointsChange: (_val: string | number) => void;
     dailyCooldown: string;
-    onDailyCooldownChange: (val: string) => void;
+    onDailyCooldownChange: (_val: string) => void;
     dailyRequiresVerify: boolean;
-    onDailyRequiresVerifyChange: (val: boolean) => void;
+    onDailyRequiresVerifyChange: (_val: boolean) => void;
     dailyIsBaseSocialRequired: boolean;
-    onDailyIsBaseSocialRequiredChange: (val: boolean) => void;
+    onDailyIsBaseSocialRequiredChange: (_val: boolean) => void;
     dailyMinTier: number;
-    onDailyMinTierChange: (val: number) => void;
+    onDailyMinTierChange: (_val: number) => void;
     pointSettings: PointSetting[];
-    buildAdminTaskCall: () => any;
+    buildAdminTaskCall: () => unknown;
     handleTxSuccess: () => void;
 }
 

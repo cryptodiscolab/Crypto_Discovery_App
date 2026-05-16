@@ -7,16 +7,16 @@ import { Abi } from 'viem';
 
 export interface AdminContractCall {
     to: `0x${string}`;
-    abi?: Abi | any[];
+    abi?: Abi | unknown[];
     functionName?: string;
-    args?: any[];
+    args?: unknown[];
     value?: bigint;
     data?: `0x${string}`;
 }
 
 export interface AdminTransactionButtonProps {
     calls: AdminContractCall[];
-    onSuccess?: (hash: string) => void;
+    onSuccess?: (_hash: string) => void;
     text: React.ReactNode;
     disabled?: boolean;
     className?: string;
@@ -29,25 +29,25 @@ export interface AdminTransactionButtonProps {
  * Supports single calls via useWriteContract or batches via useWriteContracts.
  * Auto-logs to admin_audit_logs via LOG_ONCHAIN_TX.
  */
-export function AdminTransactionButton({ 
-    calls, 
-    onSuccess, 
-    text, 
-    disabled, 
+export function AdminTransactionButton({
+    calls,
+    onSuccess,
+    text,
+    disabled,
     className = "",
     successMessage = "Transaction Successful!"
 }: AdminTransactionButtonProps) {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    
+
     // 1. Single Transaction Hook
     const { writeContract, data: hash, isPending: isSinglePending, error: singleError } = useWriteContract();
-    
+
     // 2. Batch Transaction Hook (Experimental / Smart Wallets)
     const { writeContracts, data: bundleId, isPending: isBatchPending, error: batchError } = useWriteContracts();
 
     // 3. Wait for Receipt
-    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ 
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
         hash: hash as `0x${string}` | undefined
     });
 
@@ -56,14 +56,14 @@ export function AdminTransactionButton({
     useEffect(() => {
         if (isSuccess && (hash || bundleId)) {
             toast.success(successMessage);
-            const finalId = hash || (typeof bundleId === 'string' ? bundleId : (bundleId as any)?.id);
+            const finalId = hash || (typeof bundleId === 'string' ? bundleId : (bundleId as unknown)?.id);
             if (onSuccess && finalId) onSuccess(finalId);
         }
     }, [isSuccess, hash, bundleId, onSuccess, successMessage]);
 
     useEffect(() => {
-        if (singleError) toast.error((singleError as any).shortMessage || "Transaction failed");
-        if (batchError) toast.error((batchError as any).shortMessage || "Batch failed");
+        if (singleError) toast.error((singleError as unknown).shortMessage || "Transaction failed");
+        if (batchError) toast.error((batchError as unknown).shortMessage || "Batch failed");
     }, [singleError, batchError]);
 
     const handleClick = async () => {
@@ -74,7 +74,7 @@ export function AdminTransactionButton({
             // 1. Sign Audit Log
             const message = `Authorize Admin Onchain Tx\nTime: ${new Date().toISOString()}`;
             const signature = await signMessageAsync({ message });
-            
+
             // 2. Send Audit Log
             await fetch('/api/admin-bundle?action=LOG_ONCHAIN_TX', {
                 method: 'POST',
@@ -102,15 +102,15 @@ export function AdminTransactionButton({
                 writeContracts({
                     contracts: calls.map(c => ({
                         address: c.to,
-                        abi: (c.abi || []) as any,
-                        functionName: (c.functionName || '') as any,
+                        abi: (c.abi || []) as unknown,
+                        functionName: (c.functionName || '') as unknown,
                         args: c.args || [],
                         value: c.value,
                         data: c.data
-                    })) as any
+                    })) as unknown
                 });
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(e.shortMessage || e.message || "Failed to authorize or execute");
         } finally {
             setIsLogging(false);

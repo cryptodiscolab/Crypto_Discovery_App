@@ -6,14 +6,14 @@ import { SponsorSettings } from '../../../../types/admin';
 
 interface EconomicIndicatorsCardProps {
     withdrawFee: string;
-    setWithdrawFee: (f: string) => void;
+    setWithdrawFee: (_f: string) => void;
     sponsorSettings: SponsorSettings;
-    setSponsorSettings: (s: SponsorSettings) => void;
+    setSponsorSettings: (_s: SponsorSettings) => void;
     autoApprove: boolean;
-    setAutoApprove: (a: boolean) => void;
-    getUsdValue: (humanAmount: string, isUsdc?: boolean) => number;
+    setAutoApprove: (_a: boolean) => void;
+    getUsdValue: (_humanAmount: string, _isUsdc?: boolean) => number;
     isSaving: boolean;
-    setIsSaving: (s: boolean) => void;
+    setIsSaving: (_s: boolean) => void;
 }
 
 export function EconomicIndicatorsCard({
@@ -36,14 +36,14 @@ export function EconomicIndicatorsCard({
                 functionName: 'setWithdrawalFee',
                 args: [BigInt(withdrawFee)],
             });
-            
+
             // 2. Sponsorship Settings
             await writeContractAsync({
                 address: CONTRACTS.DAILY_APP as `0x${string}`,
                 abi: DAILY_APP_ABI,
                 functionName: 'setSponsorshipParams',
                 args: [
-                    BigInt(Math.floor(Number(sponsorSettings.reward) * 1e18)), 
+                    BigInt(Math.floor(Number(sponsorSettings.reward) * 1e18)),
                     BigInt(sponsorSettings.tasks),
                     BigInt(Math.floor(Number(sponsorSettings.minPool) * 1e18)),
                     BigInt(Math.floor(Number(sponsorSettings.fee) * 1e6))
@@ -59,10 +59,10 @@ export function EconomicIndicatorsCard({
             });
 
             toast.success("Economic Indicators Updated!", { id: tid });
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 

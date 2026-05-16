@@ -1,0 +1,14 @@
+# Hermes custom provider template for Freemodel.
+# Copy this into your Hermes config if/when the Hermes CLI is installed.
+# Keep real API keys in .env, not in this tracked file.
+
+providers:
+  freemodel:
+    type: openai-compatible
+    base_url: ${HERMES_FREEMODEL_BASE_URL}
+    api_key: ${FREEMODEL_API_KEY}
+    default_model: ${HERMES_FREEMODEL_MODEL}
+
+defaults:
+  provider: freemodel
+  model: ${HERMES_FREEMODEL_MODEL}

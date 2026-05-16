@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import toast from 'react-hot-toast';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const _SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const _SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * useOAuth — Hook to link Google or X (Twitter) OAuth identity to the connected wallet.
@@ -24,19 +24,19 @@ export function useOAuth() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const [isLinking, setIsLinking] = useState(false);
-    const [linkedGoogle, setLinkedGoogle] = useState<any>(null);
-    const [linkedX, setLinkedX] = useState<any>(null);
+    const [linkedGoogle, setLinkedGoogle] = useState<unknown>(null);
+    const [linkedX, setLinkedX] = useState<unknown>(null);
 
     /**
      * Internal: Call the Supabase OAuth sign-in popup.
      * Uses Supabase SDK to handle PKCE/State coordination automatically.
      */
-    const openSupabaseOAuth = useCallback(async (provider: any): Promise<any> => {
+    const openSupabaseOAuth = useCallback(async (provider: unknown): Promise<unknown> => {
         const { supabase } = await import('../lib/supabaseClient');
-        
+
         const redirectTo = `${window.location.origin}/oauth-callback`;
-        
-        // Use SDK to get the authorization URL. 
+
+        // Use SDK to get the authorization URL.
         // skipBrowserRedirect: true prevents it from redirecting the current tab.
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider,
@@ -55,18 +55,18 @@ export function useOAuth() {
         return new Promise((resolve, reject) => {
             let resolved = false;
 
-            const handleMessage = (event: any) => {
+            const handleMessage = (event: unknown) => {
                 // Security check: Only trust messages from our own origin
                 if (event.origin !== window.location.origin) return;
 
                 // Provider alias matching: Supabase uses 'twitter', we normalize to 'x'
                 const msgProvider = event.data?.provider;
-                const providerMatch = msgProvider === provider 
+                const providerMatch = msgProvider === provider
                     || (provider === 'twitter' && (msgProvider === 'x' || msgProvider === 'twitter'))
                     || (provider === 'google' && msgProvider === 'google')
                     // Accept any provider if we got OAUTH_SUCCESS but provider unknown
                     || (event.data?.type === 'OAUTH_SUCCESS' && !msgProvider);
-                
+
                 if (event.data?.type === 'OAUTH_SUCCESS' && providerMatch) {
                     resolved = true;
                     window.removeEventListener('message', handleMessage);
@@ -81,8 +81,8 @@ export function useOAuth() {
             };
 
             window.addEventListener('message', handleMessage);
-            
-            // COOP Compatibility Fix: 
+
+            // COOP Compatibility Fix:
             // Do not poll popup.closed as it may throw or return true prematurely due to isolation.
             // Instead, set a 5-minute timeout as a fallback for user cancellation/timeout.
             const timeout = setTimeout(() => {
@@ -162,7 +162,7 @@ export function useOAuth() {
             toast.success(`Google linked: ${oauthUser.email}`, { id: tid, duration: 5000 });
             return { success: true, email: oauthUser.email };
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[linkGoogle]', err);
             toast.error(err.message || 'Google link failed', { id: tid });
             return { success: false, error: err.message };
@@ -223,7 +223,7 @@ export function useOAuth() {
             toast.success(`X linked: @${twitterUsername}`, { id: tid, duration: 5000 });
             return { success: true, username: twitterUsername };
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[linkX]', err);
             toast.error(err.message || 'X link failed', { id: tid });
             return { success: false, error: err.message };

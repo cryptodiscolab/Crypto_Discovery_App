@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { History, Cpu, Zap, ChevronDown, ChevronUp, Terminal, Shield, AlertCircle, Search, Filter } from 'lucide-react';
 
-export function AuditLogsSection({ logs }: { logs: any[] }) {
+export function AuditLogsSection({ logs }: { logs: unknown[] }) {
     const [expandedLog, setExpandedLog] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterAction, setFilterAction] = useState<string>('ALL');
@@ -13,13 +13,13 @@ export function AuditLogsSection({ logs }: { logs: any[] }) {
 
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
-            const matchesSearch = 
+            const matchesSearch =
                 log.action?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 log.admin_address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 JSON.stringify(log.details || {}).toLowerCase().includes(searchQuery.toLowerCase());
-            
+
             const matchesAction = filterAction === 'ALL' || log.action === filterAction;
-            
+
             return matchesSearch && matchesAction;
         });
     }, [logs, searchQuery, filterAction]);
@@ -46,22 +46,22 @@ export function AuditLogsSection({ logs }: { logs: any[] }) {
                         <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black font-mono">Cryptographically signed administrative actions</p>
                     </div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             placeholder="Search logs..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="bg-black/40 border border-white/5 rounded-xl pl-9 pr-4 py-2 text-[11px] text-white focus:outline-none focus:border-indigo-500/50 transition-all w-full md:w-48 font-mono"
                         />
                     </div>
-                    
+
                     <div className="flex items-center gap-2 bg-black/40 border border-white/5 rounded-xl px-3 py-2">
                         <Filter className="w-3.5 h-3.5 text-slate-500" />
-                        <select 
+                        <select
                             value={filterAction}
                             onChange={(e) => setFilterAction(e.target.value)}
                             className="bg-transparent text-[11px] text-slate-300 focus:outline-none font-black uppercase tracking-widest cursor-pointer"
@@ -101,9 +101,9 @@ export function AuditLogsSection({ logs }: { logs: any[] }) {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredLogs.map((log: any) => (
+                                filteredLogs.map((log: unknown) => (
                                     <React.Fragment key={log.id}>
-                                        <tr 
+                                        <tr
                                             onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
                                             className="hover:bg-white/[0.03] transition-all cursor-pointer group"
                                         >
@@ -111,10 +111,10 @@ export function AuditLogsSection({ logs }: { logs: any[] }) {
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-xs font-black text-slate-200 font-mono tracking-tight">
-                                                            {new Date(log.created_at).toLocaleString('id-ID', { 
+                                                            {new Date(log.created_at).toLocaleString('id-ID', {
                                                                 year: 'numeric', month: '2-digit', day: '2-digit',
                                                                 hour: '2-digit', minute: '2-digit', second: '2-digit',
-                                                                hour12: false 
+                                                                hour12: false
                                                             })}
                                                         </span>
                                                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
@@ -194,7 +194,7 @@ export function AuditLogsSection({ logs }: { logs: any[] }) {
                 <div className="space-y-1">
                     <h4 className="text-[11px] font-black text-white uppercase tracking-widest">Protocol Integrity Notice</h4>
                     <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                        Audit logs are immutable, cryptographically signed, and cross-referenced with backend heartbeat cycles. 
+                        Audit logs are immutable, cryptographically signed, and cross-referenced with backend heartbeat cycles.
                         Each entry represents a finalized administrative state transition within the Crypto Discovery Ecosystem.
                     </p>
                 </div>

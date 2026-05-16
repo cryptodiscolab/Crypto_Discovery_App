@@ -16,7 +16,7 @@ interface NexusTask {
     task_description: string;
     target_agent: string;
     status: string;
-    output_data?: any;
+    output_data?: unknown;
 }
 
 interface AgentStats {
@@ -53,7 +53,7 @@ export const NexusMonitorTab = () => {
                 event: '*',
                 schema: 'public',
                 table: 'agents_vault'
-            }, (payload: any) => {
+            }, (payload: unknown) => {
                 if (payload.eventType === 'INSERT') {
                     setTasks(prev => [payload.new as NexusTask, ...prev].slice(0, 50));
                 } else if (payload.eventType === 'UPDATE') {
@@ -126,7 +126,7 @@ export const NexusMonitorTab = () => {
             } else {
                 throw new Error(result.error || "Dispatch failed");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.error(err.message, { id: tid });
         } finally {
             setIsDispatching(false);
@@ -143,7 +143,7 @@ export const NexusMonitorTab = () => {
         }
     };
 
-    const AgentCard = ({ name, icon: Icon, color, status }: { name: string; icon: any; color: string; status: string }) => (
+    const AgentCard = ({ name, icon: Icon, color, status }: { name: string; icon: unknown; color: string; status: string }) => (
         <div className={`cyber-pod p-6 rounded-[2rem] ${status === 'active'
             ? 'border-indigo-500/30'
             : 'opacity-60'

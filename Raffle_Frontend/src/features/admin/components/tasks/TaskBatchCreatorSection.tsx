@@ -32,7 +32,7 @@ interface TaskBatch {
 
 interface TaskBatchCreatorSectionProps {
     tasksBatch: TaskBatch[];
-    onUpdateTask: (idx: number, field: string, value: any) => void;
+    onUpdateTask: (_idx: number, _field: string, _value: unknown) => void;
     onDeploy: () => void;
     isSaving: boolean;
 }

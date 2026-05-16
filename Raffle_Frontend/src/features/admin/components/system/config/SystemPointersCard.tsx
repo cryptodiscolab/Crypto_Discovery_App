@@ -1,20 +1,18 @@
 import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { Cpu } from 'lucide-react';
-import { useAccount, useSignMessage, usePublicClient } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { SystemPointers, TokenWhitelist } from '../../../../types/admin';
 
 interface SystemPointersCardProps {
     pointers: SystemPointers;
-    setPointers: (p: SystemPointers) => void;
-    tokens: any[];
+    setPointers: (_p: SystemPointers) => void;
+    tokens: unknown[];
     newTokenWhitelist: TokenWhitelist;
-    setNewTokenWhitelist: (t: TokenWhitelist) => void;
-    handleSyncTokenToDb: (action: string, payload: any) => Promise<void>;
+    setNewTokenWhitelist: (_t: TokenWhitelist) => void;
+    handleSyncTokenToDb: (_action: string, _payload: unknown) => Promise<void>;
     isSaving: boolean;
-    setIsSaving: (s: boolean) => void;
+    setIsSaving: (_s: boolean) => void;
 }
 
 export function SystemPointersCard({
@@ -27,7 +25,7 @@ export function SystemPointersCard({
     const { writeContractAsync } = useAdminContract();
     const publicClient = usePublicClient();
 
-    const handleUpdatePointer = async (targetContract: `0x${string}`, abi: any, functionName: string, value: string | any[]) => {
+    const handleUpdatePointer = async (targetContract: `0x${string}`, abi: unknown, functionName: string, value: string | unknown[]) => {
         setIsSaving(true);
         const tid = toast.loading(`Updating ${functionName}...`);
         try {
@@ -39,10 +37,10 @@ export function SystemPointersCard({
             });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Pointer Updated!", { id: tid });
-        } catch (e: any) { 
-            toast.error(e.shortMessage || e.message, { id: tid }); 
-        } finally { 
-            setIsSaving(false); 
+        } catch (e: unknown) {
+            toast.error(e.shortMessage || e.message, { id: tid });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -94,7 +92,7 @@ export function SystemPointersCard({
                 {/* Payment Token Whitelist Management */}
                 <div className="space-y-4 pt-4 border-t border-white/5">
                     <label className="text-[10px] font-black text-slate-500 uppercase">Payment Token Whitelist Management</label>
-                    
+
                     <div className="overflow-hidden rounded-xl border border-white/5 bg-black/20">
                         <table className="w-full text-left text-[10px]">
                             <thead className="bg-white/5 text-slate-400 uppercase font-black">
@@ -106,13 +104,13 @@ export function SystemPointersCard({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-white">
-                                {tokens.map((token: any, i: number) => (
+                                {tokens.map((token: unknown, i: number) => (
                                     <tr key={i} className="hover:bg-white/5 transition-colors">
                                         <td className="px-4 py-2 font-black">{token.symbol}</td>
                                         <td className="px-4 py-2 text-slate-400">{token.chain_id}</td>
                                         <td className="px-4 py-2 font-mono text-[9px]">{token.address.slice(0,6)}...{token.address.slice(-4)}</td>
                                         <td className="px-4 py-2">
-                                            <button 
+                                            <button
                                                 disabled={isSaving}
                                                 onClick={async () => {
                                                     setIsSaving(true);
@@ -130,7 +128,7 @@ export function SystemPointersCard({
                                                         // Sequential: 2. DB sync only after contract success
                                                         await handleSyncTokenToDb('REMOVE_TOKEN_DB', { address: token.address, chain_id: token.chain_id });
                                                         toast.success(`${token.symbol} removed!`, { id: tid });
-                                                    } catch (e: any) {
+                                                    } catch (e: unknown) {
                                                         toast.error(e.shortMessage || e.message || "Remove failed", { id: tid });
                                                     } finally {
                                                         setIsSaving(false);
@@ -172,7 +170,7 @@ export function SystemPointersCard({
                                 <input type="number" value={newTokenWhitelist.chain_id} onChange={e => setNewTokenWhitelist({...newTokenWhitelist, chain_id: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white" />
                             </div>
                         </div>
-                        <button 
+                        <button
                             disabled={isSaving}
                             onClick={async () => {
                                 // Validation: check address format
@@ -224,7 +222,7 @@ export function SystemPointersCard({
 
                                     toast.success("Token whitelisted on-chain & synced to DB!", { id: tid });
                                     setNewTokenWhitelist({ address: '', symbol: '', decimals: '18', chain_id: String(chainId) });
-                                } catch (e: any) {
+                                } catch (e: unknown) {
                                     toast.error(e.shortMessage || e.message || "Whitelist failed", { id: tid });
                                 } finally {
                                     setIsSaving(false);

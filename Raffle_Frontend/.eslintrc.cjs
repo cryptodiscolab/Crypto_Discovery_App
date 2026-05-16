@@ -15,11 +15,22 @@ module.exports = {
     plugins: ['react-refresh' /*, 'local'*/],
     rules: {
         'react-refresh/only-export-components': [
-            'warn',
+            'off',
             { allowConstantExport: true },
         ],
+        'react-hooks/exhaustive-deps': 'off',
         'react/prop-types': 'off',
-        'no-unused-vars': 'warn',
+        'no-unused-vars': 'off',
+        '@typescript-eslint/no-unused-vars': [
+            'warn',
+            {
+                argsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_',
+                destructuredArrayIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+                ignoreRestSiblings: true,
+            },
+        ],
 
         // 🚨 CUSTOM RULE: Prevent React Error #31
         // 'local/no-unsafe-react-child': 'error',

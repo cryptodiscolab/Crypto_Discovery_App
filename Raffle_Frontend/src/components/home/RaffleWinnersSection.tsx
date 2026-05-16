@@ -1,7 +1,7 @@
 import { useRaffleList, useRaffleInfo } from '../../features/raffle/hooks/useRaffleQueries';
-import { Trophy, ExternalLink, Loader2, RefreshCw, Hash, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ExternalLink, Hash, Loader2, RefreshCw, Trophy } from 'lucide-react';
 
 const EXPLORER = import.meta.env.VITE_EXPLORER_URL || 'https://sepolia.basescan.org';
 
@@ -31,7 +31,7 @@ function FinalizedRaffleRow({ raffleId }: FinalizedRaffleRowProps) {
     const prizeETH = raffle.prizePool ? (Number(raffle.prizePool) / 1e18).toFixed(4) : '?';
 
     return (
-        <div 
+        <div
             onClick={() => navigate(`/raffles/${raffleId}`)}
             className="rounded-2xl border border-white/8 bg-zinc-950/60 overflow-hidden cursor-pointer hover:border-yellow-500/30 transition-all group/row"
         >

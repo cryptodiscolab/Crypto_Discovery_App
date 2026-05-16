@@ -26,26 +26,26 @@ interface PointsContextType {
     userPoints: bigint;
     userTier: number;
     rankName: string;
-    profileData: any;
+    profileData: unknown;
     totalTasksCompleted: number;
-    unclaimedRewards: any[];
-    setUnclaimedRewards: React.Dispatch<React.SetStateAction<any[]>>;
+    unclaimedRewards: unknown[];
+    setUnclaimedRewards: React.Dispatch<React.SetStateAction<unknown[]>>;
     isLoading: boolean;
     refetch: () => void;
     isConnected: boolean;
-    formatTimeLeft: (ms: number) => string;
+    formatTimeLeft: (_ms: number) => string;
     isAdmin: boolean;
-    checkAdminStatus: (walletAddress: string | undefined) => Promise<void>;
-    manualAddPoints: (amount: number) => void;
-    sbtThresholds: any[];
+    checkAdminStatus: (_walletAddress: string | undefined) => Promise<void>;
+    manualAddPoints: (_amount: number) => void;
+    sbtThresholds: unknown[];
     ecosystemSettings: EcosystemSettings;
     /** True once ecosystem settings have been loaded from backend. False = degraded/fallback state. */
     settingsLoaded: boolean;
     fid: number | null;
     offChainPoints: number;
     offChainLevel: number;
-    gasTracker: any;
-    syncLogs: any[];
+    gasTracker: unknown;
+    syncLogs: unknown[];
     clearLogs: () => void;
 }
 
@@ -57,7 +57,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     const [userPoints, setUserPoints] = useState(0n); // BigInt for safety
     const userPointsRef = useRef(0); // Ref for sync tracking (Number)
     const [userTier, setUserTier] = useState(0);
-    const [pointsToNext, setPointsToNext] = useState(0);
+    const [_pointsToNext, _setPointsToNext] = useState(0);
     const [rankName, setRankName] = useState('Rookie');
     const [totalTasksCompleted, setTotalTasksCompleted] = useState(0);
     const [profileData, setProfileData] = useState(null);
@@ -65,7 +65,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     // Loading States
     const [isLoading, setIsLoading] = useState(false);
 
-    const [unclaimedRewards, setUnclaimedRewards] = useState<any[]>([]);
+    const [unclaimedRewards, setUnclaimedRewards] = useState<unknown[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
     const [sbtThresholds, setSbtThresholds] = useState([]);
     const [ecosystemSettings, setEcosystemSettings] = useState({
@@ -89,9 +89,9 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     // Anti-Halu Central State
-    const [fid, setFid] = useState(null);
+    const [fid, _setFid] = useState(null);
     const [offChainPoints, setOffChainPoints] = useState(0);
-    const [offChainLevel, setOffChainLevel] = useState(0);
+    const [offChainLevel, _setOffChainLevel] = useState(0);
 
     // ==========================================
     // GAS TRACKER INTEGRATION
@@ -130,7 +130,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
             prevVisualXp,
             diff: visualXp - dbXp
         };
-        setSyncLogs((prev: any[]) => [log, ...prev].slice(0, 50));
+        setSyncLogs((prev: unknown[]) => [log, ...prev].slice(0, 50));
     }, []);
 
     // ==========================================
@@ -193,7 +193,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
             const data = await response.json();
             if (data.success && data.settings) {
                 const settings = { ...data.settings };
-                
+
                 // Hardening: Normalize UGC config values if they are BigInt strings
                 if (settings.ugc_config) {
                     const cfg = settings.ugc_config;
@@ -305,7 +305,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     const value = {
         userPoints,
         userTier,
-        rankName: (profileData as any)?.rank_name || rankName,
+        rankName: (profileData as unknown)?.rank_name || rankName,
         profileData,
         totalTasksCompleted,
         unclaimedRewards,
