@@ -312,6 +312,11 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                     <div className="space-y-2">
                         <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Reward Pool Amount ({selectedToken?.symbol})</label>
                         <input type="number" step="0.001" value={ethReward} onChange={(e) => setEthReward(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-4 text-lg font-mono font-black text-indigo-400 outline-none" placeholder="0.01" />
+                        {selectedToken?.symbol !== 'USDC' && currentPrice > 0 && (
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-1 text-right mt-1">
+                                ≈ {_rewardUsdValue.toFixed(2)} USDC
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -325,7 +330,14 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                     <div className="space-y-3">
                         <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest text-slate-400">
                             <span>Campaign Reward Pool</span>
-                            <span className="text-white font-mono">{parseFloat(ethReward || '0').toFixed(selectedToken?.symbol === 'ETH' ? 6 : 2)} {selectedToken?.symbol || 'ETH'}</span>
+                            <div className="text-right">
+                                <span className="text-white font-mono">{parseFloat(ethReward || '0').toFixed(selectedToken?.symbol === 'ETH' ? 6 : 2)} {selectedToken?.symbol || 'ETH'}</span>
+                                {selectedToken?.symbol !== 'USDC' && currentPrice > 0 && (
+                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                                        ≈ {_rewardUsdValue.toFixed(2)} USDC
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         {((selectedToken?.symbol === 'USDC' ? 1 : currentPrice) > 0) && (
                             <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-500 -mt-1.5 px-1">
@@ -348,7 +360,7 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                                 </p>
                                 {((selectedToken?.symbol === 'USDC' ? 1 : currentPrice) > 0) && (
                                     <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                                        ≈ ${((selectedToken?.symbol === 'USDC' ? 1 : currentPrice) * parseFloat(ethReward || '0') + feeUsd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                                        ≈ ${((selectedToken?.symbol === 'USDC' ? 1 : currentPrice) * parseFloat(ethReward || '0') + feeUsd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
                                     </p>
                                 )}
                             </div>
@@ -358,7 +370,7 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                     <div className="p-3 bg-indigo-500/5 rounded-2xl border border-indigo-500/10 flex gap-2">
                         <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
                         <p className="text-[9px] font-medium text-slate-400 uppercase tracking-tight leading-relaxed">
-                            Listing Fee ($5 USDC) is required to prevent campaign spamming. Rewards are funded directly to the smart contract and distributed securely to verified participants.
+                            Listing Fee (${feeUsd.toFixed(2)} USDC) is required to prevent campaign spamming. Rewards are funded directly to the smart contract and distributed securely to verified participants.
                         </p>
                     </div>
                 </div>

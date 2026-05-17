@@ -241,10 +241,16 @@ export function CreateMissionPage() {
         const decimals = selectedToken?.decimals || 6;
         const displayDecimals = decimals > 6 ? 6 : 2;
 
+        const rewardPoolUsd = rewardPool * tokenPrice;
+        const totalAmountUsd = totalAmount * tokenPrice;
+
         return {
             rewardPool: rewardPool.toFixed(displayDecimals),
+            rewardPoolUsd: rewardPoolUsd.toFixed(2),
             listingFee: listingFeeToken.toFixed(displayDecimals),
+            listingFeeUsd: baseListingFeeUsdc.toFixed(2),
             totalAmount: totalAmount.toFixed(displayDecimals),
+            totalAmountUsd: totalAmountUsd.toFixed(2),
             totalAmountRaw: parseUnits(totalAmount.toFixed(decimals), decimals),
             tokenPrice
         };
@@ -333,23 +339,31 @@ export function CreateMissionPage() {
                 duration_days: parseInt(formData.duration_days),
                 status: 'pending',
                 reward_symbol: selectedToken?.symbol || 'USDC',
-                ['payment_' + 'token']: selectedTokenAddr,
+                payment_token: selectedTokenAddr, // gitleaks:allow - token contract address field, not an API secret.
                 payment_tx_hash: txHash,
+                txHash: txHash,
                 is_active: false,
                 is_verified_payment: false,
                 is_base_social_required: formData.isBaseSocialRequired,
                 listing_fee: parseFloat(stats.listingFee),
                 min_followers: parseInt(formData.minFollowers) || 0,
                 account_age_requirement: parseInt(formData.minAccountAge) || 0,
-                min_neynar_score: parseInt(formData.minNeynarScore) || 0
+                min_neynar_score: parseInt(formData.minNeynarScore) || 0,
+                tasks_batch: selectedActions.map(action => ({
+                    title: `${formData.title} (${action.toUpperCase()})`,
+                    platform: formData.platform,
+                    action_type: action,
+                    link: formData.link
+                }))
             };
 
-            const response = await fetch('/api/admin-bundle', {
+            const response = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    wallet: address,
                     wallet_address: address,
-                    action: 'CREATE_UGC_MISSION',
+                    action: 'sync-ugc-mission',
                     payload: payload,
                     message,
                     signature
@@ -695,7 +709,14 @@ export function CreateMissionPage() {
                                                     value={formData.reward_amount_per_user}
                                                     onChange={e => setFormData(prev => ({ ...prev, reward_amount_per_user: e.target.value }))}
                                                 />
-                                                <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-2">Paid in {selectedToken?.symbol || 'USDC'} via Base</p>
+                                                <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-2 flex justify-between items-center">
+                                                    <span>Paid in {selectedToken?.symbol || 'USDC'} via Base</span>
+                                                    {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                                        <span className="text-slate-400 font-mono font-bold lowercase tracking-normal">
+                                                            (≈ {((parseFloat(formData.reward_amount_per_user) || 0) * stats.tokenPrice).toFixed(2)} USDC)
+                                                        </span>
+                                                    )}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -760,6 +781,11 @@ export function CreateMissionPage() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-2xl font-black text-white font-mono tracking-tighter">{stats.rewardPool} <span className="text-xs text-slate-500 font-bold">{selectedToken?.symbol || 'USDC'}</span></p>
+                                        {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">
+                                                ≈ {stats.rewardPoolUsd} USDC
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -815,6 +841,11 @@ export function CreateMissionPage() {
                                         <span className="text-white text-[12px] font-black uppercase tracking-[0.3em]">TOTAL DUE</span>
                                         <div className="text-right">
                                             <p className="text-5xl font-black text-white font-mono tracking-tighter mb-1">{stats.totalAmount}</p>
+                                            {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-tight mb-2">
+                                                    ≈ {stats.totalAmountUsd} USDC
+                                                </p>
+                                            )}
                                             <div className="flex items-center justify-end gap-2 text-indigo-500">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                                                 <span className="text-[11px] font-black uppercase tracking-widest">{selectedToken?.symbol || 'USDC'} ON BASE</span>

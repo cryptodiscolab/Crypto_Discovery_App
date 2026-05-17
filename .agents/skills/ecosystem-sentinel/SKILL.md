@@ -5,7 +5,7 @@ description: >
   - **Anti-Hallucination Mandate (v3.63.5-Hardened)**: Mandatory **Parity Audit** via `parity-audit` endpoint before closing any architectural task. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.63.7-Hardened
+version: v3.64.2-Hardened
 ---
 
 ## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.7-Hardened)
@@ -94,7 +94,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.63.7-Hardened
+- **Versi Terakhir:** v3.64.2-Hardened
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---

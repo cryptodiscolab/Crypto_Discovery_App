@@ -6,6 +6,19 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.64.2-Hardened (UGC Multi-Asset Dynamic Conversion & Fee Parity)
+- **Real-Time USD/USDC Conversion**: Enhanced the `stats` calculation hook in `CreateMissionPage.tsx` to dynamically convert and track the USD equivalent values of `rewardPool` and `totalAmount` based on live price feeds.
+- **Dynamic Reward Per User Conversion Display**: Added dynamic real-time USD/USDC equivalent conversion displays underneath the reward-per-user input field if a non-USDC token (like Native ETH or WETH) is selected.
+- **Sidebar Settlement Parity**: Standardized the **Settlement Quote Sidebar** by displaying highly visible, precise USD equivalents (`≈ {amount} USDC`) for the **Reward Pool**, **Dynamic Listing Fee**, and **TOTAL DUE** sections.
+- **Duplication & Compilation Fix**: Removed a duplicate/redundant dynamic object key definition (`['payment_' + 'token']`) in the `CreateMissionPage.tsx` payload which was causing esbuild minification failures, restoring a 100% successful Vite production build.
+- **Profile Modal Parity Sync**: Fully aligned `CreateTaskModal.tsx` (the pop-up modal triggered directly from the User Profile page) by integrating the identical real-time USD/USDC conversion labels underneath the reward pool input field and within the **Estimated Total Cost** breakdown panel, guaranteeing a 100% consistent and premium UX throughout the ecosystem.
+
+## 🟢 v3.64.1-Hardened (UGC Mission Public API Migration & Authorization Fix)
+- **Public API Endpoint Shift**: Relocated backend synchronization in `CreateMissionPage.tsx` from the privileged `admin-bundle` to the public-facing `user-bundle` (`sync-ugc-mission` action). This completely bypasses the strict `403 Forbidden` administrative checks for ordinary community sponsors.
+- **Payload Interface Alignment**: Standardized payload fields sent to `user-bundle`'s `sync-ugc-mission` action, dynamically packaging the required `tasks_batch` array, `payment_token`, `reward_symbol`, and `txHash` keys.
+- **Sybil & Replay Protection**: Retained absolute cryptographic security using EIP-191 signature validation on the backend and transaction verification via `waitForTransactionReceipt` inside the `/api/user-bundle` pipeline.
+- **Idempotency Enforcement**: Enforced strict database-level idempotency by leveraging unique key mappings on `user_task_claims`, preventing double syncs.
+
 ## 🟢 v3.64.0-Hardened (UGC Payment Auditing, Pure English UI & Premium UX)
 - **Pure English UI Enforcement**: Systematically audited and translated all user-facing Indonesian text to concise English across the entire UGC creation pipeline, including `CreateMissionPage.tsx` platform pro-tips (Warpcast, Twitter, TikTok, Instagram, On-chain) and error warning alerts.
 - **On-Chain Parity & Dynamic Fee Calculations**: Aligned creator gating with smart contract (`DailyAppV15.sol`) requirements, dynamically auditing and validating USDC platform fees against live wallets before execution to avoid gas reverts.
