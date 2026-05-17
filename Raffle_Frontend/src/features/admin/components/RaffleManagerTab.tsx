@@ -531,6 +531,8 @@ interface WinnersPanelProps {
 }
 
 function WinnersPanel({ winners, raffleId }: WinnersPanelProps) {
+    const { address } = useAccount();
+    const { signMessageAsync } = useSignMessage();
     const { announceWinner, isAnnouncing } = useAdminRaffleQueries();
     if (!winners || winners.length === 0) return null;
     const zeroAddr = '0x0000000000000000000000000000000000000000';
@@ -538,7 +540,22 @@ function WinnersPanel({ winners, raffleId }: WinnersPanelProps) {
     if (realWinners.length === 0) return null;
 
     const handleAnnounce = async () => {
-        await announceWinner(raffleId.toString());
+        if (!address) return toast.error("Wallet not connected");
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Announce Winner for Raffle #${raffleId}\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            await announceWinner({
+                raffle_id: raffleId.toString(),
+                wallet: address,
+                signature,
+                message
+            });
+        } catch (e: any) {
+            console.error(e);
+            toast.error(e.message || "Failed to announce winner");
+        }
     };
 
     return (

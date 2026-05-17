@@ -1,0 +1,8 @@
+{
+  "name": "post-coding-reaudit",
+  "description": "Forces the agent to automatically check error logs and trigger the auto-reaudit skill after coding or modifying files.",
+  "when": "PostToolUse",
+  "if": "tool == 'replace_file_content' || tool == 'multi_replace_file_content' || tool == 'write_to_file'",
+  "then": "warn",
+  "message": "CODE MODIFICATION DETECTED: You MUST now execute the 'auto-reaudit' skill. Check terminal/IDE error logs immediately and perform a strict re-audit to ensure zero regressions."
+}

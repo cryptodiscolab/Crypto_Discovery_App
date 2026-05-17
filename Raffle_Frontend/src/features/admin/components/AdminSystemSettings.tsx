@@ -106,6 +106,12 @@ export default function AdminSystemSettings() {
         fetchInitialData();
     }, []);
 
+    useEffect(() => {
+        if (address) {
+            fetchTierDistribution();
+        }
+    }, [address]);
+
     const fetchInitialData = async () => {
         setLoading(true);
         try {
@@ -120,10 +126,31 @@ export default function AdminSystemSettings() {
     };
 
     const fetchTierDistribution = async () => {
+        if (!address) return;
         try {
-            const { data, error } = await supabase.rpc('fn_get_tier_distribution');
-            if (!error && data) setTierDistribution(data);
-        } catch (error) { console.error('Fetch Distribution Error:', error); }
+            const timestamp = new Date().toISOString();
+            const message = `Fetch Tier Distribution\nAdmin: ${address}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const response = await fetch('/api/user-bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'get-tier-distribution',
+                    wallet: address,
+                    signature,
+                    message
+                })
+            });
+
+            if (!response.ok) throw new Error(`Fetch tier distribution failed: ${response.status}`);
+            const result = await response.json();
+            if (result.success && result.data) {
+                setTierDistribution(result.data);
+            }
+        } catch (error) {
+            console.error('Fetch Distribution Error:', error);
+        }
     };
 
     const fetchTierConfig = async () => {

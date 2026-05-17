@@ -92,6 +92,7 @@ async function verifyRaffleOnChain(taskId: string, wallet_address: string, messa
     if (taskId.startsWith('raffle_buy_')) {
         const parts = taskId.split('_');
         const txHash = parts[parts.length - 1];
+        const raffleId = parts[2];
         if (!txHash || !txHash.startsWith('0x')) throw new Error('Missing transaction hash in task ID');
 
         const amountMatch = message.match(/Amount:\s*(\d+)/i);
@@ -102,8 +103,12 @@ async function verifyRaffleOnChain(taskId: string, wallet_address: string, messa
             const receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
             if (!receipt || receipt.status !== 'success') throw new Error('Transaction failed or not found');
 
+            const raffleContractAddr = getContractAddr('RAFFLE').toLowerCase();
             let confirmedAmount = 0;
+            
             for (const log of receipt.logs) {
+                if (log.address.toLowerCase() !== raffleContractAddr) continue; // [SECURITY FIX] Reject spoofed logs from fake contracts
+                
                 try {
                     const decoded = decodeEventLog({
                         abi: RAFFLE_EVENT_ABI,
@@ -111,11 +116,15 @@ async function verifyRaffleOnChain(taskId: string, wallet_address: string, messa
                         topics: log.topics,
                     });
                     if (decoded.eventName === 'TicketPurchased') {
-                        if (decoded.args.user.toLowerCase() === wallet_address.toLowerCase()) {
+                        // [SECURITY FIX] Enforce cross-raffle integrity
+                        if (
+                            decoded.args.user.toLowerCase() === wallet_address.toLowerCase() &&
+                            decoded.args.raffleId.toString() === raffleId
+                        ) {
                             confirmedAmount += Number(decoded.args.count);
                         }
                     }
-                } catch (e) { /* skip logs from other contracts */ }
+                } catch (e) { /* skip unparseable logs */ }
             }
 
             if (confirmedAmount < expectedAmount) {
@@ -138,7 +147,7 @@ async function verifyRaffleOnChain(taskId: string, wallet_address: string, messa
             // Check RaffleWinner events in the contract for this raffleId
             const logs = await publicClient.getLogs({
                 address: getContractAddr('RAFFLE'), // Zero-Hardcode ✅
-                event: RAFFLE_EVENT_ABI[1],
+                event: RAFFLE_EVENT_ABI[2], // [SECURITY FIX] Corrected ABI index from 1 (RaffleCreated) to 2 (RaffleWinner)
                 args: { raffleId: BigInt(raffleId) },
                 fromBlock: 'earliest'
             });
@@ -185,14 +194,23 @@ async function validateAndCalculateXP(wallet_address: string, signature: string,
     }
 
     let targetId: string | null = null;
-    if (task_id && task_id.startsWith('raffle_')) {
+    let isUgc = false;
+    if (task_id && task_id.startsWith('raffle_buy_')) {
         targetId = task_id.split('_').pop() || null;
+    } else if (task_id && task_id.startsWith('raffle_win_')) {
+        const parts = task_id.split('_');
+        if (parts.length !== 3) throw new Error('[Security] Invalid task ID format for raffle_win');
+        targetId = `raffle_win_${parts[2]}`;
     } else {
-        const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id').eq('id', task_id).maybeSingle<DbDailyTask>();
+        const { data: task } = await supabaseAdmin.from('daily_tasks').select('target_id, task_type').eq('id', task_id).maybeSingle();
         targetId = task?.target_id || null;
+        isUgc = task?.task_type === 'ugc';
     }
 
-    if (targetId) {
+    if (targetId && !isUgc) {
+        // [SECURITY FIX] UGC Sub-Task Lockout
+        // UGC sub-tasks share the same target_id (campaign.id). If we don't bypass this,
+        // users are blocked from claiming more than 1 sub-task per campaign.
         const { count } = await supabaseAdmin
             .from('user_task_claims')
             .select('id', { count: 'exact', head: true })
@@ -243,6 +261,7 @@ async function awardReferralBonus(userWallet: string, xpEarned: number, source: 
         if (bonusXp <= 0) return;
 
         const referrerWallet = profile.referred_by.toLowerCase();
+        if (referrerWallet === cleanWallet) return; // [SECURITY HARDENING] Prevent self-referral XP loop
         await supabaseAdmin.rpc('fn_increment_xp', { p_wallet: referrerWallet, p_amount: bonusXp });
         await logActivity(referrerWallet, 'XP', 'Referral Bonus', `Referral Bonus: +${bonusXp} XP (${bonusPercent}% from ${cleanWallet.slice(0, 6)}...${cleanWallet.slice(-4)})`, bonusXp, 'XP', { source, referred_user: cleanWallet, bonus_percent: bonusPercent });
     } catch (err: unknown) {
@@ -278,10 +297,11 @@ async function checkAndGrantDailyBonus(wallet_address: string) {
         }
 
         const bonusXp = await getPointValue('daily_task_completion') || 50;
+        const todayStr = new Date().toISOString().split('T')[0];
         
         const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
             wallet_address: wallet,
-            task_id: 'daily_task_completion',
+            task_id: `daily_task_completion_${todayStr}`,
             xp_earned: bonusXp,
             platform: 'system',
             action_type: 'daily_bonus'
@@ -528,10 +548,25 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
+        // [SECURITY FIX] Enforce Campaign Join & Participant Limit
+        // Ensure user actually joined the campaign so they can't bypass max_participants
+        const { data: joinRecord } = await supabaseAdmin
+            .from('user_claims')
+            .select('is_claimed')
+            .eq('user_address', wallet_address.toLowerCase())
+            .eq('campaign_id', campaign_id)
+            .maybeSingle();
+
+        if (!joinRecord) {
+            return res.status(403).json({ error: 'You must join the campaign before claiming rewards.' });
+        }
+
         const { data: subTasks, error: stErr } = await supabaseAdmin
             .from('daily_tasks')
             .select('id, action_type, xp_reward, platform')
-            .eq('onchain_id', campaign_id)
+            // [SECURITY FIX] UGC Campaign Sub-task Linkage Failure
+            // Previously queried 'onchain_id', but campaigns are linked via 'target_id'
+            .eq('target_id', campaign_id)
             .eq('task_type', 'ugc')
             .eq('is_active', true);
 
@@ -547,7 +582,7 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             .eq('task_id', `ugc_campaign_${campaign_id}`)
             .maybeSingle();
 
-        if (existingClaim) {
+        if (existingClaim || joinRecord.is_claimed) {
             return res.status(200).json({ success: true, already_claimed: true, message: 'Campaign reward already claimed.' });
         }
 
@@ -587,13 +622,26 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             .eq('id', campaign_id)
             .maybeSingle();
 
-        await supabaseAdmin.from('user_task_claims').insert({
+        const { error: insErr } = await supabaseAdmin.from('user_task_claims').insert({
             wallet_address: wallet_address.toLowerCase(),
             task_id: `ugc_campaign_${campaign_id}`,
             xp_earned: totalXp,
             platform: 'ugc',
             action_type: 'campaign_complete'
         });
+
+        if (insErr) {
+            if (insErr.code === '23505') {
+                return res.status(200).json({ success: true, already_claimed: true, message: 'Campaign reward already claimed.' });
+            }
+            throw insErr;
+        }
+
+        // [SECURITY FIX] Update Campaign Join State
+        await supabaseAdmin.from('user_claims')
+            .update({ is_claimed: true })
+            .eq('user_address', wallet_address.toLowerCase())
+            .eq('campaign_id', campaign_id);
 
         if (totalXp > 0) {
             const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {

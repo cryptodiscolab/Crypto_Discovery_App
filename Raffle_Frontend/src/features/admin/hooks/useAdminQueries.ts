@@ -34,7 +34,7 @@ export function useAdminRaffleQueries() {
 
     // Mutations
     const announceMutation = useMutation({
-        mutationFn: (raffleId: number | string) => adminService.announceWinner(raffleId),
+        mutationFn: (payload: { raffle_id: number | string; wallet: string; signature: string; message: string }) => adminService.announceWinner(payload),
         onSuccess: () => {
             toast.success('Announcement sent to Telegram!');
         },

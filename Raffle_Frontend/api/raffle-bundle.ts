@@ -11,10 +11,26 @@ import {
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
     isMainnet,
-    sanitizeError
+    sanitizeError,
+    MASTER_ADMINS
 } from './_shared/constants.js';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+async function isAuthorizedAdmin(walletAddress: string): Promise<boolean> {
+    if (!walletAddress) return false;
+    const clean = walletAddress.toLowerCase();
+    if (MASTER_ADMINS.includes(clean)) return true;
+
+    const { data, error } = await supabaseAdmin
+        .from('user_profiles')
+        .select('is_admin')
+        .eq('wallet_address', clean)
+        .maybeSingle();
+
+    if (error || !data) return false;
+    return !!data.is_admin;
+}
 
 // ─── Telegram Notification Helper ────────────────────────────────────────────
 async function notifyTelegramWinner(walletAddress: string, raffleId: string, xpAwarded: number) {
@@ -89,15 +105,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
     const { raffle_id, wallet_address, signature, message } = req.body;
-    if (!raffle_id) return res.status(400).json({ error: 'Missing raffle_id' });
-
-    // Admin auth: require wallet signature from an admin
-    if (wallet_address && signature && message) {
-        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
-        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+    if (!raffle_id || !wallet_address || !signature || !message) {
+        return res.status(400).json({ error: 'Missing required authorization fields' });
     }
 
     try {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid || !(await isAuthorizedAdmin(wallet_address))) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        // Replay protection: verify message details
+        const lowerMsg = String(message).toLowerCase();
+        if (!lowerMsg.includes('announce winner') || !lowerMsg.includes(`raffle #${raffle_id}`)) {
+            return res.status(400).json({ error: 'Invalid message structure' });
+        }
+
+        // Timestamp expiration (replay protection)
+        const isoMatch = message.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/);
+        if (!isoMatch) return res.status(401).json({ error: 'Missing timestamp in signature message' });
+        const messageTime = new Date(isoMatch[0]).getTime();
+        if (Math.abs(Date.now() - messageTime) / (1000 * 60) > 5) {
+            return res.status(401).json({ error: 'Signature expired (max 5 min old)' });
+        }
         const raffleInfo: any = await rpcClient.readContract({
             address: RAFFLE_ADDRESS as `0x${string}`,
             abi: RAFFLE_ABI,
@@ -199,11 +229,16 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
                 xp_earned: xpAwarded,
                 platform: 'system',
                 action_type: 'raffle_win',
-                target_id: String(raffle_id),
+                target_id: `raffle_win_${raffle_id}`,
                 claimed_at: new Date().toISOString()
             });
 
-        if (claimError && claimError.code !== '23505') throw claimError;
+        if (claimError) {
+            if (claimError.code === '23505') {
+                return res.status(200).json({ success: true, alreadyClaimed: true });
+            }
+            throw claimError;
+        }
 
         if (xpAwarded > 0) {
             await supabaseAdmin.rpc('fn_increment_xp', { p_wallet: normalizedWallet, p_amount: xpAwarded });
@@ -295,40 +330,16 @@ async function handleCampaignJoin(req: VercelRequest, res: VercelResponse) {
         const messageTime = new Date(isoMatch[0]).getTime();
         if (Math.abs(Date.now() - messageTime) / (1000 * 60) > 5) return res.status(401).json({ error: 'Signature expired' });
 
-        const { data: existing } = await supabaseAdmin
-            .from('user_claims')
-            .select('id')
-            .eq('campaign_id', campaign_id)
-            .eq('user_address', wallet.toLowerCase())
-            .maybeSingle();
-
-        if (existing) return res.status(400).json({ error: 'Already joined' });
-
-        const { data: campaign, error: cErr } = await supabaseAdmin
-            .from('campaigns')
-            .select('max_participants, current_participants, status')
-            .eq('id', campaign_id)
-            .maybeSingle();
-
-        if (cErr || !campaign) throw new Error('Campaign not found');
-        if (campaign.status !== 'active') throw new Error('Campaign is not active');
-        if (campaign.max_participants && (campaign.current_participants ?? 0) >= campaign.max_participants) {
-            throw new Error('Campaign is full');
-        }
-
-        const { error: claimErr } = await supabaseAdmin
-            .from('user_claims')
-            .insert({
-                user_address: wallet.toLowerCase(),
-                campaign_id: campaign_id,
-                is_verified: false,
-                is_claimed: false,
-                created_at: new Date().toISOString()
+        const { data: joinRes, error: joinErr } = await supabaseAdmin
+            .rpc('fn_join_campaign_atomic', {
+                p_campaign_id: campaign_id,
+                p_user_address: wallet.toLowerCase()
             });
 
-        if (claimErr) throw claimErr;
-
-        await supabaseAdmin.rpc('fn_increment_campaign_participants', { p_campaign_id: campaign_id });
+        if (joinErr) throw joinErr;
+        if (joinRes && !joinRes.success) {
+            return res.status(400).json({ error: joinRes.error });
+        }
 
         return res.status(200).json({ success: true });
     } catch (error: any) {

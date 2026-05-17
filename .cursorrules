@@ -13,9 +13,10 @@ Before responding to ANY request, you MUST perform these reads IN ORDER:
 2. .agents/skills/secure-infrastructure-manager/SKILL.md  ← Security & contracts
 3. .agents/skills/git-hygiene/SKILL.md          ← Clean tree mandate
 4. .agents/skills/wsl-optimization/SKILL.md      ← Performance & WSL First (NEW)
-5. .agents/WORKSPACE_MAP.md                     ← Canonical Nav Map
-6. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
-7. PRD/FEATURE_WORKFLOW_SOT.md                  ← Feature & Sync Source of Truth (Anti-Hallucination)
+5. .agents/skills/auto-reaudit/SKILL.md         ← Auto Re-Audit Hook Protocol (NEW)
+6. .agents/WORKSPACE_MAP.md                     ← Canonical Nav Map
+7. PRD/DISCO_DAILY_MASTER_PRD.md                ← Master Source of Truth
+8. PRD/FEATURE_WORKFLOW_SOT.md                  ← Feature & Sync Source of Truth (Anti-Hallucination)
 ```
 
 ### STEP 2 — Read Situational Skills (baca jika relevan dengan task)
@@ -557,7 +558,7 @@ Agent SELF-CHECK (sebelum menulis kode):
 - **RELIABILITY SYNC**: Semua verifikasi sosial (Farcaster/Twitter) WAJIB menggunakan **Iterative Pagination** (Iterated Fetching) untuk mendukung user dengan following besar atau casts populer (>100 items).
 
 ### 29.3 Post-Fix Re-Audit (AFTER applying any fix)
-Setelah fix diterapkan, Agent WAJIB menjalankan kembali:
+Setelah fix diterapkan, Agent WAJIB memicu skill `auto-reaudit` (sesuai mandat dari hook `post-coding-reaudit.json`) ATAU menjalankan kembali:
 ```bash
 # Re-run Ecosystem Sync Audit
 node scripts/audits/check_sync_status.cjs

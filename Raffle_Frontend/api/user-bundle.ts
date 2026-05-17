@@ -226,6 +226,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'check-admin': await handleCheckAdmin(req, res); break;
         case 'pending-missions': await handleFetchPendingMissions(req, res); break;
         case 'pending-raffles': await handleFetchPendingRaffles(req, res); break;
+        case 'get-tier-distribution': await handleGetTierDistribution(req, res); break;
         case 'get-health': await handleGetHealth(req, res); break;
         case 'reset-health': await handleResetHealth(req, res); break;
         case 'generate-sync-signature': await handleGenerateSyncSignature(req, res); break;
@@ -361,16 +362,40 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
     try {
         const cleanAddress = wallet_address.toLowerCase();
         let skipSignature = false;
+        let cleanTxHash: string | undefined = undefined;
 
         if (tx_hash) {
+            cleanTxHash = String(tx_hash).trim().toLowerCase();
+
+            // [SECURITY FIX] Prevent Replay Attacks using an old but valid tx_hash
+            const { data: existingLog } = await getSupabaseAdmin()
+                .from('user_activity_logs')
+                .select('id')
+                .eq('tx_hash', cleanTxHash)
+                .maybeSingle();
+
+            if (existingLog) {
+                return res.status(200).json({ success: true, xp_synced: 0, message: 'Transaction already synced.' });
+            }
+
             try {
-                const receipt = await rpcClient.waitForTransactionReceipt({ hash: tx_hash as `0x${string}`, timeout: 10000 });
-                if (receipt?.status === 'success' && receipt.from.toLowerCase() === cleanAddress) {
+                const receipt = await rpcClient.waitForTransactionReceipt({ hash: cleanTxHash as `0x${string}`, timeout: 10000 });
+                
+                // [SECURITY FIX] Ensure the transaction was actually sent to our DailyApp contract, not just any random address
+                const isDailyAppTx = receipt?.to?.toLowerCase() === DAILY_APP_ADDRESS.toLowerCase();
+                
+                if (receipt?.status === 'success' && receipt.from.toLowerCase() === cleanAddress && isDailyAppTx) {
                     skipSignature = true;
+                } else if (receipt && (!isDailyAppTx || receipt.from.toLowerCase() !== cleanAddress)) {
+                    return res.status(400).json({ error: 'Invalid transaction target or sender.' });
                 }
             } catch (hashErr: unknown) {
-                const msg = hashErr instanceof Error ? hashErr.message : String(hashErr);
-                if (msg === 'RPC_TIMEOUT') skipSignature = true;
+                const msg = hashErr instanceof Error ? hashErr.message.toLowerCase() : String(hashErr).toLowerCase();
+                if (msg.includes('timeout') || msg.includes('could not be found')) {
+                    // [SECURITY FIX] DO NOT set skipSignature = true here. That opens a free XP exploit for fake hashes.
+                    // Instead, force the request to fail safely so the frontend queues it in pending_sync_jobs for the CRON.
+                    return res.status(503).json({ error: 'RPC_SYNC_DELAYED', message: 'Transaction unverified due to RPC lag. Sync queued for CRON.' });
+                }
             }
         }
 
@@ -411,18 +436,39 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
 
         let xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
 
-        const { data: dailySetting } = await getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'daily_claim').maybeSingle();
-        const standardDailyReward = dailySetting?.points_value || 100;
+        let finalLastOnChainXpToSave = currentOnChainXp;
 
         if (xpDelta === 0 && tx_hash && skipSignature) {
-            xpDelta = standardDailyReward;
+            // [SECURITY FIX] Phantom Claim Exploit Prevention
+            // Never blindly force XP if the node reads 0 delta. It could be a fake 0 ETH transfer.
+            // Return 503 so the frontend queues it in pending_sync_jobs. If it's real RPC lag, 
+            // the CRON will eventually read the correct delta and grant the XP securely.
+            return res.status(503).json({ error: 'RPC_STATE_LAG', message: 'Transaction verified but state is lagging. Queued for CRON.' });
+        }
+        
+        const isDailyClaim = !!(tx_hash && skipSignature);
+        let currentStreakToSave = profile?.streak_count || 0;
+        let lastStreakClaimToSave = profile?.last_streak_claim || null;
+        
+        if (isDailyClaim) {
+            const now = new Date();
+            const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
+            
+            if (!lastClaimDate) {
+                currentStreakToSave = 1;
+            } else {
+                const diffHours = (now.getTime() - lastClaimDate.getTime()) / (1000 * 60 * 60);
+                if (diffHours >= 20 && diffHours <= 48) currentStreakToSave += 1;
+                else if (diffHours > 48) currentStreakToSave = 1;
+            }
+            lastStreakClaimToSave = now.toISOString();
         }
 
         const result = { success: true, xp_synced: 0, current_tier: currentTierOnChain };
 
         if (xpDelta > 0) {
             // Rule 60: COOLDOWN ENFORCEMENT for Daily Claim — check BEFORE incrementing
-            if (xpDelta === standardDailyReward || (tx_hash && skipSignature)) {
+            if (isDailyClaim) {
                 if (profile?.last_streak_claim) {
                     const lastDate = new Date(profile.last_streak_claim);
                     const hoursSince = (new Date().getTime() - lastDate.getTime()) / (1000 * 60 * 60);
@@ -431,7 +477,33 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                     }
                 }
             }
+            
+            const updatePayload: any = {
+                last_onchain_xp: finalLastOnChainXpToSave,
+                tier: currentTierOnChain,
+                updated_at: new Date().toISOString()
+            };
+            
+            if (isDailyClaim) {
+                updatePayload.streak_count = currentStreakToSave;
+                updatePayload.last_streak_claim = lastStreakClaimToSave;
+            }
 
+            // [SECURITY FIX] Optimistic Concurrency Control (OCC) + Atomic Streak Update
+            const { data: updateData, error: updateErr } = await getSupabaseAdmin()
+                .from('user_profiles')
+                .update(updatePayload)
+                .eq('wallet_address', cleanAddress)
+                .eq('last_onchain_xp', lastOnChainXp) // Ensure no concurrent request has already moved the watermark
+                .select('wallet_address');
+
+            if (updateErr) throw updateErr;
+            if (!updateData || updateData.length === 0) {
+                // High watermark already moved by a concurrent request. Abort to prevent XP multiplication.
+                return res.status(409).json({ error: 'Conflict: Sync already processed.' });
+            }
+
+            // Safe to increment total_xp ONLY AFTER securing the watermark update
             const { error: rpcErr } = await getSupabaseAdmin().rpc('fn_increment_xp', {
                 p_wallet: cleanAddress,
                 p_amount: xpDelta
@@ -439,41 +511,13 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
 
             if (rpcErr) throw rpcErr;
 
-            await getSupabaseAdmin()
-                .from('user_profiles')
-                .update({
-                    last_onchain_xp: currentOnChainXp,
-                    tier: currentTierOnChain,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('wallet_address', cleanAddress);
-
-            // Streak tracking for Daily Claim
-            if (xpDelta === standardDailyReward || (tx_hash && skipSignature)) {
-                const now = new Date();
-                const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
-                let currentStreak = profile?.streak_count || 0;
-
-                if (!lastClaimDate) {
-                    currentStreak = 1;
-                } else {
-                    const diffHours = (now.getTime() - lastClaimDate.getTime()) / (1000 * 60 * 60);
-                    if (diffHours >= 20 && diffHours <= 48) currentStreak += 1;
-                    else if (diffHours > 48) currentStreak = 1;
-                }
-
-                await getSupabaseAdmin()
-                    .from('user_profiles')
-                    .update({ streak_count: currentStreak, last_streak_claim: now.toISOString() })
-                    .eq('wallet_address', cleanAddress);
-            }
-
             // Determine if this is a daily claim vs generic XP sync
-            const isDailyClaim = xpDelta === standardDailyReward || (tx_hash && skipSignature);
             const logCategory = isDailyClaim ? 'DAILY' : 'XP';
             const logType = isDailyClaim ? 'On-chain Daily Claim' : 'Ledger Sync';
+            
+            // [UX FIX] Log the ACTUAL new streak, not the stale one from the old profile object
             const logDescription = isDailyClaim
-                ? `Daily claim: +${xpDelta} XP (streak: ${profile?.streak_count || 1})`
+                ? `Daily claim: +${xpDelta} XP (streak: ${currentStreakToSave})`
                 : `Synced ${xpDelta} XP from Base Ledger (Parity: ${currentOnChainXp})`;
 
             await logActivity({
@@ -483,7 +527,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 description: logDescription,
                 amount: xpDelta,
                 symbol: 'XP',
-                txHash: tx_hash || null,
+                txHash: (cleanTxHash && skipSignature) ? cleanTxHash : null,
                 metadata: {
                     chain_id: isMainnet ? 8453 : 84532,
                     contract_address: DAILY_APP_ADDRESS,
@@ -496,26 +540,6 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             awardReferralBonus(cleanAddress, xpDelta, logType).catch(() => {});
 
             result.xp_synced = xpDelta;
-        } else if (tx_hash) {
-            // xpDelta is 0 but user submitted a valid tx_hash — this means the on-chain XP
-            // was already synced (race condition) or RPC returned stale data.
-            // Still log the daily claim event so user history is not empty.
-            await logActivity({
-                wallet: cleanAddress,
-                category: 'DAILY',
-                type: 'On-chain Daily Claim',
-                description: `Daily claim confirmed (XP already synced, delta: 0)`,
-                amount: 0,
-                symbol: 'XP',
-                txHash: tx_hash,
-                metadata: {
-                    chain_id: isMainnet ? 8453 : 84532,
-                    contract_address: DAILY_APP_ADDRESS,
-                    on_chain_xp: currentOnChainXp,
-                    sync_status: 'already_synced',
-                    note: 'xpDelta was 0 — on-chain state already matched DB'
-                }
-            });
         }
 
         return res.status(200).json(result);
@@ -534,12 +558,28 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const response = await fetchWithRetry(
-            () => neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [address] }),
+            () => neynar.fetchBulkUsersByEthOrSolAddress({ addresses: [address.toLowerCase()] }),
             'neynar-api'
         ) as Record<string, { fid: number; username: string; pfp_url: string; experimental?: { neynar_user_score: number } }[]>;
-        const fcUser = response?.[address.toLowerCase()]?.[0];
+        
+        // [SECURITY FIX] Case-insensitive key lookup to prevent 404s if Neynar returns checksummed keys
+        const cleanAddress = address.toLowerCase();
+        const userKey = Object.keys(response || {}).find(k => k.toLowerCase() === cleanAddress);
+        const fcUser = userKey ? response[userKey]?.[0] : undefined;
 
         if (fcUser) {
+            // Check if another wallet has already linked this Farcaster FID
+            const { data: existingFc } = await getSupabaseAdmin()
+                .from('user_profiles')
+                .select('wallet_address')
+                .eq('fid', fcUser.fid)
+                .neq('wallet_address', address.toLowerCase())
+                .maybeSingle();
+
+            if (existingFc) {
+                return res.status(400).json({ error: 'This Farcaster account is already linked to another wallet.' });
+            }
+
             const { data, error } = await getSupabaseAdmin()
                 .from('user_profiles')
                 .upsert({
@@ -550,7 +590,12 @@ async function handleFarcasterSync(req: VercelRequest, res: VercelResponse) {
                     neynar_score: fcUser.experimental?.neynar_user_score || 0
                 }, { onConflict: 'wallet_address' })
                 .select().maybeSingle();
-            if (error) throw error;
+            if (error) {
+                if (error.code === '23505') {
+                    return res.status(400).json({ error: 'This Farcaster account is already linked to another wallet.' });
+                }
+                throw error;
+            }
             return res.status(200).json({ ok: true, profile: data });
         }
         return res.status(404).json({ error: 'No Farcaster profile' });
@@ -761,6 +806,12 @@ async function handleFrontendLogActivity(req: VercelRequest, res: VercelResponse
     try {
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        // [SECURITY FIX] Disallow frontend from logging financial/XP categories to prevent Admin Metrics Poisoning via Fake Receipts.
+        const forbiddenCategories = ['PURCHASE', 'REWARD', 'SWAP', 'XP', 'ADMIN'];
+        if (forbiddenCategories.includes(category?.toUpperCase())) {
+            return res.status(403).json({ error: `Category ${category} must be logged by the backend.` });
+        }
 
         // For financial activities (PURCHASE/REWARD) with tx_hash, verify receipt on-chain
         let receiptVerified = false;
@@ -1036,7 +1087,7 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
                 xp_earned: creatorXp,
                 platform: 'system',
                 action_type: 'raffle_create',
-                target_id: String(raffle_id)
+                target_id: `raffle_create_${raffle_id}`
             });
 
             if (!claimErr) {
@@ -1257,22 +1308,31 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
         if (!isVerified) return res.status(403).json({ error: 'Identity verification required for rewards' });
 
         const { amountETH, tier, txHash } = payload;
+        if (!txHash) return res.status(400).json({ error: 'Missing transaction hash' });
 
-        // Verify claim tx on-chain if txHash provided
         const verifiedAmount = parseFloat(amountETH);
-        if (txHash) {
-            try {
-                const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
-                if (receipt?.status === 'success') {
-                    // The ClaimProcessed event contains the actual amount
-                    // For now, trust the frontend amount but flag if receipt doesn't match wallet
-                    if (receipt.from.toLowerCase() !== wallet.toLowerCase()) {
-                        return res.status(403).json({ error: 'Transaction sender does not match wallet' });
-                    }
-                }
-            } catch {
-                // Receipt verification is best-effort for pool claims
-            }
+        let receipt;
+        try {
+            receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+        } catch (err: unknown) {
+            console.warn('[handleSyncPoolClaim] RPC lag fetching receipt:', err);
+            return res.status(503).json({ error: 'RPC_STATE_LAG', message: 'Transaction verified but state is lagging. Please try again in a few seconds.' });
+        }
+
+        if (!receipt) {
+            return res.status(503).json({ error: 'RPC_STATE_LAG', message: 'Transaction receipt not indexed yet.' });
+        }
+
+        if (receipt.status !== 'success') {
+            return res.status(400).json({ error: 'Transaction reverted on-chain' });
+        }
+
+        if (receipt.from.toLowerCase() !== wallet.toLowerCase()) {
+            return res.status(403).json({ error: 'Transaction sender does not match wallet' });
+        }
+
+        if (DAILY_APP_ADDRESS && receipt.to?.toLowerCase() !== DAILY_APP_ADDRESS.toLowerCase()) {
+            return res.status(403).json({ error: 'Transaction destination is not the DailyApp contract' });
         }
 
         await logActivity({
@@ -1283,7 +1343,7 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
             amount: verifiedAmount,
             symbol: 'ETH',
             txHash,
-            metadata: { userTier: tier, feature: 'sbt_pool', tx_verified: !!txHash }
+            metadata: { userTier: tier, feature: 'sbt_pool', tx_verified: true }
         });
 
         return res.status(200).json({ success: true });
@@ -1334,23 +1394,18 @@ async function awardReferralBonus(userWallet: string, xpEarned: number, source: 
     try {
         const cleanWallet = userWallet.toLowerCase();
 
-        // 1. Check if user has a referrer
+        // 1. Check if user has a referrer and their current XP in a single query to prevent DB exhaustion
         const { data: profile } = await getSupabaseAdmin()
             .from('user_profiles')
-            .select('referred_by')
+            .select('referred_by, total_xp')
             .eq('wallet_address', cleanWallet)
             .maybeSingle();
 
         if (!profile?.referred_by) return;
         const referrerWallet = profile.referred_by.toLowerCase();
+        if (referrerWallet === cleanWallet) return; // [SECURITY HARDENING] Prevent self-referral XP loop
 
         // 2. Check if user has reached the active threshold (referrer only earns from active referrals)
-        const { data: userProfile } = await getSupabaseAdmin()
-            .from('user_profiles')
-            .select('total_xp')
-            .eq('wallet_address', cleanWallet)
-            .maybeSingle();
-
         // Get threshold from system settings
         const { data: thresholdSetting } = await getSupabaseAdmin()
             .from('system_settings')
@@ -1359,7 +1414,7 @@ async function awardReferralBonus(userWallet: string, xpEarned: number, source: 
             .maybeSingle();
         const threshold = thresholdSetting?.value ? Number(thresholdSetting.value) : 500;
 
-        if ((userProfile?.total_xp || 0) < threshold) return; // User not yet "active"
+        if ((profile?.total_xp || 0) < threshold) return; // User not yet "active"
 
         // 3. Get bonus percentage from system settings
         const { data: bonusSetting } = await getSupabaseAdmin()
@@ -1593,29 +1648,11 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
     if (!wallet_address || !signature || !message || !provider || !oauth_data) return res.status(400).json({ error: 'Missing fields' });
 
     try {
-        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
-        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
-
-        const normalizedWallet = wallet_address.toLowerCase();
-
-        if (provider === 'google') {
-            const { google_id, google_email } = oauth_data;
-            const { data: existing } = await getSupabaseAdmin().from('user_profiles').select('wallet_address').eq('google_id', google_id).maybeSingle();
-            if (existing && existing.wallet_address !== normalizedWallet) return res.status(409).json({ error: 'Already linked' });
-
-            await getSupabaseAdmin().from('user_profiles').update({ google_id, google_email, oauth_provider: 'google', updated_at: new Date().toISOString() }).eq('wallet_address', normalizedWallet);
-            await logActivity({ wallet: normalizedWallet, category: 'SOCIAL', type: 'Identity Link', description: `Linked Google: ${google_email}` });
-            return res.status(200).json({ success: true });
-        } else if (provider === 'x') {
-            const { twitter_id, twitter_username } = oauth_data;
-            const { data: existing } = await getSupabaseAdmin().from('user_profiles').select('wallet_address').eq('twitter_id', twitter_id).maybeSingle();
-            if (existing && existing.wallet_address !== normalizedWallet) return res.status(409).json({ error: 'Already linked' });
-
-            await getSupabaseAdmin().from('user_profiles').update({ twitter_id, twitter_username, oauth_provider: 'x', updated_at: new Date().toISOString() }).eq('wallet_address', normalizedWallet);
-            await logActivity({ wallet: normalizedWallet, category: 'SOCIAL', type: 'Identity Link', description: `Linked X: @${twitter_username}` });
-            return res.status(200).json({ success: true });
-        }
-        return res.status(400).json({ error: 'Invalid provider' });
+        // [SECURITY FIX] Client-Side OAuth Trust Vulnerability
+        // Accepting 'oauth_data' directly from the frontend without a server-side Provider JWT validation 
+        // allows attackers to pass {"twitter_id": "1", "twitter_username": "elonmusk"} and instantly bypass Identity Gating.
+        // Endpoint MUST be disabled until a proper server-side token validation (e.g. Supabase Auth verifyOTP/getSession) is implemented.
+        return res.status(501).json({ error: 'OAuth endpoint disabled: Server-side token validation required.' });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });
@@ -1643,7 +1680,12 @@ async function handleApproveMission(req: VercelRequest, res: VercelResponse) {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid || !(await isAuthorizedAdmin(wallet))) return res.status(403).json({ error: 'Unauthorized' });
 
-        const { error: taskErr } = await getSupabaseAdmin().from('daily_tasks').update({ is_active: true }).eq('id', mission_id);
+        // [SECURITY FIX] Cross-Table Data Corruption & Activation Deadlock
+        // Previously only updated campaigns without activating the underlying tasks
+        const { error: campErr } = await getSupabaseAdmin().from('campaigns').update({ is_active: true, status: 'active' }).eq('id', mission_id);
+        if (campErr) throw campErr;
+
+        const { error: taskErr } = await getSupabaseAdmin().from('daily_tasks').update({ is_active: true }).eq('target_id', mission_id);
         if (taskErr) throw taskErr;
 
         await getSupabaseAdmin().from('admin_audit_logs').insert({ admin_address: wallet.toLowerCase(), action: 'UGC_APPROVE_MISSION', details: { mission_id } });
@@ -1753,9 +1795,14 @@ async function handleGetHealth(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleResetHealth(req: VercelRequest, res: VercelResponse) {
-    const { service_key } = req.body || {};
+    const { wallet, signature, message, service_key } = req.body || {};
     if (!service_key) return res.status(400).json({ error: 'Missing service_key' });
+    
     try {
+        // [SECURITY FIX] Unauthenticated Admin Health Reset
+        // Previously missing signature and admin verification, allowing public alert suppression.
+        const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid || !(await isAuthorizedAdmin(wallet))) return res.status(403).json({ error: 'Unauthorized' });
         const { error } = await getSupabaseAdmin().from('system_health').upsert({
             service_key,
             status: 'healthy',
@@ -1878,6 +1925,27 @@ async function handleGetDailyProgress(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, progress: data || { wallet_address: wallet.toLowerCase(), completed_count: 0, bonus_claimed: false }, bonus_amount: bonusSetting?.points_value || 50 });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleGetTierDistribution(req: VercelRequest, res: VercelResponse) {
+    const body = req.method === 'POST' ? req.body : req.query;
+    const { wallet, signature, message } = body || {};
+    if (!wallet || !signature || !message) {
+        return res.status(400).json({ error: 'Missing signature, wallet, or message' });
+    }
+
+    try {
+        const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid || !(await isAuthorizedAdmin(wallet))) return res.status(403).json({ error: 'Unauthorized' });
+
+        const { data, error } = await getSupabaseAdmin().rpc('fn_get_tier_distribution');
+        if (error) throw error;
+
+        return res.status(200).json({ success: true, data: data || [] });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }

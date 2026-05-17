@@ -34,11 +34,11 @@ class AdminService {
         return data.data;
     }
 
-    async announceWinner(raffleId: number | string) {
+    async announceWinner(payload: { raffle_id: number | string; wallet: string; signature: string; message: string }) {
         const res = await fetch('/api/raffle/announce-winner', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'announce-winner', raffle_id: raffleId })
+            body: JSON.stringify({ action: 'announce-winner', ...payload })
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed to announce winner');
