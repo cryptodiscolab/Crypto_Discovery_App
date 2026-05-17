@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Calculator, Info } from 'lucide-react';
 import { useAccount, useSignMessage, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
@@ -35,6 +35,11 @@ interface PayAndCreateMissionButtonProps {
     address?: `0x${string}`;
     tasksBatch: TaskBatchItem[];
     selectedTokenAddr: string;
+    selectedTokenBalance: bigint;
+    usdcBalance: bigint;
+    platformFee: bigint;
+    rewardAmount: bigint;
+    selectedTokenSymbol: string;
     onSuccess: (_hash: `0x${string}`) => Promise<void>;
     onInsufficientBalance?: () => void;
 }
@@ -43,7 +48,18 @@ interface PayAndCreateMissionButtonProps {
  * PayAndCreateMissionButton Component
  * Internal to CreateTaskModal for now.
  */
-function PayAndCreateMissionButton({ calls, address, onSuccess }: PayAndCreateMissionButtonProps) {
+function PayAndCreateMissionButton({
+    calls,
+    address,
+    onSuccess,
+    selectedTokenBalance,
+    usdcBalance,
+    platformFee,
+    rewardAmount,
+    selectedTokenAddr,
+    selectedTokenSymbol,
+    onInsufficientBalance
+}: PayAndCreateMissionButtonProps) {
     const { writeContractAsync } = useWriteContract();
     const [isCreating, setIsCreating] = useState(false);
     const publicClient = usePublicClient();
@@ -51,6 +67,44 @@ function PayAndCreateMissionButton({ calls, address, onSuccess }: PayAndCreateMi
     const handleCreate = async () => {
         if (!address) return toast.error("Connect wallet!");
         if (calls.length === 0) return toast.error("Batch is empty!");
+
+        // 1. Check USDC Balance for Platform Listing Fee
+        if (usdcBalance < platformFee) {
+            toast.error(`Insufficient USDC balance for listing fee. Required: ${formatUnits(platformFee, 6)} USDC. Available: ${formatUnits(usdcBalance, 6)} USDC.`);
+            if (onInsufficientBalance) {
+                toast.loading("Opening swap modal...", { duration: 2000 });
+                setTimeout(() => onInsufficientBalance(), 1000);
+            }
+            return;
+        }
+
+        // 2. Check Selected Token Balance for Reward Pool
+        const isNativeETH = selectedTokenAddr === "0x0000000000000000000000000000000000000000";
+        if (isNativeETH) {
+            if (selectedTokenBalance < rewardAmount) {
+                toast.error(`Insufficient ETH balance for reward pool. Required: ${formatUnits(rewardAmount, 18)} ETH. Available: ${formatUnits(selectedTokenBalance, 18)} ETH.`);
+                if (onInsufficientBalance) {
+                    toast.loading("Opening swap modal...", { duration: 2000 });
+                    setTimeout(() => onInsufficientBalance(), 1000);
+                }
+                return;
+            }
+        } else {
+            const isUsdc = selectedTokenAddr.toLowerCase() === (CONTRACTS.USDC || "").toLowerCase();
+            const totalRequired = isUsdc ? (platformFee + rewardAmount) : rewardAmount;
+            const currentBalance = isUsdc ? usdcBalance : selectedTokenBalance;
+            const decimals = isUsdc ? 6 : 18;
+
+            if (currentBalance < totalRequired) {
+                toast.error(`Insufficient ${selectedTokenSymbol} balance for reward pool. Required: ${formatUnits(totalRequired, decimals)} ${selectedTokenSymbol}. Available: ${formatUnits(currentBalance, decimals)} ${selectedTokenSymbol}.`);
+                if (onInsufficientBalance) {
+                    toast.loading("Opening swap modal...", { duration: 2000 });
+                    setTimeout(() => onInsufficientBalance(), 1000);
+                }
+                return;
+            }
+        }
+
         setIsCreating(true);
         const tid = toast.loading("Processing Mission Batch...");
         try {
@@ -106,10 +160,6 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
     const { refetch: refetchStats } = useUserInfo(address);
     const { ecosystemSettings } = usePoints();
 
-    const { data: qSponsorFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
-    const { data: qMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
-    const { data: qRewardClaim } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
-
     const allowedTokens = ((ecosystemSettings as { allowed_tokens?: AllowedToken[]; whitelisted_tokens?: AllowedToken[] })?.allowed_tokens
         || (ecosystemSettings as { allowed_tokens?: AllowedToken[]; whitelisted_tokens?: AllowedToken[] })?.whitelisted_tokens
         || []) as AllowedToken[];
@@ -118,6 +168,52 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
 
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>(ethToken?.address || "0x0000000000000000000000000000000000000000");
     const selectedToken = allowedTokens.find((t) => t.address?.toLowerCase() === selectedTokenAddr?.toLowerCase()) || ethToken;
+
+    const [selectedTokenBalance, setSelectedTokenBalance] = useState<bigint>(0n);
+    const [usdcBalance, setUsdcBalance] = useState<bigint>(0n);
+    const publicClient = usePublicClient();
+
+    const fetchBalances = async () => {
+        if (!address || !publicClient) return;
+        try {
+            // 1. Fetch Selected Token Balance
+            if (selectedTokenAddr === '0x0000000000000000000000000000000000000000') {
+                const bal = await publicClient.getBalance({ address });
+                setSelectedTokenBalance(bal);
+            } else {
+                const bal = await publicClient.readContract({
+                    address: selectedTokenAddr as `0x${string}`,
+                    abi: ERC20_ABI,
+                    functionName: 'balanceOf',
+                    args: [address]
+                });
+                setSelectedTokenBalance(bal as bigint);
+            }
+
+            // 2. Fetch USDC Balance for platform fee validation
+            if (CONTRACTS.USDC) {
+                const uBal = await publicClient.readContract({
+                    address: CONTRACTS.USDC as `0x${string}`,
+                    abi: ERC20_ABI,
+                    functionName: 'balanceOf',
+                    args: [address]
+                });
+                setUsdcBalance(uBal as bigint);
+            }
+        } catch (err) {
+            console.warn('[CreateTaskModal] Balance fetch lag:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchBalances();
+        const interval = setInterval(fetchBalances, 10000);
+        return () => clearInterval(interval);
+    }, [address, selectedTokenAddr, publicClient]);
+
+    const { data: qSponsorFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
+    const { data: qMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
+    const { data: qRewardClaim } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
 
     const [ethReward, setEthReward] = useState(() => {
         const rawValue = (ecosystemSettings as { ugc_config?: { min_reward_amount?: string } })?.ugc_config?.min_reward_amount || '0.1';
@@ -218,6 +314,54 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                         <input type="number" step="0.001" value={ethReward} onChange={(e) => setEthReward(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-4 text-lg font-mono font-black text-indigo-400 outline-none" placeholder="0.01" />
                     </div>
                 </div>
+
+                {/* 3. Cost Breakdown Panel [v3.64.0] */}
+                <div className="p-5 rounded-3xl bg-black/40 border border-white/5 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <Calculator className="w-4 h-4 text-indigo-400" />
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest">COST BREAKDOWN</h4>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest text-slate-400">
+                            <span>Campaign Reward Pool</span>
+                            <span className="text-white font-mono">{parseFloat(ethReward || '0').toFixed(selectedToken?.symbol === 'ETH' ? 6 : 2)} {selectedToken?.symbol || 'ETH'}</span>
+                        </div>
+                        {((selectedToken?.symbol === 'USDC' ? 1 : currentPrice) > 0) && (
+                            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-500 -mt-1.5 px-1">
+                                <span>Token Price ({selectedToken?.symbol})</span>
+                                <span className="font-mono">${(selectedToken?.symbol === 'USDC' ? 1 : currentPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
+                            </div>
+                        )}
+                        
+                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest text-slate-400">
+                            <span>Platform Listing Fee</span>
+                            <span className="text-indigo-400 font-mono">{feeUsd.toFixed(2)} USDC</span>
+                        </div>
+                        
+                        <div className="pt-3 border-t border-white/5 flex justify-between items-center">
+                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Estimated Total Cost</span>
+                            <div className="text-right">
+                                <p className="text-xs font-black text-indigo-400 font-mono">
+                                    {parseFloat(ethReward || '0').toFixed(selectedToken?.symbol === 'ETH' ? 4 : 2)} {selectedToken?.symbol || 'ETH'}
+                                    {feeUsd > 0 && ` + ${feeUsd.toFixed(2)} USDC`}
+                                </p>
+                                {((selectedToken?.symbol === 'USDC' ? 1 : currentPrice) > 0) && (
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                                        ≈ ${((selectedToken?.symbol === 'USDC' ? 1 : currentPrice) * parseFloat(ethReward || '0') + feeUsd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="p-3 bg-indigo-500/5 rounded-2xl border border-indigo-500/10 flex gap-2">
+                        <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                        <p className="text-[9px] font-medium text-slate-400 uppercase tracking-tight leading-relaxed">
+                            Listing Fee ($5 USDC) is required to prevent campaign spamming. Rewards are funded directly to the smart contract and distributed securely to verified participants.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="p-4 border-t border-white/5 bg-black/50">
@@ -227,6 +371,11 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                     address={address}
                     tasksBatch={tasksBatch}
                     selectedTokenAddr={selectedTokenAddr}
+                    selectedTokenBalance={selectedTokenBalance}
+                    usdcBalance={usdcBalance}
+                    platformFee={platformFee}
+                    rewardAmount={rewardAmount}
+                    selectedTokenSymbol={selectedToken?.symbol || 'ETH'}
                     onInsufficientBalance={onRequestSwap}
                     onSuccess={async (hash) => {
                         toast.success("Missions Created Successfully! Syncing... 🚀");

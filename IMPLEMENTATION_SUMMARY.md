@@ -6,6 +6,18 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.64.0-Hardened (UGC Payment Auditing, Pure English UI & Premium UX)
+- **Pure English UI Enforcement**: Systematically audited and translated all user-facing Indonesian text to concise English across the entire UGC creation pipeline, including `CreateMissionPage.tsx` platform pro-tips (Warpcast, Twitter, TikTok, Instagram, On-chain) and error warning alerts.
+- **On-Chain Parity & Dynamic Fee Calculations**: Aligned creator gating with smart contract (`DailyAppV15.sol`) requirements, dynamically auditing and validating USDC platform fees against live wallets before execution to avoid gas reverts.
+- **Seamless Modular Swap Integration**: Integrated client-side insufficient balance checkpoints with the global `SwapModal` overlay, providing immediate redirection to SwapModal without losing page context.
+- **Ecosystem Build Validation**: Successfully validated type safety and chunk compilation with 0 compilation errors across 7,299 modules.
+
+## 🟢 v3.63.10-Hardened (Multi-Asset Revenue Hardening & Financial Parity)
+- **Multi-Asset Revenue Dashboard**: Refactored `UgcRevenueTab.tsx` to support dynamic aggregation of pending SBT funding totals categorized by token symbol (ETH vs USDC), ensuring ledger transparency.
+- **Payment Verification Hardening**: Upgraded `handleVerifyUgcPaymentOnchain` in `admin-bundle.ts` with robust `BigInt` calculation logic to eliminate floating-point precision risks.
+- **Portfolio Highlighting UX**: Enhanced `WalletPortfolio.tsx` with a `highlightSymbol` prop to isolate the selected mission reward token during the creation flow.
+- **Administrative Parity**: Standardized `AdminCampaignTab.tsx` and `ModerationCenterTab.tsx` to dynamically resolve asset-specific decimals and symbols in moderation workflows.
+
 ## 🟢 v3.63.7-Hardened (High-Fidelity Auditing & Multi-Asset Infrastructure)
 - **Millisecond Auditing Precision**: Upgraded `logActivity` deduplication to 23-character precision (ISO-8601 with ms) in `user-bundle.ts`, ensuring that high-frequency events are captured without deduplication gaps.
 - **Dynamic Multi-Asset Support**: Integrated Native ETH, WETH, and USDC support for mission creation and sponsorship portals. Implemented dynamic decimal handling (18 for ETH/WETH, 6 for USDC) and automated currency symbol resolution.

@@ -150,7 +150,7 @@ export function CreateMissionPage() {
     const toggleAction = (value: string) => {
         setSelectedActions(prev => {
             if (prev.includes(value)) return prev.filter(a => a !== value);
-            if (prev.length >= 3) { toast.error('Maksimal 3 aksi per misi.'); return prev; }
+            if (prev.length >= 3) { toast.error('Maximum 3 actions per mission.'); return prev; }
             return [...prev, value];
         });
     };
@@ -261,8 +261,8 @@ export function CreateMissionPage() {
             const rule = PLATFORM_URL_RULES[formData.platform];
             return toast.error(`[Link Guard] Mission link must be from ${rule.hint}`);
         }
-        if (selectedActions.length === 0) return toast.error('Pilih minimal 1 aksi.');
-        if (selectedActions.length > 3) return toast.error('[Multi-Action Bound] Maksimal 3 aksi per misi.');
+        if (selectedActions.length === 0) return toast.error('Select at least 1 action.');
+        if (selectedActions.length > 3) return toast.error('[Multi-Action Bound] Maximum 3 actions per mission.');
 
         // [v3.63.8] Hardened Budget Validations
         const minRewardUsdc = parseFloat(ugcConfig.min_reward_amount) || 0.1;
@@ -273,7 +273,14 @@ export function CreateMissionPage() {
         }
 
         if (parseInt(formData.max_participants) > (ugcConfig.max_participants_limit || 10000)) {
-            return toast.error(`[Scale Guard] Maksimal peserta adalah ${ugcConfig.max_participants_limit}.`);
+            return toast.error(`[Scale Guard] Maximum participants limit is ${ugcConfig.max_participants_limit}.`);
+        }
+
+        // [v3.64.0] Hardened Pre-flight balance checks
+        if (tokenBalance < stats.totalAmountRaw) {
+            toast.error(`[Insufficient Balance] Insufficient ${selectedToken?.symbol || 'Token'} balance. Required: ${stats.totalAmount} ${selectedToken?.symbol || 'Token'}. Available: ${formatUnits(tokenBalance, selectedToken?.decimals || 18)} ${selectedToken?.symbol || 'Token'}.`);
+            setIsSwapModalOpen(true);
+            return;
         }
 
         setIsSubmitting(true);
@@ -527,11 +534,11 @@ export function CreateMissionPage() {
                                                 {/* Pro Tip per platform */}
                                                 {!formData.link && (
                                                     <p className="text-[9px] font-bold text-slate-700 tracking-wide mt-1.5 pl-1 italic">
-                                                        {formData.platform === 'farcaster' && 'Pro Tip: Gunakan full Warpcast thread URL untuk tugas Quote.'}
-                                                        {formData.platform === 'twitter' && 'Pro Tip: Gunakan link Tweet/profil spesifik, bukan homepage.'}
-                                                        {formData.platform === 'tiktok' && 'Pro Tip: Gunakan link video TikTok untuk tugas Like/Comment.'}
-                                                        {formData.platform === 'instagram' && 'Pro Tip: Pastikan akun/postingan tidak private.'}
-                                                        {formData.platform === 'onchain' && 'Pro Tip: Gunakan link ke dApp atau contract yang relevan.'}
+                                                        {formData.platform === 'farcaster' && 'Pro Tip: Use full Warpcast thread URL for Quote tasks.'}
+                                                        {formData.platform === 'twitter' && 'Pro Tip: Use specific Tweet/profile links, not homepage.'}
+                                                        {formData.platform === 'tiktok' && 'Pro Tip: Use TikTok video link for Like/Comment tasks.'}
+                                                        {formData.platform === 'instagram' && 'Pro Tip: Ensure account/post is not private.'}
+                                                        {formData.platform === 'onchain' && 'Pro Tip: Use a link to the relevant dApp or contract.'}
                                                     </p>
                                                 )}
                                             </div>
@@ -789,7 +796,7 @@ export function CreateMissionPage() {
                                                 <div className="space-y-2">
                                                     <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Insufficient Balance</p>
                                                     <p className="text-[9px] font-bold text-amber-400/70 uppercase tracking-tight leading-relaxed">
-                                                        Saldo Anda ({formatUnits(tokenBalance, selectedToken?.decimals || 18)} {selectedToken?.symbol || 'USDC'}) tidak cukup untuk membayar total biaya ({stats.totalAmount} {selectedToken?.symbol || 'USDC'}).
+                                                        Your balance ({formatUnits(tokenBalance, selectedToken?.decimals || 18)} {selectedToken?.symbol || 'USDC'}) is insufficient to cover the total cost ({stats.totalAmount} {selectedToken?.symbol || 'USDC'}).
                                                     </p>
                                                     <button
                                                         type="button"
