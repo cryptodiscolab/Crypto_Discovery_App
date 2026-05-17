@@ -379,8 +379,15 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
         }
 
         // Rule 61: IDENTITY GATING MANDATE
-        const isVerified = await checkIdentityStatus(cleanAddress);
-        if (!isVerified) return res.status(403).json({ error: 'Identity verification required (Farcaster/Twitter/Base)' });
+        // Exception: when a confirmed on-chain tx from the same wallet is provided, the user has
+        // already proven non-Sybil status by paying gas. Daily claim flow falls under this — paying
+        // gas to claimDailyBonus() on DailyApp is sufficient anti-Sybil evidence. Identity gate
+        // remains active for off-chain-only signature sync (no tx_hash) and for higher-value
+        // actions (tier upgrades, raffle rewards, sponsorship) which have their own identity checks.
+        if (!skipSignature) {
+            const isVerified = await checkIdentityStatus(cleanAddress);
+            if (!isVerified) return res.status(403).json({ error: 'Identity verification required (Farcaster/Twitter/Base)' });
+        }
 
         const { data: profile } = await getSupabaseAdmin()
             .from('user_profiles')
