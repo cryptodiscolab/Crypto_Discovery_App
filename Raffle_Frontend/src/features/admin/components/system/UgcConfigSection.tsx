@@ -41,7 +41,7 @@ export function UgcConfigSection() {
     async function fetchConfig() {
         setLoading(true);
         try {
-            const { data, _error } = await supabase
+            const { data, error: _error } = await supabase
                 .from('system_settings')
                 .select('value')
                 .eq('key', 'ugc_config')
@@ -59,13 +59,13 @@ export function UgcConfigSection() {
         }
     }
 
-    function performAudit(currentConfig: unknown) {
+    function performAudit(currentConfig: { listing_fee_usdc?: string; is_active?: boolean; treasury_address?: string; sbt_pool_share_pct?: string }) {
         const newDrifts: Record<string, string> = {};
 
         // Audit Listing Fee vs Contract minRewardPool (assuming Listing Fee >= minRewardPool)
         if (minRewardPool) {
             const contractMin = parseFloat(formatUnits(minRewardPool, 6)); // Assuming 6 decimals for USDC/Points
-            if (parseFloat(currentConfig.listing_fee_usdc) < contractMin) {
+            if (parseFloat(currentConfig.listing_fee_usdc || '0') < contractMin) {
                 newDrifts.listing_fee = `Contract requires min ${contractMin} USDC`;
             }
         }
@@ -73,7 +73,7 @@ export function UgcConfigSection() {
         // Audit SBT Share vs Raffle Maintenance Fee (if they should align)
         if (maintenanceFee) {
             const contractBP = Number(maintenanceFee) / 100; // BP to %
-            if (parseFloat(currentConfig.sbt_pool_share_pct) !== contractBP) {
+            if (parseFloat(currentConfig.sbt_pool_share_pct || '0') !== contractBP) {
                 // Not necessarily an error, but worth flagging if they drift
                 // newDrifts.sbt_share = `Contract BP is ${contractBP}%`;
             }
@@ -127,7 +127,7 @@ export function UgcConfigSection() {
             }
 
             toast.success('UGC Configuration updated!', { id: tid });
-        } catch (error: unknown) {
+        } catch (error: any) {
             toast.error('Save failed: ' + error.message, { id: tid });
         } finally {
             setSaving(false);

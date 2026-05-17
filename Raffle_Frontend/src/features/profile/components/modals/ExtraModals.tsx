@@ -40,7 +40,7 @@ export function RevenueClaimModal({ onClose, claimable, onSuccess }: RevenueClai
             toast.success("Dividends claimed!", { id: tid });
             if (onSuccess) onSuccess();
             onClose();
-        } catch (err: unknown) {
+        } catch (err: any) {
             toast.error(err.shortMessage || "Claim failed", { id: tid });
         } finally {
             setIsClaiming(false);
@@ -75,7 +75,7 @@ export function RenewSponsorshipModal({ onClose }: RenewSponsorshipModalProps) {
     const [reqId, setReqId] = useState('');
     const { address } = useAccount();
     const { refetch: _refetchStats } = useUserInfo(address);
-    const feeUsd = Number((ecosystemSettings as unknown)?.ugc_config?.listing_fee_usdc || 0);
+    const feeUsd = Number((ecosystemSettings as { ugc_config?: { listing_fee_usdc?: string | number } })?.ugc_config?.listing_fee_usdc || 0);
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">

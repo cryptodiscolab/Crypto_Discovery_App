@@ -31,7 +31,7 @@ export const ProfileHeader = ({
     isFarcasterLoading,
     address,
     onChainUserData,
-    _setActiveModal,
+    setActiveModal: _setActiveModal,
     setProfileData
 }: ProfileHeaderProps) => {
     return (
@@ -63,13 +63,13 @@ export const ProfileHeader = ({
                                         if (!address) return toast.error("Please connect your wallet!");
                                         const toastId = toast.loading("Syncing Identity...");
                                         try {
-                                            const synced = await syncUser(address, true);
+                                            const synced = await syncUser(address, true) as { fid?: number | string } | null;
                                             if (synced?.fid) {
                                                 toast.success("Identity synced! 🎉", { id: toastId });
                                             } else {
                                                 toast.error("Farcaster account not found.", { id: toastId });
                                             }
-                                        } catch (e: unknown) {
+                                        } catch (e: any) {
                                             toast.error("Sync failed: " + (e.message || "Unknown error"), { id: toastId });
                                         }
                                     }}

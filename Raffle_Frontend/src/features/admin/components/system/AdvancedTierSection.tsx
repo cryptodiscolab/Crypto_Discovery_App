@@ -52,7 +52,7 @@ export function AdvancedTierSection({
                         { key: 'SILVER', color: 'text-slate-300', bg: 'bg-slate-400/10' },
                         { key: 'BRONZE', color: 'text-amber-700', bg: 'bg-amber-800/10' }
                     ].map(t => {
-                        const dist = tierDistribution.find((d: unknown) => d.tier_label === t.key);
+                        const dist = tierDistribution.find((d): d is { tier_label: string; user_count?: number } => typeof d === 'object' && d !== null && (d as { tier_label?: string }).tier_label === t.key);
                         return (
                             <div key={t.key} className={`${t.bg} p-3 rounded-2xl border border-white/5 flex flex-col items-center sm:items-start`}>
                                 <p className={`text-[9px] font-black tracking-widest ${t.color}`}>{t.key}</p>
@@ -86,7 +86,7 @@ export function AdvancedTierSection({
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={(((tierConfig.percentiles as unknown)?.[t.key] || (tierConfig as unknown)[t.key] || 0) * 100).toFixed(2)}
+                                        value={((tierConfig.percentiles?.[t.key] || (tierConfig as unknown as Record<string, number>)[t.key] || 0) * 100).toFixed(2)}
                                         onChange={(e) => onTierConfigChange('percentiles', t.key, parseFloat(e.target.value) / 100)}
                                         className={`w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-xs ${t.border} outline-none`}
                                     />

@@ -112,7 +112,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         integrator: 'crypto-disco-app'
       });
       configuredRef.current = true;
-    } catch (e: unknown) {
+    } catch (e: any) {
       console.warn('[SwapModal] Li.Fi SDK init failed:', e instanceof Error ? e.message : String(e));
       configuredRef.current = true;
     }
@@ -143,7 +143,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           integrator: 'crypto-disco-app'
         });
         setQuote(result as unknown as LiFiQuote);
-        } catch (error: unknown) {
+        } catch (error: any) {
           console.error("Quote Error:", error);
           setQuote(null);
           const errMsg = error instanceof Error ? error.message : String(error);
@@ -170,7 +170,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     const tid = toast.loading("Executing Swap via Li.Fi...");
 
     try {
-      await executeRoute(quote as unknown, {
+      await executeRoute(quote as unknown as Parameters<typeof executeRoute>[0], {
         updateRouteHook: () => {
 
         },
@@ -208,7 +208,7 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       setAmountIn('');
       setQuote(null);
       onClose();
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Swap Error:", error);
       toast.error(error instanceof Error ? error.message : "Swap failed", { id: tid });
     } finally {

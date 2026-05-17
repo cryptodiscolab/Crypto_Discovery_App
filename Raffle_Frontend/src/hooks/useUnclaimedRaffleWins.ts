@@ -78,16 +78,16 @@ export function useUnclaimedRaffleWins() {
                 try {
                     const result = await publicClient.readContract({
                         address: RAFFLE_ADDRESS,
-                        abi: ABIS.RAFFLE as unknown,
+                        abi: ABIS.RAFFLE as readonly unknown[],
                         functionName: 'getRaffleInfo',
                         args: [BigInt(raffle.id)]
                     });
 
                     if (!result) continue;
 
-                    const raffleData = result as unknown;
-                    const winners: string[] = raffleData.winners || raffleData[6] || [];
-                    const prizePerWinner = raffleData.prizePerWinner || raffleData[14] || 0n;
+                    const raffleData = result as { winners?: string[]; prizePerWinner?: bigint; 6?: string[]; 14?: bigint };
+                    const winners: string[] = raffleData.winners || (raffleData as unknown as unknown[])[6] as string[] || [];
+                    const prizePerWinner = raffleData.prizePerWinner || (raffleData as unknown as unknown[])[14] as bigint || 0n;
 
                     const isWinner = winners.some(
                         (w: string) => w.toLowerCase() === address.toLowerCase() &&
@@ -100,7 +100,7 @@ export function useUnclaimedRaffleWins() {
                         try {
                             const claimed = await publicClient.readContract({
                                 address: RAFFLE_ADDRESS,
-                                abi: ABIS.RAFFLE as unknown,
+                                abi: ABIS.RAFFLE as readonly unknown[],
                                 functionName: 'hasClaimedPrize',
                                 args: [BigInt(raffle.id), address]
                             });

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { ABIS, MASTER_X_ADDRESS as MX_ADDR, DAILY_APP_ADDRESS as DA_ADDR } from '../lib/contracts';
 
@@ -253,7 +254,7 @@ export function useSBT() {
             toast.success(`Successfully synced ${result.data.length} tiers in one batch!`, { id: toastId });
             return { success: true, count: result.data.length, tx };
 
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('[SyncTiers] Error:', error);
             toast.error(`Sync failed: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
             throw error;
@@ -270,7 +271,7 @@ export function useSBT() {
             void signMessageAsync;
             throw new Error('Live MasterX bytecode does not expose bulk XP sync. Use syncOffchainXP or deploy a contract version with bulk sync support.');
 
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('[SyncPoints] Error:', error);
             toast.error(`Points sync failed: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
             throw error;
@@ -320,7 +321,7 @@ export function useSBT() {
 
             toast.success('All NFT Metadata synced to contract!', { id: toastId });
             return { success: true };
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('[SyncMetadata] Error:', error);
             toast.error(`Metadata sync failed: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
             throw error;

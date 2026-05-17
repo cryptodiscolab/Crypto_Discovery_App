@@ -28,11 +28,56 @@ import type {
     UserProfile,
     SyncPayload,
     XpSyncPayload,
-    _UpdateProfilePayload,
     UgcMissionPayload,
     UgcRafflePayload,
     Json
 } from './_shared/types.js';
+
+type ActivityLogRow = Pick<Database['public']['Tables']['user_activity_logs']['Row'], 'id' | 'category' | 'activity_type' | 'description' | 'value_amount' | 'value_symbol' | 'tx_hash' | 'created_at'>;
+type TaskClaimRow = Pick<Database['public']['Tables']['user_task_claims']['Row'], 'id' | 'task_id' | 'xp_earned' | 'action_type' | 'claimed_at'>;
+type ActivityFeedItem = {
+    id: string | number;
+    category: string;
+    activity_type: string;
+    description: string;
+    value_amount: number;
+    value_symbol: string;
+    tx_hash: string | null;
+    created_at: string;
+    source: 'log' | 'claim';
+};
+
+type PendingSyncJobInsert = {
+    wallet_address: string;
+    action_type: string;
+    tx_hash: string | null;
+    chain_id: number | string | null;
+    contract_address: string | null;
+    payload: Json | null;
+    error_message: string | null;
+    status: string;
+};
+
+type UnknownTableClient = {
+    from: (table: string) => {
+        insert: (value: PendingSyncJobInsert) => {
+            select: (columns: string) => {
+                single: () => Promise<{ data: { id?: string | number } | null; error: { message: string } | null }>;
+            };
+        };
+        select: (columns: string) => {
+            eq: (column: string, value: string) => {
+                eq: (column: string, value: string) => {
+                    order: (column: string, options: { ascending: boolean }) => {
+                        limit: (count: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+                    };
+                };
+            };
+        };
+    };
+};
+
+const toJson = (value: unknown): Json => value as Json;
 
 // Move initialization inside helper to prevent top-level invocation failures
 let supabaseAdminInstance: ReturnType<typeof createClient<Database>> | null = null;
@@ -630,20 +675,20 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
 
         if (logsResult.error) throw logsResult.error;
 
-        const activityLogs = (logsResult.data || []).map((log: unknown) => ({
+        const activityLogs: ActivityFeedItem[] = ((logsResult.data || []) as ActivityLogRow[]).map((log) => ({
             id: log.id,
             category: log.category,
             activity_type: log.activity_type,
-            description: log.description,
+            description: log.description || '',
             value_amount: log.value_amount || 0,
             value_symbol: log.value_symbol || 'XP',
             tx_hash: log.tx_hash,
-            created_at: log.created_at,
+            created_at: log.created_at || new Date(0).toISOString(),
             source: 'log'
         }));
 
         // Convert task claims to activity log format (fill gaps)
-        const claimLogs = (claimsResult.data || []).map((claim: unknown) => {
+        const claimLogs: ActivityFeedItem[] = ((claimsResult.data || []) as TaskClaimRow[]).map((claim) => {
             // Determine proper category based on task type
             let claimCategory = 'XP';
             if (claim.task_id === 'daily_task_completion' || claim.action_type === 'daily_bonus') {
@@ -678,20 +723,20 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
                 value_amount: claim.xp_earned || 0,
                 value_symbol: 'XP',
                 tx_hash: null,
-                created_at: claim.claimed_at,
+                created_at: claim.claimed_at || new Date(0).toISOString(),
                 source: 'claim'
             };
         });
 
         // Merge and deduplicate (prefer explicit logs over claim-derived entries)
         // [FIX v3.63.7] Use 23 chars (millisecond precision) for deduplication to prevent collapsing multiple actions in same second.
-        const logTimestamps = new Set(activityLogs.map((l: { created_at: string }) => l.created_at?.slice(0, 23)));
+        const logTimestamps = new Set(activityLogs.map((l) => l.created_at.slice(0, 23)));
         const uniqueClaimLogs = claimLogs
-            .filter((c: { created_at: string }) => !logTimestamps.has(c.created_at?.slice(0, 23)))
-            .filter((c: { category: string }) => !category || category === 'ALL' || c.category === category);
+            .filter((c) => !logTimestamps.has(c.created_at.slice(0, 23)))
+            .filter((c) => !category || category === 'ALL' || c.category === category);
 
         const combined = [...activityLogs, ...uniqueClaimLogs]
-            .sort((a: unknown, b: unknown) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
             .slice(0, parsedLimit);
 
         return res.status(200).json({ success: true, logs: combined });
@@ -746,7 +791,7 @@ async function handleGetPointSettings(req: VercelRequest, res: VercelResponse) {
             getSupabaseAdmin().from('allowed_tokens').select('*').eq('is_active', true)
         ]);
 
-        type SettingValue = string | number | boolean | Json;
+        type SettingValue = string | number | boolean | Json | Json[];
         const settings: Record<string, SettingValue> = points?.reduce((acc, curr) => {
             acc[curr.activity_key] = curr.points_value;
             return acc;
@@ -757,8 +802,8 @@ async function handleGetPointSettings(req: VercelRequest, res: VercelResponse) {
         });
 
         const tokenList = (allowedTokens && allowedTokens.length > 0)
-            ? allowedTokens
-            : ((settings.whitelisted_tokens_json as unknown as unknown[]) || []);
+            ? (allowedTokens as unknown as Json[])
+            : ((settings.whitelisted_tokens_json as Json[] | undefined) || []);
         settings.allowed_tokens = tokenList;
         settings.whitelisted_tokens = tokenList;
 
@@ -821,7 +866,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         if (campaignErr || !campaign) throw campaignErr || new Error('Campaign creation failed');
 
         if (tasks_batch && Array.isArray(tasks_batch)) {
-            const tasksToInsert = tasks_batch.map(task => ({
+            const tasksToInsert = (tasks_batch as Array<{ title?: string; platform?: string; action_type?: string; link?: string }>).map(task => ({
                 description: task.title || 'UGC Task',
                 xp_reward: taskXpReward,
                 platform: task.platform || 'base',
@@ -834,7 +879,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
                 token_reward_symbol: reward_symbol || 'TOKEN',
                 creator_address: wallet.toLowerCase(),
                 is_base_social_required: !!is_base_social_required,
-                expires_at: new Date(Date.now() + (ugcConfig.mission_duration_days || 7) * 24 * 60 * 60 * 1000).toISOString(),
+                expires_at: new Date(Date.now() + Number(ugcConfig.mission_duration_days || 7) * 24 * 60 * 60 * 1000).toISOString(),
                 created_at: new Date().toISOString()
             }));
 
@@ -878,7 +923,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
                     amount: creatorXp,
                     symbol: 'XP',
                     txHash,
-                    metadata: { campaign_id: campaign.id }
+                    metadata: { campaign_id: String(campaign.id) }
                 });
             }
         } catch (xpErr: unknown) {
@@ -1247,7 +1292,7 @@ interface LogActivityParams {
     amount?: number;
     symbol?: string;
     txHash?: string | null;
-    metadata?: unknown;
+    metadata?: Json;
 }
 
 async function logActivity({ wallet, category, type, description, amount, symbol, txHash, metadata }: LogActivityParams) {
@@ -1346,9 +1391,10 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
         // Force initialization check
         getSupabaseAdmin();
     } catch (initErr: unknown) {
+        const msg = initErr instanceof Error ? initErr.message : String(initErr);
         return res.status(500).json({
             error: "Initialization Failed",
-            message: initErr.message,
+            message: msg,
             env_status: {
                 has_url: !!SUPABASE_URL,
                 has_key: !!SUPABASE_SERVICE_ROLE_KEY
@@ -1480,7 +1526,7 @@ async function handleRecordPendingSync(req: VercelRequest, res: VercelResponse) 
         const cleanWallet = (wallet as string).toLowerCase();
         const sanitizedError = error_message ? String(error_message).slice(0, 500) : null;
 
-        const { data, error } = await (getSupabaseAdmin() as unknown)
+        const { data, error } = await (getSupabaseAdmin() as unknown as UnknownTableClient)
             .from('pending_sync_jobs')
             .insert({
                 wallet_address: cleanWallet,
@@ -1488,7 +1534,7 @@ async function handleRecordPendingSync(req: VercelRequest, res: VercelResponse) 
                 tx_hash: tx_hash || null,
                 chain_id: chain_id || null,
                 contract_address: contract_address ? String(contract_address).toLowerCase() : null,
-                payload: payload || null,
+                payload: payload ? toJson(payload) : null,
                 error_message: sanitizedError,
                 status: 'pending'
             })
@@ -1515,7 +1561,7 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
 
     try {
         const cleanWallet = wallet.toLowerCase();
-        const { data, error } = await (getSupabaseAdmin() as unknown)
+        const { data, error } = await (getSupabaseAdmin() as unknown as UnknownTableClient)
             .from('pending_sync_jobs')
             .select('id, action_type, tx_hash, chain_id, status, retry_count, created_at, last_attempted_at, error_message')
             .eq('wallet_address', cleanWallet)

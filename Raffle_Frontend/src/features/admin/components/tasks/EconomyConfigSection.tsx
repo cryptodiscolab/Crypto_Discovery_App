@@ -27,7 +27,7 @@ export function EconomyConfigSection({
     pendingPrice,
     onUpdateEconomy,
     onSchedulePrice,
-    _onExecutePrice
+    onExecutePrice: _onExecutePrice
 }: EconomyConfigSectionProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700 text-left relative">
@@ -107,14 +107,14 @@ export function EconomyConfigSection({
                                 <span>SYNC ORACLE PRICE</span>
                             </div>
                         </button>
-                        {pendingPrice?.[2] && (
+                        {Boolean(pendingPrice?.[2]) && (
                             <div className="p-5 bg-blue-500/5 rounded-2xl border border-blue-500/20 flex items-center justify-between group/pending animate-pulse">
                                 <div className="flex items-center gap-4">
                                     <RefreshCw className="w-5 h-5 text-blue-400 animate-spin" />
                                     <div className="flex flex-col">
                                         <p className="text-[9px] text-blue-400 font-black uppercase tracking-[0.2em]">Pending Transaction</p>
                                         <p className="text-xs text-white font-mono font-bold mt-1">
-                                            TARGET: ${(Number(pendingPrice[0]) / 1e18).toFixed(4)}
+                                            TARGET: ${(Number((pendingPrice as unknown[])?.[0] || 0) / 1e18).toFixed(4)}
                                         </p>
                                     </div>
                                 </div>

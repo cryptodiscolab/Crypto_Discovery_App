@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { useAccount, useChainId, useSignMessage, useWriteContract, usePublicClient } from 'wagmi';
+import { useSendCalls } from 'wagmi/experimental';
 import { encodeFunctionData, formatEther, decodeEventLog } from 'viem';
 import { usePoints } from '../shared/context/PointsContext';
 import { ABIS, CONTRACTS } from '../lib/contracts';
@@ -57,7 +60,7 @@ export function useRaffle() {
                 await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${hash}`, 0);
 
                 if (refetch) refetch();
-            } catch (e: unknown) {
+            } catch (e: any) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 console.warn("XP Awarding/Logging skipped:", errMsg);
                 recordPendingSync({
@@ -84,19 +87,19 @@ export function useRaffle() {
         }
 
         const callData = encodeFunctionData({
-            abi: ABIS.RAFFLE as unknown,
+            abi: ABIS.RAFFLE as readonly unknown[],
             functionName: 'buyTickets',
             args: [BigInt(raffleId), BigInt(amount)],
         });
 
         const price = (await publicClient!.readContract({
             address: MASTER_X_ADDRESS,
-            abi: ABIS.MASTER_X as unknown,
+            abi: ABIS.MASTER_X as readonly unknown[],
             functionName: 'getTicketPriceInETH'
         })) as bigint;
         const surcharge = (await publicClient!.readContract({
             address: RAFFLE_ADDRESS,
-            abi: ABIS.RAFFLE as unknown,
+            abi: ABIS.RAFFLE as readonly unknown[],
             functionName: 'surchargeBP'
         })) as bigint;
         const baseETH = price * BigInt(amount);
@@ -111,13 +114,13 @@ export function useRaffle() {
 
         // [FIX v3.56.5] Resolve actual on-chain txHash from callId for backend verification.
         // EIP-5792 callId is NOT a valid txHash — we must resolve receipts to get the real hash.
-        let resolvedTxHash: string = typeof callId === 'string' ? callId : (callId as unknown).id; // fallback to ID from call response
+        let resolvedTxHash: string = typeof callId === 'string' ? callId : ((callId as { id?: string })?.id || ''); // fallback to ID from call response
         try {
             // Poll getCallsStatus to retrieve the actual transaction hash
             let attempts = 0;
             while (attempts < 10) {
                 await new Promise(r => setTimeout(r, 2000));
-                const status = (await (publicClient as unknown)!.request({
+                const status = (await (publicClient as unknown as { request: (args: { method: string; params: unknown[] }) => Promise<unknown> })!.request({
                     method: 'wallet_getCallsStatus',
                     params: [callId],
                 })) as CallStatusResponse;
@@ -160,7 +163,7 @@ export function useRaffle() {
             });
 
             if (refetch) refetch();
-        } catch (e: unknown) {
+        } catch (e: any) {
             const errMsg = e instanceof Error ? e.message : String(e);
             console.warn("XP Awarding/Logging skipped:", errMsg);
             recordPendingSync({
@@ -206,7 +209,7 @@ export function useRaffle() {
             } catch { /* admin log is best-effort */ }
             setIsDrawing(false);
             return hash;
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error((e as { shortMessage?: string }).shortMessage || "Draw failed", { id: tid });
             setIsDrawing(false);
             throw e;
@@ -248,7 +251,7 @@ export function useRaffle() {
                         toast.success(`You won! +${result.xpAwarded} XP added! 🏆`);
                     }
                     if (refetch) refetch();
-                } catch (e: unknown) {
+                } catch (e: any) {
                     console.warn("XP Awarding skipped:", e.message);
                     recordPendingSync({
                         actionType: 'raffle_claim',
@@ -262,7 +265,7 @@ export function useRaffle() {
                 }
             }
             return hash;
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error((e as { shortMessage?: string }).shortMessage || "Claim failed", { id: tid });
             throw e;
         }
@@ -344,7 +347,7 @@ export function useRaffle() {
                     throw new Error(result?.error || 'Raffle DB sync failed');
                 }
                 toast.success("Raffle synced to explorer!");
-            } catch (logErr: unknown) {
+            } catch (logErr: any) {
                 const errMsg = logErr instanceof Error ? logErr.message : String(logErr);
                 console.warn('Logging UGC Raffle failed:', errMsg);
                 recordPendingSync({
@@ -475,7 +478,7 @@ export function useRaffle() {
                         })
                     });
                 }
-            } catch (syncErr: unknown) {
+            } catch (syncErr: any) {
                 const errMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
                 console.warn('[adminCreateRaffle] DB sync skipped:', errMsg);
                 recordPendingSync({

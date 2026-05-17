@@ -44,15 +44,15 @@ export function UgcRevenueTab() {
                 const data = result.data || [];
                 setRevenueData(data);
 
-                const pending = data.filter((r: unknown) => !r.is_revenue_allocated);
+                const pending = data.filter((r: { is_revenue_allocated?: boolean }) => !r.is_revenue_allocated);
                 const totals: Record<string, number> = {};
-                pending.forEach((r: unknown) => {
+                pending.forEach((r: { reward_symbol?: string; sbt_share_amount?: number | string }) => {
                     const symbol = r.reward_symbol || 'USDC';
                     totals[symbol] = (totals[symbol] || 0) + parseFloat(String(r.sbt_share_amount || 0));
                 });
                 setStats({ totals, count: pending.length });
             }
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('Fetch revenue failed:', error);
             toast.error(error.message || "Failed to load revenue tracking");
         } finally {
@@ -89,7 +89,7 @@ export function UgcRevenueTab() {
             } else {
                 throw new Error(result.error || "Failed to update status");
             }
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('Allocation marking failed:', error);
             toast.error(error.message || "Failed to mark as allocated", { id: tid });
         }
@@ -143,7 +143,7 @@ export function UgcRevenueTab() {
                         <div className="space-y-2">
                             <p className="admin-label !mb-0 !text-[11px]">1. Destination (MasterX)</p>
                             <button
-                                onClick={() => copyToClipboard(CONTRACTS.MASTER_X as unknown, 'MasterX Address')}
+                                onClick={() => copyToClipboard((CONTRACTS.MASTER_X as string) || '', 'MasterX Address')}
                                 className="w-full flex items-center justify-between px-3 py-2 bg-black/40 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group"
                             >
                                 <span className="text-[11px] font-mono text-slate-300 truncate">{CONTRACTS.MASTER_X}</span>

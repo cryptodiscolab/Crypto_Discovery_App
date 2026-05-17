@@ -15,6 +15,12 @@ interface TaskBatchItem {
     link: string;
 }
 
+interface AllowedToken {
+    symbol: string;
+    address: string;
+    decimals?: number;
+}
+
 interface ContractCall {
     address: `0x${string}`;
     abi: unknown[];
@@ -37,7 +43,7 @@ interface PayAndCreateMissionButtonProps {
  * PayAndCreateMissionButton Component
  * Internal to CreateTaskModal for now.
  */
-function PayAndCreateMissionButton({ calls, _ethReward, address, _tasksBatch, _selectedTokenAddr, onSuccess, _onInsufficientBalance }: PayAndCreateMissionButtonProps) {
+function PayAndCreateMissionButton({ calls, address, onSuccess }: PayAndCreateMissionButtonProps) {
     const { writeContractAsync } = useWriteContract();
     const [isCreating, setIsCreating] = useState(false);
     const publicClient = usePublicClient();
@@ -52,11 +58,11 @@ function PayAndCreateMissionButton({ calls, _ethReward, address, _tasksBatch, _s
             const approveCalls = calls.filter(c => c.functionName === 'approve');
             for (const appCall of approveCalls) {
                 toast.loading(`Approving ${appCall.address === CONTRACTS.USDC ? 'USDC' : 'Reward Token'}...`, { id: tid });
-                const appHash = await writeContractAsync(appCall as unknown);
+                const appHash = await writeContractAsync(appCall as Parameters<typeof writeContractAsync>[0]);
                 await publicClient!.waitForTransactionReceipt({ hash: appHash });
             }
             toast.loading("Creating Mission Batch on-chain...", { id: tid });
-            const hash = await writeContractAsync(mainCall as unknown);
+            const hash = await writeContractAsync(mainCall as Parameters<typeof writeContractAsync>[0]);
             const receipt = await publicClient!.waitForTransactionReceipt({ hash });
             if (receipt.status === 'success') {
                 await onSuccess(hash);
@@ -64,7 +70,8 @@ function PayAndCreateMissionButton({ calls, _ethReward, address, _tasksBatch, _s
                 throw new Error("Transaction failed");
             }
         } catch (err: unknown) {
-            toast.error(err.shortMessage || err.message || "Action failed", { id: tid });
+            const e = err as { shortMessage?: string; message?: string };
+            toast.error(e.shortMessage || e.message || "Action failed", { id: tid });
         } finally {
             setIsCreating(false);
         }
@@ -103,15 +110,17 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
     const { data: qMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
     const { data: qRewardClaim } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
 
-    const allowedTokens: unknown[] = (ecosystemSettings as unknown)?.allowed_tokens || (ecosystemSettings as unknown)?.whitelisted_tokens || [];
-    const ethToken = allowedTokens.find((t: unknown) => t.symbol === 'ETH') || allowedTokens[0];
-    const usdcToken = allowedTokens.find((t: unknown) => t.symbol === 'USDC');
+    const allowedTokens = ((ecosystemSettings as { allowed_tokens?: AllowedToken[]; whitelisted_tokens?: AllowedToken[] })?.allowed_tokens
+        || (ecosystemSettings as { allowed_tokens?: AllowedToken[]; whitelisted_tokens?: AllowedToken[] })?.whitelisted_tokens
+        || []) as AllowedToken[];
+    const ethToken = allowedTokens.find((t) => t.symbol === 'ETH') || allowedTokens[0];
+    const usdcToken = allowedTokens.find((t) => t.symbol === 'USDC');
 
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>(ethToken?.address || "0x0000000000000000000000000000000000000000");
-    const selectedToken = allowedTokens.find((t: unknown) => t.address?.toLowerCase() === selectedTokenAddr?.toLowerCase()) || ethToken;
+    const selectedToken = allowedTokens.find((t) => t.address?.toLowerCase() === selectedTokenAddr?.toLowerCase()) || ethToken;
 
     const [ethReward, setEthReward] = useState(() => {
-        const rawValue = (ecosystemSettings as unknown)?.ugc_config?.min_reward_amount || '0.1';
+        const rawValue = (ecosystemSettings as { ugc_config?: { min_reward_amount?: string } })?.ugc_config?.min_reward_amount || '0.1';
         return rawValue;
     });
 
@@ -126,8 +135,8 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
         }
     }, [qMinPool, ethReward]);
 
-    const feeUsd = qSponsorFee ? Number(formatUnits(qSponsorFee as bigint, 6)) : Number((ecosystemSettings as unknown)?.ugc_config?.listing_fee_usdc || 0);
-    const { prices } = usePriceOracle(allowedTokens.map((t: unknown) => t.address));
+    const feeUsd = qSponsorFee ? Number(formatUnits(qSponsorFee as bigint, 6)) : Number((ecosystemSettings as { ugc_config?: { listing_fee_usdc?: string } })?.ugc_config?.listing_fee_usdc || 0);
+    const { prices } = usePriceOracle(allowedTokens.map((t) => t.address));
     const currentPrice = prices[selectedTokenAddr?.toLowerCase()] || 0;
     const _rewardUsdValue = currentPrice * parseFloat(ethReward || '0');
 
@@ -201,7 +210,7 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                     <div className="space-y-3">
                         <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Sponsorship Asset</label>
                         <select value={selectedTokenAddr} onChange={(e) => setSelectedTokenAddr(e.target.value)} className="w-full bg-zinc-900/50 border border-indigo-500/30 rounded-2xl px-4 py-4 text-[11px] font-black uppercase tracking-widest text-white outline-none">
-                            {allowedTokens.map((t: unknown, i: number) => <option key={i} value={t.address || "0x0000000000000000000000000000000000000000"} className="bg-zinc-900">{t.symbol}</option>)}
+                            {allowedTokens.map((t, i) => <option key={i} value={t.address || "0x0000000000000000000000000000000000000000"} className="bg-zinc-900">{t.symbol}</option>)}
                         </select>
                     </div>
                     <div className="space-y-2">
@@ -237,7 +246,7 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
                                         description: `UGC Campaign with ${taskCount} missions on ${firstTask.platform}`,
                                         sponsor_address: address, platform_code: firstTask.platform,
                                         reward_amount_per_user: ethReward.toString(),
-                                        max_participants: (ecosystemSettings as unknown)?.ugc_config?.default_participants || 100,
+                                        max_participants: (ecosystemSettings as { ugc_config?: { default_participants?: number } })?.ugc_config?.default_participants || 100,
                                         txHash: hash, payment_token: selectedTokenAddr, // gitleaks:allow - token contract address field, not an API secret.
                                         reward_symbol: selectedToken?.symbol || 'ETH',
                                         is_base_social_required: sybilFilters.isBaseSocialRequired,

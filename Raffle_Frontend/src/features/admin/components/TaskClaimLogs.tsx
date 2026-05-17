@@ -46,14 +46,14 @@ export default function TaskClaimLogs() {
             if (error) throw error;
 
             if (isInitial) {
-                setLogs(data || []);
+                setLogs((data || []) as unknown as ClaimLog[]);
                 setPage(1);
             } else {
-                setLogs(prev => [...prev, ...(data || [])]);
+                setLogs(prev => [...prev, ...((data || []) as unknown as ClaimLog[])]);
                 setPage(prev => prev + 1);
             }
             setTotalCount(count || 0);
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error('[Task Logs] Fetch failure:', e.message);
             toast.error("Failed to sync task logs.");
         } finally {

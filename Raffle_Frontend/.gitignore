@@ -147,8 +147,19 @@ tmp_*.js
 tmp_*.mjs
 *.scratch.js
 tsc_output*.txt
+tsc_errors*.txt
+tsc_run.txt
+tsc_v*.txt
+tsc_check.txt
+tsc_done.txt
+tsc_now.txt
+tsc_status*.txt
+tsc_final*.txt
 lint_results*.txt
 lint_errors.json
 build_error.log
 final_errors.txt
+bulk_fix.py
+fix_*.py
+patch_*.py
  

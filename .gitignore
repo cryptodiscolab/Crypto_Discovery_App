@@ -38,6 +38,8 @@ hardhat.config.js.backup
 .agents/**/secrets*
 .agents/**/*.key
 .agents/**/.env*
+.litellm/
+litellm*.local.yaml
 ag.py
 antigravity_sdk.py
 

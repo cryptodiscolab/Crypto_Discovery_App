@@ -124,7 +124,7 @@ export function Header() {
                 account,
                 chain,
                 openAccountModal,
-                _openChainModal,
+                openChainModal: _openChainModal,
                 openConnectModal,
                 authenticationStatus,
                 mounted,

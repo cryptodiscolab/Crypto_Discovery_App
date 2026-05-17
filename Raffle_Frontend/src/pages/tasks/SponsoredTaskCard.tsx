@@ -124,7 +124,7 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
 
             toast.success("Mission Reward Claimed! 🎉", { id: tid });
             setVerifyingStatus(null);
-        } catch (err: unknown) {
+        } catch (err: any) {
             toast.error(err.shortMessage || "Claim failed", { id: tid });
         } finally {
             setIsClaiming(false);

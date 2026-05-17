@@ -1,5 +1,5 @@
 import { TrendingUp } from 'lucide-react';
-import { AdminTransactionButton } from '../AdminTransactionButton';
+import { AdminTransactionButton, AdminContractCall } from '../AdminTransactionButton';
 
 interface QuickEconConfigSectionProps {
     configPlatformFee: string;
@@ -8,7 +8,7 @@ interface QuickEconConfigSectionProps {
     onConfigMinPoolChange: (_val: string) => void;
     configMinReward: string;
     onConfigMinRewardChange: (_val: string) => void;
-    buildConfigCall: () => unknown;
+    buildConfigCall: () => AdminContractCall[];
     handleTxSuccess: () => void;
 }
 

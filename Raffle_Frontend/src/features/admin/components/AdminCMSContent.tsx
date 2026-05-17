@@ -39,7 +39,7 @@ export default function AdminCMSContent() {
 
     useEffect(() => {
         if (featureCards && Array.isArray(featureCards)) {
-            setCards(featureCards);
+            setCards(featureCards as FeatureCard[]);
         }
     }, [featureCards]);
 
@@ -89,9 +89,9 @@ export default function AdminCMSContent() {
                 { id: tid, duration: 6000 }
             );
             refetchAll();
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error(e);
-            toast.error(e instanceof Error ? (e as unknown).shortMessage || e.message : "Transaction failed", { id: tid });
+            toast.error(e instanceof Error ? (e as { shortMessage?: string }).shortMessage || e.message : "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -121,7 +121,7 @@ export default function AdminCMSContent() {
             const filePath = `cms/feature-cards/${fileName}`;
 
             // Upload to Supabase Storage (Assumes 'assets' bucket exists)
-            const { _data, error: uploadError } = await supabase.storage
+            const { data: _data, error: uploadError } = await supabase.storage
                 .from('assets')
                 .upload(filePath, file);
 
@@ -134,7 +134,7 @@ export default function AdminCMSContent() {
 
             setCardForm(prev => ({ ...prev, icon: publicUrl }));
             toast.success("Image uploaded successfully!", { id: toastId });
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('[Upload Error]', err);
             toast.error("Upload failed: " + (err instanceof Error ? err.message : String(err)), { id: toastId });
         } finally {

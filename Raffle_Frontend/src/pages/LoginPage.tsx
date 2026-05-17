@@ -76,7 +76,7 @@ export function LoginPage() {
             if (isBaseApp || isFarcaster) {
                 // Beri jeda 500ms agar provider mount secara sempurna sebelum SIWE popup muncul
                 const timer = setTimeout(() => {
-                    signIn(frameUser?.fid);
+                    signIn(frameUser?.fid ?? null);
                 }, 500);
                 return () => clearTimeout(timer);
             }
@@ -180,7 +180,7 @@ export function LoginPage() {
                             </p>
                             {!siweSession ? (
                                 <button
-                                    onClick={() => signIn(frameUser?.fid)}
+                                    onClick={() => signIn(frameUser?.fid ?? null)}
                                     disabled={isSigningIn}
                                     type="button"
                                     className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"

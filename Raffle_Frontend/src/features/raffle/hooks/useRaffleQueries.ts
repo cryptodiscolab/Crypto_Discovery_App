@@ -1,4 +1,5 @@
 import { useReadContract } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
 import { ABIS, CONTRACTS } from '../../../lib/contracts';
 import { raffleService } from '../../../services/raffleService';
 import { Raffle } from '../../../types';
@@ -29,13 +30,13 @@ export function useRaffleList(): RaffleListResult {
     // Fetch Total Raffle Count from Blockchain
     const contractQuery = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: ABIS.RAFFLE as unknown,
+        abi: ABIS.RAFFLE as readonly unknown[],
         functionName: 'currentRaffleId',
     });
 
     return {
-        raffleIds: dbQuery.data || [],
-        count: (dbQuery.data || []).length,
+        raffleIds: (dbQuery.data as number[] | undefined) || [],
+        count: ((dbQuery.data as number[] | undefined) || []).length,
         totalOnChain: contractQuery.data ? Number(contractQuery.data) : 0,
         isLoading: dbQuery.isLoading || contractQuery.isLoading,
         refetch: dbQuery.refetch
@@ -52,7 +53,7 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
     // 1. Fetch On-Chain Raffle State
     const { data: chainData, isLoading: chainLoading, refetch: refetchChain } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: ABIS.RAFFLE as unknown,
+        abi: ABIS.RAFFLE as readonly unknown[],
         functionName: 'getRaffleInfo',
         args: [BigInt(raffleId || 0)],
         query: {
@@ -76,7 +77,23 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
 
     if (!chainData || isLoading) return { raffle: null, isLoading, refetch: refetchAll };
 
-    const c = chainData as unknown;
+    const c = chainData as {
+        raffleId: bigint | number;
+        totalTickets: bigint | number;
+        maxTickets: bigint | number;
+        targetPrizePool: bigint;
+        prizePool: bigint;
+        participants: string[];
+        winners: string[];
+        winnerCount: bigint | number;
+        randomNumber: bigint;
+        isActive: boolean;
+        isFinalized: boolean;
+        sponsor: string;
+        metadataURI: string;
+        endTime: bigint | number;
+        prizePerWinner: bigint;
+    };
 
     // Merge on-chain truth with off-chain rich metadata
     return {
@@ -96,8 +113,8 @@ export function useRaffleInfo(raffleId: string | number): RaffleInfoResult {
             metadataURI: c.metadataURI,
             endTime: Number(c.endTime),
             prizePerWinner: c.prizePerWinner,
-            ...(dbData || {}) // Spread title, image_url, description, etc.
-        } as unknown,
+            ...((dbData as object | undefined) || {}) // Spread title, image_url, description, etc.
+        } as Raffle,
         isLoading,
         refetch: refetchAll
     };

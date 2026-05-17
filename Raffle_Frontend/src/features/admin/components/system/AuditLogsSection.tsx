@@ -2,17 +2,25 @@ import React, { useState, useMemo } from 'react';
 import { History, Cpu, Zap, ChevronDown, ChevronUp, Terminal, Shield, AlertCircle, Search, Filter } from 'lucide-react';
 
 export function AuditLogsSection({ logs }: { logs: unknown[] }) {
+    type LogEntry = {
+        id: string;
+        action?: string;
+        admin_address?: string;
+        details?: unknown;
+        created_at: string;
+    };
+    const typedLogs = logs as LogEntry[];
     const [expandedLog, setExpandedLog] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterAction, setFilterAction] = useState<string>('ALL');
 
     const actionTypes = useMemo(() => {
-        const types = new Set(logs.map(l => l.action).filter(Boolean));
+        const types = new Set(typedLogs.map(l => l.action).filter(Boolean) as string[]);
         return ['ALL', ...Array.from(types).sort()];
-    }, [logs]);
+    }, [typedLogs]);
 
     const filteredLogs = useMemo(() => {
-        return logs.filter(log => {
+        return typedLogs.filter(log => {
             const matchesSearch =
                 log.action?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 log.admin_address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -22,9 +30,9 @@ export function AuditLogsSection({ logs }: { logs: unknown[] }) {
 
             return matchesSearch && matchesAction;
         });
-    }, [logs, searchQuery, filterAction]);
+    }, [typedLogs, searchQuery, filterAction]);
 
-    const getActionColor = (action: string) => {
+    const getActionColor = (action: string | undefined) => {
         const a = action?.toUpperCase() || '';
         if (a.includes('RESET') || a.includes('OVERRIDE')) return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
         if (a.includes('DELETE') || a.includes('REMOVE') || a.includes('FAILED')) return 'text-red-400 bg-red-400/10 border-red-400/20';
@@ -101,7 +109,7 @@ export function AuditLogsSection({ logs }: { logs: unknown[] }) {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredLogs.map((log: unknown) => (
+                                filteredLogs.map((log) => (
                                     <React.Fragment key={log.id}>
                                         <tr
                                             onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}

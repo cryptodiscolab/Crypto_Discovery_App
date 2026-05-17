@@ -134,7 +134,7 @@ export function AccountantLedgerTab() {
                 throw new Error(data.error || 'Failed to fetch ledger');
             }
             refetchBalances();
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('[Ledger Fetch]', error);
             toast.error(error.message);
         } finally {
@@ -162,7 +162,7 @@ export function AccountantLedgerTab() {
             } else {
                 toast.error(response.data.error || 'Sync failed');
             }
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('Sync Error:', err);
             toast.error(err.response?.data?.error || err.message);
         } finally {
@@ -215,7 +215,7 @@ export function AccountantLedgerTab() {
             } else {
                 throw new Error(data.error || "Audit failed");
             }
-        } catch (error: unknown) {
+        } catch (error: any) {
             toast.error(error.message, { id: toastId });
         } finally {
             setIsHardening(false);
@@ -257,9 +257,11 @@ export function AccountantLedgerTab() {
         }
     };
 
-    const formatBal = (data: unknown, decimals = 4) => {
-        if (!data) return '0.0000';
-        return Number(formatUnits(data.value, data.decimals)).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    const formatBal = (data: { value?: bigint; decimals?: number } | unknown, decimals = 4) => {
+        if (!data || typeof data !== 'object') return '0.0000';
+        const d = data as { value?: bigint; decimals?: number };
+        if (!d.value || !d.decimals) return '0.0000';
+        return Number(formatUnits(d.value, d.decimals)).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     };
 
     useEffect(() => {
@@ -280,7 +282,7 @@ export function AccountantLedgerTab() {
             await withdrawTreasury(parseEther(withdrawAmount.toString()));
             toast.success("Withdrawal executed successfully!");
             setWithdrawAmount('');
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('[Withdrawal Error]', error);
             toast.error(error.shortMessage || error.message || "Transaction failed");
         } finally {
@@ -288,7 +290,7 @@ export function AccountantLedgerTab() {
         }
     };
 
-    const MetricCard = ({ title, aggregate, icon: Icon }: { title: string; aggregate?: Aggregate; icon: unknown }) => {
+    const MetricCard = ({ title, aggregate, icon: Icon }: { title: string; aggregate?: Aggregate; icon: React.ComponentType<{ className?: string }> }) => {
         const safeAggregate = aggregate || { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } };
         return (
         <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl p-6 relative overflow-hidden group">

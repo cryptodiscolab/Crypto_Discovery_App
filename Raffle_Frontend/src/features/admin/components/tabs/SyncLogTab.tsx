@@ -39,7 +39,9 @@ export function SyncLogTab() {
                                     </td>
                                 </tr>
                             ) : (
-                                syncLogs.map((log: unknown) => (
+                                syncLogs.map((logRaw: unknown) => {
+                                    const log = logRaw as { id: number | string; timestamp: string; type: string; dbXp: number; visualXp: number; prevVisualXp: number | null; diff: number };
+                                    return (
                                     <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex flex-col">
@@ -77,7 +79,8 @@ export function SyncLogTab() {
                                             )}
                                         </td>
                                     </tr>
-                                ))
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

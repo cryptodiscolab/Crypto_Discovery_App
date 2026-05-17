@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useRaffleList } from '../features/raffle/hooks/useRaffleQueries';
 import { GaslessBadge } from '../components/GaslessBadge';
 import { SwapModal } from '../components/SwapModal';

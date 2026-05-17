@@ -62,20 +62,21 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
 
     useEffect(() => {
         if (tiers && tiers.length > 0) {
-            setLocalConfigs(tiers.map((t: unknown) => ({
-                ...t,
-                mintPriceETH: formatEther(t.mintPrice || 0n),
-                localURI: t.uri || ''
+            setLocalConfigs(tiers.map((t) => ({
+                ...(t as unknown as Tier),
+                mintPriceETH: formatEther((t as { mintPrice?: bigint }).mintPrice || 0n),
+                localURI: (t as { uri?: string }).uri || ''
             })));
         }
         if (economy && (tiers as unknown[]).length >= 5) {
+            const tArr = tiers as Array<{ mintPrice: bigint }>;
             setLocalEco({
                 tokenP: (economy as Economy).tokenPriceUSD,
-                p1: getUSD(formatEther((tiers as unknown[])[0].mintPrice)),
-                p2: getUSD(formatEther((tiers as unknown[])[1].mintPrice)),
-                p3: getUSD(formatEther((tiers as unknown[])[2].mintPrice)),
-                p4: getUSD(formatEther((tiers as unknown[])[3].mintPrice)),
-                p5: getUSD(formatEther((tiers as unknown[])[4].mintPrice))
+                p1: getUSD(formatEther(tArr[0].mintPrice)),
+                p2: getUSD(formatEther(tArr[1].mintPrice)),
+                p3: getUSD(formatEther(tArr[2].mintPrice)),
+                p4: getUSD(formatEther(tArr[3].mintPrice)),
+                p5: getUSD(formatEther(tArr[4].mintPrice))
             });
         }
         if (diamondWeight !== undefined) {
@@ -109,7 +110,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             );
             toast.success(`${tier.name} Config Updated!`, { id: tid });
             refetch();
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Update failed", { id: tid });
         } finally {
             setIsSaving(null);
@@ -122,7 +123,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await updateTierURI(tier.id, tier.localURI || '');
             toast.success(`${tier.name} Metadata URI Updated!`, { id: tid });
             refetch();
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "URI Update failed", { id: tid });
         }
     };
@@ -148,7 +149,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await updateBatchConfig(ids, points, prices, bonuses, multipliers, supplies, opens);
             toast.success("Master Economic Parameters Finalized!", { id: tid });
             refetch();
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Batch update failed", { id: tid });
         }
     };
@@ -159,7 +160,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await toggleTier(tier.id, !tier.isOpen);
             toast.success(`${tier.name} status updated!`, { id: tid });
             refetch();
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Action failed", { id: tid });
         }
     };
@@ -226,7 +227,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
 
             toast.success("Global Economics & SBT Multipliers Updated!", { id: tid });
             refetch();
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Update failed", { id: tid });
         }
     };
@@ -242,7 +243,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await setTierWeights(localWeights.d, localWeights.p, localWeights.g, localWeights.s, localWeights.b);
             toast.success("Revenue Weights Updated!", { id: tid });
             refetchMaster();
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || "Weight update failed", { id: tid });
         }
     };
@@ -342,7 +343,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                 const tid = toast.loading("Syncing Multipliers...");
                                 try {
                                     const multiplierMap: Record<number, number> = {};
-                                    tiers.forEach((t: unknown) => { multiplierMap[t.id] = Number(t.multiplierBP); });
+                                    tiers.forEach((t) => { multiplierMap[(t as unknown as Tier).id] = Number((t as unknown as Tier).multiplierBP); });
                                     const syncMsg = `Action: SYNC_MULTIPLIERS\nTimestamp: ${Date.now()}`;
                                     const sig = await signMessageAsync({ message: syncMsg });
                                     await axios.post('/api/admin-bundle', { action: 'SYNC_MULTIPLIERS', wallet_address: address, signature: sig, message: syncMsg, payload: multiplierMap });

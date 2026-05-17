@@ -43,7 +43,7 @@ export function RewardSettingsCard({ rewards, setRewards, drift }: RewardSetting
             });
 
             toast.success('Rewards updated on-chain & in DB!', { id: tid });
-        } catch (err: unknown) {
+        } catch (err: any) {
             toast.error(err.message, { id: tid });
         }
     };

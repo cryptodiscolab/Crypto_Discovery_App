@@ -27,7 +27,7 @@ export const userService = {
     syncUgcMission: async (payload: unknown) => {
         const { data } = await axios.post('/api/user-bundle', {
             action: 'sync-ugc-mission',
-            ...payload
+            ...(payload as object)
         });
         return data;
     },

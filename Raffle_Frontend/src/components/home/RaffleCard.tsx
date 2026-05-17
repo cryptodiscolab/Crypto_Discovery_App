@@ -78,7 +78,7 @@ export function RaffleCard() {
     }
 
     // Default if no raffle found
-    const displayedRaffle: unknown = raffle || {
+    const displayedRaffle = (raffle || {
         id: 0,
         title: "No Active Raffle",
         description: "Stay tuned for the next blue-chip NFT drop!",
@@ -91,6 +91,19 @@ export function RaffleCard() {
         sponsor: null,
         created_at: null,
         prizePool: 0n
+    }) as {
+        id: number;
+        title?: string;
+        description?: string;
+        prizeName?: string;
+        floorPrice?: string;
+        endTime: number;
+        totalTickets: number;
+        maxTickets: number;
+        isActive: boolean;
+        sponsor: string | null;
+        created_at: string | null;
+        prizePool: bigint | number;
     };
 
     const progress = (displayedRaffle.totalTickets / (displayedRaffle.maxTickets || 1)) * 100;

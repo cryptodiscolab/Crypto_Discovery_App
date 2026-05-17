@@ -6,7 +6,7 @@ import { formatEther, parseEther } from 'viem';
 const V12 = CONTRACTS.DAILY_APP as `0x${string}`;
 
 export function useNFTTiers() {
-    const { _address } = useAccount();
+    useAccount();
     const { writeContractAsync } = useWriteContract();
     const publicClient = usePublicClient();
 
@@ -35,17 +35,20 @@ export function useNFTTiers() {
         { id: 3, name: 'Gold', data: gConfig },
         { id: 4, name: 'Platinum', data: pConfig },
         { id: 5, name: 'Diamond', data: dConfig },
-    ].map(t => ({
-        ...t,
-        pointsRequired: t.data ? Number(t.data[0]) : 0,
-        mintPrice: t.data ? t.data[1] : 0n,
-        dailyBonus: t.data ? Number(t.data[2]) : 0,
-        multiplierBP: t.data ? Number(t.data[3]) : 0,
-        maxSupply: t.data ? Number(t.data[4]) : 0,
-        currentSupply: t.data ? Number(t.data[5]) : 0,
-        isOpen: t.data ? t.data[6] : false,
-        uri: t.id === 1 ? bURI : t.id === 2 ? sURI : t.id === 3 ? gURI : t.id === 4 ? pURI : dURI
-    })), [bConfig, sConfig, gConfig, pConfig, dConfig, bURI, sURI, gURI, pURI, dURI]);
+    ].map(t => {
+        const d = t.data as readonly unknown[] | undefined;
+        return {
+            ...t,
+            pointsRequired: d ? Number(d[0]) : 0,
+            mintPrice: d ? (d[1] as bigint) : 0n,
+            dailyBonus: d ? Number(d[2]) : 0,
+            multiplierBP: d ? Number(d[3]) : 0,
+            maxSupply: d ? Number(d[4]) : 0,
+            currentSupply: d ? Number(d[5]) : 0,
+            isOpen: d ? (d[6] as boolean) : false,
+            uri: t.id === 1 ? bURI : t.id === 2 ? sURI : t.id === 3 ? gURI : t.id === 4 ? pURI : dURI
+        };
+    }), [bConfig, sConfig, gConfig, pConfig, dConfig, bURI, sURI, gURI, pURI, dURI]);
 
     // Global Economic Variables
     const { data: tokenPrice } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'tokenPriceUSD' });
@@ -53,12 +56,12 @@ export function useNFTTiers() {
     const { data: dailyBonus } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'dailyBonusAmount' });
 
     const economy = useMemo(() => ({
-        tokenPriceUSD: tokenPrice ? formatEther(tokenPrice) : "0",
+        tokenPriceUSD: tokenPrice ? formatEther(tokenPrice as bigint) : "0",
         withdrawalFeeBP: withdrawalFee ? Number(withdrawalFee) : 0,
         dailyBonusAmount: dailyBonus ? Number(dailyBonus) : 0
     }), [tokenPrice, withdrawalFee, dailyBonus]);
 
-    const updateEconomy = async (tokenP: unknown) => {
+    const updateEconomy = async (tokenP: string) => {
         if (tokenP) {
             await writeAndWait({
                 address: V12,
@@ -69,7 +72,7 @@ export function useNFTTiers() {
         }
     };
 
-    const setCreatorToken = async (tokenAddr: unknown) => {
+    const setCreatorToken = async (tokenAddr: `0x${string}`) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -78,7 +81,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setUSDCToken = async (tokenAddr: unknown) => {
+    const setUSDCToken = async (tokenAddr: `0x${string}`) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -87,7 +90,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setMasterX = async (masterAddr: unknown) => {
+    const setMasterX = async (masterAddr: `0x${string}`) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -96,7 +99,7 @@ export function useNFTTiers() {
         });
     };
 
-    const setPaymentTokenStatus = async (tokenAddr: unknown, status: unknown, decimals = 18, symbol = '') => {
+    const setPaymentTokenStatus = async (tokenAddr: `0x${string}`, status: boolean, decimals = 18, symbol = '') => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -105,27 +108,27 @@ export function useNFTTiers() {
         });
     };
 
-    const setWithdrawalFeeBP = async (feeBP: unknown) => {
+    const setWithdrawalFeeBP = async (feeBP: number | string | bigint) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setWithdrawalFee',
-            args: [BigInt(feeBP)]
+            args: [BigInt(feeBP as string | number | bigint)]
         });
     };
 
-    const setDailyBonusAmount = async (amount: unknown) => {
+    const setDailyBonusAmount = async (amount: number | string | bigint) => {
         // setGlobalRewards(daily, referral) — pass 0 for referral to keep it unchanged
         // Note: This will reset referral to 0. For production, read current referral first.
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setGlobalRewards',
-            args: [BigInt(amount), BigInt(0)]
+            args: [BigInt(amount as string | number | bigint), BigInt(0)]
         });
     };
 
-    const setAutoApproveSponsorship = async (status: unknown) => {
+    const setAutoApproveSponsorship = async (status: boolean) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -134,25 +137,25 @@ export function useNFTTiers() {
         });
     };
 
-    const setSponsorshipSettings = async (rewardClaim: unknown, tasksGoal: unknown, minPool: unknown, fee: unknown) => {
+    const setSponsorshipSettings = async (rewardClaim: number | string | bigint, tasksGoal: number | string | bigint, minPool: number | string | bigint, fee: number | string | bigint) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'setSponsorshipParams',
-            args: [BigInt(rewardClaim), BigInt(tasksGoal), BigInt(minPool), BigInt(fee)]
+            args: [BigInt(rewardClaim as string | number | bigint), BigInt(tasksGoal as string | number | bigint), BigInt(minPool as string | number | bigint), BigInt(fee as string | number | bigint)]
         });
     };
 
-    const updateTierConfig = async (id: unknown, points: unknown, price: unknown, multiplier: unknown, bonus: unknown, maxSupply: unknown, isOpen: unknown) => {
+    const updateTierConfig = async (id: number, points: number | string | bigint, price: bigint, multiplier: number | string | bigint, bonus: number | string | bigint, maxSupply: number | string | bigint, isOpen: boolean) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
             functionName: 'updateNFTConfig',
-            args: [id, BigInt(points), price, BigInt(multiplier), BigInt(bonus), BigInt(maxSupply), isOpen]
+            args: [id, BigInt(points as string | number | bigint), price, BigInt(multiplier as string | number | bigint), BigInt(bonus as string | number | bigint), BigInt(maxSupply as string | number | bigint), isOpen]
         });
     };
 
-    const updateBatchConfig = async (tiersArr: unknown, pointsArr: unknown, pricesArr: unknown, bonusesArr: unknown, multipliersArr: unknown, suppliesArr: unknown, openArr: unknown) => {
+    const updateBatchConfig = async (tiersArr: unknown[], pointsArr: unknown[], pricesArr: unknown[], bonusesArr: unknown[], multipliersArr: unknown[], suppliesArr: unknown[], openArr: unknown[]) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -161,7 +164,7 @@ export function useNFTTiers() {
         });
     };
 
-    const updateTierURI = async (id: unknown, uri: unknown) => {
+    const updateTierURI = async (id: number, uri: string) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -170,7 +173,7 @@ export function useNFTTiers() {
         });
     };
 
-    const toggleTier = async (id: unknown, status: unknown) => {
+    const toggleTier = async (id: number, status: boolean) => {
         return await writeAndWait({
             address: V12,
             abi: ABIS.DAILY_APP,
@@ -179,7 +182,7 @@ export function useNFTTiers() {
         });
     };
 
-    const mintTier = async (id: unknown, price: unknown) => {
+    const mintTier = async (id: number, price: bigint) => {
         // Return hash only — caller (SBTUpgradeCard) handles receipt wait + confirmation check
         const hash = await writeContractAsync({
             address: V12,

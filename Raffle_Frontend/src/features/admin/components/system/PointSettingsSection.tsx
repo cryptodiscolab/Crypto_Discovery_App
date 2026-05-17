@@ -14,7 +14,7 @@ interface PointSettingsSectionProps {
     pointSettings: PointSetting[];
     onAddActivity: () => void;
     onRemoveActivity: (_id: string) => void;
-    onChange: (_id: string, _field: string, _value: unknown) => void;
+    onChange: (_id: string, _field: string, _value: string | number | boolean) => void;
     onSave: () => void;
     saving: boolean;
 }

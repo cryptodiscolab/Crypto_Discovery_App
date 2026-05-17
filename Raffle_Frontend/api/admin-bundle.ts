@@ -25,6 +25,25 @@ import {
 } from './_shared/constants.js';
 import type { Database, Json } from './_shared/database.types.js';
 
+type JsonObject = { [key: string]: Json | undefined };
+type GenericErrorLogQuery = PromiseLike<{ data: unknown[] | null; error: { message?: string } | null }> & {
+    eq: (column: string, value: Json) => GenericErrorLogQuery;
+};
+type GenericErrorLogClient = {
+    from: (table: string) => {
+        select: (columns: string) => {
+            order: (column: string, options: { ascending: boolean }) => {
+                limit: (count: number) => GenericErrorLogQuery;
+            };
+        };
+    };
+};
+
+const toJson = (value: unknown): Json => value as Json;
+const toJsonObject = (value: unknown): JsonObject => (
+    value && typeof value === 'object' && !Array.isArray(value) ? value as JsonObject : {}
+);
+
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const AUTHORIZED_ADMINS = [
@@ -133,13 +152,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             signature?: string;
             message?: string;
             payload?: unknown;
-            task_data?: unknown;
-            tasks?: unknown[];
+            task_data?: TaskCreateData;
+            tasks?: TaskSyncData[];
+            _tx_hash?: string;
             tx_hash?: string;
             task_name?: string;
             task_description?: string;
             target_agent?: string;
         };
+        const payloadRecord = toJsonObject(payload);
+        const payloadArray = Array.isArray(payload) ? payload as Json[] : [];
         const targetAddress = (address || wallet_address || wallet || '').toLowerCase();
 
         if (!targetAddress || !signature || !message) return res.status(400).json({ error: 'Missing auth fields' });
@@ -165,10 +187,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'parity-audit': await handleParityAudit(res); break;
             case 'sync-tiers': await handleSyncTiers(res); break;
             case 'sync-points': await handleSyncPoints(res); break;
-            case 'SYNC_MULTIPLIERS': await handleGenericUpsert('tier_multipliers', payload, targetAddress, 'SYNC_MULTIPLIERS', res); break;
+            case 'SYNC_MULTIPLIERS': await handleGenericUpsert('tier_multipliers', toJson(payloadRecord), targetAddress, 'SYNC_MULTIPLIERS', res); break;
             case 'SYNC_WEIGHTS': {
                 // Refactored: inline upsert to avoid double-response from handleGenericUpsert
-                const weightPayload = payload as Record<string, string>;
+                const weightPayload = payloadRecord as Record<string, string>;
 
                 // 1. Update system_settings (master record)
                 const { error: settingsErr } = await supabaseAdmin.from('system_settings').upsert(
@@ -195,88 +217,89 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(200).json({ success: true, pool_stats_synced: !poolErr });
             }
             case 'WHITELIST_TOKEN_DB': {
-                const { error } = await supabaseAdmin.from('allowed_tokens').upsert({ ...payload, address: payload.address.toLowerCase(), is_active: true }, { onConflict: 'chain_id,address' });
+                const tokenAddress = String(payloadRecord.address || '').toLowerCase();
+                const { error } = await supabaseAdmin.from('allowed_tokens').upsert({ ...payloadRecord, address: tokenAddress, is_active: true } as never, { onConflict: 'chain_id,address' });
                 if (error) throw error;
-                await logAdminAction(targetAddress, 'WHITELIST_TOKEN_DB', payload);
+                await logAdminAction(targetAddress, 'WHITELIST_TOKEN_DB', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
             case 'REMOVE_TOKEN_DB': {
-                const { error } = await supabaseAdmin.from('allowed_tokens').update({ is_active: false }).match({ chain_id: payload.chain_id, address: payload.address.toLowerCase() });
+                const { error } = await supabaseAdmin.from('allowed_tokens').update({ is_active: false }).match({ chain_id: payloadRecord.chain_id, address: String(payloadRecord.address || '').toLowerCase() });
                 if (error) throw error;
-                await logAdminAction(targetAddress, 'REMOVE_TOKEN_DB', payload);
+                await logAdminAction(targetAddress, 'REMOVE_TOKEN_DB', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
             case 'economy-stats':
             case 'GET_ECONOMY': await handleEconomyStats(res); break;
             case 'accountant-ledger': await handleAccountantLedger(res); break;
             case 'accountant-sync': await handleAccountantSync(req, res, targetAddress); break;
-            case 'task-create': await handleTaskCreate(task_data, targetAddress, res); break;
+            case 'task-create': await handleTaskCreate(task_data as TaskCreateData, targetAddress, res); break;
             case 'task-clear': {
                 await supabaseAdmin.from('daily_tasks').delete().not('id', 'is', 'null');
                 await logAdminAction(targetAddress, 'TASK_CLEAR', {});
                 return res.status(200).json({ success: true });
             }
-            case 'UPDATE_POINTS': await handleGenericUpsert('point_settings', payload, targetAddress, 'UPDATE_POINTS', res, 'activity_key'); break;
+            case 'UPDATE_POINTS': await handleGenericUpsert('point_settings', toJson(payloadRecord), targetAddress, 'UPDATE_POINTS', res, 'activity_key'); break;
             case 'BATCH_UPDATE_POINTS': {
-                const { error } = await supabaseAdmin.from('point_settings').upsert(payload, { onConflict: 'activity_key' });
+                const { error } = await supabaseAdmin.from('point_settings').upsert(payloadArray as never, { onConflict: 'activity_key' });
                 if (error) throw error;
-                await logAdminAction(targetAddress, 'BATCH_UPDATE_POINTS', { count: payload.length });
+                await logAdminAction(targetAddress, 'BATCH_UPDATE_POINTS', { count: payloadArray.length });
                 return res.status(200).json({ success: true });
             }
-            case 'GRANT_ROLE': await handleRoleUpdate(payload.target_address, true, targetAddress, 'GRANT_ROLE', res); break;
-            case 'REVOKE_ROLE': await handleRoleUpdate(payload.target_address, false, targetAddress, 'REVOKE_ROLE', res); break;
-            case 'SYNC_RAFFLE': await handleSyncRaffle(payload, targetAddress, res); break;
+            case 'GRANT_ROLE': await handleRoleUpdate(String(payloadRecord.target_address || ''), true, targetAddress, 'GRANT_ROLE', res); break;
+            case 'REVOKE_ROLE': await handleRoleUpdate(String(payloadRecord.target_address || ''), false, targetAddress, 'REVOKE_ROLE', res); break;
+            case 'SYNC_RAFFLE': await handleSyncRaffle(payloadRecord as unknown as SyncRafflePayload, targetAddress, res); break;
             case 'CREATE_CAMPAIGN': {
-                const { data, error } = await supabaseAdmin.from('campaigns').insert([payload]).select();
+                const { data, error } = await supabaseAdmin.from('campaigns').insert([payloadRecord] as never).select();
                 if (error) throw error;
-                await logAdminAction(targetAddress, 'CREATE_CAMPAIGN', payload);
+                await logAdminAction(targetAddress, 'CREATE_CAMPAIGN', toJson(payloadRecord));
                 return res.status(200).json({ success: true, data });
             }
             case 'UPDATE_CAMPAIGN_STATUS': {
-                await supabaseAdmin.from('campaigns').update({ status: payload.status }).eq('id', payload.id);
-                await logAdminAction(targetAddress, 'UPDATE_CAMPAIGN_STATUS', payload);
+                await supabaseAdmin.from('campaigns').update({ status: payloadRecord.status as string }).eq('id', payloadRecord.id as string);
+                await logAdminAction(targetAddress, 'UPDATE_CAMPAIGN_STATUS', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
             case 'DELETE_CAMPAIGN': {
-                await supabaseAdmin.from('campaigns').delete().eq('id', payload.id);
-                await logAdminAction(targetAddress, 'DELETE_CAMPAIGN', payload);
+                await supabaseAdmin.from('campaigns').delete().eq('id', payloadRecord.id as string);
+                await logAdminAction(targetAddress, 'DELETE_CAMPAIGN', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
-            case 'RESET_SEASON': await handleResetSeason(payload.new_season_id, targetAddress, res); break;
+            case 'RESET_SEASON': await handleResetSeason(String(payloadRecord.new_season_id || ''), targetAddress, res); break;
             case 'task-sync': await handleTaskSync((tasks || []) as TaskSyncData[], targetAddress, res); break;
             case 'GRANT_PRIVILEGE': {
-                await supabaseAdmin.from('user_privileges').upsert({ wallet_address: payload.target_address.toLowerCase(), feature_id: payload.feature_id, granted_at: new Date().toISOString() }, { onConflict: 'wallet_address,feature_id' });
-                await logAdminAction(targetAddress, 'GRANT_PRIVILEGE', payload);
+                await supabaseAdmin.from('user_privileges').upsert({ wallet_address: String(payloadRecord.target_address || '').toLowerCase(), feature_id: payloadRecord.feature_id as string, granted_at: new Date().toISOString() }, { onConflict: 'wallet_address,feature_id' });
+                await logAdminAction(targetAddress, 'GRANT_PRIVILEGE', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
             case 'REVOKE_PRIVILEGE': {
-                await supabaseAdmin.from('user_privileges').delete().eq('wallet_address', payload.target_address.toLowerCase()).eq('feature_id', payload.feature_id);
-                await logAdminAction(targetAddress, 'REVOKE_PRIVILEGE', payload);
+                await supabaseAdmin.from('user_privileges').delete().eq('wallet_address', String(payloadRecord.target_address || '').toLowerCase()).eq('feature_id', payloadRecord.feature_id as string);
+                await logAdminAction(targetAddress, 'REVOKE_PRIVILEGE', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
             case 'ISSUE_ENS': {
-                await supabaseAdmin.from('ens_subdomains').insert([{ ...payload, wallet_address: payload.wallet_address.toLowerCase() }]);
-                await logAdminAction(targetAddress, 'ISSUE_ENS', payload);
+                await supabaseAdmin.from('ens_subdomains').insert([{ ...payloadRecord, wallet_address: String(payloadRecord.wallet_address || '').toLowerCase() }] as never);
+                await logAdminAction(targetAddress, 'ISSUE_ENS', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
-            case 'UPDATE_FEATURE_FLAGS': await handleGenericUpsert('active_features', payload, targetAddress, 'UPDATE_FEATURE_FLAGS', res); break;
-            case 'UPDATE_UGC_CONFIG': await handleGenericUpsert('ugc_config', payload, targetAddress, 'UPDATE_UGC_CONFIG', res); break;
-            case 'CREATE_UGC_MISSION': await handleCreateUgcMission(payload, targetAddress, res); break;
+            case 'UPDATE_FEATURE_FLAGS': await handleGenericUpsert('active_features', toJson(payloadRecord), targetAddress, 'UPDATE_FEATURE_FLAGS', res); break;
+            case 'UPDATE_UGC_CONFIG': await handleGenericUpsert('ugc_config', toJson(payloadRecord), targetAddress, 'UPDATE_UGC_CONFIG', res); break;
+            case 'CREATE_UGC_MISSION': await handleCreateUgcMission(payloadRecord as unknown as UgcMissionCreatePayload, targetAddress, res); break;
             case 'VERIFY_UGC_PAYMENT_ONCHAIN': await handleVerifyUgcPaymentOnchain(req, res, targetAddress); break;
             case 'reject-mission': await handleRejectMission(req, res, targetAddress); break;
             case 'GET_UGC_REVENUE': await handleGetUgcRevenue(res); break;
-            case 'MARK_REVENUE_ALLOCATED': await handleMarkRevenueAllocated(payload.mission_id, targetAddress, res); break;
+            case 'MARK_REVENUE_ALLOCATED': await handleMarkRevenueAllocated(String(payloadRecord.mission_id || ''), targetAddress, res); break;
             case 'UPDATE_THRESHOLDS': {
-                const { error } = await supabaseAdmin.from('sbt_thresholds').upsert(payload, { onConflict: 'level' });
+                const { error } = await supabaseAdmin.from('sbt_thresholds').upsert(payloadArray as never, { onConflict: 'level' });
                 if (error) throw error;
-                await logAdminAction(targetAddress, 'UPDATE_THRESHOLDS', { count: payload.length });
+                await logAdminAction(targetAddress, 'UPDATE_THRESHOLDS', { count: payloadArray.length });
                 return res.status(200).json({ success: true });
             }
-            case 'UPDATE_TIER_CONFIG': await handleGenericUpsert('tier_config', payload, targetAddress, 'UPDATE_TIER_CONFIG', res); break;
+            case 'UPDATE_TIER_CONFIG': await handleGenericUpsert('tier_config', toJson(payloadRecord), targetAddress, 'UPDATE_TIER_CONFIG', res); break;
             case 'MANUAL_TIER_OVERRIDE': {
-                const { error } = await supabaseAdmin.from('user_profiles').update({ tier_override: payload.tier }).eq('wallet_address', payload.target_address.toLowerCase());
+                const { error } = await supabaseAdmin.from('user_profiles').update({ tier_override: payloadRecord.tier as number }).eq('wallet_address', String(payloadRecord.target_address || '').toLowerCase());
                 if (error) throw error;
-                await logAdminAction(targetAddress, 'MANUAL_TIER_OVERRIDE', payload);
+                await logAdminAction(targetAddress, 'MANUAL_TIER_OVERRIDE', toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
             case 'NEXUS_DISPATCH': {
@@ -294,7 +317,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(200).json({ success: true, message: `Task dispatched to ${target_agent}` });
             }
             case 'LOG_ONCHAIN_TX': {
-                await logAdminAction(targetAddress, `ONCHAIN_TX: ${payload?.functionName || 'unknown'}`, payload || {});
+                await logAdminAction(targetAddress, `ONCHAIN_TX: ${payloadRecord.functionName || 'unknown'}`, toJson(payloadRecord));
                 return res.status(200).json({ success: true });
             }
             case 'GET_AUDIT_LOGS': {
@@ -302,15 +325,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(200).json({ success: true, logs: data || [] });
             }
             case 'GET_ERROR_LOGS': {
-                const limit = payload?.limit || 100;
-                const severity = payload?.severity || null;
-                let query = (supabaseAdmin as unknown).from('system_error_logs')
+                const limit = Number(payloadRecord.limit || 100);
+                const severity = payloadRecord.severity || null;
+                let query: any = (supabaseAdmin as any).from('system_error_logs')
                     .select('*')
                     .order('created_at', { ascending: false })
                     .limit(limit);
                 if (severity) query = query.eq('severity', severity);
-                if (payload?.bundle) query = query.eq('bundle', payload.bundle);
-                if (payload?.wallet_address) query = query.eq('wallet_address', payload.wallet_address.toLowerCase());
+                if (payloadRecord.bundle) query = query.eq('bundle', payloadRecord.bundle);
+                if (payloadRecord.wallet_address) query = query.eq('wallet_address', String(payloadRecord.wallet_address).toLowerCase());
                 const { data, error: qErr } = await query;
                 if (qErr) return res.status(200).json({ success: true, logs: [], error: 'Table may not exist yet' });
                 return res.status(200).json({ success: true, logs: data || [] });
@@ -437,7 +460,7 @@ async function handleSyncPoints(res: VercelResponse) {
 
 async function handleGenericUpsert(key: string, value: Json, admin: string, action: string, res: VercelResponse, conflictCol = 'key') {
     const row = conflictCol === 'key' ? { key, value, updated_at: new Date().toISOString() } : (value as Record<string, Json>);
-    const { error } = await supabaseAdmin.from('system_settings').upsert(row as unknown, { onConflict: conflictCol as unknown });
+    const { error } = await supabaseAdmin.from('system_settings').upsert(row as never, { onConflict: conflictCol });
     if (error) throw error;
     await logAdminAction(admin, action, value);
     return res.status(200).json({ success: true });
@@ -579,6 +602,7 @@ interface UgcMissionCreatePayload {
     total_reward_pool: string;
     duration_days: number;
     payment_tx_hash: string;
+    payment_token?: string;
 }
 
 async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: string, res: VercelResponse) {
@@ -594,8 +618,8 @@ async function handleCreateUgcMission(payload: UgcMissionCreatePayload, admin: s
         max_participants: parseInt(payload.max_participants) || 0,
         total_reward_pool: parseFloat(payload.total_reward_pool) || 0,
         remaining_reward_pool: parseFloat(payload.total_reward_pool) || 0,
-        reward_token_address: (payload.reward_token_address || (payload as unknown).payment_token || USDC_ADDRESS).toLowerCase(),
-        reward_symbol: payload.reward_symbol || (payload as unknown).reward_symbol || 'TOKEN',
+        reward_token_address: (payload.reward_token_address || payload.payment_token || USDC_ADDRESS).toLowerCase(),
+        reward_symbol: payload.reward_symbol || 'TOKEN',
         listing_fee: parseFloat(String(payload.listing_fee || 0)),
         duration_days: payload.duration_days || 7,
         creation_tx_hash: payload.payment_tx_hash || '',

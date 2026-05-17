@@ -1,16 +1,31 @@
 import { useState } from 'react';
 import { UserCheck, CheckCircle, Globe } from 'lucide-react';
 
+interface EligibleUser {
+    fid: number | string;
+    total_xp?: number | string;
+    wallet_address?: string;
+}
+
+interface IssuedSubname {
+    id: string | number;
+    fid?: number | string;
+    full_name: string;
+    wallet_address?: string;
+}
+
 export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, saving }: {
     eligibleUsers: unknown[];
     issuedSubnames: unknown[];
-    onIssue: (_user: unknown, _label: string) => void;
+    onIssue: (_user: { fid: number | string; wallet_address?: string; total_xp?: number | string }, _label: string) => void | Promise<unknown>;
     saving: boolean;
 }) {
     const [labelMap, setLabelMap] = useState<Record<string, string>>({});
+    const typedEligible = eligibleUsers as EligibleUser[];
+    const typedIssued = issuedSubnames as IssuedSubname[];
 
-    const handleLabelChange = (fid: unknown, value: string) => {
-        setLabelMap(prev => ({ ...prev, [fid]: value }));
+    const handleLabelChange = (fid: number | string, value: string) => {
+        setLabelMap(prev => ({ ...prev, [String(fid)]: value }));
     };
 
     return (
@@ -18,10 +33,10 @@ export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, s
             <div className="space-y-4">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2"><UserCheck className="w-5 h-5 text-indigo-400" /> Eligible Candidates</h2>
                 <div className="bg-slate-900/50 rounded-2xl border border-white/5 p-4 max-h-[500px] overflow-y-auto space-y-3 custom-scrollbar">
-                    {eligibleUsers.length === 0 ? (
+                    {typedEligible.length === 0 ? (
                         <p className="text-slate-500 italic text-center py-10">No eligible candidates found.</p>
                     ) : (
-                        eligibleUsers.map((user: unknown) => (
+                        typedEligible.map((user) => (
                             <div key={user.fid} className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl flex flex-col gap-3 group hover:border-indigo-500/30 transition-all">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-mono text-indigo-400 py-1 px-2 bg-indigo-500/10 rounded-lg">FID: {user.fid}</span>
@@ -31,15 +46,15 @@ export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, s
                                     <input
                                         type="text"
                                         placeholder="label"
-                                        value={labelMap[user.fid] || ''}
+                                        value={labelMap[String(user.fid)] || ''}
                                         onChange={(e) => handleLabelChange(user.fid, e.target.value)}
                                         className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-indigo-500 outline-none font-bold"
                                     />
                                     <span className="text-slate-500 text-xs font-black">.cryptodiscovery.eth</span>
                                 </div>
                                 <button
-                                    onClick={() => onIssue(user, labelMap[user.fid] || '')}
-                                    disabled={saving || !labelMap[user.fid]}
+                                    onClick={() => onIssue(user, labelMap[String(user.fid)] || '')}
+                                    disabled={saving || !labelMap[String(user.fid)]}
                                     className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black py-2.5 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <CheckCircle className="w-4 h-4" /> Issue Subname Identity
@@ -63,7 +78,7 @@ export function EnsManagementSection({ eligibleUsers, issuedSubnames, onIssue, s
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {issuedSubnames.map((item: unknown) => (
+                                {typedIssued.map((item) => (
                                     <tr key={item.id} className="hover:bg-white/[0.02]">
                                         <td className="px-4 py-4">
                                             <p className="text-xs font-bold text-white">{item.full_name}</p>

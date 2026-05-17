@@ -34,9 +34,9 @@ import { WalletPortfolio } from '../components/WalletPortfolio';
 export default function ProfilePage() {
   const { address } = useAccount();
   const _navigate = useNavigate();
-  const { _disconnect } = useDisconnect();
+  const { disconnect: _disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
-  const { _ecosystemSettings, refetch: refetchPoints } = usePoints();
+  const { ecosystemSettings: _ecosystemSettings, refetch: refetchPoints } = usePoints();
   const { linkGoogle, linkX, isLinking: isOAuthLinking } = useOAuth();
 
   // Modular Data Fetching (TanStack Query)
@@ -80,7 +80,7 @@ export default function ProfilePage() {
       toast.success("Profile updated! 🎉", { id: tid });
       setIsEditing(false);
       refetchProfile();
-    } catch (e: unknown) {
+    } catch (e: any) {
       toast.error(e.message || "Update failed", { id: tid });
     } finally {
       setIsSaving(false);
@@ -100,7 +100,7 @@ export default function ProfilePage() {
         return res.profile;
       }
       return null;
-    } catch (e: unknown) {
+    } catch (e: any) {
       console.error("[handleSyncUser] Error:", e);
       throw e;
     }
@@ -126,7 +126,7 @@ export default function ProfilePage() {
         </p>
 
         <button
-            onClick={() => (window as unknown).rainbowContext?.openConnectModal?.()}
+            onClick={() => (window as unknown as Record<string, { openConnectModal?: () => void }>).rainbowContext?.openConnectModal?.()}
             className="group relative flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-indigo-50 transition-all active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.1)]"
         >
             <Wallet size={18} />
@@ -223,7 +223,7 @@ export default function ProfilePage() {
               refetchOnChainStats();
               refetchSBT();
             }}
-            streakCount={(profileData as unknown)?.streakCount || (profileData as unknown)?.streak_count || 0}
+            streakCount={(profileData as { streakCount?: number; streak_count?: number })?.streakCount || (profileData as { streak_count?: number })?.streak_count || 0}
           />
         )}
         {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}

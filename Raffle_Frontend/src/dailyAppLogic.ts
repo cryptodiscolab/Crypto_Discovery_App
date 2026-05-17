@@ -33,7 +33,7 @@ export async function ensureUserProfile(walletAddress: string, signature: string
         if (referred_by) referralUtils.clearReferrer();
 
         return result.profile;
-    } catch (err: unknown) {
+    } catch (err: any) {
         console.error('[Ensure Profile] Critical Error:', err.message);
         // Persist error for admin visibility (fire-and-forget)
         try {
@@ -82,7 +82,7 @@ export async function awardTaskXP(walletAddress: string, signature: string, mess
         if (!response.ok) throw new Error(result.error || "XP Award failed");
 
         return { success: true, ...result };
-    } catch (err: unknown) {
+    } catch (err: any) {
         console.error('[Award XP Error]', err);
         // Persist XP award error for admin visibility (fire-and-forget)
         try {
@@ -119,7 +119,7 @@ export async function getUserStatsByFid(fid: unknown) {
 
         if (error && error.code !== 'PGRST116') throw error;
         return data || { total_xp: 0, tier: 1, last_seen_at: null };
-    } catch (err: unknown) {
+    } catch (err: any) {
         console.error('[User Stats] Error:', err);
         return null;
     }
@@ -134,7 +134,7 @@ export async function getSBTThresholds() {
 
         if (error) throw error;
         return data || [];
-    } catch (err: unknown) {
+    } catch (err: any) {
         console.error('[SBT Config] Error fetching thresholds:', err);
         return [];
     }

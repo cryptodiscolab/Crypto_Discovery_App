@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-    _Plus, _Zap, _Calendar, Loader2, _CheckCircle2, AlertCircle,
-    _Star, _Database, _RefreshCw, _Settings, _TrendingUp,
-    _Share2, _List, _Clock, _Send
+    Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle,
+    Star, Database, RefreshCw, Settings, TrendingUp,
+    Share2, List, Clock, Send
 } from 'lucide-react';
+import { useAccount, useSignMessage, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { encodeFunctionData, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
 import { DAILY_APP_ABI, CONTRACTS } from '../../../lib/contracts';
@@ -18,7 +20,7 @@ import { EconomyConfigSection } from './tasks/EconomyConfigSection';
 import { ActiveCampaignsSection } from './tasks/ActiveCampaignsSection';
 import { EconomyMetrics } from './EconomyMetrics';
 
-const DAILY_APP_ADDRESS = CONTRACTS.DAILY_APP;
+const DAILY_APP_ADDRESS = CONTRACTS.DAILY_APP as `0x${string}`;
 
 interface TaskManagerProps {
     initialMode?: 'batch' | 'quick';
@@ -164,7 +166,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as unknown, functionName: 'addTask',
+                abi: DAILY_APP_ABI as any, functionName: 'addTask',
                 args: [BigInt(dailyPoints || 0), BigInt(cd), BigInt(dailyMinTier), dailyDesc, '', dailyRequiresVerify]
             }),
         }];
@@ -178,7 +180,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as unknown,
+                abi: DAILY_APP_ABI as any,
                 functionName: 'buySponsorshipWithToken',
                 args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, isNative ? 0n : totalPool, selectedTokenAddr]
             }),
@@ -208,7 +210,8 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             });
             toast.success("Batch transaction submitted!", { id: tid });
         } catch (e: unknown) {
-            toast.error(e instanceof Error ? (e as unknown).shortMessage || e.message : "Batch deployment failed", { id: tid });
+            const msg = e instanceof Error ? ((e as { shortMessage?: string }).shortMessage || e.message) : "Batch deployment failed";
+            toast.error(msg, { id: tid });
         }
     };
 
@@ -229,7 +232,8 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             });
             toast.success("Sponsorship transaction submitted!", { id: tid });
         } catch (e: unknown) {
-            toast.error(e instanceof Error ? (e as unknown).shortMessage || "Deployment failed" : "Deployment failed", { id: tid });
+            const msg = e instanceof Error ? ((e as { shortMessage?: string }).shortMessage || e.message) : "Deployment failed";
+            toast.error(msg, { id: tid });
         }
     };
 
@@ -386,7 +390,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                         {subTab === 'BATCH_CREATOR' && (
                             <TaskBatchCreatorSection
                                 tasksBatch={tasksBatch}
-                                onUpdateTask={updateTaskLine as unknown}
+                                onUpdateTask={updateTaskLine as any}
                                 onDeploy={handleBatchSave}
                                 isSaving={isWaiting}
                             />
@@ -444,7 +448,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                         {isWaiting ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
                         <div>
                             <p className="text-[11px] font-black text-white uppercase tracking-widest">{isWaiting ? "Protocol Engagement Active" : "Authorization Error"}</p>
-                            <p className="text-[9px] text-slate-500 mt-0.5">{isWaiting ? "Awaiting block confirmation..." : (writeError as unknown)?.shortMessage || writeError?.message}</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">{isWaiting ? "Awaiting block confirmation..." : (writeError as { shortMessage?: string; message?: string })?.shortMessage || writeError?.message}</p>
                         </div>
                     </div>
                 </div>

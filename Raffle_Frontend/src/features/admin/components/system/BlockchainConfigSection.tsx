@@ -71,8 +71,11 @@ export function BlockchainConfigSection() {
         desc: ''
     });
 
-    const allowedTokens = (ecosystemSettings as unknown)?.allowed_tokens || (ecosystemSettings as unknown)?.whitelisted_tokens || [];
-    const tokenAddresses = allowedTokens.map((t: unknown) => t.address as `0x${string}`);
+    interface AllowedTok { address: string; symbol: string; decimals?: number }
+    const allowedTokens = ((ecosystemSettings as { allowed_tokens?: AllowedTok[]; whitelisted_tokens?: AllowedTok[] })?.allowed_tokens
+        || (ecosystemSettings as { allowed_tokens?: AllowedTok[]; whitelisted_tokens?: AllowedTok[] })?.whitelisted_tokens
+        || []) as AllowedTok[];
+    const tokenAddresses = allowedTokens.map((t) => t.address as `0x${string}`);
     const { prices } = usePriceOracle(tokenAddresses);
 
     const getUsdValue = (humanAmount: string, isUsdc = false) => {
@@ -171,8 +174,9 @@ export function BlockchainConfigSection() {
 
     // Drift Detection
     useEffect(() => {
-        const dbRewards = (ecosystemSettings as unknown)?.points_settings?.find((s: unknown) => s.activity_key === 'daily_claim')?.points_value;
-        const dbXp = (ecosystemSettings as unknown)?.points_settings?.find((s: unknown) => s.activity_key === 'raffle_create')?.points_value;
+        const settings = (ecosystemSettings as { points_settings?: Array<{ activity_key: string; points_value: number }> })?.points_settings;
+        const dbRewards = settings?.find((s) => s.activity_key === 'daily_claim')?.points_value;
+        const dbXp = settings?.find((s) => s.activity_key === 'raffle_create')?.points_value;
 
         setDrift({
             rewards: dbRewards !== undefined && dbRewards !== parseInt(rewards.daily),
@@ -201,7 +205,8 @@ export function BlockchainConfigSection() {
             });
             toast.success("Pool Settings Updated!", { id: tid });
         } catch (e: unknown) {
-            toast.error(e.message, { id: tid });
+            const err = e as { message?: string };
+            toast.error(err.message || 'Update failed', { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -220,7 +225,8 @@ export function BlockchainConfigSection() {
             toast.success("Revenue Distributed!", { id: tid });
             refetchAll();
         } catch (e: unknown) {
-            toast.error(e.shortMessage || e.message, { id: tid });
+            const err = e as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || 'Distribution failed', { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -239,7 +245,8 @@ export function BlockchainConfigSection() {
             toast.success("Funds Withdrawn to Safe!", { id: tid });
             refetchAll();
         } catch (e: unknown) {
-            toast.error(e.shortMessage || e.message, { id: tid });
+            const err = e as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || 'Withdraw failed', { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -248,8 +255,9 @@ export function BlockchainConfigSection() {
     const handleSyncTokenToDb = async (action: string, payload: unknown) => {
         const tid = toast.loading("Syncing Database...");
         try {
+            const p = payload as { symbol?: string; address?: string };
             const timestamp = new Date().toISOString();
-            const message = `${action}: ${payload.symbol || payload.address} [${timestamp}]`;
+            const message = `${action}: ${p.symbol || p.address} [${timestamp}]`;
             const signature = await signMessageAsync({ message });
             await axios.post('/api/admin-bundle', {
                 wallet_address: address,
@@ -260,7 +268,8 @@ export function BlockchainConfigSection() {
             });
             toast.success("Database Synchronized!", { id: tid });
         } catch (e: unknown) {
-            toast.error(e.message, { id: tid });
+            const err = e as { message?: string };
+            toast.error(err.message || 'Sync failed', { id: tid });
         }
     };
 

@@ -63,7 +63,7 @@ export function RaffleRow({ raffleId, filter = 'all' }: RaffleRowProps) {
         }
         toast.dismiss(tid);
       }
-    } catch (e: unknown) {
+    } catch (e: any) {
       toast.error(e.shortMessage || e.message || "Action failed", { id: tid });
     } finally {
       setIsProcessing(false);

@@ -21,7 +21,7 @@ interface RaffleEconSettingsCardProps {
 export function RaffleEconSettingsCard({
     raffleFees, setRaffleFees,
     raffleLimits, setRaffleLimits,
-    raffleXp, _setRaffleXp,
+    raffleXp, setRaffleXp: _setRaffleXp,
     drift, isSaving, setIsSaving
 }: RaffleEconSettingsCardProps) {
     const { address } = useAccount();
@@ -41,7 +41,7 @@ export function RaffleEconSettingsCard({
             });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Raffle Fees Updated!", { id: tid });
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || e.message, { id: tid });
         } finally {
             setIsSaving(false);
@@ -60,7 +60,7 @@ export function RaffleEconSettingsCard({
             });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Raffle Limits Updated!", { id: tid });
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || e.message, { id: tid });
         } finally {
             setIsSaving(false);
@@ -95,7 +95,7 @@ export function RaffleEconSettingsCard({
             });
 
             toast.success('Raffle XP updated on-chain & in DB!', { id: tid });
-        } catch (err: unknown) {
+        } catch (err: any) {
             toast.error(err.message, { id: tid });
         }
     };

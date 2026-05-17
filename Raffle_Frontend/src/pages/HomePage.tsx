@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Timer as TimerIcon,
   CheckCircle,
-  _DollarSign,
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { usePoints } from '../shared/context/PointsContext';
@@ -36,7 +35,7 @@ import { useFarcaster } from '../shared/context/FarcasterContext';
 
 export function HomePage() {
   const { isConnected, address } = useAccount();
-  const { userPoints, _unclaimedRewards } = usePoints();
+  const { userPoints, unclaimedRewards: _unclaimedRewards } = usePoints();
   const { totalPoolBalance } = useSBT();
   const { isFrame, frameUser, client } = useFarcaster();
   const {
@@ -53,7 +52,7 @@ export function HomePage() {
   const targetUSDC = poolSettings?.targetUSDC || 5000;
   const progressPct = Math.min((poolUSD / targetUSDC) * 100, 100).toFixed(1);
 
-  const theme = client?.config?.theme || 'dark';
+  const theme = (client as any)?.config?.theme || 'dark';
   const isLight = theme === 'light';
 
   return (
@@ -66,8 +65,8 @@ export function HomePage() {
           isLight ? 'bg-white/80 border-black/5' : 'bg-[#050505]/80 border-white/5'
         }`}>
           <div className="flex items-center gap-2.5">
-            {frameUser?.pfpUrl ? (
-              <img src={frameUser.pfpUser || frameUser.pfpUrl} alt="" className="w-8 h-8 rounded-full border-2 border-indigo-500/50 shadow-lg" />
+            {(frameUser as any)?.pfpUrl ? (
+              <img src={(frameUser as any).pfpUser || (frameUser as any).pfpUrl} alt="" className="w-8 h-8 rounded-full border-2 border-indigo-500/50 shadow-lg" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
                 <User size={14} className="text-indigo-400" />
@@ -75,7 +74,7 @@ export function HomePage() {
             )}
             <div>
             <p className="text-[11px] font-black uppercase tracking-tighter text-indigo-500 leading-none">
-                {frameUser?.username || 'Nexus Agent'}
+                {(frameUser as any)?.username || 'Nexus Agent'}
               </p>
               <p className={`text-[11px] font-bold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
                 {isConnected && address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Guest Mode'}
@@ -114,7 +113,7 @@ export function HomePage() {
         </div>
 
         {/* ── Announcement Banner ───────────────────────────────────────── */}
-        <AnnouncementBanner announcement={announcement as unknown} />
+        <AnnouncementBanner announcement={announcement as any} />
 
         {/* ── Pool Widget ──────────────────────────────────────────────────── */}
         {/* Minimalist: bg-zinc-900, tanpa border warna, tanpa glow overlay berlapis */}
@@ -135,13 +134,13 @@ export function HomePage() {
                 <p className="text-zinc-600 text-[11px] mt-1 font-mono font-black uppercase tracking-widest">≈ {poolETH} ETH</p>
               </div>
 
-              {poolSettings?.claimTimestamp > Date.now() && (
+              {(poolSettings as any)?.claimTimestamp > Date.now() && (
                 <div className="bg-white/5 backdrop-blur-xl border border-white/5 rounded-xl p-4 flex items-center gap-3 self-start sm:self-auto">
                   <TimerIcon className="w-5 h-5 text-indigo-400 shrink-0" />
                   <div>
                     <p className="text-[11px] text-zinc-500 font-black uppercase tracking-widest">NEXT DROP</p>
                     <div className="text-[11px] font-black text-white font-mono uppercase tracking-widest">
-                      <HomeCountdown timestamp={poolSettings.claimTimestamp} />
+                      <HomeCountdown timestamp={(poolSettings as any).claimTimestamp} />
                     </div>
                   </div>
                 </div>
@@ -179,10 +178,10 @@ export function HomePage() {
             <FeatureCardSkeleton count={6} />
           ) : (
             displayCards
-              .filter(card => card.visible !== false)
-              .map((card, index) => {
+              .filter((card: any) => card.visible !== false)
+              .map((card: any, index: number) => {
                 const isCustomImage = card.icon && typeof card.icon === 'string' && card.icon.startsWith('http');
-                const IconComponent = (iconMap as unknown)[card.icon] || Sparkles;
+                const IconComponent = (iconMap as any)[card.icon] || Sparkles;
 
                 return (
                   <Link key={index} to={card.link || '/'} className="group">

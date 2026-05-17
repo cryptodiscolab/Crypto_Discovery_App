@@ -11,33 +11,24 @@ import toast from 'react-hot-toast';
 import { usePendingSyncRecovery } from '../../../hooks/usePendingSyncRecovery';
 import { AlertCircle, ArrowUpCircle, CheckCircle2, Loader2, Lock, Sparkles } from 'lucide-react';
 
-interface _Tier {
-    id: number;
-    name: string;
-    pointsRequired: number;
-    mintPrice: bigint;
-    maxSupply: number;
-    currentSupply: number;
-}
-
 export function SBTUpgradeCard() {
     const { address } = useAccount();
     const chainId = useChainId();
     const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const config = useConfig();
     const { signMessageAsync } = useSignMessage();
-    const { userPoints, userTier, _rankName, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
+    const { userPoints, userTier, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
     const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { ethPrice } = useCMS();
-    const { _userOnChainXP, _currentSeasonId, refetchAll } = useSBT();
+    const { refetchAll } = useSBT();
     const { stats: userOnChainStats, refetch: refetchUserInfo } = useUserInfo(address);
-    const { _syncXP, syncOffchainXP, isLoading: isSyncing } = useSyncXP();
+    const { syncOffchainXP, isLoading: isSyncing } = useSyncXP();
     const { data: balanceData } = useBalance({ address });
 
     // Feature Flags Check
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
-    const isSbtFeatureEnabled = !isMainnet || (ecosystemSettings as unknown)?.active_features?.sbt_minting === true;
+    const isSbtFeatureEnabled = !isMainnet || (ecosystemSettings as { active_features?: { sbt_minting?: boolean } })?.active_features?.sbt_minting === true;
 
     // Find current and next tier (Sync on-chain tier to bypass DB delay)
     const dbTier = userTier || 0;
@@ -49,7 +40,7 @@ export function SBTUpgradeCard() {
     // Read MasterX tier fee as fallback (admin may set fee there instead of DailyApp)
     const { data: masterXFee } = useReadContract({
         address: CONTRACTS.MASTER_X as `0x${string}`,
-        abi: ABIS.MASTER_X as unknown,
+        abi: ABIS.MASTER_X as readonly unknown[],
         functionName: 'tierUpgradeFeeWei',
         args: [nextTierId],
         query: { enabled: nextTierId <= 5 }
@@ -189,7 +180,7 @@ export function SBTUpgradeCard() {
             refetchAll();
             refetchUserInfo?.(); // FIX v3.56.1: Force update on-chain user stats for instant UI feedback
         } catch (err: unknown) {
-            const e = err as unknown;
+            const e = err as { shortMessage?: string; message?: string; code?: number | string };
             console.error('[SBTUpgradeCard] Mint error:', e);
             // Provide specific error messages based on error type
             const errMsg = e?.shortMessage || e?.message || '';
@@ -251,8 +242,9 @@ export function SBTUpgradeCard() {
             refetchPoints();
         } catch (error: unknown) {
             console.error("Sync error:", error);
-            const msg = error?.shortMessage || error?.message || "Sync failed";
-            if (error?.code === 4001) {
+            const e = error as { shortMessage?: string; message?: string; code?: number | string };
+            const msg = e?.shortMessage || e?.message || "Sync failed";
+            if (e?.code === 4001) {
                 toast.error('Sync cancelled by user.', { id: tid });
             } else {
                 toast.error(msg, { id: tid });

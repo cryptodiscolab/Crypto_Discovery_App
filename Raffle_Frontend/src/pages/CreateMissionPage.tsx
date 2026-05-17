@@ -128,14 +128,14 @@ export function CreateMissionPage() {
     const [showPortfolio, setShowPortfolio] = useState(false);
 
     // Initial state matching design spec
-    const [whitelistedTokens, setWhitelistedTokens] = useState<unknown[]>([]);
+    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
 
     // Fetch prices for all whitelisted tokens
-    const tokenAddresses = useMemo(() => whitelistedTokens.map(t => t.address), [whitelistedTokens]);
+    const tokenAddresses = useMemo(() => whitelistedTokens.map((t: any) => t.address), [whitelistedTokens]);
     const { prices: tokenPrices } = usePriceOracle(tokenAddresses);
 
-    const selectedToken = whitelistedTokens.find(t => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const selectedToken = whitelistedTokens.find((t: any) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
 
     // Reset actions when platform changes
@@ -180,7 +180,7 @@ export function CreateMissionPage() {
                 const { data: tokens } = await supabase.from('allowed_tokens').select('*').eq('chain_id', chainId).eq('is_active', true);
                 if (tokens && tokens.length > 0) {
                     setWhitelistedTokens(tokens);
-                    const defaultToken = tokens.find((t: unknown) => t.symbol === 'USDC') || tokens[0];
+                    const defaultToken = tokens.find((t: any) => t.symbol === 'USDC') || tokens[0];
                     setSelectedTokenAddr(defaultToken.address);
                 }
                 fetchCurrentBalance();
@@ -665,7 +665,7 @@ export function CreateMissionPage() {
                                                     onChange={(e) => setSelectedTokenAddr(e.target.value)}
                                                     className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer pr-12"
                                                 >
-                                                    {whitelistedTokens.map((t, i) => (
+                                                    {whitelistedTokens.map((t: any, i) => (
                                                         <option key={i} value={t.address} className="bg-[#0B0E14]">
                                                             {t.symbol} — {t.address === '0x0000000000000000000000000000000000000000' ? 'NATIVE' : `${t.address.slice(0,6)}...${t.address.slice(-4)}`}
                                                         </option>

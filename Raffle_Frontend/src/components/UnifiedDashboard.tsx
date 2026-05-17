@@ -5,7 +5,7 @@ import { Zap, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useSocialGuard } from '../hooks/useSocialGuard';
 import { useVerification } from '../hooks/useVerification';
 import { useTaskInfo } from '../hooks/useTaskInfo';
-import { useUserV12Stats } from '../hooks/useContract';
+import { useUserV12Stats, useV12Stats } from '../hooks/useContract';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCMS } from '../hooks/useCMS';
 import { GovernancePanel } from './GovernancePanel';

@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
+import type { ComponentType } from 'react';
 import { supabase } from '../../../../lib/supabaseClient';
 import {
     Cpu, Brain, Shield, Zap,
@@ -49,11 +50,12 @@ export const NexusMonitorTab = () => {
 
         const channel = supabase
             .channel('nexus-live')
+            // @ts-expect-error supabase types broaden 'postgres_changes' but runtime accepts it
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
                 table: 'agents_vault'
-            }, (payload: unknown) => {
+            }, (payload: { eventType: string; new: NexusTask; old: unknown }) => {
                 if (payload.eventType === 'INSERT') {
                     setTasks(prev => [payload.new as NexusTask, ...prev].slice(0, 50));
                 } else if (payload.eventType === 'UPDATE') {
@@ -127,7 +129,8 @@ export const NexusMonitorTab = () => {
                 throw new Error(result.error || "Dispatch failed");
             }
         } catch (err: unknown) {
-            toast.error(err.message, { id: tid });
+            const e = err as { message?: string };
+            toast.error(e.message || 'Dispatch failed', { id: tid });
         } finally {
             setIsDispatching(false);
         }
@@ -143,7 +146,7 @@ export const NexusMonitorTab = () => {
         }
     };
 
-    const AgentCard = ({ name, icon: Icon, color, status }: { name: string; icon: unknown; color: string; status: string }) => (
+    const AgentCard = ({ name, icon: Icon, color, status }: { name: string; icon: ComponentType<{ className?: string }>; color: string; status: string }) => (
         <div className={`cyber-pod p-6 rounded-[2rem] ${status === 'active'
             ? 'border-indigo-500/30'
             : 'opacity-60'
@@ -276,15 +279,15 @@ export const NexusMonitorTab = () => {
                                                 {task.task_description}
                                             </p>
 
-                                            {task.output_data && (typeof task.output_data === 'object' ? Object.keys(task.output_data).length > 0 : task.output_data) && (
+                                            {Boolean(task.output_data && (typeof task.output_data === 'object' ? Object.keys(task.output_data as object).length > 0 : task.output_data)) && (
                                                 <div className="mt-4 p-4 bg-black/40 rounded-2xl border border-white/5 font-mono text-[10px] text-slate-300 overflow-hidden">
                                                     <div className="flex items-center gap-2 mb-2 text-slate-500 uppercase tracking-widest font-black text-left">
                                                         <Activity className="w-3 h-3" /> Output Log
                                                     </div>
                                                     <div className="opacity-80 leading-relaxed overflow-x-auto whitespace-pre-wrap text-left">
-                                                        {task.output_data?.result
-                                                            ? (typeof task.output_data.result === 'string' ? task.output_data.result : JSON.stringify(task.output_data.result, null, 2))
-                                                            : (typeof task.output_data === 'string' ? task.output_data : JSON.stringify(task.output_data, null, 2))
+                                                        {String((task.output_data as { result?: unknown })?.result
+                                                            ? (typeof (task.output_data as { result?: unknown }).result === 'string' ? String((task.output_data as { result?: unknown }).result) : JSON.stringify((task.output_data as { result?: unknown }).result, null, 2))
+                                                            : (typeof task.output_data === 'string' ? task.output_data : JSON.stringify(task.output_data, null, 2)))
                                                         }
                                                     </div>
                                                 </div>

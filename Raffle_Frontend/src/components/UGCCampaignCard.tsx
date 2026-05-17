@@ -158,7 +158,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     const [localStarted, setLocalStarted] = useState<Record<string | number, boolean>>({});
 
     // Identity Verification Status (v3.42.1)
-    const isBaseVerified = useMemo(() => (profileData as unknown)?.is_base_social_verified === true, [profileData]);
+    const isBaseVerified = useMemo(() => (profileData as { is_base_social_verified?: boolean })?.is_base_social_verified === true, [profileData]);
 
     const totalTasks = subTasks.length;
     const completedCount = subTasks.filter(t => userClaimedTaskIds.has(String(t.id))).length;
@@ -183,7 +183,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
 
     const handleVerifySubTask = async (task: UGCSubTask) => {
         if (!address) return toast.error("Connect wallet first.");
-        const success = await verifyTask(task, address, task.id, (profileData as unknown)?.fid);
+        const success = await verifyTask(task, address, task.id, (profileData as { fid?: number })?.fid);
         if (success && refetchStats) refetchStats();
     };
 
@@ -223,7 +223,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
             setClaimResult(data);
             setClaimed(true);
             toast.success(`🎉 +${data.xp} XP & ${data.usdc_reward} ${data.reward_symbol} claimed!`, { id: tid, duration: 6000 });
-        } catch (err: unknown) {
+        } catch (err: any) {
             toast.error(err.message || 'Claim failed.', { id: tid });
         } finally {
             setIsClaiming(false);
@@ -271,7 +271,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                 <div className="px-6 pb-4 space-y-2 mt-2">
                     {subTasks.map((task, i) => {
                         const isDone = userClaimedTaskIds.has(String(task.id));
-                        const lastTime = (lastActionTime as unknown)[task.id] || 0;
+                        const lastTime = (lastActionTime as Record<string | number, number>)[task.id] || 0;
                         const diff = Math.floor((Date.now() - lastTime) / 1000);
                         const isCountingDown = lastTime > 0 && diff < APP_CONFIG.SOCIAL_INDEX_DELAY_SEC;
                         const timeLeft = Math.max(0, APP_CONFIG.SOCIAL_INDEX_DELAY_SEC - diff);
@@ -359,7 +359,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
             {showModal && (
                 <CompletionModal
                     campaign={campaign}
-                    totalXp={claimResult?.xp || 0}
+                    totalXp={(claimResult as { xp?: number })?.xp || 0}
                     usdcReward={campaign.reward_amount_per_user || '0'}
                     rewardSymbol={campaign.reward_symbol || 'USDC'}
                     onClaim={handleClaim}

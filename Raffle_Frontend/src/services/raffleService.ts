@@ -13,7 +13,7 @@ class RaffleService {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data?.map((r: unknown) => r.id) || [];
+        return data?.map((r: { id: unknown }) => r.id) || [];
     }
 
     async getRaffleMetadata(raffleId: number | string) {

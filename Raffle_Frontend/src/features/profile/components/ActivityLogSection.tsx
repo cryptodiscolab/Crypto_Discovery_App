@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useActivityLogs } from '../hooks/useProfileQueries';
 import { ActivityLog } from '../types';
-import { Clock, ExternalLink, History, RefreshCw } from 'lucide-react';
+import { Award, Calendar, Clock, ExternalLink, Fingerprint, Gem, History, RefreshCw, ShoppingCart, Ticket, Users, Zap } from 'lucide-react';
 
 interface ActivityLogSectionProps {
     walletAddress?: string;

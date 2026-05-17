@@ -13,7 +13,7 @@ export function useSIWE() {
     const { signMessageAsync } = useSignMessage();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [session, setSession] = useState<unknown | null>(null);
+    const [session, setSession] = useState<Record<string, unknown> | null>(null);
 
     // 1. Generate SIWE Message (Standard Format with Custom Statement)
     // Memoized to prevent unnecessary re-calculations
@@ -63,7 +63,7 @@ ${resourceLines}`;
     };
 
     // 3. Main Sign-In Function
-    const signIn = useCallback(async (fid = null) => {
+    const signIn = useCallback(async (fid: number | string | null = null) => {
         if (!address || !chain) {
             setError("Wallet not connected");
             return;
@@ -110,7 +110,7 @@ ${resourceLines}`;
 
             return userSession;
 
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error("SIWE Error:", err);
             setError(err.message || "Sign-in failed");
             throw err;

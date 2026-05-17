@@ -29,9 +29,9 @@ export function TasksPage() {
                 .from('user_task_claims')
                 .select('task_id')
                 .eq('wallet_address', address.toLowerCase())
-                .then(({ data, error }: { data: unknown; error: unknown }) => {
+                .then(({ data, error }) => {
                     if (data && !error) {
-                        setOffChainClaims(new Set(data.map((d: unknown) => String(d.task_id).toLowerCase())));
+                        setOffChainClaims(new Set((data as Array<{ task_id: string | number }>).map((d) => String(d.task_id).toLowerCase())));
                     }
                 });
         } else {
@@ -45,9 +45,9 @@ export function TasksPage() {
                 .from('user_task_claims')
                 .select('task_id')
                 .eq('wallet_address', address.toLowerCase())
-                .then(({ data, error }: { data: unknown; error: unknown }) => {
+                .then(({ data, error }) => {
                     if (data && !error) {
-                        setOffChainClaims(new Set(data.map((d: unknown) => String(d.task_id).toLowerCase())));
+                        setOffChainClaims(new Set((data as Array<{ task_id: string | number }>).map((d) => String(d.task_id).toLowerCase())));
                     }
                 });
         }
@@ -69,7 +69,10 @@ export function TasksPage() {
 
                 if (!campaigns || campaigns.length === 0) { setUgcCampaigns([]); return; }
 
-                const campaignIds = campaigns.map((c: unknown) => c.id);
+                type CampaignRow = { id: string | number; title?: string; platform_code?: string; reward_amount_per_user?: number; reward_symbol?: string; is_active?: boolean; is_verified_payment?: boolean };
+                const typedCampaigns = campaigns as CampaignRow[];
+
+                const campaignIds = typedCampaigns.map((c) => c.id);
                 const { data: subTasks } = await supabase
                     .from('daily_tasks')
                     .select('id, title, action_type, platform, link, onchain_id, is_base_social_required')
@@ -97,7 +100,7 @@ export function TasksPage() {
                     });
                 });
 
-                setUgcCampaigns(campaigns.map((c: unknown) => ({
+                setUgcCampaigns(typedCampaigns.map((c) => ({
                     id: String(c.id),
                     title: c.title || '',
                     platform_code: c.platform_code || '',
@@ -105,7 +108,7 @@ export function TasksPage() {
                     reward_symbol: c.reward_symbol || 'USDC',
                     is_active: !!c.is_active,
                     is_verified_payment: !!c.is_verified_payment,
-                    subTasks: tasksByCampaign[c.id] || []
+                    subTasks: tasksByCampaign[String(c.id)] || []
                 })));
             } catch (e) {
                 console.error('[UGC Fetch]', e);
@@ -189,7 +192,7 @@ export function TasksPage() {
                                     <UGCCampaignCard
                                         key={campaign.id}
                                         campaign={campaign}
-                                        subTasks={(campaign.subTasks || []) as unknown}
+                                        subTasks={(campaign.subTasks || []) as unknown as Parameters<typeof UGCCampaignCard>[0]['subTasks']}
                                         userClaimedTaskIds={offChainClaims}
                                         refetchStats={() => { refetch(); refetchClaims(); }}
                                     />

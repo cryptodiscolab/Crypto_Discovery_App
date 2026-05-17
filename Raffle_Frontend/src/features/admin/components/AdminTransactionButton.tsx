@@ -56,14 +56,14 @@ export function AdminTransactionButton({
     useEffect(() => {
         if (isSuccess && (hash || bundleId)) {
             toast.success(successMessage);
-            const finalId = hash || (typeof bundleId === 'string' ? bundleId : (bundleId as unknown)?.id);
+            const finalId = hash || (typeof bundleId === 'string' ? bundleId : (bundleId as { id?: string } | undefined)?.id);
             if (onSuccess && finalId) onSuccess(finalId);
         }
     }, [isSuccess, hash, bundleId, onSuccess, successMessage]);
 
     useEffect(() => {
-        if (singleError) toast.error((singleError as unknown).shortMessage || "Transaction failed");
-        if (batchError) toast.error((batchError as unknown).shortMessage || "Batch failed");
+        if (singleError) toast.error((singleError as { shortMessage?: string }).shortMessage || "Transaction failed");
+        if (batchError) toast.error((batchError as { shortMessage?: string }).shortMessage || "Batch failed");
     }, [singleError, batchError]);
 
     const handleClick = async () => {
@@ -92,26 +92,27 @@ export function AdminTransactionButton({
                 // Standard single call
                 writeContract({
                     address: calls[0].to,
-                    abi: calls[0].abi || [], // Parent should provide ABI or use generic
-                    functionName: calls[0].functionName,
+                    abi: (calls[0].abi || []) as Abi, // Parent should provide ABI or use generic
+                    functionName: calls[0].functionName ?? '',
                     args: calls[0].args || [],
-                    value: calls[0].value || 0n,
+                    value: calls[0].value ?? 0n,
                 });
             } else {
                 // Try Batch (Atomic)
                 writeContracts({
                     contracts: calls.map(c => ({
                         address: c.to,
-                        abi: (c.abi || []) as unknown,
-                        functionName: (c.functionName || '') as unknown,
+                        abi: (c.abi || []) as Abi,
+                        functionName: c.functionName || '',
                         args: c.args || [],
                         value: c.value,
                         data: c.data
-                    })) as unknown
+                    })) as Parameters<typeof writeContracts>[0]['contracts']
                 });
             }
         } catch (e: unknown) {
-            toast.error(e.shortMessage || e.message || "Failed to authorize or execute");
+            const err = e as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || "Failed to authorize or execute");
         } finally {
             setIsLogging(false);
         }

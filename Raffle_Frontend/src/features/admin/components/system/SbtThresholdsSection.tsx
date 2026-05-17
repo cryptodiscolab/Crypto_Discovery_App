@@ -12,7 +12,7 @@ interface SbtThresholdsSectionProps {
     thresholds: SbtThreshold[];
     onAddLevel: () => void;
     onRemoveLevel: (_id: string) => void;
-    onChange: (_id: string, _field: string, _value: unknown) => void;
+    onChange: (_id: string, _field: string, _value: string | number) => void;
     onSave: () => void;
     saving: boolean;
 }

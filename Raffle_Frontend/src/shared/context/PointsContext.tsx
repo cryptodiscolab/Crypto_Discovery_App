@@ -44,7 +44,15 @@ interface PointsContextType {
     fid: number | null;
     offChainPoints: number;
     offChainLevel: number;
-    gasTracker: unknown;
+    gasTracker: {
+        gasPriceWei?: bigint;
+        gasPriceGwei: number;
+        gasCategory: string;
+        isGasHigh: boolean;
+        isGasExpensive: boolean;
+        isLoadingGas: boolean;
+        isGasError: boolean;
+    };
     syncLogs: unknown[];
     clearLogs: () => void;
 }
@@ -67,7 +75,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
 
     const [unclaimedRewards, setUnclaimedRewards] = useState<unknown[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [sbtThresholds, setSbtThresholds] = useState([]);
+    const [sbtThresholds, setSbtThresholds] = useState<unknown[]>([]);
     const [ecosystemSettings, setEcosystemSettings] = useState({
         daily_claim: 100,
         max_gas_price_gwei: 100,
@@ -244,8 +252,9 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
             if (unclaimedRewards.length > 0) {
                 const now = Date.now();
                 unclaimedRewards.forEach(reward => {
-                    if (!reward.isClaimed && reward.deadline) {
-                        const timeLeft = reward.deadline - now;
+                    const r = reward as { isClaimed?: boolean; deadline?: number };
+                    if (!r.isClaimed && r.deadline) {
+                        const timeLeft = r.deadline - now;
                         // Notify if roughly 1 hour left (between 59m and 61m to avoid spam)
                         if (timeLeft > 59 * 60 * 1000 && timeLeft < 61 * 60 * 1000) {
                             import('react-hot-toast').then(({ default: toast }) => {
@@ -305,7 +314,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     const value = {
         userPoints,
         userTier,
-        rankName: (profileData as unknown)?.rank_name || rankName,
+        rankName: (profileData as { rank_name?: string } | null)?.rank_name || rankName,
         profileData,
         totalTasksCompleted,
         unclaimedRewards,

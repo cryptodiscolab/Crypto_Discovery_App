@@ -2,7 +2,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Define the global type for the singleton
 declare global {
-    let supabaseInstance: SupabaseClient | unknown;
+    // eslint-disable-next-line no-var
+    var supabaseInstance: SupabaseClient | undefined;
 }
 
 // Hardened Supabase Client Singleton
@@ -33,7 +34,7 @@ if (!globalThis.supabaseInstance && supabaseUrl && supabaseAnonKey) {
     } as unknown as SupabaseClient;
 }
 
-export const supabase = globalThis.supabaseInstance;
+export const supabase = globalThis.supabaseInstance as SupabaseClient;
 
 // Helper: Clean wallet address untuk konsistensi (lowercase)
 // Prevents case-sensitivity bugs in EVM address comparisons
@@ -41,4 +42,3 @@ export const cleanWallet = (address: string | null | undefined) => {
     if (!address) return null;
     return address.toLowerCase().trim();
 };
-

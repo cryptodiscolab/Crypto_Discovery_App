@@ -18,11 +18,11 @@ export function useEnvironment() {
         const detect = async () => {
             // 1. Detect Farcaster (Frame v2)
             // frame-sdk injection usually happens on window.frame
-            const isFarcaster = !!((window as unknown).frame || navigator.userAgent.includes('Farcaster'));
+            const isFarcaster = !!((window as unknown as Record<string, unknown>).frame || navigator.userAgent.includes('Farcaster'));
 
             // 2. Detect Base App (Coinbase Wallet)
             // OnchainKit/Coinbase Wallet injection
-            const isBaseApp = !!((window as unknown).coinbaseWalletExtension || navigator.userAgent.includes('CoinbaseWallet'));
+            const isBaseApp = !!((window as unknown as Record<string, unknown>).coinbaseWalletExtension || navigator.userAgent.includes('CoinbaseWallet'));
 
             setEnv({
                 isFarcaster,

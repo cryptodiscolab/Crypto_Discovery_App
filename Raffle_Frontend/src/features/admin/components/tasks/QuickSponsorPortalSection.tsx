@@ -1,5 +1,5 @@
 import { Zap, TrendingUp } from 'lucide-react';
-import { AdminTransactionButton } from '../AdminTransactionButton';
+import { AdminTransactionButton, AdminContractCall } from '../AdminTransactionButton';
 import { formatUnits } from 'viem';
 
 interface QuickSponsorPortalSectionProps {
@@ -23,7 +23,7 @@ interface QuickSponsorPortalSectionProps {
     whitelistedTokens: unknown[];
     selectedTokenAddr: string;
     onTokenChange: (_val: string) => void;
-    buildSponsorCall: () => unknown;
+    buildSponsorCall: () => AdminContractCall[];
     handleTxSuccess: () => void;
 }
 
@@ -45,7 +45,8 @@ export function QuickSponsorPortalSection({
     buildSponsorCall,
     handleTxSuccess
 }: QuickSponsorPortalSectionProps) {
-    const selectedToken = whitelistedTokens.find((t: unknown) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const tokens = whitelistedTokens as Array<{ address: string; symbol: string; decimals?: number }>;
+    const selectedToken = tokens.find((t) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     return (
         <div className="bg-[#121214] p-5 rounded-2xl border border-white/5 space-y-4 text-left relative overflow-hidden">
             <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
@@ -111,7 +112,7 @@ export function QuickSponsorPortalSection({
                         onChange={e => onTokenChange(e.target.value)}
                         className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl px-4 py-3 text-[13px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500/50"
                     >
-                        {whitelistedTokens.map((t: unknown, i: number) => (
+                        {tokens.map((t, i: number) => (
                             <option key={i} value={t.address} className="bg-[#121214]">
                                 {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
                             </option>

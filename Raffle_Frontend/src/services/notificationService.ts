@@ -41,7 +41,7 @@ export const NotificationService = {
 
             return true;
         } catch (error) {
-            console.error('[NotificationService] Fetch error:', (error as unknown).message);
+            console.error('[NotificationService] Fetch error:', (error as Error).message);
             return false;
         }
     },
@@ -76,7 +76,7 @@ export const NotificationService = {
 
             return true;
         } catch (error) {
-            console.error('[NotificationService] Fetch error:', (error as unknown).message);
+            console.error('[NotificationService] Fetch error:', (error as Error).message);
             return false;
         }
     },
@@ -87,13 +87,14 @@ export const NotificationService = {
      */
     checkDeadlinesAndNotify(unclaimedRewards: unknown[]) {
         const now = Date.now();
-        unclaimedRewards.forEach((reward: unknown) => {
-            if (!reward.isClaimed && reward.deadline) {
-                const timeLeft = reward.deadline - now;
+        unclaimedRewards.forEach((reward) => {
+            const r = reward as { isClaimed?: boolean; deadline?: number; fid?: number | string };
+            if (!r.isClaimed && r.deadline) {
+                const timeLeft = r.deadline - now;
                 // 1 jam sebelum deadline: trigger notification via server
-                if (timeLeft < 3600000 && timeLeft > 0 && reward.fid) {
+                if (timeLeft < 3600000 && timeLeft > 0 && r.fid) {
                     this.sendFarcasterNotification(
-                        reward.fid,
+                        r.fid,
                         `⏰ Klaim reward kamu sebelum expired dalam 1 jam!`,
                         'mention'
                     );

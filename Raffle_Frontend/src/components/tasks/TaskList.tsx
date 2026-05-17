@@ -11,10 +11,10 @@ import { AlertCircle, CheckCircle2, Clock, Coins, ExternalLink, Gift, Hash, Load
 
 export function TaskList() {
     const { address, isConnected } = useAccount();
-    const { _signMessageAsync } = useSignMessage();
-    const [tasks, setTasks] = useState<unknown[]>([]);
+    useSignMessage();
+    const [tasks, setTasks] = useState<any[]>([]);
     const [userScore, setUserScore] = useState(0);
-    const [userClaims, setUserClaims] = useState<unknown[]>([]); // Array of {task_id, claimed_at}
+    const [userClaims, setUserClaims] = useState<any[]>([]); // Array of {task_id, claimed_at}
     const [isLoading, setIsLoading] = useState(false);
     const [_hasProfile, setHasProfile] = useState(false);
     const [isBaseVerified, setIsBaseVerified] = useState(false); // v3.42.0
@@ -49,7 +49,7 @@ export function TaskList() {
         return () => clearInterval(interval);
     }, [startedTasks]);
 
-    const handleGoToTask = (task: unknown) => {
+    const handleGoToTask = (task: any) => {
         if (!isConnected || !address) {
             toast.error('Please connect wallet first');
             return;
@@ -97,7 +97,7 @@ export function TaskList() {
 
                 if (claimsResult.data) {
                     setUserClaims(prev => {
-                        const dbClaimIds = new Set((claimsResult.data || []).map((c: unknown) => String(c.task_id).toLowerCase()));
+                        const dbClaimIds = new Set((claimsResult.data || []).map((c: any) => String(c.task_id).toLowerCase()));
                         const recentOptimistic = prev.filter(c =>
                             !dbClaimIds.has(String(c.task_id).toLowerCase()) &&
                             (Date.now() - new Date(c.claimed_at).getTime() < 15000)
@@ -109,8 +109,8 @@ export function TaskList() {
                 }
 
                 if (profileData) {
-                    setUserScore(profileData.neynar_score || 0);
-                    setIsBaseVerified(!!profileData.is_base_social_verified);
+                    setUserScore((profileData as any).neynar_score || 0);
+                    setIsBaseVerified(!!(profileData as any).is_base_social_verified);
                     setHasProfile(true);
                 } else {
                     setUserScore(0);
@@ -124,12 +124,13 @@ export function TaskList() {
                 setHasProfile(false);
             }
 
-        } catch (error: unknown) {
+        } catch (error: any) {
+            const errMsg = error instanceof Error ? error.message : String(error);
             console.group("TaskList Fetch Error");
-            console.error('Error fetching tasks:', error.message);
+            console.error('Error fetching tasks:', errMsg);
             console.debug('Full error context:', error);
             console.groupEnd();
-            toast.error(`Failed to load daily tasks: ${error.message || 'Network error'}`);
+            toast.error(`Failed to load daily tasks: ${errMsg || 'Network error'}`);
         } finally {
             setIsLoading(false);
         }
@@ -147,7 +148,7 @@ export function TaskList() {
         }
     }, [isConnected, address, profileData, isSyncing, syncUser]);
 
-    const handleClaim = async (task: unknown) => {
+    const handleClaim = async (task: any) => {
         if (!isConnected || !address) {
             toast.error("Please connect wallet first");
             return;
@@ -198,10 +199,11 @@ export function TaskList() {
             // Server-sync after a small delay to ensure DB is committed
             setTimeout(() => fetchData(), 1500);
 
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error("Claim error:", err);
-            const errMsg = err.message || "Unknown error";
-            if (err.code === 4001 || errMsg.toLowerCase().includes("rejected")) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            const errCode = (err as { code?: number })?.code;
+            if (errCode === 4001 || errMsg.toLowerCase().includes("rejected")) {
                 toast.error("Signature rejected", { id: toastId });
             } else if (errMsg.toLowerCase().includes("already completed") ||
                 errMsg.toLowerCase().includes("already claimed") ||
@@ -224,11 +226,11 @@ export function TaskList() {
     };
 
     // Filter Tasks (Zero-Assumption Mandate Applied)
-    const activeTasks = tasks.filter(task => {
+    const activeTasks = tasks.filter((task: any) => {
         const taskIdStr = String(task.id).toLowerCase();
 
         // 1. Hide if claimed (One-time logic per interval/task)
-        const hasClaimed = userClaims.some(c => String(c.task_id).toLowerCase() === taskIdStr);
+        const hasClaimed = userClaims.some((c: any) => String(c.task_id).toLowerCase() === taskIdStr);
         if (hasClaimed) return false;
 
         // 2. Hide if expired (Autoritative field from DB)
@@ -281,7 +283,7 @@ export function TaskList() {
             )}
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {activeTasks.map((task: unknown) => {
+                {activeTasks.map((task: any) => {
                     const taskId = String(task.id);
                     const hasStarted = !!startedTasks[taskId];
                     const countdown = countdowns[taskId] ?? (hasStarted ? 0 : null);

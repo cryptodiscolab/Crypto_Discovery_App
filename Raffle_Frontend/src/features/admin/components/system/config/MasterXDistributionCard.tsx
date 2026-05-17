@@ -36,7 +36,7 @@ export function MasterXDistributionCard({
                 args: [BigInt(econShares.owner), BigInt(econShares.ops), BigInt(econShares.treasury), BigInt(econShares.sbt)],
             });
             toast.success("Revenue Shares Updated!", { id: tid });
-        } catch (e: unknown) {
+        } catch (e: any) {
             toast.error(e.shortMessage || e.message, { id: tid });
         } finally {
             setIsSaving(false);
@@ -72,7 +72,7 @@ export function MasterXDistributionCard({
             });
 
             toast.success('Weights updated on-chain & in DB!', { id: tid });
-        } catch (err: unknown) {
+        } catch (err: any) {
             toast.error(err.message, { id: tid });
         }
     };

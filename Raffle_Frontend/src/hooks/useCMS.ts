@@ -186,7 +186,7 @@ export function useCMS() {
                     setIsDbAdmin(!!data.is_admin);
                 }
             } catch (e: unknown) {
-                console.warn('[useCMS] DB Admin check failed:', e.message);
+                console.warn('[useCMS] DB Admin check failed:', e instanceof Error ? e.message : String(e));
                 if (isMounted) setIsDbAdmin(false);
             }
             try {
@@ -197,7 +197,7 @@ export function useCMS() {
                     if (isMounted && currentAddress === address && json.isAdmin) setIsEnvAdmin(true);
                 }
             } catch (e: unknown) {
-                console.warn('[useCMS] ENV Admin check failed:', e.message);
+                console.warn('[useCMS] ENV Admin check failed:', e instanceof Error ? e.message : String(e));
             } finally {
                 if (isMounted) setIsCheckingRoles(false);
             }

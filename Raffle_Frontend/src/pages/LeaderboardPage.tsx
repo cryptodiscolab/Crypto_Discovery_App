@@ -2,12 +2,23 @@ import { useState, useEffect } from 'react';
 import { Trophy, Crown, Sparkles, Medal, Users, Shield } from 'lucide-react';
 import { useAccount } from 'wagmi';
 
+interface LeaderboardUser {
+  wallet_address: string;
+  display_name?: string;
+  username?: string;
+  pfp_url?: string;
+  rank_name?: string;
+  total_xp?: number | string;
+  streak_count?: number;
+  raffle_wins?: number;
+}
+
 const formatAddress = (addr: string) => {
   if (!addr) return 'Unknown';
   return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
 };
 
-function LeaderboardRow({ user, rank, isCurrentUser }: { user: unknown, rank: number, isCurrentUser: boolean | string | undefined }) {
+function LeaderboardRow({ user, rank, isCurrentUser }: { user: LeaderboardUser, rank: number, isCurrentUser: boolean | string | undefined }) {
   const getDisplayAddress = (name: string, addr: string) => {
     if (name && name.startsWith('0x') && name.length > 20) {
       return formatAddress(name);
@@ -17,7 +28,7 @@ function LeaderboardRow({ user, rank, isCurrentUser }: { user: unknown, rank: nu
     return formatAddress(addr);
   };
 
-  const displayName = getDisplayAddress(user.display_name, user.wallet_address);
+  const displayName = getDisplayAddress(user.display_name || '', user.wallet_address || '');
   const streakCount = user.streak_count || 0;
   const raffleWins = user.raffle_wins || 0;
 
@@ -94,8 +105,8 @@ function LeaderboardRow({ user, rank, isCurrentUser }: { user: unknown, rank: nu
 
 export function LeaderboardPage() {
   const { address } = useAccount();
-  const [allUsers, setAllUsers] = useState<unknown[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<unknown[]>([]);
+  const [allUsers, setAllUsers] = useState<LeaderboardUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('All'); // 'All', 'Elite', 'Gold', 'Silver', 'Rookie'
@@ -120,7 +131,7 @@ export function LeaderboardPage() {
     if (activeTab === 'All') {
       setFilteredUsers(allUsers);
     } else {
-      setFilteredUsers(allUsers.filter((u: unknown) => u.rank_name === activeTab));
+      setFilteredUsers(allUsers.filter((u) => u.rank_name === activeTab));
     }
   }, [activeTab, allUsers]);
 
@@ -130,10 +141,12 @@ export function LeaderboardPage() {
       const response = await fetch(`/api/leaderboard?limit=100`, { signal });
       if (!response.ok) throw new Error("Failed to fetch leaderboard");
       const data = await response.json();
-      setAllUsers(data || []);
-      setFilteredUsers(data || []);
+      const users = (data || []) as LeaderboardUser[];
+      setAllUsers(users);
+      setFilteredUsers(users);
     } catch (err: unknown) {
-      if (err.name === 'AbortError') return;
+      const e = err as { name?: string };
+      if (e.name === 'AbortError') return;
       console.error("Error fetching leaderboard:", err);
       setFetchError('Failed to load leaderboard. Please try again.');
     } finally {

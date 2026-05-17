@@ -87,7 +87,7 @@ export function ContentTab() {
                 { id: tid, duration: 6000 }
             );
             refetchAll();
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {

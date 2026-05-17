@@ -1,10 +1,19 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { sdk } from '@farcaster/miniapp-sdk';
+import { sdk as _sdk } from '@farcaster/miniapp-sdk';
+
+const sdk = _sdk as { actions: { ready: () => Promise<void> }; context: Promise<{ client?: unknown; user?: { fid: number; username?: string; displayName?: string; pfpUrl?: string } } | null> };
+
+interface FrameUser {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+}
 
 interface FarcasterContextType {
-    frameUser: unknown | null;
-    client: unknown | null;
-    safeAreaInsets: unknown | null;
+    frameUser: FrameUser | null;
+    client: { config?: { theme?: string; safeAreaInsets?: { top?: number; bottom?: number; left?: number; right?: number } } } | null;
+    safeAreaInsets: { top?: number; bottom?: number; left?: number; right?: number } | null;
     isFrame: boolean;
     isLoading: boolean;
     error: unknown | null;
@@ -20,9 +29,9 @@ const FarcasterContext = createContext<FarcasterContextType>({
 });
 
 export function FarcasterProvider({ children }: { children: ReactNode }) {
-    const [frameUser, setFrameUser] = useState<unknown | null>(null);
-    const [client, setClient] = useState<unknown | null>(null);
-    const [safeAreaInsets, setSafeAreaInsets] = useState<unknown | null>(null);
+    const [frameUser, setFrameUser] = useState<FrameUser | null>(null);
+    const [client, setClient] = useState<FarcasterContextType['client']>(null);
+    const [safeAreaInsets, setSafeAreaInsets] = useState<{ top?: number; bottom?: number; left?: number; right?: number } | null>(null);
     const [isFrame, setIsFrame] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, _setError] = useState<unknown | null>(null);
@@ -36,8 +45,8 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
 
                 if (context) {
                     setIsFrame(true);
-                    setClient(context.client);
-                    setSafeAreaInsets((context.client as unknown).config?.safeAreaInsets || null);
+                    setClient(context.client as FarcasterContextType['client']);
+                    setSafeAreaInsets(((context.client as { config?: { safeAreaInsets?: { top?: number; bottom?: number; left?: number; right?: number } } }).config?.safeAreaInsets) || null);
 
                     if (context.user) {
                         setFrameUser({

@@ -24,14 +24,14 @@ export function useOAuth() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const [isLinking, setIsLinking] = useState(false);
-    const [linkedGoogle, setLinkedGoogle] = useState<unknown>(null);
-    const [linkedX, setLinkedX] = useState<unknown>(null);
+    const [linkedGoogle, setLinkedGoogle] = useState<{ email: string; id: string } | null>(null);
+    const [linkedX, setLinkedX] = useState<{ username: string; id: string } | null>(null);
 
     /**
      * Internal: Call the Supabase OAuth sign-in popup.
      * Uses Supabase SDK to handle PKCE/State coordination automatically.
      */
-    const openSupabaseOAuth = useCallback(async (provider: unknown): Promise<unknown> => {
+    const openSupabaseOAuth = useCallback(async (provider: 'google' | 'twitter'): Promise<{ id: string; email?: string; user_metadata?: { full_name?: string; name?: string; avatar_url?: string; picture?: string; user_name?: string; preferred_username?: string; provider_id?: string } }> => {
         const { supabase } = await import('../lib/supabaseClient');
 
         const redirectTo = `${window.location.origin}/oauth-callback`;
@@ -55,7 +55,7 @@ export function useOAuth() {
         return new Promise((resolve, reject) => {
             let resolved = false;
 
-            const handleMessage = (event: unknown) => {
+            const handleMessage = (event: MessageEvent) => {
                 // Security check: Only trust messages from our own origin
                 if (event.origin !== window.location.origin) return;
 
@@ -158,14 +158,15 @@ export function useOAuth() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Sync failed');
 
-            setLinkedGoogle({ email: oauthUser.email, id: oauthUser.id });
+            setLinkedGoogle({ email: oauthUser.email || '', id: oauthUser.id || '' });
             toast.success(`Google linked: ${oauthUser.email}`, { id: tid, duration: 5000 });
             return { success: true, email: oauthUser.email };
 
         } catch (err: unknown) {
             console.error('[linkGoogle]', err);
-            toast.error(err.message || 'Google link failed', { id: tid });
-            return { success: false, error: err.message };
+            const msg = err instanceof Error ? err.message : String(err);
+            toast.error(msg || 'Google link failed', { id: tid });
+            return { success: false, error: msg };
         } finally {
             setIsLinking(false);
         }
@@ -219,14 +220,15 @@ export function useOAuth() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Sync failed');
 
-            setLinkedX({ username: twitterUsername, id: twitterId });
+            setLinkedX({ username: twitterUsername || '', id: twitterId || '' });
             toast.success(`X linked: @${twitterUsername}`, { id: tid, duration: 5000 });
             return { success: true, username: twitterUsername };
 
         } catch (err: unknown) {
             console.error('[linkX]', err);
-            toast.error(err.message || 'X link failed', { id: tid });
-            return { success: false, error: err.message };
+            const msg = err instanceof Error ? err.message : String(err);
+            toast.error(msg || 'X link failed', { id: tid });
+            return { success: false, error: msg };
         } finally {
             setIsLinking(false);
         }

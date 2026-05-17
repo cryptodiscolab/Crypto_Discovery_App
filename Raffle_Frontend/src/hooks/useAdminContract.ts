@@ -20,7 +20,7 @@ export function useAdminContract() {
                 address,
                 message,
                 signature,
-                payload: { functionName: (params as unknown).functionName || 'unknown_tx' }
+                payload: { functionName: (params as { functionName?: string }).functionName || 'unknown_tx' }
             })
         });
 

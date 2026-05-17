@@ -67,17 +67,17 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
 
       if (data.pairs && data.pairs.length > 0) {
         // Group pairs by baseToken address and pick the one with most liquidity
-        const bestPairs: Record<string, unknown> = {};
-        data.pairs.forEach((pair: unknown) => {
+        const bestPairs: Record<string, { baseToken: { address: string }; liquidity?: { usd?: string }; priceUsd?: string }> = {};
+        data.pairs.forEach((pair: { baseToken: { address: string }; liquidity?: { usd?: string }; priceUsd?: string }) => {
           const addr = pair.baseToken.address.toLowerCase();
-          const liquidity = parseFloat(pair.liquidity?.usd || 0);
-          if (!bestPairs[addr] || liquidity > parseFloat(bestPairs[addr].liquidity?.usd || 0)) {
+          const liquidity = parseFloat(pair.liquidity?.usd || '0');
+          if (!bestPairs[addr] || liquidity > parseFloat(bestPairs[addr].liquidity?.usd || '0')) {
             bestPairs[addr] = pair;
           }
         });
 
         Object.keys(bestPairs).forEach(addr => {
-          const price = parseFloat(bestPairs[addr].priceUsd || 0);
+          const price = parseFloat(bestPairs[addr].priceUsd || '0');
           newPrices[addr] = price;
           PRICE_CACHE.set(addr, { price, timestamp: now });
         });
@@ -111,7 +111,7 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
 
       setPrices(prev => ({ ...prev, ...newPrices }));
       setLastFetchedAt(Date.now());
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('[PriceOracle] Fetch error:', err);
       setError(err.message || "Unknown error");
     } finally {

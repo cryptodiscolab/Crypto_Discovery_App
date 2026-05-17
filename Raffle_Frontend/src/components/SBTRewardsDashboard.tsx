@@ -107,7 +107,7 @@ export function SBTRewardsDashboard() {
             } catch (syncErr) {
                 console.warn('Pool Sync failed:', syncErr);
             }
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error(err);
             toast.error(err.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -264,7 +264,7 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
                     .select('*')
                     .maybeSingle();
                 if (!error && data && mounted) setStats(data);
-            } catch (e: unknown) {
+            } catch (e: any) {
                 console.warn('[SBTTierBreakdown] fetch error:', e.message);
             } finally {
                 if (mounted) setLoading(false);
@@ -282,7 +282,7 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
         { key: 'bronze_holders', label: 'Bronze', shareKey: 'share_participation', rank: 'Holders', color: 'text-amber-600', bg: 'bg-amber-600/10', border: 'border-amber-600/20', emoji: '🥉' },
     ];
 
-    const totalHolders = stats ? TIERS.reduce((sum, t) => sum + (stats[t.key] || 0), 0) : 0;
+    const totalHolders = stats ? TIERS.reduce((sum, t) => sum + Number(stats[t.key] || 0), 0) : 0;
     const lastDist = stats?.last_distribution_at
         ? new Date(stats.last_distribution_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
         : '—';
@@ -307,8 +307,8 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {TIERS.map((t) => {
-                        const count = stats?.[t.key] || 0;
-                        const sharePct = stats?.[t.shareKey] || 0;
+                        const count = Number(stats?.[t.key] || 0);
+                        const sharePct = Number(stats?.[t.shareKey] || 0);
                         const poolShare = ((parseFloat(formatEther(totalPoolBalance || 0n)) * ethPrice) * (sharePct / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 });
 
                         return (

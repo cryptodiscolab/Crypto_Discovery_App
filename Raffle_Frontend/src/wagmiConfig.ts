@@ -1,4 +1,5 @@
 import { createConfig, http, fallback } from 'wagmi';
+import { mock } from 'wagmi/connectors';
 import { base, baseSepolia } from 'wagmi/chains';
 // IMPORT WAJIB DARI RAINBOWKIT:
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
@@ -20,10 +21,10 @@ const connectors = connectorsForWallets(
         {
             groupName: 'Recommended',
             wallets: [
-                (opts) => coinbaseWallet({
-                    ...opts,
+                (opts: unknown) => coinbaseWallet({
+                    ...(opts as object),
                     preference: 'smartWalletOnly'
-                } as unknown),
+                } as unknown as Parameters<typeof coinbaseWallet>[0]),
                 metaMaskWallet,
                 rainbowWallet,
                 walletConnectWallet,

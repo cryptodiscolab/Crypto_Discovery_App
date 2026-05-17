@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Link } from 'react-router-dom';
 
 export function TaskCard() {
-    const [tasks, setTasks] = useState<unknown[]>([]);
+    const [tasks, setTasks] = useState<{ id: string | number; platform?: string; title: string; xp_reward: number; token_reward_amount?: number }[]>([]);
     const [totalActive, setTotalActive] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -66,7 +66,7 @@ export function TaskCard() {
                         <div key={i} className="h-14 bg-white/5 rounded-xl border border-white/5 animate-pulse" />
                     ))
                 ) : tasks.length > 0 ? (
-                    tasks.map((task: unknown, _i: number) => (
+                    tasks.map((task: { id: string | number; platform?: string; title: string; xp_reward: number; token_reward_amount?: number }, _i: number) => (
                         <div key={task.id} className="group/item flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/40 border border-white/5 hover:border-blue-500/30 hover:bg-zinc-900/60 transition-all duration-300">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-lg group-hover/item:scale-110 transition-transform">
@@ -81,7 +81,7 @@ export function TaskCard() {
                                             <Coins size={8} className="text-yellow-500/70" />
                                             <span className="text-[8px] font-bold text-slate-500">+{task.xp_reward}</span>
                                         </div>
-                                        {task.token_reward_amount > 0 && (
+                                        {(task.token_reward_amount ?? 0) > 0 && (
                                             <div className="flex items-center gap-1">
                                                 <Gift size={8} className="text-emerald-500/70" />
                                                 <span className="text-[8px] font-bold text-slate-500">${task.token_reward_amount}</span>

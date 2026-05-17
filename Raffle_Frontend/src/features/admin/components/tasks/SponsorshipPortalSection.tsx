@@ -14,8 +14,8 @@ interface SponsorshipPortalSectionProps {
     onTargetClaimsChange: (_val: string) => void;
     isBaseSocialRequired: boolean;
     onIsBaseSocialRequiredChange: (_val: boolean) => void;
-    currentTokenPrice?: bigint;
     currentPlatformFee?: bigint;
+    currentTokenPrice?: bigint;
     whitelistedTokens: unknown[];
     selectedTokenAddr: string;
     onTokenChange: (_addr: string) => void;
@@ -30,7 +30,6 @@ export function SponsorshipPortalSection({
     rewardPerUserUSD, onRewardPerUserUSDChange,
     targetClaims, onTargetClaimsChange,
     isBaseSocialRequired, onIsBaseSocialRequiredChange,
-    _currentTokenPrice,
     currentPlatformFee,
     whitelistedTokens,
     selectedTokenAddr,
@@ -38,7 +37,8 @@ export function SponsorshipPortalSection({
     onCreateSponsorship,
     isSponsorSaving
 }: SponsorshipPortalSectionProps) {
-    const selectedToken = whitelistedTokens.find((t: unknown) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const tokens = whitelistedTokens as Array<{ address: string; symbol: string; decimals?: number }>;
+    const selectedToken = tokens.find((t) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     return (
         <div className="glass-card p-10 bg-emerald-950/5 border border-emerald-500/10 rounded-[3rem] relative overflow-hidden group/main">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/5 blur-[120px] rounded-full -mr-48 -mt-48 transition-all duration-1000 group-hover/main:bg-emerald-600/10" />
@@ -84,7 +84,7 @@ export function SponsorshipPortalSection({
                                 onChange={e => onTokenChange(e.target.value)}
                                 className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-white text-sm font-black uppercase tracking-widest focus:border-emerald-500/50 outline-none appearance-none"
                             >
-                                {whitelistedTokens.map((t: unknown, i: number) => (
+                                {tokens.map((t, i: number) => (
                                     <option key={i} value={t.address} className="bg-zinc-900">
                                         {t.symbol} ({t.address.slice(0,6)}...{t.address.slice(-4)})
                                     </option>

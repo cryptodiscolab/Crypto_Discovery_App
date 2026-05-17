@@ -5,12 +5,11 @@
  * while maintaining 100% backward compatibility with existing imports.
  */
 
-// @ts-expect-error Vite raw text imports are provided by the bundler.
 import abisDataRaw from './abis_data.txt?raw';
 import { getAddress } from 'viem';
 
-let _cache: unknown = null;
-const _get = () => {
+let _cache: any = null;
+const _get = (): any => {
   if (!_cache) {
     try {
       _cache = JSON.parse(abisDataRaw);
@@ -25,17 +24,17 @@ const _get = () => {
 // Helper to create a proxy that acts like an array but only loads on access
 const createAbiProxy = (name: string) => {
   return new Proxy([], {
-    get: (target, prop) => {
-      const realAbi = _get().ABIS[name] || [];
-      const value = realAbi[prop];
+    get: (_target, prop) => {
+      const realAbi = (_get().ABIS as any)[name] || [];
+      const value = realAbi[prop as any];
       return typeof value === 'function' ? value.bind(realAbi) : value;
     },
-    getOwnPropertyDescriptor: (target, prop) => {
-      const realAbi = _get().ABIS[name] || [];
+    getOwnPropertyDescriptor: (_target, prop) => {
+      const realAbi = (_get().ABIS as any)[name] || [];
       return Object.getOwnPropertyDescriptor(realAbi, prop);
     },
     ownKeys: (_target) => {
-      const realAbi = _get().ABIS[name] || [];
+      const realAbi = (_get().ABIS as any)[name] || [];
       return Reflect.ownKeys(realAbi);
     }
   });

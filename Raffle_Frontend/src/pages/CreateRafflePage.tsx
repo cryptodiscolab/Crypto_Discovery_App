@@ -9,7 +9,18 @@ import { CONTRACTS, MASTER_X_ABI, RAFFLE_ABI, WETH_ADDRESS } from '../lib/contra
 import { usePriceOracle } from '../hooks/usePriceOracle';
 import { ArrowRight, Calculator, CheckCircle2, ChevronDown, Clock, Gift, ImageIcon, Info, LinkIcon, Loader2, Lock, Shield, Tag, Twitter } from 'lucide-react';
 
-const RafflePreview = ({ data }: { data: unknown }) => {
+const RafflePreview = ({ data }: { data: {
+    imageUrl?: string;
+    category: string;
+    minSbtLevel: string;
+    durationDays: string;
+    title?: string;
+    description?: string;
+    twitterLink?: string;
+    externalLink?: string;
+    prizeDeposit?: string;
+    ticketPrice?: string;
+} }) => {
     return (
         <div className="glass-card overflow-hidden border-white/5 bg-slate-900/40 group">
             <div className="relative aspect-video bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -72,7 +83,7 @@ export function CreateRafflePage() {
 
     // Feature Flags Check
     const isMainnet = import.meta.env.VITE_CHAIN_ID === '8453';
-    const isUgcFeatureEnabled = !isMainnet || (ecosystemSettings as unknown)?.active_features?.ugc_payment === true;
+    const isUgcFeatureEnabled = !isMainnet || (ecosystemSettings as { active_features?: { ugc_payment?: boolean } })?.active_features?.ugc_payment === true;
 
     const { data: globalTicketPrice } = useReadContract({
         address: CONTRACTS.MASTER_X,
@@ -208,7 +219,8 @@ export function CreateRafflePage() {
             toast.success("Raffle Event Sponsored! 🎲", { id: tid });
             navigate('/raffles');
         } catch (err: unknown) {
-            toast.error(err.shortMessage || err.message || "Creation failed", { id: tid });
+            const e = err as { shortMessage?: string; message?: string };
+            toast.error(e.shortMessage || e.message || "Creation failed", { id: tid });
         } finally {
             setIsSubmitting(false);
         }

@@ -47,7 +47,7 @@ export function WhitelistManagerTab() {
                 }
 
                 if (data) {
-                    setWhitelistedUsers(data.map((u: unknown) => ({
+                    setWhitelistedUsers(data.map((u: { wallet_address: string; feature_id: string }) => ({
                         address: u.wallet_address,
                         featureId: u.feature_id,
                         featureName: FEATURE_NAMES[u.feature_id] || u.feature_id
@@ -118,7 +118,7 @@ export function WhitelistManagerTab() {
 
             setUserAddress('');
             refetchAll();
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -184,7 +184,7 @@ export function WhitelistManagerTab() {
 
             setBatchAddresses('');
             refetchAll();
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {
@@ -230,7 +230,7 @@ export function WhitelistManagerTab() {
             ));
 
             refetchAll();
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error(e);
             toast.error(e.shortMessage || "Transaction failed", { id: tid });
         } finally {

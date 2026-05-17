@@ -30,15 +30,30 @@ export function useVerification(refetchStats?: () => void) {
         setIsVerifying(true);
         const tid = toast.loading("Requesting signature for Verification...");
 
+        const t = task as {
+            title?: string;
+            platform?: string;
+            action_type?: string;
+            socialId?: number | string;
+            tiktokHandle?: string;
+            instagramHandle?: string;
+            targetFid?: number | string;
+            castHash?: string;
+            tweetId?: string;
+            targetUserId?: string;
+            reward_points?: number;
+            baseReward?: number;
+        };
+
         try {
             // 1. Request Signature for Zero-Trust verification
             const timestamp = new Date().toISOString();
-            const message = `Verify Task Action\nTask: ${task.title}\nID: ${taskId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
+            const message = `Verify Task Action\nTask: ${t.title}\nID: ${taskId}\nUser: ${address.toLowerCase()}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
 
             toast.loading("Verifying on server...", { id: tid });
 
-            const platform = task.platform?.toLowerCase() || 'farcaster';
+            const platform = t.platform?.toLowerCase() || 'farcaster';
             const isSocialTask = ['farcaster', 'twitter', 'tiktok', 'instagram'].includes(platform);
 
             let response;
@@ -55,16 +70,16 @@ export function useVerification(refetchStats?: () => void) {
                         message,
                         task_id: taskId,
                         platform: platform,
-                        action_type: task.action_type || 'like',
-                        fid: platform === 'farcaster' ? (userFid || task.socialId || 0) : undefined,
-                        userId: platform === 'twitter' ? (userFid || task.socialId || 0) : undefined,
-                        tiktokHandle: platform === 'tiktok' ? (task.socialId || task.tiktokHandle || '') : undefined,
-                        instagramHandle: platform === 'instagram' ? (task.socialId || task.instagramHandle || '') : undefined,
-                        targetFid: task.targetFid,
-                        castHash: task.castHash,
-                        tweetId: task.tweetId,
-                        targetUserId: task.targetUserId,
-                        xp_reward: task.reward_points || task.baseReward || 0
+                        action_type: t.action_type || 'like',
+                        fid: platform === 'farcaster' ? (userFid || t.socialId || 0) : undefined,
+                        userId: platform === 'twitter' ? (userFid || t.socialId || 0) : undefined,
+                        tiktokHandle: platform === 'tiktok' ? (t.socialId || t.tiktokHandle || '') : undefined,
+                        instagramHandle: platform === 'instagram' ? (t.socialId || t.instagramHandle || '') : undefined,
+                        targetFid: t.targetFid,
+                        castHash: t.castHash,
+                        tweetId: t.tweetId,
+                        targetUserId: t.targetUserId,
+                        xp_reward: t.reward_points || t.baseReward || 0
                     })
                 });
             } else {
@@ -79,8 +94,8 @@ export function useVerification(refetchStats?: () => void) {
                         message,
                         task_id: taskId,
                         platform: platform,
-                        action_type: task.action_type || 'task',
-                        xp_reward: task.reward_points || task.baseReward || 0
+                        action_type: t.action_type || 'task',
+                        xp_reward: t.reward_points || t.baseReward || 0
                     })
                 });
             }
@@ -90,6 +105,7 @@ export function useVerification(refetchStats?: () => void) {
             try {
                 result = JSON.parse(text);
             } catch (jsonErr) {
+                void jsonErr;
                 // If the response is not JSON, the server likely crashed or returned the Vercel error page
                 throw new Error(`Server returned an invalid response (${response.status}): ${text.slice(0, 100)}...`);
             }
@@ -107,11 +123,12 @@ export function useVerification(refetchStats?: () => void) {
             }
         } catch (error: unknown) {
             console.error('[Verification Error]', error);
-            const errMsg = error.message || "Unknown Verification error";
+            const e = error as { code?: number | string; message?: string };
+            const errMsg = e.message || "Unknown Verification error";
 
-            if (error.code === 4001 || error.message?.includes('rejected')) {
+            if (e.code === 4001 || e.message?.includes('rejected')) {
                 toast.error("Signature rejected by user.", { id: tid });
-            } else if (error.message?.includes('failed to fetch') || error.message?.includes('NetworkError')) {
+            } else if (e.message?.includes('failed to fetch') || e.message?.includes('NetworkError')) {
                 toast.error("Network Error: Verification server is unreachable.", { id: tid });
             } else {
                 toast.error(errMsg, { id: tid });

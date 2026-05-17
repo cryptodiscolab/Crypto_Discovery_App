@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Shield, Award, Landmark, _Settings, Database,
+    Shield, Award, Landmark, Settings, Database,
     AlertTriangle, ExternalLink, RefreshCw,
     Edit3, UserCog, Newspaper,
     Trophy, Zap, LayoutList, ClipboardList, Sliders, Megaphone,
@@ -39,7 +39,7 @@ const AccountantLedgerTab = React.lazy(() => import('../features/admin/component
 export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
     const navigate = useNavigate();
     const { address, isConnected } = useAccount();
-    const { totalPoolBalance, contractOwner, distributeRevenue, _updateTier, _withdrawTreasury, refetchAll } = useSBT();
+    const { totalPoolBalance, contractOwner, distributeRevenue, updateTier: _updateTier, withdrawTreasury: _withdrawTreasury, refetchAll } = useSBT();
     const {
         isAdmin: isCMSAdmin,
         isOperator,

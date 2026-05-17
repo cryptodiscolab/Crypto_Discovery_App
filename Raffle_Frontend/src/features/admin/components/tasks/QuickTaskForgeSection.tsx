@@ -1,5 +1,5 @@
 import { Calendar } from 'lucide-react';
-import { AdminTransactionButton } from '../AdminTransactionButton';
+import { AdminTransactionButton, AdminContractCall } from '../AdminTransactionButton';
 
 interface PointSetting {
     id: string;
@@ -21,7 +21,7 @@ interface QuickTaskForgeSectionProps {
     dailyMinTier: number;
     onDailyMinTierChange: (_val: number) => void;
     pointSettings: PointSetting[];
-    buildAdminTaskCall: () => unknown;
+    buildAdminTaskCall: () => AdminContractCall[];
     handleTxSuccess: () => void;
 }
 

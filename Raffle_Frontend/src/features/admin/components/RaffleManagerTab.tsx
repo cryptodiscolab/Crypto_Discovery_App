@@ -4,6 +4,7 @@ import { useAccount, useReadContract, usePublicClient, useSignMessage } from 'wa
 import { AdminTransactionButton } from './AdminTransactionButton';
 import { RAFFLE_ABI, CONTRACTS } from '../../../lib/contracts';
 import { useRaffle } from '../../../hooks/useRaffle';
+import { useRaffleInfo } from '../../raffle/hooks/useRaffleQueries';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAdminRaffleQueries } from '../hooks/useAdminQueries';
@@ -246,7 +247,7 @@ function CreatorEarningsCard() {
     const { address } = useAccount();
     const { data: balance, refetch } = useReadContract({
         address: RAFFLE_ADDRESS,
-        abi: RAFFLE_ABI as unknown,
+        abi: RAFFLE_ABI as readonly unknown[],
         functionName: 'sponsorBalances',
         args: [address],
         query: { enabled: !!address }
@@ -290,7 +291,7 @@ function CreatorEarningsCard() {
 }
 
 function AdminRaffleSettings() {
-    const { _address } = useAccount();
+    useAccount();
     const [fees, setFees] = useState({ rake: '20', surcharge: '10' });
 
     // Fetch current settings
@@ -358,10 +359,10 @@ function AdminRaffleSettings() {
 }
 
 export function RaffleManagerTab() {
-    const { _address } = useAccount();
+    useAccount();
     const {
         raffles, isLoadingRaffles, refetchRaffles,
-        recentTickets, _isLoadingTickets, refetchTickets,
+        recentTickets, refetchTickets,
         winners, isLoadingWinners, refetchWinners
     } = useAdminRaffleQueries();
 
@@ -375,7 +376,7 @@ export function RaffleManagerTab() {
             })
             .subscribe();
 
-        return () => supabase.removeChannel(sub);
+        return () => { supabase.removeChannel(sub); };
     }, [refetchTickets]);
 
     return (
@@ -415,13 +416,16 @@ export function RaffleManagerTab() {
                             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest">LIVE TICKET PURCHASES</h3>
                         </div>
                         <div className="flex flex-wrap gap-3">
-                            {recentTickets.map((t: unknown, i: number) => (
+                            {recentTickets.map((t, i: number) => {
+                                const ticket = t as { wallet_address: string; ticket_count: number; raffle_id: number };
+                                return (
                                 <div key={i} className="px-4 py-2 bg-black/40 border border-emerald-500/20 rounded-xl flex items-center gap-2">
                                     <Ticket size={12} className="text-emerald-500" />
-                                    <span className="text-[10px] font-mono text-white">{(t as unknown).wallet_address.slice(0, 6)}...</span>
-                                    <span className="text-[10px] text-slate-400">bought {(t as unknown).ticket_count} for #{(t as unknown).raffle_id}</span>
+                                    <span className="text-[10px] font-mono text-white">{ticket.wallet_address.slice(0, 6)}...</span>
+                                    <span className="text-[10px] text-slate-400">bought {ticket.ticket_count} for #{ticket.raffle_id}</span>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -457,9 +461,10 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
-                            {raffles.map((r: unknown) => (
-                                <AdminRaffleRow key={(r as unknown).id.toString()} raffleId={(r as unknown).id} />
-                            ))}
+                            {raffles.map((r: unknown) => {
+                                const raffle = r as { id: number | string };
+                                return <AdminRaffleRow key={raffle.id.toString()} raffleId={raffle.id} />;
+                            })}
                         </div>
                     )}
                 </div>
@@ -489,25 +494,28 @@ export function RaffleManagerTab() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {winners.map((w: unknown, i: number) => (
-                                <div key={(w as unknown).wallet_address} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-yellow-500/20 transition-all group">
+                            {winners.map((w: unknown, i: number) => {
+                                const winner = w as { wallet_address: string; streak_count?: number; raffle_wins: number; total_xp?: number };
+                                return (
+                                <div key={winner.wallet_address} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-yellow-500/20 transition-all group">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-slate-900 text-slate-500'}`}>
                                             {i + 1}
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-mono text-white group-hover:text-yellow-400 transition-colors">
-                                                {w.wallet_address.slice(0, 6)}...{w.wallet_address.slice(-4)}
+                                                {winner.wallet_address.slice(0, 6)}...{winner.wallet_address.slice(-4)}
                                             </span>
-                                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter">WIN STREAK: {w.streak_count || 0}</span>
+                                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter">WIN STREAK: {winner.streak_count || 0}</span>
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end">
-                                        <span className="text-[10px] text-yellow-400 font-black">🏆 {w.raffle_wins} WINS</span>
-                                        <span className="text-[9px] text-indigo-400 font-mono">{(w.total_xp || 0).toLocaleString()} XP</span>
+                                        <span className="text-[10px] text-yellow-400 font-black">🏆 {winner.raffle_wins} WINS</span>
+                                        <span className="text-[9px] text-indigo-400 font-mono">{(winner.total_xp || 0).toLocaleString()} XP</span>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -607,9 +615,8 @@ function AdminRaffleRow({ raffleId }: AdminRaffleRowProps) {
 
             // Watch raffle.isFinalized via refetch
             const stopWhenDone = setInterval(async () => {
-                const result = await (refetch as unknown)();
-                const resData = result?.data as unknown;
-                if (resData?.raffle?.isFinalized) {
+                const result = await (refetch as () => Promise<{ data?: { raffle?: { isFinalized?: boolean } } }>)();
+                if (result?.data?.raffle?.isFinalized) {
                     clearInterval(stopWhenDone);
                     clearInterval(poll);
                     setDrawPending(false);

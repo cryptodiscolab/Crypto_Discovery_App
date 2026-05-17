@@ -30,7 +30,7 @@ export function usePaymaster() {
     // Periksa apakah wallet mendukung paymasterService di chain yang aktif
     const isGaslessSupported = useMemo(() => {
         if (!capabilities || !chainId) return false;
-        const chainCapabilities = (capabilities as unknown)[chainId];
+        const chainCapabilities = (capabilities as Record<number, { paymasterService?: { supported?: boolean }; atomicBatch?: { supported?: boolean } }>)[chainId];
         if (!chainCapabilities) return false;
         // Wallet EIP-5792: key 'paymasterService' atau 'atomicBatch'
         return !!(
@@ -65,11 +65,19 @@ export function usePaymaster() {
  * @param {Object} contractConfig - { address, abi, functionName, args }
  * @param {string} label - Label untuk toast notification
  */
-export function useGaslessContractCall(contractConfig: unknown, label = 'Transaction') {
+interface ContractCallConfig {
+    address: `0x${string}`;
+    abi: readonly unknown[];
+    functionName: string;
+    args?: readonly unknown[];
+    value?: bigint;
+}
+
+export function useGaslessContractCall(contractConfig: ContractCallConfig | null | undefined, label = 'Transaction') {
     const { isGaslessSupported, paymasterCapabilities } = usePaymaster();
     const { sendCallsAsync, isPending, isSuccess, data: callId } = useSendCalls();
 
-    const sendGasless = useCallback(async (overrideArgs = null) => {
+    const sendGasless = useCallback(async (overrideArgs: readonly unknown[] | null = null) => {
         if (!contractConfig?.address || !contractConfig?.abi) {
             throw new Error('[Paymaster] Contract config missing');
         }
@@ -80,7 +88,7 @@ export function useGaslessContractCall(contractConfig: unknown, label = 'Transac
         const callData = encodeFunctionData({
             abi: contractConfig.abi,
             functionName: contractConfig.functionName,
-            args,
+            args: args as readonly unknown[],
         });
 
         const tid = toast.loading(
@@ -107,7 +115,8 @@ export function useGaslessContractCall(contractConfig: unknown, label = 'Transac
             );
             return result;
         } catch (err: unknown) {
-            toast.error(err.shortMessage || err.message || `${label} failed`, { id: tid });
+            const e = err as { shortMessage?: string; message?: string };
+            toast.error(e.shortMessage || e.message || `${label} failed`, { id: tid });
             throw err;
         }
     }, [contractConfig, isGaslessSupported, paymasterCapabilities, sendCallsAsync, label]);

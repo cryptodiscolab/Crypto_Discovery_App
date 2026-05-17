@@ -27,7 +27,7 @@ export const WalletPortfolio = ({ highlightSymbol }: { highlightSymbol?: string 
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-                {balances.map((token: unknown, i: number) => {
+                {(balances as Array<{ symbol: string; name?: string; icon?: string; address?: string; balance?: { value: bigint; decimals: number } }>).map((token, i: number) => {
                     const isHighlighted = token.symbol === highlightSymbol;
                     return (
                         <div

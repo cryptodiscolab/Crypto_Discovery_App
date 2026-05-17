@@ -2,6 +2,8 @@ import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { Cpu } from 'lucide-react';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
 import toast from 'react-hot-toast';
+import { usePublicClient } from 'wagmi';
+import type { Abi } from 'viem';
 import { SystemPointers, TokenWhitelist } from '../../../../types/admin';
 
 interface SystemPointersCardProps {
@@ -25,20 +27,21 @@ export function SystemPointersCard({
     const { writeContractAsync } = useAdminContract();
     const publicClient = usePublicClient();
 
-    const handleUpdatePointer = async (targetContract: `0x${string}`, abi: unknown, functionName: string, value: string | unknown[]) => {
+    const handleUpdatePointer = async (targetContract: `0x${string}`, abi: Abi | readonly unknown[], functionName: string, value: string | unknown[]) => {
         setIsSaving(true);
         const tid = toast.loading(`Updating ${functionName}...`);
         try {
             const hash = await writeContractAsync({
                 address: targetContract,
-                abi: abi,
+                abi: abi as Abi,
                 functionName: functionName,
                 args: Array.isArray(value) ? value : [value],
             });
             await publicClient!.waitForTransactionReceipt({ hash });
             toast.success("Pointer Updated!", { id: tid });
         } catch (e: unknown) {
-            toast.error(e.shortMessage || e.message, { id: tid });
+            const err = e as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || 'Update failed', { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -104,7 +107,7 @@ export function SystemPointersCard({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-white">
-                                {tokens.map((token: unknown, i: number) => (
+                                {(tokens as Array<{ symbol: string; chain_id: number; address: string; decimals?: number }>).map((token, i: number) => (
                                     <tr key={i} className="hover:bg-white/5 transition-colors">
                                         <td className="px-4 py-2 font-black">{token.symbol}</td>
                                         <td className="px-4 py-2 text-slate-400">{token.chain_id}</td>
@@ -129,7 +132,8 @@ export function SystemPointersCard({
                                                         await handleSyncTokenToDb('REMOVE_TOKEN_DB', { address: token.address, chain_id: token.chain_id });
                                                         toast.success(`${token.symbol} removed!`, { id: tid });
                                                     } catch (e: unknown) {
-                                                        toast.error(e.shortMessage || e.message || "Remove failed", { id: tid });
+                                                        const err = e as { shortMessage?: string; message?: string };
+                                                        toast.error(err.shortMessage || err.message || "Remove failed", { id: tid });
                                                     } finally {
                                                         setIsSaving(false);
                                                     }
@@ -223,7 +227,8 @@ export function SystemPointersCard({
                                     toast.success("Token whitelisted on-chain & synced to DB!", { id: tid });
                                     setNewTokenWhitelist({ address: '', symbol: '', decimals: '18', chain_id: String(chainId) });
                                 } catch (e: unknown) {
-                                    toast.error(e.shortMessage || e.message || "Whitelist failed", { id: tid });
+                                    const err = e as { shortMessage?: string; message?: string };
+                                    toast.error(err.shortMessage || err.message || "Whitelist failed", { id: tid });
                                 } finally {
                                     setIsSaving(false);
                                 }

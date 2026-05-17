@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Power, ShieldAlert, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -41,7 +42,7 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
             if (data?.value) {
                 setFlags(data.value as FeatureFlags);
             }
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('Failed to fetch flags:', err);
             toast.error('Sync Error: Failed to fetch system flags');
         } finally {
@@ -85,7 +86,7 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
 
             toast.success('Phased Rollout Updated! UI auto-locked on Mainnet.', { id: tid });
             await fetchFlags();
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('Save error:', err);
             toast.error('Update failed: ' + (err.message || 'Unknown error'), { id: tid });
         } finally {

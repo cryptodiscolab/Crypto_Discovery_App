@@ -1,13 +1,35 @@
+import { useCallback, useRef, useState } from 'react';
 import { useSignMessage } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
 import { cleanWallet } from '../utils/cleanWallet';
+
+interface FarcasterProfile {
+    wallet_address: string;
+    fid?: number;
+    username?: string;
+    display_name?: string;
+    pfp_url?: string;
+    bio?: string;
+    follower_count?: number;
+    following_count?: number;
+    verifications?: string[];
+    active_status?: string;
+    neynar_score?: number;
+    power_badge?: boolean;
+    last_login_at?: string;
+    last_sync?: string;
+    is_base_social_verified?: boolean;
+    twitter_id?: string;
+    tiktok_username?: string;
+    instagram_username?: string;
+}
 
 /**
  * Senior Architecture Hook: zero-latency identity management.
  * Adheres to Anti-Riba and hardware optimization principles.
  */
 export const useFarcaster = () => {
-    const [profileData, setProfileData] = useState<unknown>(null);
+    const [profileData, setProfileData] = useState<FarcasterProfile | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { signMessageAsync } = useSignMessage();
@@ -138,15 +160,16 @@ export const useFarcaster = () => {
             return finalProfile;
 
         } catch (err: unknown) {
-            if (err.name === 'AbortError') return null;
-            setError(err.message || "Unknown error");
+            const e = err as { name?: string; message?: string };
+            if (e.name === 'AbortError') return null;
+            setError(e.message || "Unknown error");
             console.error("[Sync Hook] Process Error:", err);
             return null;
         } finally {
             setIsLoading(false);
             abortControllerRef.current = null;
         }
-    }, []);
+    }, [signMessageAsync]);
 
     return {
         user: profileData, // Alias for ProfilePage.jsx
