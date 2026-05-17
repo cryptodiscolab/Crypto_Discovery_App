@@ -8,7 +8,7 @@ import { useAccount, useWriteContract, usePublicClient, useSignMessage, useChain
 import { parseUnits, formatUnits, erc20Abi } from 'viem';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { CONTRACTS } from '../lib/contracts';
+import { CONTRACTS, WETH_ADDRESS } from '../lib/contracts';
 import { SwapModal } from '../components/SwapModal';
 import { WalletPortfolio } from '../components/WalletPortfolio';
 import { supabase } from '../lib/supabaseClient';
@@ -224,18 +224,33 @@ export function CreateMissionPage() {
 
         const rewardPool = rewardPerUser * participants;
 
-        // Calculate dynamic listing fee based on token price [v3.63.8]
+        // Calculate dynamic listing fee based on token price [v3.64.2]
         // USDC is the baseline (price = 1)
         const isUsdc = selectedToken?.symbol === 'USDC';
-        const priceKey = selectedTokenAddr === '0x0000000000000000000000000000000000000000'
-            ? '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
-            : selectedTokenAddr.toLowerCase();
+        const isNativeEth = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
 
-        const tokenPrice = isUsdc ? 1 : (tokenPrices[priceKey] || 0);
-        const isPriceLoading = !isUsdc && tokenPrice === 0;
+        // For Native ETH, try multiple address representations in the price oracle
+        let tokenPrice = 0;
+        if (isUsdc) {
+            tokenPrice = 1;
+        } else if (isNativeEth) {
+            // Try: zero-address → alt-address (0xeee...eee) → WETH address
+            const WETH_ADDR = WETH_ADDRESS.toLowerCase();
+            tokenPrice =
+                tokenPrices[selectedTokenAddr.toLowerCase()] ||
+                tokenPrices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] ||
+                (WETH_ADDR ? (tokenPrices[WETH_ADDR] || 0) : 0);
+        } else {
+            tokenPrice = tokenPrices[selectedTokenAddr.toLowerCase()] || 0;
+        }
 
-        // If price is loading, we treat the fee as 0 temporarily to avoid UX flicker/insufficient balance alerts
-        const listingFeeToken = isPriceLoading ? 0 : (tokenPrice > 0 ? (baseListingFeeUsdc / tokenPrice) : baseListingFeeUsdc);
+        const isPriceAvailable = isUsdc || tokenPrice > 0;
+
+        // Listing fee in selected token denomination
+        // If price oracle hasn't resolved yet, show the USDC fee as-is (will be corrected once price loads)
+        const listingFeeToken = isPriceAvailable
+            ? (tokenPrice > 0 ? (baseListingFeeUsdc / tokenPrice) : baseListingFeeUsdc)
+            : 0;
 
         const totalAmount = rewardPool + listingFeeToken;
         const decimals = selectedToken?.decimals || 6;
@@ -251,14 +266,16 @@ export function CreateMissionPage() {
             listingFeeUsd: baseListingFeeUsdc.toFixed(2),
             totalAmount: totalAmount.toFixed(displayDecimals),
             totalAmountUsd: totalAmountUsd.toFixed(2),
-            totalAmountRaw: parseUnits(totalAmount.toFixed(decimals), decimals),
-            tokenPrice
+            totalAmountRaw: isPriceAvailable ? parseUnits(totalAmount.toFixed(decimals), decimals) : 0n,
+            tokenPrice,
+            isPriceAvailable
         };
     }, [formData, ugcConfig, selectedToken, selectedTokenAddr, tokenPrices]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isConnected) return toast.error("Please connect wallet");
+        if (!stats.isPriceAvailable) return toast.error("[Price Oracle] Waiting for live price data. Please wait a moment and try again.");
 
         // [v3.59.0] Client-side pre-flight validation (mirrors server-side rules)
         if (!formData.title || formData.title.trim().length < 5) return toast.error('Mission title must be at least 5 characters.');
@@ -796,7 +813,7 @@ export function CreateMissionPage() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-2xl font-black text-indigo-400 font-mono tracking-tighter">
-                                            {(!selectedToken || (selectedToken.symbol !== 'USDC' && stats.tokenPrice === 0)) ? (
+                                            {!stats.isPriceAvailable ? (
                                                 <span className="animate-pulse opacity-50">...</span>
                                             ) : (
                                                 stats.listingFee

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { WETH_ADDRESS, NATIVE_ETH_ALT_ADDRESS } from '../lib/contracts';
+import { WETH_ADDRESS, NATIVE_ETH_ADDRESS, NATIVE_ETH_ALT_ADDRESS } from '../lib/contracts';
 
 const DEX_SCREENER_BASE_URL = 'https://api.dexscreener.com/latest/dex/tokens';
 const PRICE_CACHE = new Map();
@@ -94,17 +94,24 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
 
       // Fallback: If WETH price is still 0, fetch from Binance
       const wethAddr = WETH_ADDRESS.toLowerCase();
-      if (addrsToFetch.some(a => a.toLowerCase() === wethAddr) && !newPrices[wethAddr]) {
+      const nativeEthAddr = NATIVE_ETH_ADDRESS.toLowerCase();
+      const needsEthPrice = addrsToFetch.some(a => {
+        const la = a.toLowerCase();
+        return la === wethAddr || la === nativeEthAddr || la === NATIVE_ETH_ALT_ADDRESS;
+      });
+      if (needsEthPrice && !newPrices[wethAddr]) {
         try {
           const binRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDC');
           const binData = await binRes.json();
           if (binData.price) {
             const ethUsd = parseFloat(binData.price);
+            // Set price for all ETH representations
             newPrices[wethAddr] = ethUsd;
             PRICE_CACHE.set(wethAddr, { price: ethUsd, timestamp: now });
-            // Also set for native ETH placeholder
             newPrices[NATIVE_ETH_ALT_ADDRESS] = ethUsd;
             PRICE_CACHE.set(NATIVE_ETH_ALT_ADDRESS, { price: ethUsd, timestamp: now });
+            newPrices[nativeEthAddr] = ethUsd;
+            PRICE_CACHE.set(nativeEthAddr, { price: ethUsd, timestamp: now });
           }
         } catch (e) { /* Binance fallback failed, leave as 0 */ }
       }
