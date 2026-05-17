@@ -8,13 +8,14 @@ import axios from 'axios';
 import { parseEther, formatUnits } from 'viem';
 import { useAccount, useBalance, useSignMessage } from 'wagmi';
 import {
-    MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS
+    MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS, WETH_ADDRESS
 } from '../../../../lib/contracts';
+import { usePriceOracle } from '../../../../hooks/usePriceOracle';
 import { ShieldCheck, HardDrive, DatabaseZap, FileJson, Award, Wallet } from 'lucide-react';
 
 interface Aggregate {
-    income: { USDC: number; ETH: number };
-    expense: { USDC: number; ETH: number };
+    income: Record<string, number>;
+    expense: Record<string, number>;
 }
 
 interface Aggregates {
@@ -60,9 +61,9 @@ export function AccountantLedgerTab() {
     const [isHardening, setIsHardening] = useState(false);
     const [parityResults, setParityResults] = useState<ParitySummary | null>(null);
     const [aggregates, setAggregates] = useState<Aggregates>({
-        daily: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } },
-        weekly: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } },
-        monthly: { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } }
+        daily: { income: {}, expense: {} },
+        weekly: { income: {}, expense: {} },
+        monthly: { income: {}, expense: {} }
     });
     const [logs, setLogs] = useState<LedgerLog[]>([]);
     const [syncState, setSyncState] = useState<SyncState | null>(null);
@@ -70,6 +71,12 @@ export function AccountantLedgerTab() {
 
     const [withdrawAmount, setWithdrawAmount] = useState<string>('');
     const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+    // Fetch live prices for WETH (which corresponds to ETH) and USDC
+    const { prices } = usePriceOracle(
+        ([WETH_ADDRESS, USDC_ADDRESS].filter(Boolean) as string[])
+    );
+    const ethPrice = prices[WETH_ADDRESS.toLowerCase()] || 0;
 
     // On-Chain Balances
     const { data: dailyAppEth, refetch: rf1 } = useBalance({ address: DAILY_APP_ADDRESS });
@@ -291,54 +298,90 @@ export function AccountantLedgerTab() {
     };
 
     const MetricCard = ({ title, aggregate, icon: Icon }: { title: string; aggregate?: Aggregate; icon: React.ComponentType<{ className?: string }> }) => {
-        const safeAggregate = aggregate || { income: { USDC: 0, ETH: 0 }, expense: { USDC: 0, ETH: 0 } };
+        const safeAggregate = aggregate || { income: {}, expense: {} };
+        
+        const getSortedTokens = (map: Record<string, number>) => {
+            return Object.keys(map).sort((a, b) => {
+                if (a.toUpperCase() === 'USDC') return -1;
+                if (b.toUpperCase() === 'USDC') return 1;
+                return a.localeCompare(b);
+            });
+        };
+
+        const incomeTokens = getSortedTokens(safeAggregate.income);
+        const expenseTokens = getSortedTokens(safeAggregate.expense);
+
         return (
-        <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-emerald-500/10 transition-colors" />
-            <div className="flex items-center gap-3 mb-4 relative z-10">
-                <div className="p-2.5 bg-emerald-500/10 rounded-xl">
-                    <Icon className="w-5 h-5 text-emerald-400" />
-                </div>
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">{title}</h3>
-            </div>
-
-            <div className="space-y-4 relative z-10">
-                {/* INCOME */}
-                <div className="space-y-1">
-                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Gross Income</span>
-                    <div className="flex justify-between items-end">
-                        <span className="text-xs font-bold text-slate-500 uppercase">USDC</span>
-                        <span className="text-lg font-black text-emerald-400 font-mono">
-                            ${Number(safeAggregate.income.USDC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
+            <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-emerald-500/10 transition-colors" />
+                <div className="flex items-center gap-3 mb-4 relative z-10">
+                    <div className="p-2.5 bg-emerald-500/10 rounded-xl">
+                        <Icon className="w-5 h-5 text-emerald-400" />
                     </div>
-                    <div className="flex justify-between items-end">
-                        <span className="text-xs font-bold text-slate-500 uppercase">ETH</span>
-                        <span className="text-sm font-bold text-emerald-400 font-mono">
-                            {Number(safeAggregate.income.ETH).toFixed(4)} ETH
-                        </span>
-                    </div>
+                    <h3 className="text-[11px] font-black text-white uppercase tracking-widest label-native">{title}</h3>
                 </div>
 
-                {/* EXPENSE */}
-                <div className="space-y-1 pt-3 border-t border-white/5">
-                    <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Total Payouts</span>
-                    <div className="flex justify-between items-end">
-                        <span className="text-xs font-bold text-slate-500 uppercase">USDC</span>
-                        <span className="text-lg font-black text-red-400 font-mono">
-                            ${Number(safeAggregate.expense.USDC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
+                <div className="space-y-4 relative z-10">
+                    {/* INCOME */}
+                    <div className="space-y-2">
+                        <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest label-native">Gross Income</span>
+                        {incomeTokens.length === 0 ? (
+                            <div className="text-slate-500 text-[13px] font-medium font-mono content-native">0.00</div>
+                        ) : (
+                            incomeTokens.map(tok => {
+                                const val = safeAggregate.income[tok] || 0;
+                                const isUsdc = tok.toUpperCase() === 'USDC';
+                                const usdEquivalent = !isUsdc && (tok.toUpperCase() === 'ETH' || tok.toUpperCase() === 'WETH') ? val * ethPrice : 0;
+                                return (
+                                    <div key={tok} className="flex justify-between items-center py-0.5">
+                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">{tok}</span>
+                                        <div className="text-right">
+                                            <div className="text-[13px] font-black text-emerald-400 font-mono content-native">
+                                                {isUsdc ? '$' : ''}{val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: isUsdc ? 2 : 4 })}{!isUsdc ? ` ${tok}` : ''}
+                                            </div>
+                                            {usdEquivalent > 0 && (
+                                                <div className="text-[11px] font-black text-slate-500 font-mono uppercase tracking-widest label-native mt-0.5">
+                                                    ≈ ${usdEquivalent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
-                    <div className="flex justify-between items-end">
-                        <span className="text-xs font-bold text-slate-500 uppercase">ETH</span>
-                        <span className="text-sm font-bold text-red-400 font-mono">
-                            {Number(safeAggregate.expense.ETH).toFixed(4)} ETH
-                        </span>
+
+                    {/* EXPENSE */}
+                    <div className="space-y-2 pt-3 border-t border-white/5">
+                        <span className="text-[11px] font-black text-red-400 uppercase tracking-widest label-native">Total Payouts</span>
+                        {expenseTokens.length === 0 ? (
+                            <div className="text-slate-500 text-[13px] font-medium font-mono content-native">0.00</div>
+                        ) : (
+                            expenseTokens.map(tok => {
+                                const val = safeAggregate.expense[tok] || 0;
+                                const isUsdc = tok.toUpperCase() === 'USDC';
+                                const usdEquivalent = !isUsdc && (tok.toUpperCase() === 'ETH' || tok.toUpperCase() === 'WETH') ? val * ethPrice : 0;
+                                return (
+                                    <div key={tok} className="flex justify-between items-center py-0.5">
+                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">{tok}</span>
+                                        <div className="text-right">
+                                            <div className="text-[13px] font-black text-red-400 font-mono content-native">
+                                                {isUsdc ? '$' : ''}{val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: isUsdc ? 2 : 4 })}{!isUsdc ? ` ${tok}` : ''}
+                                            </div>
+                                            {usdEquivalent > 0 && (
+                                                <div className="text-[11px] font-black text-slate-500 font-mono uppercase tracking-widest label-native mt-0.5">
+                                                    ≈ ${usdEquivalent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
     };
 
     return (
@@ -595,8 +638,8 @@ export function AccountantLedgerTab() {
             {/* Transaction Log Table */}
             <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl overflow-hidden flex flex-col h-[600px]">
                 <div className="p-4 border-b border-white/5 flex justify-between items-center bg-[#0d0d0f]">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Recent Transactions</h3>
-                    <span className="text-xs font-bold text-slate-500 uppercase">{logs.length} Records</span>
+                    <h3 className="text-[11px] font-black text-white uppercase tracking-widest label-native">Recent Transactions</h3>
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">{logs.length} Records</span>
                 </div>
 
                 <div className="flex-1 overflow-auto">
@@ -607,16 +650,16 @@ export function AccountantLedgerTab() {
                     ) : logs.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
                             <AlertTriangle className="w-8 h-8" />
-                            <span className="text-xs font-black uppercase tracking-widest">No transactions found</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest label-native">No transactions found</span>
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-[#121214] sticky top-0 z-10">
                                 <tr>
-                                    <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">Date & Time</th>
-                                    <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">Activity / Description</th>
-                                    <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">Wallet</th>
-                                    <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 text-right">Amount</th>
+                                    <th className="p-4 text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 label-native">Date & Time</th>
+                                    <th className="p-4 text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 label-native">Activity / Description</th>
+                                    <th className="p-4 text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 label-native">Wallet</th>
+                                    <th className="p-4 text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 text-right label-native">Amount</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -630,18 +673,18 @@ export function AccountantLedgerTab() {
                                     return (
                                         <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
                                             <td className="p-4 whitespace-nowrap">
-                                                <div className="text-xs font-bold text-slate-300">
+                                                <div className="text-[13px] font-medium leading-relaxed text-slate-300 content-native">
                                                     {new Date(log.created_at).toLocaleDateString()}
                                                 </div>
-                                                <div className="text-[10px] font-mono text-slate-500 mt-0.5">
+                                                <div className="text-[11px] font-mono text-slate-500 mt-0.5 label-native">
                                                     {new Date(log.created_at).toLocaleTimeString()}
                                                 </div>
                                             </td>
                                             <td className="p-4">
-                                                <div className="text-xs font-black text-white uppercase tracking-wider mb-0.5">
+                                                <div className="text-[11px] font-black text-white uppercase tracking-widest mb-0.5 label-native">
                                                     {log.activity_type || log.category}
                                                 </div>
-                                                <div className="text-[11px] text-slate-400 max-w-sm truncate">
+                                                <div className="text-[13px] font-medium leading-relaxed text-slate-400 max-w-sm truncate content-native">
                                                     {log.description}
                                                 </div>
                                             </td>
@@ -650,14 +693,14 @@ export function AccountantLedgerTab() {
                                                     href={`https://basescan.org/address/${log.wallet_address}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-xs font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 w-fit"
+                                                    className="text-[13px] font-medium leading-relaxed text-indigo-400 hover:text-indigo-300 flex items-center gap-1 w-fit font-mono content-native"
                                                 >
                                                     {log.wallet_address?.slice(0, 6)}...{log.wallet_address?.slice(-4)}
                                                     <ExternalLink className="w-3 h-3" />
                                                 </a>
                                             </td>
                                             <td className="p-4 text-right">
-                                                <div className={`text-sm font-black font-mono ${colorClass}`}>
+                                                <div className={`text-[13px] font-black font-mono ${colorClass} content-native`}>
                                                     {sign}{log.value_symbol === 'USDC' ? '$' : ''}
                                                     {Number(log.value_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                                                     {log.value_symbol !== 'USDC' ? ` ${log.value_symbol}` : ''}
