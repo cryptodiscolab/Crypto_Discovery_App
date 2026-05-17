@@ -155,6 +155,8 @@ See `Raffle_Frontend/KIRO WORK REPORT/SESSION_2026-05-17_FRONTEND_TYPESCRIPT_HAR
 
 ## 2. Hook Compliance Protocol
 
+> **Note:** For complete Kiro methodology documentation (tools, workflow patterns, hooks creation), see `kiro-methodology` skill. This evidence-driven-execution skill is the core anti-hallucination protocol, while kiro-methodology covers operational patterns.
+
 Pre-tool-use hooks fire on every shell command. They are guards, not noise.
 
 ### Hook 1 — Pre-Push Verification (Codebase-specific)

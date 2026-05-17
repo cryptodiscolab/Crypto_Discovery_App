@@ -8,6 +8,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useSIWE } from '../hooks/useSIWE';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 import { useOAuth } from '../hooks/useOAuth';
+import { useWalletAttest } from '../hooks/useWalletAttest';
 import { HypeFeed } from '../components/HypeFeed';
 import { useEnvironment } from '../useEnvironment';
 
@@ -28,6 +29,7 @@ export function LoginPage() {
     const { frameUser } = useFarcaster();
     const { signIn, session: siweSession, isLoading: isSigningIn } = useSIWE();
     const { linkGoogle, linkX, isLinking, linkedGoogle, linkedX } = useOAuth();
+    const { attest, isAttesting, isAttested } = useWalletAttest();
     const from = location.state?.from?.pathname || '/';
     const { address, isConnected, isConnecting, isReconnecting } = useAccount();
     const { connect, connectors } = useConnect();
@@ -246,6 +248,28 @@ export function LoginPage() {
                                 </div>
                                 {linkedX && (
                                     <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
+                                )}
+                            </button>
+
+                            {/* Wallet Attestation — FREE, no API cost, no third-party */}
+                            <button
+                                onClick={attest}
+                                disabled={isAttesting || isAttested === true}
+                                className={`mt-2 w-full flex items-center justify-between px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border ${
+                                    isAttested === true
+                                        ? 'bg-green-500/10 border-green-500/20 text-green-400 cursor-default'
+                                        : 'bg-indigo-500/5 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/15 hover:border-indigo-500/50 active:scale-95'
+                                } disabled:opacity-60`}
+                                title="Sign with your wallet to verify identity. Free, no third-party account needed."
+                            >
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                    {isAttested === true ? 'WALLET VERIFIED' : isAttesting ? 'SIGNING...' : 'VERIFY WITH WALLET (FREE)'}
+                                </div>
+                                {isAttested === true ? (
+                                    <span className="text-[11px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-black">LINKED</span>
+                                ) : (
+                                    <span className="text-[11px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30 font-black">FREE</span>
                                 )}
                             </button>
 

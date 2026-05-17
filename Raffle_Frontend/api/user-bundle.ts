@@ -219,6 +219,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'leaderboard': await handleLeaderboard(req, res); break;
         case 'sync-oauth': await handleSyncOAuth(req, res); break;
         case 'sync-base-social': await handleSyncBaseSocial(req, res); break;
+        case 'link-wallet-attest': await handleLinkWalletAttest(req, res); break;
         case 'approve-mission': await handleApproveMission(req, res); break;
         case 'approve-raffle': await handleApproveRaffle(req, res); break;
         case 'reject-raffle': await handleRejectRaffle(req, res); break;
@@ -247,11 +248,12 @@ async function checkIdentityStatus(wallet: string): Promise<boolean> {
     try {
         const { data: profile } = await getSupabaseAdmin()
             .from('user_profiles')
-            .select('fid, twitter_id, is_base_social_verified')
+            .select('fid, twitter_id, is_base_social_verified, verifications')
             .eq('wallet_address', wallet.toLowerCase())
             .maybeSingle();
 
-        return !!(profile?.fid || profile?.twitter_id || profile?.is_base_social_verified);
+        const hasWalletAttest = Array.isArray(profile?.verifications) && profile.verifications.includes('wallet-attest');
+        return !!(profile?.fid || profile?.twitter_id || profile?.is_base_social_verified || hasWalletAttest);
     } catch (e) {
         return false;
     }
@@ -1789,6 +1791,78 @@ async function handleSyncBaseSocial(req: VercelRequest, res: VercelResponse) {
         await logActivity({ wallet: normalizedWallet, category: 'IDENTITY', type: 'Base Social Link', description: `Verified Base Social: ${basename}` });
 
         return res.status(200).json({ success: true, basename });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+/**
+ * Wallet Attestation — FREE identity verification (no API cost).
+ * User signs an EIP-191 message asserting they are a unique person.
+ * Combined with on-chain transaction history (proves gas spend),
+ * this is sufficient anti-Sybil for non-monetary flows (daily claim, basic XP).
+ *
+ * Higher-value flows (tier upgrades, raffle rewards, sponsorship) recommend
+ * Farcaster/Twitter/Base for stronger Sybil resistance, but accept attestation as fallback.
+ */
+async function handleLinkWalletAttest(req: VercelRequest, res: VercelResponse) {
+    const { wallet_address, signature, message } = req.body;
+    if (!wallet_address || !signature || !message) {
+        return res.status(400).json({ error: 'Missing wallet_address, signature, or message' });
+    }
+    try {
+        const valid = await verifyMessage({
+            address: wallet_address as `0x${string}`,
+            message,
+            signature: signature as `0x${string}`
+        });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        // Validate message format: must contain assertion + wallet + timestamp
+        const lowerMsg = String(message).toLowerCase();
+        if (!lowerMsg.includes('disco gacha wallet attestation') ||
+            !lowerMsg.includes(wallet_address.toLowerCase())) {
+            return res.status(400).json({ error: 'Invalid attestation message format' });
+        }
+
+        // Replay protection: timestamp must be within last 5 minutes
+        const isoMatch = message.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/);
+        if (!isoMatch) return res.status(401).json({ error: 'Missing timestamp in message' });
+        const messageTime = new Date(isoMatch[0]).getTime();
+        if (Math.abs(Date.now() - messageTime) / (1000 * 60) > 5) {
+            return res.status(401).json({ error: 'Attestation expired (max 5 min old)' });
+        }
+
+        const normalizedWallet = wallet_address.toLowerCase();
+
+        const { data: existing } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('verifications')
+            .eq('wallet_address', normalizedWallet)
+            .maybeSingle();
+
+        const currentVerifications = Array.isArray(existing?.verifications) ? existing.verifications : [];
+        if (currentVerifications.includes('wallet-attest')) {
+            return res.status(200).json({ success: true, already_attested: true });
+        }
+
+        const newVerifications = [...currentVerifications, 'wallet-attest'];
+
+        const { error: updateErr } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .update({ verifications: newVerifications, updated_at: new Date().toISOString() })
+            .eq('wallet_address', normalizedWallet);
+        if (updateErr) throw updateErr;
+
+        await logActivity({
+            wallet: normalizedWallet,
+            category: 'IDENTITY',
+            type: 'Wallet Attestation',
+            description: 'Self-attested unique-person identity via wallet signature'
+        });
+
+        return res.status(200).json({ success: true, attested: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });
