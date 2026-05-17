@@ -477,9 +477,59 @@ async function handleEconomyStats(res: VercelResponse) {
 }
 
 async function handleAccountantLedger(res: VercelResponse) {
-    const { data: logs, error } = await supabaseAdmin.from('user_activity_logs').select('*').in('category', ['PURCHASE', 'REWARD', 'EXPENSE']).order('created_at', { ascending: false }).limit(100);
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+
+    // Fetch all logs within the last 30 days (single query, efficient)
+    const { data: logs, error } = await supabaseAdmin
+        .from('user_activity_logs')
+        .select('*')
+        .in('category', ['PURCHASE', 'REWARD', 'EXPENSE'])
+        .gte('created_at', thirtyDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(500);
     if (error) throw error;
-    return res.status(200).json({ success: true, logs });
+
+    const safeRows = logs || [];
+
+    // Helper: aggregate income/expense by symbol within a time window
+    const aggregate = (since: string) => {
+        const income: Record<string, number> = {};
+        const expense: Record<string, number> = {};
+        for (const row of safeRows) {
+            if (row.created_at && row.created_at < since) continue;
+            const sym = (row.value_symbol || 'UNKNOWN').toUpperCase();
+            const val = Number(row.value_amount) || 0;
+            if (row.category === 'PURCHASE') {
+                income[sym] = (income[sym] || 0) + val;
+            } else {
+                expense[sym] = (expense[sym] || 0) + val;
+            }
+        }
+        return { income, expense };
+    };
+
+    const aggregates = {
+        daily: aggregate(oneDayAgo),
+        weekly: aggregate(sevenDaysAgo),
+        monthly: aggregate(thirtyDaysAgo),
+    };
+
+    // Fetch sync state from system_settings
+    const { data: syncRow } = await supabaseAdmin
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'last_synced_block')
+        .maybeSingle();
+
+    const syncState = syncRow?.value
+        ? { last_synced_block: Number((syncRow.value as JsonObject)?.block ?? 0), updated_at: String((syncRow.value as JsonObject)?.updated_at ?? now.toISOString()) }
+        : null;
+
+    // Return recent 100 logs for the table, plus aggregates and syncState
+    return res.status(200).json({ success: true, logs: safeRows.slice(0, 100), aggregates, syncState });
 }
 
 async function handleAccountantSync(req: VercelRequest, res: VercelResponse, admin: string) {
@@ -712,7 +762,36 @@ async function handleVerifyUgcPaymentOnchain(req: VercelRequest, res: VercelResp
     await supabaseAdmin.from('daily_tasks').update({ is_active: true }).eq('target_id', mission_id);
     await logAdminAction(admin, 'VERIFY_UGC_PAYMENT_ONCHAIN', { mission_id, amount_paid: totalPaid.toString(), symbol: mission.reward_symbol });
 
-    return res.status(200).json({ success: true, message: `Payment verified for ${mission.reward_symbol || 'USDC'}` });
+    // === LEDGER INGESTION: Insert PURCHASE logs for Accountant Ledger (v3.64.2) ===
+    const creatorWallet = (mission.sponsor_address || admin).toLowerCase();
+    const msTimestamp = new Date().toISOString(); // Millisecond-precision ISO-8601 (Rule 75)
+    const symbol = (mission.reward_symbol || 'USDC').toUpperCase();
+
+    const purchaseLogs = [
+        {
+            wallet_address: creatorWallet,
+            category: 'PURCHASE',
+            activity_type: 'UGC_LISTING_FEE',
+            description: `Listing fee for campaign ${String(mission_id).slice(0, 8)}`,
+            value_amount: listingFeeValue,
+            value_symbol: symbol,
+            tx_hash: mission.payment_tx_hash,
+            created_at: msTimestamp,
+        },
+        {
+            wallet_address: creatorWallet,
+            category: 'PURCHASE',
+            activity_type: 'UGC_REWARD_POOL',
+            description: `Reward pool deposit for campaign ${String(mission_id).slice(0, 8)}`,
+            value_amount: rewardPoolValue,
+            value_symbol: symbol,
+            tx_hash: mission.payment_tx_hash,
+            created_at: msTimestamp,
+        },
+    ];
+    await supabaseAdmin.from('user_activity_logs').insert(purchaseLogs);
+
+    return res.status(200).json({ success: true, message: `Payment verified for ${symbol}` });
 }
 
 async function handleRejectMission(req: VercelRequest, res: VercelResponse, admin: string) {
