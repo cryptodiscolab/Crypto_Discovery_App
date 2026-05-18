@@ -1,4 +1,4 @@
-# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.5-Hardened)
+# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.6-Hardened)
 # Crypto Discovery App | Codex (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Codex sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.5-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.5).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.6-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.6).
 
 ---
 
@@ -169,7 +169,7 @@ All high-fidelity activity logging MUST use 23-character ISO-8601 timestamps (YY
 ## Rule 76 — MULTI-ASSET UI PARITY MANDATE.
 All financial UI components (Missions, Sponsorships, Claims) MUST handle Native ETH, WETH, and USDC dynamically. This includes fetching allowed tokens from the database, handling 18/6 decimal normalization, and displaying accurate currency symbols. Hardcoding "USDC" or "ETH" labels is strictly forbidden. (v3.63.7-Hardened).
 ## Rule 77 — AGENT ANTI-NEGLIGENCE HOOK MANDATE.
-Agents MUST execute the verification hook via `node scripts/audits/agent_anti_negligence_hook.cjs` before finalizing ANY task, code changes, or commits. Any file containing `[dotenv]`, tip logs, duplicate artifacts, secret leaks, or unregistered documents in `WORKSPACE_MAP.md` will trigger an immediate block. Self-audit is mandatory. (v3.64.5-Hardened).
+Agents MUST execute the verification hook via `node scripts/audits/agent_anti_negligence_hook.cjs` before finalizing ANY task, code changes, or commits. Any file containing `[dotenv]`, tip logs, duplicate artifacts, secret leaks, or unregistered documents in `WORKSPACE_MAP.md` will trigger an immediate block. Self-audit is mandatory. (v3.64.6-Hardened).
 
 ---
 
@@ -233,8 +233,8 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.5 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.6 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
-*Audit Precision Hardened: 2026-05-14. v3.64.1 MILLISECOND PRECISION & MULTI-ASSET.*
-*Anti-Negligence Hook Activated: 2026-05-18. v3.64.5 AUTOMATED SCANNING.*
+*Audit Precision Hardened: 2026-05-14. v3.64.6 MILLISECOND PRECISION & MULTI-ASSET.*
+*Anti-Negligence Hook Activated: 2026-05-18. v3.64.6 AUTOMATED SCANNING & RTK INTEGRATED.*

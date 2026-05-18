@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.4-Hardened)
-Last Update: 2026-05-18 (21:40)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.6-Hardened)
+Last Update: 2026-05-18 (22:15)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -78,6 +78,7 @@ e:\Disco Gacha\Disco_DailyApp
 │   │   ├── robust_sync.cjs      # Clean-Pipe Sync Engine (v3.43.0)
 │   │   └── sync_vercel_all.cjs  # Multi-Project Sync Trigger
 │   ├── deployments/         # CI/CD and deploy helpers
+│   │   └── install_rtk.cjs  # 🆕 Local RTK CLI installer (v3.64.6)
 │   └── database/            # DB Schema & Dump tools
 │
 ├── verification-server/     # 🤖 Telegram Bot & Off-chain verification
@@ -205,4 +206,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-17T09:42:00+00:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.64.0 LOCKED.*
+*Last Updated: 2026-05-18T22:15:00+00:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.64.6 LOCKED.*

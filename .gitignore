@@ -22,6 +22,7 @@ typechain-types/
 coverage/
 coverage.json
 stats.html
+.bin/
 
 # === HARDHAT ===
 hardhat.config.js.backup
