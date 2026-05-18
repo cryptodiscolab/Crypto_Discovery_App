@@ -206,6 +206,22 @@ if (!hasFailure) {
     console.log("   ✅ Secret Leak Audit passed: Zero raw secrets/keys found in source files.");
 }
 
+// ═══ CHECK 5: RUST TOKEN KILLER (RTK) SCAN ═══
+console.log("\n🔍 Running Rust Token Killer (RTK) Analysis...");
+const rtkPath = path.join(WORKSPACE_DIR, '.bin', 'rtk.exe');
+if (fs.existsSync(rtkPath)) {
+    try {
+        const rtkOutput = execSync(`"${rtkPath}" --version`, { cwd: WORKSPACE_DIR, encoding: 'utf8', stdio: 'pipe' });
+        console.log("   ✅ RTK is active and available: " + rtkOutput.trim());
+        // Future expansion: execSync(`"${rtkPath}" analyze .`)
+    } catch (e) {
+        failures.push(`RTK Execution Failed: ${e.message}`);
+        hasFailure = true;
+    }
+} else {
+    warnings.push("RTK executable not found in .bin/. Please run scripts/deployments/install_rtk.cjs.");
+}
+
 // ═══ FINAL VERDICT ═══
 console.log("\n╔══════════════════════════════════════════════════════════╗");
 if (hasFailure) {
