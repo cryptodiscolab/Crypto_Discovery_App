@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.2-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.4-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.2-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.2).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.4-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.4).
 
 ---
 
@@ -31,6 +31,20 @@ Before responding to ANY request, read these files IN ORDER:
 To prevent supply-chain malware injection, ALL installations MUST follow these commands:
 - **`npm install --ignore-scripts`** — For general dependency addition.
 - **`npm ci`** — For clean, reproducible, and script-safe environment setup.
+
+---
+
+### ⚠️ SUPREME SOURCE OF TRUTH (SOT) HIERARCHY
+To prevent documentation conflict and context fragmentation, all AI agents and models MUST strictly resolve contradictions using this deterministic, absolute command chain:
+
+1. **On-Chain Smart Contracts** — The final and absolute execution state on the Base Network.
+2. **Supabase Dynamic Settings** — Dynamic variables stored in `system_settings` and `point_settings` tables (Source of Truth for rewards, caps, and parameters).
+3. **Product Requirements (PRD)** — Master SOT docs located in the `PRD/` folder (`PRD/DISCO_DAILY_MASTER_PRD.md`, `PRD/ACCOUNTANT_LEDGER_SOT.md`, etc.).
+4. **Supreme Codebase Protocols** — `.cursorrules` and `CLAUDE.md`.
+5. **Design Guidelines** — `DESIGN.md` and `.agents/skills/design-protocol/SKILL.md`.
+6. **Local Code Documentation** — Relative `SKILL.md` registries and source code comments.
+
+*Rule: If a rule in `DESIGN.md` contradicts `PRD/DISCO_DAILY_MASTER_PRD.md`, the PRD overrides. If an instructions/value in `.cursorrules` conflicts with the live Supabase database settings or contracts, the database/contracts override. There is no blend or compromise.*
 
 ---
 
@@ -217,7 +231,7 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.2 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.3 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
-*Audit Precision Hardened: 2026-05-14. v3.64.2 MILLISECOND PRECISION & MULTI-ASSET.*
+*Audit Precision Hardened: 2026-05-14. v3.64.3 MILLISECOND PRECISION & MULTI-ASSET.*

@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.2-Hardened)
-Last Update: 2026-05-18 (18:15)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.4-Hardened)
+Last Update: 2026-05-18 (21:40)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -41,12 +41,16 @@ e:\Disco Gacha\Disco_DailyApp
 │   │   ├── vercel-react-view-transitions # Smooth UI animations
 │   │   ├── web-design-guidelines     # UI/UX Accessibility
 │   │   └── xp-reward-lifecycle       # XP Accrual & Sync logic
-│   ├── workflows/           # Automated workflow definitions (.md)
+│   ├── MASTER_COGNITIVE_MAP.md # Consolidated Master Cognitive Map SOT
+│   ├── MASTER_COGNITIVE_MAP.html # Viewable Rendered Cognitive Map
+│   ├── workflows.md         # Consolidated Master Workflows SOT
+│   ├── workflows.html       # Viewable Rendered Workflows
 │   ├── gemini.md            # operational constitution for Gemini
 │   ├── VERCEL_ECOSYSTEM_SOT.md # Vercel UI & CLI standards
 │   └── WORKSPACE_MAP.md     # This file (Canonical Nav)
 │
 ├── Raffle_Frontend/         # 💻 Main Web Application (Vite + React)
+│   ├── Agen Work Report/   # Consolidated agent work reports
 │   ├── api/                 # Serverless Backend Bundles (Vercel)
 │   │   ├── database.types.ts # 🆕 Canonical Supabase Schema (Generated)
 │   │   ├── types.ts          # 🆕 Central Entity Interfaces (Hardened)
@@ -84,10 +88,10 @@ e:\Disco Gacha\Disco_DailyApp
 │   └── contracts/           # Solidity source code (DailyAppV13, MasterX, Raffle)
 │
 └── PRD/                     # 📄 Product Requirements Documentation
-    ├── DISCO_DAILY_MASTER_PRD.md   # Source of Truth
-    ├── FEATURE_WORKFLOW_SOT.md     # Feature Workflow & Sync SOT
-    ├── TASK_FEATURE_WORKFLOW.md    # 🎯 Task Feature E2E Workflow (Complete SOT)
-    └── DISCO_DAILY_MASTER_PRD.html # Viewable Design Doc
+    ├── DISCO_DAILY_MASTER_PRD.md   # Consolidated Supreme Source of Truth
+    ├── DISCO_DAILY_MASTER_PRD.html # Viewable Rendered Design Doc
+    ├── ROADMAP.html                # Interactive Product Roadmap
+    └── _archive/                   # Historical snapshots of versioned SOTs
 ```
 
 ---

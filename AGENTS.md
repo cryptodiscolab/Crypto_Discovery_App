@@ -1,4 +1,4 @@
-# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.2-Hardened)
+# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.5-Hardened)
 # Crypto Discovery App | Codex (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Codex sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.2-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.2).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.5-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.5).
 
 ---
 
@@ -31,6 +31,20 @@ Before responding to ANY request, read these files IN ORDER:
 To prevent supply-chain malware injection, ALL installations MUST follow these commands:
 - **`npm install --ignore-scripts`** — For general dependency addition.
 - **`npm ci`** — For clean, reproducible, and script-safe environment setup.
+
+---
+
+### ⚠️ SUPREME SOURCE OF TRUTH (SOT) HIERARCHY
+To prevent documentation conflict and context fragmentation, all AI agents and models MUST strictly resolve contradictions using this deterministic, absolute command chain:
+
+1. **On-Chain Smart Contracts** — The final and absolute execution state on the Base Network.
+2. **Supabase Dynamic Settings** — Dynamic variables stored in `system_settings` and `point_settings` tables (Source of Truth for rewards, caps, and parameters).
+3. **Product Requirements (PRD)** — Master SOT docs located in the `PRD/` folder (`PRD/DISCO_DAILY_MASTER_PRD.md`, `PRD/ACCOUNTANT_LEDGER_SOT.md`, etc.).
+4. **Supreme Codebase Protocols** — `.cursorrules` and `CLAUDE.md`.
+5. **Design Guidelines** — `DESIGN.md` and `.agents/skills/design-protocol/SKILL.md`.
+6. **Local Code Documentation** — Relative `SKILL.md` registries and source code comments.
+
+*Rule: If a rule in `DESIGN.md` contradicts `PRD/DISCO_DAILY_MASTER_PRD.md`, the PRD overrides. If an instructions/value in `.cursorrules` conflicts with the live Supabase database settings or contracts, the database/contracts override. There is no blend or compromise.*
 
 ---
 
@@ -154,6 +168,8 @@ Strictly enforce `SECURITY INVOKER` for all public-facing database views. Revoke
 All high-fidelity activity logging MUST use 23-character ISO-8601 timestamps (YYYY-MM-DDTHH:MM:SS.mmmZ) to ensure millisecond-level deduplication and prevent event collapsing during high-frequency transactions. (v3.63.7-Hardened).
 ## Rule 76 — MULTI-ASSET UI PARITY MANDATE.
 All financial UI components (Missions, Sponsorships, Claims) MUST handle Native ETH, WETH, and USDC dynamically. This includes fetching allowed tokens from the database, handling 18/6 decimal normalization, and displaying accurate currency symbols. Hardcoding "USDC" or "ETH" labels is strictly forbidden. (v3.63.7-Hardened).
+## Rule 77 — AGENT ANTI-NEGLIGENCE HOOK MANDATE.
+Agents MUST execute the verification hook via `node scripts/audits/agent_anti_negligence_hook.cjs` before finalizing ANY task, code changes, or commits. Any file containing `[dotenv]`, tip logs, duplicate artifacts, secret leaks, or unregistered documents in `WORKSPACE_MAP.md` will trigger an immediate block. Self-audit is mandatory. (v3.64.5-Hardened).
 
 ---
 
@@ -217,7 +233,8 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.1 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.5 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
 *Audit Precision Hardened: 2026-05-14. v3.64.1 MILLISECOND PRECISION & MULTI-ASSET.*
+*Anti-Negligence Hook Activated: 2026-05-18. v3.64.5 AUTOMATED SCANNING.*

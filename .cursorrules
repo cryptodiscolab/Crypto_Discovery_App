@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.2-Hardened)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.5-Hardened)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -36,6 +36,23 @@ After reading, internally confirm:
 - [ ] Vercel 12-function limit understood
 
 > ❗ If you skip this step and start working without reading skills, **you are in Protocol Breach**.
+
+---
+
+### ⚠️ SUPREME SOURCE OF TRUTH (SOT) HIERARCHY
+To prevent documentation conflict and context fragmentation, all AI agents and models MUST strictly resolve contradictions using this deterministic, absolute command chain:
+
+1. **On-Chain Smart Contracts** — The final and absolute execution state on the Base Network.
+2. **Supabase Dynamic Settings** — Dynamic variables stored in `system_settings` and `point_settings` tables (Source of Truth for rewards, caps, and parameters).
+3. **Product Requirements (PRD)** — Master SOT docs located in the `PRD/` folder (`PRD/DISCO_DAILY_MASTER_PRD.md`, `PRD/ACCOUNTANT_LEDGER_SOT.md`, etc.).
+4. **Supreme Codebase Protocols** — `.cursorrules` and `CLAUDE.md`.
+5. **Design Guidelines** — `DESIGN.md` and `.agents/skills/design-protocol/SKILL.md`.
+6. **Local Code Documentation** — Relative `SKILL.md` registries and source code comments.
+
+*Rule: If a rule in `DESIGN.md` contradicts `PRD/DISCO_DAILY_MASTER_PRD.md`, the PRD overrides. If an instructions/value in `.cursorrules` conflicts with the live Supabase database settings or contracts, the database/contracts override. There is no blend or compromise.*
+
+---
+
 ### Section 20.1: OpenClaw Local Installation
 - **Binary Path**: `C:\Users\chiko\AppData\Roaming\npm\openclaw.ps1`
 - **Ollama Model**: `OpenClaw:3.38.0` (Powered by `qwen2.5-coder`)
@@ -43,6 +60,16 @@ After reading, internally confirm:
 - **Mandate**: OpenClaw is the resident Security Auditor. All security-sensitive tasks (contract audits, secret checks, env validation) MUST prioritize the local `OpenClaw` model for absolute integrity.
 - v3.51.1: Fixed Dual Pipeline Routing (Social vs Claim).
 - v3.51.2: Implemented Self-Healing Claim Pipeline (Ghost Claim Recovery).
+
+---
+
+## 🟢 Work Report v3.64.3-Hardened: Hermes & LiteLLM Ecosystem Cleanout
+**Status**: ✅ IMPLEMENTED
+**Summary**: Purged LiteLLM and Hermes Agent installations from the WSL environment and project directory to reduce technical debt, while fully preserving all Freemodel and DeepSeek API keys in the `.env` configuration file.
+**Changes**:
+1. **WSL Environment**: Uninstalled the `litellm` uv tool (litellm and litellm-proxy binaries) and purged the `hermes-agent` installation and all related configurations/databases under `~/.hermes/` except for the system's `node` runtime.
+2. **Project Workspace**: Safely deleted the gitignored `.litellm/` configuration folder containing run scripts.
+3. **Docs**: Updated Implementation Summary, Master PRD, Workspace Map, and Ecosystem Protocols to record the cleanup and maintain pristine architecture records.
 
 ---
 
@@ -929,8 +956,13 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 - **NORMALIZATION**: Implementation MUST strictly follow the 18/6 decimal normalization standard (18 for ETH/WETH, 6 for USDC) using dynamic lookups from the `allowed_tokens` database table.
 - **SYMBOL RESOLUTION**: Currency symbols and labels MUST be resolved from metadata, never hardcoded. Use `formatUnits` and `parseUnits` from `viem` to handle conversions safely.
 
+## 61. AGENT ANTI-NEGLIGENCE HOOK MANDATE (v3.64.5-Hardened) 🛡️
+- **MANDATE**: Agents MUST execute the verification hook via `node scripts/audits/agent_anti_negligence_hook.cjs` before finalizing ANY task, code changes, or commits.
+- **ACTION**: Any file containing `[dotenv]`, tip logs, duplicate artifacts, secret leaks, or unregistered documents in `WORKSPACE_MAP.md` will trigger an immediate block. Self-audit is mandatory.
+
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.64.0-Hardened. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.64.0.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.64.5-Hardened. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.64.5.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
-*Audit Precision Hardened: 2026-05-14. v3.64.0 MILLISECOND PRECISION & MULTI-ASSET.*
+*Audit Precision Hardened: 2026-05-14. v3.64.5 MILLISECOND PRECISION & MULTI-ASSET.*
+*Anti-Negligence Hook Activated: 2026-05-18. v3.64.5 AUTOMATED SCANNING.*

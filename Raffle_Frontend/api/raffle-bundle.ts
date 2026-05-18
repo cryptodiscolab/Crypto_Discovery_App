@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { withMiddleware } from './_shared/middleware.js';
 import { verifyMessage } from 'viem';
 import {
     SUPABASE_URL,
@@ -86,7 +87,7 @@ async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promi
 // -----------------------------------------------------------------------------
 // MAIN HANDLER
 // -----------------------------------------------------------------------------
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
     const action = req.body?.action || req.query?.action;
 
     if (['claim-prize'].includes(action)) {
@@ -346,3 +347,5 @@ async function handleCampaignJoin(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: sanitizeError(error) });
     }
 }
+
+export default withMiddleware(handler);

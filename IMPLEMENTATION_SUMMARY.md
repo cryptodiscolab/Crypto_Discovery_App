@@ -6,6 +6,17 @@
 
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
+## 🟢 v3.64.4-Hardened (Supreme Source of Truth (SOT) Hierarchy Consolidation)
+- **Supreme SOT Hierarchy**: Inserted a clear, multi-tiered hierarchy of command directly below the step confirmation block in `.cursorrules` and `CLAUDE.md`: (1) On-Chain Smart Contracts, (2) Supabase Dynamic Settings, (3) Product Requirements (PRD), (4) Supreme Protocols, (5) Design Guidelines, (6) Local Code/Skills.
+- **Deterministic Resolution**: Established absolute precedence parameters to resolve potential guidelines/instruction conflicts, completely preventing model context fragmentation.
+- **Documentation Parity**: Synchronized all primary documentation blueprints (`.cursorrules`, `CLAUDE.md`, `PRD/DISCO_DAILY_MASTER_PRD.md`, `ROADMAP.md`, `WORKSPACE_MAP.md`) to version `v3.64.4-Hardened`.
+
+## 🟢 v3.64.3-Hardened (Hermes & LiteLLM Ecosystem Cleanout)
+- **WSL Footprint Decontamination**: Uninstalled the redundant Python `litellm` uv tool (litellm and litellm-proxy command-line binaries) and recursively purged all files and databases under the `~/.hermes/` installation directory in the WSL Linux runtime, reducing background CPU/storage overhead.
+- **Ecosystem Cleanup**: Removed the gitignored `.litellm/` directory from the repository root, deleting stale startup shell scripts and configuration maps.
+- **Config & Secret Integrity**: Safely preserved all critical `.env` environment variables including `DEEPSEEK_API_KEY` and Freemodel configs, ensuring zero interruption to the production-grade LLM verifier networks.
+- **Documentation Parity**: Synchronized `.cursorrules`, `CLAUDE.md`, `ROADMAP.md`, `WORKSPACE_MAP.md`, and PRD resources to match version `v3.64.3-Hardened` with complete forensic logs.
+
 ## 🟢 v3.64.2-Hardened (UGC Multi-Asset Dynamic Conversion & Fee Parity)
 - **Real-Time USD/USDC Conversion**: Enhanced the `stats` calculation hook in `CreateMissionPage.tsx` to dynamically convert and track the USD equivalent values of `rewardPool` and `totalAmount` based on live price feeds.
 - **Dynamic Reward Per User Conversion Display**: Added dynamic real-time USD/USDC equivalent conversion displays underneath the reward-per-user input field if a non-USDC token (like Native ETH or WETH) is selected.
@@ -568,4 +579,16 @@ GET  /api/verify/health
 
 ---
 
-**Implementation Complete! 🎉 — Nexus v3.64.2 Hardened.**
+## 🟢 v3.64.5-Hardened (Ecosystem Hardening & Observability/Security Protection)
+- **Pre-commit Automated Anti-Negligence Hook**: Deployed an automated Git pre-commit hook mapping directly to `node scripts/audits/agent_anti_negligence_hook.cjs`. The system checks for dotenv log injections, temporary scripts/artifacts, workspace map alignment, and potential secret leaks prior to any commit, satisfying Rule 77 (Agent Anti-Negligence Hook Mandate).
+- **Workspace Map Integration**: Formally registered `Raffle_Frontend/Agen Work Report/` inside the canonical `WORKSPACE_MAP.md` mapping at line 52 to ensure proper multi-agent index structure and prevent technical debt.
+- **Smart Contract Automated CI**: Implemented the Hardhat compilation and unit test automated execution pipeline `.github/workflows/smart-contracts-ci.yml` that triggers on every push to enforce automated contract test validation.
+- **Sentry Integration Middleware**: Installed and integrated `@sentry/node` within a unified Serverless API Middleware wrapper at `/api/_shared/middleware.ts` to capture runtime exceptions and push telemetry data.
+- **Dynamic IP-based Rate Limiter**: Deployed an in-memory auto-pruning client rate-limiter inside the serverless middleware layer restricting clients to a max of 60 requests per minute to prevent Sybil spam.
+- **On-chain Replay-Attack Protection Guard**: Integrated transaction replay validation that queries the `user_activity_logs` table for incoming `tx_hash` values, immediately rejecting any duplicated transaction identifiers.
+- **Surgical API Injection**: Wrapped the core serverless handler entrypoints in `user-bundle.ts` and `raffle-bundle.ts` securely with `withMiddleware` to activate Sentry telemetry, rate-limiting, and replay guards across all routes.
+- **Ecosystem Build Integrity**: Confirmed 100% type safety and perfect ESM resolution under ESM `"type": "module"` with an automated `npx tsc --noEmit` check passing with **Exit Code: 0**.
+
+---
+
+**Implementation Complete! 🎉 — Nexus v3.64.5 Hardened.**

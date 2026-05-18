@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { withMiddleware } from './_shared/middleware.js';
 import type { Database } from './_shared/database.types.js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { verifyMessage, keccak256, encodePacked } from 'viem';
@@ -184,7 +185,7 @@ async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promi
 // -----------------------------------------------------------------------------
 // MAIN HANDLER
 // -----------------------------------------------------------------------------
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
     const action = req.body?.action || req.query?.action;
 
     if (['xp', 'sync-pool-claim'].includes(action)) {
@@ -1968,3 +1969,5 @@ async function handleSocialStatus(req: VercelRequest, res: VercelResponse) {
         });
     } catch (e: unknown) { return res.status(500).json({ error: 'Internal Error', isVerified: false }); }
 }
+
+export default withMiddleware(handler);

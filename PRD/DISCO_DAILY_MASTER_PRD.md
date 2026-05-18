@@ -1,4 +1,1787 @@
-# CRYPTO DISCO DAILY APP - MASTER PRD (v3.64.2-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.4-Hardened)
+
+- **Ecosystem Version:** v3.64.4-Hardened
+- **Last Updated:** 2026-05-18T19:15:00+07:00
+- **Author:** Antigravity (Lead Blockchain Architect)
+- **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
+- **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+---
+
+## 📋 Table of Contents
+1. [Supreme Source of Truth (SOT) Hierarchy](#1-supreme-source-of-truth-sot-hierarchy)
+2. [Section I: Supreme Core Technical Specifications](#section-i-supreme-core-technical-specifications)
+   - [Chapter A: Feature Workflows & State Machine SOT](#chapter-a-feature-workflows--state-machine-sot)
+   - [Chapter B: Task Feature E2E Workflow & Implementation SOT](#chapter-b-task-feature-e2e-workflow--implementation-sot)
+   - [Chapter C: Accountant Ledger & Financial Balances SOT](#chapter-c-accountant-ledger--financial-balances-sot)
+   - [Chapter D: Swap & Profit Engine Specification](#chapter-d-swap--profit-engine-specification)
+3. [Section II: Chronological Development Log](#section-ii-chronological-development-log)
+
+---
+
+## 1. Supreme Source of Truth (SOT) Hierarchy
+
+To prevent documentation conflict and context fragmentation, all AI agents and models MUST strictly resolve contradictions using this deterministic, absolute command chain:
+
+1. **On-Chain Smart Contracts** — The final and absolute execution state on the Base Network.
+2. **Supabase Dynamic Settings** — Dynamic variables stored in `system_settings` and `point_settings` tables (Source of Truth for rewards, caps, and parameters).
+3. **Product Requirements (PRD)** — Master SOT docs located in the `PRD/` folder (`PRD/DISCO_DAILY_MASTER_PRD.md`, `PRD/ACCOUNTANT_LEDGER_SOT.md`, etc.).
+4. **Supreme Codebase Protocols** — `.cursorrules` and `CLAUDE.md`.
+5. **Design Guidelines** — `DESIGN.md` and `.agents/skills/design-protocol/SKILL.md`.
+6. **Local Code Documentation** — Relative `SKILL.md` registries and source code comments.
+
+---
+
+# Section I: Supreme Core Technical Specifications
+
+## Chapter A: Feature Workflows & State Machine SOT
+- **Specification:** Feature Workflows & State Machine SOT
+- **Version:** v3.63.4
+- **Date Stamp:** 2026-05-11T18:30:00+07:00
+- **Author:** Antigravity (Lead Blockchain Architect)
+- **Status:** HARDENED SOT
+
+Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
+
+---
+
+## 🏛️ 0. Active Contract Index & Network Registry (DO NOT DEVIATE)
+Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegang ekosistem berjalan:
+
+| Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
+| :--- | :--- | :--- | :--- |
+| **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
+| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | 09 Mei 2026 | Satellite Tugas Multi-Token (USDC/ETH). Decimal-Aware (6-dec base). |
+| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Legacy Satellite. Masih didukung untuk klaim reward lama. |
+| **Raffle Manager** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
+| **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
+| **Safe Multisig** | `0xAfB7C7E711418EFD744f74B4D92c2b91B9668fAa` | - | Treasury Pusat & End-point Penarikan. |
+
+> [!WARNING]
+> Mismatched Contract Alert: Jika API atau interaksi on-chain `revert`, hal pertama yang harus dicek oleh Sentinel Agent adalah apakah `.env` (`VITE_MASTER_X_ADDRESS_SEPOLIA`, dll) sudah persis menunjuk ke alamat tabel di atas.
+
+---
+
+## 🔑 1. Login & Identity Management Flow
+
+### 1.1 Social Connect (Neynar / Web2)
+- **Tujuan**: Menghubungkan identitas sosial user tanpa gesekan.
+- **Workflow**:
+  1. User klik "Connect Farcaster/X/TikTok".
+  2. Neynar SIWE memvalidasi ownership akun sosial tersebut.
+  3. Frontend mengirim `authData` ke `/api/user-bundle?action=update-profile`.
+  4. Backend memverifikasi payload (EIP-191).
+  5. **Identity Lock**: Backend mengecek apakah `fid`/`twitter_id` sudah tertaut ke `wallet_address` lain (Sybil Prevention).
+  6. Jika lolos, Supabase membuat/memperbarui baris di `user_profiles`.
+
+### 1.2 Wallet Connect (Web3)
+- **Tujuan**: Autentikasi wallet ke ekosistem Base Sepolia.
+- **Workflow**:
+  1. (A) **Auto-Login via Platform**: Jika `useEnvironment` mendeteksi `isFarcaster` atau `isBaseApp`, Wagmi akan melakukan `connect` otomatis ke connector spesifik (`injected` untuk Farcaster, `coinbaseWalletSDK` untuk Base App) dan langsung menembak `signIn()` ke Backend (SIWE).
+  2. (B) **Manual Login**: Jika browser Web biasa, user harus klik "Connect Wallet".
+  3. `Web3Provider.jsx` memastikan `window.ethereum` tidak crash oleh konflik ekstensi.
+  4. Frontend membaca `chainId`. Jika salah jaringan, memunculkan prompt pindah ke Base Sepolia (84532).
+  5. Jika dompet terhubung + social terhubung = Akun siap menerima XP dan tier.
+
+---
+
+## 🎁 2. Daily Claim Workflow (The "Optimistic Trust" Model)
+
+Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi kegagalan RPC (Remote Procedure Call).
+
+### 2.1 The Claim Execution
+- **Triggers**: User klik "Claim" pada `DailyClaimModal`.
+- **Pre-Check (Frontend)**: `ProfilePage.jsx` membaca **HANYA** dari `userData.lastDailyBonusClaim` (on-chain) untuk menghitung sisa waktu cooldown (Single Source of Truth).
+- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D`).
+- **Success**: MetaMask/Wallet mengembalikan `tx_hash`.
+
+### 2.2 The Backend Synchronization (Hardened v3.61.0)
+- **Triggers**: Setelah `tx_hash` didapat, Frontend memanggil `/api/user-bundle?action=xp`.
+- **Workflow (Backend `handleXpSync` - 100% TS)**:
+  1. **Validation**: Backend menerima `tx_hash`. Menggunakan strict interface `UserBundlePayload`.
+  2. **Security**: Implementasi `unknown` error guard pattern untuk mencegah kegagalan fatal pada RPC lag.
+  3. **RPC Read (Lag-Prone)**: Backend mencoba membaca `readContract(userStats)`.
+  3. **Optimistic Trust Fallback**:
+     - Jika `tx_hash` ada, TETAPI `readContract` gagal/timeout.
+     - ATAU jika `tx_hash` valid tapi XP On-Chain belum berubah (RPC lag `xpDelta === 0`).
+     - **Maka**: Backend mengabaikannya dan SECARA PAKSA menambahkan `standardDailyReward` ke Supabase.
+  4. **Database Write**: `user_profiles.total_xp` di-update dengan nilai baru.
+  5. **Activity Log**: Ditulis ke `user_activity_logs` dengan keterangan Daily Claim.
+
+### 2.3 Post-Claim Frontend Refresh
+- Frontend menunggu secara eksplisit selama **1.5 detik** sebelum memanggil `refetch()`.
+- Tujuannya: Agar Supabase memiliki waktu meng-update SQL Views (`v_user_full_profile`).
+
+---
+
+## 🏆 3. Leaderboard & Database View Synchronization
+
+Leaderboard bergantung pada kueri database yang efisien, bukan RPC blockchain agar bisa merender ribuan user seketika.
+
+### 3.1 Leaderboard Read Flow
+- **Data Source**: Menggunakan tabel view `v_user_full_profile`.
+- **Mechanism**:
+  1. User mengunjungi halaman `/leaderboard`.
+  2. Frontend men-fetch data API rank.
+  3. Data yang di-return adalah hasil agregasi `user_profiles` (untuk Avatar, Bio, XP) yang sudah langsung terupdate setelah Daily Claim selesai.
+- **Rules**: 
+  1. Dilarang me-loop panggil `MasterX` untuk mengambil ranking user, semuanya harus via database `user_profiles.total_xp`.
+  2. **SBT-Gating Mandate (v3.59.2)**: User hanya akan ditampilkan di leaderboard jika memiliki NFT SBT di on-chain. Integritas ini dijaga oleh fungsi SQL `compute_leaderboard_tiers` yang melakukan join terhadap status minting.
+
+### 3.2 Dua Jalur XP Sync (PENTING — Jangan Regress!)
+
+Ada **dua jalur berbeda** yang mengupdate `user_profiles.total_xp`. Agen HARUS memahami perbedaannya:
+
+| Jalur | Sumber XP | Trigger Backend | Cara Update DB |
+|-------|-----------|-----------------|----------------|
+| **On-Chain** | `claimDailyBonus()` di DailyApp contract | `/api/user-bundle?action=xp` | Baca `readContract(userStats)` → upsert `total_xp` |
+| **Off-Chain** | Task dari tabel `daily_tasks` (Supabase) | `Verification-Server` → `tasks-bundle.js` | `fn_increment_xp(wallet, xp)` RPC langsung |
+
+> [!IMPORTANT]
+> **`tasks-bundle.js` (`handleClaim`, `handleSocialVerify`)** WAJIB memanggil `supabaseAdmin.rpc('fn_increment_xp', ...)` setelah setiap successful insert ke `user_task_claims`. Tanpa ini, XP tidak akan pernah muncul di leaderboard untuk off-chain tasks.
+
+> [!WARNING]
+> Database **tidak memiliki trigger otomatis** yang mengagregasi `user_task_claims → user_profiles.total_xp`. Hanya ada `trg_referral_bonus`. Jangan berharap XP tersinkron secara pasif.
+
+---
+
+## 🏅 4. Tier Rank Recalculation (Database Driven)
+
+Setelah XP didapat dari Daily Claim atau Social Tasks, sistem harus menentukan apakah Tier/Rank user berubah. **Tier harus dihitung berdasarkan Database, bukan menunggu on-chain.**
+
+### 4.1 Real-Time Tier Update Flow
+- **Workflow** di dalam `/api/user-bundle?action=xp`:
+  1. Setelah backend selesai menambahkan XP (misal: total menjadi 12,000 XP).
+  2. Backend melakukan **query asinkron langsung ke tabel `sbt_thresholds`** di Supabase (diurutkan descending berdasarkan `xp_required`).
+  3. Sistem mencari Tier tertinggi dimana `total_xp >= xp_required`.
+  4. Jika "Fan" (10,000 XP) terpenuhi, backend otomatis mengupdate kolom `tier` di `user_profiles` menjadi "Fan".
+- **Result**: Saat user pindah ke Leaderboard/Profile, Tier mereka langsung "Fan", tanpa perlu menunggu data dari smart contract.
+
+---
+
+## 🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint) — v3.56.4
+Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersifat **Soulbound** dan **Sequential**.
+
+### 5.1 The Upgrade Execution
+- **Triggers**: UI memunculkan tombol "Mint / Upgrade" jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.
+- **Rules (Mandatory)**:
+    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV13` akan me-revert transaksi jika `tier != currentTier + 1`.
+    2. **Soulbound Mandate**: NFT SBT bersifat **Non-Transferable**. Setiap upaya transfer antar wallet (kecuali mint/burn) akan di-revert oleh kontrak.
+- **Workflow**:
+    1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 4 syarat: `hasTotalXP` (DB), `hasOnChainXP` (MASTER_X), `hasEnoughETH` (balance), dan `!isSoldOut` (DAILY_APP nftConfigs).
+    2. **Cost Transparency**: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.
+    3. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.
+    4. **Minting**: Frontend memanggil `mintNFT(tierId, mintPrice)` dari `useNFTTiers` hook — yang memanggil `DAILY_APP.mintNFT()`. 
+    5. **On-Chain Enforcement**: Kontrak memvalidasi urutan tier dan membakar XP yang sesuai.
+    6. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
+    7. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
+    8. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas.
+
+> [!WARNING]
+> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Gunakan `useNFTTiers.mintNFT(id, price)` yang memanggil `DAILY_APP.mintNFT()`.
+
+---
+
+## 🚦 6. Definisi "Healthy State" Ekosistem (CHECKLIST)
+
+Setiap saat fitur baru dibangun, Ekosistem ini dianggap sehat jika memenuhi seluruh kriteria berikut:
+1. [ ] **Zero Hardcode**: Tidak ada Contract Address statis di `.js` atau `.jsx` Frontend. Semuanya dibaca lewat Proxy ABI dari import `.env`.
+2. [ ] **Dual Config Sync**: `WORKSPACE_MAP.md`, `.cursorrules`, dan `.env` menonjolkan alamat kontrak utama yang **SAMA**.
+3. [ ] **Single Source Cooldown**: `DailyClaimModal` menggunakan `userData[3]` (on-chain lastClaim), bukan database, untuk memverifikasi waktu tunggu.
+4. [ ] **Optimistic Sync**: XP dapat dikreditkan asalkan ada bukti `tx_hash` transaksi komplit, meskipun RPC provider (seperti Alchemy/Infura) belum up-to-date.
+5. [ ] **No Secrets Leak**: Proses git push lolos audit `gitleaks`.
+6. [ ] **Off-Chain XP Sync**: `tasks-bundle.js` memanggil `fn_increment_xp` setelah setiap off-chain task claim agar `total_xp` di `user_profiles` sinkron dengan leaderboard.
+7. [ ] **Two-Step Task Flow**: Off-chain tasks dengan `task_link` HARUS menampilkan "GO TO TASK" sebelum "CLAIM REWARD" dapat diaktifkan (v3.47.1).
+8. [ ] **Contract Call Parity**: Setiap contract write call HARUS menggunakan contract yang SAMA dengan sumber data read-nya. Mint data dari DAILY_APP → write ke DAILY_APP (v3.47.1).
+9. [ ] **SDK Error Visibility**: Setiap async SDK call (Li.Fi, Neynar, etc.) HARUS memiliki visible error state di UI jika gagal, bukan hanya console.error (v3.47.1).
+10. [ ] **Concurrent UI Performance**: Seluruh modal dengan hook berat (Wagmi, Li.Fi) WAJIB menggunakan `startTransition` untuk mencegah pemblokiran main thread (v3.56.0).
+11. [ ] **Zero-Hardcode Enforcement**: Seluruh input alamat kontrak di UI harus dinamis dan diambil dari Registry `CONTRACTS` atau `.env`.
+12. [ ] **Raffle Economics Configurability**: Admin harus dapat mengubah Rake, Claim Fee, dan Surcharge secara real-time melalui dashboard (v3.59.5).
+13. [ ] **Creator Revenue Accountability**: Setiap raffle harus mencatat porsi revenue kreator (80%) yang dapat ditarik secara mandiri melalui tombol "Withdraw Creator Earnings" (v3.59.5).
+14. [ ] **Strict API Typing (v3.61.0)**: Seluruh API serverless di `api/` harus menggunakan tipe data eksplisit dan error guarding yang resilien.
+15. [ ] **Admin Consolidation (v3.63.0)**: Seluruh modul administratif harus menggunakan komponen terpusat di `src/features/admin/` dan interface strict di `types/tasks.ts`.
+
+---
+
+## 🔁 7. End-to-End Synchronization Audit Workflow
+Jika Agen mendiagnosis kesalahan logika atau melakukan pembaruan kontrak/fitur, Agen WAJIB menjalankan alur audisi E2E berikut:
+
+1. **Contract Registry Check**:
+   - Cocokkan ABI dan Alamat di tabel pendaftaran atas dengan `.env`.
+   - Update `.cursorrules`, `WORKSPACE_MAP.md`, dan seluruh file definisi `SKILL` dengan Address terbaru tersebut.
+2. **Database Propagation**:
+   - Pastikan logic database-read bergantung pada Tables reguler (`user_profiles`) dan Views (`v_user_full_profile`). Jangan bergantung pada RPC state (lag-prone).
+3. **Environment Push**:
+   - Jika nilai variabel di `.env` berubah, eksekusi secara otomatis ke Production & Preview via skrip Node:
+     `node scripts/audits/sync-env.mjs`
+4. **Git Zero-Leak Boundary**:
+   - Semua perubahan harus di-commit bebas cache dan bebas credential API menggunakan `gitleaks`. 
+
+---
+
+## 🚦 8. Mainnet Phased Rollout & Global Kill Switch
+
+Transisi ekosistem berjalan menuju Mainnet dilindungi oleh sistem "Phased Rollout" (Feature Flags) untuk mencegah eksploitasi smart contract yang belum matang dan untuk memastikan adopsi bertahap. Fitur ini bersifat "Mute-by-Default" di Mainnet hingga dinyalakan via **Admin Dashboard** (`active_features` di tabel `system_settings`).
+
+### 8.1 Active Feature Check Logic
+1. **Frontend Read**: UI komponen seperti `SBTUpgradeCard` dan `CreateRafflePage` mengekstrak `ugc_payment` dan `sbt_minting` boolean langsung dari `PointsContext.jsx`.
+2. **UI Locking**: Jika boolean `false` (dan `import.meta.env.VITE_CHAIN_ID === '8453'`), semua tombol submit, form, dan mint function diblokir secara visual dan mekanik (`pointer-events-none`).
+3. **Backend Middleware Check**: `checkFeatureGuard(featureKey, chainId)` berjalan di setiap route serverless API (mis. `user-bundle.js`, `raffle-bundle.js`).
+    - Jika VITE_CHAIN_ID == 8453 dan flag `false`, otomatis mengembalikan `HTTP 403 Feature Disabled`.
+    - Mekanisme ini memastikan peretas *bypassing* UI React tidak akan bisa mengakses logika write di backend.
+
+### 8.2 Kill Switch Execution
+Semua status flag dikontrol melalui: **Admin UI -> System Settings -> Features Flags**. Setiap pembaruan yang dibroadcast WAJIB memerlukan *cryptographic signature verification* dari Dompet Administrator.
+
+
+## 💼 5. UGC Revenue Management & Transaction History Flow (v3.40.12)
+
+Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berputar pada dua siklus: Sistem verifikasi tugas dan History log.
+
+### 5.1 Admin Revenue Reconciliation (Manual Batching SOT)
+- **Revenue Sources**:
+  1. **UGC Missions (USDC)**: Sponsor membayar *Reward Pool + Listing Fee* via deposit Gnosis Multisig `VITE_SAFE_MULTISIG`.
+  2. **UGC Raffles (ETH)**: Sponsor mendeploy deposit + platform surcharge menggunakan smart contract `Raffle` native.
+- **Admin Reconciliation (UGCRevenueTab)**:
+  1. Frontend / UI mendeteksi seluruh Kampanye yang sudah lolos `is_verified: true` namun `is_revenue_allocated: false`.
+  2. Data disajikan dalam Tab **"Pending Allocation"**, memisahkan beban *Listing Fee* (untuk Platform) dan porsi *SBT Share* (untuk dikirim Admin secara *manual batch* ke `MasterX`).
+  3. Setelah Admin sukses mengeksekusi transfer dari Multisig Safe, tombol **"Mark Funded"** akan mengunci alokasi revenue tersebut.
+  4. Misi kemudian secara permanen pindah ke **"Allocation History"** dengan visual indikator `Funded (Emerald)` yang tidak bisa lagi diputarbalikkan.
+
+
+ ### 5.3 UGC Mission Creation Flow (Sponsor Side)
+ 1. **Input Reward Pool**: Sponsor menentukan jumlah reward dalam nominal ETH. UI secara otomatis mengonversi ke estimasi USDC.
+ 2. **UX Safeguard**: Tooltip info menjelaskan bahwa pembayaran aktual dilakukan dalam ETH (Native).
+ 3. **Batch Execution (EIP-5792)**: Tombol "CREATE" mengeksekusi batch call (Listing Fee USDC + Reward Pool ETH).
+ 4. **Resilient Tracking**: Sistem menggunakan `useCallsStatus` untuk memantau status bundle transaksi batch, mencegah UI hang saat menunggu konfirmasi dari provider (v3.45.0).
+ 
+ ### 5.2 Unified Activity Logs Tracking
+- Semua transaksi yang memengaruhi poin atau ekuitas user **WAJIB** terpusat di fungsi `logActivity` (di backend APIs). Frontend *ProfilePage* => `ActivityLogSection` mem-parse data log secara realtime dengan pembagian:
+- **XP Gains (ZAP)**: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.
+- **Purchases (SHOPPING CART)**: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan `raffle_buy_`.
+- **Rewards (ACCOMPLISHMENT)**: Pemenang undian Raffle / Airdrop khusus.
+- Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.
+
+
+
+## 🏛️ 9. XP Reward Lifecycle & Anti-Whale Economic Model (v3.41.2)
+
+Untuk menjaga nilai kelangkaan XP dan keadilan ekosistem jangka panjang, Crypto Disco menggunakan **The Nexus Hybrid Formula**. Semua perhitungan dilakukan secara **atomic** di level database dalam fungsi RPC `public.fn_increment_xp`.
+
+### 9.1 Rumus Perhitungan Utama
+`Final XP = MAX( 5, ROUND(Base_XP * G * I * U) )`
+
+| Variabel | Nama | Deskripsi & Rumus |
+| :--- | :--- | :--- |
+| **G** | **Global Multiplier** (Macro) | `1.5 / (1 + log10(Total_Users / 1000 + 1))` <br/> Menjaga inflasi saat populasi user bertambah besar. |
+| **I** | **Individual Multiplier** (Micro) | `MAX( 0.5, 1.0 - (User_XP / 20000) )` <br/> Melambatkan pemain lama (Whales) agar pemain baru bisa mengejar. |
+| **U** | **Underdog Bonus** | `1.1` *(+10%)* jika User Tier $\le$ Silver (Level 2). |
+| **5** | **Minimum Floor** | Hadiah terkecil yang bisa diterima user untuk menjamin kepuasan. |
+
+### 9.2 Filosofi Anti-Whale
+Sistem ini dirancang agar pemain Diamond (10,000+ XP) mendapatkan XP yang lebih sedikit untuk tugas yang sama dibanding pemain Bronze. Hal ini mencegah monopoli Leaderboard secara permanen.
+
+- **Sybil Resistance**: XP scaling membuat pembuatan banyak akun (botting) kurang efisien karena hadiah per akun mengecil seiring waktu (Individual Scaling).
+- **Early Incentives**: Pemain di fase awal aplikasi (< 1,000 user) mendapatkan bonus global hingga **1.5x lipat** untuk memicu pertumbuhan viral.
+
+### 9.3 Implementasi Teknis (Staff Rules)
+- **Constraint**: Dilarang menghitung XP di Frontend atau Backend (JavaScript/React).
+- **Execution**: Backend wajib mengambil `points_value` dari `point_settings` (sebagai `Base_XP`) lalu mengirimkannya secara mentah ke RPC `fn_increment_xp(p_wallet, p_amount)`.
+- **Sync Parity**: Hasil akhir XP di database harus langsung tercermin di `v_user_full_profile`.
+
+---
+
+## 🏛️ 10. Referral Growth Loop v2 (Vesting & Dividends)
+
+Transformasi dari "Instant Reward" ke "High-Integrity Growth".
+
+### 10.1 Pendaftaran & Tracking
+1. New User men-download/akses via Referral Link.
+2. Link disimpan di `localStorage` dan dikirim ke `/api/user-bundle` saat login pertama.
+3. Backend mencatat `referred_by` di `user_profiles`. **Tidak ada XP yang diberikan secara instan.**
+
+### 10.2 Milestone Reward (Vesting)
+1. User yang diajak melakukan aktivitas (Claim Daily/Tasks).
+2. Fungsi `fn_increment_xp` memantau akumulasi XP user tersebut.
+3. Saat `total_xp >= 500`:
+   - Sistem secara otomatis memberikan 50 XP ke Referrer.
+   - Kolom `referral_bonus_paid` di-set menjadi `true` untuk mencegah repeat.
+   - Aktivitas dicatat sebagai `REFERRAL_VESTING`.
+
+### 10.3 Passive Dividend (Scaling)
+1. Setiap kali user yang diajak mendapatkan XP > 0:
+   - Referrer (Tier 1) otomatis mendapatkan 10% x XP tersebut.
+   - Aktivitas dicatat sebagai `REFERRAL_DIVIDEND` ("Nexus Growth Dividend from {user}").
+   - Logic ini berjalan secara rekursif di Postgres untuk menjamin integritas.
+
+---
+
+## 🏛️ 11. Base Social Verification (Identity Link)
+
+Integrasi Basename untuk eliminasi bot dan standardisasi identitas on-chain.
+
+### 11.1 Link Identity Flow
+1. User mengunjungi Profil -> Klik "LINK BASE SOCIAL".
+2. Frontend memanggil `/api/user-bundle?action=sync-base-social`.
+3. Backend melakukan reverse resolution via viem/RPC (`0xC697...`).
+4. Jika Basename ditemukan:
+   - `user_profiles.base_username` di-update.
+   - `is_base_social_verified` di-set menjadi `true`.
+   - Nama user di dashboard berubah menjadi Basename.
+
+### 11.2 Task Gate (Social Guard)
+1. Admin menandai tugas dengan flag `is_base_social_required = true`.
+2. Frontend `UnifiedDashboard` mengevaluasi profil user.
+3. Jika tugas butuh verifikasi tapi user belum link:
+   - Tombol "Claim" di-replace dengan "LINK BASE".
+   - Status visual: `BASE REQ`.
+
+---
+### 11.3 Task Visibility & Nexus Metadata Mandate (v3.53.0)
+1. **Immediate Hiding**: Tasks that are `hasCompletedTask` or `hasClaimed` MUST be filtered out from the `TasksPage` UI.
+2. **Authoritative Expiry**: Tasks with an `expires_at` timestamp in the past MUST be filtered out from the UI. Daily tasks default to a 24-hour expiration from `created_at`.
+3. **Type-Safe Filtering**: When comparing task IDs (e.g., in `activeTasks.filter`), ALWAYS use `String()` conversion.
+4. **Nexus Parity Mandate**: Task and Raffle cards MUST display consistent metadata stamps:
+    - **Unique ID**: System traceability via `Hash` icon.
+    - **Creator Attribute**: Distinguish between ADMIN, USER (Address), or SYSTEM via `ShieldCheck` icon.
+    - **Created At & Expires At**: Explicit timestamps for urgency and historical transparency via `Clock` icon.
+    - **Dual Rewards**: Clear distinction between XP (Coins) and Token/USDC (Gift) rewards.
+5. **Verified Badge Branding**: All verified identities MUST display the **Base Blue** shield icon for premium signaling.
+
+---
+
+## 12. Task Feature E2E Workflow (Canonical Reference)
+
+> [!IMPORTANT]
+> Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
+> **`PRD/TASK_FEATURE_WORKFLOW.md`**
+
+Dokumen tersebut mencakup (15 section):
+1. Arsitektur tingkat tinggi (Mermaid diagram)
+2. Dual Task Pipeline (On-Chain vs Off-Chain)
+3. Smart Contract Registry & Functions (DailyApp V13.2)
+4. Database Schema (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs, fn_increment_xp)
+5. API Routing & Bundle Map (tasks-bundle.js handlers)
+6. On-Chain Task Workflow E2E (Sequence diagram)
+7. Off-Chain Task Workflow E2E (Sequence diagram)
+8. Social Verification Flow (EIP-191 + anti-fraud)
+9. XP Economy & Hybrid Formula (G × I × U)
+10. Identity Guard & Access Control Matrix
+11. Disappearing Task Mandate (v3.42.2)
+12. Partner Offers (Campaigns)
+13. Admin Task Management
+14. File Reference Map (14 files)
+15. Healthy State Checklist (14-point)
+
+**Semua modifikasi terhadap fitur Task WAJIB mematuhi alur yang tertera di dokumen tersebut.**
+
+## 🏛️ 13. Raffle Moderation & Refund Workflow (Protocol V2.1)
+Mekanisme pengamanan dana sponsor saat konten UGC tidak disetujui.
+
+### 13.1 Administrative Rejection
+- **Triggers**: Admin klik tombol "REJECT" pada `ModerationCenterTab.jsx`.
+- **Workflow**:
+  1. **On-Chain Refund**: Dashboard memanggil `cancelRaffle(raffleId)` di kontrak Raffle V2.1.
+  2. **Fund Recovery**: Kontrak memverifikasi `totalTickets == 0` dan mengirimkan kembali deposit ETH ke `sponsor`.
+  3. **Event**: Blockchain memancarkan `RaffleCancelled`.
+  4. **API Sync**: Setelah `tx_hash` didapat, Frontend memanggil `/api/user-bundle?action=reject-raffle`.
+  5. **DB Update**: Backend mencatat `cancellation_tx`, mengubah status raffle di Supabase, dan merekam aksi di `admin_audit_logs`.
+
+---
+
+## 👁️ 14. Lurah Sentinel & Sync State Architecture (v3.56.5)
+Arsitektur pemantauan ekosistem sekarang eksklusif berada di jaringan Vercel Serverless.
+
+### 14.1 Vercel Cron Override
+- **Lurah Cron**: Dijalankan via `/api/lurah-cron` (berdasarkan `vercel.json`). Menyimpan health check di tabel `system_health` dengan `service_key: lurah_ekosistem`.
+- **Legacy Ban**: Script PM2/Hardhat lokal seperti `sync-sbt.cjs` dan `sync-underdog.cjs` DILARANG digunakan lagi. Entry health lama mereka WAJIB dihapus dari `system_health`.
+
+### 14.2 Sync Events Staleness Protection
+- **Sync State**: Endpoint `/api/cron/sync-events` memantau jarak block on-chain dan off-chain di tabel `sync_state`.
+- **Catch-Up Mechanism**: Cron akan melakukan iterasi 2000 blocks per eksekusi. Jika `last_synced_block` tertinggal sangat jauh (mis. 14 hari), dilarang memaksa `sync_state` dengan limit ekstrem. Biarkan catch-up harian otomatis atau lakukan block reset terukur.
+
+---
+---
+
+## 🏛️ 15. UGC Multi-Action & All-or-Nothing Campaign Workflow (v3.57.0)
+
+Evolusi sistem misi UGC untuk mendukung kampanye multi-tugas yang lebih kompleks dan bernilai tinggi.
+
+### 15.1 Campaign Creation (Creator Side)
+1. **Multi-Action Input**: Creator memilih hingga 3 aksi (Follow, Like, Recast, dsb) dalam satu form.
+2. **URL Validation**: Frontend melakukan regex matching terhadap link berdasarkan platform yang dipilih (Warpcast, X, TikTok, IG).
+3. **Atomic Deployment**:
+   - `admin-bundle.js` menerima array `action_types`.
+   - Melakukan batch insert ke `daily_tasks` dimana setiap sub-tugas memiliki `onchain_id` yang sama (ID Kampanye).
+   - Status kampanye diaktifkan setelah verifikasi pembayaran sukses.
+
+### 15.2 Verification & Progress (User Side)
+1. **Grouping Logic**: `TasksPage.jsx` mem-fetch kampanye aktif dan sub-tugasnya, mengelompokkannya menggunakan komponen `UGCCampaignCard`.
+2. **Individual Verification**: User melakukan verifikasi sub-tugas satu per satu. Setiap sukses verifikasi akan mencatat record di `user_task_claims` namun BELUM memberikan reward XP/USDC.
+3. **Progress Tracking**: UI menampilkan indikator (misal: 1/3, 2/3) secara real-time.
+
+### 15.3 All-or-Nothing Reward Claim
+1. **Completion Trigger**: Saat progres mencapai 3/3 (atau N/N), tombol "CLAIM TOTAL REWARD" aktif di Pop-up Modal.
+2. **Final Verification (`claim-ugc-campaign`)**:
+   - Backend mengecek integritas seluruh sub-tugas yang terikat ke kampanye tersebut.
+   - Jika valid, backend mengeksekusi distribusi XP dan USDC secara atomik.
+   - Record `user_task_claims` untuk ID kampanye (sebagai parent) dibuat untuk menandai kampanye selesai secara permanen.
+3. **Social Sharing**: Setelah klaim, user disuguhi opsi sharing referal ke media sosial untuk memperkuat loop pertumbuhan.
+
+---
+
+## 🏛️ 16. Ecosystem Infrastructure Hardening & Zero-Hardcode Mandate (v3.59.1)
+
+Untuk menjamin skalabilitas dan mencegah *environmental drift* saat transisi antar network (Sepolia -> Mainnet), ekosistem Crypto Disco mewajibkan pemisahan mutlak antara logika aplikasi dan alamat infrastruktur.
+
+### 16.1 Zero-Hardcode ABI Registry
+- **Protocol**: File `src/lib/abis_data.txt` telah direfaktor untuk menghapus seluruh alamat kontrak statis.
+- **Marker**: Seluruh alamat digantikan dengan placeholder `[RESOLVED_VIA_ENV]`.
+- **Enforcement**: Frontend akan secara otomatis mengambil alamat dari `.env` (`VITE_*_ADDRESS`) dan me-map-nya ke ABI yang relevan. Jika variabel `.env` kosong, aplikasi akan gagal secara eksplisit (*fail-fast*), mencegah interaksi ke kontrak yang salah.
+
+### 16.2 Global Sync Protocol
+- **Trigger**: Setiap perubahan kontrak atau environment **WAJIB** diikuti dengan eksekusi `node scripts/sync/sync-all-envs.cjs`.
+- **Audit**: Jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan seluruh 13 poin integritas (termasuk Zero-Hardcode) terpenuhi.
+
+## 🏛️ 17. Ecosystem Hardening & Parity Audit Workflow (v3.59.2)
+
+Protokol untuk memastikan database dan blockchain tetap dalam sinkronisasi sempurna (Absolute Parity).
+
+### 17.1 Drift Detection
+- **Dashboard**: Akses via **Accountant Ledger -> Hardening Center**.
+- **Endpoint**: `/api/admin/parity-audit`.
+- **Logic**: Backend membandingkan `total_xp` (DB) vs `points` (On-chain) dan `tier` (DB) vs `currentTier` (On-chain) untuk Top 50 users.
+- **Threshold**: Deviasi > 1 XP dianggap sebagai *Drift* dan harus segera disinkronkan.
+
+### 17.2 Synchronization Procedure
+1. **Sync XP**: Mengirimkan transaksi batch ke `MasterX` untuk mengupdate poin on-chain sesuai nilai database.
+2. **Sync Tiers**: Memaksa pembaruan tier di blockchain jika status SBT user tidak sesuai dengan rank database.
+3. **NFT Metadata Sync**: Menggunakan `setTierURI` untuk memastikan Base URI NFT di kontrak DailyApp menunjuk ke link Pinata yang benar.
+
+### 17.3 Infrastructure Parity (v3.59.2 Hardening)
+- **Scope**: XP Rewards (Daily/Ref/Raffle), Tier Weights, and Revenue Shares.
+- **Workflow**:
+  1. **Detection**: Frontend `BlockchainConfigSection.jsx` secara otomatis memicu audit saat dimuat.
+  2. **Alerting**: Peringatan visual "DRIFT DETECTED" muncul jika parameter `system_settings` atau `activity_rewards` tidak sesuai dengan state kontrak.
+  3. **Atomic Sync**: Setiap pembaruan parameter wajib menggunakan alur `Chain TX` -> `Admin Signature` -> `DB Sync (BATCH_UPDATE_POINTS / SYNC_WEIGHTS)`.
+  4. **Emergency Recovery**: Tombol **Emergency Parity Sync** disediakan untuk memulihkan seluruh paritas konfigurasi secara massal.
+
+## 🏛️ 18. DailyApp V14 Multi-Token Sponsorship & Decimal Normalization (v3.59.3)
+
+Implementasi pengerasan infrastruktur untuk mendukung ekonomi multi-aset dengan normalisasi desimal otomatis.
+
+### 18.1 Multi-Token Reward Pool
+- **Storage**: Reward disimpan dalam mapping 2D `user => token => amount` di kontrak V14.
+- **Supported Tokens**: USDC (6-dec) dan Native ETH (18-dec) secara default. Token tambahan dapat diaktifkan via `setAllowedToken`.
+- **Claiming**: User melakukan klaim secara granular per-token melalui `claimRewards(tokenAddress)`.
+
+### 18.2 Decimal Normalization Protocol
+Untuk menjaga konsistensi parameter ekonomi (seperti `rewardPerClaim` dan `minRewardPoolValue`), V14 menggunakan **6-Decimal USDC Base** sebagai standar internal.
+- **Normalization Logic**:
+  - `ETH (18 dec)` -> Dibagi `10^12` -> `Normal (6 dec)`.
+  - `USDC (6 dec)` -> Tetap -> `Normal (6 dec)`.
+- **Validation**: Seluruh pengecekan threshold (min. deposit $5) dilakukan terhadap nilai yang sudah dinormalisasi ke 6-desimal.
+
+### 18.3 UI Persistence & Visibility Mandate
+- **Sponsored Task Cards**: Kartu tugas bersponsor tidak boleh disembunyikan HANYA karena status `hasCompletedTask`.
+- **Authoritative Condition**: Kartu harus tetap muncul selama `claimableRewards(user, token) > 0`. Ini memastikan user selalu memiliki akses ke tombol klaim hingga seluruh reward ditarik.
+
+## 🏛️ 19. Daily Goal Retention Loop (Milestone 3-Tasks Bonus) — v3.59.4
+Sistem insentif harian untuk memicu retensi pengguna melalui reward progresif dalam jendela waktu 24 jam.
+
+### 19.1 Daily Progress Tracking
+- **Data Source**: Menggunakan SQL View `v_user_daily_progress` yang memantau penyelesaian tugas di tabel `user_task_claims` dalam 24 jam terakhir.
+- **Milestone**: Target utama adalah penyelesaian **3 tugas** unik dalam satu siklus harian.
+- **UI Component**: `DailyGoalCard.jsx` menampilkan progress bar real-time (0/3, 1/3, dst) dan status klaim bonus.
+
+### 19.2 Automated Bonus Fulfillment
+- **Trigger**: Setiap kali user berhasil melakukan klaim tugas (`handleClaim` di `tasks-bundle.js`), sistem secara otomatis menjalankan `checkAndGrantDailyBonus`.
+- **Eligibility Check**:
+  1. Menghitung jumlah tugas yang diselesaikan hari ini.
+  2. Memeriksa apakah bonus harian untuk hari kalender tersebut sudah diberikan (mencegah double-claim).
+- **Fulfillment**:
+  - Jika `count >= 3` dan belum dapat bonus: Backend memanggil `fn_increment_xp` dengan porsi bonus (default: 50 XP).
+  - Aktivitas dicatat di `user_activity_logs` dengan kategori `REWARD` dan metadata `daily_bonus: true`.
+
+---
+
+## 🏛️ 20. Manual Accountant Ledger Sync Protocol (v3.59.4)
+Mekanisme pengamanan audit finansial untuk mengatasi keterbatasan cron serverless.
+
+### 20.1 On-Demand Blockchain Sync
+- **Trigger**: Tombol "Trigger Sync" di Admin Portal -> Accountant Ledger.
+- **Backend Action**: `accountant-sync` di `admin-bundle.js`.
+- **Workflow**:
+  1. Verifikasi Admin Signature.
+  2. Backend memproses event `RewardsClaimed` dan `SponsorshipRequested` dari blockchain.
+  3. Mengupdate metadata `sync_state` untuk melacak progress sinkronisasi.
+- **Result**: Data ledger terjamin mutakhir tanpa menunggu jadwal cron, sangat krusial sebelum melakukan audit saldo akhir atau penarikan treasury.
+
+---
+
+## 🏛️ 21. Raffle Platform Economics & Creator Withdrawal Flow (v3.59.5)
+
+Sistem ekonomi sirkular yang memberikan transparansi bagi admin dan insentif bagi kreator konten (sponsor).
+
+### 21.1 Admin Economic Controls
+- **Workflow**: Admin mengakses **Raffle Manager -> Settings**.
+- **Dynamic Parameters**: Admin dapat mengubah persentase fee yang langsung berdampak pada logika on-chain:
+  1. **Project Rake**: Potongan dari total penjualan tiket (Default: 20%).
+  2. **Claim Fee**: Biaya yang dibayar pemenang saat klaim hadiah (Default: 5%).
+  3. **Gas Surcharge**: Biaya tambahan untuk menutupi biaya callback randomness (Default: 10%).
+- **State Sync**: Perubahan pada dashboard memicu `setRaffleFees` di kontrak `CryptoDiscoRaffle.sol`.
+
+### 21.2 Creator Revenue Portal
+- **Visibility**: Kreator melihat kartu **"Your Earnings"** di dashboard mereka.
+- **Data Source**: On-chain balance yang dihitung dari 80% penjualan tiket (dikurangi rake platform).
+- **Execution**: 
+  1. Kreator klik tombol **"Withdraw Creator Earnings"**.
+  2. Kontrak mentransfer sisa saldo tiket secara atomik ke alamat kreator.
+  3. UI melakukan refetch saldo dan menampilkan histori penarikan di `ActivityLogSection`.
+
+### 16.3 Address Parity Hardening (v3.63.3)
+- **Mandate**: Seluruh pemanggilan `readContract` dan `writeContract` di level API Serverless WAJIB menggunakan resolver terpusat (`RAFFLE_ADDRESS`, `DAILY_APP_ADDRESS`) dari `constants.ts`.
+- **Enforcement**: Dilarang menggunakan `process.env` secara langsung di dalam logika bisnis handler untuk alamat kontrak. Seluruh dependensi alamat harus melalui proxy resolver yang mendukung `isMainnet` toggle.
+
+---
+*End of Source of Truth Document - Nexus v3.63.3 LOCKED.*
+
+---
+
+## Chapter B: Task Feature E2E Workflow & Implementation SOT
+- **Specification:** Task Feature E2E Workflow & Implementation SOT
+- **Version:** v3.63.5-Hardened
+- **Date Stamp:** 2026-05-12T10:00:00+07:00
+- **Author:** Antigravity (Lead Blockchain Architect)
+- **Status:** HARDENED SOT
+
+- **v3.63.5-Hardened**: Serverless API Stabilization & ESM Module Resolution. Resolved persistent 500 (`ERR_MODULE_NOT_FOUND`) errors in Vercel Node runtime by enforcing strict ESM resolution and segregating type imports. Updated all agent skills and protocols to v3.63.5-Hardened truth.
+- **v3.63.4**: Admin API Hardening & Parity Sync. Finalisasi hardening `admin-bundle.ts` dengan eliminasi residu hardcode `getEnv` untuk alamat kontrak, perbaikan import yang rusak (`constants.ts`), dan penyelarasan alamat Safe Multisig di `.env`.
+- **v3.63.3**: Zero-Hardcode Address Parity & Raffle Sync Fix. Resolusi kesalahan alamat kontrak pada `handleSyncUgcRaffle` (Raffle target), eliminasi hardcoded environment variables di `raffle-bundle.ts`, dan penyelarasan payload frontend `claimPrize`.
+- **v3.63.0**: Admin Architecture Consolidation & Technical Debt Liquidation. Unified `TaskManager` components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (`ActiveCampaignsSection`, `EconomyConfigSection`, etc.). Archival of legacy Python/SQL scripts.
+- **v3.61.0**: Serverless API Hardening & 100% TS Migration. Refaktor `user-bundle.ts`, `tasks-bundle.ts`, dan `admin-bundle.ts` ke strict TypeScript. Integrasi `database.types.ts` dan implementasi `unknown` error guard pattern.
+- **v3.59.5**: Raffle Admin Hardening & Platform Economics. Implementasi `AdminRaffleSettings` (Rake, Claim Fee, Surcharge), `CreatorEarningsCard` untuk penarikan revenue sponsor (80%), dan penegakan **Zero-Hardcode Mandate** pada seluruh form pembuatan raffle.
+- **v3.59.4**: Final Polish & Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added `daily_task_completion` reward keys.
+- **v3.59.3**: Multi-Token Sponsorship (V14) & Decimal-Aware Infrastructure. Implementasi DailyApp V14 dengan 6-decimal USDC base, reward mapping 2D (user => token => reward), dan perbaikan persistensi visibilitas SponsoredTaskCard.
+- **v3.59.2**: Ecosystem Hardening & Parity Audit. Implementasi **Hardening Center** di Accountant Ledger, penegakan **SBT-Gating** pada Leaderboard, dan integrasi **Parity Audit API** dengan Runtime ABI Guards.
+- **v3.59.1**: Ecosystem Infrastructure Hardening & Zero-Hardcode Sync. Refactor `abis_data.txt` untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.
+- **v3.58.0**: Lurah Ecosystem Hardening & Autonomous Agent Resiliency. Implementasi **Auto-Retry logic** pada RPC, heartbeat dinamis di `system_health`, dan eliminasi hardcoded addresses.
+- **v3.57.0**: Hardening UGC Mission Pipeline. Implementasi **Multi-Action Campaign selector**, **All-or-Nothing Reward Claiming**, dan **Grouped UI Components** (`UGCCampaignCard`). Validasi URL platform-aware.
+- **v3.56.4**: Hardened Multi-Agent Cognitive Sync. Implementasi **Lurah Brain (AI Filter)**, **Telegram Chat Memory**, dan **Sequential SBT Upgrade Mandate**. Penghapusan protokol "Izin Pemeliharaan" untuk agen otonom.
+- **v3.56.3**: Implementasi Raffle v2.1 Refund Protocol & OpenClaw Security Audit.
+
+---
+
+## 📋 Table of Contents
+1. [Arsitektur Tingkat Tinggi](#1-arsitektur-tingkat-tinggi)
+2. [Dua Jalur Tugas (Dual Task Pipeline)](#2-dua-jalur-tugas)
+3. [Smart Contract Registry & Functions](#3-smart-contract-registry--functions)
+4. [Database Schema (Supabase)](#4-database-schema-supabase)
+5. [API Routing & Bundle Map](#5-api-routing--bundle-map)
+6. [On-Chain Task Workflow (E2E)](#6-on-chain-task-workflow-e2e)
+7. [Off-Chain Task Workflow (E2E)](#7-off-chain-task-workflow-e2e)
+8. [Social Verification Flow](#8-social-verification-flow)
+9. [XP Economy & Hybrid Formula](#9-xp-economy--hybrid-formula)
+10. [Identity Guard & Access Control](#10-identity-guard--access-control)
+11. [Disappearing Task Mandate](#11-disappearing-task-mandate)
+12. [Partner Offers (Campaigns)](#12-partner-offers-campaigns)
+13. [Admin Task Management](#13-admin-task-management)
+14. [File Reference Map](#14-file-reference-map)
+15. [Healthy State Checklist](#15-healthy-state-checklist)
+16. [Self-Healing Claim Pipeline](#16-self-healing-claim-pipeline)
+17. [Concurrent UI Performance](#17-concurrent-ui-performance)
+18. [SBT Tier Integration Mandate](#18-sbt-tier-integration-mandate)
+19. [UGC Multi-Action & All-or-Nothing Campaign Workflow](#19-ugc-multi-action--all-or-nothing-campaign-workflow)
+20. [Zero-Hardcode Infrastructure Mandate](#20-zero-hardcode-infrastructure-mandate)
+21. [Absolute Parity & Hardening Audit Protocol](#21-absolute-parity--hardening-audit-protocol)
+
+---
+
+## 1. Arsitektur Tingkat Tinggi
+
+Fitur Task adalah inti dari engagement loop Crypto Disco. User menyelesaikan tugas (sosial, on-chain, atau harian) dan mendapatkan XP yang menggerakkan seluruh ekonomi tier dan reward.
+
+```mermaid
+graph TB
+    subgraph "🖥️ Frontend Layer"
+        TP["TasksPage.jsx"]
+        TL["TaskList.jsx<br/>(Off-Chain Tasks)"]
+        TR["TaskRow Component<br/>(On-Chain Tasks)"]
+        STC["SponsoredTaskCard<br/>(Grouped Missions)"]
+        OL["OffersList.jsx<br/>(Partner Campaigns)"]
+        SM["SwapModal.jsx<br/>(Quick Swap Engine)"]
+    end
+
+    subgraph "🔗 Hooks & Logic"
+        UV["useVerification.js<br/>(Social Verify Flow)"]
+        UVA["useVerifiedAction.js<br/>(Secure Claim Flow)"]
+        UC["useContract.js<br/>(On-Chain Read/Write)"]
+        DAL["dailyAppLogic.js<br/>(XP Award Bridge)"]
+    end
+
+    subgraph "⚡ API Layer (Vercel Serverless - Hardened v3.61.0)"
+        TB["tasks-bundle.ts<br/>handleClaim | handleVerify | handleSocialVerify"]
+        UB["user-bundle.js<br/>handleXpSync (On-Chain)"]
+        CB["campaigns.js<br/>handleJoin"]
+    end
+
+    subgraph "🔐 Security Layer"
+        VS["Verification Server<br/>(External Bridge)"]
+    end
+
+    subgraph "🗄️ Database (Supabase)"
+        DT["daily_tasks"]
+        UTC["user_task_claims"]
+        UP["user_profiles"]
+        PS["point_settings"]
+        UAL["user_activity_logs"]
+        FN["fn_increment_xp()<br/>(Hybrid Formula RPC)"]
+    end
+
+    subgraph "⛓️ Blockchain (Base Sepolia)"
+        DA["DailyApp V13.2<br/>0x81D6...4B5D"]
+        MX["MasterX<br/>0x9807...076c"]
+    end
+
+    TP --> TL & TR & STC & OL
+    TL -->|Claim| UVA -->|POST| VS
+    TR -->|doTask| UC -->|Write| DA
+    TR -->|Verify| UV -->|POST| VS
+    STC -->|claimRewards| DA
+    STC -->|XP Sync| UB
+    OL -->|Join| CB
+    SM -->|Swap Quote| LS[Li.Fi SDK]
+    STC -->|Low Balance| SM
+    TL -->|Low Balance| SM
+
+    VS -->|Reroute| TB
+    TB -->|Insert| UTC
+    TB -->|RPC| FN
+    TB -->|Read| PS & DT
+    TB -->|Log| UAL
+    FN -->|Atomic Update| UP
+
+    UB -->|readContract| DA
+    UB -->|Upsert| UP
+```
+
+---
+
+## 2. Dua Jalur Tugas
+
+> [!IMPORTANT]
+> Crypto Disco memiliki **DUA jalur tugas yang sangat berbeda**. Agen dan developer WAJIB memahami perbedaan ini untuk mencegah bug XP sync.
+
+| Aspek | 🟦 On-Chain Tasks | 🟩 Off-Chain Tasks |
+|---|---|---|
+| **Sumber Data** | Smart Contract `DailyApp V13.2` | Tabel Supabase `daily_tasks` |
+| **Penyimpanan Tugas** | Disimpan on-chain via `addTask()` | Disimpan di database via Admin |
+| **Komponen UI** | `TaskRow` di `TasksPage.jsx` | `TaskList.jsx` (standalone) |
+| **Verifikasi Sosial** | Ya — via `useVerification.js` | Tidak — klaim langsung |
+| **Pemeriksaan Selesai** | `hasCompletedTask(user, taskId)` on-chain | `user_task_claims` lookup di DB |
+| **Klaim XP** | `doTask()` → `awardTaskXP()` → `/api/tasks/verify` | `useVerifiedAction` → `/api/tasks-bundle?action=claim` |
+| **XP Sync Method** | `fn_increment_xp` via tasks-bundle | `fn_increment_xp` via tasks-bundle |
+| **Reward Source** | `point_settings` (dynamic key) | `point_settings` → fallback `daily_tasks.xp_reward` |
+| **Sponsored Grouping** | Ya — `sponsorshipId` grouping | Tidak |
+| **Tier Gating** | Ya — `minTier` on-chain | Tidak secara langsung |
+| **Identity Guard** | Ya — `isBaseSocialRequired` | Ya — `is_base_social_required` column |
+| **Unique Constraint** | `hasCompletedTask` (on-chain boolean) | `user_task_claims` UNIQUE(wallet, task_id) |
+
+```mermaid
+flowchart LR
+    subgraph "On-Chain Path"
+        A1[User Sees TaskRow] --> A2[Click → Open Link + doTask on-chain]
+        A2 --> A3[Wait 30s Anti-Fraud]
+        A3 --> A4[Click Verify → EIP-191 Sign]
+        A4 --> A5[POST /api/tasks-bundle action=social-verify]
+        A5 --> A6[Insert user_task_claims + fn_increment_xp]
+    end
+
+    subgraph "Off-Chain Path (v3.47.1 Two-Step Flow)"
+        B1[User Sees TaskList Card] --> B2["Step 1: Click 'GO TO TASK' → window.open(task_link)"]
+        B2 --> B3[15s Anti-Fraud Countdown]
+        B3 --> B4["Step 2: Click 'CLAIM REWARD' (green, enabled)"]
+        B4 --> B5[EIP-191 Sign via useVerifiedAction]
+        B5 --> B6[POST /api/tasks-bundle action=claim]
+        B6 --> B7[Insert user_task_claims + fn_increment_xp]
+    end
+```
+
+---
+
+## 3. Smart Contract Registry & Functions
+
+### 3.1 Contract Addresses (Base Sepolia — 84532)
+
+| Contract | Address | Governance |
+|---|---|---|
+| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` |
+| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` |
+| **MasterX (XP)** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` |
+| **Raffle** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` |
+| **CMS V2** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` |
+
+> [!WARNING]
+> Mainnet addresses are `[RESERVED]` — NEVER use Sepolia addresses on Mainnet labels.
+
+### 3.2 DailyApp V13.2 — Task-Related Functions
+
+| Function | Type | Signature | Purpose |
+|---|---|---|---|
+| `getTask` | `view` | `(uint256 taskId) → (baseReward, isActive, cooldown, minTier, title, link, createdAt, requiresVerification, sponsorshipId)` | Membaca detail tugas |
+| `getTasksInRange` | `view` | `(uint256 from, uint256 to) → Task[]` | Batch baca seluruh tugas |
+| `nextTaskId` | `view` | `() → uint256` | Total tugas yang terdaftar |
+| `doTask` | `write` | `(uint256 taskId, address referrer)` | Registrasi intent/cooldown user |
+| `hasCompletedTask` | `view` | `(address user, uint256 taskId) → bool` | Cek apakah tugas sudah selesai |
+| `isTaskVerified` | `view` | `(address user, uint256 taskId) → bool` | Cek status verifikasi |
+| `userStats` | `view` | `(address user) → (points, totalTasksCompleted, referralCount, currentTier, tasksForReferralProgress, lastDailyBonusClaim, isBlacklisted)` | Statistik user |
+| `userSponsorshipProgress` | `view` | `(address user, uint256 sponsorshipId) → uint256 count` | Progress sponsorship mission |
+| `claimableRewards` | `view` | `(address user) → uint256` | Reward yang bisa diklaim |
+| `claimRewards` | `write` | `()` | Klaim akumulasi reward |
+| `lastActivityTime` | `view` | `(address user) → uint256` | Timestamp aktivitas terakhir |
+| `addTask` | `write` | `(baseReward, isActive, cooldown, minTier, title, link, requiresVerification, sponsorshipId)` | Admin: Tambah tugas |
+| `setSponsorshipParams` | `write` | `(rewardPerClaim, tasksRequired, minPool, platformFee)` | Admin: Config sponsorship parameters |
+| `setTokenPriceUSD` | `write` | `(uint256 newPrice)` | Admin: Direct update token price |
+| `approveSponsorship` | `write` | `(uint256 requestId)` | Admin: Setujui sponsorship |
+| `rejectSponsorship` | `write` | `(uint256 requestId, string reason)` | Admin: Tolak sponsorship |
+| `buySponsorshipWithToken` | `write` | `(sponsorshipId, titles[], links[], email, rewardPerClaim, paymentToken)` | Sponsor: Buy sponsorship mission |
+
+### 3.3 ABI Source of Truth
+
+```
+File: src/lib/abis_data.txt
+Import: src/lib/contracts.js (Proxy pattern — anti Rollup AST crash)
+```
+
+ABIs di-load secara lazy via `createAbiProxy()` pattern:
+```javascript
+// contracts.js
+export const DAILY_APP_ABI = createAbiProxy('DAILY_APP');
+export const CONTRACTS = {
+    DAILY_APP: getAddr('DAILY_APP', 'VITE_V12_CONTRACT_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA'),
+    // ...
+};
+```
+
+---
+
+## 4. Database Schema (Supabase)
+
+### 4.1 `daily_tasks` — Off-Chain Task Definitions
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` (PK) | ID unik tugas |
+| `title` | `text` | Judul tugas (ditampilkan di UI) |
+| `description` | `text` | Deskripsi lengkap |
+| `platform` | `text` | Platform sosial: `farcaster`, `twitter`, `tiktok`, `instagram`, `regular` |
+| `action_type` | `text` | Jenis aksi: `follow`, `like`, `repost`, `comment`, `task` |
+| `xp_reward` | `integer` | Base XP reward (fallback jika `point_settings` tidak ada) |
+| `target_id` | `text` | ID target sosial (FID, tweet ID, etc.) — Sybil prevention |
+| `task_type` | `text` | `social`, `regular`, `system` — Sistem tasks difilter dari UI |
+| `is_active` | `boolean` | Status aktif (UGC default: `false` sampai admin approve) |
+| `is_base_social_required` | `boolean` | Apakah memerlukan Basenames identity verification |
+| `min_neynar_score` | `integer` | Minimum Neynar reputation score (anti-Sybil) |
+| `expires_at` | `timestamp` | Tanggal kadaluarsa (null = permanent) |
+| `created_at` | `timestamp` | Tanggal dibuat |
+
+### 4.2 `user_task_claims` — Claim History (One-Time Per Task)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` (PK) | Auto-generated |
+| `wallet_address` | `text` | User wallet (lowercase) |
+| `task_id` | `text` | Reference ke `daily_tasks.id` atau dynamic ID (e.g., `raffle_buy_123`) |
+| `platform` | `text` | Platform verifikasi |
+| `action_type` | `text` | Jenis aksi |
+| `xp_earned` | `integer` | XP yang diberikan (sebelum scaling) |
+| `target_id` | `text` | Target ID untuk Sybil prevention |
+| `claimed_at` | `timestamp` | Waktu klaim |
+| **UNIQUE** | | `(wallet_address, task_id)` — Mencegah duplikasi |
+
+### 4.3 `point_settings` — Dynamic XP Configuration (Zero-Hardcode)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` (PK) | Auto-generated |
+| `activity_key` | `text` (UNIQUE) | Pattern: `{platform}_{action_type}` (e.g., `farcaster_follow`) |
+| `points_value` | `integer` | Base XP value |
+| `is_active` | `boolean` | Aktif/non-aktif |
+
+**Canonical Keys**:
+`daily_claim` · `farcaster_follow` · `farcaster_like` · `farcaster_recast` · `x_follow` · `x_repost` · `x_like` · `base_transaction` · `raffle_buy` · `raffle_win` · `raffle_ticket` · `sponsor_task`
+
+### 4.4 `user_profiles` — Core User Identity
+
+| Column | Type | Task-Related |
+|---|---|---|
+| `wallet_address` | `text` (PK) | ✅ Join key untuk claims |
+| `total_xp` | `integer` | ✅ Updated via `fn_increment_xp` setelah klaim |
+| `tier` | `integer` | ✅ Tier gating untuk tugas |
+| `is_base_social_verified` | `boolean` | ✅ Identity guard |
+| `neynar_score` | `integer` | ✅ Reputation gating |
+| `referred_by` | `text` | ✅ Referral dividend tracking |
+| `referral_bonus_paid` | `boolean` | ✅ 500 XP milestone vesting |
+| `last_seen_at` | `timestamp` | ✅ Leaderboard sync |
+
+### 4.5 `user_activity_logs` — Audit Trail
+
+| Column | Type | Description |
+|---|---|---|
+| `wallet_address` | `text` | User wallet |
+| `category` | `text` | `XP`, `PURCHASE`, `REFERRAL_DIVIDEND` |
+| `activity_type` | `text` | `Task Claim`, `Task Verify`, `Social Verify`, `Raffle Ticket Buy` |
+| `description` | `text` | Human-readable description |
+| `value_amount` | `integer` | XP amount |
+| `value_symbol` | `text` | `XP` |
+| `tx_hash` | `text` | Transaction hash (if applicable) |
+| `metadata` | `jsonb` | Additional context |
+
+### 4.6 `fn_increment_xp` — Atomic XP RPC Function
+
+```sql
+-- Signature
+fn_increment_xp(p_wallet TEXT, p_amount INT) → void
+
+-- Internal Logic (Hybrid Formula v3.41.2):
+-- Final_XP = MAX(5, ROUND(Base_XP * G * I * U))
+-- G = 1.5 / (1 + log10(total_users / 1000 + 1))     -- Global Multiplier
+-- I = MAX(0.5, 1.0 - (user_xp / 20000))               -- Individual Anti-Whale
+-- U = 1.1 if tier <= Silver, else 1.0                   -- Underdog Bonus
+--
+-- Also handles:
+-- 1. Referral vesting (50 XP when invitee reaches 500 XP)
+-- 2. 10% passive dividend to Tier 1 referrer
+-- 3. Activity logging for REFERRAL_DIVIDEND
+```
+
+> [!CAUTION]
+> DILARANG menghitung XP scaling di frontend atau backend JavaScript. Semua scaling wajib melalui `fn_increment_xp` di Postgres.
+
+### 4.7 `v_user_full_profile` — Unified View
+
+View SQL yang menggabungkan `user_profiles` dengan tier names, SBT stats, dan raffle statistics. Digunakan oleh Leaderboard dan profil user.
+
+### 4.8 `telegram_chat_history` — Conversational Memory (v3.56.4)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` (PK) | Auto-generated |
+| `chat_id` | `text` | ID Chat Telegram (Owner) |
+| `role` | `text` | `user` (Owner) atau `assistant` (Lurah) |
+| `content` | `text` | Isi pesan/diskusi teknis |
+| `created_at` | `timestamp` | Waktu pesan dikirim |
+
+> [!TIP]
+> Digunakan oleh Lurah (Antigravity Bridge) untuk mempertahankan konteks diskusi teknis hingga 10 pesan terakhir tanpa kehilangan alur pikiran.
+
+### 4.9 `nexus_agent_reports` — Intelligence Feed
+
+Digunakan oleh **Lurah Brain** untuk memfilter laporan agen (Linter, Security, Sync) sebelum dikirim ke Telegram. Hanya laporan dengan level `CRITICAL` atau `ALERT` yang akan memicu notifikasi.
+
+---
+
+## 5. API Routing & Bundle Map
+
+### 5.1 Vercel Rewrites (vercel.json)
+
+> [!IMPORTANT]
+> **Hardening Mandate (v3.61.0)**: Seluruh file di `Raffle_Frontend/api/` telah dimigrasikan ke **.ts** (TypeScript). Vercel secara otomatis memproses file `.ts` sebagai serverless functions. Mapping di `vercel.json` tetap menggunakan nama file tanpa ekstensi atau `.js` (Vercel runtime handles the rest).
+
+| Frontend Path | Backend Target | Action |
+|---|---|---|
+| `POST /api/tasks-bundle` | `tasks-bundle.js` | Direct call (claim, verify, social-verify) |
+| `/api/tasks/:action` | `tasks-bundle.js?action=:action` | Rewrite pattern |
+| `/api/verify-action` | `tasks-bundle.js?action=social-verify` | Legacy alias |
+| `POST /api/user-bundle` | `user-bundle.js` | XP sync (on-chain daily claim) |
+| `POST /api/campaigns` | `campaigns.js` | Partner Offers join |
+| `/api/admin/tasks/:action` | `admin-bundle.js?action=task-:action` | Admin task CRUD |
+
+### 5.2 tasks-bundle.js — Handler Map
+
+| Action | Handler Function | Trigger |
+|---|---|---|
+| `claim` | `handleClaim()` | Off-chain task klaim (TaskList.jsx) |
+| `verify` | `handleVerify()` | On-chain task verify (TaskRow) |
+| `social-verify` | `handleSocialVerify()` | Social task verify (useVerification.js) |
+
+**Common Flow**:
+```
+1. Validate EIP-191 Signature (viem.verifyMessage)
+2. Get XP reward from point_settings (dynamic) → fallback to daily_tasks.xp_reward
+3. Check Sybil: target_id uniqueness + global task_id uniqueness
+4. Insert into user_task_claims (UNIQUE constraint)
+5. Call fn_increment_xp(wallet, base_xp) — scaling handled in DB
+6. Log to user_activity_logs
+7. Return { success: true, xp }
+```
+
+### 5.3 Feature Guard (Mainnet Phased Rollout)
+
+```javascript
+// tasks-bundle.js
+if (['claim', 'verify'].includes(action)) {
+    const allowed = await checkFeatureGuard('daily_claim', res);
+    if (!allowed) return; // HTTP 403 on Mainnet if feature disabled
+}
+```
+
+---
+
+## 6. On-Chain Task Workflow (E2E)
+
+### 6.1 Regular On-Chain Task
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as TasksPage/TaskRow
+    participant SC as DailyApp V13.2
+    participant UV as useVerification
+    participant API as tasks-bundle.js
+    participant DB as Supabase DB
+
+    Note over FE: Page Load
+    FE->>SC: getTasksInRange(1, nextTaskId)
+    SC-->>FE: Task[] (title, link, reward, sponsorshipId...)
+    FE->>SC: hasCompletedTask(user, taskId)
+    SC-->>FE: bool (filter completed)
+
+    Note over U: Step 1: Do Task
+    U->>FE: Click Task Row
+    FE->>SC: doTask(taskId, referrer=0x0)
+    SC-->>FE: tx_hash (intent registered)
+    FE->>FE: registerTaskStart(taskId) → start 30s timer
+
+    Note over U: Step 2: Perform Action
+    FE->>U: window.open(task.link)
+    U->>U: Perform social action (like/follow/etc)
+    FE->>FE: 30s countdown in UI
+
+    Note over U: Step 3: Verify
+    U->>FE: Click "Verify" button
+    FE->>UV: verifyTask(task, address, taskId, fid)
+    UV->>U: Request EIP-191 Signature
+    U-->>UV: signature
+    UV->>API: POST /api/tasks-bundle {action: 'social-verify', wallet, signature, message, task_id, platform, action_type}
+
+    API->>API: verifyMessage(address, message, signature)
+    API->>DB: SELECT point_settings WHERE activity_key = '{platform}_{action}'
+    API->>DB: SELECT user_task_claims WHERE wallet + task_id (unique check)
+    API->>DB: INSERT user_task_claims
+    API->>DB: RPC fn_increment_xp(wallet, base_xp)
+    API->>DB: INSERT user_activity_logs
+    API-->>FE: {success: true, xp: N}
+
+    FE->>SC: refetch hasCompletedTask → true
+    Note over FE: Task disappears from UI
+```
+
+### 6.2 Sponsored Mission (Grouped Tasks)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant STC as SponsoredTaskCard
+    participant SC as DailyApp V13.2
+    participant UV as useVerification
+    participant API as tasks-bundle.js
+    participant DB as Supabase
+
+    Note over STC: Render grouped tasks by sponsorshipId
+    STC->>SC: userSponsorshipProgress(user, sponsorshipId)
+    SC-->>STC: completedCount
+
+    alt completedCount >= tasks.length
+        Note over STC: return null (card disappears)
+    end
+
+    Note over U: Step 1: Open External Links
+    U->>STC: Click each task link (IndividualTaskRow)
+    STC->>STC: registerTaskStart(taskId) per task
+
+    Note over U: Step 2: Verify All At Once
+    U->>STC: Click "VERIFY MISSION"
+    loop For each task in group
+        STC->>UV: verifyTask(task, address, taskId)
+        UV->>API: POST social-verify
+        API->>DB: Insert claim + fn_increment_xp
+    end
+
+    alt All tasks verified
+        STC->>STC: verifyingStatus = 'success', timer = 30s
+        Note over STC: Show "Verified! Claim in 30s..."
+    else Any task failed
+        STC->>STC: verifyingStatus = 'fail'
+        Note over STC: Show "Verification Failed"
+    end
+
+    Note over U: Step 3: Claim On-Chain Reward
+    U->>STC: Click "Claim Task Reward"
+    STC->>SC: claimRewards()
+    SC-->>STC: tx_hash
+
+    STC->>API: POST /api/user-bundle {action: 'xp', tx_hash}
+    API->>SC: readContract(userStats)
+    API->>DB: Upsert user_profiles.total_xp
+    API-->>STC: {success: true}
+```
+
+---
+
+## 7. Off-Chain Task Workflow (E2E)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant TL as TaskList.jsx
+    participant UVA as useVerifiedAction
+    participant API as tasks-bundle.js
+    participant DB as Supabase
+
+    Note over TL: Component Mount
+    TL->>DB: SELECT daily_tasks WHERE is_active=true AND task_type!='system'
+    DB-->>TL: Task[]
+    TL->>DB: SELECT user_task_claims WHERE wallet_address
+    DB-->>TL: Claim[] (task_id, claimed_at)
+    TL->>DB: SELECT user_profiles WHERE wallet (neynar_score, is_base_social)
+    DB-->>TL: Profile data
+
+    TL->>TL: Filter: activeTasks = tasks.filter(not claimed)
+
+    Note over U: STEP 1 — User Clicks "GO TO TASK" (v3.47.1)
+    U->>TL: handleGoToTask(task)
+    TL->>TL: window.open(task.task_link, '_blank')
+    TL->>TL: setStartedTasks({task_id: Date.now()})
+    TL->>TL: start 15s countdown
+    Note over TL: Card turns amber (countdown state)
+
+    Note over U: STEP 2 — After 15s, User Clicks "CLAIM REWARD"
+    U->>TL: handleClaim(task) [only enabled when countdown=0]
+
+    alt Neynar Score too low
+        TL-->>U: Toast: "Low Reputation"
+    else Base Social Required but not verified
+        TL-->>U: Toast: "Identity Guard"
+    else
+        TL->>UVA: execute('claim_task', {task_id, xp_earned})
+        UVA->>U: Request EIP-191 Signature
+        U-->>UVA: signature
+        UVA->>API: POST /api/tasks-bundle {action: 'claim', wallet, task_id, signature, message}
+
+        API->>API: verifyMessage()
+        API->>DB: getTaskReward(task_id) → point_settings lookup
+        API->>DB: Check uniqueness (wallet + task_id)
+        API->>DB: INSERT user_task_claims
+        API->>DB: RPC fn_increment_xp(wallet, base_xp)
+        API->>DB: INSERT user_activity_logs
+        API-->>TL: {success: true, xp}
+
+        TL->>TL: Optimistic: add to userClaims → task disappears
+        TL->>TL: setTimeout(fetchData, 1500ms) → server sync
+    end
+```
+
+---
+
+## 8. Social Verification Flow
+
+### 8.1 Verification Pipeline (useVerification.js)
+
+```mermaid
+flowchart TD
+    Start[User clicks Verify] --> Check1{Anti-Fraud: 30s elapsed?}
+    Check1 -- No --> Error1[Toast: Wait Xs]
+    Check1 -- Yes --> Check2{Wallet Connected?}
+    Check2 -- No --> Error2[Toast: Connect Wallet]
+    Check2 -- Yes --> Sign[EIP-191 Sign Message]
+
+    Sign --> BuildMsg["Build message:<br/>Verify Task Action<br/>Task: {title}<br/>ID: {id}<br/>User: {wallet}<br/>Time: {ISO timestamp}"]
+
+    BuildMsg --> Route{Platform?}
+    Route -- Farcaster/Twitter/TikTok/IG --> Social[POST /api/tasks-bundle<br/>action=social-verify<br/> + platform + action_type<br/>+ fid/userId/handle]
+    Route -- Other --> General[POST /api/tasks-bundle<br/>action=social-verify<br/>platform=regular]
+
+    Social & General --> Backend[tasks-bundle.js handleSocialVerify]
+
+    Backend --> V1[verifyMessage via viem]
+    V1 --> V2[getTaskReward → point_settings]
+    V2 --> V3{Target already claimed?}
+    V3 -- Yes --> Reject[Error: Target account claimed]
+    V3 -- No --> V4{User+Task already claimed?}
+    V4 -- Yes --> Dup[Return: Already recorded]
+    V4 -- No --> Insert[INSERT user_task_claims]
+    Insert --> XP[RPC fn_increment_xp]
+    XP --> Log[INSERT user_activity_logs]
+    Log --> Success[Return: success + xp]
+```
+
+### 8.2 Anti-Fraud Mechanisms
+
+| Layer | Mechanism | Implementation |
+|---|---|---|
+| **30s Delay** | Mencegah instant verify tanpa aksi nyata | `lastActionTime[taskId]` + countdown di UI |
+| **EIP-191 Signature** | Membuktikan kepemilikan wallet | `viem.verifyMessage()` di backend |
+| **Timestamp Window** | Mencegah replay attack | Timestamp dalam signed message (5 min window) |
+| **Target Uniqueness** | Mencegah multi-wallet claim per target | `target_id` check di `user_task_claims` |
+| **Global Uniqueness** | Satu wallet = satu kali per task_id | UNIQUE constraint `(wallet, task_id)` |
+| **Neynar Score Gate** | Reputasi minimum untuk tugas tertentu | `min_neynar_score` di `daily_tasks` |
+| **Identity Guard** | Basenames verification untuk premium tasks | `is_base_social_required` flag |
+| **Tier Gating** | Level minimum untuk on-chain tasks | `minTier` di smart contract |
+| **Feature Guard** | Kill switch untuk Mainnet rollout | `system_settings.active_features` |
+
+---
+
+## 9. XP Economy & Hybrid Formula
+
+### 9.1 The Nexus Hybrid Formula (v3.41.2)
+
+```
+Final_XP = MAX(5, ROUND(Base_XP × G × I × U))
+```
+
+| Variable | Formula | Range | Purpose |
+|---|---|---|---|
+| **G** (Global) | `1.5 / (1 + log₁₀(users/1000 + 1))` | ~0.75 – 1.5 | Anti-inflasi seiring pertumbuhan user |
+| **I** (Individual) | `MAX(0.5, 1.0 - (xp/20000))` | 0.5 – 1.0 | Anti-whale; pemain lama dapat lebih sedikit |
+| **U** (Underdog) | `1.1 if tier ≤ Silver` | 1.0 – 1.1 | +10% catch-up untuk tier rendah |
+| **Floor** | `MAX(5, ...)` | ≥ 5 | Minimum reward terjamin |
+
+### 9.2 XP Resolution Priority
+
+```mermaid
+flowchart TD
+    Task[Task claimed] --> Type{Task ID Pattern?}
+
+    Type -- "raffle_buy_*" --> PS1[point_settings WHERE activity_key = 'raffle_buy']
+    Type -- "raffle_win_*" --> PS2[point_settings WHERE activity_key = 'raffle_win']
+    Type -- "raffle_draw_*" --> PS3[point_settings WHERE activity_key = 'raffle_ticket']
+    Type -- "UUID (Supabase)" --> DB1[daily_tasks → get platform + action_type]
+
+    DB1 --> DynKey["Build key: {platform}_{action_type}"]
+    DynKey --> PS4[point_settings WHERE activity_key = dynamic_key]
+    PS4 --> Check{points_value > 0?}
+    Check -- Yes --> Use[Use dynamic value]
+    Check -- No --> Fallback[Use daily_tasks.xp_reward]
+
+    PS1 & PS2 & PS3 & Use & Fallback --> FN[fn_increment_xp(wallet, base_xp)]
+    FN --> Result[Hybrid Formula Applied in Postgres]
+```
+
+### 9.3 Referral Integration
+
+Setiap XP yang masuk via `fn_increment_xp` otomatis:
+1. **Milestone Check**: Jika `total_xp >= 500` dan `referral_bonus_paid = false`, berikan 50 XP ke referrer
+2. **Passive Dividend**: Berikan 10% × `base_xp` ke Tier 1 referrer
+3. **Logging**: Catat `REFERRAL_DIVIDEND` dan `REFERRAL_VESTING` di `user_activity_logs`
+
+---
+
+## 10. Identity Guard & Access Control
+
+### 10.1 Access Control Matrix
+
+```mermaid
+flowchart TD
+    User[User Attempts Task] --> C1{Wallet Connected?}
+    C1 -- No --> Block1["🚫 Toast: Connect Wallet"]
+    C1 -- Yes --> C2{On-Chain: minTier check}
+    C2 -- Locked --> Block2["🔒 Badge: LVL X Required"]
+    C2 -- Pass --> C3{is_base_social_required?}
+    C3 -- Yes --> C4{user.is_base_social_verified?}
+    C4 -- No --> Block3["🛡️ Badge: IDENTITY GUARD<br/>Button: VERIFY IDENTITY TO UNLOCK"]
+    C4 -- Yes --> C5{min_neynar_score?}
+    C3 -- No --> C5
+    C5 -- Score Low --> Block4["⚠️ Badge: LOW REPUTATION"]
+    C5 -- Pass --> C6{Already Completed?}
+    C6 -- Yes --> Block5["✅ return null (disappear)"]
+    C6 -- No --> Allow["✅ Task Available"]
+```
+
+### 10.2 Farcaster Account Check
+
+Tugas berbasis Farcaster (`warpcast.com` or `farcaster` in link) memerlukan `profileData.fid`. Jika tidak ada, user diarahkan ke sign-up Farcaster via toast dengan referral link.
+
+### 10.3 Base Social (Basenames) Verification
+
+1. User mengunjungi Profil → Klik "LINK BASE SOCIAL"
+2. Backend melakukan reverse resolution via on-chain resolver (`0xC697...`)
+3. Jika Basename ditemukan: `user_profiles.is_base_social_verified = true`
+4. Tugas dengan `is_base_social_required = true` menjadi terbuka.
+
+### 10.4 SBT-Gated Leaderboard (v3.59.2)
+- **Mandate**: User tidak diizinkan masuk ke Leaderboard SOT (Database View) jika kolom `has_minted_sbt` bernilai `false`.
+- **Enforcement**: Filter ini diterapkan pada level SQL View `v_user_full_profile` untuk memastikan hadiah reward pool hanya didistribusikan kepada user yang sudah memvalidasi identitas on-chain mereka.
+
+---
+
+## 11. Disappearing Task Mandate (v3.42.2)
+
+> [!IMPORTANT]
+> Tugas yang sudah selesai/diklaim **WAJIB menghilang** dari UI. Tidak ada badge "DONE" yang tetap terlihat.
+
+### 11.1 On-Chain Tasks (TaskRow)
+
+```javascript
+// TasksPage.jsx — TaskRow component
+const { data: isCompleted } = useReadContract({
+    functionName: 'hasCompletedTask',
+    args: [address, taskId],
+});
+
+// CRITICAL: Early return null = task disappears
+if (isLoading || !task || !task.isActive || isCompleted) return null;
+```
+
+### 11.2 Off-Chain Tasks (TaskList)
+
+```javascript
+// TaskList.jsx — Active task filter
+const activeTasks = tasks.filter(task => {
+    const history = userClaims.filter(c => String(c.task_id) === String(task.id));
+    const hasAnyClaim = history.length > 0;
+    if (hasAnyClaim) return false;       // ← DISAPPEAR
+    if (task.task_type === 'system') return false;
+    return true;
+});
+```
+
+> [!WARNING]
+> **Type-Safety**: SELALU gunakan `String()` conversion saat membandingkan task IDs. Contract IDs = Integer, Supabase IDs = UUID. `===` tanpa konversi akan gagal silently.
+
+### 11.3 Sponsored Card Disappearance
+
+```javascript
+// SponsoredTaskCard
+const isGlobalCompleted = progressCount >= tasks.length;
+if (isGlobalCompleted) return null; // Entire card disappears
+```
+
+### 11.4 Reactive Error Sync (Race Condition Fix)
+
+```javascript
+// TaskList.jsx — handleClaim success/error handler
+const result = await executeClaim('claim_task', { task_id, xp_earned });
+
+// NEW (v3.42.8): Explicitly handle already_claimed flag from success response
+if (result?.already_claimed) {
+    toast.success("Mission already completed! Syncing...", { id: toastId });
+} else {
+    toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
+}
+
+// Force sync: add to local claims → task disappears instantly
+setUserClaims(prev => [...prev, { task_id: task.id, claimed_at: new Date().toISOString() }]);
+setTimeout(() => fetchData(), 1500); // Full server sync
+```
+
+### 11.5 Empty State
+
+Ketika seluruh tugas selesai, tampilkan:
+- **On-Chain**: `"YOU ARE ALL CAUGHT UP!"` banner dengan `CheckCircle2` icon
+- **Off-Chain**: `"ALL MISSIONS COMPLETED"` dengan subtitle "Check back tomorrow"
+
+---
+
+## 12. Partner Offers (Campaigns)
+
+### 12.1 Data Source
+
+Tabel: `campaigns`
+- Diambil langsung dari Supabase (READ via `supabase.from('campaigns')`)
+- Filter: `status = 'active'`
+- UI: `OffersList.jsx` → `CampaignCard` component
+
+### 12.2 Join Flow
+
+```
+User → Click "JOIN MISSION" → EIP-191 Sign → POST /api/campaigns {action: 'join'}
+→ Backend validates signature → Insert campaign_participants → Success
+```
+
+### 12.3 Campaigns vs Tasks
+
+| Feature | Tasks | Campaigns |
+|---|---|---|
+| XP Reward | Yes | USDC/token reward per user |
+| Verification | Social API check | Join participation |
+| Duration | Permanent or expires_at | `start_at` → `end_at` window |
+| Capacity | Unlimited claims | `max_participants` limit |
+| UI Location | "Daily Tasks" tab | "Partner Offers" tab |
+
+---
+
+## 13. Admin Task Management (Hardened v3.63.0)
+
+### 13.1 Unified TaskManager Architecture
+Dashboard Admin telah dikonsolidasi dari komponen monolitik menjadi arsitektur modular yang terpusat di `src/features/admin/`. Komponen `TaskManagerTab` dan `TaskManager` digabungkan untuk menyatukan workflow "Quick Forge" dan "Smart Batch".
+
+**Key Sub-Components**:
+- `ActiveCampaignsSection`: Pemantauan misi UGC yang sedang berjalan.
+- `EconomyConfigSection`: Pengaturan parameter ekonomi protokol (XP, Fees).
+- `TaskBatchCreatorSection`: Pembuatan tugas secara massal (Batch Creator).
+- `QuickTaskCreator`: Pembuatan tugas manual cepat.
+
+### 13.2 Type-Safe Administration
+Seluruh data administratif kini menggunakan interface strict di `src/features/admin/types/tasks.ts`. Penggunaan `any` telah dieliminasi untuk menjamin integritas data saat pengiriman ke `admin-bundle.ts`.
+
+### 13.3 Off-Chain Task Management
+Pipeline Backend (`admin-bundle.js`) memproses field berikut secara atomic:
+- `title` & `description`: Keduanya di-set secara eksplisit.
+- `xp_reward`: Poin dasar dari `point_settings`.
+- `target_id`: ID unik sosial (FID/TweetID) untuk Sybil prevention.
+- `min_neynar_score`: Gating reputasi Farcaster.
+- `expires_at`: Tanggal kadaluarsa otomatis.
+- `is_base_social_required`: Toggle Identity Guard (Basenames).
+
+All User Generated Content (Missions, Raffles) default to `is_active: false` and require explicit admin approval before becoming visible to users.
+
+---
+
+## 14. File Reference Map
+
+### Frontend (React/Vite)
+
+| File | Purpose | Path |
+|---|---|---|
+| [TasksPage.jsx](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/pages/TasksPage.jsx) | Main page: Tab switcher, On-Chain TaskRow + SponsoredTaskCard | `src/pages/` |
+| [TaskList.jsx](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/components/tasks/TaskList.jsx) | Off-Chain tasks from Supabase `daily_tasks` | `src/components/tasks/` |
+| [OffersList.jsx](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/components/tasks/OffersList.jsx) | Partner campaign cards | `src/components/tasks/` |
+| [useVerification.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/hooks/useVerification.js) | Social verify hook (EIP-191 + API call) | `src/hooks/` |
+| [useVerifiedAction.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/hooks/useVerifiedAction.js) | Secure claim hook (off-chain tasks) | `src/hooks/` |
+| [useContract.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/hooks/useContract.js) | On-chain read/write hooks (doTask, taskInfo, etc.) | `src/hooks/` |
+| [dailyAppLogic.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/dailyAppLogic.js) | XP award bridge (awardTaskXP) | `src/` |
+| [contracts.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/lib/contracts.js) | ABI Proxy, Addresses, Config | `src/lib/` |
+| [economy.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/lib/economy.js) | Frontend mirror of Hybrid Formula (display only) | `src/lib/` |
+
+### Backend (Vercel Serverless)
+
+| File | Purpose | Path |
+|---|---|---|
+| [tasks-bundle.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/tasks-bundle.ts) | Task claim, verify, social-verify handlers (100% TS) | `api/` |
+| [user-bundle.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/user-bundle.ts) | On-chain XP sync, profile sync (100% TS) | `api/` |
+| [admin-bundle.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/admin-bundle.ts) | Admin task CRUD, system settings (100% TS) | `api/` |
+| [campaigns.js](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/campaigns.js) | Campaign join handler | `api/` |
+
+### Routing
+
+| File | Purpose | Path |
+|---|---|---|
+| [vercel.json](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/vercel.json) | API rewrite rules | Root |
+
+### Smart Contracts
+
+| File | Purpose | Path |
+|---|---|---|
+| DailyAppV13.sol | Task contract source | `DailyApp.V.12/contracts/` |
+| [abis_data.txt](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/lib/abis_data.txt) | Compiled ABI JSON | `src/lib/` |
+
+---
+
+## 15. Healthy State Checklist
+
+Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
+
+- [x] **Zero-Hardcode XP**: Tidak ada literal XP value di kode (e.g., `reward: 100`). Semua dari `point_settings`.
+- [x] **Dual Task Sync**: On-chain tasks via contract + Off-chain tasks via Supabase keduanya menghasilkan `fn_increment_xp` call.
+- [x] **Disappearing Tasks**: Completed tasks return `null` (not "DONE" badge) — verified di kedua jalur.
+- [x] **Type-Safe Comparison**: `String()` conversion pada semua ID comparison (Contract Integer vs Supabase UUID).
+- [x] **Signature Verification**: Semua write operations melewati EIP-191 signature verification di backend.
+- [x] **Already Claimed Handling**: Frontend mendeteksi `already_claimed: true` flag untuk mencegah toast misleading saat task menghilang.
+- [x] **Anti-Sybil**: `target_id` uniqueness + global `(wallet, task_id)` uniqueness enforced.
+- [x] **Expiry Logic**: Task creation menyertakan `expires_at` dan frontend memfilter task yang sudah lewat waktu.
+- [x] **Identity Guard**: `is_base_social_required` tasks locked untuk user non-verified.
+- [x] **Tier Gating**: `minTier` on-chain check aktif dan UI menampilkan lock badge.
+- [x] **Feature Guard**: Mainnet kill switch via `system_settings.active_features` operational.
+- [x] **Activity Logging**: Setiap klaim menghasilkan entry di `user_activity_logs`.
+- [x] **Reactive Sync**: "Already completed" error forces `fetchData()` re-sync.
+- [x] **30s Anti-Fraud (On-Chain)**: Timer aktif sebelum social verification (TaskRow).
+- [x] **Concurrent Modal Trigger**: Seluruh modal state transitions dibungkus `startTransition` (v3.56.0).
+- [x] **Nexus UI Parity (v3.53.0)**: Metadata stamps (ID, Creator, Created At, Expires At) transparan dan konsisten di seluruh kartu.
+- [x] **Dynamic Summary**: Home Page summary (`TaskCard.jsx`) menggunakan real-time Supabase stats (bukan placeholder).
+- [x] **15s Anti-Fraud (Off-Chain)**: `startedTasks` countdown setelah "GO TO TASK" klik sebelum CLAIM REWARD aktif (v3.47.1).
+- [x] **Self-Healing v3.51.2**: Backend otomatis memulihkan XP/Log jika record claim sudah ada tapi data reward hilang.
+
+---
+
+## 16. Self-Healing Claim Pipeline (v3.51.2)
+
+Protokol Self-Healing dirancang untuk mengatasi "Ghost Claims" (kondisi di mana record di `user_task_claims` ada, tetapi penambahan XP atau penulisan Activity Log gagal karena timeout atau crash).
+
+### 16.1 Ghost Claim Recovery Logic
+Saat backend menerima error **23505 (Unique Violation)** pada tabel `user_task_claims`, sistem tidak lagi langsung melempar error. Sebaliknya, sistem menjalankan:
+1. **Log Audit**: Mengecek `user_activity_logs` menggunakan `metadata->task_id`.
+2. **State Restoration**: Jika log tidak ditemukan, sistem secara otomatis mengeksekusi `fn_increment_xp()` dan menulis log baru.
+3. **Idempotency**: Jika log sudah ada, sistem mengonfirmasi klaim tersebut sukses tanpa duplikasi XP.
+
+### 16.2 UI Resiliency Mandate
+Frontend `TaskList.jsx` wajib menangkap error "already completed" dan melakukan sinkronisasi lokal instan:
+```javascript
+if (error.message.includes("already completed")) {
+    setLocalClaims(prev => [...prev, taskId]); // Instant hide
+    fetchData(); // Background sync
+}
+```
+
+- [x] **Two-Step Task Flow (Off-Chain)**: User HARUS buka link dulu via "GO TO TASK" sebelum bisa klaim XP (v3.47.1).
+- [x] **Swap Quote Error Visibility**: SwapModal menampilkan error visible + Jumper fallback jika Li.Fi SDK gagal quote (v3.47.1).
+- [x] **NFT Mint Contract Parity**: SBTUpgradeCard memanggil `mintNFT` (DAILY_APP) bukan `upgradeTier` (MASTER_X) (v3.47.1).
+- [x] **Batch Resilience**: Create Mission menggunakan `useCallsStatus` (EIP-5792) untuk mencegah UI hang pada batch transactions.
+- [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract (157 entries).
+- [x] **Verification Server Sync**: `VITE_VERIFY_SERVER_URL` & `VITE_VERIFY_API_SECRET` disinkronkan di ekosistem Vercel (v3.49.0).
+- [x] **Global Lockout Fix**: Target ID uniqueness sekarang berbasis per-user (`wallet_address` + `target_id`) (v3.49.0).
+- [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
+- [x] **Dual Pipeline Routing Fix**: `useVerifiedAction.js` — `claim_task` actions ALWAYS route to `/api/tasks-bundle`, never to Verification Server. `isSocialVerify` only true for non-claim social verification actions (v3.51.1).
+- [x] **Duplicate Action Key Fix**: JSON body property `action: payload.action_type` renamed to `action_type: payload.action_type` to prevent silent override of `action: bundleAction` (v3.51.1).
+
+---
+
+## 18. SBT Tier Integration Mandate
+
+Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Hardened Tier Ascension**:
+
+1. **Sequential Progression**: User **WAJIB** upgrade tier secara berurutan. Sistem tidak mengizinkan lompatan (misal: Rookie langsung ke Gold). Tier $N$ hanya bisa di-mint jika wallet memiliki Tier $N-1$.
+2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV13`.
+3. **Price Transparency**: UI `SBTUpgradeCard` wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.
+4. **XP Burn Compliance**: Setiap upgrade akan membakar XP sesuai konfigurasi `nftConfigs` on-chain. Pastikan sinkronisasi XP setelah minting dilakukan secara atomik melalui event listener.
+
+*Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
+*Antigravity — Nexus Master Architect. Protocol v3.56.4 Locked.*
+
+---
+
+## 19. UGC Multi-Action & All-or-Nothing Campaign Workflow
+
+Sistem ini berevolusi dari tugas tunggal menjadi kampanye terstruktur guna meningkatkan retensi dan kualitas engagement.
+
+### 19.1 Arsitektur Data Kampanye
+- **Tabel `campaigns`**: Bertindak sebagai entitas parent yang menyimpan `title`, `reward_amount`, dan metadata global.
+- **Tabel `daily_tasks`**: Menyimpan sub-tugas individu. Kunci penghubungnya adalah `onchain_id` yang diisi dengan ID Kampanye.
+- **Tabel `user_task_claims`**: 
+  - Mencatat verifikasi individual sub-tugas (reward 0).
+  - Mencatat klaim final kampanye (ID Kampanye) untuk memicu reward XP/USDC.
+
+### 19.2 Alur Pembuatan (Batching)
+```javascript
+// admin-bundle.js
+const { data: tasks, error: taskError } = await supabaseAdmin
+    .from('daily_tasks')
+    .insert(action_types.map(act => ({
+        title: `${title} (${act})`,
+        action_type: act,
+        onchain_id: campaignId,
+        task_type: 'ugc',
+        // ... metadata lainnya
+    })));
+```
+
+### 19.3 Alur Klaim (Atomic All-or-Nothing)
+1. **Frontend**: Menghitung `completedCount` dari sub-tugas yang ada di `offChainClaims`.
+2. **Logic**: Jika `completedCount === subTasks.length`, tampilkan tombol klaim.
+3. **Backend (`claim-ugc-campaign`)**:
+   - Query seluruh sub-tugas kampanye X.
+   - Query seluruh claim user untuk sub-tugas kampanye X.
+   - Bandingkan: `count(subTasks) == count(userClaims)`.
+   - Jika `true`, eksekusi `fn_increment_xp` dan increment saldo USDC.
+   - Tandai kampanye sebagai `claimed` untuk user tersebut.
+
+### 19.4 Checklist Kesehatan UGC v3.57.0
+1. [ ] **Regex Link Guard**: Link harus valid sesuai platform (Warpcast/X/TikTok).
+2. [ ] **Multi-Action Bound**: Maksimal 3 aksi per kampanye untuk menjaga UX.
+3. [ ] **Atomic Claims**: Reward tidak boleh bocor per sub-tugas, hanya di level parent kampanye.
+4. [ ] **Referral Loop**: Setiap klaim sukses harus memicu CTA sharing sosial.
+
+---
+
+## 20. Zero-Hardcode Infrastructure Mandate (v3.59.1)
+
+Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanpa risiko *manual error*.
+
+### 20.1 Dynamic Address Resolution
+- **Frontend**: Menggunakan helper `getAddr()` dari `src/lib/contracts.js` yang menarik nilai dari `import.meta.env`.
+- **ABI Mapping**: File `abis_data.txt` sekarang bertindak murni sebagai registry fungsi, dengan alamat kontrak yang disuntikkan secara dinamis saat runtime.
+
+### 20.2 Synchronization Triggers
+- Setiap kali alamat kontrak diubah di `.env`, developer **WAJIB** menjalankan:
+  - `node scripts/sync/sync-all-envs.cjs` (Environment Sync)
+  - `node scripts/sync/rebuild_abis_data.cjs` (ABI Placeholder Sync)
+  - `node scripts/audits/check_sync_status.cjs` (Integritas Audit)
+
+---
+
+## 21. Absolute Parity & Hardening Audit Protocol (v3.59.2)
+
+Setiap agen yang mengelola tugas berantai (Multi-Action) atau distribusi reward wajib menjalankan audit paritas.
+
+### 21.1 Parity Audit Checklist
+1. **XP Drift**: Pastikan `total_xp` database sinkron dengan `points` on-chain.
+2. **Tier Drift**: Pastikan level database sinkron dengan `currentTier` on-chain.
+3. **Metadata Parity**: Pastikan URL Pinata di database sinkron dengan `BaseURI` on-chain via `setTierURI`.
+
+### 21.2 Tools & Endpoints
+- **Audit Tool**: Dashboard Hardening Center di Tab Admin.
+- **API**: `/api/admin/parity-audit` (High-precision comparison).
+- **Manual Sync**: Gunakan tombol "Batch Sync" jika terdeteksi drift > 1% pada Top 50 users.
+
+---
+
+## 22. DailyApp V14 Multi-Token Sponsorship & Decimal Normalization (v3.59.3)
+
+Peningkatan infrastruktur sponsor untuk mendukung ekonomi multi-aset dan normalisasi parameter moneter.
+
+### 22.1 Multi-Token Rewards
+- **Storage Strategy**: Reward disimpan di `mapping(address => mapping(address => uint256)) public claimableRewards` (user => token => amount).
+- **Default Tokens**: USDC (Base) dan ETH.
+- **Claim Logic**: User memanggil `claimRewards(tokenAddress)` secara spesifik untuk menarik saldo per-token.
+
+### 22.2 Decimal Normalization (6-Decimal Base)
+Seluruh parameter ekonomi dikonfigurasi menggunakan basis **6-desimal** (USDC-native) untuk menghindari fragmentasi unit.
+- **buySponsorshipWithToken**: Mengonversi deposit token ke 6-desimal internal.
+  - ETH (18 dec) -> Normalisasi ke 6 dec.
+  - USDC (6 dec) -> Langsung.
+- **Validation**: Pengecekan `minPool` (threshold minimal sponsor) dilakukan terhadap nilai hasil normalisasi ini.
+
+### 22.3 UI Persistence Mandate
+- **Card Visibility**: `SponsoredTaskCard` tidak boleh menghilang hanya karena user sudah menyelesaikan tugas.
+- **Enforcement**: Kartu tetap ditampilkan selama `claimableRewards(user, token) > 0` untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.
+
+---
+*End of Task Feature Workflow - Nexus v3.59.3 LOCKED.*
+
+---
+
+## Chapter C: Accountant Ledger & Financial Balances SOT
+- **Specification:** Accountant Ledger & Financial Balances SOT
+- **Version:** v3.63.0
+- **Date Stamp:** 2026-05-18T19:01:52+07:00
+- **Author:** Antigravity (Lead Blockchain Architect)
+- **Status:** HARDENED SOT
+
+## 1. Arsitektur Akuntan Ledger
+Sistem Ledger bekerja dengan menggabungkan data dari dua sumber utama:
+1.  **On-Chain (Blockchain)**: Saldo real-time dari kontrak pintar (Smart Contracts).
+2.  **Off-Chain (Database)**: Log aktivitas pengguna (`user_activity_logs`) yang mencatat kategori transaksi.
+
+### 📍 Komponen Utama
+- **Dashboard UI**: `AdminPage.tsx` -> `TaskManager.tsx` (Modular sections in `src/features/admin/components/`).
+- **Backend Logic**: `admin-bundle.js` (Endpoint `/api/admin/accountant-ledger`).
+- **Hook**: `useSBT.js` (Fungsi `withdrawTreasury`).
+- **Database Table**: `user_activity_logs`.
+
+---
+
+## 2. Kategorisasi Transaksi
+Seluruh aktivitas finansial di dalam ekosistem wajib dipetakan ke dalam salah satu kategori berikut untuk memastikan laporan balancing yang akurat:
+
+| Kategori | Tipe | Deskripsi | Contoh Aktivitas |
+|---|---|---|---|
+| **PURCHASE** | Income (🟢) | Dana masuk ke kas ekosistem. | UGC Listing Fee, SBT Upgrade/Mint, Raffle Tickets. |
+| **REWARD** | Expense (🔴) | Pengeluaran untuk hadiah pengguna. | SBT Pool Reward, Raffle Prize Payouts. |
+| **EXPENSE** | Expense (🔴) | Biaya operasional atau penarikan manual. | Server costs, manual treasury rebalancing. |
+
+---
+
+## 3. On-Chain Balancing Report
+Sistem melakukan verifikasi saldo secara langsung pada alamat kontrak berikut untuk dibandingkan dengan catatan Ledger:
+
+| Kontrak / Wallet | Kegunaan | Asset |
+|---|---|---|
+| **SAFE_MULTISIG** | Treasury Pusat (End-point Penarikan) | ETH, USDC |
+| **MASTER_X_ADDRESS** | Smart Contract XP & SBT Pool | ETH, USDC |
+| **DAILY_APP_ADDRESS** | Smart Contract Core (UGC & Mints) | ETH, USDC |
+| **RAFFLE_ADDRESS** | Smart Contract Raffle (Ticket Revenue) | ETH, USDC |
+
+> [!IMPORTANT]
+> **Zero-Hardcode Compliance**: Seluruh alamat di atas wajib ditarik secara dinamis dari environment variables via `lib/contracts.js`.
+
+---
+
+## 4. Modul Treasury (ETH Withdrawal)
+Admin memiliki otoritas untuk menarik akumulasi dana ETH dari kontrak operasional ke Treasury Pusat melalui fungsi `withdrawTreasury`.
+
+- **Alur**: `UI (AccountantLedgerTab)` -> `useSBT (hook)` -> `Contract (DailyApp/Raffle)` -> `Transfer to SAFE_MULTISIG`.
+- **Security**: Hanya wallet dengan role Admin/Owner yang dapat mengeksekusi penarikan ini.
+
+## 5. Multi-Token Audit Protocol (V14.1)
+Sistem Ledger kini mendukung audit multi-token otomatis (USDC/ETH) dengan standar sinkronisasi event-driven:
+
+1.  **On-Chain Event SOT**:
+    - `SponsorshipRequested`: Mencatat pemasukan fee platform (USDC).
+    - `RewardsClaimed`: Mencatat pengeluaran hadiah pengguna (USDC/ETH/DISCO). *Diperkenalkan di V14.1*.
+2.  **Decimal Normalization Engine**:
+    - Seluruh jumlah dana dinormalisasi secara otomatis berdasarkan desimal token (USDC=6, ETH=18) sebelum dicatat ke `user_activity_logs`.
+    - Payout dicatat dalam kategori `REWARD` dan ditampilkan sebagai pengeluaran (expense) di dashboard.
+
+---
+
+## 6. Ecosystem Hardening Center (v3.59.4)
+Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah terjadinya "Data Drift" pada XP dan Tier pengguna.
+
+### 📍 Fitur Utama:
+1.  **Parity Audit**: Membandingkan `total_xp` dan `tier` di Supabase dengan `userStats` di blockchain secara real-time.
+2.  **Batch Synchronization**:
+    *   **Sync XP**: Memperbarui status poin di kontrak MasterX berdasarkan data database.
+    *   **Sync Tiers**: Memaksa pembaruan tier di blockchain jika terdeteksi inkonsistensi.
+    *   **Sync NFT URIs**: Sinkronisasi metadata IPFS (Pinata) dari database ke kontrak on-chain.
+3.  **Manual Ledger Sync Protocol**:
+    *   **On-Demand Trigger**: Memungkinkan admin memicu sinkronisasi event blockchain (`accountant-sync`) secara manual untuk mengatasi kegagalan cron otomatis.
+    *   **Block Height Visibility**: Dashboard menampilkan `last_synced_block` dan menghitung selisih (*drift*) terhadap `current_block` jaringan.
+    *   **Freshness Indicator**: Memberikan feedback visual (Success/Warning) berdasarkan usia sinkronisasi terakhir untuk menjamin kemutakhiran data audit.
+
+---
+
+---
+
+## 7. Raffle Economy Architecture (v3.59.5)
+Ekosistem Raffle menggunakan sistem biaya tiga lapis untuk menjamin keberlanjutan operasional dan profitabilitas platform:
+
+| Komponen Biaya | Nominal (Default) | Pihak yang Membayar | Tujuan |
+|---|---|---|---|
+| **Project Rake** | 20% | Creator (dari Tiket) | Revenue murni platform dari penjualan tiket. |
+| **Gas Surcharge** | 10% | Creator (saat Create) | Biaya operasional gas untuk API3 QRNG (Randomness). |
+| **Claim Fee** | 5% | Pemenang (saat Claim) | Biaya pemrosesan klaim dan maintenance hadiah. |
+
+### 📍 Mekanisme Aliran Dana:
+1.  **Ticket Sales (80/20 Split)**:
+    *   80% Masuk ke `sponsorBalances` (Internal mapping) -> Dapat ditarik oleh Creator via Dashboard.
+    *   20% Masuk ke `owner()` (Admin) -> Dikirim otomatis saat `_finalizeRaffle`.
+2.  **Creation Surcharge**:
+    *   10% Dipotong dari deposit awal creator -> Dikirim otomatis ke `masterContract` (Operasional).
+3.  **Prize Payout**:
+    *   Dana hadiah disimpan aman di kontrak hingga diklaim.
+    *   Saat klaim, 5% dipotong untuk Admin, 95% dikirim ke Pemenang.
+
+---
+
+## 8. Panduan Integrasi Modul Baru
+Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang **WAJIB** mengikuti langkah berikut:
+
+1.  **Emit Log di Database**: Gunakan kategori `PURCHASE` untuk setiap revenue.
+2.  **Metadata Lengkap**: Sertakan `tx_hash`, `value_amount`, dan `value_symbol` ('USDC' atau 'ETH').
+3.  **Automatic Inclusion**: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.
+
+---
+---
+*End of Accountant Ledger SOT - Nexus v3.63.0 Locked.*
+
+---
+
+## Chapter D: Swap & Profit Engine Specification
+- **Specification:** Swap & Profit Engine Specification
+- **Version:** v3.47.0
+- **Date Stamp:** 2026-04-20T14:30:00+07:00
+- **Author:** Antigravity (Lead Blockchain Architect)
+- **Status:** HARDENED SOT
+
+## 1. Overview
+The Swap & Profit Engine is a strategic feature designed to onboard users who lack ETH/USDC on the Base network and to generate a sustainable revenue stream (Integrator Fees) for the Crypto Disco protocol. By integrating Li.Fi, we enable cross-chain bridging and single-chain swaps directly within the application.
+
+## 2. Objectives
+- **User Growth**: Allow users from other chains (Mainnet, OP, ARB, etc.) to onboard with a single transaction.
+- **Revenue Generation**: Collect a **0.5% - 1.0%** fee on every swap/bridge volume.
+- **Frictionless UX**: Support gasless swap intents via Coinbase Smart Wallet & CDP Paymaster.
+
+## 3. Features & Functions
+### 3.1. Unified Swap Modal
+- **Source Token Selection**: Detect and list all tokens in user's wallet across supported chains.
+- **Destination Token**: Hardcoded options for ETH (Base) and USDC (Base).
+- **Real-time Quotes**: Fetch best routes using Li.Fi API.
+- **Slippage Protection**: User-configurable slippage (default 0.5%).
+
+### 3.2. Profit Mechanism
+- **Integrator Fee**: 0.5% (Configurable up to 1.0%).
+- **Fee Recipient**: `MASTER_X_ADDRESS` (0x980770dAcE8f13E10632D3EC1410FAA4c707076c).
+- **Deduction**: Automatic deduction by Li.Fi contract during the swap.
+
+### 3.3. Gasless Support (CDP Paymaster)
+- If user is using a **Smart Wallet**, the swap transaction will be wrapped to use the CDP Paymaster.
+- Users with 0 ETH can swap existing ERC20 tokens into ETH for future gas.
+
+---
+
+# Workflow: Swap Integration
+
+```mermaid
+graph TD
+    A[User clicks 'Swap/Get USDC'] --> B[Open SwapModal]
+    B --> C[Select Source Token & Chain]
+    C --> D[Fetch Li.Fi Quote]
+    D --> E{Quote Valid?}
+    E -- No --> F[Show Error/No Route]
+    E -- Yes --> G[Display Fee & Slippage]
+    G --> H[User Clicks 'Swap']
+    H --> I{Wallet Type?}
+    I -- Smart Wallet --> J[CDP Paymaster - Gasless]
+    I -- EOA --> K[Standard Transaction]
+    J --> L[Execute Li.Fi Route]
+    K --> L
+    L --> M[Success Toast + Balance Update]
+    L --> N[Revenue Sent to MasterX]
+```
+
+---
+
+# Step-by-Step List To-Do (v3.47.0)
+
+- [x] **Phase 1: Environment & Setup**
+    - [x] Add `VITE_LIFI_INTEGRATOR_ID` to `.env`.
+    - [x] Verify `MASTER_X_ADDRESS` is correctly set as fee recipient.
+- [x] **Phase 2: Component Development**
+    - [x] Install `@lifi/widget` and `@lifi/sdk`.
+    - [x] Create `SwapModal.jsx` with "Midnight Cyber" styling.
+    - [x] Integrate Li.Fi Widget with custom theme and partner fee.
+- [x] **Phase 3: Logic & Integration**
+    - [x] *PIVOT*: Replaced `@lifi/widget` with `@lifi/sdk` custom UI due to Rollup AST build crash.
+    - [x] Hook `SwapModal` into `ProfilePage.jsx` and `RaffleCard.jsx`.
+    - [x] Implement "GET USDC" buttons as balance support.
+    - [x] Finalize auto-trigger on insufficient balance for Task creation.
+- [/] **Phase 4: Verification & Audit**
+    - [x] Test swap route on Base Sepolia.
+    - [x] Verify UI/UX audit for "Native+" compliance.
+    - [x] Systematic Documentation Sync (v3.47.0).
+
+---
+
+# Section II: Chronological Development Log
+
+## 44. Work Report v3.64.4-Hardened
+**Date:** 2026-05-18
+**Subject:** Supreme Source of Truth (SOT) Hierarchy Consolidation
+**Author:** Antigravity (Lead Blockchain Architect)
+
+### Executive Summary
+Successfully integrated a supreme, deterministic Source of Truth (SOT) Hierarchy into the Master Architect Protocol (`.cursorrules` and `CLAUDE.md`). This establishes an absolute command chain for all future AI sessions, preventing context fragmentation and conflicting decisions.
+
+### Key Implementation Details
+1. **Supreme SOT Hierarchy**: Inserted a clear, multi-tiered hierarchy of command: (1) On-Chain Smart Contracts, (2) Supabase Dynamic Settings, (3) Product Requirements (PRD), (4) Supreme Protocols, (5) Design Guidelines, (6) Local Code/Skills.
+2. **Deterministic Precedence**: Formulated clear rules ensuring that on-chain state and database point settings override static guidelines, eliminating "AI-generated enterprise labyrinths" and documentation conflicts.
+3. **Ecosystem Parity**: Synchronized `.cursorrules`, `CLAUDE.md`, `ROADMAP.md`, `IMPLEMENTATION_SUMMARY.md`, and workspace maps, bumping the ecosystem to v3.64.4-Hardened.
+
+### Verification Matrix
+- [x] **Hierarchy Injected**: Absolute command chain successfully added below step confirmation block.
+- [x] **Protocol Integrity**: Verified via visual audit to ensure zero adjacent lines were impacted.
+- [x] **Documentation Synced**: Master PRD, CLAUDE.md, and summaries bumped to v3.64.4-Hardened.
+
+---
+
+## 43. Work Report v3.64.3-Hardened
+**Date:** 2026-05-18
+**Subject:** Hermes & LiteLLM Ecosystem Cleanout
+**Author:** Antigravity (Elite Systems Architect)
+
+### Executive Summary
+Successfully eliminated LiteLLM and Hermes Agent from the WSL environment and project directories, drastically reducing technical debt. Verified that all Freemodel and DeepSeek API keys are securely preserved in the primary `.env` file for ongoing LLM operations, ensuring absolute zero-trust configuration management.
+
+### Key Implementation Details
+1. **WSL Purge**: Deinstalled `litellm` using Python's `uv tool` manager and deleted the entire configuration footprint of Hermes Agent (under `~/.hermes/`) from the Linux shell, ensuring a clean and optimal WSL footprint.
+2. **Project Folder Cleanup**: Deleted the `.litellm/` directory from the workspace, eliminating unused startup shell scripts.
+3. **Configuration Preservation**: Verified that no active runtime secrets, environment keys, or wallets were affected during the cleanup, with `process.env.DEEPSEEK_API_KEY` and other critical configurations remaining pristine in the main `.env` profile.
+4. **Document Sync & Parity**: Synchronized `.cursorrules`, `CLAUDE.md`, `ROADMAP.md`, `IMPLEMENTATION_SUMMARY.md`, and workspace maps to record the cleanup and bump the ecosystem to v3.64.3-Hardened.
+
+### Verification Matrix
+- [x] **WSL Footprint**: LiteLLM/Hermes agent processes and files purged.
+- [x] **Secret Isolation**: DeepSeek and Freemodel keys intact.
+- [x] **Tree Hygiene**: Clean Git status with zero untracked `.litellm` files.
 
 ---
 
@@ -2323,12 +4106,229 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
     - **Live Lurah (Vercel Cron)**: Implemented `api/lurah-cron.js` and scheduled it in `vercel.json`. The "Lurah" now performs periodic health checks and sends proactive Telegram alerts if any "Economy Drift" atau "Environment Drift" terdeteksi.
 - **Roadmap Management**:
     - Formally paused **Phase 4 (Staking & Governance)** in `ROADMAP.md` untuk memprioritaskan stabilitas absolut ekonomi Raffle dan SBT saat ini.
+## 25. Work Report v3.38.19 — Architectural Purge
+**Status**: COMPLETED
+**Date**: 2026-03-22
+**Focus**: Final removal of mock dependencies from root search path.
+
+### ✅ Key Results:
+- **Pure Search Path**: Moved `MockAggregatorV3.sol` to `old/`.
+
+---
+
+## 26. Work Report v3.38.20 — Absolute Pure State & Canonical Lock
+**Status**: COMPLETED
+**Date**: 2026-03-22
+**Focus**: Establishing the "Zero-Artifact" project root.
+
+---
+
+## 27. Work Report v3.38.21 — Ecosystem Consolidation
+**Status**: COMPLETED
+**Date**: 2026-03-22
+**Focus**: Archiving redundant project folders.
+
+### ✅ Key Results:
+- **Root Cleanup**: Moved `DailyApp.V.12` and `NFT_Raffle_Source` to `_archive/`.
+
+---
+
+## 28. Work Report v3.38.22 — Final Health Audit
+**Status**: COMPLETED
+**Date**: 2026-03-22
+**Focus**: 13/13 Security Checks Pass.
+
+---
+
+## 29. Work Report v3.38.23 — Global Supabase Database Sync
+**Status**: COMPLETED
+**Date**: 2026-03-22
+**Focus**: Total schema hardening and on-chain state synchronization.
+
+---
+
+## 32. Work Report v3.39.1 — Database Parity Hardening
+**Status**: COMPLETED
+**Date**: 2026-03-27
+**Focus**: Achieving absolute database parity after final ecosystem sync.
+
+### ✅ Key Results:
+- **SBT Pool Sync**: Synchronized on-chain pool balances and holder counts to `sbt_pool_stats`.
+- **Underdog Optimization**: Recalculated percentile-based underdog thresholds based on current XP distribution.
+- **Git Hygiene Lockdown**: Purged all untracked lint artifacts and localized temporary logs.
+- **Protocol Lockdown**: Incremented ecosystem version to v3.39.1 across all agent skills and system documents.
+
+## 33. Work Report v3.39.0 — End-to-End Ecosystem Sync & Audit
+**Status**: COMPLETED
+**Date**: 2026-03-27
+**Focus**: Finalizing absolute parity across frontend, logic, and contract layers.
+
+### ✅ Key Results:
+- **Critical Frontend Patch**: Resolved a parsing error in `LoginPage.jsx` by balancing the JSX tree (missing `</div>` tags).
+- **Linter Compliance**: Fixed missing `useMemo` dependencies in `CreateRafflePage.jsx` and removed unused variables in `AdminPage.jsx`.
+- **Address Validation**: Verified that `.env` and `.cursorrules` share identical contract addresses for `DAILY_APP`, `MASTER_X`, `RAFFLE`, and `CMS V2`.
+- **Ecosystem Sync**: Incremented version to v3.39.0 across all protocol documents (`PRD`, `.cursorrules`, `CLAUDE.md`, `gemini.md`).
+
+---
+## 34. Work Report v3.40.3 — Task Claim Hardening & Ecosystem Sync
+**Status**: COMPLETED
+**Date**: 2026-03-27
+**Focus**: Resolving duplicate key errors and hardening the end-to-end claim pipeline.
+
+### ✅ Key Results:
+- **Database Schema**: Dropped redundant `uidx_user_task_unique` index, enabling multi-day claims for daily tasks.
+- **API Hardening**: Updated `tasks-bundle.js` and `user-bundle.js` to gracefully handle unique constraint violations (PostgreSQL 23505).
+- **Frontend Logic**: Refactored `TaskList.jsx` to correctly filter tasks using full claim history. Fixed a regression where `userClaims` state was incompatible with Set-based methods.
+- **Verification Server**: Hardened `supabase.service.js` in the verification-server against race conditions during high-frequency social task claims.
+- **Security**: Reinforced Identity Lock (1 Social Account : 1 Wallet) and Zero-Trust cryptographic verification for all claims.
+
+---
+## 35. Work Report v3.40.4 — Daily Claim Hardening & Real-time Sync
+**Status**: COMPLETED
+**Date**: 2026-03-31
+**Focus**: Eliminating 401 sync errors and achieving absolute real-time tier/XP parity.
+
+### ✅ Key Results:
+- **Backend Resilience**: Hardened `handleXpSync` with RPC timeout tolerance (10s race) and optimistic trust for proven `tx_hash`.
+- **XP Delta Logic**: Implemented fail-safe `xpDelta` fallback that triggers even if `readContract` fails, ensuring no claim is lost to RPC lag.
+- **Single Source of Truth**: Unified cooldown detection in `DailyClaimModal` to rely exclusively on on-chain data, preventing UI de-sync.
+- **Real-time Tier Sync**: Added instantaneous tier recalculation via `sbt_thresholds` DB query during XP sync (bypassing stale on-chain tier reads).
+- **View Parity**: Implemented 1.5s settled-state delay before refetching, ensuring `v_user_full_profile` leaderboard data is 100% fresh.
+- **Ecosystem Sync**: Incremented version to v3.40.4 across all protocol documents and verified via 13/13 Audit PASS.
+
+---
+## 36. Work Report v3.40.5 — Total Ecosystem Contract Synchronization
+**Status**: COMPLETED
+**Date**: 2026-04-02
+**Focus**: Updating active contract tables with explicit timestamps to prevent Source of Truth regression.
+
+### ✅ Key Results:
+- **Timestamped SOT**: Injected exact timestamps (`Last Synced: 2026-04-02T11:14:23+07:00`) into `.cursorrules` and active AI protocols.
+- **Protocol Parity**: Synchronized skill mandates to ensure absolute adherence to Base Sepolia/Mainnet states, ensuring agents always know the newest values.
+
+---
+## 37. Work Report v3.40.6 — Mainnet Phased Rollout Infrastructure
+**Status**: COMPLETED
+**Date**: 2026-04-02
+**Focus**: Safely transitioning the ecosystem to Base Mainnet without smart contract deployments using dynamic Feature Flags.
+
+### ✅ Key Results:
+- **Database Kill Switch**: Introduced `active_features` JSONB into `system_settings` to control Rollout Phases (`login_and_social`, `daily_claim`, `sbt_minting`, `ugc_payment`).
+- **Network-Aware Backends**: Severless APIs dynamically parse `VITE_CHAIN_ID` to block execution on Mainnet if the corresponding feature flag is `false`.
+- **UI Locking Mechanism**: Protected `CreateRafflePage` and `SBTUpgradeCard` with real-time React UI Locks that gray-out and prevent interaction based on points context flag status.
+- **Admin Command Center**: Built an integrated UI in `Admin Dashboard -> System Settings` allowing Admin users to toggle all Feature Flags directly via signature validation.
+
+---
+---
+## 38. Work Report v3.40.13 — Nexus Protocol Synchronization
+**Status**: COMPLETED
+**Date**: 2026-04-03
+**Focus**: Specialized environment sanitation, MasterX checksum correction, and global documentation synchronization.
+
+### ✅ Key Results:
+- **MasterX Correction**: Purged legacy `0x1ED8...` (Checksum/Revert conflict) and unified ecosystem around `0x980770dAcE8f13E10632D3EC1410FAA4c707076c`.
+- **Specialized Env Audit**: Sanitized 7 environment files (`.env`, `.env.example`, `.env.local`, `.env.vercel`, `.env.vercel.preview`, `.env.vercel.production`, `.env.verification.vercel`).
+- **Clean-Pipe Sync**: Resolved "Silent Corruption" (shell-induced `\r\n`) in Vercel environment variables via `spawnSync` protocol.
+- **Protocol Parity**: Synchronized `.cursorrules`, `CLAUDE.md`, `gemini.md`, `WORKSPACE_MAP.md`, and `FEATURE_WORKFLOW_SOT.md` to ensure absolute parity.
+- **Security Validation**: Verified 13/13 Security Matrix checks pass (`check_sync_status.cjs`) and zero secret leaks (`gitleaks`).
+
+---
+## 39. Work Report v3.40.18 — Global Mobile UI Hardening
+**Status**: COMPLETED
+**Date**: 2026-04-03
+**Focus**: Achieving "Native+" professional consistency and mobile accessibility across the entire ecosystem.
+
+### ✅ Key Results:
+- **Design System Lockdown**: Standardized all small labels and micro-text to **11px (Bold/Uppercase/Tracking-Wide)**. This eliminates the previous 9px/10px "flicker" and ensures readability on high-density displays.
+- **Safe Area Insets (Notch Proofing)**: Implemented `.pb-safe` and `.pt-safe` utilities across all pages and fixed navigation bars (Header/BottomNav), resolving all overlap issues with device home indicators.
+- **Admin Hub Hardening**: Refactored the `ModerationCenterTab` and `UgcRevenueTab` with standardized typography, premium `btn-native` styles, and improved empty states. Fixed a critical `isMainnet` reference bug in the moderation center.
+- **Component Parity**: Standardized all form inputs, dropdowns (`select-native`), and interactive elements on `CreateMissionPage` and `CreateRafflePage` to match the new "Native+" component library.
+- **Header & BottomNav**: Re-engineered for a refined "Native+" feel with enhanced glassmorphism (`backdrop-blur-3xl`), 11px micro-text labels, and precise safe-area-inset handling via environment variables.
+
+---
+## 36. Work Report — v3.41.0 (FINAL)
+**Date**: 2026-04-04
+**Task**: Social Identity Hardening & Native+ Balanced Typography.
+**Action**:
+- **Multi-Platform Social Guard**: Expanded identity verification to support parallel Farcaster (via Neynar) and Twitter (via internal DB linkage) checks in `useSocialGuard`.
+- **Backend Verification**: Implemented secure `GET /api/verify/farcaster/check` and `GET /api/verify/twitter/check` endpoints in the verification server.
+- **Native+ Balanced Typography**: Refined the UI with a hybrid typography system: 11px Bold/Uppercase labels (`.label-native`) for scannability and 13px Medium content (`.content-native`) for readability.
+- **Global UI Refactor**: Systematically applied Balanced Typography to `ProfilePage.jsx`, `TasksPage.jsx`, `SBTRewardsDashboard.jsx`, `RaffleCard.jsx`, `RafflesPage.jsx`, and `ActivityLogSection.jsx`.
+- **Raffle Integration**: Hardened `RaffleCard.jsx` and `RafflesPage.jsx` with a mandatory social verification check before ticket purchase, preventing Sybil attacks.
+- **Ecosystem Sync Audit**: Successfully ran `check_sync_status.cjs` proving 13/13 security checks pass and absolute environment parity.
+**Outcome**: 100% Sybil-resistant raffle participation and a more readable, high-end "Professional Native" mobile interface. Ecosystem fully synchronized.
+
+---
+## 41. Work Report — v3.42.8 (CURRENT)
+**Date**: 2026-04-08
+**Task**: Task Feature Integrity Hardening & Cleanup.
+**Action**:
+- **Admin Creation Pipeline**: Fixed missing `title`, `expires_at`, and `target_id` injection in `admin-bundle.js` handlers. All system tasks now have explicit expiry metadata.
+- **Claim Handler Hardening**: `TaskList.jsx` now explicitly handles the `already_claimed` flag from the backend success response to prevent misleading UI states and ensure instant task removal.
+- **Database Sanitization**: Purged all dummy tasks (`Follow @CryptoDisco`, etc.) and cleaned 9 orphan user claims to maintain a performance-optimized baseline.
+- **Documentation Sync**: Synchronized `TASK_FEATURE_WORKFLOW.md` and `FEATURE_WORKFLOW_SOT.md` to version v3.42.8.
+**Outcome**: 100% mission persistence consistency and hardened social claim security. Ecosystem fully synchronized to v3.42.8.
+
+---
+## 40. Work Report — v3.42.2 (LEGACY)
+**Date**: 2026-04-05
+**Task**: Identity Guard UI Hardening & Disappearing Task Mandate.
+**Action**:
+- **Premium Identity Branding**: Injected "Verified" shield badges (Base Blue) into `ProfilePage.jsx` and refactored the Base Social linking section for a more professional, high-contrast look.
+- **Identity Guard Hardening**: Enforced card-level gating in `SponsoredTaskCard` (`TasksPage.jsx`), preventing unverified users from attempting bulk-verification on gated missions.
+- **Disappearing Task Mandate**: Implemented strict visibility logic. Individual tasks and entire mission cards now **vanish** from the UI immediately upon completion/claim, maintaining a clean "To-Do" list for the user.
+- **Admin Visibility**: Hardened `ActiveCampaignsSection.jsx` in the Admin Dashboard to explicitly label "IDENTITY GUARDED" missions for moderators.
+- **UGC Creation Protection**: Updated `CreateTaskModal` to clearly label the Identity Guard as "Sybil Protection" for mission creators, increasing the value proposition of the protocol.
+**Outcome**: 100% Sybil-resistant participation with a "Clean Sweep" task experience and premium identity signaling. Ecosystem fully synchronized to v3.42.2.
+
+---
+## 42. Work Report v3.43.0 — Hardening Raffle & SBT Economy + Nexus Sentinel
+**Status**: COMPLETED
+**Date**: 2026-04-29
+**Focus**: Stabilizing the Raffle economy, synchronizing SBT tier thresholds, and activating real-time ecosystem monitoring.
+
+### ✅ Key Results:
+- **Raffle Moderation Hardening**:
+    - Replaced `window.prompt` with a **Premium Rejection Modal** (Glassmorphism UI) for UGC Raffle moderation.
+    - Implemented **On-Chain Refund Protocol**: Rejection of a raffle now automatically triggers a `cancelRaffle` transaction to refund the sponsor's 1.5% fee.
+    - Sanitized `user-bundle.js` to filter out already rejected raffles from the moderation queue.
+- **SBT Economy Parity**:
+    - Synchronized XP thresholds across `MasterX` and `DailyApp` contracts: Bronze (100) to Diamond (10,000).
+    - Verified the **SBT Upgrade** lifecycle, ensuring users can only mint/upgrade based on validated on-chain XP data.
+- **Nexus Command Center (NCC) v2.0**:
+    - **Real-Time Monitor**: Built a premium dashboard (`index.html`) with auto-refresh and dependency graph visualization.
+    - **Proactive Sentinel**: Deployed a background audit script (`ncc-sentinel.cjs`) with state tracking to prevent alert fatigue.
+    - **Live Lurah (Vercel Cron)**: Implemented `api/lurah-cron.js` and scheduled it in `vercel.json`. The "Lurah" now performs periodic health checks and sends proactive Telegram alerts if any "Economy Drift" atau "Environment Drift" terdeteksi.
+- **Roadmap Management**:
+    - Formally paused **Phase 4 (Staking & Governance)** in `ROADMAP.md` untuk memprioritaskan stabilitas absolut ekonomi Raffle dan SBT saat ini.
 
 ---
 *Created by Antigravity — Nexus Master Architect*
 *Integrity First. Nexus Synchronized.*
 
-# #   A r c h i t e c t u r e   U p d a t e   v 3 . 4 7 . 1 + 
- S B T   M i n t i n g   l o g i c   a n d   O n - C h a i n   X P   V e r i f i c a t i o n   h a v e   b e e n   p e r m a n e n t l y   m i g r a t e d   f r o m   t h e   M A S T E R _ X   c o n t r a c t   t o   t h e   D A I L Y _ A P P   c o n t r a c t .   T h e   f r o n t e n d   c o m p o n e n t   S B T U p g r a d e C a r d . j s x   m u s t   r e a d   X P   p o i n t s   v i a   u s e U s e r I n f o   ( D A I L Y _ A P P )   i n s t e a d   o f   u s e S B T   ( M A S T E R _ X )   t o   e n s u r e   i m m e d i a t e   U I   s y n c   a n d   u n l o c k   S B T   M i n t i n g   i n s t a n t l y   a f t e r   a   d a i l y   c l a i m . 
- 
- 
+# #   A r c h i t e c t u r e   U p d a t e   v 3 . 4 7 . 1 + 
+ S B T   M i n t i n g   l o g i c   a n d   O n - C h a i n   X P   V e r i f i c a t i o n   h a v e   b e e n   p e r m a n e n t l y   m i g r a t e d   f r o m   t h e   M A S T E R _ X   c o n t r a c t   t o   t h e   D A I L Y _ A P P   c o n t r a c t .   T h e   f r o n t e n d   c o m p o n e n t   S B T U p g r a d e C a r d . j s x   m u s t   r e a d   X P   p o i n t s   v i a   u s e U s e r I n f o   ( D A I L Y _ A P P )   i n s t e a d   o f   u s e S B T   ( M A S T E R _ X )   t o   e n s u r e   i m m e d i a t e   U I   s y n c   a n d   u n l o c k   S B T   M i n t i n g   i n s t a n t l y   a f t e r   a   d a i l y   c l a i m . 
+
+---
+## 43. Work Report v3.64.5 — Agent Anti-Negligence Hook & Ecosystem Hardening
+**Status**: COMPLETED
+**Date**: 2026-05-18
+**Focus**: Introducing an automated scan blocking agent negligences, unifying workspaces, cleaning old artifacts, and hardening protocols.
+
+### ✅ Key Results:
+- **Anti-Negligence Agent Hook**: 
+  - Designed and deployed `scripts/audits/agent_anti_negligence_hook.cjs` to enforce zero-leak, zero-secrets, and clean git protocols.
+  - Automatically scans workspace files for raw secrets, private keys, `[dotenv]`, unregistered files, and temporary artifacts.
+  - Integrated into absolute rules as `Rule 77` in `AGENTS.md` and `Rule 61` in `.cursorrules`.
+- **Ecosystem Work Reports Consolidation**:
+  - Unified fragmented workflow documents under `.agents/workflows/` into a single canonical history: `AGENT_WORK_REPORT.md`.
+  - Added millisecond-level precision metadata stamps (author, date, time, task metadata) to all reports.
+- **Repository Clean Tree Mandate**:
+  - Automatically deleted redundant `tsc_output*.txt`, `tsc-errors*.txt`, temporary build logs, and environment backups to prevent leak pathways.
+  - Aligned environment variables across all Vercel servers via Clean-Pipe Sync.
+
+---
+*Created by Antigravity — Nexus Master Architect*
+*Integrity First. Nexus Synchronized. v3.64.5 LOCKED.*
+ 
+ S B T   M i n t i n g   l o g i c   a n d   O n - C h a i n   X P   V e r i f i c a t i o n   h a v e   b e e n   p e r m a n e n t l y   m i g r a t e d   f r o m   t h e   M A S T E R _ X   c o n t r a c t   t o   t h e   D A I L Y _ A P P   c o n t r a c t .   T h e   f r o n t e n d   c o m p o n e n t   S B T U p g r a d e C a r d . j s x   m u s t   r e a d   X P   p o i n t s   v i a   u s e U s e r I n f o   ( D A I L Y _ A P P )   i n s t e a d   o f   u s e S B T   ( M A S T E R _ X )   t o   e n s u r e   i m m e d i a t e   U I   s y n c   a n d   u n l o c k   S B T   M i n t i n g   i n s t a n t l y   a f t e r   a   d a i l y   c l a i m .

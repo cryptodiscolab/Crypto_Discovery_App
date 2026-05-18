@@ -47,6 +47,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@sentry/node": "^10.53.1",
     "@supabase/supabase-js": "^2.42.0",
     "telegraf": "4.16.3",
     "viem": "2.47.4"
