@@ -91,12 +91,12 @@ describe("CryptoDiscoMasterX - Batch Distribution Logic", function () {
             await masterX.connect(user1).distributeRevenue();
 
             // 40% Owner = 4 ETH
-            // SBT Split = 3 ETH. GOLD (user1) gets 50% = 1.5 ETH.
-            // Silver (30%) and Bronze (20%) are empty -> Owner Overflow = 1.5 ETH.
-            // Total expected for Owner: 4 + 1.5 = 5.5 ETH.
+            // SBT Split = 3 ETH. GOLD (user1) gets 25% = 0.75 ETH.
+            // Diamond(30%), Platinum(15%), Silver(20%), Bronze(10%) are empty -> Owner Overflow = 2.25 ETH.
+            // Total expected for Owner: 4 + 2.25 = 6.25 ETH.
 
             const ownerAfter = await ethers.provider.getBalance(owner.address);
-            expect(ownerAfter - ownerBefore).to.equal(ethers.parseEther("5.5"));
+            expect(ownerAfter - ownerBefore).to.equal(ethers.parseEther("6.25"));
 
             // 20% Ops = 2 ETH
             const opsAfter = await ethers.provider.getBalance(opsWallet.address);
@@ -107,7 +107,7 @@ describe("CryptoDiscoMasterX - Batch Distribution Logic", function () {
             expect(treasuryAfter - treasuryBefore).to.equal(ethers.parseEther("1.0"));
 
             // SBT Pool check
-            expect(await masterX.totalLockedRewards()).to.equal(ethers.parseEther("1.5"));
+            expect(await masterX.totalLockedRewards()).to.equal(ethers.parseEther("0.75"));
         });
     });
 
@@ -116,9 +116,9 @@ describe("CryptoDiscoMasterX - Batch Distribution Logic", function () {
             await masterX.updateUserTier(user1.address, TIER_GOLD);
             await owner.sendTransaction({ to: masterX.target, value: ethers.parseEther("10") });
 
-            await masterX.distributeRevenue(); // 3 ETH split to SBT, 1.5 ETH to GOLD
+            await masterX.distributeRevenue(); // 3 ETH split to SBT, 0.75 ETH to GOLD
 
-            expect(await masterX.accRewardPerShare(TIER_GOLD)).to.equal(ethers.parseEther("1.5") * REWARD_PRECISION);
+            expect(await masterX.accRewardPerShare(TIER_GOLD)).to.equal(ethers.parseEther("0.75") * REWARD_PRECISION);
         });
     });
 });
