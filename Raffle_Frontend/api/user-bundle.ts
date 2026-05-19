@@ -435,9 +435,9 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
         const currentOnChainXp = Number(contractStats?.[0] || 0);
         const currentTierOnChain = Number(contractStats?.[3] || 0);
 
-        let xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
+        const xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
 
-        let finalLastOnChainXpToSave = currentOnChainXp;
+        const finalLastOnChainXpToSave = currentOnChainXp;
 
         if (xpDelta === 0 && tx_hash && skipSignature) {
             // [SECURITY FIX] Phantom Claim Exploit Prevention
