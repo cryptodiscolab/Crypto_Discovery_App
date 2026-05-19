@@ -1,0 +1,1516 @@
+<p>﻿- <strong>v3.63.0</strong>: Admin Architecture Consolidation &amp; Technical Debt Liquidation. Unified <code>TaskManager</code> components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (<code>ActiveCampaignsSection</code>, <code>EconomyConfigSection</code>, etc.). Archival of legacy Python/SQL scripts.</p>
+<ul>
+<li><strong>v3.61.0</strong>: Serverless API Hardening &amp; 100% TS Migration. Refaktor <code>user-bundle.ts</code>, <code>tasks-bundle.ts</code>, dan <code>admin-bundle.ts</code> ke strict TypeScript. Integrasi <code>database.types.ts</code> dan implementasi <code>unknown</code> error guard pattern.</li>
+<li><strong>v3.59.5</strong>: Raffle Admin Hardening &amp; Platform Economics. Implementasi <code>AdminRaffleSettings</code> (Rake, Claim Fee, Surcharge), <code>CreatorEarningsCard</code> untuk penarikan revenue sponsor (80%), dan penegakan <strong>Zero-Hardcode Mandate</strong> pada seluruh form pembuatan raffle.</li>
+<li><strong>v3.59.4</strong>: Final Polish &amp; Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added <code>daily_task_completion</code> reward keys.</li>
+<li><strong>v3.59.3</strong>: Multi-Token Sponsorship (V14) &amp; Decimal-Aware Infrastructure. Implementasi DailyApp V14 dengan 6-decimal USDC base, reward mapping 2D (user =&gt; token =&gt; reward), dan perbaikan persistensi visibilitas SponsoredTaskCard.</li>
+<li><strong>v3.59.2</strong>: Ecosystem Hardening &amp; Parity Audit. Implementasi <strong>Hardening Center</strong> di Accountant Ledger, penegakan <strong>SBT-Gating</strong> pada Leaderboard, dan integrasi <strong>Parity Audit API</strong> dengan Runtime ABI Guards.</li>
+<li><strong>v3.59.1</strong>: Ecosystem Infrastructure Hardening &amp; Zero-Hardcode Sync. Refactor <code>abis_data.txt</code> untuk menghapus alamat statis, pemulihan webhook Telegram Lurah Bot, dan sinkronisasi environment global.</li>
+<li><strong>v3.58.0</strong>: Lurah Ecosystem Hardening &amp; Autonomous Agent Resiliency. Implementasi <strong>Auto-Retry logic</strong> pada RPC, heartbeat dinamis di <code>system_health</code>, dan eliminasi hardcoded addresses.</li>
+<li><strong>v3.57.0</strong>: Hardening UGC Mission Pipeline. Implementasi <strong>Multi-Action Campaign selector</strong>, <strong>All-or-Nothing Reward Claiming</strong>, dan <strong>Grouped UI Components</strong> (<code>UGCCampaignCard</code>). Validasi URL platform-aware.</li>
+<li><strong>v3.56.4</strong>: Hardened Multi-Agent Cognitive Sync. Implementasi <strong>Lurah Brain (AI Filter)</strong>, <strong>Telegram Chat Memory</strong>, dan <strong>Sequential SBT Upgrade Mandate</strong>. Penghapusan protokol &quot;Izin Pemeliharaan&quot; untuk agen otonom.</li>
+<li><strong>v3.56.3</strong>: Implementasi Raffle v2.1 Refund Protocol &amp; OpenClaw Security Audit.</li>
+</ul>
+<hr>
+<h2>≡ƒôï Table of Contents</h2>
+<ol>
+<li><a href="#1-arsitektur-tingkat-tinggi">Arsitektur Tingkat Tinggi</a></li>
+<li><a href="#2-dua-jalur-tugas">Dua Jalur Tugas (Dual Task Pipeline)</a></li>
+<li><a href="#3-smart-contract-registry--functions">Smart Contract Registry &amp; Functions</a></li>
+<li><a href="#4-database-schema-supabase">Database Schema (Supabase)</a></li>
+<li><a href="#5-api-routing--bundle-map">API Routing &amp; Bundle Map</a></li>
+<li><a href="#6-on-chain-task-workflow-e2e">On-Chain Task Workflow (E2E)</a></li>
+<li><a href="#7-off-chain-task-workflow-e2e">Off-Chain Task Workflow (E2E)</a></li>
+<li><a href="#8-social-verification-flow">Social Verification Flow</a></li>
+<li><a href="#9-xp-economy--hybrid-formula">XP Economy &amp; Hybrid Formula</a></li>
+<li><a href="#10-identity-guard--access-control">Identity Guard &amp; Access Control</a></li>
+<li><a href="#11-disappearing-task-mandate">Disappearing Task Mandate</a></li>
+<li><a href="#12-partner-offers-campaigns">Partner Offers (Campaigns)</a></li>
+<li><a href="#13-admin-task-management">Admin Task Management</a></li>
+<li><a href="#14-file-reference-map">File Reference Map</a></li>
+<li><a href="#15-healthy-state-checklist">Healthy State Checklist</a></li>
+<li><a href="#16-self-healing-claim-pipeline">Self-Healing Claim Pipeline</a></li>
+<li><a href="#17-concurrent-ui-performance">Concurrent UI Performance</a></li>
+<li><a href="#18-sbt-tier-integration-mandate">SBT Tier Integration Mandate</a></li>
+<li><a href="#19-ugc-multi-action--all-or-nothing-campaign-workflow">UGC Multi-Action &amp; All-or-Nothing Campaign Workflow</a></li>
+<li><a href="#20-zero-hardcode-infrastructure-mandate">Zero-Hardcode Infrastructure Mandate</a></li>
+<li><a href="#21-absolute-parity--hardening-audit-protocol">Absolute Parity &amp; Hardening Audit Protocol</a></li>
+</ol>
+<hr>
+<h2>1. Arsitektur Tingkat Tinggi</h2>
+<p>Fitur Task adalah inti dari engagement loop Crypto Disco. User menyelesaikan tugas (sosial, on-chain, atau harian) dan mendapatkan XP yang menggerakkan seluruh ekonomi tier dan reward.</p>
+<pre><code class="language-mermaid">graph TB
+    subgraph &quot;≡ƒûÑ∩╕Å Frontend Layer&quot;
+        TP[&quot;TasksPage.jsx&quot;]
+        TL[&quot;TaskList.jsx&lt;br/&gt;(Off-Chain Tasks)&quot;]
+        TR[&quot;TaskRow Component&lt;br/&gt;(On-Chain Tasks)&quot;]
+        STC[&quot;SponsoredTaskCard&lt;br/&gt;(Grouped Missions)&quot;]
+        OL[&quot;OffersList.jsx&lt;br/&gt;(Partner Campaigns)&quot;]
+        SM[&quot;SwapModal.jsx&lt;br/&gt;(Quick Swap Engine)&quot;]
+    end
+
+    subgraph &quot;≡ƒöù Hooks &amp; Logic&quot;
+        UV[&quot;useVerification.js&lt;br/&gt;(Social Verify Flow)&quot;]
+        UVA[&quot;useVerifiedAction.js&lt;br/&gt;(Secure Claim Flow)&quot;]
+        UC[&quot;useContract.js&lt;br/&gt;(On-Chain Read/Write)&quot;]
+        DAL[&quot;dailyAppLogic.js&lt;br/&gt;(XP Award Bridge)&quot;]
+    end
+
+    subgraph &quot;ΓÜí API Layer (Vercel Serverless - Hardened v3.61.0)&quot;
+        TB[&quot;tasks-bundle.ts&lt;br/&gt;handleClaim | handleVerify | handleSocialVerify&quot;]
+        UB[&quot;user-bundle.js&lt;br/&gt;handleXpSync (On-Chain)&quot;]
+        CB[&quot;campaigns.js&lt;br/&gt;handleJoin&quot;]
+    end
+
+    subgraph &quot;≡ƒöÉ Security Layer&quot;
+        VS[&quot;Verification Server&lt;br/&gt;(External Bridge)&quot;]
+    end
+
+    subgraph &quot;≡ƒùä∩╕Å Database (Supabase)&quot;
+        DT[&quot;daily_tasks&quot;]
+        UTC[&quot;user_task_claims&quot;]
+        UP[&quot;user_profiles&quot;]
+        PS[&quot;point_settings&quot;]
+        UAL[&quot;user_activity_logs&quot;]
+        FN[&quot;fn_increment_xp()&lt;br/&gt;(Hybrid Formula RPC)&quot;]
+    end
+
+    subgraph &quot;Γ¢ô∩╕Å Blockchain (Base Sepolia)&quot;
+        DA[&quot;DailyApp V13.2&lt;br/&gt;0x81D6...4B5D&quot;]
+        MX[&quot;MasterX&lt;br/&gt;0x9807...076c&quot;]
+    end
+
+    TP --&gt; TL &amp; TR &amp; STC &amp; OL
+    TL --&gt;|Claim| UVA --&gt;|POST| VS
+    TR --&gt;|doTask| UC --&gt;|Write| DA
+    TR --&gt;|Verify| UV --&gt;|POST| VS
+    STC --&gt;|claimRewards| DA
+    STC --&gt;|XP Sync| UB
+    OL --&gt;|Join| CB
+    SM --&gt;|Swap Quote| LS[Li.Fi SDK]
+    STC --&gt;|Low Balance| SM
+    TL --&gt;|Low Balance| SM
+
+    VS --&gt;|Reroute| TB
+    TB --&gt;|Insert| UTC
+    TB --&gt;|RPC| FN
+    TB --&gt;|Read| PS &amp; DT
+    TB --&gt;|Log| UAL
+    FN --&gt;|Atomic Update| UP
+
+    UB --&gt;|readContract| DA
+    UB --&gt;|Upsert| UP
+</code></pre>
+<hr>
+<h2>2. Dua Jalur Tugas</h2>
+<blockquote>
+<p>[!IMPORTANT]
+Crypto Disco memiliki <strong>DUA jalur tugas yang sangat berbeda</strong>. Agen dan developer WAJIB memahami perbedaan ini untuk mencegah bug XP sync.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Aspek</th>
+<th>≡ƒƒª On-Chain Tasks</th>
+<th>≡ƒƒ⌐ Off-Chain Tasks</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sumber Data</strong></td>
+<td>Smart Contract <code>DailyApp V13.2</code></td>
+<td>Tabel Supabase <code>daily_tasks</code></td>
+</tr>
+<tr>
+<td><strong>Penyimpanan Tugas</strong></td>
+<td>Disimpan on-chain via <code>addTask()</code></td>
+<td>Disimpan di database via Admin</td>
+</tr>
+<tr>
+<td><strong>Komponen UI</strong></td>
+<td><code>TaskRow</code> di <code>TasksPage.jsx</code></td>
+<td><code>TaskList.jsx</code> (standalone)</td>
+</tr>
+<tr>
+<td><strong>Verifikasi Sosial</strong></td>
+<td>Ya ΓÇö via <code>useVerification.js</code></td>
+<td>Tidak ΓÇö klaim langsung</td>
+</tr>
+<tr>
+<td><strong>Pemeriksaan Selesai</strong></td>
+<td><code>hasCompletedTask(user, taskId)</code> on-chain</td>
+<td><code>user_task_claims</code> lookup di DB</td>
+</tr>
+<tr>
+<td><strong>Klaim XP</strong></td>
+<td><code>doTask()</code> ΓåÆ <code>awardTaskXP()</code> ΓåÆ <code>/api/tasks/verify</code></td>
+<td><code>useVerifiedAction</code> ΓåÆ <code>/api/tasks-bundle?action=claim</code></td>
+</tr>
+<tr>
+<td><strong>XP Sync Method</strong></td>
+<td><code>fn_increment_xp</code> via tasks-bundle</td>
+<td><code>fn_increment_xp</code> via tasks-bundle</td>
+</tr>
+<tr>
+<td><strong>Reward Source</strong></td>
+<td><code>point_settings</code> (dynamic key)</td>
+<td><code>point_settings</code> ΓåÆ fallback <code>daily_tasks.xp_reward</code></td>
+</tr>
+<tr>
+<td><strong>Sponsored Grouping</strong></td>
+<td>Ya ΓÇö <code>sponsorshipId</code> grouping</td>
+<td>Tidak</td>
+</tr>
+<tr>
+<td><strong>Tier Gating</strong></td>
+<td>Ya ΓÇö <code>minTier</code> on-chain</td>
+<td>Tidak secara langsung</td>
+</tr>
+<tr>
+<td><strong>Identity Guard</strong></td>
+<td>Ya ΓÇö <code>isBaseSocialRequired</code></td>
+<td>Ya ΓÇö <code>is_base_social_required</code> column</td>
+</tr>
+<tr>
+<td><strong>Unique Constraint</strong></td>
+<td><code>hasCompletedTask</code> (on-chain boolean)</td>
+<td><code>user_task_claims</code> UNIQUE(wallet, task_id)</td>
+</tr>
+</tbody></table>
+<pre><code class="language-mermaid">flowchart LR
+    subgraph &quot;On-Chain Path&quot;
+        A1[User Sees TaskRow] --&gt; A2[Click ΓåÆ Open Link + doTask on-chain]
+        A2 --&gt; A3[Wait 30s Anti-Fraud]
+        A3 --&gt; A4[Click Verify ΓåÆ EIP-191 Sign]
+        A4 --&gt; A5[POST /api/tasks-bundle action=social-verify]
+        A5 --&gt; A6[Insert user_task_claims + fn_increment_xp]
+    end
+
+    subgraph &quot;Off-Chain Path (v3.47.1 Two-Step Flow)&quot;
+        B1[User Sees TaskList Card] --&gt; B2[&quot;Step 1: Click &#39;GO TO TASK&#39; ΓåÆ window.open(task_link)&quot;]
+        B2 --&gt; B3[15s Anti-Fraud Countdown]
+        B3 --&gt; B4[&quot;Step 2: Click &#39;CLAIM REWARD&#39; (green, enabled)&quot;]
+        B4 --&gt; B5[EIP-191 Sign via useVerifiedAction]
+        B5 --&gt; B6[POST /api/tasks-bundle action=claim]
+        B6 --&gt; B7[Insert user_task_claims + fn_increment_xp]
+    end
+</code></pre>
+<hr>
+<h2>3. Smart Contract Registry &amp; Functions</h2>
+<h3>3.1 Contract Addresses (Base Sepolia ΓÇö 84532)</h3>
+<table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+<th>Governance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>DailyApp V14</strong></td>
+<td><code>0x888fE02bd09642de385E55DdC6D8a7Ab5580f834</code></td>
+<td><code>AccessControl</code></td>
+</tr>
+<tr>
+<td><strong>DailyApp V13.2</strong></td>
+<td><code>0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D</code></td>
+<td><code>AccessControl</code></td>
+</tr>
+<tr>
+<td><strong>MasterX (XP)</strong></td>
+<td><code>0x980770dAcE8f13E10632D3EC1410FAA4c707076c</code></td>
+<td><code>Ownable</code></td>
+</tr>
+<tr>
+<td><strong>Raffle</strong></td>
+<td><code>0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3</code></td>
+<td><code>Ownable</code></td>
+</tr>
+<tr>
+<td><strong>CMS V2</strong></td>
+<td><code>0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC</code></td>
+<td><code>AccessControl</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>[!WARNING]
+Mainnet addresses are <code>[RESERVED]</code> ΓÇö NEVER use Sepolia addresses on Mainnet labels.</p>
+</blockquote>
+<h3>3.2 DailyApp V13.2 ΓÇö Task-Related Functions</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Type</th>
+<th>Signature</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>getTask</code></td>
+<td><code>view</code></td>
+<td><code>(uint256 taskId) ΓåÆ (baseReward, isActive, cooldown, minTier, title, link, createdAt, requiresVerification, sponsorshipId)</code></td>
+<td>Membaca detail tugas</td>
+</tr>
+<tr>
+<td><code>getTasksInRange</code></td>
+<td><code>view</code></td>
+<td><code>(uint256 from, uint256 to) ΓåÆ Task[]</code></td>
+<td>Batch baca seluruh tugas</td>
+</tr>
+<tr>
+<td><code>nextTaskId</code></td>
+<td><code>view</code></td>
+<td><code>() ΓåÆ uint256</code></td>
+<td>Total tugas yang terdaftar</td>
+</tr>
+<tr>
+<td><code>doTask</code></td>
+<td><code>write</code></td>
+<td><code>(uint256 taskId, address referrer)</code></td>
+<td>Registrasi intent/cooldown user</td>
+</tr>
+<tr>
+<td><code>hasCompletedTask</code></td>
+<td><code>view</code></td>
+<td><code>(address user, uint256 taskId) ΓåÆ bool</code></td>
+<td>Cek apakah tugas sudah selesai</td>
+</tr>
+<tr>
+<td><code>isTaskVerified</code></td>
+<td><code>view</code></td>
+<td><code>(address user, uint256 taskId) ΓåÆ bool</code></td>
+<td>Cek status verifikasi</td>
+</tr>
+<tr>
+<td><code>userStats</code></td>
+<td><code>view</code></td>
+<td><code>(address user) ΓåÆ (points, totalTasksCompleted, referralCount, currentTier, tasksForReferralProgress, lastDailyBonusClaim, isBlacklisted)</code></td>
+<td>Statistik user</td>
+</tr>
+<tr>
+<td><code>userSponsorshipProgress</code></td>
+<td><code>view</code></td>
+<td><code>(address user, uint256 sponsorshipId) ΓåÆ uint256 count</code></td>
+<td>Progress sponsorship mission</td>
+</tr>
+<tr>
+<td><code>claimableRewards</code></td>
+<td><code>view</code></td>
+<td><code>(address user) ΓåÆ uint256</code></td>
+<td>Reward yang bisa diklaim</td>
+</tr>
+<tr>
+<td><code>claimRewards</code></td>
+<td><code>write</code></td>
+<td><code>()</code></td>
+<td>Klaim akumulasi reward</td>
+</tr>
+<tr>
+<td><code>lastActivityTime</code></td>
+<td><code>view</code></td>
+<td><code>(address user) ΓåÆ uint256</code></td>
+<td>Timestamp aktivitas terakhir</td>
+</tr>
+<tr>
+<td><code>addTask</code></td>
+<td><code>write</code></td>
+<td><code>(baseReward, isActive, cooldown, minTier, title, link, requiresVerification, sponsorshipId)</code></td>
+<td>Admin: Tambah tugas</td>
+</tr>
+<tr>
+<td><code>setSponsorshipParams</code></td>
+<td><code>write</code></td>
+<td><code>(rewardPerClaim, tasksRequired, minPool, platformFee)</code></td>
+<td>Admin: Config sponsorship parameters</td>
+</tr>
+<tr>
+<td><code>setTokenPriceUSD</code></td>
+<td><code>write</code></td>
+<td><code>(uint256 newPrice)</code></td>
+<td>Admin: Direct update token price</td>
+</tr>
+<tr>
+<td><code>approveSponsorship</code></td>
+<td><code>write</code></td>
+<td><code>(uint256 requestId)</code></td>
+<td>Admin: Setujui sponsorship</td>
+</tr>
+<tr>
+<td><code>rejectSponsorship</code></td>
+<td><code>write</code></td>
+<td><code>(uint256 requestId, string reason)</code></td>
+<td>Admin: Tolak sponsorship</td>
+</tr>
+<tr>
+<td><code>buySponsorshipWithToken</code></td>
+<td><code>write</code></td>
+<td><code>(sponsorshipId, titles[], links[], email, rewardPerClaim, paymentToken)</code></td>
+<td>Sponsor: Buy sponsorship mission</td>
+</tr>
+</tbody></table>
+<h3>3.3 ABI Source of Truth</h3>
+<pre><code>File: src/lib/abis_data.txt
+Import: src/lib/contracts.js (Proxy pattern ΓÇö anti Rollup AST crash)
+</code></pre>
+<p>ABIs di-load secara lazy via <code>createAbiProxy()</code> pattern:</p>
+<pre><code class="language-javascript">// contracts.js
+export const DAILY_APP_ABI = createAbiProxy(&#39;DAILY_APP&#39;);
+export const CONTRACTS = {
+    DAILY_APP: getAddr(&#39;DAILY_APP&#39;, &#39;VITE_V12_CONTRACT_ADDRESS&#39;, &#39;VITE_V12_CONTRACT_ADDRESS_SEPOLIA&#39;),
+    // ...
+};
+</code></pre>
+<hr>
+<h2>4. Database Schema (Supabase)</h2>
+<h3>4.1 <code>daily_tasks</code> ΓÇö Off-Chain Task Definitions</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td><code>uuid</code> (PK)</td>
+<td>ID unik tugas</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><code>text</code></td>
+<td>Judul tugas (ditampilkan di UI)</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>text</code></td>
+<td>Deskripsi lengkap</td>
+</tr>
+<tr>
+<td><code>platform</code></td>
+<td><code>text</code></td>
+<td>Platform sosial: <code>farcaster</code>, <code>twitter</code>, <code>tiktok</code>, <code>instagram</code>, <code>regular</code></td>
+</tr>
+<tr>
+<td><code>action_type</code></td>
+<td><code>text</code></td>
+<td>Jenis aksi: <code>follow</code>, <code>like</code>, <code>repost</code>, <code>comment</code>, <code>task</code></td>
+</tr>
+<tr>
+<td><code>xp_reward</code></td>
+<td><code>integer</code></td>
+<td>Base XP reward (fallback jika <code>point_settings</code> tidak ada)</td>
+</tr>
+<tr>
+<td><code>target_id</code></td>
+<td><code>text</code></td>
+<td>ID target sosial (FID, tweet ID, etc.) ΓÇö Sybil prevention</td>
+</tr>
+<tr>
+<td><code>task_type</code></td>
+<td><code>text</code></td>
+<td><code>social</code>, <code>regular</code>, <code>system</code> ΓÇö Sistem tasks difilter dari UI</td>
+</tr>
+<tr>
+<td><code>is_active</code></td>
+<td><code>boolean</code></td>
+<td>Status aktif (UGC default: <code>false</code> sampai admin approve)</td>
+</tr>
+<tr>
+<td><code>is_base_social_required</code></td>
+<td><code>boolean</code></td>
+<td>Apakah memerlukan Basenames identity verification</td>
+</tr>
+<tr>
+<td><code>min_neynar_score</code></td>
+<td><code>integer</code></td>
+<td>Minimum Neynar reputation score (anti-Sybil)</td>
+</tr>
+<tr>
+<td><code>expires_at</code></td>
+<td><code>timestamp</code></td>
+<td>Tanggal kadaluarsa (null = permanent)</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>timestamp</code></td>
+<td>Tanggal dibuat</td>
+</tr>
+</tbody></table>
+<h3>4.2 <code>user_task_claims</code> ΓÇö Claim History (One-Time Per Task)</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td><code>uuid</code> (PK)</td>
+<td>Auto-generated</td>
+</tr>
+<tr>
+<td><code>wallet_address</code></td>
+<td><code>text</code></td>
+<td>User wallet (lowercase)</td>
+</tr>
+<tr>
+<td><code>task_id</code></td>
+<td><code>text</code></td>
+<td>Reference ke <code>daily_tasks.id</code> atau dynamic ID (e.g., <code>raffle_buy_123</code>)</td>
+</tr>
+<tr>
+<td><code>platform</code></td>
+<td><code>text</code></td>
+<td>Platform verifikasi</td>
+</tr>
+<tr>
+<td><code>action_type</code></td>
+<td><code>text</code></td>
+<td>Jenis aksi</td>
+</tr>
+<tr>
+<td><code>xp_earned</code></td>
+<td><code>integer</code></td>
+<td>XP yang diberikan (sebelum scaling)</td>
+</tr>
+<tr>
+<td><code>target_id</code></td>
+<td><code>text</code></td>
+<td>Target ID untuk Sybil prevention</td>
+</tr>
+<tr>
+<td><code>claimed_at</code></td>
+<td><code>timestamp</code></td>
+<td>Waktu klaim</td>
+</tr>
+<tr>
+<td><strong>UNIQUE</strong></td>
+<td></td>
+<td><code>(wallet_address, task_id)</code> ΓÇö Mencegah duplikasi</td>
+</tr>
+</tbody></table>
+<h3>4.3 <code>point_settings</code> ΓÇö Dynamic XP Configuration (Zero-Hardcode)</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td><code>uuid</code> (PK)</td>
+<td>Auto-generated</td>
+</tr>
+<tr>
+<td><code>activity_key</code></td>
+<td><code>text</code> (UNIQUE)</td>
+<td>Pattern: <code>{platform}_{action_type}</code> (e.g., <code>farcaster_follow</code>)</td>
+</tr>
+<tr>
+<td><code>points_value</code></td>
+<td><code>integer</code></td>
+<td>Base XP value</td>
+</tr>
+<tr>
+<td><code>is_active</code></td>
+<td><code>boolean</code></td>
+<td>Aktif/non-aktif</td>
+</tr>
+</tbody></table>
+<p><strong>Canonical Keys</strong>:
+<code>daily_claim</code> ┬╖ <code>farcaster_follow</code> ┬╖ <code>farcaster_like</code> ┬╖ <code>farcaster_recast</code> ┬╖ <code>x_follow</code> ┬╖ <code>x_repost</code> ┬╖ <code>x_like</code> ┬╖ <code>base_transaction</code> ┬╖ <code>raffle_buy</code> ┬╖ <code>raffle_win</code> ┬╖ <code>raffle_ticket</code> ┬╖ <code>sponsor_task</code></p>
+<h3>4.4 <code>user_profiles</code> ΓÇö Core User Identity</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Task-Related</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>wallet_address</code></td>
+<td><code>text</code> (PK)</td>
+<td>Γ£à Join key untuk claims</td>
+</tr>
+<tr>
+<td><code>total_xp</code></td>
+<td><code>integer</code></td>
+<td>Γ£à Updated via <code>fn_increment_xp</code> setelah klaim</td>
+</tr>
+<tr>
+<td><code>tier</code></td>
+<td><code>integer</code></td>
+<td>Γ£à Tier gating untuk tugas</td>
+</tr>
+<tr>
+<td><code>is_base_social_verified</code></td>
+<td><code>boolean</code></td>
+<td>Γ£à Identity guard</td>
+</tr>
+<tr>
+<td><code>neynar_score</code></td>
+<td><code>integer</code></td>
+<td>Γ£à Reputation gating</td>
+</tr>
+<tr>
+<td><code>referred_by</code></td>
+<td><code>text</code></td>
+<td>Γ£à Referral dividend tracking</td>
+</tr>
+<tr>
+<td><code>referral_bonus_paid</code></td>
+<td><code>boolean</code></td>
+<td>Γ£à 500 XP milestone vesting</td>
+</tr>
+<tr>
+<td><code>last_seen_at</code></td>
+<td><code>timestamp</code></td>
+<td>Γ£à Leaderboard sync</td>
+</tr>
+</tbody></table>
+<h3>4.5 <code>user_activity_logs</code> ΓÇö Audit Trail</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>wallet_address</code></td>
+<td><code>text</code></td>
+<td>User wallet</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td><code>text</code></td>
+<td><code>XP</code>, <code>PURCHASE</code>, <code>REFERRAL_DIVIDEND</code></td>
+</tr>
+<tr>
+<td><code>activity_type</code></td>
+<td><code>text</code></td>
+<td><code>Task Claim</code>, <code>Task Verify</code>, <code>Social Verify</code>, <code>Raffle Ticket Buy</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>text</code></td>
+<td>Human-readable description</td>
+</tr>
+<tr>
+<td><code>value_amount</code></td>
+<td><code>integer</code></td>
+<td>XP amount</td>
+</tr>
+<tr>
+<td><code>value_symbol</code></td>
+<td><code>text</code></td>
+<td><code>XP</code></td>
+</tr>
+<tr>
+<td><code>tx_hash</code></td>
+<td><code>text</code></td>
+<td>Transaction hash (if applicable)</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>jsonb</code></td>
+<td>Additional context</td>
+</tr>
+</tbody></table>
+<h3>4.6 <code>fn_increment_xp</code> ΓÇö Atomic XP RPC Function</h3>
+<pre><code class="language-sql">-- Signature
+fn_increment_xp(p_wallet TEXT, p_amount INT) ΓåÆ void
+
+-- Internal Logic (Hybrid Formula v3.41.2):
+-- Final_XP = MAX(5, ROUND(Base_XP * G * I * U))
+-- G = 1.5 / (1 + log10(total_users / 1000 + 1))     -- Global Multiplier
+-- I = MAX(0.5, 1.0 - (user_xp / 20000))               -- Individual Anti-Whale
+-- U = 1.1 if tier &lt;= Silver, else 1.0                   -- Underdog Bonus
+--
+-- Also handles:
+-- 1. Referral vesting (50 XP when invitee reaches 500 XP)
+-- 2. 10% passive dividend to Tier 1 referrer
+-- 3. Activity logging for REFERRAL_DIVIDEND
+</code></pre>
+<blockquote>
+<p>[!CAUTION]
+DILARANG menghitung XP scaling di frontend atau backend JavaScript. Semua scaling wajib melalui <code>fn_increment_xp</code> di Postgres.</p>
+</blockquote>
+<h3>4.7 <code>v_user_full_profile</code> ΓÇö Unified View</h3>
+<p>View SQL yang menggabungkan <code>user_profiles</code> dengan tier names, SBT stats, dan raffle statistics. Digunakan oleh Leaderboard dan profil user.</p>
+<h3>4.8 <code>telegram_chat_history</code> ΓÇö Conversational Memory (v3.56.4)</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td><code>uuid</code> (PK)</td>
+<td>Auto-generated</td>
+</tr>
+<tr>
+<td><code>chat_id</code></td>
+<td><code>text</code></td>
+<td>ID Chat Telegram (Owner)</td>
+</tr>
+<tr>
+<td><code>role</code></td>
+<td><code>text</code></td>
+<td><code>user</code> (Owner) atau <code>assistant</code> (Lurah)</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td><code>text</code></td>
+<td>Isi pesan/diskusi teknis</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>timestamp</code></td>
+<td>Waktu pesan dikirim</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>[!TIP]
+Digunakan oleh Lurah (Antigravity Bridge) untuk mempertahankan konteks diskusi teknis hingga 10 pesan terakhir tanpa kehilangan alur pikiran.</p>
+</blockquote>
+<h3>4.9 <code>nexus_agent_reports</code> ΓÇö Intelligence Feed</h3>
+<p>Digunakan oleh <strong>Lurah Brain</strong> untuk memfilter laporan agen (Linter, Security, Sync) sebelum dikirim ke Telegram. Hanya laporan dengan level <code>CRITICAL</code> atau <code>ALERT</code> yang akan memicu notifikasi.</p>
+<hr>
+<h2>5. API Routing &amp; Bundle Map</h2>
+<h3>5.1 Vercel Rewrites (vercel.json)</h3>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>Hardening Mandate (v3.61.0)</strong>: Seluruh file di <code>Raffle_Frontend/api/</code> telah dimigrasikan ke <strong>.ts</strong> (TypeScript). Vercel secara otomatis memproses file <code>.ts</code> sebagai serverless functions. Mapping di <code>vercel.json</code> tetap menggunakan nama file tanpa ekstensi atau <code>.js</code> (Vercel runtime handles the rest).</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Frontend Path</th>
+<th>Backend Target</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POST /api/tasks-bundle</code></td>
+<td><code>tasks-bundle.js</code></td>
+<td>Direct call (claim, verify, social-verify)</td>
+</tr>
+<tr>
+<td><code>/api/tasks/:action</code></td>
+<td><code>tasks-bundle.js?action=:action</code></td>
+<td>Rewrite pattern</td>
+</tr>
+<tr>
+<td><code>/api/verify-action</code></td>
+<td><code>tasks-bundle.js?action=social-verify</code></td>
+<td>Legacy alias</td>
+</tr>
+<tr>
+<td><code>POST /api/user-bundle</code></td>
+<td><code>user-bundle.js</code></td>
+<td>XP sync (on-chain daily claim)</td>
+</tr>
+<tr>
+<td><code>POST /api/campaigns</code></td>
+<td><code>campaigns.js</code></td>
+<td>Partner Offers join</td>
+</tr>
+<tr>
+<td><code>/api/admin/tasks/:action</code></td>
+<td><code>admin-bundle.js?action=task-:action</code></td>
+<td>Admin task CRUD</td>
+</tr>
+</tbody></table>
+<h3>5.2 tasks-bundle.js ΓÇö Handler Map</h3>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Handler Function</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>claim</code></td>
+<td><code>handleClaim()</code></td>
+<td>Off-chain task klaim (TaskList.jsx)</td>
+</tr>
+<tr>
+<td><code>verify</code></td>
+<td><code>handleVerify()</code></td>
+<td>On-chain task verify (TaskRow)</td>
+</tr>
+<tr>
+<td><code>social-verify</code></td>
+<td><code>handleSocialVerify()</code></td>
+<td>Social task verify (useVerification.js)</td>
+</tr>
+</tbody></table>
+<p><strong>Common Flow</strong>:</p>
+<pre><code>1. Validate EIP-191 Signature (viem.verifyMessage)
+2. Get XP reward from point_settings (dynamic) ΓåÆ fallback to daily_tasks.xp_reward
+3. Check Sybil: target_id uniqueness + global task_id uniqueness
+4. Insert into user_task_claims (UNIQUE constraint)
+5. Call fn_increment_xp(wallet, base_xp) ΓÇö scaling handled in DB
+6. Log to user_activity_logs
+7. Return { success: true, xp }
+</code></pre>
+<h3>5.3 Feature Guard (Mainnet Phased Rollout)</h3>
+<pre><code class="language-javascript">// tasks-bundle.js
+if ([&#39;claim&#39;, &#39;verify&#39;].includes(action)) {
+    const allowed = await checkFeatureGuard(&#39;daily_claim&#39;, res);
+    if (!allowed) return; // HTTP 403 on Mainnet if feature disabled
+}
+</code></pre>
+<hr>
+<h2>6. On-Chain Task Workflow (E2E)</h2>
+<h3>6.1 Regular On-Chain Task</h3>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant U as User
+    participant FE as TasksPage/TaskRow
+    participant SC as DailyApp V13.2
+    participant UV as useVerification
+    participant API as tasks-bundle.js
+    participant DB as Supabase DB
+
+    Note over FE: Page Load
+    FE-&gt;&gt;SC: getTasksInRange(1, nextTaskId)
+    SC--&gt;&gt;FE: Task[] (title, link, reward, sponsorshipId...)
+    FE-&gt;&gt;SC: hasCompletedTask(user, taskId)
+    SC--&gt;&gt;FE: bool (filter completed)
+
+    Note over U: Step 1: Do Task
+    U-&gt;&gt;FE: Click Task Row
+    FE-&gt;&gt;SC: doTask(taskId, referrer=0x0)
+    SC--&gt;&gt;FE: tx_hash (intent registered)
+    FE-&gt;&gt;FE: registerTaskStart(taskId) ΓåÆ start 30s timer
+
+    Note over U: Step 2: Perform Action
+    FE-&gt;&gt;U: window.open(task.link)
+    U-&gt;&gt;U: Perform social action (like/follow/etc)
+    FE-&gt;&gt;FE: 30s countdown in UI
+
+    Note over U: Step 3: Verify
+    U-&gt;&gt;FE: Click &quot;Verify&quot; button
+    FE-&gt;&gt;UV: verifyTask(task, address, taskId, fid)
+    UV-&gt;&gt;U: Request EIP-191 Signature
+    U--&gt;&gt;UV: signature
+    UV-&gt;&gt;API: POST /api/tasks-bundle {action: &#39;social-verify&#39;, wallet, signature, message, task_id, platform, action_type}
+
+    API-&gt;&gt;API: verifyMessage(address, message, signature)
+    API-&gt;&gt;DB: SELECT point_settings WHERE activity_key = &#39;{platform}_{action}&#39;
+    API-&gt;&gt;DB: SELECT user_task_claims WHERE wallet + task_id (unique check)
+    API-&gt;&gt;DB: INSERT user_task_claims
+    API-&gt;&gt;DB: RPC fn_increment_xp(wallet, base_xp)
+    API-&gt;&gt;DB: INSERT user_activity_logs
+    API--&gt;&gt;FE: {success: true, xp: N}
+
+    FE-&gt;&gt;SC: refetch hasCompletedTask ΓåÆ true
+    Note over FE: Task disappears from UI
+</code></pre>
+<h3>6.2 Sponsored Mission (Grouped Tasks)</h3>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant U as User
+    participant STC as SponsoredTaskCard
+    participant SC as DailyApp V13.2
+    participant UV as useVerification
+    participant API as tasks-bundle.js
+    participant DB as Supabase
+
+    Note over STC: Render grouped tasks by sponsorshipId
+    STC-&gt;&gt;SC: userSponsorshipProgress(user, sponsorshipId)
+    SC--&gt;&gt;STC: completedCount
+
+    alt completedCount &gt;= tasks.length
+        Note over STC: return null (card disappears)
+    end
+
+    Note over U: Step 1: Open External Links
+    U-&gt;&gt;STC: Click each task link (IndividualTaskRow)
+    STC-&gt;&gt;STC: registerTaskStart(taskId) per task
+
+    Note over U: Step 2: Verify All At Once
+    U-&gt;&gt;STC: Click &quot;VERIFY MISSION&quot;
+    loop For each task in group
+        STC-&gt;&gt;UV: verifyTask(task, address, taskId)
+        UV-&gt;&gt;API: POST social-verify
+        API-&gt;&gt;DB: Insert claim + fn_increment_xp
+    end
+
+    alt All tasks verified
+        STC-&gt;&gt;STC: verifyingStatus = &#39;success&#39;, timer = 30s
+        Note over STC: Show &quot;Verified! Claim in 30s...&quot;
+    else Any task failed
+        STC-&gt;&gt;STC: verifyingStatus = &#39;fail&#39;
+        Note over STC: Show &quot;Verification Failed&quot;
+    end
+
+    Note over U: Step 3: Claim On-Chain Reward
+    U-&gt;&gt;STC: Click &quot;Claim Task Reward&quot;
+    STC-&gt;&gt;SC: claimRewards()
+    SC--&gt;&gt;STC: tx_hash
+
+    STC-&gt;&gt;API: POST /api/user-bundle {action: &#39;xp&#39;, tx_hash}
+    API-&gt;&gt;SC: readContract(userStats)
+    API-&gt;&gt;DB: Upsert user_profiles.total_xp
+    API--&gt;&gt;STC: {success: true}
+</code></pre>
+<hr>
+<h2>7. Off-Chain Task Workflow (E2E)</h2>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant U as User
+    participant TL as TaskList.jsx
+    participant UVA as useVerifiedAction
+    participant API as tasks-bundle.js
+    participant DB as Supabase
+
+    Note over TL: Component Mount
+    TL-&gt;&gt;DB: SELECT daily_tasks WHERE is_active=true AND task_type!=&#39;system&#39;
+    DB--&gt;&gt;TL: Task[]
+    TL-&gt;&gt;DB: SELECT user_task_claims WHERE wallet_address
+    DB--&gt;&gt;TL: Claim[] (task_id, claimed_at)
+    TL-&gt;&gt;DB: SELECT user_profiles WHERE wallet (neynar_score, is_base_social)
+    DB--&gt;&gt;TL: Profile data
+
+    TL-&gt;&gt;TL: Filter: activeTasks = tasks.filter(not claimed)
+
+    Note over U: STEP 1 ΓÇö User Clicks &quot;GO TO TASK&quot; (v3.47.1)
+    U-&gt;&gt;TL: handleGoToTask(task)
+    TL-&gt;&gt;TL: window.open(task.task_link, &#39;_blank&#39;)
+    TL-&gt;&gt;TL: setStartedTasks({task_id: Date.now()})
+    TL-&gt;&gt;TL: start 15s countdown
+    Note over TL: Card turns amber (countdown state)
+
+    Note over U: STEP 2 ΓÇö After 15s, User Clicks &quot;CLAIM REWARD&quot;
+    U-&gt;&gt;TL: handleClaim(task) [only enabled when countdown=0]
+
+    alt Neynar Score too low
+        TL--&gt;&gt;U: Toast: &quot;Low Reputation&quot;
+    else Base Social Required but not verified
+        TL--&gt;&gt;U: Toast: &quot;Identity Guard&quot;
+    else
+        TL-&gt;&gt;UVA: execute(&#39;claim_task&#39;, {task_id, xp_earned})
+        UVA-&gt;&gt;U: Request EIP-191 Signature
+        U--&gt;&gt;UVA: signature
+        UVA-&gt;&gt;API: POST /api/tasks-bundle {action: &#39;claim&#39;, wallet, task_id, signature, message}
+
+        API-&gt;&gt;API: verifyMessage()
+        API-&gt;&gt;DB: getTaskReward(task_id) ΓåÆ point_settings lookup
+        API-&gt;&gt;DB: Check uniqueness (wallet + task_id)
+        API-&gt;&gt;DB: INSERT user_task_claims
+        API-&gt;&gt;DB: RPC fn_increment_xp(wallet, base_xp)
+        API-&gt;&gt;DB: INSERT user_activity_logs
+        API--&gt;&gt;TL: {success: true, xp}
+
+        TL-&gt;&gt;TL: Optimistic: add to userClaims ΓåÆ task disappears
+        TL-&gt;&gt;TL: setTimeout(fetchData, 1500ms) ΓåÆ server sync
+    end
+</code></pre>
+<hr>
+<h2>8. Social Verification Flow</h2>
+<h3>8.1 Verification Pipeline (useVerification.js)</h3>
+<pre><code class="language-mermaid">flowchart TD
+    Start[User clicks Verify] --&gt; Check1{Anti-Fraud: 30s elapsed?}
+    Check1 -- No --&gt; Error1[Toast: Wait Xs]
+    Check1 -- Yes --&gt; Check2{Wallet Connected?}
+    Check2 -- No --&gt; Error2[Toast: Connect Wallet]
+    Check2 -- Yes --&gt; Sign[EIP-191 Sign Message]
+
+    Sign --&gt; BuildMsg[&quot;Build message:&lt;br/&gt;Verify Task Action&lt;br/&gt;Task: {title}&lt;br/&gt;ID: {id}&lt;br/&gt;User: {wallet}&lt;br/&gt;Time: {ISO timestamp}&quot;]
+
+    BuildMsg --&gt; Route{Platform?}
+    Route -- Farcaster/Twitter/TikTok/IG --&gt; Social[POST /api/tasks-bundle&lt;br/&gt;action=social-verify&lt;br/&gt; + platform + action_type&lt;br/&gt;+ fid/userId/handle]
+    Route -- Other --&gt; General[POST /api/tasks-bundle&lt;br/&gt;action=social-verify&lt;br/&gt;platform=regular]
+
+    Social &amp; General --&gt; Backend[tasks-bundle.js handleSocialVerify]
+
+    Backend --&gt; V1[verifyMessage via viem]
+    V1 --&gt; V2[getTaskReward ΓåÆ point_settings]
+    V2 --&gt; V3{Target already claimed?}
+    V3 -- Yes --&gt; Reject[Error: Target account claimed]
+    V3 -- No --&gt; V4{User+Task already claimed?}
+    V4 -- Yes --&gt; Dup[Return: Already recorded]
+    V4 -- No --&gt; Insert[INSERT user_task_claims]
+    Insert --&gt; XP[RPC fn_increment_xp]
+    XP --&gt; Log[INSERT user_activity_logs]
+    Log --&gt; Success[Return: success + xp]
+</code></pre>
+<h3>8.2 Anti-Fraud Mechanisms</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Mechanism</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>30s Delay</strong></td>
+<td>Mencegah instant verify tanpa aksi nyata</td>
+<td><code>lastActionTime[taskId]</code> + countdown di UI</td>
+</tr>
+<tr>
+<td><strong>EIP-191 Signature</strong></td>
+<td>Membuktikan kepemilikan wallet</td>
+<td><code>viem.verifyMessage()</code> di backend</td>
+</tr>
+<tr>
+<td><strong>Timestamp Window</strong></td>
+<td>Mencegah replay attack</td>
+<td>Timestamp dalam signed message (5 min window)</td>
+</tr>
+<tr>
+<td><strong>Target Uniqueness</strong></td>
+<td>Mencegah multi-wallet claim per target</td>
+<td><code>target_id</code> check di <code>user_task_claims</code></td>
+</tr>
+<tr>
+<td><strong>Global Uniqueness</strong></td>
+<td>Satu wallet = satu kali per task_id</td>
+<td>UNIQUE constraint <code>(wallet, task_id)</code></td>
+</tr>
+<tr>
+<td><strong>Neynar Score Gate</strong></td>
+<td>Reputasi minimum untuk tugas tertentu</td>
+<td><code>min_neynar_score</code> di <code>daily_tasks</code></td>
+</tr>
+<tr>
+<td><strong>Identity Guard</strong></td>
+<td>Basenames verification untuk premium tasks</td>
+<td><code>is_base_social_required</code> flag</td>
+</tr>
+<tr>
+<td><strong>Tier Gating</strong></td>
+<td>Level minimum untuk on-chain tasks</td>
+<td><code>minTier</code> di smart contract</td>
+</tr>
+<tr>
+<td><strong>Feature Guard</strong></td>
+<td>Kill switch untuk Mainnet rollout</td>
+<td><code>system_settings.active_features</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. XP Economy &amp; Hybrid Formula</h2>
+<h3>9.1 The Nexus Hybrid Formula (v3.41.2)</h3>
+<pre><code>Final_XP = MAX(5, ROUND(Base_XP ├ù G ├ù I ├ù U))
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Formula</th>
+<th>Range</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>G</strong> (Global)</td>
+<td><code>1.5 / (1 + logΓéüΓéÇ(users/1000 + 1))</code></td>
+<td>~0.75 ΓÇô 1.5</td>
+<td>Anti-inflasi seiring pertumbuhan user</td>
+</tr>
+<tr>
+<td><strong>I</strong> (Individual)</td>
+<td><code>MAX(0.5, 1.0 - (xp/20000))</code></td>
+<td>0.5 ΓÇô 1.0</td>
+<td>Anti-whale; pemain lama dapat lebih sedikit</td>
+</tr>
+<tr>
+<td><strong>U</strong> (Underdog)</td>
+<td><code>1.1 if tier Γëñ Silver</code></td>
+<td>1.0 ΓÇô 1.1</td>
+<td>+10% catch-up untuk tier rendah</td>
+</tr>
+<tr>
+<td><strong>Floor</strong></td>
+<td><code>MAX(5, ...)</code></td>
+<td>ΓëÑ 5</td>
+<td>Minimum reward terjamin</td>
+</tr>
+</tbody></table>
+<h3>9.2 XP Resolution Priority</h3>
+<pre><code class="language-mermaid">flowchart TD
+    Task[Task claimed] --&gt; Type{Task ID Pattern?}
+
+    Type -- &quot;raffle_buy_*&quot; --&gt; PS1[point_settings WHERE activity_key = &#39;raffle_buy&#39;]
+    Type -- &quot;raffle_win_*&quot; --&gt; PS2[point_settings WHERE activity_key = &#39;raffle_win&#39;]
+    Type -- &quot;raffle_draw_*&quot; --&gt; PS3[point_settings WHERE activity_key = &#39;raffle_ticket&#39;]
+    Type -- &quot;UUID (Supabase)&quot; --&gt; DB1[daily_tasks ΓåÆ get platform + action_type]
+
+    DB1 --&gt; DynKey[&quot;Build key: {platform}_{action_type}&quot;]
+    DynKey --&gt; PS4[point_settings WHERE activity_key = dynamic_key]
+    PS4 --&gt; Check{points_value &gt; 0?}
+    Check -- Yes --&gt; Use[Use dynamic value]
+    Check -- No --&gt; Fallback[Use daily_tasks.xp_reward]
+
+    PS1 &amp; PS2 &amp; PS3 &amp; Use &amp; Fallback --&gt; FN[fn_increment_xp(wallet, base_xp)]
+    FN --&gt; Result[Hybrid Formula Applied in Postgres]
+</code></pre>
+<h3>9.3 Referral Integration</h3>
+<p>Setiap XP yang masuk via <code>fn_increment_xp</code> otomatis:</p>
+<ol>
+<li><strong>Milestone Check</strong>: Jika <code>total_xp &gt;= 500</code> dan <code>referral_bonus_paid = false</code>, berikan 50 XP ke referrer</li>
+<li><strong>Passive Dividend</strong>: Berikan 10% ├ù <code>base_xp</code> ke Tier 1 referrer</li>
+<li><strong>Logging</strong>: Catat <code>REFERRAL_DIVIDEND</code> dan <code>REFERRAL_VESTING</code> di <code>user_activity_logs</code></li>
+</ol>
+<hr>
+<h2>10. Identity Guard &amp; Access Control</h2>
+<h3>10.1 Access Control Matrix</h3>
+<pre><code class="language-mermaid">flowchart TD
+    User[User Attempts Task] --&gt; C1{Wallet Connected?}
+    C1 -- No --&gt; Block1[&quot;≡ƒÜ½ Toast: Connect Wallet&quot;]
+    C1 -- Yes --&gt; C2{On-Chain: minTier check}
+    C2 -- Locked --&gt; Block2[&quot;≡ƒöÆ Badge: LVL X Required&quot;]
+    C2 -- Pass --&gt; C3{is_base_social_required?}
+    C3 -- Yes --&gt; C4{user.is_base_social_verified?}
+    C4 -- No --&gt; Block3[&quot;≡ƒ¢í∩╕Å Badge: IDENTITY GUARD&lt;br/&gt;Button: VERIFY IDENTITY TO UNLOCK&quot;]
+    C4 -- Yes --&gt; C5{min_neynar_score?}
+    C3 -- No --&gt; C5
+    C5 -- Score Low --&gt; Block4[&quot;ΓÜá∩╕Å Badge: LOW REPUTATION&quot;]
+    C5 -- Pass --&gt; C6{Already Completed?}
+    C6 -- Yes --&gt; Block5[&quot;Γ£à return null (disappear)&quot;]
+    C6 -- No --&gt; Allow[&quot;Γ£à Task Available&quot;]
+</code></pre>
+<h3>10.2 Farcaster Account Check</h3>
+<p>Tugas berbasis Farcaster (<code>warpcast.com</code> or <code>farcaster</code> in link) memerlukan <code>profileData.fid</code>. Jika tidak ada, user diarahkan ke sign-up Farcaster via toast dengan referral link.</p>
+<h3>10.3 Base Social (Basenames) Verification</h3>
+<ol>
+<li>User mengunjungi Profil ΓåÆ Klik &quot;LINK BASE SOCIAL&quot;</li>
+<li>Backend melakukan reverse resolution via on-chain resolver (<code>0xC697...</code>)</li>
+<li>Jika Basename ditemukan: <code>user_profiles.is_base_social_verified = true</code></li>
+<li>Tugas dengan <code>is_base_social_required = true</code> menjadi terbuka.</li>
+</ol>
+<h3>10.4 SBT-Gated Leaderboard (v3.59.2)</h3>
+<ul>
+<li><strong>Mandate</strong>: User tidak diizinkan masuk ke Leaderboard SOT (Database View) jika kolom <code>has_minted_sbt</code> bernilai <code>false</code>.</li>
+<li><strong>Enforcement</strong>: Filter ini diterapkan pada level SQL View <code>v_user_full_profile</code> untuk memastikan hadiah reward pool hanya didistribusikan kepada user yang sudah memvalidasi identitas on-chain mereka.</li>
+</ul>
+<hr>
+<h2>11. Disappearing Task Mandate (v3.42.2)</h2>
+<blockquote>
+<p>[!IMPORTANT]
+Tugas yang sudah selesai/diklaim <strong>WAJIB menghilang</strong> dari UI. Tidak ada badge &quot;DONE&quot; yang tetap terlihat.</p>
+</blockquote>
+<h3>11.1 On-Chain Tasks (TaskRow)</h3>
+<pre><code class="language-javascript">// TasksPage.jsx ΓÇö TaskRow component
+const { data: isCompleted } = useReadContract({
+    functionName: &#39;hasCompletedTask&#39;,
+    args: [address, taskId],
+});
+
+// CRITICAL: Early return null = task disappears
+if (isLoading || !task || !task.isActive || isCompleted) return null;
+</code></pre>
+<h3>11.2 Off-Chain Tasks (TaskList)</h3>
+<pre><code class="language-javascript">// TaskList.jsx ΓÇö Active task filter
+const activeTasks = tasks.filter(task =&gt; {
+    const history = userClaims.filter(c =&gt; String(c.task_id) === String(task.id));
+    const hasAnyClaim = history.length &gt; 0;
+    if (hasAnyClaim) return false;       // ΓåÉ DISAPPEAR
+    if (task.task_type === &#39;system&#39;) return false;
+    return true;
+});
+</code></pre>
+<blockquote>
+<p>[!WARNING]
+<strong>Type-Safety</strong>: SELALU gunakan <code>String()</code> conversion saat membandingkan task IDs. Contract IDs = Integer, Supabase IDs = UUID. <code>===</code> tanpa konversi akan gagal silently.</p>
+</blockquote>
+<h3>11.3 Sponsored Card Disappearance</h3>
+<pre><code class="language-javascript">// SponsoredTaskCard
+const isGlobalCompleted = progressCount &gt;= tasks.length;
+if (isGlobalCompleted) return null; // Entire card disappears
+</code></pre>
+<h3>11.4 Reactive Error Sync (Race Condition Fix)</h3>
+<pre><code class="language-javascript">// TaskList.jsx ΓÇö handleClaim success/error handler
+const result = await executeClaim(&#39;claim_task&#39;, { task_id, xp_earned });
+
+// NEW (v3.42.8): Explicitly handle already_claimed flag from success response
+if (result?.already_claimed) {
+    toast.success(&quot;Mission already completed! Syncing...&quot;, { id: toastId });
+} else {
+    toast.success(`Claimed +${task.xp_reward} XP!`, { id: toastId });
+}
+
+// Force sync: add to local claims ΓåÆ task disappears instantly
+setUserClaims(prev =&gt; [...prev, { task_id: task.id, claimed_at: new Date().toISOString() }]);
+setTimeout(() =&gt; fetchData(), 1500); // Full server sync
+</code></pre>
+<h3>11.5 Empty State</h3>
+<p>Ketika seluruh tugas selesai, tampilkan:</p>
+<ul>
+<li><strong>On-Chain</strong>: <code>&quot;YOU ARE ALL CAUGHT UP!&quot;</code> banner dengan <code>CheckCircle2</code> icon</li>
+<li><strong>Off-Chain</strong>: <code>&quot;ALL MISSIONS COMPLETED&quot;</code> dengan subtitle &quot;Check back tomorrow&quot;</li>
+</ul>
+<hr>
+<h2>12. Partner Offers (Campaigns)</h2>
+<h3>12.1 Data Source</h3>
+<p>Tabel: <code>campaigns</code></p>
+<ul>
+<li>Diambil langsung dari Supabase (READ via <code>supabase.from(&#39;campaigns&#39;)</code>)</li>
+<li>Filter: <code>status = &#39;active&#39;</code></li>
+<li>UI: <code>OffersList.jsx</code> ΓåÆ <code>CampaignCard</code> component</li>
+</ul>
+<h3>12.2 Join Flow</h3>
+<pre><code>User ΓåÆ Click &quot;JOIN MISSION&quot; ΓåÆ EIP-191 Sign ΓåÆ POST /api/campaigns {action: &#39;join&#39;}
+ΓåÆ Backend validates signature ΓåÆ Insert campaign_participants ΓåÆ Success
+</code></pre>
+<h3>12.3 Campaigns vs Tasks</h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Tasks</th>
+<th>Campaigns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>XP Reward</td>
+<td>Yes</td>
+<td>USDC/token reward per user</td>
+</tr>
+<tr>
+<td>Verification</td>
+<td>Social API check</td>
+<td>Join participation</td>
+</tr>
+<tr>
+<td>Duration</td>
+<td>Permanent or expires_at</td>
+<td><code>start_at</code> ΓåÆ <code>end_at</code> window</td>
+</tr>
+<tr>
+<td>Capacity</td>
+<td>Unlimited claims</td>
+<td><code>max_participants</code> limit</td>
+</tr>
+<tr>
+<td>UI Location</td>
+<td>&quot;Daily Tasks&quot; tab</td>
+<td>&quot;Partner Offers&quot; tab</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>13. Admin Task Management (Hardened v3.63.0)</h2>
+<h3>13.1 Unified TaskManager Architecture</h3>
+<p>Dashboard Admin telah dikonsolidasi dari komponen monolitik menjadi arsitektur modular yang terpusat di <code>src/features/admin/</code>. Komponen <code>TaskManagerTab</code> dan <code>TaskManager</code> digabungkan untuk menyatukan workflow &quot;Quick Forge&quot; dan &quot;Smart Batch&quot;.</p>
+<p><strong>Key Sub-Components</strong>:</p>
+<ul>
+<li><code>ActiveCampaignsSection</code>: Pemantauan misi UGC yang sedang berjalan.</li>
+<li><code>EconomyConfigSection</code>: Pengaturan parameter ekonomi protokol (XP, Fees).</li>
+<li><code>TaskBatchCreatorSection</code>: Pembuatan tugas secara massal (Batch Creator).</li>
+<li><code>QuickTaskCreator</code>: Pembuatan tugas manual cepat.</li>
+</ul>
+<h3>13.2 Type-Safe Administration</h3>
+<p>Seluruh data administratif kini menggunakan interface strict di <code>src/features/admin/types/tasks.ts</code>. Penggunaan <code>any</code> telah dieliminasi untuk menjamin integritas data saat pengiriman ke <code>admin-bundle.ts</code>.</p>
+<h3>13.3 Off-Chain Task Management</h3>
+<p>Pipeline Backend (<code>admin-bundle.js</code>) memproses field berikut secara atomic:</p>
+<ul>
+<li><code>title</code> &amp; <code>description</code>: Keduanya di-set secara eksplisit.</li>
+<li><code>xp_reward</code>: Poin dasar dari <code>point_settings</code>.</li>
+<li><code>target_id</code>: ID unik sosial (FID/TweetID) untuk Sybil prevention.</li>
+<li><code>min_neynar_score</code>: Gating reputasi Farcaster.</li>
+<li><code>expires_at</code>: Tanggal kadaluarsa otomatis.</li>
+<li><code>is_base_social_required</code>: Toggle Identity Guard (Basenames).</li>
+</ul>
+<p>All User Generated Content (Missions, Raffles) default to <code>is_active: false</code> and require explicit admin approval before becoming visible to users.</p>
+<hr>
+<h2>14. File Reference Map</h2>
+<h3>Frontend (React/Vite)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/pages/TasksPage.jsx">TasksPage.jsx</a></td>
+<td>Main page: Tab switcher, On-Chain TaskRow + SponsoredTaskCard</td>
+<td><code>src/pages/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/components/tasks/TaskList.jsx">TaskList.jsx</a></td>
+<td>Off-Chain tasks from Supabase <code>daily_tasks</code></td>
+<td><code>src/components/tasks/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/components/tasks/OffersList.jsx">OffersList.jsx</a></td>
+<td>Partner campaign cards</td>
+<td><code>src/components/tasks/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/hooks/useVerification.js">useVerification.js</a></td>
+<td>Social verify hook (EIP-191 + API call)</td>
+<td><code>src/hooks/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/hooks/useVerifiedAction.js">useVerifiedAction.js</a></td>
+<td>Secure claim hook (off-chain tasks)</td>
+<td><code>src/hooks/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/hooks/useContract.js">useContract.js</a></td>
+<td>On-chain read/write hooks (doTask, taskInfo, etc.)</td>
+<td><code>src/hooks/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/dailyAppLogic.js">dailyAppLogic.js</a></td>
+<td>XP award bridge (awardTaskXP)</td>
+<td><code>src/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/lib/contracts.js">contracts.js</a></td>
+<td>ABI Proxy, Addresses, Config</td>
+<td><code>src/lib/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/lib/economy.js">economy.js</a></td>
+<td>Frontend mirror of Hybrid Formula (display only)</td>
+<td><code>src/lib/</code></td>
+</tr>
+</tbody></table>
+<h3>Backend (Vercel Serverless)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/tasks-bundle.ts">tasks-bundle.ts</a></td>
+<td>Task claim, verify, social-verify handlers (100% TS)</td>
+<td><code>api/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/user-bundle.ts">user-bundle.ts</a></td>
+<td>On-chain XP sync, profile sync (100% TS)</td>
+<td><code>api/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/admin-bundle.ts">admin-bundle.ts</a></td>
+<td>Admin task CRUD, system settings (100% TS)</td>
+<td><code>api/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/campaigns.js">campaigns.js</a></td>
+<td>Campaign join handler</td>
+<td><code>api/</code></td>
+</tr>
+</tbody></table>
+<h3>Routing</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/vercel.json">vercel.json</a></td>
+<td>API rewrite rules</td>
+<td>Root</td>
+</tr>
+</tbody></table>
+<h3>Smart Contracts</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DailyAppV13.sol</td>
+<td>Task contract source</td>
+<td><code>DailyApp.V.12/contracts/</code></td>
+</tr>
+<tr>
+<td><a href="file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/lib/abis_data.txt">abis_data.txt</a></td>
+<td>Compiled ABI JSON</td>
+<td><code>src/lib/</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>15. Healthy State Checklist</h2>
+<p>Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>Zero-Hardcode XP</strong>: Tidak ada literal XP value di kode (e.g., <code>reward: 100</code>). Semua dari <code>point_settings</code>.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Dual Task Sync</strong>: On-chain tasks via contract + Off-chain tasks via Supabase keduanya menghasilkan <code>fn_increment_xp</code> call.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Disappearing Tasks</strong>: Completed tasks return <code>null</code> (not &quot;DONE&quot; badge) ΓÇö verified di kedua jalur.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Type-Safe Comparison</strong>: <code>String()</code> conversion pada semua ID comparison (Contract Integer vs Supabase UUID).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Signature Verification</strong>: Semua write operations melewati EIP-191 signature verification di backend.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Already Claimed Handling</strong>: Frontend mendeteksi <code>already_claimed: true</code> flag untuk mencegah toast misleading saat task menghilang.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Anti-Sybil</strong>: <code>target_id</code> uniqueness + global <code>(wallet, task_id)</code> uniqueness enforced.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Expiry Logic</strong>: Task creation menyertakan <code>expires_at</code> dan frontend memfilter task yang sudah lewat waktu.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Identity Guard</strong>: <code>is_base_social_required</code> tasks locked untuk user non-verified.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Tier Gating</strong>: <code>minTier</code> on-chain check aktif dan UI menampilkan lock badge.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Feature Guard</strong>: Mainnet kill switch via <code>system_settings.active_features</code> operational.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Activity Logging</strong>: Setiap klaim menghasilkan entry di <code>user_activity_logs</code>.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Reactive Sync</strong>: &quot;Already completed&quot; error forces <code>fetchData()</code> re-sync.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>30s Anti-Fraud (On-Chain)</strong>: Timer aktif sebelum social verification (TaskRow).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Concurrent Modal Trigger</strong>: Seluruh modal state transitions dibungkus <code>startTransition</code> (v3.56.0).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Nexus UI Parity (v3.53.0)</strong>: Metadata stamps (ID, Creator, Created At, Expires At) transparan dan konsisten di seluruh kartu.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Dynamic Summary</strong>: Home Page summary (<code>TaskCard.jsx</code>) menggunakan real-time Supabase stats (bukan placeholder).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>15s Anti-Fraud (Off-Chain)</strong>: <code>startedTasks</code> countdown setelah &quot;GO TO TASK&quot; klik sebelum CLAIM REWARD aktif (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Self-Healing v3.51.2</strong>: Backend otomatis memulihkan XP/Log jika record claim sudah ada tapi data reward hilang.</li>
+</ul>
+<hr>
+<h2>16. Self-Healing Claim Pipeline (v3.51.2)</h2>
+<p>Protokol Self-Healing dirancang untuk mengatasi &quot;Ghost Claims&quot; (kondisi di mana record di <code>user_task_claims</code> ada, tetapi penambahan XP atau penulisan Activity Log gagal karena timeout atau crash).</p>
+<h3>16.1 Ghost Claim Recovery Logic</h3>
+<p>Saat backend menerima error <strong>23505 (Unique Violation)</strong> pada tabel <code>user_task_claims</code>, sistem tidak lagi langsung melempar error. Sebaliknya, sistem menjalankan:</p>
+<ol>
+<li><strong>Log Audit</strong>: Mengecek <code>user_activity_logs</code> menggunakan <code>metadata-&gt;task_id</code>.</li>
+<li><strong>State Restoration</strong>: Jika log tidak ditemukan, sistem secara otomatis mengeksekusi <code>fn_increment_xp()</code> dan menulis log baru.</li>
+<li><strong>Idempotency</strong>: Jika log sudah ada, sistem mengonfirmasi klaim tersebut sukses tanpa duplikasi XP.</li>
+</ol>
+<h3>16.2 UI Resiliency Mandate</h3>
+<p>Frontend <code>TaskList.jsx</code> wajib menangkap error &quot;already completed&quot; dan melakukan sinkronisasi lokal instan:</p>
+<pre><code class="language-javascript">if (error.message.includes(&quot;already completed&quot;)) {
+    setLocalClaims(prev =&gt; [...prev, taskId]); // Instant hide
+    fetchData(); // Background sync
+}
+</code></pre>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>Two-Step Task Flow (Off-Chain)</strong>: User HARUS buka link dulu via &quot;GO TO TASK&quot; sebelum bisa klaim XP (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Swap Quote Error Visibility</strong>: SwapModal menampilkan error visible + Jumper fallback jika Li.Fi SDK gagal quote (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>NFT Mint Contract Parity</strong>: SBTUpgradeCard memanggil <code>mintNFT</code> (DAILY_APP) bukan <code>upgradeTier</code> (MASTER_X) (v3.47.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Batch Resilience</strong>: Create Mission menggunakan <code>useCallsStatus</code> (EIP-5792) untuk mencegah UI hang pada batch transactions.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>ABI Parity</strong>: <code>abis_data.txt</code> sinkron dengan deployed contract (157 entries).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Verification Server Sync</strong>: <code>VITE_VERIFY_SERVER_URL</code> &amp; <code>VITE_VERIFY_API_SECRET</code> disinkronkan di ekosistem Vercel (v3.49.0).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Global Lockout Fix</strong>: Target ID uniqueness sekarang berbasis per-user (<code>wallet_address</code> + <code>target_id</code>) (v3.49.0).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Vercel &lt; 12</strong>: Total serverless functions under Hobby Plan limit (8/12).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Dual Pipeline Routing Fix</strong>: <code>useVerifiedAction.js</code> ΓÇö <code>claim_task</code> actions ALWAYS route to <code>/api/tasks-bundle</code>, never to Verification Server. <code>isSocialVerify</code> only true for non-claim social verification actions (v3.51.1).</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Duplicate Action Key Fix</strong>: JSON body property <code>action: payload.action_type</code> renamed to <code>action_type: payload.action_type</code> to prevent silent override of <code>action: bundleAction</code> (v3.51.1).</li>
+</ul>
+<hr>
+<h2>18. SBT Tier Integration Mandate</h2>
+<p>Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan <strong>Hardened Tier Ascension</strong>:</p>
+<ol>
+<li><strong>Sequential Progression</strong>: User <strong>WAJIB</strong> upgrade tier secara berurutan. Sistem tidak mengizinkan lompatan (misal: Rookie langsung ke Gold). Tier $N$ hanya bisa di-mint jika wallet memiliki Tier $N-1$.</li>
+<li><strong>Soulbound (Non-Transferable)</strong>: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak <code>DailyAppV13</code>.</li>
+<li><strong>Price Transparency</strong>: UI <code>SBTUpgradeCard</code> wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.</li>
+<li><strong>XP Burn Compliance</strong>: Setiap upgrade akan membakar XP sesuai konfigurasi <code>nftConfigs</code> on-chain. Pastikan sinkronisasi XP setelah minting dilakukan secara atomik melalui event listener.</li>
+</ol>
+<p><em>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.</em>
+<em>Antigravity ΓÇö Nexus Master Architect. Protocol v3.56.4 Locked.</em></p>
+<hr>
+<h2>19. UGC Multi-Action &amp; All-or-Nothing Campaign Workflow</h2>
+<p>Sistem ini berevolusi dari tugas tunggal menjadi kampanye terstruktur guna meningkatkan retensi dan kualitas engagement.</p>
+<h3>19.1 Arsitektur Data Kampanye</h3>
+<ul>
+<li><strong>Tabel <code>campaigns</code></strong>: Bertindak sebagai entitas parent yang menyimpan <code>title</code>, <code>reward_amount</code>, dan metadata global.</li>
+<li><strong>Tabel <code>daily_tasks</code></strong>: Menyimpan sub-tugas individu. Kunci penghubungnya adalah <code>onchain_id</code> yang diisi dengan ID Kampanye.</li>
+<li><strong>Tabel <code>user_task_claims</code></strong>: <ul>
+<li>Mencatat verifikasi individual sub-tugas (reward 0).</li>
+<li>Mencatat klaim final kampanye (ID Kampanye) untuk memicu reward XP/USDC.</li>
+</ul>
+</li>
+</ul>
+<h3>19.2 Alur Pembuatan (Batching)</h3>
+<pre><code class="language-javascript">// admin-bundle.js
+const { data: tasks, error: taskError } = await supabaseAdmin
+    .from(&#39;daily_tasks&#39;)
+    .insert(action_types.map(act =&gt; ({
+        title: `${title} (${act})`,
+        action_type: act,
+        onchain_id: campaignId,
+        task_type: &#39;ugc&#39;,
+        // ... metadata lainnya
+    })));
+</code></pre>
+<h3>19.3 Alur Klaim (Atomic All-or-Nothing)</h3>
+<ol>
+<li><strong>Frontend</strong>: Menghitung <code>completedCount</code> dari sub-tugas yang ada di <code>offChainClaims</code>.</li>
+<li><strong>Logic</strong>: Jika <code>completedCount === subTasks.length</code>, tampilkan tombol klaim.</li>
+<li><strong>Backend (<code>claim-ugc-campaign</code>)</strong>:<ul>
+<li>Query seluruh sub-tugas kampanye X.</li>
+<li>Query seluruh claim user untuk sub-tugas kampanye X.</li>
+<li>Bandingkan: <code>count(subTasks) == count(userClaims)</code>.</li>
+<li>Jika <code>true</code>, eksekusi <code>fn_increment_xp</code> dan increment saldo USDC.</li>
+<li>Tandai kampanye sebagai <code>claimed</code> untuk user tersebut.</li>
+</ul>
+</li>
+</ol>
+<h3>19.4 Checklist Kesehatan UGC v3.57.0</h3>
+<ol>
+<li><input disabled="" type="checkbox"> <strong>Regex Link Guard</strong>: Link harus valid sesuai platform (Warpcast/X/TikTok).</li>
+<li><input disabled="" type="checkbox"> <strong>Multi-Action Bound</strong>: Maksimal 3 aksi per kampanye untuk menjaga UX.</li>
+<li><input disabled="" type="checkbox"> <strong>Atomic Claims</strong>: Reward tidak boleh bocor per sub-tugas, hanya di level parent kampanye.</li>
+<li><input disabled="" type="checkbox"> <strong>Referral Loop</strong>: Setiap klaim sukses harus memicu CTA sharing sosial.</li>
+</ol>
+<hr>
+<h2>20. Zero-Hardcode Infrastructure Mandate (v3.59.1)</h2>
+<p>Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanpa risiko <em>manual error</em>.</p>
+<h3>20.1 Dynamic Address Resolution</h3>
+<ul>
+<li><strong>Frontend</strong>: Menggunakan helper <code>getAddr()</code> dari <code>src/lib/contracts.js</code> yang menarik nilai dari <code>import.meta.env</code>.</li>
+<li><strong>ABI Mapping</strong>: File <code>abis_data.txt</code> sekarang bertindak murni sebagai registry fungsi, dengan alamat kontrak yang disuntikkan secara dinamis saat runtime.</li>
+</ul>
+<h3>20.2 Synchronization Triggers</h3>
+<ul>
+<li>Setiap kali alamat kontrak diubah di <code>.env</code>, developer <strong>WAJIB</strong> menjalankan:<ul>
+<li><code>node scripts/sync/sync-all-envs.cjs</code> (Environment Sync)</li>
+<li><code>node scripts/sync/rebuild_abis_data.cjs</code> (ABI Placeholder Sync)</li>
+<li><code>node scripts/audits/check_sync_status.cjs</code> (Integritas Audit)</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>21. Absolute Parity &amp; Hardening Audit Protocol (v3.59.2)</h2>
+<p>Setiap agen yang mengelola tugas berantai (Multi-Action) atau distribusi reward wajib menjalankan audit paritas.</p>
+<h3>21.1 Parity Audit Checklist</h3>
+<ol>
+<li><strong>XP Drift</strong>: Pastikan <code>total_xp</code> database sinkron dengan <code>points</code> on-chain.</li>
+<li><strong>Tier Drift</strong>: Pastikan level database sinkron dengan <code>currentTier</code> on-chain.</li>
+<li><strong>Metadata Parity</strong>: Pastikan URL Pinata di database sinkron dengan <code>BaseURI</code> on-chain via <code>setTierURI</code>.</li>
+</ol>
+<h3>21.2 Tools &amp; Endpoints</h3>
+<ul>
+<li><strong>Audit Tool</strong>: Dashboard Hardening Center di Tab Admin.</li>
+<li><strong>API</strong>: <code>/api/admin/parity-audit</code> (High-precision comparison).</li>
+<li><strong>Manual Sync</strong>: Gunakan tombol &quot;Batch Sync&quot; jika terdeteksi drift &gt; 1% pada Top 50 users.</li>
+</ul>
+<hr>
+<h2>22. DailyApp V14 Multi-Token Sponsorship &amp; Decimal Normalization (v3.59.3)</h2>
+<p>Peningkatan infrastruktur sponsor untuk mendukung ekonomi multi-aset dan normalisasi parameter moneter.</p>
+<h3>22.1 Multi-Token Rewards</h3>
+<ul>
+<li><strong>Storage Strategy</strong>: Reward disimpan di <code>mapping(address =&gt; mapping(address =&gt; uint256)) public claimableRewards</code> (user =&gt; token =&gt; amount).</li>
+<li><strong>Default Tokens</strong>: USDC (Base) dan ETH.</li>
+<li><strong>Claim Logic</strong>: User memanggil <code>claimRewards(tokenAddress)</code> secara spesifik untuk menarik saldo per-token.</li>
+</ul>
+<h3>22.2 Decimal Normalization (6-Decimal Base)</h3>
+<p>Seluruh parameter ekonomi dikonfigurasi menggunakan basis <strong>6-desimal</strong> (USDC-native) untuk menghindari fragmentasi unit.</p>
+<ul>
+<li><strong>buySponsorshipWithToken</strong>: Mengonversi deposit token ke 6-desimal internal.<ul>
+<li>ETH (18 dec) -&gt; Normalisasi ke 6 dec.</li>
+<li>USDC (6 dec) -&gt; Langsung.</li>
+</ul>
+</li>
+<li><strong>Validation</strong>: Pengecekan <code>minPool</code> (threshold minimal sponsor) dilakukan terhadap nilai hasil normalisasi ini.</li>
+</ul>
+<h3>22.3 UI Persistence Mandate</h3>
+<ul>
+<li><strong>Card Visibility</strong>: <code>SponsoredTaskCard</code> tidak boleh menghilang hanya karena user sudah menyelesaikan tugas.</li>
+<li><strong>Enforcement</strong>: Kartu tetap ditampilkan selama <code>claimableRewards(user, token) &gt; 0</code> untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.</li>
+</ul>
+<hr>
+<p><em>End of Task Feature Workflow - Nexus v3.59.3 LOCKED.</em></p>
