@@ -4396,6 +4396,8 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
   - Hardened `get-onchain-stats.cjs` to read variables dynamically via ecosystem-aware variables instead of hardcoded strings.
 - **Ecosystem Parity**:
   - Fully synchronized all docs: `.cursorrules`, `AGENTS.md`, and `PRD/DISCO_DAILY_MASTER_PRD.md` to `v3.64.7-Hardened`.
+- **RTK Token Savings Mandate**:
+  - Promoted RTK usage into the cross-agent protocols (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, and `.agents/WORKSPACE_MAP.md`) so all agents use token-saving wrappers during terminal work, with PowerShell-safe fallbacks documented.
 
 ---
 *Created by Antigravity — Nexus Master Architect*

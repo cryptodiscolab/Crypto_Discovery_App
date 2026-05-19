@@ -903,6 +903,7 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 
 ## 53. SUPER KETAT - TOKEN OPTIMIZATION PROTOCOL (v3.54.0) 🏎️💨
 - **PRINCIPLE**: Maximize cache hits and minimize redundant processing to achieve "Super Tight" token efficiency.
+- **RTK MANDATE**: All agents MUST use Rust Token Killer (`rtk`) for token-heavy shell work whenever available (`rtk git ...`, `rtk read`, `rtk npx`, `rtk npm`, `rtk grep`, `rtk ls`, `rtk gain`). On PowerShell/Windows, use RTK subcommands that proxy available tools (for example `rtk git diff`, not raw `rtk diff` if Unix `diff` is unavailable) and only fall back to native PowerShell after stating the reason.
 - **MANDATE**: Before reading any file > 500 lines (e.g., PRD, bundles, large components), the agent MUST run the `context-hasher` script.
 - **ACTION**:
   - Run `node scripts/sync/context-hasher.cjs check <path>` to verify cache status.

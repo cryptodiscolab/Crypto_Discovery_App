@@ -11,6 +11,7 @@ Dokumen ini adalah referensi utama untuk navigasi folder dan struktur data di se
 
 ```text
 e:\Disco Gacha\Disco_DailyApp
+├── .rtk/                    # RTK project-local filters for token-saving command output
 ├── .agents/                 # 🧠 Intelligence & Protocols (The "Brain")
 │   ├── skills/              # Agent skillsets (SKILL.md)
 │   │   ├── 30-seconds-of-code        # JS/CSS/HTML utilities
@@ -168,6 +169,7 @@ graph TD
 5.  **ZERO-HARDCODE MANDATE (v3.59.1)**: Prohibit use of static contract addresses in any source file or ABI definition. Pull exclusively from `.env`.
 6.  **TYPESCRIPT HARDENING MANDATE (v3.61.0)**: All serverless API code in `Raffle_Frontend/api/` MUST be strictly typed. Implicit `any` is prohibited. Error handling MUST use the `unknown` catch pattern with explicit type guards.
 7.  **GIT HYGIENE MANDATE**: Never commit `.env.vercel*` or temporary audit logs. Run `Remove-Item tsc_output*.txt` before closing tasks.
+8.  **RTK TOKEN SAVINGS MANDATE**: All agents must prefer `rtk` wrappers for token-heavy terminal work (`rtk git`, `rtk read`, `rtk npx`, `rtk npm`, `rtk grep`, `rtk gain`). On PowerShell, use RTK subcommands that proxy available binaries and fall back to native PowerShell only when RTK cannot wrap the command safely.
 
 ---
 

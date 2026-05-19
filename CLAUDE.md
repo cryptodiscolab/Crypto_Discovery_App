@@ -235,3 +235,10 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
 *Audit Precision Hardened: 2026-05-14. v3.64.3 MILLISECOND PRECISION & MULTI-ASSET.*
+
+## RTK TOKEN OPTIMIZATION MANDATE
+All agents MUST use Rust Token Killer (`rtk`) for token-heavy shell work whenever available. Prefer `rtk git ...`, `rtk read <file>`, `rtk npx tsc --noEmit`, `rtk npm run <script>`, `rtk grep <pattern> <paths>`, `rtk ls`, and `rtk gain` before raw equivalents.
+
+PowerShell/Windows note: do not call Unix-only wrappers such as raw `rtk diff` or raw `rtk grep` when the underlying binary is unavailable. Use RTK subcommands that proxy existing tools (`rtk git diff`, `rtk read`, `rtk npx`, `rtk npm`) or fall back to native PowerShell only after stating why RTK cannot wrap that command safely.
+
+Before finalizing work, run `rtk gain` or the repository anti-negligence hook so token savings/adoption are visible in the report.

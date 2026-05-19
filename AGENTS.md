@@ -170,6 +170,8 @@ All high-fidelity activity logging MUST use 23-character ISO-8601 timestamps (YY
 All financial UI components (Missions, Sponsorships, Claims) MUST handle Native ETH, WETH, and USDC dynamically. This includes fetching allowed tokens from the database, handling 18/6 decimal normalization, and displaying accurate currency symbols. Hardcoding "USDC" or "ETH" labels is strictly forbidden. (v3.63.7-Hardened).
 ## Rule 77 — AGENT ANTI-NEGLIGENCE HOOK MANDATE.
 Agents MUST execute the verification hook via `node scripts/audits/agent_anti_negligence_hook.cjs` before finalizing ANY task, code changes, or commits. Any file containing `[dotenv]`, tip logs, duplicate artifacts, secret leaks, or unregistered documents in `WORKSPACE_MAP.md` will trigger an immediate block. Self-audit is mandatory. (v3.64.6-Hardened).
+## Rule 78 — RTK TOKEN SAVINGS MANDATE.
+All agents MUST use Rust Token Killer (`rtk`) for token-heavy shell work whenever available: `rtk git ...`, `rtk read <file>`, `rtk npx ...`, `rtk npm ...`, `rtk grep ...`, `rtk ls`, and `rtk gain`. On PowerShell/Windows, prefer RTK subcommands that proxy existing tools (`rtk git diff`, `rtk read`, `rtk npx`, `rtk npm`) and only fall back to native PowerShell after stating why RTK cannot wrap the command safely.
 
 ---
 

@@ -17,6 +17,7 @@
      - Refactored `get-onchain-stats.cjs` to accept dynamic target wallet addresses, sanitized input format via regex validation, and parsed contract/RPC parameters dynamically from environment variables instead of hardcoded addresses.
   5. **Doc Sync (Zero Documentation Drift)**: Synchronized all system protocols (`.cursorrules`, `AGENTS.md`, and `PRD/DISCO_DAILY_MASTER_PRD.md`) to version `v3.64.7-Hardened`. Generated updated `DISCO_DAILY_MASTER_PRD.html` dynamically using the `marked` compiler pipeline to prevent drift between markdown and HTML versions.
 - **Verification**: `npx tsc --noEmit` resolved with **Exit Code 0** (zero compilation errors), `agent_anti_negligence_hook.cjs` verified a **100% OPERATIONAL & PRISTINE** verdict, and `check_sync_status.cjs` verified all 13 security/parity checks successfully **PASSED**.
+- **RTK Token Savings Mandate**: Promoted RTK usage into cross-agent protocol files (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, and `.agents/WORKSPACE_MAP.md`) so all agents prefer `rtk` wrappers during terminal work, with PowerShell-safe fallbacks documented.
 
 ---
 
