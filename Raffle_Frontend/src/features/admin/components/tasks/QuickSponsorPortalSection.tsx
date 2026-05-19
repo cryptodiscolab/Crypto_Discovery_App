@@ -20,6 +20,8 @@ interface QuickSponsorPortalSectionProps {
     minPoolUSD?: bigint;
     totalPoolUSD: number;
     requiredTokens: bigint;
+    selectedTokenUsdPrice: number;
+    isPriceReady: boolean;
     whitelistedTokens: unknown[];
     selectedTokenAddr: string;
     onTokenChange: (_val: string) => void;
@@ -39,6 +41,8 @@ export function QuickSponsorPortalSection({
     minPoolUSD,
     totalPoolUSD,
     requiredTokens,
+    selectedTokenUsdPrice,
+    isPriceReady,
     whitelistedTokens,
     selectedTokenAddr,
     onTokenChange,
@@ -132,14 +136,17 @@ export function QuickSponsorPortalSection({
                     <span className="text-[13px] font-black text-indigo-400 font-mono">
                         {formatUnits(requiredTokens, selectedToken?.decimals || 18)} ${selectedToken?.symbol || 'ETH'}
                     </span>
+                    <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">
+                        {isPriceReady ? `$${selectedTokenUsdPrice.toFixed(4)} / ${selectedToken?.symbol || 'ETH'}` : 'PRICE ORACLE PENDING'}
+                    </span>
                 </div>
             </div>
 
             <AdminTransactionButton
-                disabled={totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 6))}
+                disabled={!isPriceReady || totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 6))}
                 calls={buildSponsorCall()}
                 onSuccess={handleTxSuccess}
-                text={totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 6)) ? `MIN POOL $${formatUnits(minPoolUSD || 2000000n, 6)} REQUIRED` : `REQUEST SPONSORSHIP ($${totalPoolUSD.toFixed(2)})`}
+                text={!isPriceReady ? 'WAITING FOR PRICE ORACLE' : totalPoolUSD < Number(formatUnits(minPoolUSD || 0n, 6)) ? `MIN POOL $${formatUnits(minPoolUSD || 2000000n, 6)} REQUIRED` : `REQUEST SPONSORSHIP ($${totalPoolUSD.toFixed(2)})`}
                 className="w-full py-4 bg-white hover:bg-slate-100 text-black rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-30 disabled:grayscale transition-all"
             />
         </div>

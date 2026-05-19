@@ -4,6 +4,12 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.6-Hardened (UGC Admin Multi-Asset Reward Conversion Fix)
+- **Status**: Fixed and verified with TypeScript.
+- **Fix**: Admin UGC sponsor creation now converts USD-denominated reward inputs into selected-token amounts using live whitelisted-token prices before `parseUnits`. `0.01` with ETH/WETH/custom tokens is now treated as `$0.01 USDC equivalent`, not `0.01` token.
+- **Affected Surfaces**: `/admin` -> Task Master -> Quick Forge Sponsor and Smart Batch Sponsor Portal; `TaskManager.tsx`; `QuickSponsorPortalSection.tsx`; `SponsorshipPortalSection.tsx`.
+- **Guardrail**: Admin deployment buttons now block while the price oracle is pending and show the selected token USD price next to the calculated asset requirement.
+
 This file tracks the latest technical implementations, bug fixes, and feature additions across the Crypto Disco DailyApp ecosystem. It serves as a rapid-reference guide for AI Agents to understand recent changes.
 
 ## 🟢 v3.64.4-Hardened (Supreme Source of Truth (SOT) Hierarchy Consolidation)

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle,
     Star, Database, RefreshCw, Settings, TrendingUp,
@@ -8,7 +8,8 @@ import { useAccount, useSignMessage, useWriteContract, useWaitForTransactionRece
 import { encodeFunctionData, parseUnits } from 'viem';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
-import { DAILY_APP_ABI, CONTRACTS } from '../../../lib/contracts';
+import { DAILY_APP_ABI, CONTRACTS, NATIVE_ETH_ALT_ADDRESS, WETH_ADDRESS } from '../../../lib/contracts';
+import { usePriceOracle } from '../../../hooks/usePriceOracle';
 import { TaskBatchItem } from '../types/tasks';
 
 // Sub-sections
@@ -21,6 +22,7 @@ import { ActiveCampaignsSection } from './tasks/ActiveCampaignsSection';
 import { EconomyMetrics } from './EconomyMetrics';
 
 const DAILY_APP_ADDRESS = CONTRACTS.DAILY_APP as `0x${string}`;
+const NATIVE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 interface TaskManagerProps {
     initialMode?: 'batch' | 'quick';
@@ -99,8 +101,47 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
 
     // --- TOKEN WHITELIST ---
     const [whitelistedTokens, setWhitelistedTokens] = useState<AllowedToken[]>([]);
-    const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
+    const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>(NATIVE_TOKEN_ADDRESS);
     const selectedToken = whitelistedTokens.find((t: AllowedToken) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const selectedTokenSymbol = selectedToken?.symbol || 'ETH';
+    const selectedTokenDecimals = selectedToken?.decimals || 18;
+    const selectedTokenAddresses = useMemo(
+        () => [...new Set([selectedTokenAddr, WETH_ADDRESS, NATIVE_ETH_ALT_ADDRESS].filter(Boolean))],
+        [selectedTokenAddr]
+    );
+    const { prices: selectedTokenPrices, priceStale: isSelectedTokenPriceStale } = usePriceOracle(selectedTokenAddresses);
+    const isSelectedTokenUsdc = selectedTokenSymbol.toUpperCase() === 'USDC' || selectedTokenAddr.toLowerCase() === (CONTRACTS.USDC || '').toLowerCase();
+    const selectedTokenUsdPrice = useMemo(() => {
+        if (isSelectedTokenUsdc) return 1;
+        const lowerSelected = selectedTokenAddr.toLowerCase();
+        return selectedTokenPrices[lowerSelected]
+            || selectedTokenPrices[NATIVE_ETH_ALT_ADDRESS]
+            || selectedTokenPrices[WETH_ADDRESS.toLowerCase()]
+            || 0;
+    }, [isSelectedTokenUsdc, selectedTokenAddr, selectedTokenPrices]);
+    const isSelectedTokenPriceReady = isSelectedTokenUsdc || (!isSelectedTokenPriceStale && selectedTokenUsdPrice > 0);
+
+    const toTokenUnitString = (value: number, decimals: number) => {
+        if (!Number.isFinite(value) || value <= 0) return '0';
+        const fixed = value.toFixed(Math.min(decimals, 18));
+        return fixed.replace(/\.?0+$/, '') || '0';
+    };
+
+    const getTokenAmountForUsd = (usdValue: number) => {
+        if (!isSelectedTokenPriceReady || selectedTokenUsdPrice <= 0) return 0;
+        return usdValue / selectedTokenUsdPrice;
+    };
+
+    const getRewardPoolUnits = (rewardPerUserUsd: string, totalClaims: string) => {
+        const totalUsd = (parseFloat(rewardPerUserUsd) || 0) * (parseFloat(totalClaims) || 0);
+        const tokenAmount = getTokenAmountForUsd(totalUsd);
+        return parseUnits(toTokenUnitString(tokenAmount, selectedTokenDecimals), selectedTokenDecimals);
+    };
+
+    const quickSponsorTotalPoolUsd = (Number(quickSponsorRewardPerUser) || 0) * (Number(quickSponsorTotalClaims) || 0);
+    const batchSponsorTotalPoolUsd = (parseFloat(batchRewardPerUserUSD) || 0) * (parseFloat(batchTargetClaims) || 0);
+    const quickSponsorRequiredTokens = getRewardPoolUnits(quickSponsorRewardPerUser, quickSponsorTotalClaims);
+    const batchSponsorRequiredTokens = getRewardPoolUnits(batchRewardPerUserUSD, batchTargetClaims);
 
     // --- INITIALIZATION ---
     useEffect(() => {
@@ -173,9 +214,8 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     };
 
     const buildQuickSponsorCall = () => {
-        const decimals = selectedToken?.decimals || 18;
-        const totalPool = parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), decimals);
-        const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
+        const totalPool = quickSponsorRequiredTokens;
+        const isNative = selectedTokenAddr === NATIVE_TOKEN_ADDRESS;
 
         return [{
             to: DAILY_APP_ADDRESS,
@@ -217,11 +257,11 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
 
     const handleCreateBatchSponsorship = async () => {
         if (!batchSponsorTitle || !batchSponsorLink) return toast.error("Missing fields");
+        if (!isSelectedTokenPriceReady) return toast.error(`[Price Oracle] Waiting for live ${selectedTokenSymbol} price data.`);
         const tid = toast.loading("Processing Batch Sponsorship...");
         try {
-            const decimals = selectedToken?.decimals || 18;
-            const totalPool = parseUnits((parseFloat(batchRewardPerUserUSD) * Number(batchTargetClaims)).toString(), decimals);
-            const isNative = selectedTokenAddr === '0x0000000000000000000000000000000000000000';
+            const totalPool = batchSponsorRequiredTokens;
+            const isNative = selectedTokenAddr === NATIVE_TOKEN_ADDRESS;
 
             await writeContractAsync({
                 address: DAILY_APP_ADDRESS as `0x${string}`,
@@ -295,9 +335,9 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                                 ? `Created Sponsorship: ${quickSponsorTitle || batchSponsorTitle}`
                                 : `Created Task Batch: ${tasksBatch.filter(t => t.title.trim() !== '').length} tasks`,
                             amount: subTab === 'sponsor' || subTab === 'SPONSOR_PORTAL'
-                                ? parseFloat(quickSponsorRewardPerUser || batchRewardPerUserUSD) * parseFloat(quickSponsorTotalClaims || batchTargetClaims)
+                                ? (subTab === 'sponsor' ? quickSponsorTotalPoolUsd : batchSponsorTotalPoolUsd)
                                 : 0,
-                            symbol: selectedToken?.symbol || 'ETH',
+                            symbol: selectedTokenSymbol,
                             txHash: receipt.transactionHash
                         })
                     });
@@ -377,8 +417,10 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                                 platformFee={platformFee}
                                 minRewardUSD={minRewardUSD}
                                 minPoolUSD={minPoolUSD}
-                                totalPoolUSD={Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)}
-                                requiredTokens={parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), selectedToken?.decimals || 18)}
+                                totalPoolUSD={quickSponsorTotalPoolUsd}
+                                requiredTokens={quickSponsorRequiredTokens}
+                                selectedTokenUsdPrice={selectedTokenUsdPrice}
+                                isPriceReady={isSelectedTokenPriceReady}
                                 buildSponsorCall={buildQuickSponsorCall}
                                 handleTxSuccess={handleTxSuccess}
                             />
@@ -408,6 +450,9 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                                 whitelistedTokens={whitelistedTokens}
                                 selectedTokenAddr={selectedTokenAddr}
                                 onTokenChange={setSelectedTokenAddr}
+                                requiredTokens={batchSponsorRequiredTokens}
+                                selectedTokenUsdPrice={selectedTokenUsdPrice}
+                                isPriceReady={isSelectedTokenPriceReady}
                                 onCreateSponsorship={handleCreateBatchSponsorship}
                                 isSponsorSaving={isWaiting}
                             />

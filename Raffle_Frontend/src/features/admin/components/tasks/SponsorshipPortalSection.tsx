@@ -1,5 +1,5 @@
 import { Share2, RefreshCw } from 'lucide-react';
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits } from 'viem';
 
 interface SponsorshipPortalSectionProps {
     sponsorTitle: string;
@@ -19,6 +19,9 @@ interface SponsorshipPortalSectionProps {
     whitelistedTokens: unknown[];
     selectedTokenAddr: string;
     onTokenChange: (_addr: string) => void;
+    requiredTokens: bigint;
+    selectedTokenUsdPrice: number;
+    isPriceReady: boolean;
     onCreateSponsorship: () => void;
     isSponsorSaving: boolean;
 }
@@ -34,6 +37,9 @@ export function SponsorshipPortalSection({
     whitelistedTokens,
     selectedTokenAddr,
     onTokenChange,
+    requiredTokens,
+    selectedTokenUsdPrice,
+    isPriceReady,
     onCreateSponsorship,
     isSponsorSaving
 }: SponsorshipPortalSectionProps) {
@@ -142,7 +148,7 @@ export function SponsorshipPortalSection({
                             <div className="space-y-4 p-6 bg-black/60 rounded-[1.5rem] border border-white/5">
                                 <div className="flex justify-between items-center">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Pool Value</span>
-                                    <span className="text-sm font-black text-white">${(parseFloat(rewardPerUserUSD) * parseFloat(targetClaims)).toLocaleString()} USD</span>
+                                    <span className="text-sm font-black text-white">${((parseFloat(rewardPerUserUSD) || 0) * (parseFloat(targetClaims) || 0)).toLocaleString()} USD</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sponsorship Asset</span>
@@ -152,9 +158,14 @@ export function SponsorshipPortalSection({
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Asset Requirement</span>
-                                    <span className="text-sm font-black text-emerald-400 font-mono">
-                                        {formatUnits(parseUnits((parseFloat(rewardPerUserUSD || '0') * parseFloat(targetClaims || '0')).toString(), selectedToken?.decimals || 18), selectedToken?.decimals || 18)}
-                                    </span>
+                                    <div className="text-right">
+                                        <span className="block text-sm font-black text-emerald-400 font-mono">
+                                            {formatUnits(requiredTokens, selectedToken?.decimals || 18)}
+                                        </span>
+                                        <span className="block text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">
+                                            {isPriceReady ? `$${selectedTokenUsdPrice.toFixed(4)} / ${selectedToken?.symbol || 'ETH'}` : 'PRICE ORACLE PENDING'}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="pt-4 border-t border-white/5 flex justify-between items-center">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Platform Fee</span>
@@ -167,7 +178,7 @@ export function SponsorshipPortalSection({
 
                         <button
                             onClick={onCreateSponsorship}
-                            disabled={isSponsorSaving}
+                            disabled={isSponsorSaving || !isPriceReady}
                             className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-6 rounded-[2rem] text-white font-black uppercase tracking-[0.3em] shadow-2xl shadow-emerald-500/30 active:scale-[0.98] transition-all disabled:opacity-50 mt-8"
                         >
                             {isSponsorSaving ? (
@@ -175,7 +186,7 @@ export function SponsorshipPortalSection({
                                     <RefreshCw className="w-6 h-6 animate-spin" />
                                     <span>DEPLOYING...</span>
                                 </div>
-                            ) : 'DEPLOY SPONSORSHIP'}
+                            ) : isPriceReady ? 'DEPLOY SPONSORSHIP' : 'WAITING FOR PRICE ORACLE'}
                         </button>
                     </div>
                 </div>

@@ -5,6 +5,14 @@
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
 
+## 2026-05-19 Fix Report - UGC Admin Multi-Asset Reward Conversion
+- **Status**: Fixed.
+- **Surface**: `/admin` -> Task Master -> Quick Forge Sponsor and Smart Batch Sponsor Portal.
+- **Evidence**: `TaskManager.tsx` computes `parseUnits((Number(quickSponsorRewardPerUser) * Number(quickSponsorTotalClaims)).toString(), selectedToken.decimals)` and `parseUnits((parseFloat(batchRewardPerUserUSD) * Number(batchTargetClaims)).toString(), selectedToken.decimals)`. `QuickSponsorPortalSection.tsx` and `SponsorshipPortalSection.tsx` label those inputs as USD, but no selected-token USD price is used before converting to token units.
+- **Impact**: For ETH, WETH, or any whitelisted custom token, `0.01` is treated as `0.01` token instead of `$0.01 USDC equivalent`, causing oversized reward pools and incorrect admin cost previews.
+- **Fix Applied**: Ported the live `usePriceOracle` conversion pattern into `TaskManager.tsx`, computing token amount as `usdValue / selectedTokenUsdPrice` before `parseUnits`. Quick and batch admin sponsor panels now receive the corrected `requiredTokens`, show the token USD price, and block deployment while oracle data is pending.
+- **Verification**: `npx tsc --noEmit --pretty false` passed.
+
 ---
 
 ## 📋 Table of Contents
@@ -4538,4 +4546,3 @@ When you see one of these in a new file, apply the corresponding fix mechanicall
 - **API surface impact:** none — `api/` directory untouched
 
 ---
-

@@ -1,7 +1,7 @@
-<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.4-Hardened)</h1>
+<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.6-Hardened)</h1>
 <ul>
-<li><strong>Ecosystem Version:</strong> v3.64.4-Hardened</li>
-<li><strong>Last Updated:</strong> 2026-05-18T19:15:00+07:00</li>
+<li><strong>Ecosystem Version:</strong> v3.64.6-Hardened</li>
+<li><strong>Last Updated:</strong> 2026-05-18T22:15:00+07:00</li>
 <li><strong>Author:</strong> Antigravity (Lead Blockchain Architect)</li>
 <li><strong>Status:</strong> [🟢] DEPLOYED &amp; HARDENED (Source of Truth)</li>
 <li><strong>Master Registry:</strong> <a href="file:///.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a> | <a href="file:///AGENTS.md">AGENTS.md</a></li>
@@ -2484,6 +2484,23 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 </ul>
 <hr>
 <h1>Section II: Chronological Development Log</h1>
+<h2>45. Work Report v3.64.6-Hardened</h2>
+<p><strong>Date:</strong> 2026-05-19
+<strong>Subject:</strong> UGC Admin Multi-Asset Reward Conversion Fix
+<strong>Author:</strong> Antigravity (Lead Blockchain Architect)</p>
+<h3>Executive Summary</h3>
+<p>Fixed the admin-side UGC sponsor creation flow so USD-denominated reward inputs are converted into the selected whitelisted token amount before on-chain execution. Admin inputs such as <code>0.01</code> now represent <code>$0.01 USDC equivalent</code>, not <code>0.01</code> ETH/WETH/custom token.</p>
+<h3>Key Implementation Details</h3>
+<ol>
+<li><strong>Live Price Conversion</strong>: <code>TaskManager.tsx</code> now uses the existing <code>usePriceOracle</code> pattern to resolve selected token USD price from <code>allowed_tokens</code>.</li>
+<li><strong>Correct Token Units</strong>: Quick Forge Sponsor and Smart Batch Sponsor Portal compute <code>tokenAmount = usdValue / selectedTokenUsdPrice</code> before <code>parseUnits</code>.</li>
+<li><strong>Oracle Safety Gate</strong>: Admin sponsor deploy actions are disabled while live price data is unavailable, preventing accidental oversized reward pools.</li>
+</ol>
+<h3>Verification Matrix</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>Type Safety</strong>: <code>npx tsc --noEmit --pretty false</code> passed.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Blast Radius</strong>: Change scoped to admin UGC sponsor surfaces; public <code>CreateMissionPage.tsx</code> behavior remains unchanged.</li>
+</ul>
 <h2>44. Work Report v3.64.4-Hardened</h2>
 <p><strong>Date:</strong> 2026-05-18
 <strong>Subject:</strong> Supreme Source of Truth (SOT) Hierarchy Consolidation
@@ -5000,10 +5017,264 @@ system documents.
 </ul>
 </li>
 </ul>
+<h2>25. Work Report v3.38.19 — Architectural Purge</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-22
+<strong>Focus</strong>: Final removal of mock dependencies from root search path.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Pure Search Path</strong>: Moved <code>MockAggregatorV3.sol</code> to <code>old/</code>.</li>
+</ul>
+<hr>
+<h2>26. Work Report v3.38.20 — Absolute Pure State &amp; Canonical Lock</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-22
+<strong>Focus</strong>: Establishing the &quot;Zero-Artifact&quot; project root.</p>
+<hr>
+<h2>27. Work Report v3.38.21 — Ecosystem Consolidation</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-22
+<strong>Focus</strong>: Archiving redundant project folders.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Root Cleanup</strong>: Moved <code>DailyApp.V.12</code> and <code>NFT_Raffle_Source</code> to <code>_archive/</code>.</li>
+</ul>
+<hr>
+<h2>28. Work Report v3.38.22 — Final Health Audit</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-22
+<strong>Focus</strong>: 13/13 Security Checks Pass.</p>
+<hr>
+<h2>29. Work Report v3.38.23 — Global Supabase Database Sync</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-22
+<strong>Focus</strong>: Total schema hardening and on-chain state synchronization.</p>
+<hr>
+<h2>32. Work Report v3.39.1 — Database Parity Hardening</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-27
+<strong>Focus</strong>: Achieving absolute database parity after final ecosystem sync.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>SBT Pool Sync</strong>: Synchronized on-chain pool balances and holder counts to <code>sbt_pool_stats</code>.</li>
+<li><strong>Underdog Optimization</strong>: Recalculated percentile-based underdog thresholds based on current XP distribution.</li>
+<li><strong>Git Hygiene Lockdown</strong>: Purged all untracked lint artifacts and localized temporary logs.</li>
+<li><strong>Protocol Lockdown</strong>: Incremented ecosystem version to v3.39.1 across all agent skills and system documents.</li>
+</ul>
+<h2>33. Work Report v3.39.0 — End-to-End Ecosystem Sync &amp; Audit</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-27
+<strong>Focus</strong>: Finalizing absolute parity across frontend, logic, and contract layers.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Critical Frontend Patch</strong>: Resolved a parsing error in <code>LoginPage.jsx</code> by balancing the JSX tree (missing <code>&lt;/div&gt;</code> tags).</li>
+<li><strong>Linter Compliance</strong>: Fixed missing <code>useMemo</code> dependencies in <code>CreateRafflePage.jsx</code> and removed unused variables in <code>AdminPage.jsx</code>.</li>
+<li><strong>Address Validation</strong>: Verified that <code>.env</code> and <code>.cursorrules</code> share identical contract addresses for <code>DAILY_APP</code>, <code>MASTER_X</code>, <code>RAFFLE</code>, and <code>CMS V2</code>.</li>
+<li><strong>Ecosystem Sync</strong>: Incremented version to v3.39.0 across all protocol documents (<code>PRD</code>, <code>.cursorrules</code>, <code>CLAUDE.md</code>, <code>gemini.md</code>).</li>
+</ul>
+<hr>
+<h2>34. Work Report v3.40.3 — Task Claim Hardening &amp; Ecosystem Sync</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-27
+<strong>Focus</strong>: Resolving duplicate key errors and hardening the end-to-end claim pipeline.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Database Schema</strong>: Dropped redundant <code>uidx_user_task_unique</code> index, enabling multi-day claims for daily tasks.</li>
+<li><strong>API Hardening</strong>: Updated <code>tasks-bundle.js</code> and <code>user-bundle.js</code> to gracefully handle unique constraint violations (PostgreSQL 23505).</li>
+<li><strong>Frontend Logic</strong>: Refactored <code>TaskList.jsx</code> to correctly filter tasks using full claim history. Fixed a regression where <code>userClaims</code> state was incompatible with Set-based methods.</li>
+<li><strong>Verification Server</strong>: Hardened <code>supabase.service.js</code> in the verification-server against race conditions during high-frequency social task claims.</li>
+<li><strong>Security</strong>: Reinforced Identity Lock (1 Social Account : 1 Wallet) and Zero-Trust cryptographic verification for all claims.</li>
+</ul>
+<hr>
+<h2>35. Work Report v3.40.4 — Daily Claim Hardening &amp; Real-time Sync</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-03-31
+<strong>Focus</strong>: Eliminating 401 sync errors and achieving absolute real-time tier/XP parity.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Backend Resilience</strong>: Hardened <code>handleXpSync</code> with RPC timeout tolerance (10s race) and optimistic trust for proven <code>tx_hash</code>.</li>
+<li><strong>XP Delta Logic</strong>: Implemented fail-safe <code>xpDelta</code> fallback that triggers even if <code>readContract</code> fails, ensuring no claim is lost to RPC lag.</li>
+<li><strong>Single Source of Truth</strong>: Unified cooldown detection in <code>DailyClaimModal</code> to rely exclusively on on-chain data, preventing UI de-sync.</li>
+<li><strong>Real-time Tier Sync</strong>: Added instantaneous tier recalculation via <code>sbt_thresholds</code> DB query during XP sync (bypassing stale on-chain tier reads).</li>
+<li><strong>View Parity</strong>: Implemented 1.5s settled-state delay before refetching, ensuring <code>v_user_full_profile</code> leaderboard data is 100% fresh.</li>
+<li><strong>Ecosystem Sync</strong>: Incremented version to v3.40.4 across all protocol documents and verified via 13/13 Audit PASS.</li>
+</ul>
+<hr>
+<h2>36. Work Report v3.40.5 — Total Ecosystem Contract Synchronization</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-04-02
+<strong>Focus</strong>: Updating active contract tables with explicit timestamps to prevent Source of Truth regression.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Timestamped SOT</strong>: Injected exact timestamps (<code>Last Synced: 2026-04-02T11:14:23+07:00</code>) into <code>.cursorrules</code> and active AI protocols.</li>
+<li><strong>Protocol Parity</strong>: Synchronized skill mandates to ensure absolute adherence to Base Sepolia/Mainnet states, ensuring agents always know the newest values.</li>
+</ul>
+<hr>
+<h2>37. Work Report v3.40.6 — Mainnet Phased Rollout Infrastructure</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-04-02
+<strong>Focus</strong>: Safely transitioning the ecosystem to Base Mainnet without smart contract deployments using dynamic Feature Flags.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Database Kill Switch</strong>: Introduced <code>active_features</code> JSONB into <code>system_settings</code> to control Rollout Phases (<code>login_and_social</code>, <code>daily_claim</code>, <code>sbt_minting</code>, <code>ugc_payment</code>).</li>
+<li><strong>Network-Aware Backends</strong>: Severless APIs dynamically parse <code>VITE_CHAIN_ID</code> to block execution on Mainnet if the corresponding feature flag is <code>false</code>.</li>
+<li><strong>UI Locking Mechanism</strong>: Protected <code>CreateRafflePage</code> and <code>SBTUpgradeCard</code> with real-time React UI Locks that gray-out and prevent interaction based on points context flag status.</li>
+<li><strong>Admin Command Center</strong>: Built an integrated UI in <code>Admin Dashboard -&gt; System Settings</code> allowing Admin users to toggle all Feature Flags directly via signature validation.</li>
+</ul>
+<hr>
+<hr>
+<h2>38. Work Report v3.40.13 — Nexus Protocol Synchronization</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-04-03
+<strong>Focus</strong>: Specialized environment sanitation, MasterX checksum correction, and global documentation synchronization.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>MasterX Correction</strong>: Purged legacy <code>0x1ED8...</code> (Checksum/Revert conflict) and unified ecosystem around <code>0x980770dAcE8f13E10632D3EC1410FAA4c707076c</code>.</li>
+<li><strong>Specialized Env Audit</strong>: Sanitized 7 environment files (<code>.env</code>, <code>.env.example</code>, <code>.env.local</code>, <code>.env.vercel</code>, <code>.env.vercel.preview</code>, <code>.env.vercel.production</code>, <code>.env.verification.vercel</code>).</li>
+<li><strong>Clean-Pipe Sync</strong>: Resolved &quot;Silent Corruption&quot; (shell-induced <code>\r\n</code>) in Vercel environment variables via <code>spawnSync</code> protocol.</li>
+<li><strong>Protocol Parity</strong>: Synchronized <code>.cursorrules</code>, <code>CLAUDE.md</code>, <code>gemini.md</code>, <code>WORKSPACE_MAP.md</code>, and <code>FEATURE_WORKFLOW_SOT.md</code> to ensure absolute parity.</li>
+<li><strong>Security Validation</strong>: Verified 13/13 Security Matrix checks pass (<code>check_sync_status.cjs</code>) and zero secret leaks (<code>gitleaks</code>).</li>
+</ul>
+<hr>
+<h2>39. Work Report v3.40.18 — Global Mobile UI Hardening</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-04-03
+<strong>Focus</strong>: Achieving &quot;Native+&quot; professional consistency and mobile accessibility across the entire ecosystem.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Design System Lockdown</strong>: Standardized all small labels and micro-text to <strong>11px (Bold/Uppercase/Tracking-Wide)</strong>. This eliminates the previous 9px/10px &quot;flicker&quot; and ensures readability on high-density displays.</li>
+<li><strong>Safe Area Insets (Notch Proofing)</strong>: Implemented <code>.pb-safe</code> and <code>.pt-safe</code> utilities across all pages and fixed navigation bars (Header/BottomNav), resolving all overlap issues with device home indicators.</li>
+<li><strong>Admin Hub Hardening</strong>: Refactored the <code>ModerationCenterTab</code> and <code>UgcRevenueTab</code> with standardized typography, premium <code>btn-native</code> styles, and improved empty states. Fixed a critical <code>isMainnet</code> reference bug in the moderation center.</li>
+<li><strong>Component Parity</strong>: Standardized all form inputs, dropdowns (<code>select-native</code>), and interactive elements on <code>CreateMissionPage</code> and <code>CreateRafflePage</code> to match the new &quot;Native+&quot; component library.</li>
+<li><strong>Header &amp; BottomNav</strong>: Re-engineered for a refined &quot;Native+&quot; feel with enhanced glassmorphism (<code>backdrop-blur-3xl</code>), 11px micro-text labels, and precise safe-area-inset handling via environment variables.</li>
+</ul>
+<hr>
+<h2>36. Work Report — v3.41.0 (FINAL)</h2>
+<p><strong>Date</strong>: 2026-04-04
+<strong>Task</strong>: Social Identity Hardening &amp; Native+ Balanced Typography.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Multi-Platform Social Guard</strong>: Expanded identity verification to support parallel Farcaster (via Neynar) and Twitter (via internal DB linkage) checks in <code>useSocialGuard</code>.</li>
+<li><strong>Backend Verification</strong>: Implemented secure <code>GET /api/verify/farcaster/check</code> and <code>GET /api/verify/twitter/check</code> endpoints in the verification server.</li>
+<li><strong>Native+ Balanced Typography</strong>: Refined the UI with a hybrid typography system: 11px Bold/Uppercase labels (<code>.label-native</code>) for scannability and 13px Medium content (<code>.content-native</code>) for readability.</li>
+<li><strong>Global UI Refactor</strong>: Systematically applied Balanced Typography to <code>ProfilePage.jsx</code>, <code>TasksPage.jsx</code>, <code>SBTRewardsDashboard.jsx</code>, <code>RaffleCard.jsx</code>, <code>RafflesPage.jsx</code>, and <code>ActivityLogSection.jsx</code>.</li>
+<li><strong>Raffle Integration</strong>: Hardened <code>RaffleCard.jsx</code> and <code>RafflesPage.jsx</code> with a mandatory social verification check before ticket purchase, preventing Sybil attacks.</li>
+<li><strong>Ecosystem Sync Audit</strong>: Successfully ran <code>check_sync_status.cjs</code> proving 13/13 security checks pass and absolute environment parity.
+<strong>Outcome</strong>: 100% Sybil-resistant raffle participation and a more readable, high-end &quot;Professional Native&quot; mobile interface. Ecosystem fully synchronized.</li>
+</ul>
+<hr>
+<h2>41. Work Report — v3.42.8 (CURRENT)</h2>
+<p><strong>Date</strong>: 2026-04-08
+<strong>Task</strong>: Task Feature Integrity Hardening &amp; Cleanup.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Admin Creation Pipeline</strong>: Fixed missing <code>title</code>, <code>expires_at</code>, and <code>target_id</code> injection in <code>admin-bundle.js</code> handlers. All system tasks now have explicit expiry metadata.</li>
+<li><strong>Claim Handler Hardening</strong>: <code>TaskList.jsx</code> now explicitly handles the <code>already_claimed</code> flag from the backend success response to prevent misleading UI states and ensure instant task removal.</li>
+<li><strong>Database Sanitization</strong>: Purged all dummy tasks (<code>Follow @CryptoDisco</code>, etc.) and cleaned 9 orphan user claims to maintain a performance-optimized baseline.</li>
+<li><strong>Documentation Sync</strong>: Synchronized <code>TASK_FEATURE_WORKFLOW.md</code> and <code>FEATURE_WORKFLOW_SOT.md</code> to version v3.42.8.
+<strong>Outcome</strong>: 100% mission persistence consistency and hardened social claim security. Ecosystem fully synchronized to v3.42.8.</li>
+</ul>
+<hr>
+<h2>40. Work Report — v3.42.2 (LEGACY)</h2>
+<p><strong>Date</strong>: 2026-04-05
+<strong>Task</strong>: Identity Guard UI Hardening &amp; Disappearing Task Mandate.
+<strong>Action</strong>:</p>
+<ul>
+<li><strong>Premium Identity Branding</strong>: Injected &quot;Verified&quot; shield badges (Base Blue) into <code>ProfilePage.jsx</code> and refactored the Base Social linking section for a more professional, high-contrast look.</li>
+<li><strong>Identity Guard Hardening</strong>: Enforced card-level gating in <code>SponsoredTaskCard</code> (<code>TasksPage.jsx</code>), preventing unverified users from attempting bulk-verification on gated missions.</li>
+<li><strong>Disappearing Task Mandate</strong>: Implemented strict visibility logic. Individual tasks and entire mission cards now <strong>vanish</strong> from the UI immediately upon completion/claim, maintaining a clean &quot;To-Do&quot; list for the user.</li>
+<li><strong>Admin Visibility</strong>: Hardened <code>ActiveCampaignsSection.jsx</code> in the Admin Dashboard to explicitly label &quot;IDENTITY GUARDED&quot; missions for moderators.</li>
+<li><strong>UGC Creation Protection</strong>: Updated <code>CreateTaskModal</code> to clearly label the Identity Guard as &quot;Sybil Protection&quot; for mission creators, increasing the value proposition of the protocol.
+<strong>Outcome</strong>: 100% Sybil-resistant participation with a &quot;Clean Sweep&quot; task experience and premium identity signaling. Ecosystem fully synchronized to v3.42.2.</li>
+</ul>
+<hr>
+<h2>42. Work Report v3.43.0 — Hardening Raffle &amp; SBT Economy + Nexus Sentinel</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-04-29
+<strong>Focus</strong>: Stabilizing the Raffle economy, synchronizing SBT tier thresholds, and activating real-time ecosystem monitoring.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Raffle Moderation Hardening</strong>:<ul>
+<li>Replaced <code>window.prompt</code> with a <strong>Premium Rejection Modal</strong> (Glassmorphism UI) for UGC Raffle moderation.</li>
+<li>Implemented <strong>On-Chain Refund Protocol</strong>: Rejection of a raffle now automatically triggers a <code>cancelRaffle</code> transaction to refund the sponsor&#39;s 1.5% fee.</li>
+<li>Sanitized <code>user-bundle.js</code> to filter out already rejected raffles from the moderation queue.</li>
+</ul>
+</li>
+<li><strong>SBT Economy Parity</strong>:<ul>
+<li>Synchronized XP thresholds across <code>MasterX</code> and <code>DailyApp</code> contracts: Bronze (100) to Diamond (10,000).</li>
+<li>Verified the <strong>SBT Upgrade</strong> lifecycle, ensuring users can only mint/upgrade based on validated on-chain XP data.</li>
+</ul>
+</li>
+<li><strong>Nexus Command Center (NCC) v2.0</strong>:<ul>
+<li><strong>Real-Time Monitor</strong>: Built a premium dashboard (<code>index.html</code>) with auto-refresh and dependency graph visualization.</li>
+<li><strong>Proactive Sentinel</strong>: Deployed a background audit script (<code>ncc-sentinel.cjs</code>) with state tracking to prevent alert fatigue.</li>
+<li><strong>Live Lurah (Vercel Cron)</strong>: Implemented <code>api/lurah-cron.js</code> and scheduled it in <code>vercel.json</code>. The &quot;Lurah&quot; now performs periodic health checks and sends proactive Telegram alerts if any &quot;Economy Drift&quot; atau &quot;Environment Drift&quot; terdeteksi.</li>
+</ul>
+</li>
+<li><strong>Roadmap Management</strong>:<ul>
+<li>Formally paused <strong>Phase 4 (Staking &amp; Governance)</strong> in <code>ROADMAP.md</code> untuk memprioritaskan stabilitas absolut ekonomi Raffle dan SBT saat ini.</li>
+</ul>
+</li>
+</ul>
 <hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
 <em>Integrity First. Nexus Synchronized.</em></p>
-<p># #   A r c h i t e c t u r e   U p d a t e   v 3 . 4 7 . 1 + 
- S B T   M i n t i n g   l o g i c   a n d   O n - C h a i n   X P   V e r i f i c a t i o n   h a v e   b e e n   p e r m a n e n t l y   m i g r a t e d   f r o m   t h e   M A S T E R _ X   c o n t r a c t   t o   t h e   D A I L Y _ A P P   c o n t r a c t .   T h e   f r o n t e n d   c o m p o n e n t   S B T U p g r a d e C a r d . j s x   m u s t   r e a d   X P   p o i n t s   v i a   u s e U s e r I n f o   ( D A I L Y _ A P P )   i n s t e a d   o f   u s e S B T   ( M A S T E R _ X )   t o   e n s u r e   i m m e d i a t e   U I   s y n c   a n d   u n l o c k   S B T   M i n t i n g   i n s t a n t l y   a f t e r   a   d a i l y   c l a i m . 
- 
- </p>
+<h1>#   A r c h i t e c t u r e   U p d a t e   v 3 . 4 7 . 1 +</h1>
+<p> S B T   M i n t i n g   l o g i c   a n d   O n - C h a i n   X P   V e r i f i c a t i o n   h a v e   b e e n   p e r m a n e n t l y   m i g r a t e d   f r o m   t h e   M A S T E R _ X   c o n t r a c t   t o   t h e   D A I L Y _ A P P   c o n t r a c t .   T h e   f r o n t e n d   c o m p o n e n t   S B T U p g r a d e C a r d . j s x   m u s t   r e a d   X P   p o i n t s   v i a   u s e U s e r I n f o   ( D A I L Y _ A P P )   i n s t e a d   o f   u s e S B T   ( M A S T E R _ X )   t o   e n s u r e   i m m e d i a t e   U I   s y n c   a n d   u n l o c k   S B T   M i n t i n g   i n s t a n t l y   a f t e r   a   d a i l y   c l a i m . </p>
+<hr>
+<h2>43. Work Report v3.64.5 — Agent Anti-Negligence Hook &amp; Ecosystem Hardening</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-18
+<strong>Focus</strong>: Introducing an automated scan blocking agent negligences, unifying workspaces, cleaning old artifacts, and hardening protocols.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Anti-Negligence Agent Hook</strong>: <ul>
+<li>Designed and deployed <code>scripts/audits/agent_anti_negligence_hook.cjs</code> to enforce zero-leak, zero-secrets, and clean git protocols.</li>
+<li>Automatically scans workspace files for raw secrets, private keys, <code>[dotenv]</code>, unregistered files, and temporary artifacts.</li>
+<li>Integrated into absolute rules as <code>Rule 77</code> in <code>AGENTS.md</code> and <code>Rule 61</code> in <code>.cursorrules</code>.</li>
+</ul>
+</li>
+<li><strong>Ecosystem Work Reports Consolidation</strong>:<ul>
+<li>Unified fragmented workflow documents under <code>.agents/workflows/</code> into a single canonical history: <code>AGENT_WORK_REPORT.md</code>.</li>
+<li>Added millisecond-level precision metadata stamps (author, date, time, task metadata) to all reports.</li>
+</ul>
+</li>
+<li><strong>Repository Clean Tree Mandate</strong>:<ul>
+<li>Automatically deleted redundant <code>tsc_output*.txt</code>, <code>tsc-errors*.txt</code>, temporary build logs, and environment backups to prevent leak pathways.</li>
+<li>Aligned environment variables across all Vercel servers via Clean-Pipe Sync.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><em>Created by Antigravity — Nexus Master Architect</em>
+<em>Integrity First. Nexus Synchronized. v3.64.5 LOCKED.</em></p>
+<p> S B T   M i n t i n g   l o g i c   a n d   O n - C h a i n   X P   V e r i f i c a t i o n   h a v e   b e e n   p e r m a n e n t l y   m i g r a t e d   f r o m   t h e   M A S T E R _ X   c o n t r a c t   t o   t h e   D A I L Y _ A P P   c o n t r a c t .   T h e   f r o n t e n d   c o m p o n e n t   S B T U p g r a d e C a r d . j s x   m u s t   r e a d   X P   p o i n t s   v i a   u s e U s e r I n f o   ( D A I L Y _ A P P )   i n s t e a d   o f   u s e S B T   ( M A S T E R _ X )   t o   e n s u r e   i m m e d i a t e   U I   s y n c   a n d   u n l o c k   S B T   M i n t i n g   i n s t a n t l y   a f t e r   a   d a i l y   c l a i m .</p>
+<hr>
+<h2>44. Work Report v3.64.6 — Local Ecosystem CLI Optimization &amp; RTK Integration</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-18
+<strong>Focus</strong>: Setting up Rust Token Killer (RTK) locally to minimize agent token usage, securing local directories, and updating workspace mapping.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Local Binaries Segregation</strong>:<ul>
+<li>Injected <code>.bin/</code> folder into <code>.gitignore</code> under the &quot;BUILD &amp; COMPILE OUTPUTS&quot; section, preventing compiled binary contamination in the repository.</li>
+</ul>
+</li>
+<li><strong>RTK Automated Installer</strong>:<ul>
+<li>Developed and implemented <code>scripts/deployments/install_rtk.cjs</code> in native Node.js.</li>
+<li>Automates directory creation, fetches the pre-built <code>rtk-x86_64-pc-windows-msvc.zip</code> from official GitHub releases, extracts the <code>rtk.exe</code> binary, and cleans up the temporary zip file (Zero-Leak &amp; Clean Git Hygiene).</li>
+</ul>
+</li>
+<li><strong>Execution &amp; Validation</strong>:<ul>
+<li>Verified <code>rtk.exe</code> is locally active (<code>.\.bin\rtk --version</code> -&gt; <code>rtk 0.40.0</code>).</li>
+<li>Mapped commands for session-level PATH inclusion to allow transparent agent execution savings (<code>rtk gain</code> tracking).</li>
+</ul>
+</li>
+<li><strong>Ecosystem Sync</strong>:<ul>
+<li>Updated the workspace nav map in <code>.agents/WORKSPACE_MAP.md</code> and consolidated PRD logs to match the v3.64.6 standard.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><em>Created by Antigravity — Nexus Master Architect</em>
+<em>Integrity First. Nexus Synchronized. v3.64.6 LOCKED.</em></p>

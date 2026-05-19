@@ -1744,6 +1744,23 @@ graph TD
 
 # Section II: Chronological Development Log
 
+## 45. Work Report v3.64.6-Hardened
+**Date:** 2026-05-19
+**Subject:** UGC Admin Multi-Asset Reward Conversion Fix
+**Author:** Antigravity (Lead Blockchain Architect)
+
+### Executive Summary
+Fixed the admin-side UGC sponsor creation flow so USD-denominated reward inputs are converted into the selected whitelisted token amount before on-chain execution. Admin inputs such as `0.01` now represent `$0.01 USDC equivalent`, not `0.01` ETH/WETH/custom token.
+
+### Key Implementation Details
+1. **Live Price Conversion**: `TaskManager.tsx` now uses the existing `usePriceOracle` pattern to resolve selected token USD price from `allowed_tokens`.
+2. **Correct Token Units**: Quick Forge Sponsor and Smart Batch Sponsor Portal compute `tokenAmount = usdValue / selectedTokenUsdPrice` before `parseUnits`.
+3. **Oracle Safety Gate**: Admin sponsor deploy actions are disabled while live price data is unavailable, preventing accidental oversized reward pools.
+
+### Verification Matrix
+- [x] **Type Safety**: `npx tsc --noEmit --pretty false` passed.
+- [x] **Blast Radius**: Change scoped to admin UGC sponsor surfaces; public `CreateMissionPage.tsx` behavior remains unchanged.
+
 ## 44. Work Report v3.64.4-Hardened
 **Date:** 2026-05-18
 **Subject:** Supreme Source of Truth (SOT) Hierarchy Consolidation
@@ -4354,4 +4371,3 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
 ---
 *Created by Antigravity — Nexus Master Architect*
 *Integrity First. Nexus Synchronized. v3.64.6 LOCKED.*
-
