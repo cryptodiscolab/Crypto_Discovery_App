@@ -2486,20 +2486,28 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 <h1>Section II: Chronological Development Log</h1>
 <h2>45. Work Report v3.64.6-Hardened</h2>
 <p><strong>Date:</strong> 2026-05-19
-<strong>Subject:</strong> UGC Admin Multi-Asset Reward Conversion Fix
+<strong>Subject:</strong> UGC Admin Multi-Asset Reward Conversion &amp; RTK Global Optimization
 <strong>Author:</strong> Antigravity (Lead Blockchain Architect)</p>
 <h3>Executive Summary</h3>
-<p>Fixed the admin-side UGC sponsor creation flow so USD-denominated reward inputs are converted into the selected whitelisted token amount before on-chain execution. Admin inputs such as <code>0.01</code> now represent <code>$0.01 USDC equivalent</code>, not <code>0.01</code> ETH/WETH/custom token.</p>
+<ol>
+<li>Fixed the admin-side UGC sponsor creation flow so USD-denominated reward inputs are converted into the selected whitelisted token amount before on-chain execution. Admin inputs such as <code>0.01</code> now represent <code>$0.01 USDC equivalent</code>, not <code>0.01</code> ETH/WETH/custom token.</li>
+<li>Restored key ecosystem Source of Truth (SOT) documents (<code>FEATURE_WORKFLOW_SOT</code> and <code>TASK_FEATURE_WORKFLOW</code>) that were deleted in prior commits, and compiled their corresponding HTML pages.</li>
+<li>Configured and activated the Rust Token Killer (RTK) global Pre-Tool Use hook in the system settings (<code>~/.claude/settings.json</code>) to optimize token usage and prevent context bloat.</li>
+</ol>
 <h3>Key Implementation Details</h3>
 <ol>
 <li><strong>Live Price Conversion</strong>: <code>TaskManager.tsx</code> now uses the existing <code>usePriceOracle</code> pattern to resolve selected token USD price from <code>allowed_tokens</code>.</li>
-<li><strong>Correct Token Units</strong>: Quick Forge Sponsor and Smart Batch Sponsor Portal compute <code>tokenAmount = usdValue / selectedTokenUsdPrice</code> before <code>parseUnits</code>.</li>
+<li><strong>Correct Token Units &amp; NaN Guards</strong>: Quick Forge Sponsor and Smart Batch Sponsor Portal compute <code>tokenAmount = usdValue / selectedTokenUsdPrice</code> before <code>parseUnits</code>. Added <code>|| 0</code> fallback to <code>parseFloat</code> calls in <code>SponsorshipPortalSection.tsx</code> to prevent <code>NaN</code> values under empty inputs.</li>
 <li><strong>Oracle Safety Gate</strong>: Admin sponsor deploy actions are disabled while live price data is unavailable, preventing accidental oversized reward pools.</li>
+<li><strong>SOT Restoration</strong>: Re-imported deleted PRD files from <code>c78ef3d</code> and generated compliant HTML equivalents using <code>marked</code> compiler.</li>
+<li><strong>RTK Pre-Tool Use Hook</strong>: Injected <code>&quot;PreToolUse&quot;</code> matcher into <code>~/.claude/settings.json</code> configured to execute <code>&quot;rtk hook claude&quot;</code>, optimizing system resources and token context length.</li>
 </ol>
 <h3>Verification Matrix</h3>
 <ul>
 <li><input checked="" disabled="" type="checkbox"> <strong>Type Safety</strong>: <code>npx tsc --noEmit --pretty false</code> passed.</li>
 <li><input checked="" disabled="" type="checkbox"> <strong>Blast Radius</strong>: Change scoped to admin UGC sponsor surfaces; public <code>CreateMissionPage.tsx</code> behavior remains unchanged.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Pre-Commit Audit</strong>: Passed <code>agent_anti_negligence_hook.cjs</code> with 100% operational status.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>RTK Operation</strong>: Hook verified, global initialization verified successfully.</li>
 </ul>
 <h2>44. Work Report v3.64.4-Hardened</h2>
 <p><strong>Date:</strong> 2026-05-18
