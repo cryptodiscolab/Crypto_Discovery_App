@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Trophy, Crown, Sparkles, Medal, Users, Shield } from 'lucide-react';
 import { useAccount } from 'wagmi';
+import { supabase } from '../lib/supabaseClient';
 
 interface LeaderboardUser {
   wallet_address: string;
@@ -121,21 +122,7 @@ export function LeaderboardPage() {
     { id: 'Rookie', label: 'Rookie', icon: Trophy, color: 'text-slate-500' },
   ];
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchLeaderboard(controller.signal);
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'All') {
-      setFilteredUsers(allUsers);
-    } else {
-      setFilteredUsers(allUsers.filter((u) => u.rank_name === activeTab));
-    }
-  }, [activeTab, allUsers]);
-
-  const fetchLeaderboard = async (signal?: AbortSignal) => {
+  const fetchLeaderboard = useCallback(async (signal?: AbortSignal) => {
     setFetchError(null);
     try {
       const response = await fetch(`/api/leaderboard?limit=100`, { signal });
@@ -152,7 +139,38 @@ export function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchLeaderboard(controller.signal);
+    return () => controller.abort();
+  }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('leaderboard-live-user-profiles')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_profiles',
+      }, () => {
+        void fetchLeaderboard();
+      })
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    if (activeTab === 'All') {
+      setFilteredUsers(allUsers);
+    } else {
+      setFilteredUsers(allUsers.filter((u) => u.rank_name === activeTab));
+    }
+  }, [activeTab, allUsers]);
 
   return (
     <div className="min-h-screen bg-[#0B0E14] pb-28 md:pb-8 pt-safe">

@@ -106,6 +106,7 @@ Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadik
 2.  **Anti-Protokol Kertas**: Dilarang membuat aturan atau alur kerja yang hanya bagus di dokumen Markdown. Setiap keinginan user harus diwujudkan menjadi kode fungsional, script automasi, atau fitur nyata yang memberikan manfaat bagi orang banyak.
 3.  **Implementasi Kemanusiaan**: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, serta mengabdi pada misi membantu keluarga, mitra, dan orang-orang baik yang membutuhkan melalui sistem yang jujur dan efisien.
 4.  **Evolusi Nexus (Self-Learning)**: Kegagalan teknis adalah guru terbaik. Agen wajib mendokumentasikan "Lessons Learned" di `agent_vault` untuk mencegah regresi bug yang sama (misal: OAuth State Mismatch).
+5.  **RTK Local Binary Memory (v3.64.8)**: Jika mandat RTK aktif tetapi command `rtk` tidak dikenali di PowerShell, jangan langsung fallback ke shell native. Verifikasi `.\.bin\rtk.exe --version`, review/trust `.rtk/filters.toml` bila perlu, lalu gunakan `.\.bin\rtk.exe read|grep|git|npm|npx ...` sebagai jalur utama.
 
 ## 📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)
 

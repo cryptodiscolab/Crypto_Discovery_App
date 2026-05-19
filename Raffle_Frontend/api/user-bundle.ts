@@ -63,7 +63,7 @@ type UnknownTableClient = {
     from: (table: string) => {
         insert: (value: PendingSyncJobInsert) => {
             select: (columns: string) => {
-                single: () => Promise<{ data: { id?: string | number } | null; error: { message: string } | null }>;
+                maybeSingle: () => Promise<{ data: { id?: string | number } | null; error: { message: string } | null }>;
             };
         };
         select: (columns: string) => {
@@ -488,7 +488,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             }
             
             // [SECURITY FIX] Optimistic Concurrency Control (OCC) for both watermark (last_onchain_xp) and XP recovery
-            const updatePayload: any = {
+            const updatePayload: Database['public']['Tables']['user_profiles']['Update'] = {
                 tier: currentTierOnChain,
                 updated_at: new Date().toISOString()
             };
@@ -1633,7 +1633,7 @@ async function handleRecordPendingSync(req: VercelRequest, res: VercelResponse) 
                 status: 'pending'
             })
             .select('id')
-            .single();
+            .maybeSingle();
 
         if (error) {
             // Table may not exist yet in environments where migration has not run.

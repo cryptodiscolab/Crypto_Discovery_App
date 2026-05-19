@@ -6,7 +6,8 @@ import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     rpcClient,
-    isMainnet,
+    DAILY_APP_ADDRESS,
+    DAILY_APP_USER_STATS_ABI,
     MASTER_X_ADDRESS,
     NEYNAR_API_KEY,
     MASTER_X_EVENT_ABI,
@@ -18,10 +19,6 @@ import {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const CRON_SECRET = getEnv('CRON_SECRET', '');
-
-const DAILY_APP_ADDRESS = isMainnet 
-    ? getEnv('VITE_V12_CONTRACT_ADDRESS') 
-    : getEnv('DAILY_APP_ADDRESS', getEnv('VITE_V12_CONTRACT_ADDRESS_SEPOLIA'));
 
 const TASK_IDS = {
     REFERRAL_XP: getEnv('REFERRAL_TASK_ID', "12e123f5-0ded-4ca1-af04-e8b6924823e2"),
@@ -199,7 +196,8 @@ async function logActivity(supabase: SupabaseClient, { wallet, category, type, d
         description,
         value_amount: amount || 0,
         value_symbol: symbol || 'XP',
-        tx_hash: txHash
+        tx_hash: txHash,
+        created_at: new Date().toISOString() // Rule 75 precision timestamp
     });
 }
 
@@ -254,7 +252,7 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                             const wallet = job.wallet_address.toLowerCase();
                             const stats = await rpcClient.readContract({
                                 address: DAILY_APP_ADDRESS as `0x${string}`,
-                                abi: [{ name: 'userStats', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'address' }], outputs: [{ name: 'points', type: 'uint256' }, { name: 'totalTasksCompleted', type: 'uint256' }, { name: 'referralCount', type: 'uint256' }, { name: 'currentTier', type: 'uint8' }, { name: 'tasksForReferralProgress', type: 'uint256' }, { name: 'lastDailyBonusClaim', type: 'uint256' }, { name: 'isBlacklisted', type: 'bool' }] }],
+                                abi: DAILY_APP_USER_STATS_ABI,
                                 functionName: 'userStats',
                                 args: [wallet as `0x${string}`]
                             }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
@@ -273,6 +271,147 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                         }
                     }
 
+                    // For daily_claim jobs: sync daily bonus XP, streak, and log activity
+                    if (job.action_type === 'daily_claim') {
+                        try {
+                            const wallet = job.wallet_address.toLowerCase();
+                            const cleanTxHash = job.tx_hash ? String(job.tx_hash).trim().toLowerCase() : '';
+
+                            // Check if the transaction is already in user_activity_logs (already synced)
+                            const { data: existingLog, error: logCheckErr } = await (supabase as any)
+                                .from('user_activity_logs')
+                                .select('id')
+                                .eq('tx_hash', cleanTxHash)
+                                .maybeSingle();
+
+                            if (logCheckErr) throw logCheckErr;
+
+                            if (existingLog) {
+                                console.log(`[Reconcile] Job ${job.id} daily claim already synced in user_activity_logs.`);
+                            } else {
+                                // Fetch current profile
+                                const { data: profile, error: profErr } = await (supabase as any)
+                                    .from('user_profiles')
+                                    .select('last_onchain_xp, total_xp, streak_count, last_streak_claim')
+                                    .eq('wallet_address', wallet)
+                                    .maybeSingle();
+
+                                if (profErr) throw profErr;
+                                if (!profile) {
+                                    throw new Error(`Profile not found for wallet: ${wallet}`);
+                                }
+
+                                const lastOnChainXp = profile.last_onchain_xp || 0;
+                                const currentTotalXp = profile.total_xp || 0;
+
+                                // Fetch contract stats
+                                const stats = await rpcClient.readContract({
+                                    address: DAILY_APP_ADDRESS as `0x${string}`,
+                                    abi: DAILY_APP_USER_STATS_ABI,
+                                    functionName: 'userStats',
+                                    args: [wallet as `0x${string}`]
+                                }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
+
+                                const currentOnChainXp = Number(stats[0] || 0);
+                                const currentTierOnChain = Number(stats[3] || 0);
+
+                                const xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
+                                const finalLastOnChainXpToSave = currentOnChainXp;
+
+                                let recoveryDelta = 0;
+                                if (currentTotalXp < lastOnChainXp) {
+                                    recoveryDelta = lastOnChainXp - currentTotalXp;
+                                }
+
+                                const totalXpToIncrement = xpDelta + recoveryDelta;
+
+                                if (totalXpToIncrement === 0) {
+                                    if (currentTotalXp === currentOnChainXp && lastOnChainXp === currentOnChainXp) {
+                                        console.log(`[Reconcile] Job ${job.id} already has DB/on-chain XP parity; resolving without XP mutation.`);
+                                    } else {
+                                        // No delta to sync, and not in user_activity_logs.
+                                        // This means RPC state is lagging or the tx didn't change points.
+                                        throw new Error('RPC_STATE_LAG: No XP delta or recovery found yet.');
+                                    }
+                                }
+
+                                if (totalXpToIncrement > 0) {
+                                    // Calculate streak updates
+                                    let currentStreakToSave = profile.streak_count || 0;
+                                    let lastStreakClaimToSave = profile.last_streak_claim || null;
+
+                                    if (xpDelta > 0) {
+                                        const now = new Date();
+                                        const lastClaimDate = profile.last_streak_claim ? new Date(profile.last_streak_claim) : null;
+
+                                        if (!lastClaimDate) {
+                                            currentStreakToSave = 1;
+                                        } else {
+                                            const diffHours = (now.getTime() - lastClaimDate.getTime()) / (1000 * 60 * 60);
+                                            if (diffHours >= 20 && diffHours <= 48) currentStreakToSave += 1;
+                                            else if (diffHours > 48) currentStreakToSave = 1;
+                                        }
+                                        lastStreakClaimToSave = now.toISOString();
+                                    }
+
+                                    // Apply updates with OCC
+                                    const updatePayload: any = {
+                                        tier: currentTierOnChain,
+                                        updated_at: new Date().toISOString()
+                                    };
+
+                                    if (xpDelta > 0) {
+                                        updatePayload.last_onchain_xp = finalLastOnChainXpToSave;
+                                    }
+
+                                    updatePayload.streak_count = currentStreakToSave;
+                                    updatePayload.last_streak_claim = lastStreakClaimToSave;
+
+                                    const { data: updateData, error: updateErr } = await (supabase as any)
+                                        .from('user_profiles')
+                                        .update(updatePayload)
+                                        .eq('wallet_address', wallet)
+                                        .eq('last_onchain_xp', lastOnChainXp)
+                                        .eq('total_xp', currentTotalXp)
+                                        .select('wallet_address');
+
+                                    if (updateErr) throw updateErr;
+                                    if (!updateData || updateData.length === 0) {
+                                        throw new Error('Conflict: Sync already processed concurrently.');
+                                    }
+
+                                    // Increment total_xp
+                                    const { error: rpcErr } = await (supabase as any).rpc('fn_increment_xp', {
+                                        p_wallet: wallet,
+                                        p_amount: totalXpToIncrement
+                                    });
+
+                                    if (rpcErr) throw rpcErr;
+
+                                    // Log activity using logActivity helper
+                                    const logDescription = xpDelta > 0 && recoveryDelta > 0
+                                        ? `Daily claim (reconciled): +${xpDelta} XP (streak: ${currentStreakToSave}) and recovered +${recoveryDelta} XP from under-sync.`
+                                        : xpDelta > 0
+                                            ? `Daily claim (reconciled): +${xpDelta} XP (streak: ${currentStreakToSave})`
+                                            : `Ecosystem Parity Recovery (reconciled): Restored +${recoveryDelta} XP from under-sync.`;
+
+                                    await logActivity(supabase, {
+                                        wallet,
+                                        category: 'XP',
+                                        type: recoveryDelta > 0 && xpDelta === 0 ? 'Parity Recovery' : 'On-chain Daily Claim',
+                                        description: logDescription,
+                                        amount: totalXpToIncrement,
+                                        symbol: 'XP',
+                                        txHash: cleanTxHash || null
+                                    });
+                                }
+                            }
+                        } catch (syncErr) {
+                            console.warn(`[Reconcile] Daily claim sync for job ${job.id} failed:`, syncErr);
+                            throw syncErr; // Re-throw to trigger retry_count increment in the outer catch block
+                        }
+                    }
+
                     await (supabase as any)
                         .from('pending_sync_jobs')
                         .update({
@@ -284,6 +423,48 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                         .eq('id', job.id);
                     resolved++;
                 } else {
+                    if (job.action_type === 'daily_claim' && job.wallet_address) {
+                        try {
+                            const wallet = job.wallet_address.toLowerCase();
+                            const [{ data: profile, error: profileErr }, stats] = await Promise.all([
+                                (supabase as any)
+                                    .from('user_profiles')
+                                    .select('total_xp, last_onchain_xp')
+                                    .eq('wallet_address', wallet)
+                                    .maybeSingle(),
+                                rpcClient.readContract({
+                                    address: DAILY_APP_ADDRESS as `0x${string}`,
+                                    abi: DAILY_APP_USER_STATS_ABI,
+                                    functionName: 'userStats',
+                                    args: [wallet as `0x${string}`]
+                                }) as Promise<[bigint, bigint, bigint, number, bigint, bigint, boolean]>
+                            ]);
+
+                            if (profileErr) throw profileErr;
+
+                            const dbTotalXp = Number(profile?.total_xp || 0);
+                            const dbLastOnChainXp = Number(profile?.last_onchain_xp || 0);
+                            const onChainXp = Number(stats[0] || 0);
+
+                            if (profile && dbTotalXp === onChainXp && dbLastOnChainXp === onChainXp) {
+                                await (supabase as any)
+                                    .from('pending_sync_jobs')
+                                    .update({
+                                        status: 'resolved',
+                                        resolved_at: new Date().toISOString(),
+                                        last_attempted_at: new Date().toISOString(),
+                                        retry_count: job.retry_count + 1,
+                                        error_message: 'Reconciliation: no XP drift detected; resolved without receipt'
+                                    })
+                                    .eq('id', job.id);
+                                resolved++;
+                                continue;
+                            }
+                        } catch (parityErr) {
+                            console.warn(`[Reconcile] No-drift resolution check for job ${job.id} failed:`, parityErr);
+                        }
+                    }
+
                     // Tx not confirmed or no tx_hash — increment retry count
                     const newRetryCount = job.retry_count + 1;
                     const newStatus = newRetryCount >= MAX_RETRIES ? 'failed' : 'pending';

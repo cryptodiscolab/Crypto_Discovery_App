@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.4-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.8-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.4-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.4).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.8-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.8).
 
 ---
 
@@ -231,14 +231,14 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.3 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.8 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
-*Audit Precision Hardened: 2026-05-14. v3.64.3 MILLISECOND PRECISION & MULTI-ASSET.*
+*Audit Precision Hardened: 2026-05-14. v3.64.8 MILLISECOND PRECISION & MULTI-ASSET.*
 
 ## RTK TOKEN OPTIMIZATION MANDATE
-All agents MUST use Rust Token Killer (`rtk`) for token-heavy shell work whenever available. Prefer `rtk git ...`, `rtk read <file>`, `rtk npx tsc --noEmit`, `rtk npm run <script>`, `rtk grep <pattern> <paths>`, `rtk ls`, and `rtk gain` before raw equivalents.
+All agents MUST use Rust Token Killer for token-heavy shell work whenever available. On this Windows workspace, prefer the local binary form first: `.\.bin\rtk.exe git ...`, `.\.bin\rtk.exe read <file>`, `.\.bin\rtk.exe npx tsc --noEmit`, `.\.bin\rtk.exe npm run <script>`, `.\.bin\rtk.exe grep <pattern> <paths>`, `.\.bin\rtk.exe ls`, and `.\.bin\rtk.exe gain` before raw equivalents, because bare `rtk` may not be on the active PowerShell `PATH`.
 
-PowerShell/Windows note: do not call Unix-only wrappers such as raw `rtk diff` or raw `rtk grep` when the underlying binary is unavailable. Use RTK subcommands that proxy existing tools (`rtk git diff`, `rtk read`, `rtk npx`, `rtk npm`) or fall back to native PowerShell only after stating why RTK cannot wrap that command safely.
+PowerShell/Windows note: do not call Unix-only wrappers such as raw `rtk diff` when the underlying binary is unavailable. Use RTK subcommands that proxy existing tools (`.\.bin\rtk.exe git diff`, `.\.bin\rtk.exe read`, `.\.bin\rtk.exe npx`, `.\.bin\rtk.exe npm`). Review `.rtk/filters.toml` and run `.\.bin\rtk.exe trust` before relying on project-local filters. Fall back to native PowerShell only after stating why RTK cannot wrap that command safely.
 
-Before finalizing work, run `rtk gain` or the repository anti-negligence hook so token savings/adoption are visible in the report.
+Before finalizing work, run `.\.bin\rtk.exe gain` or the repository anti-negligence hook so token savings/adoption are visible in the report.

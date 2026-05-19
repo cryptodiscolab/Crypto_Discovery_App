@@ -234,6 +234,27 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     }, [isConnected, address, fetchEcosystemSettings, fetchUserData]);
 
     useEffect(() => {
+        if (!isConnected || !address) return;
+
+        const cleanAddress = address.toLowerCase();
+        const channel = supabase
+            .channel(`points-live-${cleanAddress}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'user_profiles',
+                filter: `wallet_address=eq.${cleanAddress}`,
+            }, () => {
+                void fetchUserData(true);
+            })
+            .subscribe();
+
+        return () => {
+            void supabase.removeChannel(channel);
+        };
+    }, [address, fetchUserData, isConnected]);
+
+    useEffect(() => {
         const loadThresholds = async () => {
             const data = await getSBTThresholds();
             if (data && data.length > 0) {

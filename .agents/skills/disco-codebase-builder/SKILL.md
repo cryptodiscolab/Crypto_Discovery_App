@@ -44,6 +44,7 @@ Do not bulk-read old PRD versions unless investigating historical drift.
 - ABI parity: before contract calls, verify function exists in `src/lib/abis_data.txt` and route through `src/lib/contracts.js` proxy pattern.
 - Data parity: keep Frontend, Backend, DB, ABI, Contract, Admin, and PRD aligned.
 - Git hygiene: no env files, media/screenshots, dumps, logs, temp scripts, or build artifacts. Run gitleaks before push or security-sensitive closure.
+- RTK first: on this Windows workspace, prefer `.\.bin\rtk.exe <subcommand>` instead of bare `rtk` because RTK may not be on the active PowerShell PATH. If project filters warn as untrusted, read `.rtk/filters.toml`, then run `.\.bin\rtk.exe trust` only after confirming the filters are safe. Use native PowerShell only when the specific RTK subcommand fails or cannot express the operation, and state that fallback.
 - Local hygiene: stop local dev servers after verification.
 - No heavy UI animation libraries; use CSS/Tailwind. Avoid glass-wall overlays with pointer event discipline.
 

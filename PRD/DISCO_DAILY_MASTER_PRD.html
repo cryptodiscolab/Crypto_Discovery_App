@@ -1,7 +1,7 @@
-<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.7-Hardened)</h1>
+<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.8-Hardened)</h1>
 <ul>
-<li><strong>Ecosystem Version:</strong> v3.64.7-Hardened</li>
-<li><strong>Last Updated:</strong> 2026-05-19T13:10:00+07:00</li>
+<li><strong>Ecosystem Version:</strong> v3.64.8-Hardened</li>
+<li><strong>Last Updated:</strong> 2026-05-19T19:50:00+07:00</li>
 <li><strong>Author:</strong> Antigravity (Lead Blockchain Architect)</li>
 <li><strong>Status:</strong> [🟢] DEPLOYED &amp; HARDENED (Source of Truth)</li>
 <li><strong>Master Registry:</strong> <a href="file:///.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a> | <a href="file:///AGENTS.md">AGENTS.md</a></li>
@@ -153,6 +153,7 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 <ul>
 <li>Frontend menunggu secara eksplisit selama <strong>1.5 detik</strong> sebelum memanggil <code>refetch()</code>.</li>
 <li>Tujuannya: Agar Supabase memiliki waktu meng-update SQL Views (<code>v_user_full_profile</code>).</li>
+<li><strong>Realtime Guard (v3.64.8)</strong>: Setelah settled refetch, <code>PointsContext</code> juga berlangganan perubahan <code>user_profiles</code> untuk wallet aktif dan memuat ulang XP/profil saat database berubah.</li>
 </ul>
 <hr>
 <h2>🏆 3. Leaderboard &amp; Database View Synchronization</h2>
@@ -164,6 +165,7 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 <li>User mengunjungi halaman <code>/leaderboard</code>.</li>
 <li>Frontend men-fetch data API rank.</li>
 <li>Data yang di-return adalah hasil agregasi <code>user_profiles</code> (untuk Avatar, Bio, XP) yang sudah langsung terupdate setelah Daily Claim selesai.</li>
+<li><code>LeaderboardPage</code> berlangganan perubahan <code>user_profiles</code> melalui Supabase Realtime dan refetch <code>/api/leaderboard</code> saat XP/profile rows berubah.</li>
 </ol>
 </li>
 <li><strong>Rules</strong>: <ol>
@@ -330,6 +332,7 @@ Jangan pernah memanggil <code>useSBT.upgradeTier()</code> untuk minting tier NFT
 <h3>5.2 Unified Activity Logs Tracking</h3>
 <ul>
 <li>Semua transaksi yang memengaruhi poin atau ekuitas user <strong>WAJIB</strong> terpusat di fungsi <code>logActivity</code> (di backend APIs). Frontend <em>ProfilePage</em> =&gt; <code>ActivityLogSection</code> mem-parse data log secara realtime dengan pembagian:</li>
+<li><strong>Realtime Guard (v3.64.8)</strong>: <code>ActivityLogSection</code> berlangganan perubahan <code>user_activity_logs</code> dan <code>user_task_claims</code> untuk wallet aktif, lalu refetch API history agar explicit logs dan claim-derived fallback tetap sinkron.</li>
 <li><strong>XP Gains (ZAP)</strong>: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.</li>
 <li><strong>Purchases (SHOPPING CART)</strong>: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan <code>raffle_buy_</code>.</li>
 <li><strong>Rewards (ACCOMPLISHMENT)</strong>: Pemenang undian Raffle / Airdrop khusus.</li>
@@ -1417,6 +1420,11 @@ Digunakan oleh Lurah (Antigravity Bridge) untuk mempertahankan konteks diskusi t
 <td><code>POST /api/user-bundle</code></td>
 <td><code>user-bundle.js</code></td>
 <td>XP sync (on-chain daily claim)</td>
+</tr>
+<tr>
+<td><code>/api/cron/reconcile-pending</code></td>
+<td><code>audit-bundle.js?action=reconcile-pending</code></td>
+<td>Vercel Cron pending sync recovery for stuck XP jobs</td>
 </tr>
 <tr>
 <td><code>POST /api/campaigns</code></td>
@@ -5320,5 +5328,20 @@ system documents.
 </li>
 </ul>
 <hr>
+<h2>46. Work Report v3.64.8 — Daily Claim Reconciliation Cron Guard</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-19
+<strong>Focus</strong>: Auditing the source-control recovery patch for XP drift and stuck daily-claim sync jobs.</p>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>Cron Reachability</strong>: Pending sync recovery now uses the clean Vercel Cron path <code>/api/cron/reconcile-pending</code>, which rewrites to <code>audit-bundle.js?action=reconcile-pending</code>.</li>
+<li><strong>Canonical Contract Reads</strong>: <code>audit-bundle.ts</code> reuses <code>DAILY_APP_ADDRESS</code> and <code>DAILY_APP_USER_STATS_ABI</code> from <code>_shared/constants.js</code>, preventing address/ABI drift between foreground XP sync and background reconciliation.</li>
+<li><strong>PGRST116 Guard</strong>: Pending sync job creation now uses <code>.maybeSingle()</code> instead of <code>.single()</code> when returning the inserted job id.</li>
+<li><strong>No-Drift Stuck Guard</strong>: Daily-claim pending jobs are auto-resolved without awarding XP when receipt lookup fails or the receipt is valid with zero remaining delta, as long as DB <code>total_xp</code>, DB <code>last_onchain_xp</code>, and contract <code>userStats.points</code> already match.</li>
+<li><strong>Realtime UI Guard</strong>: <code>ProfilePage</code>, <code>ActivityLogSection</code>, <code>PointsContext</code>, and <code>LeaderboardPage</code> now use scoped Supabase Realtime subscriptions to refetch profile XP, activity history, and leaderboard data when <code>user_profiles</code>, <code>user_activity_logs</code>, or <code>user_task_claims</code> change.</li>
+<li><strong>RTK Local Binary Memory</strong>: Captured the PowerShell PATH mismatch lesson in <code>agent_vault</code> and updated <code>.cursorrules</code>, <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.agents/WORKSPACE_MAP.md</code>, and core skills to prefer <code>.\.bin\rtk.exe</code> before any native PowerShell fallback.</li>
+<li><strong>Verification</strong>: <code>check_sync_status.cjs</code>, <code>npx tsc --noEmit --pretty false</code>, focused ESLint checks, live DB/on-chain parity checks, activity-log coverage audit, leaderboard data audit, and Supabase Realtime smoke subscription passed after the audit patch.</li>
+</ul>
+<hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
-<em>Integrity First. Nexus Synchronized. v3.64.7 LOCKED.</em></p>
+<em>Integrity First. Nexus Synchronized. v3.64.8 LOCKED.</em></p>

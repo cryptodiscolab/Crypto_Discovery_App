@@ -4,6 +4,16 @@
 
 # IMPLEMENTATION SUMMARY
 
+## 🟢 v3.64.8-Hardened (Reconciliation & Daily Claim Pipeline Stabilization)
+- **Status**: Fixed, audited, and synchronized.
+- **Reconciliation Engine Hardening**: Refactored the backend sync pipeline in `user-bundle.ts` (action: `sync`) to implement dynamic on-chain state reconciliation. The API now fetches the user's latest on-chain claim status via RPC, compares it with the database's `last_daily_claim`, and automatically reconciles any out-of-sync claims. This solves the two-phase commit edge cases where a transaction succeeded on-chain but the database sync failed or timed out.
+- **Daily Claim Activity Logging**: Aligned daily claim logging category to the `'XP'` constraint dynamically, preventing check-constraint database errors.
+- **Drift Reconciliation Audit**: Executed a comprehensive drift analysis on all active wallets. Aligned `last_onchain_xp` with `total_xp` in the database to resolve legacy zero-initialization issues, and reconciled two wallets (`0x136e...` and `0x0845...`) that had on-chain points ahead of the database. Applied SQL updates to set their database values (`total_xp` and `last_onchain_xp`) to match their exact contract points (1100 and 4510, respectively) and registered `Parity Recovery` logs in `user_activity_logs`.
+- **Pending Sync Cron Guard**: Audited the source-control patch and hardened the recovery path by routing Vercel Cron through `/api/cron/reconcile-pending`, reusing canonical `DAILY_APP_ADDRESS`/`DAILY_APP_USER_STATS_ABI` in `audit-bundle.ts`, replacing the pending-sync insert `.single()` with `.maybeSingle()`, and auto-resolving stale daily-claim jobs when DB/on-chain parity proves no XP drift remains even if the sync delta is already zero.
+- **Realtime Profile & Leaderboard Guard**: Added scoped Supabase Realtime subscriptions for `user_profiles`, `user_activity_logs`, and `user_task_claims` so profile XP, activity history, and leaderboard views refetch immediately when the backing database rows change. Verified the anon Realtime client reaches `SUBSCRIBED` state.
+- **RTK Local Binary Memory**: Captured the RTK PATH mismatch lesson in `agent_vault` and updated core skills to require `.\.bin\rtk.exe` first on PowerShell, including safe `.rtk/filters.toml` review/trust before relying on project-local filters.
+- **Ecosystem Sync & Audit**: Executed `check_sync_status.cjs` and the agent anti-negligence hook, passing with 100% compliance. Updated all core protocols (`.cursorrules`, `CLAUDE.md`, `AGENTS.md`, `ROADMAP.md`, `IMPLEMENTATION_SUMMARY.md`) to version `v3.64.8-Hardened`.
+
 ## 🟢 v3.64.7-Hardened (Daily Claim Parity & Database Deadlock Recovery)
 - **Status**: Fixed, recovered, and verified with 100% database parity.
 - **Deadlock Recovery & DB Parity**: Created and executed the atomic recovery script `recover-deadlocked-user.cjs` to repair the deadlocked user address (`0x52260c30697674a7c837feb2af21bbf3606795c8`) and any other under-synced wallets, restoring their `total_xp` (3006) to match their actual on-chain progress (`last_onchain_xp` = 3006).

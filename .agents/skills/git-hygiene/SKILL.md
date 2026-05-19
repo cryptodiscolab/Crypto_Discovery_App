@@ -88,9 +88,11 @@ File sementara (scratch scripts) memiliki siklus hidup yang jelas:
 
 ## 4. Automated Hygiene Commands
 
+> On this Windows workspace, prefer the local RTK binary form `.\.bin\rtk.exe ...` for token-heavy git/read/grep/npm/npx commands. Do not assume bare `rtk` is on PowerShell `PATH`; verify with `.\.bin\rtk.exe --version`.
+
 ```bash
 # Cek status repositori sebelum push
-git status
+.\.bin\rtk.exe git status
 
 # Hapus file dari staging (tanpa menghapus file fisik)
 git rm --cached <nama-file>
@@ -99,7 +101,7 @@ git rm --cached <nama-file>
 Remove-Item tmp_*.cjs, tmp_*.js, tsc_output*.txt, lint_results*.txt
 
 # Check berapa file yang sedang di-track tapi seharusnya di-ignore
-git ls-files --others --exclude-standard | head -30
+.\.bin\rtk.exe git ls-files --others --exclude-standard
 ```
 
 ---

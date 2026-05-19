@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.6-Hardened)
-Last Update: 2026-05-18 (22:15)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.8-Hardened)
+Last Update: 2026-05-19 (19:50)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -106,6 +106,7 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 |--------------|---------------|------------|---------|
 | `/api/user/*` | `user-bundle.js` | `sync`, `xp`, `update-profile` | User identity, XP sync & **UGC Reward Sync (v3.38.4)** |
 | `/api/leaderboard` | `user-bundle.js` | `leaderboard` | Global rankings |
+| `/api/cron/reconcile-pending` | `audit-bundle.js` | `reconcile-pending` | Pending sync recovery for confirmed on-chain tx / stuck XP jobs |
 | `/api/tasks/*` | `tasks-bundle.js` | `social-verify`, `claim` | Task verification & rewards |
 | `/api/admin/*` | `admin-bundle.js` | `task-add`, `system-update` | Administrative controls |
 | `/api/raffle/*`| `raffle-bundle.js` | `buy`, `create` | NFT Raffle operations |
@@ -124,6 +125,11 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 | `v_user_full_profile` | Unified Profile View | Joining profiles with Tier names, SBT stats, and Raffle stats |
 | `daily_tasks` | Off-Chain Tasks (Supabase) | `platform`, `action_type`, `xp_reward`, `task_type`, `is_base_social_required` |
 | `telegram_chat_history` | Conversational Memory (v3.56.4) | `chat_id`, `role`, `content`, `created_at` |
+
+**Realtime UI Listeners (v3.64.8)**:
+- `ProfilePage` / `PointsContext`: listens to `user_profiles` changes for scoped profile XP refresh.
+- `ActivityLogSection`: listens to `user_activity_logs` and `user_task_claims` changes for user history refresh.
+- `LeaderboardPage`: listens to `user_profiles` changes and refetches `/api/leaderboard`.
 
 **Key `point_settings` Keys** (pattern: `{platform}_{action_type}`):
 `daily_claim`, `farcaster_follow`, `x_follow`, `x_repost`, `x_like`, `base_transaction`, `raffle_buy`, `sponsor_task`
@@ -169,7 +175,7 @@ graph TD
 5.  **ZERO-HARDCODE MANDATE (v3.59.1)**: Prohibit use of static contract addresses in any source file or ABI definition. Pull exclusively from `.env`.
 6.  **TYPESCRIPT HARDENING MANDATE (v3.61.0)**: All serverless API code in `Raffle_Frontend/api/` MUST be strictly typed. Implicit `any` is prohibited. Error handling MUST use the `unknown` catch pattern with explicit type guards.
 7.  **GIT HYGIENE MANDATE**: Never commit `.env.vercel*` or temporary audit logs. Run `Remove-Item tsc_output*.txt` before closing tasks.
-8.  **RTK TOKEN SAVINGS MANDATE**: All agents must prefer `rtk` wrappers for token-heavy terminal work (`rtk git`, `rtk read`, `rtk npx`, `rtk npm`, `rtk grep`, `rtk gain`). On PowerShell, use RTK subcommands that proxy available binaries and fall back to native PowerShell only when RTK cannot wrap the command safely.
+8.  **RTK TOKEN SAVINGS MANDATE**: All agents must prefer RTK wrappers for token-heavy terminal work. On this Windows workspace, use the local binary form first (`.\.bin\rtk.exe git`, `.\.bin\rtk.exe read`, `.\.bin\rtk.exe npx`, `.\.bin\rtk.exe npm`, `.\.bin\rtk.exe grep`, `.\.bin\rtk.exe gain`) because bare `rtk` may not be on PowerShell `PATH`. Review `.rtk/filters.toml` and run `.\.bin\rtk.exe trust` before relying on project filters. Fall back to native PowerShell only when RTK cannot wrap the command safely.
 
 ---
 
@@ -208,4 +214,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-18T22:15:00+00:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.64.6 LOCKED.*
+*Last Updated: 2026-05-19T19:50:00+07:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.64.8 LOCKED.*

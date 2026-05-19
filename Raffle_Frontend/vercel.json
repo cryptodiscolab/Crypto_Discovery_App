@@ -17,6 +17,10 @@
             "destination": "/api/audit-bundle?action=sync"
         },
         {
+            "source": "/api/cron/reconcile-pending",
+            "destination": "/api/audit-bundle?action=reconcile-pending"
+        },
+        {
             "source": "/api/user/:action",
             "destination": "/api/user-bundle?action=:action"
         },
@@ -114,7 +118,7 @@
             "schedule": "0 1 * * *"
         },
         {
-            "path": "/api/audit-bundle?action=reconcile-pending",
+            "path": "/api/cron/reconcile-pending",
             "schedule": "0 3 * * *"
         }
     ]

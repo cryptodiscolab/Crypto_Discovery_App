@@ -26,6 +26,7 @@ Use this file when diagnosing errors or changing risky paths.
 - Direct Supabase frontend writes: sensitive writes must route through backend.
 - Env silent corruption: trim env values in serverless code.
 - Markdown table hallucination: read table headers before editing any table row.
+- RTK PATH mismatch: if bare `rtk` fails in PowerShell but anti-negligence hook passes, use the workspace binary directly: `.\.bin\rtk.exe --version`, then `.\.bin\rtk.exe read|grep|git|npm|npx ...`. Review and trust `.rtk/filters.toml` once before relying on project-local filters.
 
 ## Closure Rules
 
