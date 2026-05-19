@@ -1,7 +1,7 @@
-<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.6-Hardened)</h1>
+<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.7-Hardened)</h1>
 <ul>
-<li><strong>Ecosystem Version:</strong> v3.64.6-Hardened</li>
-<li><strong>Last Updated:</strong> 2026-05-18T22:15:00+07:00</li>
+<li><strong>Ecosystem Version:</strong> v3.64.7-Hardened</li>
+<li><strong>Last Updated:</strong> 2026-05-19T13:10:00+07:00</li>
 <li><strong>Author:</strong> Antigravity (Lead Blockchain Architect)</li>
 <li><strong>Status:</strong> [🟢] DEPLOYED &amp; HARDENED (Source of Truth)</li>
 <li><strong>Master Registry:</strong> <a href="file:///.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a> | <a href="file:///AGENTS.md">AGENTS.md</a></li>
@@ -5286,3 +5286,35 @@ system documents.
 <hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
 <em>Integrity First. Nexus Synchronized. v3.64.6 LOCKED.</em></p>
+<hr>
+<h2>45. Work Report v3.64.7 — Daily Claim Parity &amp; Database Deadlock Recovery</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-19
+<strong>Focus</strong>: Resolving PostgREST overload ambiguity (PGRST203), fixing check constraints on activity logging, restoring deadlocked user state, and hardening off-chain sync logic.</p>
+<h3>✅ Key Results:</h3>
+<ul>
+<li><strong>Database Schema Hardening</strong>:<ul>
+<li>Dropped redundant integer function overload <code>DROP FUNCTION IF EXISTS public.fn_increment_xp(text, integer);</code> leaving only the authoritative numeric overload, solving the PostgREST overload ambiguity error (<code>PGRST203</code>).</li>
+</ul>
+</li>
+<li><strong>Strict Concurrency Protection</strong>:<ul>
+<li>Implemented Optimistic Concurrency Control (OCC) logic on both watermark (<code>last_onchain_xp</code>) and XP state (<code>total_xp</code>) in <code>user-bundle.ts</code> to prevent parallel double-spending or duplicate-increment race conditions.</li>
+</ul>
+</li>
+<li><strong>Activity Log Validation</strong>:<ul>
+<li>Replaced incorrect <code>&#39;DAILY&#39;</code> log category with database constraint-compliant <code>&#39;XP&#39;</code> category, resolving database check constraint error <code>23514</code>.</li>
+</ul>
+</li>
+<li><strong>Operational Scripting &amp; Clean Tree</strong>:<ul>
+<li>Securely refactored <code>recover-deadlocked-user.cjs</code> to consume dynamic CLI wallet inputs, enforce address formats, default to dry-run safety, require <code>--execute</code> for live mutation, and prevent leak of sensitive role keys.</li>
+<li>Hardened <code>get-onchain-stats.cjs</code> to read variables dynamically via ecosystem-aware variables instead of hardcoded strings.</li>
+</ul>
+</li>
+<li><strong>Ecosystem Parity</strong>:<ul>
+<li>Fully synchronized all docs: <code>.cursorrules</code>, <code>AGENTS.md</code>, and <code>PRD/DISCO_DAILY_MASTER_PRD.md</code> to <code>v3.64.7-Hardened</code>.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><em>Created by Antigravity — Nexus Master Architect</em>
+<em>Integrity First. Nexus Synchronized. v3.64.7 LOCKED.</em></p>

@@ -436,10 +436,18 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
         const currentTierOnChain = Number(contractStats?.[3] || 0);
 
         const xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
-
         const finalLastOnChainXpToSave = currentOnChainXp;
 
-        if (xpDelta === 0 && tx_hash && skipSignature) {
+        const currentTotalXp = profile?.total_xp || 0;
+        let recoveryDelta = 0;
+        if (currentTotalXp < lastOnChainXp) {
+            recoveryDelta = lastOnChainXp - currentTotalXp;
+            console.warn(`[Deadlock Recovery] Under-sync detected for ${cleanAddress}. total_xp: ${currentTotalXp}, last_onchain_xp: ${lastOnChainXp}. Recovery amount: ${recoveryDelta} XP.`);
+        }
+
+        const totalXpToIncrement = xpDelta + recoveryDelta;
+
+        if (xpDelta === 0 && recoveryDelta === 0 && tx_hash && skipSignature) {
             // [SECURITY FIX] Phantom Claim Exploit Prevention
             // Never blindly force XP if the node reads 0 delta. It could be a fake 0 ETH transfer.
             // Return 503 so the frontend queues it in pending_sync_jobs. If it's real RPC lag, 
@@ -451,7 +459,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
         let currentStreakToSave = profile?.streak_count || 0;
         let lastStreakClaimToSave = profile?.last_streak_claim || null;
         
-        if (isDailyClaim) {
+        if (isDailyClaim && xpDelta > 0) {
             const now = new Date();
             const lastClaimDate = profile?.last_streak_claim ? new Date(profile.last_streak_claim) : null;
             
@@ -467,9 +475,9 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
 
         const result = { success: true, xp_synced: 0, current_tier: currentTierOnChain };
 
-        if (xpDelta > 0) {
+        if (totalXpToIncrement > 0) {
             // Rule 60: COOLDOWN ENFORCEMENT for Daily Claim — check BEFORE incrementing
-            if (isDailyClaim) {
+            if (isDailyClaim && xpDelta > 0) {
                 if (profile?.last_streak_claim) {
                     const lastDate = new Date(profile.last_streak_claim);
                     const hoursSince = (new Date().getTime() - lastDate.getTime()) / (1000 * 60 * 60);
@@ -479,73 +487,94 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 }
             }
             
+            // [SECURITY FIX] Optimistic Concurrency Control (OCC) for both watermark (last_onchain_xp) and XP recovery
             const updatePayload: any = {
-                last_onchain_xp: finalLastOnChainXpToSave,
                 tier: currentTierOnChain,
                 updated_at: new Date().toISOString()
             };
-            
+
+            if (xpDelta > 0) {
+                updatePayload.last_onchain_xp = finalLastOnChainXpToSave;
+            }
+
             if (isDailyClaim) {
                 updatePayload.streak_count = currentStreakToSave;
                 updatePayload.last_streak_claim = lastStreakClaimToSave;
             }
 
-            // [SECURITY FIX] Optimistic Concurrency Control (OCC) + Atomic Streak Update
             const { data: updateData, error: updateErr } = await getSupabaseAdmin()
                 .from('user_profiles')
                 .update(updatePayload)
                 .eq('wallet_address', cleanAddress)
-                .eq('last_onchain_xp', lastOnChainXp) // Ensure no concurrent request has already moved the watermark
+                .eq('last_onchain_xp', lastOnChainXp) // Prevent concurrent watermark moves
+                .eq('total_xp', currentTotalXp)       // Prevent concurrent recovery/XP changes
                 .select('wallet_address');
 
             if (updateErr) throw updateErr;
             if (!updateData || updateData.length === 0) {
-                // High watermark already moved by a concurrent request. Abort to prevent XP multiplication.
+                // High watermark or total_xp already changed by a concurrent request. Abort to prevent double-spending/double-recovery.
                 return res.status(409).json({ error: 'Conflict: Sync already processed.' });
             }
 
             // Safe to increment total_xp ONLY AFTER securing the watermark update
             const { error: rpcErr } = await getSupabaseAdmin().rpc('fn_increment_xp', {
                 p_wallet: cleanAddress,
-                p_amount: xpDelta
+                p_amount: totalXpToIncrement
             });
 
             if (rpcErr) throw rpcErr;
 
             // Determine if this is a daily claim vs generic XP sync
-            const logCategory = isDailyClaim ? 'DAILY' : 'XP';
+            const logCategory = 'XP';
             const logType = isDailyClaim ? 'On-chain Daily Claim' : 'Ledger Sync';
             
-            // [UX FIX] Log the ACTUAL new streak, not the stale one from the old profile object
-            const logDescription = isDailyClaim
-                ? `Daily claim: +${xpDelta} XP (streak: ${currentStreakToSave})`
-                : `Synced ${xpDelta} XP from Base Ledger (Parity: ${currentOnChainXp})`;
+            // [UX FIX] Log the ACTUAL new streak and recovery status
+            let logDescription = '';
+            if (xpDelta > 0 && recoveryDelta > 0) {
+                logDescription = `Daily claim: +${xpDelta} XP (streak: ${currentStreakToSave}) and recovered +${recoveryDelta} XP from under-sync.`;
+            } else if (xpDelta > 0) {
+                logDescription = isDailyClaim
+                    ? `Daily claim: +${xpDelta} XP (streak: ${currentStreakToSave})`
+                    : `Synced ${xpDelta} XP from Base Ledger (Parity: ${currentOnChainXp})`;
+            } else {
+                logDescription = `Ecosystem Parity Recovery: Restored +${recoveryDelta} XP from under-sync.`;
+            }
 
             await logActivity({
                 wallet: cleanAddress,
                 category: logCategory,
-                type: logType,
+                type: recoveryDelta > 0 && xpDelta === 0 ? 'Parity Recovery' : logType,
                 description: logDescription,
-                amount: xpDelta,
+                amount: totalXpToIncrement,
                 symbol: 'XP',
                 txHash: (cleanTxHash && skipSignature) ? cleanTxHash : null,
                 metadata: {
                     chain_id: isMainnet ? 8453 : 84532,
                     contract_address: DAILY_APP_ADDRESS,
                     on_chain_xp: currentOnChainXp,
-                    sync_status: 'synced'
+                    sync_status: 'synced',
+                    recovered_xp: recoveryDelta
                 }
             });
 
-            // Award referral bonus to referrer (fire-and-forget)
-            awardReferralBonus(cleanAddress, xpDelta, logType).catch(() => {});
+            if (xpDelta > 0) {
+                // Award referral bonus to referrer (fire-and-forget)
+                awardReferralBonus(cleanAddress, xpDelta, logType).catch(() => {});
+            }
 
-            result.xp_synced = xpDelta;
+            result.xp_synced = totalXpToIncrement;
         }
 
         return res.status(200).json(result);
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
+        await logSystemError({
+            surface: 'api',
+            bundle: 'user-bundle',
+            action: 'xp-sync',
+            wallet_address: wallet_address || 'unknown',
+            message: sanitizeError(msg)
+        });
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }

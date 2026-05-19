@@ -1,7 +1,7 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.6-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.7-Hardened)
 
-- **Ecosystem Version:** v3.64.6-Hardened
-- **Last Updated:** 2026-05-18T22:15:00+07:00
+- **Ecosystem Version:** v3.64.7-Hardened
+- **Last Updated:** 2026-05-19T13:10:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
@@ -4377,3 +4377,26 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
 ---
 *Created by Antigravity — Nexus Master Architect*
 *Integrity First. Nexus Synchronized. v3.64.6 LOCKED.*
+
+---
+## 45. Work Report v3.64.7 — Daily Claim Parity & Database Deadlock Recovery
+**Status**: COMPLETED
+**Date**: 2026-05-19
+**Focus**: Resolving PostgREST overload ambiguity (PGRST203), fixing check constraints on activity logging, restoring deadlocked user state, and hardening off-chain sync logic.
+
+### ✅ Key Results:
+- **Database Schema Hardening**:
+  - Dropped redundant integer function overload `DROP FUNCTION IF EXISTS public.fn_increment_xp(text, integer);` leaving only the authoritative numeric overload, solving the PostgREST overload ambiguity error (`PGRST203`).
+- **Strict Concurrency Protection**:
+  - Implemented Optimistic Concurrency Control (OCC) logic on both watermark (`last_onchain_xp`) and XP state (`total_xp`) in `user-bundle.ts` to prevent parallel double-spending or duplicate-increment race conditions.
+- **Activity Log Validation**:
+  - Replaced incorrect `'DAILY'` log category with database constraint-compliant `'XP'` category, resolving database check constraint error `23514`.
+- **Operational Scripting & Clean Tree**:
+  - Securely refactored `recover-deadlocked-user.cjs` to consume dynamic CLI wallet inputs, enforce address formats, default to dry-run safety, require `--execute` for live mutation, and prevent leak of sensitive role keys.
+  - Hardened `get-onchain-stats.cjs` to read variables dynamically via ecosystem-aware variables instead of hardcoded strings.
+- **Ecosystem Parity**:
+  - Fully synchronized all docs: `.cursorrules`, `AGENTS.md`, and `PRD/DISCO_DAILY_MASTER_PRD.md` to `v3.64.7-Hardened`.
+
+---
+*Created by Antigravity — Nexus Master Architect*
+*Integrity First. Nexus Synchronized. v3.64.7 LOCKED.*

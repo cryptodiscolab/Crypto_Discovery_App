@@ -1,9 +1,24 @@
 # 🤖 CRYPTO DISCO — AGENT WORK REPORTS (CONSOLIDATED)
 
-- **Ecosystem Version:** v3.64.4-Hardened
-- **Consolidated At:** 2026-05-18T19:15:00+07:00
+- **Ecosystem Version:** v3.64.7-Hardened
+- **Consolidated At:** 2026-05-19T12:56:00+07:00
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+## 2026-05-19 Fix Report - Daily Claim Parity & Database Deadlock Recovery (v3.64.7-Hardened)
+- **Status**: Fixed, recovered, secured, and verified with 100% database parity and hardened source control.
+- **Surface**: `/api/user-bundle` (action: `xp-sync`), PostgreSQL database functions (`fn_increment_xp`), dynamic CLI helper utilities, and PRD document compiler pipeline.
+- **Root Cause & Fix Applied**:
+  1. **PostgreSQL Overload Ambiguity (PGRST203) & Tracked Migration**: Identified redundant integer overload `fn_increment_xp(p_wallet, p_amount)` which crashed Supabase's PostgREST engine due to ambiguity with the numeric overload. Applied a SQL DDL migration to drop the integer overload, leaving a clean, backward-compatible single numeric signature. Created a formal migration file `20260519_drop_redundant_fn_increment_xp_overload.sql` in `Raffle_Frontend/supabase/migrations/` to establish full reproducibility in source control.
+  2. **Activity Log Constraint Violation (23514)**: Patched `user-bundle.ts` to replace the invalid logging category `'DAILY'` with the database check-constraint-compliant `'XP'` category.
+  3. **Strict Concurrency Protection (OCC Hardening)**: Hardened `/api/user-bundle` XP synchronization logic to prevent double-spending and duplicate-recovery race conditions from parallel requests. Consolidated the update payload and OCC constraint to always check both `last_onchain_xp` (high watermark) and `total_xp` (XP amount) atomically. Removed trailing whitespaces and ensured code hygiene.
+  4. **Dynamic, Secure CLI Helper Refactoring**:
+     - Upgraded `recover-deadlocked-user.cjs` into a dynamic, production-grade utility that accepts the target wallet dynamically via command-line arguments, validates format, defaults to dry-run safety, requires `--execute` for live mutation, contains clear operational instructions, and dynamic env loading (zero-hardcode).
+     - Refactored `get-onchain-stats.cjs` to accept dynamic target wallet addresses, sanitized input format via regex validation, and parsed contract/RPC parameters dynamically from environment variables instead of hardcoded addresses.
+  5. **Doc Sync (Zero Documentation Drift)**: Synchronized all system protocols (`.cursorrules`, `AGENTS.md`, and `PRD/DISCO_DAILY_MASTER_PRD.md`) to version `v3.64.7-Hardened`. Generated updated `DISCO_DAILY_MASTER_PRD.html` dynamically using the `marked` compiler pipeline to prevent drift between markdown and HTML versions.
+- **Verification**: `npx tsc --noEmit` resolved with **Exit Code 0** (zero compilation errors), `agent_anti_negligence_hook.cjs` verified a **100% OPERATIONAL & PRISTINE** verdict, and `check_sync_status.cjs` verified all 13 security/parity checks successfully **PASSED**.
+
+---
 
 ## 2026-05-19 Fix Report - UGC Admin Multi-Asset Reward Conversion
 - **Status**: Fixed.

@@ -4,7 +4,15 @@
 
 # IMPLEMENTATION SUMMARY
 
-## v3.64.6-Hardened (UGC Admin Multi-Asset Reward Conversion Fix)
+## 🟢 v3.64.7-Hardened (Daily Claim Parity & Database Deadlock Recovery)
+- **Status**: Fixed, recovered, and verified with 100% database parity.
+- **Deadlock Recovery & DB Parity**: Created and executed the atomic recovery script `recover-deadlocked-user.cjs` to repair the deadlocked user address (`0x52260c30697674a7c837feb2af21bbf3606795c8`) and any other under-synced wallets, restoring their `total_xp` (3006) to match their actual on-chain progress (`last_onchain_xp` = 3006).
+- **Operational Safety**: Hardened `recover-deadlocked-user.cjs` so recovery runs in dry-run mode by default and requires explicit `--execute` for live database mutation.
+- **Security & Overload Resolution**: Applied a SQL migration to drop the redundant integer overload `fn_increment_xp(p_wallet, p_amount)` which was causing PostgREST function selection ambiguity (error `PGRST203`), leaving a single, unified numeric version that is fully compatible.
+- **Database Constraint Remediations**: Changed the daily claim activity log category from the invalid `'DAILY'` category to the database-compliant `'XP'` category in `user-bundle.ts` to prevent transaction check-constraint violations (error `23514`).
+- **Audit Verification**: All 13 check suites in `check_sync_status.cjs` and the `agent_anti_negligence_hook.cjs` are passing flawlessly with exit code 0.
+
+## 🟢 v3.64.6-Hardened (UGC Admin Multi-Asset Reward Conversion Fix)
 - **Status**: Fixed and verified with TypeScript.
 - **Fix**: Admin UGC sponsor creation now converts USD-denominated reward inputs into selected-token amounts using live whitelisted-token prices before `parseUnits`. `0.01` with ETH/WETH/custom tokens is now treated as `$0.01 USDC equivalent`, not `0.01` token.
 - **Affected Surfaces**: `/admin` -> Task Master -> Quick Forge Sponsor and Smart Batch Sponsor Portal; `TaskManager.tsx`; `QuickSponsorPortalSection.tsx`; `SponsorshipPortalSection.tsx`.
