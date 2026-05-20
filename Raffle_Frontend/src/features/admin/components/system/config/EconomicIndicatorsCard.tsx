@@ -59,8 +59,9 @@ export function EconomicIndicatorsCard({
             });
 
             toast.success("Economic Indicators Updated!", { id: tid });
-        } catch (e: any) {
-            toast.error(e.shortMessage || e.message, { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Action failed", { id: tid });
         } finally {
             setIsSaving(false);
         }

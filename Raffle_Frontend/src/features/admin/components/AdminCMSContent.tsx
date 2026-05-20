@@ -89,9 +89,10 @@ export default function AdminCMSContent() {
                 { id: tid, duration: 6000 }
             );
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e instanceof Error ? (e as { shortMessage?: string }).shortMessage || e.message : "Transaction failed", { id: tid });
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -134,9 +135,10 @@ export default function AdminCMSContent() {
 
             setCardForm(prev => ({ ...prev, icon: publicUrl }));
             toast.success("Image uploaded successfully!", { id: toastId });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[Upload Error]', err);
-            toast.error("Upload failed: " + (err instanceof Error ? err.message : String(err)), { id: toastId });
+            const error = err as { message?: string };
+            toast.error("Upload failed: " + (error.message || String(err)), { id: toastId });
         } finally {
             setIsUploading(false);
         }

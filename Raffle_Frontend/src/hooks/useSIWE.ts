@@ -110,9 +110,10 @@ ${resourceLines}`;
 
             return userSession;
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("SIWE Error:", err);
-            setError(err.message || "Sign-in failed");
+            const errorMessage = err instanceof Error ? err.message : "Sign-in failed";
+            setError(errorMessage);
             throw err;
         } finally {
             setIsLoading(false);

@@ -69,9 +69,10 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
             toast.success('Tier Weights Synchronized!', { id: tid });
             setIsEditingWeights(false);
             refetchAll();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[PoolTab] setTierWeights error:', err);
-            toast.error(err.shortMessage || 'Sync failed. Check owner wallet & gas.', { id: tid });
+            const error = err as { shortMessage?: string };
+            toast.error(error.shortMessage || 'Sync failed. Check owner wallet & gas.', { id: tid });
         } finally {
             setIsSyncingWeights(false);
         }
@@ -119,9 +120,10 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                 { id: tid, duration: 8000 }
             );
             refetchAll();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[PoolTab] distributeRevenue error:', err);
-            toast.error(err.shortMessage || 'Distribution failed. Check owner wallet & gas.', { id: tid });
+            const error = err as { shortMessage?: string };
+            toast.error(error.shortMessage || 'Distribution failed. Check owner wallet & gas.', { id: tid });
         } finally {
             setIsDistributing(false);
         }

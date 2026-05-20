@@ -10,7 +10,21 @@ const STATUS_COLORS = {
     upcoming: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
 };
 
-function CampaignCard({ campaign, onClaim, userAddress }: { campaign: any; onClaim: (_c: any) => void; userAddress?: string }) {
+interface Campaign {
+    id: number | string;
+    title: string;
+    description?: string;
+    status: string;
+    start_at?: string;
+    end_at?: string;
+    banner_url?: string;
+    reward_amount_per_user?: string | number;
+    reward_symbol?: string;
+    current_participants?: number;
+    max_participants?: number;
+}
+
+function CampaignCard({ campaign, onClaim, userAddress }: { campaign: Campaign; onClaim: (c: Campaign) => void; userAddress?: string }) {
     const now = Date.now();
     const startAt = campaign.start_at ? new Date(campaign.start_at).getTime() : 0;
     const endAt = campaign.end_at ? new Date(campaign.end_at).getTime() : Infinity;
@@ -93,11 +107,11 @@ function CampaignCard({ campaign, onClaim, userAddress }: { campaign: any; onCla
 export function OffersList() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('active');
     const [search, setSearch] = useState('');
-    const [, setJoiningId] = useState<any>(null);
+    const [, setJoiningId] = useState<string | number | null>(null);
 
     useEffect(() => {
         fetchCampaigns();
@@ -106,7 +120,7 @@ export function OffersList() {
     async function fetchCampaigns() {
         setLoading(true);
         try {
-            let query: any = supabase
+            let query = supabase
                 .from('campaigns')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -119,11 +133,11 @@ export function OffersList() {
             if (error) throw error;
 
             // v3.59.6: Robust Defaulting
-            const normalized = (data || []).map((c: any) => ({
+            const normalized = ((data as Campaign[]) || []).map((c: Campaign) => ({
                 ...c,
                 reward_symbol: c.reward_symbol || 'USDC'
             }));
-            setCampaigns(normalized as any);
+            setCampaigns(normalized);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
             console.error('[OffersList] fetch error:', msg);
@@ -132,7 +146,7 @@ export function OffersList() {
         }
     }
 
-    async function handleClaim(campaign: any) {
+    async function handleClaim(campaign: Campaign) {
         if (!address) return;
         setJoiningId(campaign.id);
         const tid = toast.loading(`JOINING ${campaign.title.toUpperCase()}...`);
@@ -164,7 +178,7 @@ export function OffersList() {
         }
     }
 
-    const filtered = (campaigns as any[]).filter((c: any) =>
+    const filtered = campaigns.filter((c: Campaign) =>
         !search || c.title?.toLowerCase().includes(search.toLowerCase())
     );
 

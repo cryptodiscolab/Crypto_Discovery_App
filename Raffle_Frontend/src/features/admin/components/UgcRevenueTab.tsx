@@ -52,9 +52,10 @@ export function UgcRevenueTab() {
                 });
                 setStats({ totals, count: pending.length });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Fetch revenue failed:', error);
-            toast.error(error.message || "Failed to load revenue tracking");
+            const errMsg = error instanceof Error ? error.message : String(error);
+            toast.error(errMsg || "Failed to load revenue tracking");
         } finally {
             setLoading(false);
         }
@@ -89,9 +90,10 @@ export function UgcRevenueTab() {
             } else {
                 throw new Error(result.error || "Failed to update status");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Allocation marking failed:', error);
-            toast.error(error.message || "Failed to mark as allocated", { id: tid });
+            const errMsg = error instanceof Error ? error.message : String(error);
+            toast.error(errMsg || "Failed to mark as allocated", { id: tid });
         }
     };
 

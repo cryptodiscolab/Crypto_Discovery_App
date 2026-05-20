@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-05-14*
-*PRD Version: v3.64.0-Hardened (UGC Payment Auditing, Pure English UI & Premium UX)*
+*Last Updated: 2026-05-20*
+*PRD Version: v3.64.11-Hardened (TypeScript Lint Debt Resolution)*
 
 ---
 
@@ -203,6 +203,17 @@ npm run build
 | OpenClaw   | `> claw:` | Deep Security, Architecture Review  |
 | Qwen       | `> qwen:` | Local Refactoring, Build Check      |
 | DeepSeek   | `> deepseek:` | Backend Algo, Complex Logic     |
+| ResearchBot| Python SDK | Parallel Research & Context Extraction (Freemodel gpt-5.5) |
+| CodeBot    | Python SDK | Parallel Coding & Syntax Checks (Freemodel gpt-5.5) |
+| OrchestratorBot| Python SDK| Lead orchestration, key rotation, and registry monitoring (Gemini 2.5 Flash) |
+| ContractBot| Python SDK | Smart Contract design, optimization, and ABI parity (Gemini 2.5 Flash) |
+| FrontendBot| Python SDK | UI/UX implementation, INP optimization, styling (Gemini 2.5 Flash) |
+| SecurityBot| Python SDK | EIP-191 verification, secret prevention, audit checks (Gemini 2.5 Flash) |
+| DatabaseBot| Python SDK | DB schema migrations, RLS policies, views updates (Gemini 2.5 Flash) |
+| BackendBot | Python SDK | Serverless functions bundle management, env pipe sync (Gemini 2.5 Flash) |
+| QABot       | Python SDK | Task claim pipeline, type conversions, state testing (Gemini 2.5 Flash) |
+| GrowthBot  | Python SDK | Referral vesting loop, streak rules, milestone checks (Gemini 2.5 Flash) |
+| DocsBot     | Python SDK | SOT sync, PRD/ROADMAP documentation parity maintenance (Gemini 2.5 Flash) |
 
 State sharing via `agents_vault` table di Supabase.
 
@@ -508,5 +519,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.64.0 - Hardened & Synchronized.*
+*Constitution v3.64.11 - Hardened & Synchronized.*
 *Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened.*

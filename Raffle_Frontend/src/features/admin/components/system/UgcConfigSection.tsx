@@ -127,8 +127,10 @@ export function UgcConfigSection() {
             }
 
             toast.success('UGC Configuration updated!', { id: tid });
-        } catch (error: any) {
-            toast.error('Save failed: ' + error.message, { id: tid });
+        } catch (error: unknown) {
+            console.error('Save UGC Config Error:', error);
+            const errMsg = error instanceof Error ? error.message : String(error);
+            toast.error('Save failed: ' + errMsg, { id: tid });
         } finally {
             setSaving(false);
         }

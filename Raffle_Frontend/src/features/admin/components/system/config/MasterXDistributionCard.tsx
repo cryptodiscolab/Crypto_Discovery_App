@@ -36,8 +36,9 @@ export function MasterXDistributionCard({
                 args: [BigInt(econShares.owner), BigInt(econShares.ops), BigInt(econShares.treasury), BigInt(econShares.sbt)],
             });
             toast.success("Revenue Shares Updated!", { id: tid });
-        } catch (e: any) {
-            toast.error(e.shortMessage || e.message, { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Action failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -72,8 +73,9 @@ export function MasterXDistributionCard({
             });
 
             toast.success('Weights updated on-chain & in DB!', { id: tid });
-        } catch (err: any) {
-            toast.error(err.message, { id: tid });
+        } catch (err: unknown) {
+            const error = err as { message?: string };
+            toast.error(error.message || 'Sync failed', { id: tid });
         }
     };
 

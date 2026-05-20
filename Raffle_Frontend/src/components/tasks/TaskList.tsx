@@ -9,12 +9,59 @@ import { DailyGoalCard } from './DailyGoalCard';
 import { AlertCircle, CheckCircle2, Clock, Coins, ExternalLink, Gift, Hash, Loader2, Share2, ShieldCheck, Zap } from 'lucide-react';
 
 
+interface DailyTask {
+    id: string | number;
+    task_link?: string;
+    action_url?: string;
+    link?: string;
+    is_active?: boolean;
+    task_type?: string;
+    expires_at?: string;
+    created_at?: string;
+    description?: string;
+    min_neynar_score: number;
+    is_base_social_required: boolean;
+    xp_reward: number;
+    platform?: string;
+    action_type?: string;
+    target_id?: string;
+    target_fid?: number | string;
+    tweet_id?: string;
+    target_twitter_id?: string;
+    token_reward_amount: number;
+    token_reward_symbol?: string;
+    creator_address?: string;
+}
+
+interface TaskClaim {
+    task_id: string | number;
+    claimed_at: string;
+}
+
+interface ProfileData {
+    neynar_score?: number;
+    is_base_social_verified?: boolean;
+    fid?: number | string;
+    twitter_id?: string;
+    tiktok_username?: string;
+    instagram_username?: string;
+}
+
+const toOptionalString = (value: string | number | null | undefined) =>
+    value === null || value === undefined || value === '' ? undefined : String(value);
+
+const toOptionalNumber = (value: string | number | null | undefined) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 export function TaskList() {
     const { address, isConnected } = useAccount();
     useSignMessage();
-    const [tasks, setTasks] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<DailyTask[]>([]);
     const [userScore, setUserScore] = useState(0);
-    const [userClaims, setUserClaims] = useState<any[]>([]); // Array of {task_id, claimed_at}
+    const [userClaims, setUserClaims] = useState<TaskClaim[]>([]); // Array of {task_id, claimed_at}
     const [isLoading, setIsLoading] = useState(false);
     const [_hasProfile, setHasProfile] = useState(false);
     const [isBaseVerified, setIsBaseVerified] = useState(false); // v3.42.0
@@ -49,7 +96,7 @@ export function TaskList() {
         return () => clearInterval(interval);
     }, [startedTasks]);
 
-    const handleGoToTask = (task: any) => {
+    const handleGoToTask = (task: DailyTask) => {
         if (!isConnected || !address) {
             toast.error('Please connect wallet first');
             return;
@@ -97,7 +144,7 @@ export function TaskList() {
 
                 if (claimsResult.data) {
                     setUserClaims(prev => {
-                        const dbClaimIds = new Set((claimsResult.data || []).map((c: any) => String(c.task_id).toLowerCase()));
+                        const dbClaimIds = new Set((claimsResult.data || []).map((c: TaskClaim) => String(c.task_id).toLowerCase()));
                         const recentOptimistic = prev.filter(c =>
                             !dbClaimIds.has(String(c.task_id).toLowerCase()) &&
                             (Date.now() - new Date(c.claimed_at).getTime() < 15000)
@@ -108,9 +155,10 @@ export function TaskList() {
                     setUserClaims(prev => prev.filter(c => (Date.now() - new Date(c.claimed_at).getTime() < 15000)));
                 }
 
-                if (profileData) {
-                    setUserScore((profileData as any).neynar_score || 0);
-                    setIsBaseVerified(!!(profileData as any).is_base_social_verified);
+                const profileDataCast = profileData as ProfileData | null | undefined;
+                if (profileDataCast) {
+                    setUserScore(profileDataCast.neynar_score || 0);
+                    setIsBaseVerified(!!profileDataCast.is_base_social_verified);
                     setHasProfile(true);
                 } else {
                     setUserScore(0);
@@ -124,7 +172,7 @@ export function TaskList() {
                 setHasProfile(false);
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             const errMsg = error instanceof Error ? error.message : String(error);
             console.group("TaskList Fetch Error");
             console.error('Error fetching tasks:', errMsg);
@@ -148,7 +196,7 @@ export function TaskList() {
         }
     }, [isConnected, address, profileData, isSyncing, syncUser]);
 
-    const handleClaim = async (task: any) => {
+    const handleClaim = async (task: DailyTask) => {
         if (!isConnected || !address) {
             toast.error("Please connect wallet first");
             return;
@@ -171,20 +219,20 @@ export function TaskList() {
             // ── SECURE CLAIM FLOW ──
             // Using unified secure API route via custom hook
             const result = await executeClaim('claim_task', {
-                task_id: task.id,
+                task_id: String(task.id),
                 xp_earned: task.xp_reward,
                 platform: task.platform,
                 action_type: task.action_type,
-                target_id: task.target_id,
+                target_id: task.target_id ?? null,
                 // Social Identity for Robust Verification
-                fid: profileData?.fid,
-                twitterId: profileData?.twitter_id,
-                tiktokHandle: profileData?.tiktok_username,
-                instagramHandle: profileData?.instagram_username,
+                fid: toOptionalNumber((profileData as ProfileData | null | undefined)?.fid),
+                twitterId: (profileData as ProfileData | null | undefined)?.twitter_id,
+                tiktokHandle: (profileData as ProfileData | null | undefined)?.tiktok_username,
+                instagramHandle: (profileData as ProfileData | null | undefined)?.instagram_username,
                 // Action Params (if any)
-                targetFid: task.target_fid || task.target_id,
-                tweetId: task.tweet_id || task.target_id,
-                targetUserId: task.target_twitter_id || task.target_id
+                targetFid: toOptionalNumber(task.target_fid || task.target_id),
+                tweetId: toOptionalString(task.tweet_id || task.target_id),
+                targetUserId: toOptionalString(task.target_twitter_id || task.target_id)
             });
 
             // Handle already_claimed flag from backend (returns success:true but no new XP)
@@ -199,7 +247,7 @@ export function TaskList() {
             // Server-sync after a small delay to ensure DB is committed
             setTimeout(() => fetchData(), 1500);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Claim error:", err);
             const errMsg = err instanceof Error ? err.message : String(err);
             const errCode = (err as { code?: number })?.code;
@@ -226,11 +274,11 @@ export function TaskList() {
     };
 
     // Filter Tasks (Zero-Assumption Mandate Applied)
-    const activeTasks = tasks.filter((task: any) => {
+    const activeTasks = tasks.filter((task: DailyTask) => {
         const taskIdStr = String(task.id).toLowerCase();
 
         // 1. Hide if claimed (One-time logic per interval/task)
-        const hasClaimed = userClaims.some((c: any) => String(c.task_id).toLowerCase() === taskIdStr);
+        const hasClaimed = userClaims.some((c: TaskClaim) => String(c.task_id).toLowerCase() === taskIdStr);
         if (hasClaimed) return false;
 
         // 2. Hide if expired (Autoritative field from DB)
@@ -283,7 +331,7 @@ export function TaskList() {
             )}
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {activeTasks.map((task: any) => {
+                {activeTasks.map((task: DailyTask) => {
                     const taskId = String(task.id);
                     const hasStarted = !!startedTasks[taskId];
                     const countdown = countdowns[taskId] ?? (hasStarted ? 0 : null);
@@ -299,7 +347,7 @@ export function TaskList() {
 
                     // Metadata helpers
                     const creator = task.task_type === 'daily' ? 'ADMIN' : (task.creator_address ? `${task.creator_address.slice(0, 6)}...${task.creator_address.slice(-4)}` : task.platform?.toUpperCase() || 'SYSTEM');
-                    const createdAt = new Date(task.created_at);
+                    const createdAt = new Date(task.created_at ?? Date.now());
                     const expiresAt = task.expires_at ? new Date(task.expires_at) : new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
 
                     return (

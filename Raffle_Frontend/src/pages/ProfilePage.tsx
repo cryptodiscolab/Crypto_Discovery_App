@@ -80,8 +80,9 @@ export default function ProfilePage() {
       toast.success("Profile updated! 🎉", { id: tid });
       setIsEditing(false);
       refetchProfile();
-    } catch (e: any) {
-      toast.error(e.message || "Update failed", { id: tid });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(message || "Update failed", { id: tid });
     } finally {
       setIsSaving(false);
     }
@@ -100,7 +101,7 @@ export default function ProfilePage() {
         return res.profile;
       }
       return null;
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("[handleSyncUser] Error:", e);
       throw e;
     }

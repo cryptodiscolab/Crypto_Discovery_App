@@ -552,9 +552,10 @@ function WinnersPanel({ winners, raffleId }: WinnersPanelProps) {
                 signature,
                 message
             });
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e.message || "Failed to announce winner");
+            const err = e as { message?: string };
+            toast.error(err.message || "Failed to announce winner");
         }
     };
 

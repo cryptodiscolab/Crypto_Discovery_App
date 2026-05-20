@@ -76,7 +76,8 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
                 toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
                 if (onSuccess) onSuccess();
                 onClose();
-            } catch (syncErr: any) {
+            } catch (syncErr: unknown) {
+                const syncMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
                 // Chain succeeded but backend XP sync failed — record for reconciliation cron.
                 recordPendingSync({
                     actionType: 'daily_claim',
@@ -84,14 +85,15 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
                     chainId,
                     contractAddress: CONTRACTS.DAILY_APP as string,
                     payload: { reward_xp: dailyReward },
-                    errorMessage: syncErr?.message ? String(syncErr.message) : 'Backend XP sync failed'
+                    errorMessage: syncMsg
                 }).catch(() => {});
                 toast.success('Claim confirmed on-chain. XP sync pending — will retry automatically.', { id: tid, duration: 6000 });
                 if (onSuccess) onSuccess();
                 onClose();
             }
-        } catch (err: any) {
-            toast.error('Claim failed: ' + (err.shortMessage || 'Try again'), { id: tid });
+        } catch (err: unknown) {
+            const error = err as { shortMessage?: string; message?: string };
+            toast.error('Claim failed: ' + (error.shortMessage || error.message || 'Try again'), { id: tid });
         } finally {
             setIsClaiming(false);
         }

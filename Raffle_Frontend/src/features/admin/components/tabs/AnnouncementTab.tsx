@@ -27,9 +27,10 @@ export function AnnouncementTab() {
             showSuccessToast("Announcement Updated!", hash);
             toast.dismiss(tid);
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e.shortMessage || "Transaction failed", { id: tid });
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }

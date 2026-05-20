@@ -26,8 +26,9 @@ export function useTaskInfo(taskId: string | number): { task: Task | null, isLoa
                     .eq('id', taskId)
                     .maybeSingle();
                 if (data) setDbMetadata(data as DailyTask);
-            } catch (err: any) {
-                console.warn('[useTaskInfo] DB fetch failed:', err.message);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
+                console.warn('[useTaskInfo] DB fetch failed:', message);
             }
         };
         fetchMetadata();

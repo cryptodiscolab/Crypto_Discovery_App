@@ -7,7 +7,6 @@ import { usePoints } from '../../shared/context/PointsContext';
 import { useSocialGuard } from '../../hooks/useSocialGuard';
 import { formatEther } from 'viem';
 import {
-    Calendar,
     Users,
     Trophy,
     ChevronLeft,
@@ -18,7 +17,6 @@ import {
     Ticket,
     Info,
     AlertCircle,
-    ArrowRight,
     Loader2,
     Lock
 } from 'lucide-react';
@@ -95,8 +93,9 @@ const RaffleDetailPage = () => {
             }
             toast.success(`Success! Purchased ${ticketAmount} entry(s)`, { id: tid });
             refetch();
-        } catch (e: any) {
-            toast.error(e.shortMessage || e.message || "Purchase failed", { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Purchase failed", { id: tid });
         } finally {
             setIsBuying(false);
         }

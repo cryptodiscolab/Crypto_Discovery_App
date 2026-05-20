@@ -59,9 +59,10 @@ export function SponsorshipConfigSection() {
             }
 
             toast.success("Sponsorship Settings Updated!", { id: tid });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            toast.error("Update Failed: " + (error.shortMessage || error.message), { id: tid });
+            const err = error as { shortMessage?: string; message?: string };
+            toast.error("Update Failed: " + (err.shortMessage || err.message || "Unknown error"), { id: tid });
         } finally {
             setIsSaving(false);
         }

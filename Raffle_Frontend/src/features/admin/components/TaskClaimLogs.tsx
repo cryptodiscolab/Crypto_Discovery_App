@@ -53,8 +53,9 @@ export default function TaskClaimLogs() {
                 setPage(prev => prev + 1);
             }
             setTotalCount(count || 0);
-        } catch (e: any) {
-            console.error('[Task Logs] Fetch failure:', e.message);
+        } catch (e: unknown) {
+            const errMsg = e instanceof Error ? e.message : String(e);
+            console.error('[Task Logs] Fetch failure:', errMsg);
             toast.error("Failed to sync task logs.");
         } finally {
             setLoading(false);

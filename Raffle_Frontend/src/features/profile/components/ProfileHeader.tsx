@@ -69,8 +69,9 @@ export const ProfileHeader = ({
                                             } else {
                                                 toast.error("Farcaster account not found.", { id: toastId });
                                             }
-                                        } catch (e: any) {
-                                            toast.error("Sync failed: " + (e.message || "Unknown error"), { id: toastId });
+                                        } catch (e: unknown) {
+                                            const message = e instanceof Error ? e.message : String(e);
+                                            toast.error("Sync failed: " + (message || "Unknown error"), { id: toastId });
                                         }
                                     }}
                                     disabled={isFarcasterLoading}

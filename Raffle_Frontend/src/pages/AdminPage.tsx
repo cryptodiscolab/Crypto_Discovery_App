@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Shield, Award, Landmark, Settings, Database,
+    Shield, Award, Landmark, Database,
     AlertTriangle, ExternalLink, RefreshCw,
     Edit3, UserCog, Newspaper,
     Trophy, Zap, LayoutList, ClipboardList, Sliders, Megaphone,
@@ -30,7 +30,6 @@ const UgcRevenueTab = React.lazy(() => import('../features/admin/components/UgcR
 const AnnouncementTab = React.lazy(() => import('../features/admin/components/tabs/AnnouncementTab').then(m => ({ default: m.AnnouncementTab })));
 const NewsTab = React.lazy(() => import('../features/admin/components/tabs/NewsTab').then(m => ({ default: m.NewsTab })));
 const PoolTab = React.lazy(() => import('../features/admin/components/tabs/PoolTab').then(m => ({ default: m.PoolTab })));
-const _ContentTab = React.lazy(() => import('../features/admin/components/tabs/ContentTab').then(m => ({ default: m.ContentTab })));
 const SyncLogTab = React.lazy(() => import('../features/admin/components/tabs/SyncLogTab').then(m => ({ default: m.SyncLogTab })));
 const NFTConfigTab = React.lazy(() => import('../features/admin/components/tabs/NFTConfigTab').then(m => ({ default: m.NFTConfigTab })));
 const NexusMonitorTab = React.lazy(() => import('../features/admin/components/tabs/NexusMonitorTab').then(m => ({ default: m.NexusMonitorTab })));
@@ -244,7 +243,7 @@ export function AdminPage({ initialTab = 'pool' }: { initialTab?: string }) {
                             try {
                                 await Promise.all([refetchAll(), refetchCMS()]);
                                 toast.success("SBT & CMS Systems Synchronized", { id });
-                            } catch (e) {
+                            } catch (e: unknown) {
                                 toast.error("Global Sync Partial Failure", { id });
                             }
                         }}

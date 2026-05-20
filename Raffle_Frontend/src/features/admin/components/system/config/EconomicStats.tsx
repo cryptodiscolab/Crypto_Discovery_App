@@ -48,8 +48,9 @@ export function EconomicStats({ totalPoolBalance, rewards, drift, raffleXp, tier
             });
 
             toast.success('Full System Parity Restored!', { id: tid });
-        } catch (e: any) {
-            toast.error(e.message, { id: tid });
+        } catch (e: unknown) {
+            const error = e as { message?: string };
+            toast.error(error.message || 'Sync failed', { id: tid });
         }
     };
 

@@ -141,9 +141,10 @@ export function AccountantLedgerTab() {
                 throw new Error(data.error || 'Failed to fetch ledger');
             }
             refetchBalances();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[Ledger Fetch]', error);
-            toast.error(error.message);
+            const err = error as { message?: string };
+            toast.error(err.message || "Failed to fetch ledger");
         } finally {
             setLoading(false);
         }
@@ -169,9 +170,10 @@ export function AccountantLedgerTab() {
             } else {
                 toast.error(response.data.error || 'Sync failed');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Sync Error:', err);
-            toast.error(err.response?.data?.error || err.message);
+            const error = err as { response?: { data?: { error?: string } }; message?: string };
+            toast.error(error.response?.data?.error || error.message || "Sync failed");
         } finally {
             setSyncLoading(false);
         }
@@ -222,8 +224,9 @@ export function AccountantLedgerTab() {
             } else {
                 throw new Error(data.error || "Audit failed");
             }
-        } catch (error: any) {
-            toast.error(error.message, { id: toastId });
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error(err.message || "Audit failed", { id: toastId });
         } finally {
             setIsHardening(false);
         }
@@ -289,9 +292,10 @@ export function AccountantLedgerTab() {
             await withdrawTreasury(parseEther(withdrawAmount.toString()));
             toast.success("Withdrawal executed successfully!");
             setWithdrawAmount('');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[Withdrawal Error]', error);
-            toast.error(error.shortMessage || error.message || "Transaction failed");
+            const err = error as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || "Transaction failed");
         } finally {
             setIsWithdrawing(false);
         }

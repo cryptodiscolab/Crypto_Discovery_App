@@ -182,9 +182,10 @@ export default function AdminSystemSettings() {
             }
             if (!logsRes.error) setAuditLogs(logsRes.data as AuditLog[] || []);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Fetch Error:', error);
-            toast.error("Failed to sync DB data: " + (error instanceof Error ? error.message : String(error)));
+            const err = error as { message?: string };
+            toast.error("Failed to sync DB data: " + (err.message || String(error)));
         }
     };
 
@@ -226,8 +227,9 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to update points");
             toast.success('Point Settings updated!', { id: tid });
             await fetchPointSettings();
-        } catch (error: any) {
-            toast.error('Failed to save points: ' + (error instanceof Error ? error.message : String(error)), { id: tid });
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error('Failed to save points: ' + (err.message || String(error)), { id: tid });
         } finally { setSaving(false); }
     };
 
@@ -259,7 +261,10 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to update thresholds");
             toast.success('SBT Thresholds updated!', { id: tid });
             await fetchPointSettings();
-        } catch (error: any) { toast.error('Failed to save thresholds: ' + (error instanceof Error ? error.message : String(error)), { id: tid }); }
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error('Failed to save thresholds: ' + (err.message || String(error)), { id: tid });
+        }
         finally { setSaving(false); }
     };
 
@@ -279,8 +284,9 @@ export default function AdminSystemSettings() {
 
             if (!response.ok) throw new Error('Failed to save tier config');
             if (!silent) toast.success('Tier configuration saved!', { id: tid ?? undefined });
-        } catch (error: any) {
-            if (!silent) toast.error('Failed to save tier config: ' + (error instanceof Error ? error.message : String(error)), { id: tid ?? undefined });
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            if (!silent) toast.error('Failed to save tier config: ' + (err.message || String(error)), { id: tid ?? undefined });
             throw error;
         } finally { if (!silent) setSaving(false); }
     };
@@ -307,7 +313,10 @@ export default function AdminSystemSettings() {
             toast.success('Manual override applied!', { id: tid });
             setTargetWallet('');
             fetchTierDistribution();
-        } catch (error: any) { toast.error('Override failed: ' + (error instanceof Error ? error.message : String(error)), { id: tid }); }
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error('Override failed: ' + (err.message || String(error)), { id: tid });
+        }
         finally { setSaving(false); }
     };
 
@@ -333,8 +342,9 @@ export default function AdminSystemSettings() {
             await resetSeason(nextSeason);
             toast.success(`Season ${nextSeason} Started!`, { id: tid });
             fetchTierDistribution();
-        } catch (e: any) {
-            const errMsg = e instanceof Error ? (e as { shortMessage?: string }).shortMessage || e.message : String(e);
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            const errMsg = error.shortMessage || error.message || String(e);
             toast.error(errMsg || "Reset failed", { id: tid });
         } finally {
             setSaving(false);
@@ -363,7 +373,10 @@ export default function AdminSystemSettings() {
             if (!response.ok) throw new Error("Failed to issue identity");
             toast.success(`Identity ${fullName} issued!`, { id: tid });
             fetchPointSettings();
-        } catch (error: any) { toast.error('ENS Error: ' + (error instanceof Error ? error.message : String(error)), { id: tid }); }
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error('ENS Error: ' + (err.message || String(error)), { id: tid });
+        }
         finally { setSaving(false); }
     };
 

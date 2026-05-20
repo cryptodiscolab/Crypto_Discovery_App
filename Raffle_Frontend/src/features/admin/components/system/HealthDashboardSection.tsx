@@ -6,8 +6,7 @@ import {
     AlertCircle,
     Clock,
     RefreshCw,
-    ShieldAlert,
-    ExternalLink
+    ShieldAlert
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -68,7 +67,7 @@ export function HealthDashboardSection() {
             } else {
                 toast.error(data.error || 'Reset failed', { id: tid });
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error('Network error during reset', { id: tid });
         }
     };

@@ -152,8 +152,9 @@ export function useDoTask() {
                 const signature = await signMessageAsync({ message });
 
                 await awardTaskXP(userAddr, signature, message, taskId, 0); // Reward value handled by backend Activity Key
-            } catch (e: any) {
-                console.warn("XP Awarding skipped or failed:", e.message);
+            } catch (e: unknown) {
+                const message = e instanceof Error ? e.message : String(e);
+                console.warn("XP Awarding skipped or failed:", message);
                 toast.error('XP recording failed. Your task is confirmed but XP may sync later.');
             }
         }

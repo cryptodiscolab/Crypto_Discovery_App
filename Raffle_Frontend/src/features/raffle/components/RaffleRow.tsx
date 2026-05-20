@@ -63,8 +63,9 @@ export function RaffleRow({ raffleId, filter = 'all' }: RaffleRowProps) {
         }
         toast.dismiss(tid);
       }
-    } catch (e: any) {
-      toast.error(e.shortMessage || e.message || "Action failed", { id: tid });
+    } catch (e: unknown) {
+      const error = e as { shortMessage?: string; message?: string };
+      toast.error(error.shortMessage || error.message || "Action failed", { id: tid });
     } finally {
       setIsProcessing(false);
     }

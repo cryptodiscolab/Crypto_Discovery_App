@@ -42,7 +42,7 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
             if (data?.value) {
                 setFlags(data.value as FeatureFlags);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to fetch flags:', err);
             toast.error('Sync Error: Failed to fetch system flags');
         } finally {
@@ -86,9 +86,10 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
 
             toast.success('Phased Rollout Updated! UI auto-locked on Mainnet.', { id: tid });
             await fetchFlags();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Save error:', err);
-            toast.error('Update failed: ' + (err.message || 'Unknown error'), { id: tid });
+            const errMsg = err instanceof Error ? err.message : String(err);
+            toast.error('Update failed: ' + errMsg, { id: tid });
         } finally {
             setSaving(false);
         }

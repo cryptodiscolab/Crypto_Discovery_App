@@ -15,12 +15,30 @@ import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import { formatUnits } from 'viem';
-import { AnnouncementBanner } from '../components/AnnouncementBanner';
+import { AnnouncementBanner, Announcement } from '../components/AnnouncementBanner';
 import { FeatureCardSkeleton } from '../components/FeatureCardSkeleton';
 import { UnifiedDashboard } from '../components/UnifiedDashboard';
 import { HypeFeed } from '../components/HypeFeed';
 
-const iconMap = {
+interface PoolSettings {
+  targetUSDC: number;
+  claimTimestamp: number;
+}
+
+interface FeatureCard {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  link: string;
+  active: boolean;
+  visible: boolean;
+  color: string;
+  linkText: string;
+  badge: string;
+}
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Sparkles,
   Trophy,
   User,
@@ -38,6 +56,8 @@ export function HomePage() {
   const { userPoints, unclaimedRewards: _unclaimedRewards } = usePoints();
   const { totalPoolBalance } = useSBT();
   const { isFrame, frameUser, client } = useFarcaster();
+  const typedClient = client as { config?: { theme?: string } } | undefined;
+  const typedFrameUser = frameUser as { pfpUrl?: string; pfpUser?: string; username?: string } | undefined;
   const {
     featureCards = [],
     announcement,
@@ -46,13 +66,15 @@ export function HomePage() {
     isLoadingCards
   } = useCMS();
 
-  const displayCards = featureCards;
+  const displayCards = featureCards as FeatureCard[];
+  const currentPoolSettings = poolSettings as PoolSettings | undefined;
   const poolUSD = parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice;
   const poolETH = parseFloat(formatUnits(totalPoolBalance || 0n, 18)).toFixed(4);
-  const targetUSDC = poolSettings?.targetUSDC || 5000;
+  const targetUSDC = currentPoolSettings?.targetUSDC || 5000;
+  const claimTimestamp = currentPoolSettings?.claimTimestamp ?? 0;
   const progressPct = Math.min((poolUSD / targetUSDC) * 100, 100).toFixed(1);
 
-  const theme = (client as any)?.config?.theme || 'dark';
+  const theme = typedClient?.config?.theme || 'dark';
   const isLight = theme === 'light';
 
   return (
@@ -65,8 +87,8 @@ export function HomePage() {
           isLight ? 'bg-white/80 border-black/5' : 'bg-[#050505]/80 border-white/5'
         }`}>
           <div className="flex items-center gap-2.5">
-            {(frameUser as any)?.pfpUrl ? (
-              <img src={(frameUser as any).pfpUser || (frameUser as any).pfpUrl} alt="" className="w-8 h-8 rounded-full border-2 border-indigo-500/50 shadow-lg" />
+            {typedFrameUser?.pfpUrl ? (
+              <img src={typedFrameUser.pfpUser || typedFrameUser.pfpUrl} alt="" className="w-8 h-8 rounded-full border-2 border-indigo-500/50 shadow-lg" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
                 <User size={14} className="text-indigo-400" />
@@ -74,7 +96,7 @@ export function HomePage() {
             )}
             <div>
             <p className="text-[11px] font-black uppercase tracking-tighter text-indigo-500 leading-none">
-                {(frameUser as any)?.username || 'Nexus Agent'}
+                {typedFrameUser?.username || 'Nexus Agent'}
               </p>
               <p className={`text-[11px] font-bold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
                 {isConnected && address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Guest Mode'}
@@ -113,7 +135,7 @@ export function HomePage() {
         </div>
 
         {/* ── Announcement Banner ───────────────────────────────────────── */}
-        <AnnouncementBanner announcement={announcement as any} />
+        <AnnouncementBanner announcement={announcement as Announcement} />
 
         {/* ── Pool Widget ──────────────────────────────────────────────────── */}
         {/* Minimalist: bg-zinc-900, tanpa border warna, tanpa glow overlay berlapis */}
@@ -134,13 +156,13 @@ export function HomePage() {
                 <p className="text-zinc-600 text-[11px] mt-1 font-mono font-black uppercase tracking-widest">≈ {poolETH} ETH</p>
               </div>
 
-              {(poolSettings as any)?.claimTimestamp > Date.now() && (
+              {claimTimestamp > Date.now() && (
                 <div className="bg-white/5 backdrop-blur-xl border border-white/5 rounded-xl p-4 flex items-center gap-3 self-start sm:self-auto">
                   <TimerIcon className="w-5 h-5 text-indigo-400 shrink-0" />
                   <div>
                     <p className="text-[11px] text-zinc-500 font-black uppercase tracking-widest">NEXT DROP</p>
                     <div className="text-[11px] font-black text-white font-mono uppercase tracking-widest">
-                      <HomeCountdown timestamp={(poolSettings as any).claimTimestamp} />
+                      <HomeCountdown timestamp={claimTimestamp} />
                     </div>
                   </div>
                 </div>
@@ -178,10 +200,10 @@ export function HomePage() {
             <FeatureCardSkeleton count={6} />
           ) : (
             displayCards
-              .filter((card: any) => card.visible !== false)
-              .map((card: any, index: number) => {
+              .filter((card: FeatureCard) => card.visible !== false)
+              .map((card: FeatureCard, index: number) => {
                 const isCustomImage = card.icon && typeof card.icon === 'string' && card.icon.startsWith('http');
-                const IconComponent = (iconMap as any)[card.icon] || Sparkles;
+                const IconComponent = iconMap[card.icon] || Sparkles;
 
                 return (
                   <Link key={index} to={card.link || '/'} className="group">

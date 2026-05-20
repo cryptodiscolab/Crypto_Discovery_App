@@ -33,8 +33,9 @@ export function MasterXProtocolParamsCard({
                 ],
             });
             toast.success("MasterX Parameters Updated!", { id: tid });
-        } catch (e: any) {
-            toast.error(e.shortMessage || e.message, { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Update failed", { id: tid });
         } finally {
             setIsSaving(false);
         }

@@ -92,11 +92,12 @@ export function OAuthCallbackPage() {
                         }
                     }, window.location.origin);
                     setStatus('Sign-in complete! Closing...');
-                } catch (e: any) {
+                } catch (e: unknown) {
+                    const message = e instanceof Error ? e.message : String(e);
                     console.error('[OAuthCallback] PKCE exchange error:', e);
                     window.opener?.postMessage({
                         type: 'OAUTH_ERROR',
-                        error: e.message || 'OAuth code exchange failed'
+                        error: message || 'OAuth code exchange failed'
                     }, window.location.origin);
                 }
                 setTimeout(() => window.close(), 800);
@@ -129,10 +130,11 @@ export function OAuthCallbackPage() {
                     }, window.location.origin);
                     setStatus('Authentication incomplete. Please try again.');
                 }
-            } catch (e: any) {
+            } catch (e: unknown) {
+                const message = e instanceof Error ? e.message : String(e);
                 window.opener?.postMessage({
                     type: 'OAUTH_ERROR',
-                    error: e.message || 'Session retrieval failed'
+                    error: message || 'Session retrieval failed'
                 }, window.location.origin);
             }
             setTimeout(() => window.close(), 1500);

@@ -60,7 +60,7 @@ export function useRaffle() {
                 await awardTaskXP(address as string, signature, message, `raffle_buy_${raffleId}_${hash}`, 0);
 
                 if (refetch) refetch();
-            } catch (e: any) {
+            } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 console.warn("XP Awarding/Logging skipped:", errMsg);
                 recordPendingSync({
@@ -163,7 +163,7 @@ export function useRaffle() {
             });
 
             if (refetch) refetch();
-        } catch (e: any) {
+        } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             console.warn("XP Awarding/Logging skipped:", errMsg);
             recordPendingSync({
@@ -209,7 +209,7 @@ export function useRaffle() {
             } catch { /* admin log is best-effort */ }
             setIsDrawing(false);
             return hash;
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error((e as { shortMessage?: string }).shortMessage || "Draw failed", { id: tid });
             setIsDrawing(false);
             throw e;
@@ -251,21 +251,22 @@ export function useRaffle() {
                         toast.success(`You won! +${result.xpAwarded} XP added! 🏆`);
                     }
                     if (refetch) refetch();
-                } catch (e: any) {
-                    console.warn("XP Awarding skipped:", e.message);
+                } catch (e: unknown) {
+                    const message = e instanceof Error ? e.message : String(e);
+                    console.warn("XP Awarding skipped:", message);
                     recordPendingSync({
                         actionType: 'raffle_claim',
                         txHash: hash,
                         chainId,
                         contractAddress: RAFFLE_ADDRESS,
                         payload: { raffle_id: raffleId },
-                        errorMessage: e.message || 'Prize claim XP sync failed'
+                        errorMessage: message
                     }).catch(() => {});
                     toast.success("Prize claimed! XP sync pending — will retry automatically.", { id: tid });
                 }
             }
             return hash;
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error((e as { shortMessage?: string }).shortMessage || "Claim failed", { id: tid });
             throw e;
         }
@@ -347,7 +348,7 @@ export function useRaffle() {
                     throw new Error(result?.error || 'Raffle DB sync failed');
                 }
                 toast.success("Raffle synced to explorer!");
-            } catch (logErr: any) {
+            } catch (logErr: unknown) {
                 const errMsg = logErr instanceof Error ? logErr.message : String(logErr);
                 console.warn('Logging UGC Raffle failed:', errMsg);
                 recordPendingSync({
@@ -478,7 +479,7 @@ export function useRaffle() {
                         })
                     });
                 }
-            } catch (syncErr: any) {
+            } catch (syncErr: unknown) {
                 const errMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
                 console.warn('[adminCreateRaffle] DB sync skipped:', errMsg);
                 recordPendingSync({

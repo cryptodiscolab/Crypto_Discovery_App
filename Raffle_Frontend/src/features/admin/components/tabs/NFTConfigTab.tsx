@@ -110,8 +110,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             );
             toast.success(`${tier.name} Config Updated!`, { id: tid });
             refetch();
-        } catch (e: any) {
-            toast.error(e.shortMessage || "Update failed", { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Update failed", { id: tid });
         } finally {
             setIsSaving(null);
         }
@@ -123,8 +124,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await updateTierURI(tier.id, tier.localURI || '');
             toast.success(`${tier.name} Metadata URI Updated!`, { id: tid });
             refetch();
-        } catch (e: any) {
-            toast.error(e.shortMessage || "URI Update failed", { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "URI Update failed", { id: tid });
         }
     };
 
@@ -149,8 +151,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await updateBatchConfig(ids, points, prices, bonuses, multipliers, supplies, opens);
             toast.success("Master Economic Parameters Finalized!", { id: tid });
             refetch();
-        } catch (e: any) {
-            toast.error(e.shortMessage || "Batch update failed", { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Batch update failed", { id: tid });
         }
     };
 
@@ -160,8 +163,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await toggleTier(tier.id, !tier.isOpen);
             toast.success(`${tier.name} status updated!`, { id: tid });
             refetch();
-        } catch (e: any) {
-            toast.error(e.shortMessage || "Action failed", { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Action failed", { id: tid });
         }
     };
 
@@ -227,8 +231,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
 
             toast.success("Global Economics & SBT Multipliers Updated!", { id: tid });
             refetch();
-        } catch (e: any) {
-            toast.error(e.shortMessage || "Update failed", { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Update failed", { id: tid });
         }
     };
 
@@ -243,8 +248,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             await setTierWeights(localWeights.d, localWeights.p, localWeights.g, localWeights.s, localWeights.b);
             toast.success("Revenue Weights Updated!", { id: tid });
             refetchMaster();
-        } catch (e: any) {
-            toast.error(e.shortMessage || "Weight update failed", { id: tid });
+        } catch (e: unknown) {
+            const error = e as { shortMessage?: string; message?: string };
+            toast.error(error.shortMessage || error.message || "Weight update failed", { id: tid });
         }
     };
 

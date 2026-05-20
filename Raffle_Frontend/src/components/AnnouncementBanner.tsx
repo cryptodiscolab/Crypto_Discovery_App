@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Info, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 
-interface Announcement {
+export interface Announcement {
     title: string;
     message: string;
     type: 'info' | 'warning' | 'success' | 'error';

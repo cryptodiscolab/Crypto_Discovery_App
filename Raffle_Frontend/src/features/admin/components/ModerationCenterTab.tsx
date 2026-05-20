@@ -147,9 +147,10 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "DB Sync failed");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Rejection Error:", error);
-            const errMsg = error instanceof Error ? ((error as { shortMessage?: string }).shortMessage || error.message) : "Rejection failed";
+            const err = error as { shortMessage?: string; message?: string };
+            const errMsg = err.shortMessage || err.message || "Rejection failed";
             if (txHash) {
                 recordPendingSync({
                     actionType: 'raffle_reject',
@@ -197,8 +198,9 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Approval failed");
             }
-        } catch (error: any) {
-            toast.error(error instanceof Error ? error.message : String(error), { id: tid });
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error(err.message || "Approval failed", { id: tid });
         }
     };
 
@@ -228,8 +230,9 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Verification failed");
             }
-        } catch (error: any) {
-            toast.error(error instanceof Error ? error.message : String(error), { id: tid });
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error(err.message || "Verification failed", { id: tid });
         }
     };
 
@@ -251,8 +254,9 @@ export function ModerationCenterTab() {
             if (!response.ok || !result.success) throw new Error(result.error || 'Rejection failed');
             toast.success("Mission rejected!", { id: tid });
             fetchPending();
-        } catch (error: any) {
-            toast.error(error instanceof Error ? error.message : "Rejection failed", { id: tid });
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error(err.message || "Rejection failed", { id: tid });
         }
     };
 
@@ -282,8 +286,9 @@ export function ModerationCenterTab() {
             } else {
                 throw new Error(result.error || "Approval failed");
             }
-        } catch (error: any) {
-            toast.error(error instanceof Error ? error.message : String(error), { id: tid });
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            toast.error(err.message || "Approval failed", { id: tid });
         }
     };
 

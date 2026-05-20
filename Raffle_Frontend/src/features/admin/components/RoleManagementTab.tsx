@@ -104,9 +104,10 @@ export function RoleManagementTab() {
             setOperators([...operators, { address: operatorAddress, role: 'Operator' }]);
             setOperatorAddress('');
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e instanceof Error ? (e as { shortMessage?: string }).shortMessage || e.message : "Transaction failed", { id: tid });
+            const err = e as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -149,9 +150,10 @@ export function RoleManagementTab() {
             // Remove from local list
             setOperators(operators.filter(op => op.address?.toLowerCase() !== addr?.toLowerCase()));
             refetchAll();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error(e instanceof Error ? (e as { shortMessage?: string }).shortMessage || e.message : "Transaction failed", { id: tid });
+            const err = e as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || "Transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -192,8 +194,9 @@ export function RoleManagementTab() {
 
             toast.success("Verifier Role Active!", { id: tid });
             refetchAll();
-        } catch (e: any) {
-            toast.error(e instanceof Error ? e.message : "Grant verifier failed", { id: tid });
+        } catch (e: unknown) {
+            const err = e as { message?: string };
+            toast.error(err.message || "Grant verifier failed", { id: tid });
         } finally {
             setIsSaving(false);
         }

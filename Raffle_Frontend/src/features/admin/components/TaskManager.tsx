@@ -1,11 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import {
-    Plus, Zap, Calendar, Loader2, CheckCircle2, AlertCircle,
-    Star, Database, RefreshCw, Settings, TrendingUp,
-    Share2, List, Clock, Send
-} from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useAccount, useSignMessage, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { encodeFunctionData, parseUnits } from 'viem';
+import { encodeFunctionData, parseUnits, type Abi } from 'viem';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
 import { DAILY_APP_ABI, CONTRACTS, NATIVE_ETH_ALT_ADDRESS, WETH_ADDRESS } from '../../../lib/contracts';
@@ -207,7 +203,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any, functionName: 'addTask',
+                abi: DAILY_APP_ABI as Abi, functionName: 'addTask',
                 args: [BigInt(dailyPoints || 0), BigInt(cd), BigInt(dailyMinTier), dailyDesc, '', dailyRequiresVerify]
             }),
         }];
@@ -220,7 +216,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
         return [{
             to: DAILY_APP_ADDRESS,
             data: encodeFunctionData({
-                abi: DAILY_APP_ABI as any,
+                abi: DAILY_APP_ABI as Abi,
                 functionName: 'buySponsorshipWithToken',
                 args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, isNative ? 0n : totalPool, selectedTokenAddr]
             }),
@@ -432,7 +428,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                         {subTab === 'BATCH_CREATOR' && (
                             <TaskBatchCreatorSection
                                 tasksBatch={tasksBatch}
-                                onUpdateTask={updateTaskLine as any}
+                                onUpdateTask={updateTaskLine as (idx: number, field: string, value: unknown) => void}
                                 onDeploy={handleBatchSave}
                                 isSaving={isWaiting}
                             />

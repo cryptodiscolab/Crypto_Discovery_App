@@ -33,8 +33,9 @@ export async function ensureUserProfile(walletAddress: string, signature: string
         if (referred_by) referralUtils.clearReferrer();
 
         return result.profile;
-    } catch (err: any) {
-        console.error('[Ensure Profile] Critical Error:', err.message);
+    } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error('[Ensure Profile] Critical Error:', errMsg);
         // Persist error for admin visibility (fire-and-forget)
         try {
             fetch('/api/user-bundle', {
@@ -47,7 +48,7 @@ export async function ensureUserProfile(walletAddress: string, signature: string
                     message: 'Profile Sync Failure',
                     category: 'ERROR',
                     type: 'Profile Sync Failed',
-                    description: (err.message || 'Unknown error').slice(0, 200),
+                    description: (errMsg || 'Unknown error').slice(0, 200),
                     metadata: { source: 'ensureUserProfile' }
                 })
             }).catch(() => {});
@@ -82,8 +83,9 @@ export async function awardTaskXP(walletAddress: string, signature: string, mess
         if (!response.ok) throw new Error(result.error || "XP Award failed");
 
         return { success: true, ...result };
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[Award XP Error]', err);
+        const errMsg = err instanceof Error ? err.message : String(err);
         // Persist XP award error for admin visibility (fire-and-forget)
         try {
             fetch('/api/user-bundle', {
@@ -96,12 +98,12 @@ export async function awardTaskXP(walletAddress: string, signature: string, mess
                     message: 'XP Award Failure',
                     category: 'ERROR',
                     type: 'XP Award Failed',
-                    description: (err.message || 'Unknown error').slice(0, 200),
+                    description: (errMsg || 'Unknown error').slice(0, 200),
                     metadata: { source: 'awardTaskXP', task_id: String(taskId) }
                 })
             }).catch(() => {});
         } catch { /* never throw */ }
-        return { success: false, error: err.message };
+        return { success: false, error: errMsg };
     }
 }
 
@@ -119,7 +121,7 @@ export async function getUserStatsByFid(fid: unknown) {
 
         if (error && error.code !== 'PGRST116') throw error;
         return data || { total_xp: 0, tier: 1, last_seen_at: null };
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[User Stats] Error:', err);
         return null;
     }
@@ -134,7 +136,7 @@ export async function getSBTThresholds() {
 
         if (error) throw error;
         return data || [];
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[SBT Config] Error fetching thresholds:', err);
         return [];
     }
