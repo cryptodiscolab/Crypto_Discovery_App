@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
 *Last Updated: 2026-05-20*
-*PRD Version: v3.64.11-Hardened (TypeScript Lint Debt Resolution)*
+*PRD Version: v3.64.13-Hardened (Nexus Monitor Live Dashboard)*
 
 ---
 
@@ -205,7 +205,8 @@ npm run build
 | DeepSeek   | `> deepseek:` | Backend Algo, Complex Logic     |
 | ResearchBot| Python SDK | Parallel Research & Context Extraction (Freemodel gpt-5.5) |
 | CodeBot    | Python SDK | Parallel Coding & Syntax Checks (Freemodel gpt-5.5) |
-| OrchestratorBot| Python SDK| Lead orchestration, key rotation, and registry monitoring (Gemini 2.5 Flash) |
+| SyncGuardBot| Python SDK | Alignment checks and synchronization sentinel (Gemini 2.5 Flash) |
+| OrchestratorBot| Python SDK| Lead orchestration, key rotation, and registry monitoring (Freemodel Claude) |
 | ContractBot| Python SDK | Smart Contract design, optimization, and ABI parity (Gemini 2.5 Flash) |
 | FrontendBot| Python SDK | UI/UX implementation, INP optimization, styling (Gemini 2.5 Flash) |
 | SecurityBot| Python SDK | EIP-191 verification, secret prevention, audit checks (Gemini 2.5 Flash) |
@@ -519,5 +520,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.64.11 - Hardened & Synchronized.*
-*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened.*
+*Constitution v3.64.13 - Hardened & Synchronized.*
+*Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened. Live Agent Delegation Dashboard Activated.*

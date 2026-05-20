@@ -1,310 +1,334 @@
-import { useState, useEffect, FormEvent } from 'react';
-import type { ComponentType } from 'react';
-import { supabase } from '../../../../lib/supabaseClient';
-import {
-    Cpu, Brain, Shield, Zap,
-    Activity, Clock, CheckCircle2,
-    AlertCircle, Terminal, RefreshCw,
-    Send, Sparkles
-} from 'lucide-react';
-import { useAccount, useSignMessage } from 'wagmi';
-import toast from 'react-hot-toast';
+import { useMemo, useState } from "react";
 
-interface NexusTask {
-    id: string;
-    created_at: string;
-    task_name: string;
-    task_description: string;
-    target_agent: string;
-    status: string;
-    output_data?: unknown;
+type TaskStatus =
+  | "pending"
+  | "queued"
+  | "running"
+  | "in_progress"
+  | "processing"
+  | "completed"
+  | "done"
+  | "failed"
+  | "blocked"
+  | "cancelled";
+
+type AgentName =
+  | "ResearchBot"
+  | "CodeBot"
+  | "SyncGuardBot"
+  | "OrchestratorBot"
+  | "ContractBot"
+  | "SecurityBot"
+  | "DatabaseBot"
+  | "BackendBot"
+  | "QABot"
+  | "GrowthBot"
+  | "DocsBot"
+  | "FrontendBot";
+
+interface TaskNode {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  target_agent?: AgentName;
+  updatedAt?: string;
+  output?: string;
+  children?: TaskNode[];
 }
 
-interface AgentStats {
-    claw: string;
-    qwen: string;
-    deepseek: string;
-    [key: string]: string;
+interface NexusMonitorTabProps {
+  tasks: TaskNode[];
+  outputLog?: string;
+  loading?: boolean;
+  lastUpdated?: string;
 }
 
-export const NexusMonitorTab = () => {
-    const { address, isConnected } = useAccount();
-    const { signMessageAsync } = useSignMessage();
+const AGENTS: AgentName[] = [
+  "ResearchBot",
+  "CodeBot",
+  "SyncGuardBot",
+  "OrchestratorBot",
+  "ContractBot",
+  "SecurityBot",
+  "DatabaseBot",
+  "BackendBot",
+  "QABot",
+  "GrowthBot",
+  "DocsBot",
+  "FrontendBot",
+];
 
-    const [tasks, setTasks] = useState<NexusTask[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isDispatching, setIsDispatching] = useState(false);
-    const [stats, setStats] = useState<AgentStats>({
-        claw: 'idle',
-        qwen: 'idle',
-        deepseek: 'idle'
-    });
+function normalizeStatus(status: TaskStatus) {
+  const s = status.toLowerCase();
+  if (s === "completed" || s === "done") return "completed";
+  if (s === "failed" || s === "blocked" || s === "cancelled") return "failed";
+  return "processing";
+}
 
-    // Form States
-    const [taskName, setTaskName] = useState('');
-    const [taskDesc, setTaskDesc] = useState('');
-    const [targetAgent, setTargetAgent] = useState('qwen');
+function countTasks(nodes: TaskNode[]) {
+  const totals = { total: 0, completed: 0, failed: 0, processing: 0 };
 
-    useEffect(() => {
-        fetchTasks();
+  const walk = (items: TaskNode[]) => {
+    for (const node of items) {
+      totals.total += 1;
+      const bucket = normalizeStatus(node.status);
+      totals[bucket] += 1;
+      if (node.children?.length) walk(node.children);
+    }
+  };
 
-        const channel = supabase
-            .channel('nexus-live')
-            // @ts-expect-error supabase types broaden 'postgres_changes' but runtime accepts it
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'agents_vault'
-            }, (payload: { eventType: string; new: NexusTask; old: unknown }) => {
-                if (payload.eventType === 'INSERT') {
-                    setTasks(prev => [payload.new as NexusTask, ...prev].slice(0, 50));
-                } else if (payload.eventType === 'UPDATE') {
-                    setTasks(prev => prev.map(t => t.id === payload.new.id ? payload.new as NexusTask : t));
-                }
-            })
-            .subscribe();
+  walk(nodes);
+  return totals;
+}
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, []);
+function filterTasksByAgent(tasks: TaskNode[], activeAgent: AgentName | null): TaskNode[] {
+  if (!activeAgent) return tasks;
 
-    useEffect(() => {
-        const activeTasks = tasks.filter(t => t.status === 'processing' || t.status === 'pending');
-        const newStats: AgentStats = { claw: 'idle', qwen: 'idle', deepseek: 'idle' };
-        activeTasks.forEach(t => {
-            if (newStats[t.target_agent]) newStats[t.target_agent] = 'active';
-        });
-        setStats(newStats);
-    }, [tasks]);
+  const filterNode = (node: TaskNode): TaskNode | null => {
+    if (node.target_agent !== activeAgent) return null;
 
-    const fetchTasks = async () => {
-        setLoading(true);
-        const { data, error } = await supabase
-            .from('agents_vault')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(50);
-
-        if (error) {
-            console.error('[NexusMonitor] fetch error:', error);
-        } else if (data) {
-            setTasks(data as NexusTask[]);
-        }
-        setLoading(false);
+    return {
+      ...node,
+      children: (node.children ?? [])
+        .map(filterNode)
+        .filter((child): child is TaskNode => child !== null),
     };
+  };
 
-    const handleDispatch = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!isConnected) return toast.error("Connect Wallet First");
-        if (!taskName || !taskDesc) return toast.error("Fill all fields");
+  return tasks.map(filterNode).filter((node): node is TaskNode => node !== null);
+}
 
-        setIsDispatching(true);
-        const tid = toast.loading(`Dispatching to ${targetAgent.toUpperCase()}...`);
+function getStatusTone(status: TaskStatus) {
+  switch (normalizeStatus(status)) {
+    case "completed":
+      return "bg-emerald-500/15 text-emerald-300 border-emerald-400/20";
+    case "failed":
+      return "bg-rose-500/15 text-rose-300 border-rose-400/20";
+    default:
+      return "bg-cyan-500/15 text-cyan-300 border-cyan-400/20";
+  }
+}
 
-        try {
-            const timestamp = new Date().toISOString();
-            const message = `Agent Nexus Dispatch\nAgent: ${targetAgent}\nTask: ${taskName}\nTime: ${timestamp}`;
-            const signature = await signMessageAsync({ message });
+function getStatusLabel(status: TaskStatus) {
+  switch (normalizeStatus(status)) {
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+    default:
+      return "Processing";
+  }
+}
 
-            const response = await fetch('/api/admin/NEXUS_DISPATCH', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    wallet_address: address,
-                    signature,
-                    message,
-                    task_name: taskName,
-                    task_description: taskDesc,
-                    target_agent: targetAgent
-                })
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                toast.success("Task Synchronized to Nexus!", { id: tid });
-                setTaskName('');
-                setTaskDesc('');
-            } else {
-                throw new Error(result.error || "Dispatch failed");
-            }
-        } catch (err: unknown) {
-            const e = err as { message?: string };
-            toast.error(e.message || 'Dispatch failed', { id: tid });
-        } finally {
-            setIsDispatching(false);
-        }
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'completed': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
-            case 'failed': return <AlertCircle className="w-4 h-4 text-red-400" />;
-            case 'processing': return <RefreshCw className="w-4 h-4 text-indigo-400 animate-spin" />;
-            case 'pending': return <Clock className="w-4 h-4 text-slate-400 animate-pulse" />;
-            default: return <Activity className="w-4 h-4 text-slate-500" />;
-        }
-    };
-
-    const AgentCard = ({ name, icon: Icon, color, status }: { name: string; icon: ComponentType<{ className?: string }>; color: string; status: string }) => (
-        <div className={`cyber-pod p-6 rounded-[2rem] ${status === 'active'
-            ? 'border-indigo-500/30'
-            : 'opacity-60'
-            }`}>
-            <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-2xl bg-${color}-500/10 border border-${color}-500/20 shadow-[0_0_15px_rgba(0,0,0,0.5)]`}>
-                    <Icon className={`w-6 h-6 text-${color}-400 ${status === 'active' ? 'animate-pulse' : ''}`} />
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${status === 'active' ? `bg-${color}-400 animate-ping` : 'bg-slate-700'}`} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
-                        {status}
-                    </span>
-                </div>
-            </div>
-            <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{name}</h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Neural Link: Active</p>
+function TaskTreeNode({ node, depth = 0 }: { node: TaskNode; depth?: number }) {
+  return (
+    <div className={depth > 0 ? "ml-4 pl-4 border-l border-white/10" : ""}>
+      <div className="relative flex items-start gap-3 py-3">
+        <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
+          <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.65)]" />
         </div>
-    );
 
-    return (
-        <div className="space-y-8 animate-fade-in text-left">
-            {/* Header Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                <AgentCard name="OpenClaw" icon={Shield} color="indigo" status={stats.claw} />
-                <AgentCard name="Qwen-Coder" icon={Cpu} color="emerald" status={stats.qwen} />
-                <AgentCard name="DeepSeek" icon={Brain} color="purple" status={stats.deepseek} />
+        <div className="min-w-0 flex-1 rounded-2xl border border-white/5 bg-white/5 px-4 py-3 backdrop-blur-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-medium tracking-wide text-white/90">{node.title}</p>
+              <p className="mt-1 text-[11px] text-white/45">
+                {node.target_agent ? `Target: ${node.target_agent}` : "Target: Unassigned"}
+                {node.updatedAt ? ` • Updated ${node.updatedAt}` : ""}
+              </p>
             </div>
 
-            {/* Quick Dispatch Form */}
-            <div className="glass-card p-10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-5">
-                    <Sparkles className="w-24 h-24 text-indigo-500" />
-                </div>
-
-                <div className="relative">
-                    <h2 className="text-xl font-black text-white tracking-[0.1em] flex items-center gap-3 mb-1 uppercase">
-                        <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20" />
-                        NEXUS DISPATCH
-                    </h2>
-                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mb-8">Deploy Autonomous Task to Ecosystem</p>
-
-                    <form onSubmit={handleDispatch} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-2 space-y-4">
-                            <input
-                                type="text"
-                                placeholder="TASK NAME (e.g. Audit Pool Security)"
-                                value={taskName}
-                                onChange={(e) => setTaskName(e.target.value.toUpperCase())}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-bold text-white placeholder:text-slate-600 focus:border-indigo-500/50 outline-none transition-all"
-                            />
-                            <textarea
-                                placeholder="TASK DESCRIPTION & CONTEXT..."
-                                value={taskDesc}
-                                onChange={(e) => setTaskDesc(e.target.value)}
-                                rows={3}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-medium text-slate-300 placeholder:text-slate-600 focus:border-indigo-500/50 outline-none transition-all resize-none"
-                            />
-                        </div>
-                        <div className="space-y-4">
-                            <select
-                                value={targetAgent}
-                                onChange={(e) => setTargetAgent(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-bold text-white outline-none cursor-pointer appearance-none hover:bg-white/10 transition-all"
-                            >
-                                <option value="qwen" className="bg-[#080808]">TARGET: QWEN-CODER (Local)</option>
-                                <option value="claw" className="bg-[#080808]">TARGET: OPENCLAW (Security)</option>
-                                <option value="deepseek" className="bg-[#080808]">TARGET: DEEPSEEK (Logic)</option>
-                            </select>
-                            <button
-                                type="submit"
-                                disabled={isDispatching}
-                                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-2xl py-4 flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
-                            >
-                                {isDispatching
-                                    ? <RefreshCw className="w-4 h-4 animate-spin" />
-                                    : <><Send className="w-4 h-4" /> <span className="text-[10px] font-black uppercase tracking-widest">Execute Dispatch</span></>
-                                }
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <div
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium ${getStatusTone(
+                node.status
+              )}`}
+            >
+              {getStatusLabel(node.status)}
             </div>
+          </div>
 
-            {/* Task Feed */}
-            <div className="glass-card overflow-hidden">
-                <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
-                    <div>
-                        <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-3">
-                            <Terminal className="w-5 h-5 text-indigo-400" />
-                            NEXUS LIVE FEED
-                        </h2>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">Real-time Multi-Agent Activity</p>
-                    </div>
-                    <button
-                        onClick={fetchTasks}
-                        className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group"
-                    >
-                        <RefreshCw className={`w-4 h-4 text-slate-400 group-hover:text-white ${loading ? 'animate-spin' : ''}`} />
-                    </button>
-                </div>
-
-                <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto custom-scrollbar">
-                    {tasks.length === 0 ? (
-                        <div className="p-20 text-center opacity-30">
-                            <Zap className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-                            <p className="text-[10px] font-black uppercase tracking-widest">No Recent Activity Detected</p>
-                        </div>
-                    ) : (
-                        tasks.map((task) => (
-                            <div key={task.id} className="p-6 hover:bg-white/[0.02] transition-colors group">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-4 flex-1">
-                                        <div className="mt-1">
-                                            {getStatusIcon(task.status)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${task.target_agent === 'claw' ? 'bg-indigo-500/10 text-indigo-400' :
-                                                    task.target_agent === 'qwen' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                        'bg-purple-500/10 text-purple-400'
-                                                    }`}>
-                                                    {task.target_agent}
-                                                </span>
-                                                <h4 className="text-xs font-bold text-white truncate group-hover:text-indigo-300 transition-colors uppercase tracking-wider">
-                                                    {task.task_name}
-                                                </h4>
-                                            </div>
-                                            <p className="text-[11px] text-slate-400 font-medium line-clamp-2 leading-relaxed">
-                                                {task.task_description}
-                                            </p>
-
-                                            {Boolean(task.output_data && (typeof task.output_data === 'object' ? Object.keys(task.output_data as object).length > 0 : task.output_data)) && (
-                                                <div className="mt-4 p-4 bg-black/40 rounded-2xl border border-white/5 font-mono text-[10px] text-slate-300 overflow-hidden">
-                                                    <div className="flex items-center gap-2 mb-2 text-slate-500 uppercase tracking-widest font-black text-left">
-                                                        <Activity className="w-3 h-3" /> Output Log
-                                                    </div>
-                                                    <div className="opacity-80 leading-relaxed overflow-x-auto whitespace-pre-wrap text-left">
-                                                        {String((task.output_data as { result?: unknown })?.result
-                                                            ? (typeof (task.output_data as { result?: unknown }).result === 'string' ? String((task.output_data as { result?: unknown }).result) : JSON.stringify((task.output_data as { result?: unknown }).result, null, 2))
-                                                            : (typeof task.output_data === 'string' ? task.output_data : JSON.stringify(task.output_data, null, 2)))
-                                                        }
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">
-                                            {new Date(task.created_at).toLocaleTimeString()}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
+          {node.output ? (
+            <p className="mt-3 whitespace-pre-wrap text-[11px] leading-5 text-white/70">{node.output}</p>
+          ) : null}
         </div>
-    );
-};
+      </div>
+
+      {node.children?.length ? (
+        <div className="ml-2">
+          {node.children.map((child) => (
+            <TaskTreeNode key={child.id} node={child} depth={depth + 1} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function NexusMonitorTab({
+  tasks,
+  outputLog = "",
+  loading = false,
+  lastUpdated,
+}: NexusMonitorTabProps) {
+  const [selectedAgent, setSelectedAgent] = useState<AgentName | null>(null);
+  const [isOutputOpen, setIsOutputOpen] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const visibleTasks = useMemo(
+    () => filterTasksByAgent(tasks, selectedAgent),
+    [tasks, selectedAgent]
+  );
+
+  const stats = useMemo(() => countTasks(visibleTasks), [visibleTasks]);
+  const completionPct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(outputLog || "");
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <section className="space-y-5 text-white">
+      <div className="rounded-3xl border border-white/5 bg-white/5 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold tracking-wide text-white/90">Nexus Monitor</h2>
+            <p className="mt-1 text-[11px] text-white/45">
+              {loading ? "Synchronizing live task feed..." : "Real-time hierarchical task feed"}
+              {lastUpdated ? ` • Last updated ${lastUpdated}` : ""}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSelectedAgent(null)}
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 transition hover:bg-white/10"
+          >
+            Clear Filter
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Total Tasks", value: stats.total },
+            { label: "Completed", value: stats.completed },
+            { label: "Failed", value: stats.failed },
+            { label: "Processing", value: stats.processing },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl border border-white/5 bg-white/5 px-4 py-3 backdrop-blur-xl"
+            >
+              <p className="text-[11px] text-white/45">{item.label}</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-white/90">{item.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] text-white/60">Completion</p>
+            <p className="text-[11px] text-white/70">{completionPct}%</p>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 transition-all duration-300"
+              style={{ width: `${completionPct}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-white/5 bg-white/5 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-white/90">Agent Registry</h3>
+          <p className="text-[11px] text-white/45">12 agents</p>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+          {AGENTS.map((agent) => {
+            const active = selectedAgent === agent;
+            return (
+              <button
+                key={agent}
+                type="button"
+                onClick={() => setSelectedAgent(active ? null : agent)}
+                className={[
+                  "rounded-2xl border px-3 py-3 text-left transition backdrop-blur-xl",
+                  active
+                    ? "border-cyan-400/30 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.15)]"
+                    : "border-white/5 bg-white/5 hover:bg-white/10",
+                ].join(" ")}
+              >
+                <p className="text-[11px] font-medium text-white/90">{agent}</p>
+                <p className="mt-1 text-[11px] text-white/45">
+                  {active ? "Filtered" : "Click to filter"}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-white/5 bg-white/5 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-white/90">Hierarchical Task Feed</h3>
+          <p className="text-[11px] text-white/45">{visibleTasks.length} root node(s)</p>
+        </div>
+
+        <div className="mt-4">
+          {visibleTasks.length ? (
+            visibleTasks.map((task) => <TaskTreeNode key={task.id} node={task} />)
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-[11px] text-white/45">
+              No tasks match the current filter.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-white/5 bg-white/5 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={() => setIsOutputOpen((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+          aria-expanded={isOutputOpen}
+          aria-controls="nexus-output-log"
+        >
+          <div>
+            <h3 className="text-sm font-semibold text-white/90">Output Log</h3>
+            <p className="mt-1 text-[11px] text-white/45">Collapsible execution log with quick copy</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleCopy();
+              }}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 transition hover:bg-white/10"
+              aria-label="Copy output log"
+            >
+              {copied ? "Copied" : "Copy"}
+            </button>
+            <span className="text-white/40">{isOutputOpen ? "−" : "+"}</span>
+          </div>
+        </button>
+
+        {isOutputOpen ? (
+          <div id="nexus-output-log" className="border-t border-white/5 p-4">
+            <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl border border-white/5 bg-black/20 p-4 text-[11px] leading-5 text-white/75">
+              {outputLog || "No output available."}
+            </pre>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}

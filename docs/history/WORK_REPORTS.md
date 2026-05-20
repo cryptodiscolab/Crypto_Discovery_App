@@ -1,0 +1,142 @@
+# Historical Work Reports Log
+
+This document serves as the central registry for historical Work Reports within the Crypto Discovery App project. These reports are moved here from `.cursorrules` to maintain token efficiency and code cleanliness.
+
+---
+
+## 🟢 Work Report v3.64.13-Hardened: Nexus Monitor Live Dashboard
+**Status**: ✅ IMPLEMENTED
+**Summary**: Created a live hierarchical agent delegation dashboard inside the admin panel with zero compilation or lint warnings, and stabilized the multi-agent loop via model redirection.
+**Changes**:
+1. **Model Optimization**: Replaced OrchestratorBot model config with `gpt-5.4` on the Freemodel endpoint to resolve 504 timeouts.
+2. **Frontend UI**: Built `NexusMonitorTab.tsx` with a premium glassmorphic Cyberpunk style, interactive filters, visual delegation tree paths, and collapsible stdout clipboard copy log entries.
+3. **TypeScript**: Cleaned all unused imports to guarantee a 100% warning-free build passing ESLint.
+4. **Audit Verification**: Verified the entire codebase using check_sync_status and anti-negligence hooks.
+
+---
+
+## 🟢 Work Report v3.64.12-Hardened: SDK-Level Recursive Sub-Agent Delegation
+**Status**: ✅ IMPLEMENTED
+**Summary**: Equipped the entire multi-agent workspace with native, recursive sub-agent delegation capabilities at the SDK level (`antigravity_sdk.py`).
+**Changes**:
+1. **SDK**: Added global `SUB_AGENTS_REGISTRY` catalog.
+2. **Orchestration**: Updated `DynamicSubAgent.ask` to detect, execute, and resolve delegation tags (`[DELEGATE: AgentName -> Prompt]`) recursively up to a depth of 3.
+3. **Safety**: Ensured all execution prints utilize standard ASCII outputs to prevent Windows cp1252 unicode print failures.
+4. **Docs**: Registered the implementation status.
+
+---
+
+## 🟢 Work Report v3.64.3-Hardened: Hermes & LiteLLM Ecosystem Cleanout
+**Status**: ✅ IMPLEMENTED
+**Summary**: Purged LiteLLM and Hermes Agent installations from the WSL environment and project directory to reduce technical debt, while fully preserving all Freemodel and DeepSeek API keys in the `.env` configuration file.
+**Changes**:
+1. **WSL Environment**: Uninstalled the `litellm` uv tool (litellm and litellm-proxy binaries) and purged the `hermes-agent` installation and all related configurations/databases under `~/.hermes/` except for the system's `node` runtime.
+2. **Project Workspace**: Safely deleted the gitignored `.litellm/` configuration folder containing run scripts.
+3. **Docs**: Updated Implementation Summary, Master PRD, Workspace Map, and Ecosystem Protocols to record the cleanup and maintain pristine architecture records.
+
+---
+
+## 🟢 Work Report v3.56.0: Performance Optimization (Modal INP Fix)
+**Status**: ✅ IMPLEMENTED
+**Summary**: Resolusi kritis terhadap INP (>200ms) pada Profile Page melalui implementasi React `startTransition` untuk seluruh modal-toggling state updates.
+**Changes**:
+1. **Frontend**: Optimasi `ProfilePage.jsx` dengan concurrent rendering logic.
+2. **UX**: Reduksi input delay dari ~200ms menjadi <50ms.
+3. **Docs**: Sinkronisasi seluruh protokol ekosistem ke v3.56.0.
+
+---
+
+## 🟢 Work Report v3.55.0: Raffle Rejection & Refund Protocol
+**Status**: ✅ IMPLEMENTED
+**Summary**: Implementasi penuh protokol refund otomatis saat moderasi Raffle ditolak. Memastikan integritas dana sponsor melalui kontrak Raffle v2.1.
+**Changes**:
+1. **Contract**: Deployed Raffle V2.1 (`0xA13AF...90Ce`) dengan fungsi `cancelRaffle`.
+2. **Dashboard**: Integrasi Wagmi `useWriteContract` pada `ModerationCenterTab.jsx`.
+3. **Audit**: Pembaruan NCC Sentinel untuk audit on-chain `cancelRaffle`.
+
+---
+
+## 🟢 Work Report v3.59.3: Multi-Token Sponsorship (V14) & Decimal Hardening
+**Status**: ✅ IMPLEMENTED
+**Summary**: Migrasi ke DailyApp V14 untuk mendukung sponsorship multi-token (USDC/ETH) dengan protokol normalisasi desimal 6-digit.
+**Changes**:
+1. **Contract**: DailyApp V14 (`0x888fE02bd09642de385E55DdC6D8a7Ab5580f834`) deployed & synced.
+2. **Infrastructure**: Normalisasi parameter moneter ke basis 6-desimal (USDC).
+3. **Docs**: Pembaruan Master PRD, SOT, dan Task Workflow ke v3.59.3.
+4. **ABI**: Sinkronisasi `abis_data.txt` dengan interface V14.
+
+---
+
+## 🟢 Work Report v3.61.0: Ecosystem Hardening (Kiro Audit) & 100% TS Migration
+**Status**: ✅ IMPLEMENTED & HARDENED
+**Summary**: Pengerasan ekosistem melalui implementasi mandat Kiro Deep Audit (Zero-Trust, Zero-Hardcode), migrasi 100% TypeScript pada seluruh bundle API serverless, dan penghapusan bypass tanda tangan.
+**Changes**:
+1. **Security**: Eliminasi `signature=bypass`. Enforce real EIP-191 signatures for all admin/claim actions.
+2. **Hardening**: Integrasi `waitForTransactionReceipt` untuk 35 on-chain write operations.
+3. **Infrastructure**: Zero-Hardcode mandate enforced via dynamic .env configuration for Verifiers and Fees.
+4. **Types**: Regenerasi `database.types.ts` dengan skema produksi terbaru.
+5. **Git**: Cleanup audit artifacts dan file skema basi (`supabase_schema.sql`).
+6. **Docs**: Sinkronisasi seluruh protokol ekosistem ke v3.61.0-Hardened.
+
+---
+
+## 🟢 Work Report v3.60.4: Daily Retention Hardening & Tier Reconciliation
+**Status**: ✅ IMPLEMENTED
+**Summary**: Finalisasi pengerasan infrastruktur Daily Retention dan rekonsiliasi Tier ekosistem.
+**Changes**:
+1. **Tier**: Sinkronisasi ambang batas XP antara MasterX dan DailyApp (Bronze: 100 dst).
+2. **Retention**: Penegakan identity gating (`is_base_social_verified`) untuk bonus harian.
+3. **Docs**: Sinkronisasi seluruh protokol ekosistem ke v3.60.4.
+
+---
+
+## 🟢 Work Report v3.60.2: TypeScript Ecosystem Hardening & Git Hygiene
+**Status**: ✅ IMPLEMENTED
+**Summary**: Pengerasan ekosistem melalui migrasi 100% TSX pada komponen admin, resolusi type-safety pada dashboard utama, dan penegakan Git Hygiene (Clean Tree Mandate).
+**Changes**:
+1. **Frontend**: Refaktor `UnifiedDashboard.tsx`, `TaskList.tsx`, dan komponen Admin ke strict TSX. Resolusi `never[]` type errors.
+2. **Git**: Hardening `.gitignore` untuk mencegah leak `.env.vercel*` dan pembersihan otomatis audit artifacts.
+3. **Docs**: Sinkronisasi seluruh protokol ekosistem ke v3.60.2.
+
+---
+
+## 🟢 Work Report v3.59.5: Raffle Admin Hardening & Platform Economics
+**Status**: ✅ IMPLEMENTED
+**Summary**: Pengerasan infrastruktur admin raffle dengan kontrol ekonomi dinamis (Rake/Fee) dan portal penarikan pendapatan kreator (80/20 split).
+**Changes**:
+1. **Frontend**: Integrasi `AdminRaffleSettings` dan `CreatorEarningsCard` di Dashboard.
+2. **Contract**: Hardening `CryptoDiscoRaffle.sol` dengan `claimFeeBP` dan pencegahan double-payout.
+3. **Mandate**: Penegakan 100% **Zero-Hardcode Mandate** pada seluruh alur pembuatan raffle.
+4. **Docs**: Pembaruan Master PRD, SOT, dan Roadmap ke v3.59.5.
+
+---
+
+### 🟢 WORK REPORT: v3.59.0 (Ecosystem Infrastructure Hardening)
+- **Zero-Hardcode Mandate**: Refactored `abis_data.txt` to remove all static contract addresses, forcing the system to rely purely on `.env` vars.
+- **Global Parity Sync**: Executed `sync-all-envs.cjs` across all 15+ environment files.
+- **Contract Sync**: Base Sepolia addresses for `DailyApp` and `Raffle` synchronized across all protocols.
+- **UGC Security**: Implemented link regex guards and multi-action bounds in `admin-bundle.js`.
+- **Lurah Recovery**: Telegram webhook re-registered to `dailyapp-verification-server.vercel.app/api/webhook/telegram`.
+- **Audit Compliance**: 100% (13/13) Success on final environment audit.
+- **Master Architect Status**: `🟢 ALL SYSTEMS SYNCHRONIZED`
+
+---
+
+## 🟢 Work Report v3.51.2: Ghost Claim & State Lockout Fix
+**Status**: ✅ IMPLEMENTED
+**Root Cause**: 
+1. **State Lockout**: A strict pre-check in `tasks-bundle.js` threw an error if a claim record existed, even if the previous attempt failed to award XP or log activity. This prevented retries from ever finishing the job.
+2. **Sync Desync**: Missing RLS on `user_task_claims` (likely) caused the frontend to see the task as available, while the backend saw it as claimed, causing an infinite error loop.
+3. **Incomplete Logs**: `logActivity` lacked `task_id` in metadata, making it impossible to programmatically verify if a specific task was processed.
+
+**Technical Changes**:
+1. **Self-Healing Pipeline**: `tasks-bundle.js` now detects if a claim insert fails due to a pre-existing record. It then checks for missing logs/XP and performs an automatic recovery (idempotent XP award).
+2. **Removed Strict Pre-Check**: Shifted uniqueness enforcement to the DB UNIQUE constraint to allow the healing logic to trigger.
+3. **Enhanced Logging**: All task logs now include `task_id` in the `metadata` field for reliable auditing.
+4. **UI Resiliency**: `TaskList.jsx` now catches "already completed" errors and performs an immediate local sync/hide.
+
+---
+
+## 🟢 Work Report v3.51.1: Dual Pipeline Routing Fix
+**Status**: ✅ IMPLEMENTED
+**Summary**: Resolution of dual routing logic between Web3 identity verification and daily reward claims to avoid transaction blockages.
