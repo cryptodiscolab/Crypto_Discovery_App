@@ -1,10 +1,10 @@
 ---
 name: Git Hygiene & Clean Tree Manager
 description: Protokol untuk menjaga repositori Git tetap bersih dan organized. Skill ini menegakkan Clean Git Tree Mandate dari gemini.md (Section 27) yang melarang file sementara, secrets, dan artefak lainnya masuk ke source control. Berlaku untuk Antigravity dan semua sub-agents.
-version: v3.63.7-Hardened
+version: v3.64.13-Hardened
 ---
 
-## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.7-Hardened)
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.64.13-Hardened)
 - **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
 - **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
 - **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
@@ -108,13 +108,13 @@ Remove-Item tmp_*.cjs, tmp_*.js, tsc_output*.txt, lint_results*.txt
 
 ## 5. Penanggung Jawab
 
-Skill ini WAJIB dipahami dan diterapkan oleh **semua agents**:
-- **Antigravity** — Lead agent, bertanggung jawab atas state akhir `.gitignore`.
-- **OpenClaw** — Security audit, termasuk mencari secrets yang tidak sengaja tertrack.
-- **Qwen / DeepSeek** — Sub-agents harus menghapus file sementara setelah selesai.
+Skill ini WAJIB dipahami dan diterapkan oleh **semua 12 agents**:
+- **Antigravity / OrchestratorBot** — Lead agent, bertanggung jawab atas state akhir `.gitignore` dan pengawasan pipeline.
+- **SecurityBot** — Security audit, termasuk mencari secrets yang tidak sengaja tertrack.
+- **CodeBot / FrontendBot / ContractBot** — Sub-agents harus menghapus file sementara (seperti `tsc-errors*.txt`, scratch files, dll) setelah selesai.
 
 ---
 
 ---
 
-*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.63.7-Hardened.*
+*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.64.13-Hardened.*
