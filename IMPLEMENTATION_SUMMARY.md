@@ -4,6 +4,20 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.10-Hardened (UGC Server-Side Market Oracle Enforcement)
+- **Status**: Fixed and verified.
+- **Backend Oracle Guard**: `user-bundle.ts` now resolves UGC mission reward prices server-side using the configured DB price map first, live DexScreener market data for ERC20 tokens, and Binance ETHUSDC for native ETH/WETH fallback.
+- **Fail-Closed Budget Validation**: Mission creation now rejects non-USDC tokens when a live USD price cannot be resolved, preventing whitelist-only tokens from bypassing the minimum USDC-equivalent reward guard.
+- **Frontend Price Safety**: `CreateMissionPage.tsx` no longer assumes `$1` for missing token prices and disables mission launch while the selected token's live market price is unavailable.
+
+## 🟢 v3.64.9-Hardened (UGC Mission Reward Budget & Decimals Optimization)
+- **Status**: Fixed, audited, and synchronized.
+- **UGC Config Update**: Changed `min_reward_amount` in Supabase `system_settings` -> `ugc_config` to `'0.01'` USDC to allow users to create missions with low reward rates per user (e.g. $0.01 USDC equivalent) for alternative whitelist tokens like ETH, WETH, and DEGEN.
+- **Frontend Input Guard**: Replaced strict native validations (`step="0.01"` and `min="0.01"`) on the `reward_amount_per_user` number input in `CreateMissionPage.tsx` with `step="any"` and `min="0"`. This allows seamless input of highly-fractional token amounts (e.g., `0.00004735 ETH`).
+- **Dynamic Conversion Display**: Upgraded the live USDC equivalent preview under the input field in `CreateMissionPage.tsx` to dynamically format with up to 6 decimal places (using `toLocaleString`) to prevent small fractional values from rounding to $0.00.
+- **Backend Budget Validation**: Added a corresponding check inside `/api/user-bundle` (`sync-ugc-mission` action) that resolves the active token price from `token_prices_usd` and validates that the reward per user is at least the target `$0.01 USDC equivalent` (with a 5% float/slippage buffer) to prevent API bypass while preventing false positives from oracle price lag.
+- **Profile Modal Parity**: Aligned `CreateTaskModal.tsx` useEffect contract check to support both the legacy `'0.1'` and new `'0.01'` default reward thresholds during `minRewardPoolValue` validation.
+
 ## 🟢 v3.64.8-Hardened (Reconciliation & Daily Claim Pipeline Stabilization)
 - **Status**: Fixed, audited, and synchronized.
 - **Reconciliation Engine Hardening**: Refactored the backend sync pipeline in `user-bundle.ts` (action: `sync`) to implement dynamic on-chain state reconciliation. The API now fetches the user's latest on-chain claim status via RPC, compares it with the database's `last_daily_claim`, and automatically reconciles any out-of-sync claims. This solves the two-phase commit edge cases where a transaction succeeded on-chain but the database sync failed or timed out.

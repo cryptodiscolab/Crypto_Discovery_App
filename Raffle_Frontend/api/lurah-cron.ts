@@ -12,23 +12,6 @@ import {
     getEnv
 } from './_shared/constants.js';
 
-// Move initialization inside handler to prevent top-level invocation failures
-type LurahDynamicClient = {
-    from: (table: string) => {
-        select: (columns: string, options?: Record<string, unknown>) => unknown;
-        upsert: (row: Record<string, unknown>, options: { onConflict: string }) => unknown;
-    };
-};
-type TopUserQuery = {
-    select: (columns: string) => {
-        order: (column: string, options: { ascending: boolean }) => {
-            limit: (count: number) => {
-                maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
-            };
-        };
-    };
-};
-
 let supabase: ReturnType<typeof createClient> | null = null;
 const getSupabase = () => {
     if (supabase) return supabase;
@@ -53,6 +36,19 @@ interface AuditResults {
     duration?: number;
     error?: string;
 }
+
+interface SystemHealthHeartbeat {
+    service_key: string;
+    status: string;
+    last_heartbeat: string;
+    last_error: string | null;
+}
+
+type SystemHealthClient = {
+    from: (table: 'system_health') => {
+        upsert: (row: SystemHealthHeartbeat, options: { onConflict: string }) => PromiseLike<unknown>;
+    };
+};
 
 /**
  * Executes a task with an individual timeout and error boundary
@@ -133,7 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // 3. Parity & State Audit
             runWithTimeout("Parity & State Audit", (async () => {
                 // Check XP Parity for Top User
-                const { data: topUser } = await (getSupabase() as any).from('user_profiles')
+                const { data: topUser } = await getSupabase().from('user_profiles')
                     .select('wallet_address, total_xp')
                     .order('total_xp', { ascending: false })
                     .limit(1)
@@ -182,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Update Global Health State (Essential Heartbeat)
         try {
-            await (getSupabase() as any).from('system_health').upsert({
+            await (getSupabase() as unknown as SystemHealthClient).from('system_health').upsert({
                 service_key: 'lurah_ekosistem',
                 status: auditResults.status.toLowerCase(),
                 last_heartbeat: new Date().toISOString(),

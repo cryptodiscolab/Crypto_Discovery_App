@@ -8,8 +8,10 @@
 import abisDataRaw from './abis_data.txt?raw';
 import { getAddress } from 'viem';
 
-let _cache: any = null;
-const _get = (): any => {
+type ParsedAbiData = ReturnType<typeof JSON.parse>;
+
+let _cache: ParsedAbiData | null = null;
+const _get = (): ParsedAbiData => {
   if (!_cache) {
     try {
       _cache = JSON.parse(abisDataRaw);
@@ -25,16 +27,16 @@ const _get = (): any => {
 const createAbiProxy = (name: string) => {
   return new Proxy([], {
     get: (_target, prop) => {
-      const realAbi = (_get().ABIS as any)[name] || [];
-      const value = realAbi[prop as any];
+      const realAbi = _get().ABIS[name] || [];
+      const value = Reflect.get(realAbi, prop);
       return typeof value === 'function' ? value.bind(realAbi) : value;
     },
     getOwnPropertyDescriptor: (_target, prop) => {
-      const realAbi = (_get().ABIS as any)[name] || [];
+      const realAbi = _get().ABIS[name] || [];
       return Object.getOwnPropertyDescriptor(realAbi, prop);
     },
     ownKeys: (_target) => {
-      const realAbi = (_get().ABIS as any)[name] || [];
+      const realAbi = _get().ABIS[name] || [];
       return Reflect.ownKeys(realAbi);
     }
   });

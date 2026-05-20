@@ -327,7 +327,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'GET_ERROR_LOGS': {
                 const limit = Number(payloadRecord.limit || 100);
                 const severity = payloadRecord.severity || null;
-                let query: any = (supabaseAdmin as any).from('system_error_logs')
+                let query = (supabaseAdmin as unknown as GenericErrorLogClient).from('system_error_logs')
                     .select('*')
                     .order('created_at', { ascending: false })
                     .limit(limit);

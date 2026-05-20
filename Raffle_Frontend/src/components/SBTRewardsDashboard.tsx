@@ -107,9 +107,13 @@ export function SBTRewardsDashboard() {
             } catch (syncErr) {
                 console.warn('Pool Sync failed:', syncErr);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            toast.error(err.shortMessage || "Transaction failed", { id: tid });
+            const txError = err as { shortMessage?: unknown };
+            const errorMessage = typeof txError.shortMessage === 'string'
+                ? txError.shortMessage
+                : err instanceof Error ? err.message : "Transaction failed";
+            toast.error(errorMessage, { id: tid });
         } finally {
             setIsClaiming(false);
         }
@@ -264,8 +268,8 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
                     .select('*')
                     .maybeSingle();
                 if (!error && data && mounted) setStats(data);
-            } catch (e: any) {
-                console.warn('[SBTTierBreakdown] fetch error:', e.message);
+            } catch (e: unknown) {
+                console.warn('[SBTTierBreakdown] fetch error:', e instanceof Error ? e.message : String(e));
             } finally {
                 if (mounted) setLoading(false);
             }

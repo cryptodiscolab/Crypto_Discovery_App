@@ -87,6 +87,12 @@ interface MissionFormData {
     minNeynarScore: string;
 }
 
+interface WhitelistedToken {
+    address: string;
+    symbol: string;
+    decimals?: number;
+}
+
 export function CreateMissionPage() {
     const { address, isConnected } = useAccount();
     const chainId = useChainId();
@@ -114,7 +120,7 @@ export function CreateMissionPage() {
         description: '',
         platform: 'farcaster',
         link: '',
-        reward_amount_per_user: '0.1', // USDC
+        reward_amount_per_user: '0.01', // USDC
         max_participants: '100',
         duration_days: '7',
         isBaseSocialRequired: false,
@@ -128,14 +134,14 @@ export function CreateMissionPage() {
     const [showPortfolio, setShowPortfolio] = useState(false);
 
     // Initial state matching design spec
-    const [whitelistedTokens, setWhitelistedTokens] = useState<any[]>([]);
+    const [whitelistedTokens, setWhitelistedTokens] = useState<WhitelistedToken[]>([]);
     const [selectedTokenAddr, setSelectedTokenAddr] = useState<string>('0x0000000000000000000000000000000000000000');
 
     // Fetch prices for all whitelisted tokens
-    const tokenAddresses = useMemo(() => whitelistedTokens.map((t: any) => t.address), [whitelistedTokens]);
-    const { prices: tokenPrices } = usePriceOracle(tokenAddresses);
+    const tokenAddresses = useMemo(() => whitelistedTokens.map((t) => t.address), [whitelistedTokens]);
+    const { prices: tokenPrices, isLoading: isPriceLoading } = usePriceOracle(tokenAddresses);
 
-    const selectedToken = whitelistedTokens.find((t: any) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
+    const selectedToken = whitelistedTokens.find((t) => t.address.toLowerCase() === selectedTokenAddr.toLowerCase());
     const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
 
     // Reset actions when platform changes
@@ -178,9 +184,12 @@ export function CreateMissionPage() {
             if (!address || !publicClient || !chainId) return;
             try {
                 const { data: tokens } = await supabase.from('allowed_tokens').select('*').eq('chain_id', chainId).eq('is_active', true);
-                if (tokens && tokens.length > 0) {
-                    setWhitelistedTokens(tokens);
-                    const defaultToken = tokens.find((t: any) => t.symbol === 'USDC') || tokens[0];
+                const tokenRows = (tokens || []).filter((token): token is WhitelistedToken =>
+                    typeof token.address === 'string' && typeof token.symbol === 'string'
+                );
+                if (tokenRows.length > 0) {
+                    setWhitelistedTokens(tokenRows);
+                    const defaultToken = tokenRows.find((t) => t.symbol === 'USDC') || tokenRows[0];
                     setSelectedTokenAddr(defaultToken.address);
                 }
                 fetchCurrentBalance();
@@ -287,12 +296,13 @@ export function CreateMissionPage() {
         if (selectedActions.length === 0) return toast.error('Select at least 1 action.');
         if (selectedActions.length > 3) return toast.error('[Multi-Action Bound] Maximum 3 actions per mission.');
 
-        // [v3.63.8] Hardened Budget Validations
-        const minRewardUsdc = parseFloat(ugcConfig.min_reward_amount) || 0.1;
-        const rewardAmountUsdc = parseFloat(formData.reward_amount_per_user) * (selectedToken?.symbol === 'USDC' ? 1 : (stats.tokenPrice || 1));
+        // [v3.64.9] Hardened Budget Validations (Min reward 0.01 USDC equivalent per task)
+        const minRewardPerTaskUsdc = parseFloat(ugcConfig.min_reward_amount) || 0.01;
+        const minRewardUsdc = minRewardPerTaskUsdc * selectedActions.length;
+        const rewardAmountUsdc = parseFloat(formData.reward_amount_per_user) * stats.tokenPrice;
 
         if (rewardAmountUsdc < minRewardUsdc) {
-            return toast.error(`[Budget Guard] Reward per user must be at least $${minRewardUsdc} USDC equivalent.`);
+            return toast.error(`[Budget Guard] Reward per user must be at least $${minRewardUsdc.toFixed(2)} USDC equivalent for ${selectedActions.length} task(s) ($${minRewardPerTaskUsdc.toFixed(2)} per task).`);
         }
 
         if (parseInt(formData.max_participants) > (ugcConfig.max_participants_limit || 10000)) {
@@ -703,7 +713,7 @@ export function CreateMissionPage() {
                                                     onChange={(e) => setSelectedTokenAddr(e.target.value)}
                                                     className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer pr-12"
                                                 >
-                                                    {whitelistedTokens.map((t: any, i) => (
+                                                    {whitelistedTokens.map((t, i) => (
                                                         <option key={i} value={t.address} className="bg-[#0B0E14]">
                                                             {t.symbol} — {t.address === '0x0000000000000000000000000000000000000000' ? 'NATIVE' : `${t.address.slice(0,6)}...${t.address.slice(-4)}`}
                                                         </option>
@@ -720,8 +730,8 @@ export function CreateMissionPage() {
                                             <div className="bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[2rem] group focus-within:border-emerald-500/30 transition-all">
                                                 <input
                                                     type="number"
-                                                    step="0.01"
-                                                    min="0.01"
+                                                    step="any"
+                                                    min="0"
                                                     className="w-full bg-transparent text-white font-black text-3xl outline-none font-mono"
                                                     value={formData.reward_amount_per_user}
                                                     onChange={e => setFormData(prev => ({ ...prev, reward_amount_per_user: e.target.value }))}
@@ -730,7 +740,7 @@ export function CreateMissionPage() {
                                                     <span>Paid in {selectedToken?.symbol || 'USDC'} via Base</span>
                                                     {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
                                                         <span className="text-slate-400 font-mono font-bold lowercase tracking-normal">
-                                                            (≈ {((parseFloat(formData.reward_amount_per_user) || 0) * stats.tokenPrice).toFixed(2)} USDC)
+                                                            (≈ {((parseFloat(formData.reward_amount_per_user) || 0) * stats.tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDC)
                                                         </span>
                                                     )}
                                                 </p>
@@ -757,9 +767,9 @@ export function CreateMissionPage() {
 
                             <button
                                 type="submit"
-                                disabled={isSubmitting || !ugcConfig.is_active}
+                                disabled={isSubmitting || !ugcConfig.is_active || !stats.isPriceAvailable}
                                 className={`w-full p-6 rounded-[2.5rem] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all transform active:scale-[0.98] ${
-                                    isSubmitting || !ugcConfig.is_active
+                                    isSubmitting || !ugcConfig.is_active || !stats.isPriceAvailable
                                     ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                                     : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-[0_0_40px_-10px_rgba(79,70,229,0.4)]'
                                 }`}
@@ -771,6 +781,8 @@ export function CreateMissionPage() {
                                         <Loader2 className="w-6 h-6 animate-spin" />
                                         <span>VERIFYING PAYMENT...</span>
                                     </div>
+                                ) : !stats.isPriceAvailable ? (
+                                    <>{isPriceLoading ? 'LOADING MARKET PRICE' : 'PRICE ORACLE UNAVAILABLE'} <Lock className="w-5 h-5" /></>
                                 ) : (
                                     <>LAUNCH MISSION — {stats.totalAmount} {selectedToken?.symbol || 'USDC'} <ArrowRight className="w-5 h-5" /></>
                                 )}

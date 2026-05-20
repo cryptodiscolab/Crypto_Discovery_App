@@ -1,7 +1,7 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.8-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.10-Hardened)
 
-- **Ecosystem Version:** v3.64.8-Hardened
-- **Last Updated:** 2026-05-19T19:50:00+07:00
+- **Ecosystem Version:** v3.64.10-Hardened
+- **Last Updated:** 2026-05-20T00:00:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
@@ -4421,3 +4421,40 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
 ---
 *Created by Antigravity — Nexus Master Architect*
 *Integrity First. Nexus Synchronized. v3.64.8 LOCKED.*
+
+---
+## 47. Work Report v3.64.9 — UGC Mission Budget Guard Escalation
+**Status**: COMPLETED
+**Date**: 2026-05-19
+**Focus**: Remediating UGC Mission budget validation to scale the minimum reward per user by the number of tasks in the mission.
+
+### Key Results:
+- **Scalable Budget Validation**:
+  - Remediated the frontend validation in `CreateMissionPage.tsx` to multiply the minimum reward per task (0.01 USDC) by the number of selected actions. This ensures a mission containing $N$ tasks requires at least $N \times 0.01$ USDC per user.
+  - Aligned the serverless backend validation in `user-bundle.ts` (`sync-ugc-mission` action) to perform the same scalable calculation using the `tasks_batch` length to prevent DevTools bypass.
+- **Robust Build & Parity Checks**:
+  - Re-run frontend production bundling (`npm run build`) successfully.
+  - Compiled the Master PRD markdown into accessibile HTML via `marked` to satisfy the PRD compilation mandate.
+  - Verified ecosystem synchronization and secret leaks checks via `check_sync_status.cjs` and `agent_anti_negligence_hook.cjs` successfully (all 13 matrix checks passed).
+
+---
+*Created by Antigravity — Nexus Master Architect*
+*Integrity First. Nexus Synchronized. v3.64.9 LOCKED.*
+
+---
+## 48. Work Report v3.64.10 — UGC Server-Side Market Oracle Enforcement
+**Status**: COMPLETED
+**Date**: 2026-05-20
+**Focus**: Closing the gap between frontend live market conversion and backend reward-budget enforcement for newly whitelisted payment tokens.
+
+### Key Results:
+- **Backend Market Oracle Guard**:
+  - Added server-side USD price resolution in `user-bundle.ts` for UGC mission creation. The API now checks configured `token_prices_usd`, then resolves live ERC20 prices through DexScreener, with Binance ETHUSDC fallback for native ETH/WETH.
+  - Changed backend validation to fail closed when a non-USDC token has no resolvable market price, preventing whitelist-only tokens from bypassing the minimum USDC-equivalent reward guard.
+- **Frontend Price Safety**:
+  - Removed the `$1` fallback from `CreateMissionPage.tsx` budget validation and disabled mission launch while the selected token's live price is unavailable.
+  - Kept the existing real-time oracle UX while making backend validation the final source of truth for task creation.
+
+---
+*Created by Antigravity — Nexus Master Architect*
+*Integrity First. Nexus Synchronized. v3.64.10 LOCKED.*

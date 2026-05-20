@@ -223,8 +223,8 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
             setClaimResult(data);
             setClaimed(true);
             toast.success(`🎉 +${data.xp} XP & ${data.usdc_reward} ${data.reward_symbol} claimed!`, { id: tid, duration: 6000 });
-        } catch (err: any) {
-            toast.error(err.message || 'Claim failed.', { id: tid });
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Claim failed.', { id: tid });
         } finally {
             setIsClaiming(false);
         }

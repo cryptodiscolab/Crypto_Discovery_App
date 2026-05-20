@@ -79,6 +79,92 @@ type UnknownTableClient = {
 };
 
 const toJson = (value: unknown): Json => value as Json;
+const DEX_SCREENER_BASE_URL = 'https://api.dexscreener.com/latest/dex/tokens';
+const NATIVE_TOKEN_ADDRESSES = new Set([
+    '0x0000000000000000000000000000000000000000',
+    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+]);
+
+type TokenPriceMap = Record<string, unknown>;
+type DexScreenerPair = {
+    baseToken?: { address?: string };
+    liquidity?: { usd?: string | number };
+    priceUsd?: string;
+};
+
+const toPositiveNumber = (value: unknown): number => {
+    const parsed = typeof value === 'number' ? value : parseFloat(String(value ?? ''));
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const normalizeTokenAddress = (address?: string | null): string => (address || '').trim().toLowerCase();
+
+const lookupConfiguredTokenPrice = (
+    tokenPrices: TokenPriceMap,
+    symbol: string,
+    tokenAddress?: string | null
+): number => {
+    const normalizedSymbol = symbol.toUpperCase();
+    const normalizedAddress = normalizeTokenAddress(tokenAddress);
+    return (
+        toPositiveNumber(tokenPrices[normalizedSymbol]) ||
+        toPositiveNumber(tokenPrices[normalizedSymbol.toLowerCase()]) ||
+        toPositiveNumber(tokenPrices[normalizedAddress]) ||
+        (normalizedSymbol === 'ETH' || normalizedSymbol === 'WETH'
+            ? (toPositiveNumber(tokenPrices.ETH) || toPositiveNumber(tokenPrices.WETH))
+            : 0)
+    );
+};
+
+async function fetchEthPriceUsd(): Promise<number> {
+    try {
+        const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDC');
+        if (!response.ok) return 0;
+        const data = await response.json() as { price?: string };
+        return toPositiveNumber(data.price);
+    } catch (_) {
+        return 0;
+    }
+}
+
+async function fetchDexScreenerTokenPriceUsd(tokenAddress: string): Promise<number> {
+    const normalizedAddress = normalizeTokenAddress(tokenAddress);
+    if (!normalizedAddress || NATIVE_TOKEN_ADDRESSES.has(normalizedAddress)) return 0;
+
+    try {
+        const response = await fetch(`${DEX_SCREENER_BASE_URL}/${normalizedAddress}`);
+        if (!response.ok) return 0;
+        const data = await response.json() as { pairs?: DexScreenerPair[] };
+        const pairs = Array.isArray(data.pairs) ? data.pairs : [];
+        const bestPair = pairs
+            .filter((pair) => normalizeTokenAddress(pair.baseToken?.address) === normalizedAddress)
+            .sort((a, b) => toPositiveNumber(b.liquidity?.usd) - toPositiveNumber(a.liquidity?.usd))[0];
+
+        return toPositiveNumber(bestPair?.priceUsd);
+    } catch (_) {
+        return 0;
+    }
+}
+
+async function resolveTokenPriceUsd(
+    symbol: string,
+    tokenAddress: string | undefined,
+    tokenPrices: TokenPriceMap
+): Promise<number> {
+    const normalizedSymbol = symbol.toUpperCase();
+    const normalizedAddress = normalizeTokenAddress(tokenAddress);
+    if (normalizedSymbol === 'USDC') return 1;
+
+    const configuredPrice = lookupConfiguredTokenPrice(tokenPrices, normalizedSymbol, normalizedAddress);
+    if (configuredPrice > 0) return configuredPrice;
+
+    if (normalizedSymbol === 'ETH' || normalizedSymbol === 'WETH' || NATIVE_TOKEN_ADDRESSES.has(normalizedAddress)) {
+        const ethPrice = await fetchEthPriceUsd();
+        if (ethPrice > 0) return ethPrice;
+    }
+
+    return fetchDexScreenerTokenPriceUsd(normalizedAddress);
+}
 
 // Move initialization inside helper to prevent top-level invocation failures
 let supabaseAdminInstance: ReturnType<typeof createClient<Database>> | null = null;
@@ -919,13 +1005,36 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             is_base_social_required, listing_fee
         } = payload;
 
-        const [{ data: ugcConfigRes }, { data: sysSetting }, { data: pointSetting }] = await Promise.all([
+        const [{ data: ugcConfigRes }, { data: sysSetting }, { data: pointSetting }, { data: tokenPricesRes }] = await Promise.all([
             getSupabaseAdmin().from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle(),
             getSupabaseAdmin().from('system_settings').select('value').eq('key', 'sponsorship_listing_fee_usdc').maybeSingle(),
-            getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'ugc_task_completion').maybeSingle()
+            getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'ugc_task_completion').maybeSingle(),
+            getSupabaseAdmin().from('system_settings').select('value').eq('key', 'token_prices_usd').maybeSingle()
         ]);
 
         const ugcConfig = (ugcConfigRes?.value || {}) as Record<string, unknown>;
+        const minRewardPerTaskUsdc = parseFloat(String(ugcConfig.min_reward_amount || '0.01'));
+        const taskCount = Array.isArray(tasks_batch) ? tasks_batch.length : 1;
+        const minRewardUsdc = minRewardPerTaskUsdc * taskCount;
+
+        // [v3.64.10] Enforce backend budget check with server-side live price resolution.
+        const tokenPrices = (tokenPricesRes?.value || {}) as TokenPriceMap;
+        const symbol = (reward_symbol || 'USDC').toUpperCase();
+        const rewardAmount = parseFloat(String(reward_amount_per_user));
+        if (!Number.isFinite(rewardAmount) || rewardAmount <= 0) {
+            return res.status(400).json({ error: '[Budget Guard] Reward per user must be greater than 0.' });
+        }
+
+        const tokenPrice = await resolveTokenPriceUsd(symbol, payment_token, tokenPrices);
+        if (tokenPrice <= 0) {
+            return res.status(400).json({ error: `[Price Oracle] Live USD price is unavailable for ${symbol}. Please choose a supported liquid token or wait for market indexing.` });
+        }
+
+        const rewardAmountUsdc = rewardAmount * tokenPrice;
+        if (rewardAmountUsdc < minRewardUsdc * 0.95) { // 5% buffer for price fluctuations
+            return res.status(400).json({ error: `[Budget Guard] Reward per user must be at least $${minRewardUsdc.toFixed(2)} USDC equivalent for ${taskCount} task(s) ($${minRewardPerTaskUsdc.toFixed(2)} per task). Provided: $${rewardAmountUsdc.toFixed(6)} USDC.` });
+        }
+
         const platformFee = ugcConfig.listing_fee_usdc
             ? parseFloat(String(ugcConfig.listing_fee_usdc))
             : (sysSetting?.value ? parseFloat(String(sysSetting.value)) : 0);

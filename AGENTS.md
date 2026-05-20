@@ -1,4 +1,4 @@
-# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.8-Hardened)
+# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.10-Hardened)
 # Crypto Discovery App | Codex (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Codex sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -235,8 +235,8 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.8 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.10 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
-*Audit Precision Hardened: 2026-05-14. v3.64.8 MILLISECOND PRECISION & MULTI-ASSET.*
-*Anti-Negligence Hook Activated: 2026-05-18. v3.64.8 AUTOMATED SCANNING & RTK INTEGRATED.*
+*Audit Precision Hardened: 2026-05-14. v3.64.10 MILLISECOND PRECISION & MULTI-ASSET.*
+*Anti-Negligence Hook Activated: 2026-05-18. v3.64.10 AUTOMATED SCANNING & RTK INTEGRATED.*

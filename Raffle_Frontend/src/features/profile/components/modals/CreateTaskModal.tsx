@@ -226,7 +226,7 @@ export function CreateTaskModal({ onClose, onRequestSwap }: CreateTaskModalProps
     });
 
     useEffect(() => {
-        if (qMinPool && ethReward === '0.1') {
+        if (qMinPool && (ethReward === '0.1' || ethReward === '0.01')) {
             setEthReward(formatUnits(qMinPool as bigint, 6));
         }
     }, [qMinPool, ethReward]);

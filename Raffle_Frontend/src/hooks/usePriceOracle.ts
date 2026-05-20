@@ -2,8 +2,28 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { WETH_ADDRESS, NATIVE_ETH_ADDRESS, NATIVE_ETH_ALT_ADDRESS } from '../lib/contracts';
 
 const DEX_SCREENER_BASE_URL = 'https://api.dexscreener.com/latest/dex/tokens';
-const PRICE_CACHE = new Map();
 const CACHE_DURATION = 60000; // 1 minute
+
+interface PriceCacheEntry {
+  price: number;
+  timestamp: number;
+}
+
+interface DexScreenerPair {
+  baseToken?: { address?: string };
+  liquidity?: { usd?: string | number };
+  priceUsd?: string;
+}
+
+interface DexScreenerResponse {
+  pairs?: DexScreenerPair[];
+}
+
+interface BinanceTickerResponse {
+  price?: string;
+}
+
+const PRICE_CACHE = new Map<string, PriceCacheEntry>();
 
 /**
  * usePriceOracle
@@ -61,17 +81,19 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
       // Note: If too many, we might need to batch, but for our whitelist it should be fine.
       const url = `${DEX_SCREENER_BASE_URL}/${addrsToFetch.join(',')}`;
       const response = await fetch(url);
-      const data = await response.json();
+      const data = await response.json() as DexScreenerResponse;
 
       const newPrices: Record<string, number> = {};
 
       if (data.pairs && data.pairs.length > 0) {
         // Group pairs by baseToken address and pick the one with most liquidity
-        const bestPairs: Record<string, { baseToken: { address: string }; liquidity?: { usd?: string }; priceUsd?: string }> = {};
-        data.pairs.forEach((pair: { baseToken: { address: string }; liquidity?: { usd?: string }; priceUsd?: string }) => {
-          const addr = pair.baseToken.address.toLowerCase();
-          const liquidity = parseFloat(pair.liquidity?.usd || '0');
-          if (!bestPairs[addr] || liquidity > parseFloat(bestPairs[addr].liquidity?.usd || '0')) {
+        const bestPairs: Record<string, DexScreenerPair> = {};
+        data.pairs.forEach((pair) => {
+          const baseAddress = pair.baseToken?.address;
+          if (!baseAddress) return;
+          const addr = baseAddress.toLowerCase();
+          const liquidity = parseFloat(String(pair.liquidity?.usd || '0'));
+          if (!bestPairs[addr] || liquidity > parseFloat(String(bestPairs[addr].liquidity?.usd || '0'))) {
             bestPairs[addr] = pair;
           }
         });
@@ -102,7 +124,7 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
       if (needsEthPrice && !newPrices[wethAddr]) {
         try {
           const binRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDC');
-          const binData = await binRes.json();
+          const binData = await binRes.json() as BinanceTickerResponse;
           if (binData.price) {
             const ethUsd = parseFloat(binData.price);
             // Set price for all ETH representations
@@ -113,14 +135,14 @@ export function usePriceOracle(tokenAddresses: string[] = []) {
             newPrices[nativeEthAddr] = ethUsd;
             PRICE_CACHE.set(nativeEthAddr, { price: ethUsd, timestamp: now });
           }
-        } catch (e) { /* Binance fallback failed, leave as 0 */ }
+        } catch { /* Binance fallback failed, leave as 0 */ }
       }
 
       setPrices(prev => ({ ...prev, ...newPrices }));
       setLastFetchedAt(Date.now());
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[PriceOracle] Fetch error:', err);
-      setError(err.message || "Unknown error");
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }

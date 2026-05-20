@@ -22,7 +22,9 @@ setInterval(() => {
  * Higher-order function wrapper to inject Observability (Sentry), 
  * Rate-Limiting, and Replay-Attack Guard.
  */
-export function withMiddleware(handler: (req: VercelRequest, res: VercelResponse) => any) {
+type MiddlewareHandler = (req: VercelRequest, res: VercelResponse) => Promise<unknown> | unknown;
+
+export function withMiddleware(handler: MiddlewareHandler) {
     return async (req: VercelRequest, res: VercelResponse) => {
         // Initialize Sentry inside serverless execution context
         const sentryDsn = getEnv('SENTRY_DSN');
