@@ -1,4 +1,4 @@
-# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.13-Hardened)
+# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.16-Hardened)
 # Crypto Discovery App | Codex (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Codex sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -22,7 +22,7 @@ Before responding to ANY request, read these files IN ORDER:
 7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
 8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
 
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.13-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.13).
+> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.16-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.16).
 
 ---
 
@@ -235,9 +235,9 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War War Room Mode: Active. v3.64.13 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War War Room Mode: Active. v3.64.16 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
 *Audit Precision Hardened: 2026-05-14. v3.64.10 MILLISECOND PRECISION & MULTI-ASSET.*
 *Anti-Negligence Hook Activated: 2026-05-18. v3.64.10 AUTOMATED SCANNING & RTK INTEGRATED.*
-*Live Agent Delegation Dashboard Activated: 2026-05-20. v3.64.13 HIERARCHICAL TASK FEED & 100% BUILD SYNCHRONIZATION.*
+*Live Agent Delegation Dashboard Activated: 2026-05-20. v3.64.16 HIERARCHICAL TASK FEED & 100% BUILD SYNCHRONIZATION.*

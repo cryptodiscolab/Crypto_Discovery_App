@@ -8,7 +8,7 @@ import { useRaffleInfo } from '../../raffle/hooks/useRaffleQueries';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAdminRaffleQueries } from '../hooks/useAdminQueries';
-import { Clock, Loader2, Medal, RefreshCw, ShieldCheck, Ticket, Trophy, Users } from 'lucide-react';
+import { Clock, Loader2, Medal, RefreshCw, ShieldCheck, Ticket, Trophy, Users, Plus } from 'lucide-react';
 
 const RAFFLE_ADDRESS = import.meta.env.VITE_RAFFLE_ADDRESS || CONTRACTS?.RAFFLE;
 

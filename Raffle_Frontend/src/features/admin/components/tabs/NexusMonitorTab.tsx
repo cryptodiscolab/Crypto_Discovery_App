@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "../../../../lib/supabaseClient";
 
 type TaskStatus =
   | "pending"
@@ -36,8 +37,19 @@ interface TaskNode {
   children?: TaskNode[];
 }
 
+interface RawTaskRow {
+  id: string;
+  parent_task_id: string | null;
+  task_name: string;
+  status: string;
+  target_agent?: string;
+  updated_at: string;
+  output_data?: any;
+  task_description?: string;
+}
+
 interface NexusMonitorTabProps {
-  tasks: TaskNode[];
+  tasks?: TaskNode[];
   outputLog?: string;
   loading?: boolean;
   lastUpdated?: string;
@@ -164,19 +176,121 @@ function TaskTreeNode({ node, depth = 0 }: { node: TaskNode; depth?: number }) {
   );
 }
 
-export default function NexusMonitorTab({
-  tasks,
-  outputLog = "",
-  loading = false,
-  lastUpdated,
+export function NexusMonitorTab({
+  tasks: propTasks,
+  outputLog: propOutputLog = "",
+  loading: propLoading = false,
+  lastUpdated: propLastUpdated,
 }: NexusMonitorTabProps) {
+  const [internalTasks, setInternalTasks] = useState<TaskNode[]>([]);
+  const [internalOutputLog, setInternalOutputLog] = useState("");
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [internalLastUpdated, setInternalLastUpdated] = useState("");
+  
   const [selectedAgent, setSelectedAgent] = useState<AgentName | null>(null);
   const [isOutputOpen, setIsOutputOpen] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (propTasks && propTasks.length > 0) {
+      setInternalTasks(propTasks);
+      setInternalOutputLog(propOutputLog);
+      setInternalLoading(propLoading);
+      if (propLastUpdated) setInternalLastUpdated(propLastUpdated);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchTasks = async () => {
+      setInternalLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("agents_vault")
+          .select("*")
+          .order("updated_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching agents_vault:", error);
+          return;
+        }
+
+        if (!data || !isMounted) return;
+
+        const rawRows: RawTaskRow[] = data;
+        const nodeMap: Record<string, TaskNode> = {};
+        
+        rawRows.forEach((row) => {
+          let outVal = "";
+          if (row.output_data) {
+            if (typeof row.output_data === "object") {
+              outVal = row.output_data.error || row.output_data.message || JSON.stringify(row.output_data);
+            } else {
+              outVal = String(row.output_data);
+            }
+          } else {
+            outVal = row.task_description || "";
+          }
+
+          nodeMap[row.id] = {
+            id: row.id,
+            title: row.task_name,
+            status: row.status as TaskStatus,
+            target_agent: row.target_agent as AgentName,
+            updatedAt: row.updated_at ? new Date(row.updated_at).toLocaleTimeString() : undefined,
+            output: outVal,
+            children: [],
+          };
+        });
+
+        const rootNodes: TaskNode[] = [];
+        rawRows.forEach((row) => {
+          const node = nodeMap[row.id];
+          if (row.parent_task_id && nodeMap[row.parent_task_id]) {
+            nodeMap[row.parent_task_id].children?.push(node);
+          } else {
+            rootNodes.push(node);
+          }
+        });
+
+        const logs = rawRows
+          .map((row) => {
+            const time = row.updated_at ? new Date(row.updated_at).toLocaleString() : "";
+            const agent = row.target_agent ? `[${row.target_agent.toUpperCase()}]` : "[SYSTEM]";
+            const status = row.status ? row.status.toUpperCase() : "PENDING";
+            const desc = row.task_description || row.task_name;
+            const outputText = row.output_data 
+              ? `\n  Output: ${JSON.stringify(row.output_data)}` 
+              : "";
+            return `${time} ${agent} ${status} - ${desc}${outputText}`;
+          })
+          .join("\n\n");
+
+        if (isMounted) {
+          setInternalTasks(rootNodes);
+          setInternalOutputLog(logs || "No logs available.");
+          setInternalLastUpdated(new Date().toLocaleTimeString());
+        }
+      } catch (err) {
+        console.error("Failed to build task tree:", err);
+      } finally {
+        if (isMounted) {
+          setInternalLoading(false);
+        }
+      }
+    };
+
+    void fetchTasks();
+    const interval = setInterval(fetchTasks, 10000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [propTasks, propOutputLog, propLoading, propLastUpdated]);
+
   const visibleTasks = useMemo(
-    () => filterTasksByAgent(tasks, selectedAgent),
-    [tasks, selectedAgent]
+    () => filterTasksByAgent(internalTasks, selectedAgent),
+    [internalTasks, selectedAgent]
   );
 
   const stats = useMemo(() => countTasks(visibleTasks), [visibleTasks]);
@@ -184,7 +298,7 @@ export default function NexusMonitorTab({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(outputLog || "");
+      await navigator.clipboard.writeText(internalOutputLog || "");
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1400);
     } catch {
@@ -199,8 +313,8 @@ export default function NexusMonitorTab({
           <div>
             <h2 className="text-sm font-semibold tracking-wide text-white/90">Nexus Monitor</h2>
             <p className="mt-1 text-[11px] text-white/45">
-              {loading ? "Synchronizing live task feed..." : "Real-time hierarchical task feed"}
-              {lastUpdated ? ` • Last updated ${lastUpdated}` : ""}
+              {internalLoading ? "Synchronizing live task feed..." : "Real-time hierarchical task feed"}
+              {internalLastUpdated ? ` • Last updated ${internalLastUpdated}` : ""}
             </p>
           </div>
 
@@ -324,7 +438,7 @@ export default function NexusMonitorTab({
         {isOutputOpen ? (
           <div id="nexus-output-log" className="border-t border-white/5 p-4">
             <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl border border-white/5 bg-black/20 p-4 text-[11px] leading-5 text-white/75">
-              {outputLog || "No output available."}
+              {internalOutputLog || "No output available."}
             </pre>
           </div>
         ) : null}

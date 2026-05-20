@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import { useAccount, useSignMessage } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, RAFFLE_ABI } from '../../../../lib/contracts';
