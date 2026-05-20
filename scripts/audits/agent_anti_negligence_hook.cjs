@@ -1,10 +1,17 @@
 /**
- * 🛡️ AGENT ANTI-NEGLIGENCE HOOK (v3.64.5-Hardened)
+ * 🛡️ AGENT ANTI-NEGLIGENCE HOOK (v3.64.16-Hardened)
  * Location: scripts/audits/agent_anti_negligence_hook.cjs
- * 
+ *
  * Hook pengamanan ekosistem untuk mendeteksi kelalaian agen AI secara otomatis.
  * Mencegah kerusakan codebase, kebocoran rahasia, dokumen rusak (dotenv logs),
- * berkas sampah/duplikat, dan ketidaksesuaian Peta Kerja (WORKSPACE_MAP).
+ * berkas sampah/duplikat, ketidaksesuaian Peta Kerja (WORKSPACE_MAP), dan
+ * penggunaan RTK dari working directory yang salah (RTK ROOT-DIR MANDATE v3.64.16).
+ *
+ * CHECK 6 (v3.64.16): RTK ROOT-DIR MANDATE
+ *   .bin/rtk.exe HANYA ada di project ROOT. Untuk menjalankan perintah di sub-dir:
+ *     BENAR: Cwd=root + .bin\rtk.exe npm --prefix Raffle_Frontend run build
+ *     BENAR: Cwd=root + .bin\rtk.exe read Raffle_Frontend/src/pages/HomePage.tsx
+ *     SALAH: Cwd=Raffle_Frontend + .bin\rtk.exe (binary tidak ada!)
  */
 
 const fs = require('fs');
@@ -220,6 +227,39 @@ if (fs.existsSync(rtkPath)) {
 } else {
     failures.push("RTK executable not found in .bin/. RTK is MANDATORY to prevent token leaks. Please run node scripts/deployments/install_rtk.cjs to install.");
     hasFailure = true;
+}
+
+// ═══ CHECK 6: RTK ROOT-DIR MANDATE (v3.64.16) ═══
+console.log("\n🔍 Verifying RTK Root-Dir Mandate (Rule 78)...");
+const rtkBinPath = path.join(WORKSPACE_DIR, '.bin', 'rtk.exe');
+const rtkFiltersToml = path.join(WORKSPACE_DIR, '.rtk', 'filters.toml');
+
+if (!fs.existsSync(rtkBinPath)) {
+    failures.push("RTK ROOT-DIR VIOLATION: .bin/rtk.exe not found at project root. RTK MUST be invoked from root, not from subdirectories.");
+    hasFailure = true;
+} else {
+    // Guard: RTK binary must NOT exist inside any subdirectory
+    const rtkSubDirTargets = ['Raffle_Frontend', 'api', 'scripts', 'tools'];
+    let rtkSubViolation = false;
+    for (const sub of rtkSubDirTargets) {
+        const subBin = path.join(WORKSPACE_DIR, sub, '.bin', 'rtk.exe');
+        if (fs.existsSync(subBin)) {
+            failures.push(`RTK ROOT-DIR VIOLATION: rtk.exe found in '${sub}/.bin/' — must ONLY exist at project root!`);
+            hasFailure = true;
+            rtkSubViolation = true;
+        }
+    }
+
+    if (!rtkSubViolation) {
+        if (!fs.existsSync(rtkFiltersToml)) {
+            warnings.push("RTK: .rtk/filters.toml missing — run '.bin\\rtk.exe trust' to initialize project-local filters.");
+        }
+        console.log("   ✅ RTK Root-Dir Mandate satisfied: .bin/rtk.exe confirmed at project root only.");
+        console.log("   📋 MANDATORY PATTERN (Rule 78) — Always use Cwd=project root:");
+        console.log("      ✅ .bin\\rtk.exe read Raffle_Frontend/src/pages/X.tsx");
+        console.log("      ✅ .bin\\rtk.exe npm --prefix Raffle_Frontend run build");
+        console.log("      ❌ WRONG: Cwd=Raffle_Frontend + .\\.bin\\rtk.exe (not found!)");
+    }
 }
 
 // ═══ FINAL VERDICT ═══
