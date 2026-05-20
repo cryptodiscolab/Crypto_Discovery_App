@@ -74,7 +74,7 @@ export function SBTRewardsDashboard() {
             toast.success(
                 <div className="flex flex-col gap-1">
                     <span className="font-bold">Claim Successful!</span>
-                    <a href={`https://sepolia.basescan.org/tx/${hash}`} target="_blank" rel="noreferrer" className="text-xs text-blue-400 flex items-center gap-1 hover:underline">
+                    <a href={`https://sepolia.basescan.org/tx/${hash}`} target="_blank" rel="noreferrer" className="text-[11px] text-blue-400 flex items-center gap-1 hover:underline">
                         Proof on Basescan <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>,
@@ -120,7 +120,7 @@ export function SBTRewardsDashboard() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-[100vw] overflow-x-hidden">
             {/* 1. Pool Balance Card */}
             <div className="glass-card relative overflow-hidden group bg-slate-900/40 border-indigo-500/10">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-50" />
@@ -322,7 +322,7 @@ function SBTTierBreakdown({ ethPrice, totalPoolBalance }: { ethPrice: number; to
                                 <p className={`text-base font-black ${t.color}`}>{count}</p>
                                 <p className={`label-native ${t.color} opacity-80`}>{t.label}</p>
                                 <div className="mt-2 w-full pt-2 border-t border-white/5 text-center">
-                                    <p className="text-[10px] font-black text-white italic">${poolShare}</p>
+                                    <p className="text-[11px] font-black text-white italic">${poolShare}</p>
                                     <p className="text-[8px] uppercase font-bold text-slate-500">{sharePct}% POOL</p>
                                 </div>
                             </div>
@@ -353,7 +353,7 @@ function NexusEconomyPanel({ multipliers, totalUsers }: { multipliers: Multiplie
                         <span className="label-native mb-0">Macro-Scaling</span>
                     </div>
                     <p className="text-xl font-black text-white italic">{multipliers.global}x</p>
-                    <p className="text-[10px] uppercase font-bold text-slate-500 mt-1">
+                    <p className="text-[11px] uppercase font-bold text-slate-500 mt-1">
                         Based on {totalUsers.toLocaleString()} Users
                     </p>
                 </div>
@@ -365,7 +365,7 @@ function NexusEconomyPanel({ multipliers, totalUsers }: { multipliers: Multiplie
                         <span className="label-native mb-0">Micro-Scaling</span>
                     </div>
                     <p className="text-xl font-black text-white italic">{multipliers.individual}x</p>
-                    <p className="text-[10px] uppercase font-bold text-slate-500 mt-1">
+                    <p className="text-[11px] uppercase font-bold text-slate-500 mt-1">
                         Personal XP Multiplier
                     </p>
                 </div>
@@ -379,7 +379,7 @@ function NexusEconomyPanel({ multipliers, totalUsers }: { multipliers: Multiplie
                     <p className={`text-xl font-black italic ${multipliers.isUnderdogActive ? 'text-indigo-400' : 'text-slate-500 opacity-40'}`}>
                         {multipliers.underdog}x
                     </p>
-                    <p className="text-[10px] uppercase font-bold text-slate-500 mt-1">
+                    <p className="text-[11px] uppercase font-bold text-slate-500 mt-1">
                         {multipliers.isUnderdogActive ? 'ACTIVE (Tier 0-2)' : 'INACTIVE'}
                     </p>
                 </div>
@@ -387,7 +387,7 @@ function NexusEconomyPanel({ multipliers, totalUsers }: { multipliers: Multiplie
 
             <div className="mt-4 flex items-start gap-3 p-3 bg-black/40 rounded-xl">
                 <Info className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
-                <p className="text-[10px] font-medium text-slate-500 leading-tight uppercase tracking-tight">
+                <p className="text-[11px] font-medium text-slate-500 leading-tight uppercase tracking-tight">
                     The Nexus Hybrid Formula prevents reward inflation by scaling XP based on total ecosystem size (Macro) and prevents whale dominance by scaling based on individual XP (Micro). Underdogs receive a +10% boost.
                 </p>
             </div>

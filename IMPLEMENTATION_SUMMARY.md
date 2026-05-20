@@ -4,6 +4,18 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.15-Hardened (Native+ Typography & Viewport Containment Refactoring)
+- **Status**: Completed, audited, and verified via build.
+- **Typography Normalisation**: Refactored `ProfilePage.tsx`, `SBTRewardsDashboard.tsx`, and `DailyGoalCard.tsx` to purge legacy sizes (`text-xs`, `text-sm`, `text-[10px]`) and replace them with Native+ standard tokens (`text-[11px]` and `text-[12px]`).
+- **Viewport Containment**: Added `max-w-[100vw] overflow-x-hidden` to the root containers of `ProfilePage.tsx`, `SBTRewardsDashboard.tsx`, and `DailyGoalCard.tsx` to secure mobile UI integrity.
+- **Production Build Success**: Successfully compiled `Raffle_Frontend` with 0 warnings or errors across all modules.
+
+## v3.64.14-Hardened (Git Pre-Commit Hook & RTK Hardening)
+- **Status**: Completed, verified, and audited.
+- **Git pre-commit Hook Mandate**: Integrated `agent_anti_negligence_hook.cjs` into `.husky/pre-commit` alongside Gitleaks, preventing invalid or leaking commits from being pushed to source control.
+- **RTK Enforcement Hardening**: Promoted the missing RTK (Rust Token Killer) check from a warning to a strict fatal error in the anti-negligence hook, ensuring all agent commits are RTK-compliant and verified.
+- **Documentation Parity**: Synchronized `.cursorrules`, `CLAUDE.md`, `git-hygiene` and `ecosystem-sentinel` skills, and `DISCO_DAILY_MASTER_PRD.md` to reflect the updated version and pre-commit checks.
+
 ## v3.64.13-Hardened (Nexus Monitor Live Dashboard)
 - **Status**: Completed, audited, and synchronized.
 - **Orchestration Loop Stability**: Transitioned `OrchestratorBot`'s base LLM model from `gpt-5.5`/`claude` to `gpt-5.4` on the Freemodel endpoint, resolving the 30-second gateway 504 timeouts and allowing multi-agent evaluation loops to complete.

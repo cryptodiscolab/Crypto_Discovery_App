@@ -259,10 +259,10 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             {/* Header with ETH Price */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-indigo-500/10 p-6 rounded-2xl border border-indigo-500/20">
                 <div>
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <h3 className="text-[14px] font-black text-white uppercase tracking-wider flex items-center gap-2 label-native">
                         <Settings className="w-5 h-5 text-indigo-400" /> NFT Economy & SBT Assets
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">Manage economic parameters, metadata URIs, and global pool health.</p>
+                    <p className="text-[13px] font-medium text-slate-400 mt-1 content-native">Manage economic parameters, metadata URIs, and global pool health.</p>
                 </div>
                 <div className="flex gap-4">
                     <button onClick={() => { refetch(); refetchMaster(); }} className="p-3 bg-black/40 border border-white/10 rounded-xl hover:bg-slate-800 transition-all text-white">
@@ -273,8 +273,8 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                             <TrendingUp className="w-4 h-4 text-emerald-400" />
                         </div>
                         <div>
-                            <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Live ETH Price</p>
-                            <p className="text-lg font-mono font-bold text-white">${ethPrice?.toLocaleString()}</p>
+                            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Live ETH Price</p>
+                            <p className="text-[12px] font-bold font-mono text-white value-native">${ethPrice?.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -285,31 +285,31 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                 <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 space-y-3">
                     <div className="flex items-center gap-2 text-indigo-400">
                         <Database className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">SBT Reward Pool</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest label-native">SBT Reward Pool</span>
                     </div>
                     <div>
-                        <p className="text-2xl font-mono font-bold text-white">{formatEther((totalPoolBalance as bigint) || 0n)} ETH</p>
-                        <p className="text-[10px] text-slate-500 font-bold">Total revenue collected from mints/upgrades.</p>
+                        <p className="text-[12px] font-bold font-mono text-white value-native">{formatEther((totalPoolBalance as bigint) || 0n)} ETH</p>
+                        <p className="text-[13px] font-medium text-slate-500 content-native">Total revenue collected from mints/upgrades.</p>
                     </div>
                 </div>
                 <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 space-y-3">
                     <div className="flex items-center gap-2 text-amber-400">
                         <ShieldCheck className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Locked Liabilities</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest label-native">Locked Liabilities</span>
                     </div>
                     <div>
-                        <p className="text-2xl font-mono font-bold text-white">{formatEther((totalLockedRewards as bigint) || 0n)} ETH</p>
-                        <p className="text-[10px] text-slate-500 font-bold">Reserved for outstanding user reward claims.</p>
+                        <p className="text-[12px] font-bold font-mono text-white value-native">{formatEther((totalLockedRewards as bigint) || 0n)} ETH</p>
+                        <p className="text-[13px] font-medium text-slate-500 content-native">Reserved for outstanding user reward claims.</p>
                     </div>
                 </div>
                 <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 space-y-3">
                     <div className="flex items-center gap-2 text-emerald-400">
                         <Activity className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Net Surplus</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest label-native">Net Surplus</span>
                     </div>
                     <div>
-                        <p className="text-2xl font-mono font-bold text-white">{formatEther(((totalPoolBalance as bigint) || 0n) - ((totalLockedRewards as bigint) || 0n))} ETH</p>
-                        <p className="text-[10px] text-slate-500 font-bold">Unallocated funds available in treasury.</p>
+                        <p className="text-[12px] font-bold font-mono text-white value-native">{formatEther(((totalPoolBalance as bigint) || 0n) - ((totalLockedRewards as bigint) || 0n))} ETH</p>
+                        <p className="text-[13px] font-medium text-slate-500 content-native">Unallocated funds available in treasury.</p>
                     </div>
                 </div>
             </div>
@@ -318,10 +318,10 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             <div className="bg-[#0A0A0A] p-8 rounded-2xl border border-white/5 space-y-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-6">
                     <div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2 label-native">
                             <Settings className="w-4 h-4 text-indigo-400" /> Economic Core
                         </h4>
-                        <p className="text-[10px] text-slate-500 mt-1">Global parameters affecting all tier logic.</p>
+                        <p className="text-[13px] font-medium text-slate-500 mt-1 content-native">Global parameters affecting all tier logic.</p>
                     </div>
                     <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                         <button
@@ -330,9 +330,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                     await syncPointsToContract(signMessageAsync);
                                 } catch (e) { console.error(e); }
                             }}
-                            className="bg-emerald-900/40 hover:bg-emerald-800/40 px-4 py-2.5 rounded-xl font-bold text-[10px] text-emerald-400 border border-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                            className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                         >
-                            <Database className="w-3 h-3" /> SYNC XP TO CONTRACT
+                            SYNC XP TO CONTRACT
                         </button>
                         <button
                             onClick={async () => {
@@ -340,9 +340,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                     await syncTiersToContract(signMessageAsync);
                                 } catch (e) { console.error(e); }
                             }}
-                            className="bg-indigo-900/40 hover:bg-indigo-800/40 px-4 py-2.5 rounded-xl font-bold text-[10px] text-indigo-400 border border-indigo-500/20 transition-all flex items-center justify-center gap-2"
+                            className="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                         >
-                            <Layers className="w-3 h-3" /> SYNC ALL TIERS
+                            SYNC ALL TIERS
                         </button>
                         <button
                             onClick={async () => {
@@ -356,28 +356,28 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                     toast.success("Multipliers Synced to DB!", { id: tid });
                                 } catch (e) { toast.error("Sync failed", { id: tid }); }
                             }}
-                            className="bg-slate-800 hover:bg-slate-700 px-4 py-2.5 rounded-xl font-bold text-[10px] text-slate-400 border border-white/5 transition-all flex items-center justify-center gap-2"
+                            className="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                         >
-                            <RefreshCw className="w-3 h-3" /> SYNC MULTIPLIERS
+                            SYNC MULTIPLIERS
                         </button>
                         <button
                             onClick={handleSaveBatch}
-                            className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+                            className="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                         >
-                            <ShieldCheck className="w-4 h-4" /> BATCH SAVE ALL TIERS
+                            BATCH SAVE ALL TIERS
                         </button>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Token Price ($DISCO)</label>
+                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Token Price ($DISCO)</label>
                         <input
                             type="number"
                             step="0.0001"
                             value={localEco.tokenP}
                             onChange={e => setLocalEco({ ...localEco, tokenP: e.target.value })}
-                            className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
+                            className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native focus:border-indigo-500/50 outline-none transition-all"
                         />
                     </div>
                     {[
@@ -388,12 +388,12 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                         { label: 'Diamond SBT (USD)', key: 'p5' as const }
                     ].map((item) => (
                         <div key={item.key} className="space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</label>
+                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">{item.label}</label>
                             <input
                                 type="text"
                                 value={localEco[item.key]}
                                 onChange={e => setLocalEco({ ...localEco, [item.key]: e.target.value })}
-                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
+                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native focus:border-indigo-500/50 outline-none transition-all"
                             />
                         </div>
                     ))}
@@ -402,7 +402,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                 <div className="flex justify-end pt-2">
                     <button
                         onClick={handleSaveEconomy}
-                        className="w-full md:w-auto bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-10 py-3 rounded-xl font-bold text-xs text-emerald-400 transition-all"
+                        className="w-full md:w-auto bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 px-10 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                     >
                         Save Economics & Prices
                     </button>
@@ -417,15 +417,15 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                             <Layers className="w-5 h-5 text-indigo-400" />
                         </div>
                         <div>
-                            <h4 className="text-sm font-black text-white uppercase tracking-widest">Reward Weights</h4>
-                            <p className="text-[10px] text-slate-500 mt-0.5">% Share of SBT Reward Pool per Tier</p>
+                            <h4 className="text-[11px] font-black text-white uppercase tracking-widest label-native">Reward Weights</h4>
+                            <p className="text-[13px] font-medium text-slate-500 mt-0.5 content-native">% Share of SBT Reward Pool per Tier</p>
                         </div>
                     </div>
                     <button
                         onClick={handleSaveWeights}
-                        className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+                        className="w-full md:w-auto bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                     >
-                        <Save className="w-4 h-4" /> SAVE WEIGHTS
+                        SAVE WEIGHTS
                     </button>
                 </div>
 
@@ -438,12 +438,12 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                         { label: 'Bronze', key: 'b' as const, color: 'text-orange-400', border: 'focus:border-orange-500/50' }
                     ].map((t) => (
                         <div key={t.key} className="space-y-2">
-                            <label className={`text-[11px] font-bold uppercase tracking-wider ${t.color}`}>{t.label} (%)</label>
+                            <label className={`text-[11px] font-black uppercase tracking-widest label-native ${t.color}`}>{t.label} (%)</label>
                             <input
                                 type="number"
                                 value={localWeights[t.key]}
                                 onChange={e => setLocalWeights({ ...localWeights, [t.key]: parseInt(e.target.value) || 0 })}
-                                className={`w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm outline-none transition-all ${t.border}`}
+                                className={`w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native outline-none transition-all ${t.border}`}
                             />
                         </div>
                     ))}
@@ -452,11 +452,11 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                 <div className={`p-4 rounded-xl flex items-center justify-between border ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-red-500/5 border-red-500/10'}`}>
                     <div className="flex items-center gap-3">
                         <Info className={`w-4 h-4 shrink-0 ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400'}`} />
-                        <p className="text-[11px] font-bold text-slate-400">
+                        <p className="text-[13px] font-medium text-slate-400 content-native">
                             CURRENT TOTAL: <span className={localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400'}>{localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b}%</span>
                         </p>
                     </div>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400 animate-pulse'}`}>
+                    <span className={`text-[11px] font-black uppercase tracking-widest label-native ${localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? 'text-emerald-400' : 'text-red-400 animate-pulse'}`}>
                         {localWeights.d + localWeights.p + localWeights.g + localWeights.s + localWeights.b === 100 ? '✓ Valid' : '× Error'}
                     </span>
                 </div>
@@ -477,21 +477,21 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                         <Zap className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h4 className="text-xl font-black text-white">{tier.name}</h4>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Level {tier.id}</p>
+                                        <h4 className="text-lg font-black text-white">{tier.name}</h4>
+                                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Level {tier.id}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center px-1">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Supply</span>
-                                        <span className="text-xs font-mono text-white font-bold">{tier.currentSupply} / {tier.maxSupply}</span>
+                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Supply</span>
+                                        <span className="text-[12px] font-bold font-mono text-white value-native">{tier.currentSupply} / {tier.maxSupply}</span>
                                     </div>
                                     <button
                                         onClick={() => handleToggle(tier)}
-                                        className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${tier.isOpen
-                                            ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white'
-                                            : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                                        className={`w-full py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native ${tier.isOpen
+                                            ? 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400'
+                                            : 'bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400'
                                             }`}
                                     >
                                         {tier.isOpen ? 'Disable Tier' : 'Enable Tier'}
@@ -504,7 +504,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                 <div className="space-y-6">
                                     {/* Price Config */}
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Minting Price (ETH)</label>
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Minting Price (ETH)</label>
                                         <div className="relative">
                                             <input
                                                 type="number"
@@ -515,16 +515,16 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                                     updated[idx].mintPriceETH = e.target.value;
                                                     setLocalConfigs(updated);
                                                 }}
-                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
+                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native focus:border-indigo-500/50 outline-none transition-all"
                                             />
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase">ETH</div>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600 uppercase tracking-widest label-native">ETH</div>
                                         </div>
-                                        <p className="text-[10px] text-indigo-400 font-bold px-1">EST: ${getUSD(tier.mintPriceETH || '0')} USD</p>
+                                        <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest px-1 label-native">EST: ${getUSD(tier.mintPriceETH || '0')} USD</p>
                                     </div>
 
                                     {/* Points Config */}
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">XP Threshold</label>
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">XP Threshold</label>
                                         <input
                                             type="number"
                                             value={tier.pointsRequired}
@@ -533,7 +533,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                                 updated[idx].pointsRequired = Math.max(0, parseInt(e.target.value) || 0);
                                                 setLocalConfigs(updated);
                                             }}
-                                            className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-sm focus:border-indigo-500/50 outline-none transition-all"
+                                            className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native focus:border-indigo-500/50 outline-none transition-all"
                                         />
                                     </div>
                                 </div>
@@ -541,7 +541,7 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                 <div className="space-y-6">
                                     {/* Metadata URI */}
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Metadata URI</label>
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Metadata URI</label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
@@ -552,25 +552,25 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                                     updated[idx].localURI = e.target.value;
                                                     setLocalConfigs(updated);
                                                 }}
-                                                className="flex-1 bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[10px] focus:border-indigo-500/50 outline-none transition-all"
+                                                className="flex-1 bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native focus:border-indigo-500/50 outline-none transition-all"
                                             />
                                             <button
                                                 onClick={() => handleUpdateURI(tier)}
-                                                className="bg-white/5 hover:bg-white/10 p-3 rounded-xl text-indigo-400 border border-white/5"
+                                                className="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                                             >
-                                                <Save className="w-4 h-4" />
+                                                Save
                                             </button>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Multiplier (BP)</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Multiplier (BP)</label>
                                             <input
                                                 type="number"
                                                 value={tier.multiplierBP}
                                                 min="0"
-                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-xs focus:border-indigo-500/50 outline-none transition-all"
+                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native focus:border-indigo-500/50 outline-none transition-all"
                                                 onChange={(e) => {
                                                     const updated = [...localConfigs];
                                                     updated[idx].multiplierBP = parseInt(e.target.value) || 0;
@@ -579,11 +579,11 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Daily Bonus</label>
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Daily Bonus</label>
                                             <input
                                                 type="number"
                                                 value={tier.dailyBonus}
-                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-xs focus:border-indigo-500/50 outline-none transition-all"
+                                                className="w-full bg-[#111111] border border-white/5 p-3 rounded-xl text-white font-mono text-[12px] font-bold value-native focus:border-indigo-500/50 outline-none transition-all"
                                                 onChange={(e) => {
                                                     const updated = [...localConfigs];
                                                     updated[idx].dailyBonus = Math.max(0, parseInt(e.target.value) || 0);
@@ -600,10 +600,9 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
                                 <button
                                     onClick={() => handleUpdate(tier)}
                                     disabled={isSaving === tier.id}
-                                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded-xl font-bold text-[10px] uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all"
+                                    className="w-full h-12 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 disabled:opacity-50 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native flex items-center justify-center"
                                 >
-                                    {isSaving === tier.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    Update
+                                    {isSaving === tier.id ? 'Saving...' : 'Update'}
                                 </button>
                             </div>
                         </div>
@@ -614,8 +613,8 @@ export function NFTConfigTab({ ethPrice }: NFTConfigTabProps) {
             <div className="p-4 bg-slate-900/40 rounded-2xl border border-white/5 flex gap-4 items-start">
                 <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-1" />
                 <div className="space-y-1">
-                    <p className="text-xs font-bold text-white uppercase tracking-tight">System Security Note</p>
-                    <p className="text-[10px] text-slate-500 leading-relaxed">
+                    <p className="text-[11px] font-black text-white uppercase tracking-widest label-native">System Security Note</p>
+                    <p className="text-[13px] font-medium text-slate-500 leading-relaxed content-native">
                         Changes to Tier parameters are recorded on-chain. <span className="text-indigo-400 font-bold">Metadata URI</span> is what users see in Marketplaces (OpenSea). Use <span className="font-bold text-white">Batch Save</span> to finalize all tier economics in a single transaction before official launch.
                     </p>
                 </div>

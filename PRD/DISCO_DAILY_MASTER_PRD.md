@@ -1,10 +1,11 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.13-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.15-Hardened)
 
-- **Ecosystem Version:** v3.64.13-Hardened
-- **Last Updated:** 2026-05-20T08:21:00+07:00
+- **Ecosystem Version:** v3.64.15-Hardened
+- **Last Updated:** 2026-05-20T18:00:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
 
 ## 📋 Table of Contents
 1. [Supreme Source of Truth (SOT) Hierarchy](#1-supreme-source-of-truth-sot-hierarchy)
@@ -1642,6 +1643,201 @@ Ekosistem Raffle menggunakan sistem biaya tiga lapis untuk menjamin keberlanjuta
 | **Project Rake** | 20% | Creator (dari Tiket) | Revenue murni platform dari penjualan tiket. |
 | **Gas Surcharge** | 10% | Creator (saat Create) | Biaya operasional gas untuk API3 QRNG (Randomness). |
 | **Claim Fee** | 5% | Pemenang (saat Claim) | Biaya pemrosesan klaim dan maintenance hadiah. |
+*Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
+*Antigravity — Nexus Master Architect. Protocol v3.56.4 Locked.*
+
+---
+
+## 19. UGC Multi-Action & All-or-Nothing Campaign Workflow
+
+Sistem ini berevolusi dari tugas tunggal menjadi kampanye terstruktur guna meningkatkan retensi dan kualitas engagement.
+
+### 19.1 Arsitektur Data Kampanye
+- **Tabel `campaigns`**: Bertindak sebagai entitas parent yang menyimpan `title`, `reward_amount`, dan metadata global.
+- **Tabel `daily_tasks`**: Menyimpan sub-tugas individu. Kunci penghubungnya adalah `onchain_id` yang diisi dengan ID Kampanye.
+- **Tabel `user_task_claims`**: 
+  - Mencatat verifikasi individual sub-tugas (reward 0).
+  - Mencatat klaim final kampanye (ID Kampanye) untuk memicu reward XP/USDC.
+
+### 19.2 Alur Pembuatan (Batching)
+```javascript
+// admin-bundle.js
+const { data: tasks, error: taskError } = await supabaseAdmin
+    .from('daily_tasks')
+    .insert(action_types.map(act => ({
+        title: `${title} (${act})`,
+        action_type: act,
+        onchain_id: campaignId,
+        task_type: 'ugc',
+        // ... metadata lainnya
+    })));
+```
+
+### 19.3 Alur Klaim (Atomic All-or-Nothing)
+1. **Frontend**: Menghitung `completedCount` dari sub-tugas yang ada di `offChainClaims`.
+2. **Logic**: Jika `completedCount === subTasks.length`, tampilkan tombol klaim.
+3. **Backend (`claim-ugc-campaign`)**:
+   - Query seluruh sub-tugas kampanye X.
+   - Query seluruh claim user untuk sub-tugas kampanye X.
+   - Bandingkan: `count(subTasks) == count(userClaims)`.
+   - Jika `true`, eksekusi `fn_increment_xp` dan increment saldo USDC.
+   - Tandai kampanye sebagai `claimed` untuk user tersebut.
+
+### 19.4 Checklist Kesehatan UGC v3.57.0
+1. [ ] **Regex Link Guard**: Link harus valid sesuai platform (Warpcast/X/TikTok).
+2. [ ] **Multi-Action Bound**: Maksimal 3 aksi per kampanye untuk menjaga UX.
+3. [ ] **Atomic Claims**: Reward tidak boleh bocor per sub-tugas, hanya di level parent kampanye.
+4. [ ] **Referral Loop**: Setiap klaim sukses harus memicu CTA sharing sosial.
+
+---
+
+## 20. Zero-Hardcode Infrastructure Mandate (v3.59.1)
+
+Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanpa risiko *manual error*.
+
+### 20.1 Dynamic Address Resolution
+- **Frontend**: Menggunakan helper `getAddr()` dari `src/lib/contracts.js` yang menarik nilai dari `import.meta.env`.
+- **ABI Mapping**: File `abis_data.txt` sekarang bertindak murni sebagai registry fungsi, dengan alamat kontrak yang disuntikkan secara dinamis saat runtime.
+
+### 20.2 Synchronization Triggers
+- Setiap kali alamat kontrak diubah di `.env`, developer **WAJIB** menjalankan:
+  - `node scripts/sync/sync-all-envs.cjs` (Environment Sync)
+  - `node scripts/sync/rebuild_abis_data.cjs` (ABI Placeholder Sync)
+  - `node scripts/audits/check_sync_status.cjs` (Integritas Audit)
+
+---
+
+## 21. Absolute Parity & Hardening Audit Protocol (v3.59.2)
+
+Setiap agen yang mengelola tugas berantai (Multi-Action) atau distribusi reward wajib menjalankan audit paritas.
+
+### 21.1 Parity Audit Checklist
+1. **XP Drift**: Pastikan `total_xp` database sinkron dengan `points` on-chain.
+2. **Tier Drift**: Pastikan level database sinkron dengan `currentTier` on-chain.
+3. **Metadata Parity**: Pastikan URL Pinata di database sinkron dengan `BaseURI` on-chain via `setTierURI`.
+
+### 21.2 Tools & Endpoints
+- **Audit Tool**: Dashboard Hardening Center di Tab Admin.
+- **API**: `/api/admin/parity-audit` (High-precision comparison).
+- **Manual Sync**: Gunakan tombol "Batch Sync" jika terdeteksi drift > 1% pada Top 50 users.
+
+---
+
+## 22. DailyApp V14 Multi-Token Sponsorship & Decimal Normalization (v3.59.3)
+
+Peningkatan infrastruktur sponsor untuk mendukung ekonomi multi-aset dan normalisasi parameter moneter.
+
+### 22.1 Multi-Token Rewards
+- **Storage Strategy**: Reward disimpan di `mapping(address => mapping(address => uint256)) public claimableRewards` (user => token => amount).
+- **Default Tokens**: USDC (Base) dan ETH.
+- **Claim Logic**: User memanggil `claimRewards(tokenAddress)` secara spesifik untuk menarik saldo per-token.
+
+### 22.2 Decimal Normalization (6-Decimal Base)
+Seluruh parameter ekonomi dikonfigurasi menggunakan basis **6-desimal** (USDC-native) untuk menghindari fragmentasi unit.
+- **buySponsorshipWithToken**: Mengonversi deposit token ke 6-desimal internal.
+  - ETH (18 dec) -> Normalisasi ke 6 dec.
+  - USDC (6 dec) -> Langsung.
+- **Validation**: Pengecekan `minPool` (threshold minimal sponsor) dilakukan terhadap nilai hasil normalisasi ini.
+
+### 22.3 UI Persistence Mandate
+- **Card Visibility**: `SponsoredTaskCard` tidak boleh menghilang hanya karena user sudah menyelesaikan tugas.
+- **Enforcement**: Kartu tetap ditampilkan selama `claimableRewards(user, token) > 0` untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.
+
+---
+*End of Task Feature Workflow - Nexus v3.59.3 LOCKED.*
+
+---
+
+## Chapter C: Accountant Ledger & Financial Balances SOT
+- **Specification:** Accountant Ledger & Financial Balances SOT
+- **Version:** v3.63.0
+- **Date Stamp:** 2026-05-18T19:01:52+07:00
+- **Author:** Antigravity (Lead Blockchain Architect)
+- **Status:** HARDENED SOT
+
+## 1. Arsitektur Akuntan Ledger
+Sistem Ledger bekerja dengan menggabungkan data dari dua sumber utama:
+1.  **On-Chain (Blockchain)**: Saldo real-time dari kontrak pintar (Smart Contracts).
+2.  **Off-Chain (Database)**: Log aktivitas pengguna (`user_activity_logs`) yang mencatat kategori transaksi.
+
+### 📍 Komponen Utama
+- **Dashboard UI**: `AdminPage.tsx` -> `TaskManager.tsx` (Modular sections in `src/features/admin/components/`).
+- **Backend Logic**: `admin-bundle.js` (Endpoint `/api/admin/accountant-ledger`).
+- **Hook**: `useSBT.js` (Fungsi `withdrawTreasury`).
+- **Database Table**: `user_activity_logs`.
+
+---
+
+## 2. Kategorisasi Transaksi
+Seluruh aktivitas finansial di dalam ekosistem wajib dipetakan ke dalam salah satu kategori berikut untuk memastikan laporan balancing yang akurat:
+
+| Kategori | Tipe | Deskripsi | Contoh Aktivitas |
+|---|---|---|---|
+| **PURCHASE** | Income (🟢) | Dana masuk ke kas ekosistem. | UGC Listing Fee, SBT Upgrade/Mint, Raffle Tickets. |
+| **REWARD** | Expense (🔴) | Pengeluaran untuk hadiah pengguna. | SBT Pool Reward, Raffle Prize Payouts. |
+| **EXPENSE** | Expense (🔴) | Biaya operasional atau penarikan manual. | Server costs, manual treasury rebalancing. |
+
+---
+
+## 3. On-Chain Balancing Report
+Sistem melakukan verifikasi saldo secara langsung pada alamat kontrak berikut untuk dibandingkan dengan catatan Ledger:
+
+| Kontrak / Wallet | Kegunaan | Asset |
+|---|---|---|
+| **SAFE_MULTISIG** | Treasury Pusat (End-point Penarikan) | ETH, USDC |
+| **MASTER_X_ADDRESS** | Smart Contract XP & SBT Pool | ETH, USDC |
+| **DAILY_APP_ADDRESS** | Smart Contract Core (UGC & Mints) | ETH, USDC |
+| **RAFFLE_ADDRESS** | Smart Contract Raffle (Ticket Revenue) | ETH, USDC |
+
+> [!IMPORTANT]
+> **Zero-Hardcode Compliance**: Seluruh alamat di atas wajib ditarik secara dinamis dari environment variables via `lib/contracts.js`.
+
+---
+
+## 4. Modul Treasury (ETH Withdrawal)
+Admin memiliki otoritas untuk menarik akumulasi dana ETH dari kontrak operasional ke Treasury Pusat melalui fungsi `withdrawTreasury`.
+
+- **Alur**: `UI (AccountantLedgerTab)` -> `useSBT (hook)` -> `Contract (DailyApp/Raffle)` -> `Transfer to SAFE_MULTISIG`.
+- **Security**: Hanya wallet dengan role Admin/Owner yang dapat mengeksekusi penarikan ini.
+
+## 5. Multi-Token Audit Protocol (V14.1)
+Sistem Ledger kini mendukung audit multi-token otomatis (USDC/ETH) dengan standar sinkronisasi event-driven:
+
+1.  **On-Chain Event SOT**:
+    - `SponsorshipRequested`: Mencatat pemasukan fee platform (USDC).
+    - `RewardsClaimed`: Mencatat pengeluaran hadiah pengguna (USDC/ETH/DISCO). *Diperkenalkan di V14.1*.
+2.  **Decimal Normalization Engine**:
+    - Seluruh jumlah dana dinormalisasi secara otomatis berdasarkan desimal token (USDC=6, ETH=18) sebelum dicatat ke `user_activity_logs`.
+    - Payout dicatat dalam kategori `REWARD` dan ditampilkan sebagai pengeluaran (expense) di dashboard.
+
+---
+
+## 6. Ecosystem Hardening Center (v3.59.4)
+Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah terjadinya "Data Drift" pada XP dan Tier pengguna.
+
+### 📍 Fitur Utama:
+1.  **Parity Audit**: Membandingkan `total_xp` dan `tier` di Supabase dengan `userStats` di blockchain secara real-time.
+2.  **Batch Synchronization**:
+    *   **Sync XP**: Memperbarui status poin di kontrak MasterX berdasarkan data database.
+    *   **Sync Tiers**: Memaksa pembaruan tier di blockchain jika terdeteksi inkonsistensi.
+    *   **Sync NFT URIs**: Sinkronisasi metadata IPFS (Pinata) dari database ke kontrak on-chain.
+3.  **Manual Ledger Sync Protocol**:
+    *   **On-Demand Trigger**: Memungkinkan admin memicu sinkronisasi event blockchain (`accountant-sync`) secara manual untuk mengatasi kegagalan cron otomatis.
+    *   **Block Height Visibility**: Dashboard menampilkan `last_synced_block` dan menghitung selisih (*drift*) terhadap `current_block` jaringan.
+    *   **Freshness Indicator**: Memberikan feedback visual (Success/Warning) berdasarkan usia sinkronisasi terakhir untuk menjamin kemutakhiran data audit.
+
+---
+
+---
+
+## 7. Raffle Economy Architecture (v3.59.5)
+Ekosistem Raffle menggunakan sistem biaya tiga lapis untuk menjamin keberlanjutan operasional dan profitabilitas platform:
+
+| Komponen Biaya | Nominal (Default) | Pihak yang Membayar | Tujuan |
+|---|---|---|---|
+| **Project Rake** | 20% | Creator (dari Tiket) | Revenue murni platform dari penjualan tiket. |
+| **Gas Surcharge** | 10% | Creator (saat Create) | Biaya operasional gas untuk API3 QRNG (Randomness). |
+| **Claim Fee** | 5% | Pemenang (saat Claim) | Biaya pemrosesan klaim dan maintenance hadiah. |
 
 ### 📍 Mekanisme Aliran Dana:
 1.  **Ticket Sales (80/20 Split)**:
@@ -1652,19 +1848,6 @@ Ekosistem Raffle menggunakan sistem biaya tiga lapis untuk menjamin keberlanjuta
 3.  **Prize Payout**:
     *   Dana hadiah disimpan aman di kontrak hingga diklaim.
     *   Saat klaim, 5% dipotong untuk Admin, 95% dikirim ke Pemenang.
-
----
-
-## 8. Panduan Integrasi Modul Baru
-Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang **WAJIB** mengikuti langkah berikut:
-
-1.  **Emit Log di Database**: Gunakan kategori `PURCHASE` untuk setiap revenue.
-2.  **Metadata Lengkap**: Sertakan `tx_hash`, `value_amount`, dan `value_symbol` ('USDC' atau 'ETH').
-3.  **Automatic Inclusion**: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.
-
----
----
-*End of Accountant Ledger SOT - Nexus v3.63.0 Locked.*
 
 ---
 
@@ -1745,6 +1928,61 @@ graph TD
 ---
 
 # Section II: Chronological Development Log
+
+## 47. Work Report v3.64.15-Hardened
+**Date:** 2026-05-20
+**Subject:** Native+ Typography & Viewport Containment Refactoring
+**Author:** Antigravity (Lead Blockchain Architect)
+
+### Executive Summary
+1. Refactored typography on `ProfilePage.tsx`, `SBTRewardsDashboard.tsx`, and `DailyGoalCard.tsx` to align with the Native+ design standards.
+2. Removed legacy typography classes (`text-xs`, `text-sm`, `text-[10px]`) and normalized text components to use `.label-native` (`text-[11px] font-black uppercase tracking-widest`), `.content-native` (`text-[13px] font-medium leading-relaxed`), and `.value-native` (`text-[12px] font-bold tracking-wide`) formats.
+3. Hardened layouts on all three files to add `max-w-[100vw]` and `overflow-x-hidden` on the root elements, achieving complete mobile viewport containment and preventing content clipping.
+4. Compiled and verified frontend bundle code with zero build-time warnings or regressions.
+
+### Key Implementation Details
+1. **ProfilePage Typography Normalization**: Changed legacy loading status and mission/swap labels from `text-[10px]` to `text-[11px]`. Converted the claimable revenue value from legacy `text-sm` to standard `text-[12px]` to follow the Native+ `.value-native` format.
+2. **SBTRewardsDashboard Normalization**: Standardized transaction proof link, community tier metadata, and scaling factors from legacy `text-xs`/`text-[10px]` to standard `text-[11px]`.
+3. **DailyGoalCard Normalization**: Standardized targets, verification status, and daily reward labels from `text-[10px]` to `text-[11px]`.
+4. **Viewport Containment**: Added mobile containment container class overrides (`max-w-[100vw] overflow-x-hidden`) to all elements.
+5. **Compilation Verification**: Verified build integrity using `npm run build` in the `Raffle_Frontend` directory.
+
+### Verification Matrix
+- [x] **Typography Compliance**: Purged all legacy sizes from modified files.
+- [x] **Viewport Containment**: Horizontal scrolling blocked; root containers fit strictly within view width.
+- [x] **Production Build**: 100% success across 7,274 modules without compilation warnings.
+
+---
+
+
+
+
+
+
+
+
+## 46. Work Report v3.64.14-Hardened
+**Date:** 2026-05-20
+**Subject:** Git Pre-Commit Hook Integration & RTK Hardening Mandate
+**Author:** Antigravity (Lead Blockchain Architect)
+
+### Executive Summary
+1. Hardened the agent anti-negligence hook (`agent_anti_negligence_hook.cjs`) to promote the missing RTK (Rust Token Killer) check from a warning to a strict failure.
+2. Integrated the agent anti-negligence hook into the Git `pre-commit` hook (via Husky) alongside Gitleaks, preventing any code commits if the anti-negligence check fails or if RTK is missing/inactive.
+3. Updated core documentation (Ecosystem Sentinel, Git Hygiene, `.cursorrules`, and Master PRD) to document the mandatory pre-commit hooks and RTK enforcement rule.
+
+### Key Implementation Details
+1. **RTK Verification Hardening**: Modified `scripts/audits/agent_anti_negligence_hook.cjs` to add a failure to `failures` and set `hasFailure = true` when `rtk.exe` is missing from `.bin/`.
+2. **Husky pre-commit Hook Update**: Appended `node scripts/audits/agent_anti_negligence_hook.cjs` with exit code status checks to `.husky/pre-commit` to prevent committing invalid, leaking, or non-RTK compliant work.
+3. **Core Skills Synced**: Updated `.agents/skills/git-hygiene/SKILL.md` (v3.64.14-Hardened) and `.agents/skills/ecosystem-sentinel/SKILL.md` (v3.64.14-Hardened) to detail the new pre-commit hook and RTK enforcement mechanism.
+4. **Master Architect Protocol Synced**: Updated `.cursorrules` (v3.64.14-Hardened) sections 53 and 61 to enforce the mandatory RTK pre-commit verification.
+
+### Verification Matrix
+- [x] **Pre-Commit Audit**: Passed `agent_anti_negligence_hook.cjs` with 100% operational status.
+- [x] **RTK Availability**: Confirmed `rtk 0.40.0` is active and available in `.bin/rtk.exe`.
+- [x] **Git Hook Integrity**: Verified `.husky/pre-commit` executes hook and blocks on error.
+
+---
 
 ## 45. Work Report v3.64.6-Hardened
 **Date:** 2026-05-19

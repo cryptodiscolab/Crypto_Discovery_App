@@ -355,14 +355,14 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
             <div className="flex justify-center">
                 <div className="flex p-1 bg-black/40 rounded-2xl border border-white/5">
                     <button
-                        onClick={() => setControlMode('quick')}
-                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${controlMode === 'quick' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                        onClick={() => { setControlMode('quick'); setSubTab('daily'); }}
+                        className={`px-6 py-2 rounded-xl label-native transition-all ${controlMode === 'quick' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-lg' : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
                     >
                         Quick Forge
                     </button>
                     <button
-                        onClick={() => setControlMode('batch')}
-                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${controlMode === 'batch' ? 'bg-purple-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                        onClick={() => { setControlMode('batch'); setSubTab('BATCH_CREATOR'); }}
+                        className={`px-6 py-2 rounded-xl label-native transition-all ${controlMode === 'batch' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30 shadow-lg' : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
                     >
                         Smart Batch
                     </button>
@@ -375,7 +375,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                     <button
                         key={t}
                         onClick={() => setSubTab(t)}
-                        className={`flex-1 py-3 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${subTab === t ? 'bg-[#0a0a0c] text-indigo-400 border border-white/5' : 'text-slate-600 hover:text-slate-400'}`}
+                        className={`flex-1 py-3 rounded-lg label-native transition-all ${subTab === t ? 'bg-[#0a0a0c] text-indigo-400 border border-white/5' : 'text-slate-600 hover:text-slate-400'}`}
                     >
                         {t.replace('_', ' ').replace('daily', 'Single Task').replace('sponsor', 'Sponsor').replace('analytics', 'Analytics')}
                     </button>
@@ -488,8 +488,8 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                     <div className="flex items-center gap-4">
                         {isWaiting ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
                         <div>
-                            <p className="text-[11px] font-black text-white uppercase tracking-widest">{isWaiting ? "Protocol Engagement Active" : "Authorization Error"}</p>
-                            <p className="text-[9px] text-slate-500 mt-0.5">{isWaiting ? "Awaiting block confirmation..." : (writeError as { shortMessage?: string; message?: string })?.shortMessage || writeError?.message}</p>
+                            <p className="label-native text-white">{isWaiting ? "Protocol Engagement Active" : "Authorization Error"}</p>
+                            <p className="content-native text-slate-500 mt-0.5">{isWaiting ? "Awaiting block confirmation..." : (writeError as { shortMessage?: string; message?: string })?.shortMessage || writeError?.message}</p>
                         </div>
                     </div>
                 </div>

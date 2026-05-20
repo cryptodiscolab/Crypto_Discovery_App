@@ -89,7 +89,7 @@ export function LoginPage() {
     const step = !isConnected ? 1 : !siweSession ? 2 : 3;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] bg-[#0B0E14]">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-[100vw] overflow-x-hidden bg-[#0B0E14]">
             <HypeFeed />
             <div className="p-4 flex flex-col items-center justify-center w-full">
             <div className="relative z-50 pointer-events-auto w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2rem] p-8 shadow-2xl overflow-hidden">
@@ -289,7 +289,7 @@ export function LoginPage() {
                         href="https://farcaster.xyz/~/code/CJ393F"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-400 text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
                     >
                          GET ACCOUNT & JOIN THE GACHA
                         <ExternalLink className="w-3 h-3" />

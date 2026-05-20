@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, CheckCircle, XCircle, Clock, Trash2, RefreshCw, Ticket, Zap, AlertTriangle } from 'lucide-react';
+import { Shield, XCircle, Trash2, RefreshCw, Ticket, Zap, AlertTriangle } from 'lucide-react';
 import { useAccount, useChainId, useSignMessage, useWriteContract } from 'wagmi';
 import { RAFFLE_ADDRESS, RAFFLE_ABI } from '../../../lib/contracts';
 import { usePendingSyncRecovery } from '../../../hooks/usePendingSyncRecovery';
@@ -293,14 +293,14 @@ export function ModerationCenterTab() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-[100vw] overflow-x-hidden">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <h2 className="text-md font-black text-white uppercase tracking-[0.2em] leading-none flex items-center gap-2">
                         <Shield className="w-5 h-5 text-indigo-400" />
                         Moderation Center
                     </h2>
-                    <p className="admin-label !mb-0 !text-[11px] mt-1">Reviewing User-Generated Content</p>
+                    <p className="label-native text-slate-500 mt-2">Reviewing User-Generated Content</p>
                 </div>
                 <button onClick={fetchPending} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
                     <RefreshCw className={`w-4 h-4 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
@@ -310,13 +310,13 @@ export function ModerationCenterTab() {
             <div className="flex gap-4 border-b border-white/5 pb-4 mb-8">
                 <button
                     onClick={() => setActiveSubTab('raffles')}
-                    className={`text-[11px] font-black uppercase tracking-widest pb-2 transition-all flex items-center gap-2 ${activeSubTab === 'raffles' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`pb-2 transition-all flex items-center gap-2 label-native ${activeSubTab === 'raffles' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}
                 >
                     <Ticket className="w-3 h-3" /> Pending Raffles ({pendingRaffles.length})
                 </button>
                 <button
                     onClick={() => setActiveSubTab('missions')}
-                    className={`text-[11px] font-black uppercase tracking-widest pb-2 transition-all flex items-center gap-2 ${activeSubTab === 'missions' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`pb-2 transition-all flex items-center gap-2 label-native ${activeSubTab === 'missions' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500 hover:text-white'}`}
                 >
                     <Zap className="w-3 h-3" /> Pending Missions ({pendingMissions.length})
                 </button>
@@ -325,41 +325,41 @@ export function ModerationCenterTab() {
             {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center animate-pulse">
                     <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-                    <p className="admin-label !text-[11px]">Scanning Blockchain & DB...</p>
+                    <p className="label-native text-slate-500">Scanning Blockchain & DB...</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {activeSubTab === 'raffles' && (
                         pendingRaffles.length === 0 ? (
                             <div className="py-20 text-center bg-white/2 rounded-3xl border border-dashed border-white/5">
-                                <Ticket className="w-12 h-12 text-slate-800 mx-auto mb-4" />
-                                <p className="text-xs text-slate-600 font-bold uppercase">No pending raffles</p>
+                                <Ticket className="w-12 h-12 text-slate-800 mx-auto mb-4 opacity-30" />
+                                <p className="label-native text-slate-600">No pending raffles</p>
                             </div>
                         ) : (
                             pendingRaffles.map(raffle => (
                                 <div key={raffle.id} className="bg-[#121214] p-6 rounded-3xl border border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-indigo-500/30 transition-all">
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 text-left">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-[10px] font-black text-indigo-400 uppercase bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">Raffle #{raffle.id}</span>
-                                            <span className="text-[11px] font-mono text-slate-500">{new Date(raffle.created_at).toLocaleString()}</span>
+                                            <span className="label-native text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">Raffle #{raffle.id}</span>
+                                            <span className="label-native font-mono text-slate-500">{new Date(raffle.created_at).toLocaleString()}</span>
                                         </div>
-                                        <h3 className="text-lg font-black text-white truncate max-w-md">{raffle.title || `Raffle #${raffle.id}`}</h3>
-                                        <p className="text-[11px] text-slate-500 font-mono mt-1">Creator: {raffle.creator_address}</p>
+                                        <h3 className="value-native text-white truncate max-w-md">{raffle.title || `Raffle #${raffle.id}`}</h3>
+                                        <p className="label-native text-slate-500 font-mono mt-1">Creator: {raffle.creator_address}</p>
                                         <div className="flex gap-4 mt-3">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase">Pool: {raffle.prize_pool || 0} ETH</div>
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase">Tickets: {raffle.max_tickets}</div>
+                                            <div className="label-native text-slate-400">Pool: {raffle.prize_pool || 0} ETH</div>
+                                            <div className="label-native text-slate-400">Tickets: {raffle.max_tickets}</div>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => handleApproveRaffle(raffle.id)}
-                                            className="btn-native bg-emerald-600 hover:bg-emerald-500 text-white !py-2.5"
+                                            className="px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl label-native transition-all active:scale-[0.98] disabled:opacity-30"
                                         >
-                                            <CheckCircle className="w-3.5 h-3.5" /> Approve
+                                            Approve
                                         </button>
                                         <button
                                             onClick={() => handleRejectRaffle(raffle)}
-                                            className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all"
+                                            className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all"
                                             title="Reject & Refund"
                                         >
                                             <XCircle className="w-4 h-4" />
@@ -373,81 +373,81 @@ export function ModerationCenterTab() {
                     {activeSubTab === 'missions' && (
                         pendingMissions.length === 0 ? (
                             <div className="py-20 text-center bg-white/2 rounded-3xl border border-dashed border-white/5">
-                                <Zap className="w-12 h-12 text-slate-800 mx-auto mb-4" />
-                                <p className="text-xs text-slate-600 font-bold uppercase">No pending missions</p>
+                                <Zap className="w-12 h-12 text-slate-800 mx-auto mb-4 opacity-30" />
+                                <p className="label-native text-slate-600">No pending missions</p>
                             </div>
                         ) : (
                             pendingMissions.map(mission => (
                                 <div key={mission.id} className="bg-[#121214] p-6 rounded-3xl border border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-purple-500/30 transition-all">
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 text-left">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-[10px] font-black text-purple-400 uppercase bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20">UGC Mission</span>
-                                            <span className="text-[11px] font-mono text-slate-500">{new Date(mission.created_at || Date.now()).toLocaleString()}</span>
+                                            <span className="label-native text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20">UGC Mission</span>
+                                            <span className="label-native font-mono text-slate-500">{new Date(mission.created_at || Date.now()).toLocaleString()}</span>
                                             {mission.is_verified_payment ? (
-                                                <span className="text-[11px] font-black text-emerald-400 uppercase flex items-center gap-1">
-                                                    <CheckCircle className="w-2.5 h-2.5" /> Paid
+                                                <span className="label-native text-emerald-400">
+                                                    Paid
                                                 </span>
                                             ) : (
-                                                <span className="text-[11px] font-black text-amber-500 uppercase flex items-center gap-1">
-                                                    <Clock className="w-2.5 h-2.5" /> Unverified
+                                                <span className="label-native text-amber-500">
+                                                    Unverified
                                                 </span>
                                             )}
                                         </div>
-                                        <h3 className="text-lg font-black text-white truncate max-w-md">{mission.title}</h3>
+                                        <h3 className="value-native text-white truncate max-w-md">{mission.title}</h3>
                                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                                            <p className="text-[10px] text-slate-500 font-mono">
+                                            <p className="label-native text-slate-500 font-mono">
                                                 Reward: <span className="text-purple-400">{mission.reward_amount_per_user}</span> {mission.reward_symbol || 'USDC'}
                                             </p>
                                             {mission.listing_fee && (
-                                                <p className="text-[10px] text-slate-500 font-mono">
+                                                <p className="label-native text-slate-500 font-mono">
                                                     Fee: <span className="text-indigo-400">{mission.listing_fee}</span> {mission.reward_symbol || 'USDC'}
                                                 </p>
                                             )}
-                                            <p className="text-[10px] text-slate-500 font-mono">
+                                            <p className="label-native text-slate-500 font-mono">
                                                 Users: <span className="text-slate-300">{mission.max_participants}</span>
                                             </p>
                                         </div>
 
                                         <div className="mt-3 flex flex-wrap gap-3">
                                             <div className="px-3 py-1.5 bg-white/5 rounded-xl border border-white/5">
-                                                <p className="admin-label !mb-1 !text-[9px]">Sponsor Wallet</p>
-                                                <p className="text-[11px] text-slate-300 font-mono">{mission.sponsor_address}</p>
+                                                <p className="label-native text-slate-500 mb-1">Sponsor Wallet</p>
+                                                <p className="label-native text-slate-300 font-mono">{mission.sponsor_address}</p>
                                             </div>
                                             {mission.payment_tx_hash && (
                                                 <div className="px-3 py-1.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
-                                                    <p className="admin-label !mb-1 !text-[9px] !text-indigo-400">Payment Proof (TX)</p>
+                                                    <p className="label-native text-indigo-400 mb-1">Payment Proof (TX)</p>
                                                     <a
                                                         href={isMainnet ? `https://basescan.org/tx/${mission.payment_tx_hash}` : `https://sepolia.basescan.org/tx/${mission.payment_tx_hash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-[11px] text-blue-400 font-mono hover:underline truncate block max-w-[120px]"
+                                                        className="label-native text-blue-400 font-mono hover:underline truncate block max-w-[120px]"
                                                     >
                                                         {mission.payment_tx_hash.substring(0, 10)}...{mission.payment_tx_hash.substring(54)}
                                                     </a>
                                                 </div>
                                             )}
                                         </div>
-                                        <a href={mission.link} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-400 hover:underline flex items-center gap-1 mt-4 font-bold uppercase tracking-widest bg-blue-500/5 w-fit px-2 py-1 rounded">View Mission Source</a>
+                                        <a href={mission.link} target="_blank" rel="noopener noreferrer" className="label-native text-blue-400 hover:underline flex items-center gap-1 mt-4 bg-blue-500/5 w-fit px-2.5 py-1 rounded-lg">View Mission Source</a>
                                     </div>
                                     <div className="flex gap-2">
                                         {!mission.is_verified_payment ? (
                                             <button
                                                 onClick={() => handleVerifyOnchain(mission.id)}
-                                                className="btn-native bg-indigo-600 hover:bg-indigo-500 text-white !py-2.5 shadow-lg shadow-indigo-500/20"
+                                                className="px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 rounded-xl label-native transition-all shadow-lg active:scale-[0.98] disabled:opacity-30"
                                             >
-                                                <Shield className="w-3.5 h-3.5" /> Verify Payment
+                                                Verify Payment
                                             </button>
                                         ) : (
                                             <button
                                                 onClick={() => handleApproveMission(mission.id)}
-                                                className="btn-native bg-emerald-600 hover:bg-emerald-500 text-white !py-2.5 shadow-lg shadow-emerald-500/20"
+                                                className="px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl label-native transition-all active:scale-[0.98] disabled:opacity-30 animate-in fade-in"
                                             >
-                                                <CheckCircle className="w-3.5 h-3.5" /> Approve
+                                                Approve
                                             </button>
                                         )}
                                         <button
                                             onClick={() => handleRejectMission(mission)}
-                                            className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all"
+                                            className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -472,8 +472,8 @@ export function ModerationCenterTab() {
                                     <XCircle className="w-6 h-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Reject Raffle</h3>
-                                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Moderation Action Required</p>
+                                    <h3 className="text-md font-black text-white uppercase tracking-[0.2em] leading-none">Reject Raffle</h3>
+                                    <p className="label-native text-slate-500 mt-2">Moderation Action Required</p>
                                 </div>
                             </div>
                             <button
@@ -481,7 +481,7 @@ export function ModerationCenterTab() {
                                 className="p-2 hover:bg-white/5 rounded-xl transition-all"
                                 disabled={isRejecting}
                             >
-                                <Trash2 className="w-5 h-5 text-slate-600" />
+                                <XCircle className="w-5 h-5 text-slate-600" />
                             </button>
                         </div>
 
@@ -489,33 +489,33 @@ export function ModerationCenterTab() {
                         <div className="p-8 space-y-6">
                             <div className="p-5 bg-white/2 rounded-3xl border border-white/5 space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase">Target Raffle</span>
-                                    <span className="text-[10px] font-black text-indigo-400 uppercase">#{selectedItem?.id}</span>
+                                    <span className="label-native text-slate-500">Target Raffle</span>
+                                    <span className="label-native text-indigo-400">#{selectedItem?.id}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase">Refund Amount</span>
-                                    <span className="text-sm font-black text-white">{selectedItem?.prize_pool || 0} ETH</span>
+                                    <span className="label-native text-slate-500">Refund Amount</span>
+                                    <span className="text-[12px] font-black text-white">{selectedItem?.prize_pool || 0} ETH</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase">Recipient</span>
-                                    <span className="text-[11px] font-mono text-slate-400">{selectedItem?.sponsor_address?.substring(0,6)}...{selectedItem?.sponsor_address?.substring(38)}</span>
+                                    <span className="label-native text-slate-500">Recipient</span>
+                                    <span className="label-native text-slate-400 font-mono">{selectedItem?.sponsor_address?.substring(0,6)}...{selectedItem?.sponsor_address?.substring(38)}</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Reason for Rejection</label>
+                            <div className="space-y-2 text-left">
+                                <label className="label-native text-slate-500 ml-2">Reason for Rejection</label>
                                 <textarea
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     placeholder="e.g. Inappropriate metadata or spam content..."
-                                    className="w-full bg-black/40 border border-white/5 rounded-3xl p-5 text-sm text-white placeholder:text-slate-700 focus:outline-none focus:border-red-500/50 transition-all min-h-[120px] resize-none"
+                                    className="w-full bg-black/40 border border-white/5 rounded-3xl p-5 value-native text-white placeholder:text-slate-700 focus:outline-none focus:border-red-500/50 transition-all min-h-[120px] resize-none"
                                     disabled={isRejecting}
                                 />
                             </div>
 
-                            <div className="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 flex items-start gap-3">
+                            <div className="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 flex items-start gap-3 text-left">
                                 <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-amber-500/80 leading-relaxed font-bold">
+                                <p className="label-native text-amber-500/80 leading-relaxed">
                                     IMPORTANT: This action will trigger an on-chain transaction to refund the ETH deposit back to the sponsor. This cannot be undone.
                                 </p>
                             </div>
@@ -525,7 +525,7 @@ export function ModerationCenterTab() {
                         <div className="p-8 pt-0 flex gap-3">
                             <button
                                 onClick={() => setShowRejectModal(false)}
-                                className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest transition-all"
+                                className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white label-native transition-all active:scale-[0.98]"
                                 disabled={isRejecting}
                             >
                                 Cancel
@@ -533,30 +533,20 @@ export function ModerationCenterTab() {
                             <button
                                 onClick={confirmReject}
                                 disabled={isRejecting || !rejectionReason.trim()}
-                                className={`flex-[2] py-4 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${isRejecting || !rejectionReason.trim() ? 'bg-slate-800 text-slate-500' : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20'}`}
+                                className={`flex-[2] py-4 rounded-2xl flex items-center justify-center gap-2 label-native transition-all active:scale-[0.98] border border-red-500/30 ${isRejecting || !rejectionReason.trim() ? 'bg-[#121214] text-slate-500 border-none' : 'bg-red-600/20 hover:bg-red-600/30 text-red-400'}`}
                             >
-                                {isRejecting ? (
-                                    <>
-                                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        <XCircle className="w-3.5 h-3.5" />
-                                        Reject & Refund
-                                    </>
-                                )}
+                                {isRejecting ? "Processing..." : "Reject & Refund"}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="mt-12 p-6 bg-amber-500/5 rounded-3xl border border-amber-500/10 flex items-start gap-4">
+            <div className="mt-12 p-6 bg-amber-500/5 rounded-3xl border border-amber-500/10 flex items-start gap-4 text-left">
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
                 <div className="space-y-1">
-                    <p className="admin-label !mb-1 !text-amber-500">Governance Notice</p>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-bold">Approved content will become visible to all users across the global dashboard. Every approval action is cryptographically signed and recorded in the permanent admin audit logs.</p>
+                    <p className="label-native text-amber-500">Governance Notice</p>
+                    <p className="label-native text-slate-500 leading-relaxed">Approved content will become visible to all users across the global dashboard. Every approval action is cryptographically signed and recorded in the permanent admin audit logs.</p>
                 </div>
             </div>
         </div>

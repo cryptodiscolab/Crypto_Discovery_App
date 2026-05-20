@@ -1,10 +1,10 @@
 ---
 name: Git Hygiene & Clean Tree Manager
 description: Protokol untuk menjaga repositori Git tetap bersih dan organized. Skill ini menegakkan Clean Git Tree Mandate dari gemini.md (Section 27) yang melarang file sementara, secrets, dan artefak lainnya masuk ke source control. Berlaku untuk Antigravity dan semua sub-agents.
-version: v3.64.13-Hardened
+version: v3.64.14-Hardened
 ---
 
-## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.64.13-Hardened)
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.64.14-Hardened)
 - **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
 - **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
 - **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
@@ -106,7 +106,23 @@ Remove-Item tmp_*.cjs, tmp_*.js, tsc_output*.txt, lint_results*.txt
 
 ---
 
-## 5. Penanggung Jawab
+## 5. Git Pre-Commit Hook (Anti-Negligence & RTK Guard) (v3.64.14-Hardened)
+
+Repositori ini dikonfigurasi dengan Git hook `pre-commit` (melalui Husky) yang berjalan otomatis sebelum komit dibuat. Hook ini mengeksekusi pemeriksaan berikut:
+1. **Agent Anti-Negligence Hook** (`node scripts/audits/agent_anti_negligence_hook.cjs`)
+   - Mendeteksi kebocoran log `[dotenv]`.
+   - Memeriksa file polutan/sampah di direktori kerja (Git Hygiene).
+   - Memastikan paritas Peta Kerja (`.agents/WORKSPACE_MAP.md`).
+   - Melakukan audit keamanan (Secret Leak Audit).
+   - Memastikan ketersediaan dan validitas **Rust Token Killer (RTK)** di `.bin/rtk.exe`.
+2. **Gitleaks Scan** (`npm run gitleaks-check`)
+   - Memeriksa kebocoran token, private key, dan data sensitif secara statis.
+
+> 🚨 **PENTING**: Komit akan secara otomatis diblokir jika salah satu pemeriksaan di atas gagal, atau jika executable **RTK** (`.bin/rtk.exe`) tidak terdeteksi atau tidak aktif di workspace.
+
+---
+
+## 6. Penanggung Jawab
 
 Skill ini WAJIB dipahami dan diterapkan oleh **semua 12 agents**:
 - **Antigravity / OrchestratorBot** — Lead agent, bertanggung jawab atas state akhir `.gitignore` dan pengawasan pipeline.
@@ -117,4 +133,4 @@ Skill ini WAJIB dipahami dan diterapkan oleh **semua 12 agents**:
 
 ---
 
-*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.64.13-Hardened.*
+*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.64.14-Hardened.*

@@ -14,9 +14,9 @@ export const NotificationService = {
      * NOTE: System-level notifications should ideally be triggered server-side (cron/backend).
      * This client-side call relies on the /api/notify endpoint to validate the request
      * without requiring a cron secret from the browser.
-     * @param {number|string} fid - Farcaster ID penerima.
-     * @param {string} message - Isi pesan (max 500 karakter).
-     * @param {"mention"|"cast"} type - Tipe notifikasi.
+     * @param {number|string} fid - Recipient Farcaster ID.
+     * @param {string} message - Message content (max 500 characters).
+     * @param {"mention"|"cast"} type - Notification type.
      */
     async sendFarcasterNotification(fid: number | string, message: string, type: string = 'mention') {
         if (!fid || !message) {
@@ -48,12 +48,12 @@ export const NotificationService = {
 
     /**
      * Kirim notifikasi dengan wallet signature (user-initiated).
-     * @param {number|string} fid - Farcaster ID penerima.
-     * @param {string} message - Isi pesan.
-     * @param {string} wallet - Wallet address pengirim.
+     * @param {number|string} fid - Recipient Farcaster ID.
+     * @param {string} message - Message content.
+     * @param {string} wallet - Sender wallet address.
      * @param {string} signature - EIP-191 signature.
-     * @param {string} signedMessage - Message yang di-sign.
-     * @param {"mention"|"cast"} type - Tipe notifikasi.
+     * @param {string} signedMessage - The signed message.
+     * @param {"mention"|"cast"} type - Notification type.
      */
     async sendUserNotification(fid: number | string, message: string, wallet: string, signature: string, signedMessage: string, type: string = 'mention') {
         if (!fid || !message || !wallet || !signature || !signedMessage) {
@@ -82,8 +82,8 @@ export const NotificationService = {
     },
 
     /**
-     * Cek deadline reward dan trigger notifikasi jika diperlukan.
-     * Logika ini berjalan di client — hanya memeriksa, tidak kirim langsung ke Neynar.
+     * Check reward deadline and trigger notification if needed.
+     * This logic runs on the client — only checks, does not send directly to Neynar.
      */
     checkDeadlinesAndNotify(unclaimedRewards: unknown[]) {
         const now = Date.now();
@@ -91,11 +91,11 @@ export const NotificationService = {
             const r = reward as { isClaimed?: boolean; deadline?: number; fid?: number | string };
             if (!r.isClaimed && r.deadline) {
                 const timeLeft = r.deadline - now;
-                // 1 jam sebelum deadline: trigger notification via server
+                // 1 hour before deadline: trigger notification via server
                 if (timeLeft < 3600000 && timeLeft > 0 && r.fid) {
                     this.sendFarcasterNotification(
                         r.fid,
-                        `⏰ Klaim reward kamu sebelum expired dalam 1 jam!`,
+                        `⏰ Claim your reward before it expires in 1 hour!`,
                         'mention'
                     );
                 }

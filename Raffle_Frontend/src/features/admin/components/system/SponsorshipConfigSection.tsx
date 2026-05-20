@@ -1,6 +1,6 @@
 import { useAdminContract } from '../../../../hooks/useAdminContract';
 import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useReadContract, usePublicClient } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI } from '../../../../lib/contracts';
 import toast from 'react-hot-toast';
@@ -68,40 +68,42 @@ export function SponsorshipConfigSection() {
         }
     };
 
-
     return (
-        <div className="glass-card p-8 bg-slate-900/40 border border-white/5 space-y-6 rounded-3xl">
+        <div className="bg-[#121214] p-8 border border-white/5 space-y-6 rounded-3xl">
             <div>
-                <h3 className="text-xl font-black text-white flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-indigo-500" /> SPONSORSHIP CONTROL
-                </h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1 text-left">Configure UGC Task parameters</p>
+                <div className="flex items-center gap-2 mb-2">
+                    <Settings className="w-5 h-5 text-indigo-400" />
+                    <h3 className="text-md font-black text-white uppercase tracking-[0.2em] leading-none">
+                        SPONSORSHIP CONTROL
+                    </h3>
+                </div>
+                <p className="label-native text-slate-500 mt-2">Configure UGC Task parameters</p>
             </div>
 
             <div className="space-y-4 text-left">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Platform Fee (USDC)</label>
+                        <label className="label-native text-indigo-400">Platform Fee (USDC)</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">$</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 value-native">$</span>
                             <input
                                 type="number"
                                 value={fee}
                                 onChange={(e) => setFee(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono value-native focus:border-indigo-500 outline-none"
                             />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Min Pool Value (ETH)</label>
+                        <label className="label-native text-indigo-400">Min Pool Value (ETH)</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">Ξ</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 value-native">Ξ</span>
                             <input
                                 type="number"
                                 step="0.0001"
                                 value={minPool}
                                 onChange={(e) => setMinPool(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono value-native focus:border-indigo-500 outline-none"
                             />
                         </div>
                     </div>
@@ -109,29 +111,29 @@ export function SponsorshipConfigSection() {
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Reward/Claim (XP)</label>
+                        <label className="label-native text-amber-500">Reward/Claim (XP)</label>
                         <input
                             type="number"
                             value={rewardPerClaim}
                             onChange={(e) => setRewardPerClaim(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono value-native focus:border-indigo-500 outline-none"
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Tasks/Reward</label>
+                        <label className="label-native text-amber-500">Tasks/Reward</label>
                         <input
                             type="number"
                             value={tasksForReward}
                             onChange={(e) => setTasksForReward(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono value-native focus:border-indigo-500 outline-none"
                         />
                     </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
                     <div>
-                        <p className="text-xs font-bold text-white uppercase">Auto-Approve UGC</p>
-                        <p className="text-[9px] text-slate-500">When enabled, user tasks go live instantly after payment.</p>
+                        <p className="label-native text-white">Auto-Approve UGC</p>
+                        <p className="label-native text-slate-500 mt-1">When enabled, user tasks go live instantly after payment.</p>
                     </div>
                     <button
                         onClick={() => setAutoApprove(!autoApprove)}
@@ -145,7 +147,7 @@ export function SponsorshipConfigSection() {
             <button
                 onClick={handleSaveSponsorshipConfig}
                 disabled={isSaving}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-500/10 active:scale-[0.98] disabled:opacity-50"
+                className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 py-4 rounded-2xl label-native transition-all shadow-lg active:scale-[0.98] disabled:opacity-30"
             >
                 {isSaving ? "TRANSACTING..." : "PUSH CONFIG TO BLOCKCHAIN"}
             </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Save, Loader2, DollarSign, Wallet } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import { useAccount, useSignMessage } from 'wagmi';
 import { CONTRACTS, DAILY_APP_ABI, RAFFLE_ABI } from '../../../../lib/contracts';
@@ -70,15 +70,6 @@ export function UgcConfigSection() {
             }
         }
 
-        // Audit SBT Share vs Raffle Maintenance Fee (if they should align)
-        if (maintenanceFee) {
-            const contractBP = Number(maintenanceFee) / 100; // BP to %
-            if (parseFloat(currentConfig.sbt_pool_share_pct || '0') !== contractBP) {
-                // Not necessarily an error, but worth flagging if they drift
-                // newDrifts.sbt_share = `Contract BP is ${contractBP}%`;
-            }
-        }
-
         setDrifts(newDrifts);
     }
 
@@ -143,20 +134,23 @@ export function UgcConfigSection() {
     );
 
     return (
-        <div className="glass-card p-8 bg-slate-900/40 border border-white/5 space-y-6 rounded-3xl">
+        <div className="bg-[#121214] p-8 border border-white/5 space-y-6 rounded-3xl">
             <div>
-                <h3 className="text-xl font-black text-white flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-indigo-500" /> UGC PROTOCOL CONTROL
-                </h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1 text-left">
+                <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-5 h-5 text-indigo-400" />
+                    <h3 className="text-md font-black text-white uppercase tracking-[0.2em] leading-none">
+                        UGC PROTOCOL CONTROL
+                    </h3>
+                </div>
+                <p className="label-native text-slate-500 mt-2">
                     Configure Platform fees & Treasury for User Missions
                 </p>
             </div>
 
             <div className="space-y-4 text-left">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                        <DollarSign className="w-3 h-3" /> Listing Fee (USDC)
+                    <label className="label-native text-indigo-400">
+                        Listing Fee (USDC)
                     </label>
                     <div className="relative">
                         <input
@@ -167,56 +161,56 @@ export function UgcConfigSection() {
                                 setConfig({ ...config, listing_fee_usdc: val });
                                 performAudit({ ...config, listing_fee_usdc: val });
                             }}
-                            className={`w-full bg-black/40 border ${drifts.listing_fee ? 'border-red-500/50 animate-pulse' : 'border-white/10'} rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none`}
+                            className={`w-full bg-black/40 border ${drifts.listing_fee ? 'border-red-500/50 animate-pulse' : 'border-white/10'} rounded-xl px-4 py-3 text-white font-mono value-native focus:border-indigo-500 outline-none`}
                             placeholder="5.00"
                         />
                         {drifts.listing_fee && (
-                            <div className="absolute right-3 top-3 text-[9px] font-black text-red-500 bg-red-500/10 px-2 py-1 rounded-md uppercase tracking-tighter">
+                            <div className="absolute right-3 top-3 label-native text-red-500 bg-red-500/10 px-2 py-1 rounded-md">
                                 Drift Detected
                             </div>
                         )}
                     </div>
                     {drifts.listing_fee ? (
-                        <p className="text-[9px] text-red-400 font-bold">{drifts.listing_fee}</p>
+                        <p className="label-native text-red-400 font-bold">{drifts.listing_fee}</p>
                     ) : (
-                        <p className="text-[9px] text-slate-600 italic text-left">This fee is charged to sponsors for each Mission/Raffle created.</p>
+                        <p className="label-native text-slate-600 italic">This fee is charged to sponsors for each Mission/Raffle created.</p>
                     )}
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                        <DollarSign className="w-3 h-3" /> SBT Reward Portion (%)
+                    <label className="label-native text-indigo-400">
+                        SBT Reward Portion (%)
                     </label>
                     <div className="relative">
                         <input
                             type="number"
                             value={config.sbt_pool_share_pct}
                             onChange={(e) => setConfig({ ...config, sbt_pool_share_pct: e.target.value })}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono value-native focus:border-indigo-500 outline-none"
                             placeholder="10"
                         />
                     </div>
-                    <p className="text-[9px] text-slate-600 italic text-left">The percentage of Listing Fee that will be allocated to SBT Pool Reward.</p>
+                    <p className="label-native text-slate-600 italic">The percentage of Listing Fee that will be allocated to SBT Pool Reward.</p>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                        <Wallet className="w-3 h-3" /> Treasury Address
+                    <label className="label-native text-indigo-400">
+                        Treasury Address
                     </label>
                     <input
                         type="text"
                         value={config.treasury_address}
                         onChange={(e) => setConfig({ ...config, treasury_address: e.target.value })}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-indigo-500 outline-none"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono value-native focus:border-indigo-500 outline-none"
                         placeholder="0x..."
                     />
-                    <p className="text-[9px] text-slate-600 italic">Target wallet for all UGC listing fees and reward pools.</p>
+                    <p className="label-native text-slate-600 italic">Target wallet for all UGC listing fees and reward pools.</p>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
                     <div>
-                        <p className="text-xs font-bold text-white uppercase">UGC Submissions</p>
-                        <p className="text-[9px] text-slate-500">Enable or disable new user-generated missions.</p>
+                        <p className="label-native text-white">UGC Submissions</p>
+                        <p className="label-native text-slate-500 mt-1">Enable or disable new user-generated missions.</p>
                     </div>
                     <button
                         onClick={() => setConfig({ ...config, is_active: !config.is_active })}
@@ -230,16 +224,15 @@ export function UgcConfigSection() {
             <div className="grid grid-cols-2 gap-4">
                 <button
                     onClick={handleEmergencySync}
-                    className="bg-red-950/40 hover:bg-red-900/60 border border-red-500/20 py-4 rounded-2xl text-red-400 text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.98]"
+                    className="bg-red-950/40 hover:bg-red-900/60 border border-red-500/20 py-4 rounded-2xl text-red-400 label-native transition-all active:scale-[0.98]"
                 >
                     Emergency Parity Sync
                 </button>
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-indigo-600 hover:bg-emerald-600 py-4 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/10 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 py-4 rounded-2xl label-native transition-all shadow-lg active:scale-[0.98] disabled:opacity-30 flex items-center justify-center gap-2"
                 >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     {saving ? "SAVING..." : "UPDATE UGC PROTOCOL"}
                 </button>
             </div>

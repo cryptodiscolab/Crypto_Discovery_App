@@ -103,15 +103,15 @@ export function HealthDashboardSection() {
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-[100vw] overflow-x-hidden">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Activity className="w-5 h-5 text-indigo-400" />
                     <div>
-                        <h2 className="text-sm font-black text-white uppercase tracking-widest">Nexus Health Monitor</h2>
+                        <h2 className="text-md font-black text-white uppercase tracking-[0.2em]">Nexus Health Monitor</h2>
                         <div className="flex items-center gap-1 mt-0.5">
                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Active Telegram Alerts Enabled</span>
+                            <span className="label-native text-slate-500">Active Telegram Alerts Enabled</span>
                         </div>
                     </div>
                 </div>
@@ -128,10 +128,10 @@ export function HealthDashboardSection() {
                 {healthData.map((svc) => (
                     <div key={svc.service_key} className="p-4 bg-black/40 border border-white/5 rounded-2xl space-y-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter font-mono">
+                            <span className="label-native text-slate-400 font-mono">
                                 {svc.service_key.replace('-', ' ')}
                             </span>
-                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase ${getStatusColor(svc.status, svc.last_heartbeat)}`}>
+                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border label-native ${getStatusColor(svc.status, svc.last_heartbeat)}`}>
                                 {getStatusIcon(svc.status, svc.last_heartbeat)}
                                 {svc.status === 'recovering' ? `Healing ${svc.metadata?.consecutive_success || 0}/3` :
                                  (svc.status === 'healthy' && (Date.now() - new Date(svc.last_heartbeat).getTime() > 2 * 60 * 60 * 1000) ? 'STALE' : svc.status)}
@@ -141,21 +141,20 @@ export function HealthDashboardSection() {
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2 text-slate-500">
                                 <Clock className="w-3 h-3" />
-                                <span className="text-[10px] font-mono">{formatLastSync(svc.last_heartbeat)}</span>
+                                <span className="label-native font-mono">{formatLastSync(svc.last_heartbeat)}</span>
                             </div>
                             {svc.last_error && (
                                 <div className="mt-2 p-2 bg-red-500/5 border border-red-500/10 rounded-lg flex gap-2">
                                     <ShieldAlert className="w-3 h-3 text-red-400 flex-shrink-0 mt-0.5" />
-                                    <p className="text-[9px] text-red-400 font-mono break-all line-clamp-2">{svc.last_error}</p>
+                                    <p className="label-native text-red-400 font-mono line-clamp-2">{svc.last_error}</p>
                                 </div>
                             )}
 
                             {(svc.status === 'failed' || svc.status === 'recovering' || (Date.now() - new Date(svc.last_heartbeat).getTime() > 2 * 60 * 60 * 1000)) && (
                                 <button
                                     onClick={() => handleReset(svc.service_key)}
-                                    className="mt-3 w-full py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[9px] font-black text-white uppercase transition-all flex items-center justify-center gap-2"
+                                    className="mt-3 w-full py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-lg label-native text-indigo-400 transition-all"
                                 >
-                                    <RefreshCw className="w-3 h-3" />
                                     Manual Reset Health
                                 </button>
                             )}
@@ -169,8 +168,8 @@ export function HealthDashboardSection() {
                     <ShieldAlert className="w-5 h-5 text-indigo-400" />
                 </div>
                 <div>
-                    <h3 className="text-xs font-black text-white uppercase tracking-wide">Circuit Breaker Policy</h3>
-                    <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
+                    <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Circuit Breaker Policy</h3>
+                    <p className="label-native text-slate-400 mt-1">
                         Services marked as <strong>FAILED</strong> will automatically trigger the Circuit Breaker in the API layer.
                         Connections to external providers (Neynar, X) will be suspended for 5 minutes after a failure to prevent account banning
                         and system overload. Manual intervention may be required if errors persist.

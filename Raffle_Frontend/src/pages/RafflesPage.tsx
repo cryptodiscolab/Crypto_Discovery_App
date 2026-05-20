@@ -16,7 +16,7 @@ export function RafflesPage() {
   // Here we just pass the filter prop so each row can hide itself.
 
   return (
-    <div className="min-h-screen bg-[#050505] pb-28 md:pb-8 pt-safe">
+    <div className="min-h-screen max-w-[100vw] overflow-x-hidden bg-[#050505] pb-28 md:pb-8 pt-safe">
       <div className="max-w-screen-lg mx-auto">
         {/* Header */}
         <div className="px-4 py-6 border-b border-white/5">
@@ -31,7 +31,7 @@ export function RafflesPage() {
             <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsSwapOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-indigo-600/10 border border-indigo-500/30 text-indigo-400 label-native hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
+                  className="px-4 py-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 label-native hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
                 >
                   GET USDC
                 </button>

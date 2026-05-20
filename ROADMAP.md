@@ -14,6 +14,7 @@
 - [x] Real-time XP sync: DB→On-chain via cron (30min) + event trigger
 - [x] Security headers: HSTS, X-Frame-Options, nosniff, Referrer-Policy
 - [x] Zero-hardcode: all addresses from .env, dev wallet consolidated
+- [x] Git pre-commit hook (Husky) & RTK verification enforcement (v3.64.14)
 
 ## Phase 2: Satellite Contracts & Frontend Integration
 

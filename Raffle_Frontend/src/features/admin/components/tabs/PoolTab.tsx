@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Database, TrendingUp, Zap, Timer as TimerIcon, CheckCircle2, AlertCircle, RefreshCw, Edit3 } from 'lucide-react';
+import { Database, TrendingUp, Timer as TimerIcon, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatUnits } from 'viem';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../../../../hooks/useSBT';
@@ -112,7 +112,7 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                     <a
                         href={`https://sepolia.basescan.org/tx/${hash}`}
                         target="_blank" rel="noreferrer"
-                        className="text-xs text-blue-400 hover:underline"
+                        className="label-native text-blue-400 hover:underline"
                     >
                         View on Basescan ↗
                     </a>
@@ -130,7 +130,7 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-[100vw] overflow-x-hidden">
             {/* ── Main Stats Card ── */}
             <div className="glass-card p-10 bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-500/20 relative overflow-hidden rounded-3xl">
                 <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
@@ -138,25 +138,25 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                 </div>
                 <div className="relative z-10 text-center">
                     <Database className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
-                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Total SBT Community Pool</p>
-                    <h2 className="text-6xl font-black text-white mb-2">
-                        {currentETH.toFixed(4)} <span className="text-2xl text-slate-500">ETH</span>
+                    <p className="label-native text-slate-500 mb-2">Total SBT Community Pool</p>
+                    <h2 className="text-4xl font-black text-white mb-2">
+                        {currentETH.toFixed(4)} <span className="text-xl text-slate-500">ETH</span>
                     </h2>
                     <div className="flex flex-col items-center justify-center gap-1 mb-8">
                         <div className="flex items-center gap-2 text-indigo-400 font-mono font-bold">
                             <TrendingUp className="w-4 h-4" />
                             ~${currentUSDC.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
-                            <span className="text-[11px] text-slate-600 bg-white/5 px-2 py-0.5 rounded-full ml-2">@ ${ethPrice}/ETH</span>
+                            <span className="label-native text-slate-600 bg-white/5 px-2 py-0.5 rounded-full ml-2">@ ${ethPrice}/ETH</span>
                         </div>
-                        <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Source: Chainlink Oracle (On-Chain)</p>
+                        <p className="label-native text-slate-600">Source: Chainlink Oracle (On-Chain)</p>
                     </div>
                 </div>
             </div>
 
             {/* ── Tier Weights Grid ── */}
-            <div className="glass-card p-6 rounded-2xl border border-white/10">
+            <div className="glass-card p-6 rounded-2xl border border-white/10 text-left">
                 <div className="flex items-center justify-between mb-4">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Tier Weight Configuration</p>
+                    <p className="label-native text-slate-500">Tier Weight Configuration</p>
                     {isOwner && (
                         <button
                             onClick={() => {
@@ -167,9 +167,8 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                                 }
                             }}
                             disabled={isSyncingWeights}
-                            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-lg transition-all flex items-center gap-2"
+                            className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 rounded-lg transition-all flex items-center gap-2 label-native"
                         >
-                            {isSyncingWeights ? <RefreshCw size={12} className="animate-spin" /> : isEditingWeights ? <CheckCircle2 size={12} /> : <Edit3 size={12} />}
                             {isSyncingWeights ? 'Syncing...' : isEditingWeights ? 'Save & Sync' : 'Edit Weights'}
                         </button>
                     )}
@@ -183,41 +182,41 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                         { name: 'Bronze',   key: 'bronze',   w: tempWeights.bronze,   color: 'text-amber-600'   },
                     ].map(t => (
                         <div key={t.name} className="flex flex-col items-center p-3 rounded-xl bg-black/30 border border-white/5">
-                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">{t.name}</span>
+                            <span className="label-native text-slate-500 mb-1">{t.name}</span>
                             {isEditingWeights ? (
                                 <input
                                     type="number"
                                     value={t.w}
                                     onChange={(e) => setTempWeights(prev => ({ ...prev, [t.key]: Number(e.target.value) }))}
-                                    className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-1 text-[12px] font-bold text-center text-white outline-none focus:border-indigo-500"
+                                    className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-1 value-native text-center text-white outline-none focus:border-indigo-500"
                                 />
                             ) : (
-                                <span className={`text-[12px] font-bold ${t.color}`}>{t.w !== undefined ? String(t.w) : '—'}</span>
+                                <span className={`value-native ${t.color}`}>{t.w !== undefined ? String(t.w) : '—'}</span>
                             )}
                         </div>
                     ))}
                 </div>
                 {isEditingWeights && (
-                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider mt-3 text-center">
+                    <p className="label-native text-slate-600 mt-3 text-center">
                         Total Weight: {Object.values(tempWeights).reduce((a, b) => a + b, 0)}% (Should ideally be 100%)
                     </p>
                 )}
             </div>
 
             {/* ── Progress & Distribution Panel ── */}
-            <div className="glass-card p-8 bg-indigo-600/5 border border-indigo-500/10 rounded-2xl">
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-indigo-300 mb-6">Target Completion Progress</h4>
+            <div className="glass-card p-8 bg-indigo-600/5 border border-indigo-500/10 rounded-2xl text-left">
+                <h4 className="label-native text-indigo-300 mb-6">Target Completion Progress</h4>
 
                 {/* Progress Bar */}
                 <div className="mb-8">
                     <div className="flex justify-between items-end mb-3">
                         <div>
-                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Current (USDC Equiv.)</p>
-                            <p className="text-4xl font-black text-white">${currentUSDC.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                            <p className="label-native text-slate-500">Current (USDC Equiv.)</p>
+                            <p className="text-3xl font-black text-white">${currentUSDC.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                         </div>
                         <div className="text-right">
-                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Protocol Target</p>
-                            <p className="text-xl font-bold text-slate-400">${targetUSDC.toLocaleString()}</p>
+                            <p className="label-native text-slate-500">Protocol Target</p>
+                            <p className="value-native text-slate-400">${targetUSDC.toLocaleString()}</p>
                         </div>
                     </div>
                     <div className="h-4 bg-black/40 rounded-full border border-white/5 p-1 relative overflow-hidden">
@@ -227,8 +226,8 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                         />
                     </div>
                     <div className="flex justify-between mt-2">
-                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Auto-distribution via System Settings</p>
-                        <p className="text-[12px] font-bold text-indigo-400">{progress.toFixed(1)}% Filled</p>
+                        <p className="label-native text-slate-500">Auto-distribution via System Settings</p>
+                        <p className="value-native text-indigo-400">{progress.toFixed(1)}% Filled</p>
                     </div>
                 </div>
 
@@ -239,46 +238,45 @@ export function PoolTab({ balance, ethPrice, settings }: PoolTabProps) {
                             <TimerIcon className="w-5 h-5 text-indigo-400" />
                         </div>
                         <div>
-                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Last Distribution</p>
-                            <p className="text-[13px] font-medium text-white">{lastDistDate}</p>
+                            <p className="label-native text-slate-500">Last Distribution</p>
+                            <p className="value-native text-white">{lastDistDate}</p>
                         </div>
                     </div>
                     <div className="text-center px-4">
                         <TrendingUp className="w-5 h-5 text-emerald-500 mx-auto mb-1 animate-bounce" />
-                        <p className="text-[11px] font-black uppercase tracking-widest text-emerald-500">Growth Active</p>
+                        <p className="label-native text-emerald-500">Growth Active</p>
                     </div>
                 </div>
 
                 {/* ── DISTRIBUTE REVENUE BUTTON (Owner Only) ── */}
                 <div className={`rounded-2xl border p-5 ${isOwner ? 'border-indigo-500/30 bg-indigo-500/5' : 'border-white/5 bg-black/20'}`}>
                     <div className="flex items-center gap-2 mb-3">
-                        <Zap className={`w-4 h-4 ${isOwner ? 'text-indigo-400' : 'text-slate-600'}`} />
-                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Manual Revenue Distribution</p>
+                        <p className="label-native text-slate-400">Manual Revenue Distribution</p>
                         {isOwner
-                            ? <span className="ml-auto text-[11px] font-black uppercase tracking-widest text-green-400 flex items-center gap-1"><CheckCircle2 size={11} /> Owner Verified</span>
-                            : <span className="ml-auto text-[11px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1"><AlertCircle size={11} /> Owner Only</span>
+                            ? <span className="ml-auto label-native text-green-400 flex items-center gap-1"><CheckCircle2 size={11} /> Owner Verified</span>
+                            : <span className="ml-auto label-native text-slate-600 flex items-center gap-1"><AlertCircle size={11} /> Owner Only</span>
                         }
                     </div>
-                    <p className="text-[13px] font-medium text-slate-500 leading-relaxed mb-4">
+                    <p className="label-native text-slate-500 leading-relaxed mb-4">
                         Distributes accumulated ETH from the pool to all SBT tier holders proportional to their tier weight.
                         Only callable by the contract owner.
                     </p>
                     <button
                         onClick={handleDistribute}
                         disabled={!isOwner || isDistributing || effectiveBalance === 0n}
-                        className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98]
+                        className={`w-full py-4 rounded-xl label-native flex items-center justify-center gap-2 transition-all active:scale-[0.98]
                             ${isOwner && !isDistributing && effectiveBalance > 0n
-                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/30'
-                                : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'
+                                ? 'bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 shadow-lg'
+                                : 'bg-[#121214] text-slate-600 border border-slate-800 cursor-not-allowed'
                             }`}
                     >
                         {isDistributing
-                            ? <><RefreshCw size={13} className="animate-spin" /> Distributing...</>
+                            ? 'Distributing...'
                             : !isOwner
-                                ? '🔒 Owner Access Required'
+                                ? 'Owner Access Required'
                                 : effectiveBalance === 0n
-                                    ? '⚠️ Pool Empty — Nothing to Distribute'
-                                    : <><Zap size={13} /> Trigger Distribution ({currentETH.toFixed(4)} ETH)</>
+                                    ? 'Pool Empty — Nothing to Distribute'
+                                    : `Trigger Distribution (${currentETH.toFixed(4)} ETH)`
                         }
                     </button>
                 </div>

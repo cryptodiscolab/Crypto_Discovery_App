@@ -1,1 +1,11 @@
+echo "🛡️ [Anti-Negligence Mandate] Running Agent Anti-Negligence Hook..."
+node scripts/audits/agent_anti_negligence_hook.cjs
+
+if [ $? -ne 0 ]; then
+  echo "❌ ANTI-NEGLIGENCE CHECK FAILED! Commit blocked."
+  exit 1
+fi
+
+echo "🛡️ [Zero-Leak Mandate] Running Gitleaks security scan..."
 npm run gitleaks-check
+

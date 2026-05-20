@@ -5,10 +5,10 @@ description: >
   - **Anti-Hallucination Mandate (v3.63.5-Hardened)**: Mandatory **Parity Audit** via `parity-audit` endpoint before closing any architectural task. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.64.2-Hardened
+version: v3.64.14-Hardened
 ---
 
-## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.63.7-Hardened)
+## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.64.14-Hardened)
 - **Mandatory Extension**: Seluruh import relatif di dalam direktori `api/` (Serverless Functions) **WAJIB** menggunakan ekstensi `.js` (contoh: `import { data } from './database.js'`).
 - **Type Segregation**: Gunakan `import type` untuk seluruh referensi TypeScript guna memastikan *clean stripping* saat runtime.
 - **Pre-Fix Audit**: Sebelum melakukan modifikasi arsitektural, jalankan `node scripts/audits/check_sync_status.cjs` untuk memastikan paritas sistem.
@@ -106,7 +106,7 @@ Skill ini adalah "Sistem Pertahanan & Optimalisasi" tingkat tinggi yang menjadik
 2.  **Anti-Protokol Kertas**: Dilarang membuat aturan atau alur kerja yang hanya bagus di dokumen Markdown. Setiap keinginan user harus diwujudkan menjadi kode fungsional, script automasi, atau fitur nyata yang memberikan manfaat bagi orang banyak.
 3.  **Implementasi Kemanusiaan**: Setiap baris kode yang ditulis harus diorientasikan untuk kebaikan dan kemudahan pengguna akhir, serta mengabdi pada misi membantu keluarga, mitra, dan orang-orang baik yang membutuhkan melalui sistem yang jujur dan efisien.
 4.  **Evolusi Nexus (Self-Learning)**: Kegagalan teknis adalah guru terbaik. Agen wajib mendokumentasikan "Lessons Learned" di `agent_vault` untuk mencegah regresi bug yang sama (misal: OAuth State Mismatch).
-5.  **RTK Local Binary Memory (v3.64.8)**: Jika mandat RTK aktif tetapi command `rtk` tidak dikenali di PowerShell, jangan langsung fallback ke shell native. Verifikasi `.\.bin\rtk.exe --version`, review/trust `.rtk/filters.toml` bila perlu, lalu gunakan `.\.bin\rtk.exe read|grep|git|npm|npx ...` sebagai jalur utama.
+5.  **RTK Local Binary & Git Hook Mandate (v3.64.14-Hardened)**: Jika mandat RTK aktif tetapi command `rtk` tidak dikenali di PowerShell, jangan langsung fallback ke shell native. Verifikasi `.\.bin\rtk.exe --version`, review/trust `.rtk/filters.toml` bila perlu, lalu gunakan `.\.bin\rtk.exe read|grep|git|npm|npx ...` sebagai jalur utama. PENGGUNAAN RTK DI-ENFORCE secara mutlak oleh Git pre-commit hook via `agent_anti_negligence_hook.cjs` sehingga komit akan otomatis ditolak jika RTK tidak terinstal atau tidak aktif di workspace.
 
 ## 📜 Konstitusi Utama: Master Architect Protocol (.cursorrules)
 

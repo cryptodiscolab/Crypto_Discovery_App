@@ -213,13 +213,13 @@ if (fs.existsSync(rtkPath)) {
     try {
         const rtkOutput = execSync(`"${rtkPath}" --version`, { cwd: WORKSPACE_DIR, encoding: 'utf8', stdio: 'pipe' });
         console.log("   ✅ RTK is active and available: " + rtkOutput.trim());
-        // Future expansion: execSync(`"${rtkPath}" analyze .`)
     } catch (e) {
         failures.push(`RTK Execution Failed: ${e.message}`);
         hasFailure = true;
     }
 } else {
-    warnings.push("RTK executable not found in .bin/. Please run scripts/deployments/install_rtk.cjs.");
+    failures.push("RTK executable not found in .bin/. RTK is MANDATORY to prevent token leaks. Please run node scripts/deployments/install_rtk.cjs to install.");
+    hasFailure = true;
 }
 
 // ═══ FINAL VERDICT ═══

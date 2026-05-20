@@ -397,26 +397,24 @@ export function AccountantLedgerTab() {
                         <Landmark className="w-8 h-8 text-emerald-500" />
                         Accountant Ledger
                     </h1>
-                    <p className="text-slate-400 mt-2 text-sm max-w-xl">
+                    <p className="text-slate-400 mt-2 text-[13px] font-medium leading-relaxed max-w-xl content-native">
                         Comprehensive financial records detailing UGC fees, SBT mints, Raffle ticket purchases, and Reward Payouts. Use this to audit daily ecosystem revenue and execute treasury withdrawals.
                     </p>
                 </div>
                 <button
                     onClick={fetchLedger}
                     disabled={loading}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-white transition-all w-full md:w-auto"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-[11px] font-black uppercase tracking-widest text-indigo-400 transition-all w-full md:w-auto label-native"
                 >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh Data
+                    {loading ? 'REFRESHING...' : 'REFRESH DATA'}
                 </button>
 
                 <button
                     onClick={triggerBlockchainSync}
                     disabled={syncLoading}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-xl text-sm font-bold text-blue-400 transition-all w-full md:w-auto"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-[11px] font-black uppercase tracking-widest text-indigo-400 transition-all w-full md:w-auto label-native"
                 >
-                    <ShieldCheck className={`w-4 h-4 ${syncLoading ? 'animate-spin' : ''}`} />
-                    Trigger Blockchain Sync
+                    {syncLoading ? 'SYNCING...' : 'TRIGGER BLOCKCHAIN SYNC'}
                 </button>
             </div>
 
@@ -425,21 +423,21 @@ export function AccountantLedgerTab() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-white/40 uppercase tracking-wider font-bold">Last Synced Block</p>
-                            <p className="text-xl font-mono text-white mt-1">{syncState.last_synced_block}</p>
+                            <p className="text-[11px] font-black text-white/40 uppercase tracking-widest label-native">Last Synced Block</p>
+                            <p className="text-xl font-mono text-white mt-1 value-native">{syncState.last_synced_block}</p>
                         </div>
                         <div className="text-right">
-                            <p className="text-xs text-white/40 uppercase tracking-wider font-bold">Status</p>
+                            <p className="text-[11px] font-black text-white/40 uppercase tracking-widest label-native">Status</p>
                             <div className="flex items-center gap-2 mt-1">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <p className="text-sm text-green-400 font-bold">Live</p>
+                                <p className="text-[13px] font-medium text-green-400 content-native">Live</p>
                             </div>
                         </div>
                     </div>
                     <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-white/40 uppercase tracking-wider font-bold">Sync Freshness</p>
-                            <p className="text-sm text-white/80 mt-1">
+                            <p className="text-[11px] font-black text-white/40 uppercase tracking-widest label-native">Sync Freshness</p>
+                            <p className="text-[13px] font-medium text-white/80 mt-1 content-native">
                                 {new Date(syncState.updated_at).toLocaleString()}
                             </p>
                         </div>
@@ -466,65 +464,65 @@ export function AccountantLedgerTab() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Safe Treasury */}
                     <div className="bg-[#121214] border border-indigo-500/10 rounded-xl p-4 hover:border-indigo-500/30 transition-colors">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                        <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between label-native">
                             Safe Treasury
                             <a href={`https://basescan.org/address/${SAFE_MULTISIG}`} target="_blank" rel="noreferrer"><ExternalLink className="w-3 h-3 text-slate-600 hover:text-indigo-400" /></a>
                         </div>
                         <div className="flex justify-between items-end mb-1">
-                            <span className="text-xs font-bold text-slate-400">ETH</span>
-                            <span className="text-sm font-black text-white font-mono">{formatBal(safeEth)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">ETH</span>
+                            <span className="text-[12px] font-bold text-white font-mono value-native">{formatBal(safeEth)}</span>
                         </div>
                         <div className="flex justify-between items-end">
-                            <span className="text-xs font-bold text-slate-400">USDC</span>
-                            <span className="text-sm font-black text-emerald-400 font-mono">${formatBal(safeUsdc, 2)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">USDC</span>
+                            <span className="text-[12px] font-bold text-emerald-400 font-mono value-native">${formatBal(safeUsdc, 2)}</span>
                         </div>
                     </div>
 
                     {/* Master X */}
                     <div className="bg-[#121214] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                        <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between label-native">
                             Master X (SBT Pool)
                             <a href={`https://basescan.org/address/${MASTER_X_ADDRESS}`} target="_blank" rel="noreferrer"><ExternalLink className="w-3 h-3 text-slate-600 hover:text-indigo-400" /></a>
                         </div>
                         <div className="flex justify-between items-end mb-1">
-                            <span className="text-xs font-bold text-slate-400">ETH</span>
-                            <span className="text-sm font-black text-white font-mono">{formatBal(masterXEth)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">ETH</span>
+                            <span className="text-[12px] font-bold text-white font-mono value-native">{formatBal(masterXEth)}</span>
                         </div>
                         <div className="flex justify-between items-end">
-                            <span className="text-xs font-bold text-slate-400">USDC</span>
-                            <span className="text-sm font-black text-emerald-400 font-mono">${formatBal(masterXUsdc, 2)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">USDC</span>
+                            <span className="text-[12px] font-bold text-emerald-400 font-mono value-native">${formatBal(masterXUsdc, 2)}</span>
                         </div>
                     </div>
 
                     {/* DailyApp */}
                     <div className="bg-[#121214] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                        <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between label-native">
                             DailyApp Contract
                             <a href={`https://basescan.org/address/${DAILY_APP_ADDRESS}`} target="_blank" rel="noreferrer"><ExternalLink className="w-3 h-3 text-slate-600 hover:text-indigo-400" /></a>
                         </div>
                         <div className="flex justify-between items-end mb-1">
-                            <span className="text-xs font-bold text-slate-400">ETH</span>
-                            <span className="text-sm font-black text-white font-mono">{formatBal(dailyAppEth)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">ETH</span>
+                            <span className="text-[12px] font-bold text-white font-mono value-native">{formatBal(dailyAppEth)}</span>
                         </div>
                         <div className="flex justify-between items-end">
-                            <span className="text-xs font-bold text-slate-400">USDC</span>
-                            <span className="text-sm font-black text-emerald-400 font-mono">${formatBal(dailyAppUsdc, 2)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">USDC</span>
+                            <span className="text-[12px] font-bold text-emerald-400 font-mono value-native">${formatBal(dailyAppUsdc, 2)}</span>
                         </div>
                     </div>
 
                     {/* Raffle */}
                     <div className="bg-[#121214] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                        <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between label-native">
                             Raffle Contract
                             <a href={`https://basescan.org/address/${RAFFLE_ADDRESS}`} target="_blank" rel="noreferrer"><ExternalLink className="w-3 h-3 text-slate-600 hover:text-indigo-400" /></a>
                         </div>
                         <div className="flex justify-between items-end mb-1">
-                            <span className="text-xs font-bold text-slate-400">ETH</span>
-                            <span className="text-sm font-black text-white font-mono">{formatBal(raffleEth)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">ETH</span>
+                            <span className="text-[12px] font-bold text-white font-mono value-native">{formatBal(raffleEth)}</span>
                         </div>
                         <div className="flex justify-between items-end">
-                            <span className="text-xs font-bold text-slate-400">USDC</span>
-                            <span className="text-sm font-black text-emerald-400 font-mono">${formatBal(raffleUsdc, 2)}</span>
+                            <span className="text-[13px] font-medium text-slate-400 content-native">USDC</span>
+                            <span className="text-[12px] font-bold text-emerald-400 font-mono value-native">${formatBal(raffleUsdc, 2)}</span>
                         </div>
                     </div>
                 </div>
@@ -542,7 +540,7 @@ export function AccountantLedgerTab() {
                             </div>
                             <h2 className="text-xl font-black text-white uppercase tracking-wider">Ecosystem Hardening Center</h2>
                         </div>
-                        <p className="text-slate-400 text-sm max-w-xl">
+                        <p className="text-slate-400 text-[13px] font-medium leading-relaxed max-w-xl content-native">
                             Ensure 1:1 parity between the Accountant Ledger (Supabase) and the On-Chain Smart Contracts.
                             Use these tools to fix drift and sync metadata URIs.
                         </p>
@@ -552,34 +550,30 @@ export function AccountantLedgerTab() {
                         <button
                             onClick={runParityAudit}
                             disabled={isHardening}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-[11px] font-black uppercase tracking-widest text-indigo-400 transition-all label-native"
                         >
-                            <HardDrive className={`w-3.5 h-3.5 ${isHardening ? 'animate-pulse' : ''}`} />
-                            Run Parity Audit
+                            {isHardening ? 'AUDITING...' : 'RUN PARITY AUDIT'}
                         </button>
                         <button
                             onClick={handleSyncXP}
                             disabled={isHardening}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-xs font-bold text-indigo-400 transition-all"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-[11px] font-black uppercase tracking-widest text-indigo-400 transition-all label-native"
                         >
-                            <DatabaseZap className="w-3.5 h-3.5" />
-                            Sync XP to Contract
+                            SYNC XP TO CONTRACT
                         </button>
                         <button
                             onClick={handleSyncTiers}
                             disabled={isHardening}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl text-xs font-bold text-purple-400 transition-all"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-[11px] font-black uppercase tracking-widest text-indigo-400 transition-all label-native"
                         >
-                            <Award className="w-3.5 h-3.5" />
-                            Sync Tiers to Contract
+                            SYNC TIERS TO CONTRACT
                         </button>
                         <button
                             onClick={handleSyncMetadata}
                             disabled={isHardening}
-                            className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl text-xs font-bold text-amber-400 transition-all"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-[11px] font-black uppercase tracking-widest text-indigo-400 transition-all label-native"
                         >
-                            <FileJson className="w-3.5 h-3.5" />
-                            Sync NFT URIs
+                            SYNC NFT URIS
                         </button>
                     </div>
                 </div>
@@ -587,24 +581,24 @@ export function AccountantLedgerTab() {
                 {parityResults && (
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in relative z-10">
                         <div className="bg-black/40 border border-white/5 rounded-xl p-4">
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Audited</div>
-                            <div className="text-xl font-black text-white font-mono">{parityResults.total_users} Users</div>
+                            <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 label-native">Total Audited</div>
+                            <div className="text-xl font-black text-white font-mono value-native">{parityResults.total_users} Users</div>
                         </div>
                         <div className="bg-black/40 border border-white/5 rounded-xl p-4">
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">XP Inconsistencies</div>
-                            <div className={`text-xl font-black font-mono ${parityResults.xp_drift > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 label-native">XP Inconsistencies</div>
+                            <div className={`text-xl font-black font-mono value-native ${parityResults.xp_drift > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                                 {parityResults.xp_drift} {parityResults.xp_drift > 0 ? '⚠️' : '✅'}
                             </div>
                         </div>
                         <div className="bg-black/40 border border-white/5 rounded-xl p-4">
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Tier Inconsistencies</div>
-                            <div className={`text-xl font-black font-mono ${parityResults.tier_drift > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 label-native">Tier Inconsistencies</div>
+                            <div className={`text-xl font-black font-mono value-native ${parityResults.tier_drift > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                                 {parityResults.tier_drift} {parityResults.tier_drift > 0 ? '⚠️' : '✅'}
                             </div>
                         </div>
                         <div className="bg-black/40 border border-white/5 rounded-xl p-4">
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Last Sync Status</div>
-                            <div className="text-xs font-bold text-slate-400 mt-1">
+                            <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 label-native">Last Sync Status</div>
+                            <div className="text-[13px] font-medium text-slate-400 mt-1 content-native">
                                 {parityResults.is_perfect ? "✨ PERFECT PARITY" : "Drift Detected"}
                             </div>
                         </div>
@@ -620,21 +614,21 @@ export function AccountantLedgerTab() {
                 </div>
                 <div className="flex flex-col md:flex-row items-end gap-4">
                     <div className="flex-1 space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Withdraw Amount (ETH)</label>
+                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest px-1 label-native">Withdraw Amount (ETH)</label>
                         <input
                             type="number"
                             value={withdrawAmount}
                             onChange={(e) => setWithdrawAmount(e.target.value)}
                             placeholder="0.0"
-                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-emerald-500/50 transition-all"
+                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-[13px] font-medium text-white font-mono outline-none focus:border-emerald-500/50 transition-all content-native"
                         />
                     </div>
                     <button
                         onClick={handleWithdraw}
                         disabled={isWithdrawing || !withdrawAmount}
-                        className="flex items-center justify-center gap-2 px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-xl text-sm font-black text-white uppercase tracking-widest transition-all"
+                        className="flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 disabled:bg-slate-800/20 disabled:border-slate-800/30 disabled:text-slate-600 rounded-xl text-[11px] font-black uppercase tracking-widest text-indigo-400 transition-all label-native"
                     >
-                        {isWithdrawing ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Execute Withdrawal"}
+                        {isWithdrawing ? 'WITHDRAWING...' : 'EXECUTE WITHDRAWAL'}
                     </button>
                 </div>
             </div>
@@ -704,7 +698,7 @@ export function AccountantLedgerTab() {
                                                 </a>
                                             </td>
                                             <td className="p-4 text-right">
-                                                <div className={`text-[13px] font-black font-mono ${colorClass} content-native`}>
+                                                <div className={`text-[12px] font-bold font-mono value-native ${colorClass}`}>
                                                     {sign}{log.value_symbol === 'USDC' ? '$' : ''}
                                                     {Number(log.value_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                                                     {log.value_symbol !== 'USDC' ? ` ${log.value_symbol}` : ''}

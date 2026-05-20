@@ -1,4 +1,4 @@
-import { Settings, Plus, Trash2, Save } from 'lucide-react';
+import { Settings, Trash2 } from 'lucide-react';
 
 interface PointSetting {
     id: string;
@@ -21,20 +21,20 @@ interface PointSettingsSectionProps {
 
 export function PointSettingsSection({ pointSettings, onAddActivity, onRemoveActivity, onChange, onSave, saving }: PointSettingsSectionProps) {
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-[100vw] overflow-x-hidden">
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-blue-400" />
-                    <h2 className="text-lg font-bold text-white">Advanced Points</h2>
+                    <Settings className="w-5 h-5 text-indigo-400" />
+                    <h2 className="text-md font-black text-white uppercase tracking-[0.2em]">Advanced Points</h2>
                 </div>
-                <button onClick={onAddActivity} className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-black transition-all">
-                    <Plus className="w-3.5 h-3.5" /> Add Point Activity
+                <button onClick={onAddActivity} className="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 px-3 py-1.5 rounded-lg label-native transition-all">
+                    Add Point Activity
                 </button>
             </div>
-            <div className="bg-slate-900/50 rounded-2xl border border-white/5 overflow-hidden">
+            <div className="bg-[#121214] rounded-2xl border border-white/5 overflow-hidden">
                 <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                     <table className="w-full text-left">
-                        <thead className="bg-white/5 text-[10px] uppercase tracking-widest text-slate-500 font-bold sticky top-0 backdrop-blur-sm z-10">
+                        <thead className="bg-white/5 label-native text-slate-500 sticky top-0 backdrop-blur-sm z-10">
                             <tr>
                                 <th className="px-4 py-3">Platform / Action</th>
                                 <th className="px-4 py-3">XP</th>
@@ -52,7 +52,7 @@ export function PointSettingsSection({ pointSettings, onAddActivity, onRemoveAct
                                                 <select
                                                     value={item.platform}
                                                     onChange={(e) => onChange(item.id, 'platform', e.target.value)}
-                                                    className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-white font-black text-[10px] cursor-pointer outline-none focus:border-blue-500"
+                                                    className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-white label-native cursor-pointer outline-none focus:border-indigo-500"
                                                 >
                                                     <option value="farcaster">Farcaster</option>
                                                     <option value="x">X (Twitter)</option>
@@ -64,7 +64,7 @@ export function PointSettingsSection({ pointSettings, onAddActivity, onRemoveAct
                                                 <select
                                                     value={item.action_type || 'Follow'}
                                                     onChange={(e) => onChange(item.id, 'action_type', e.target.value)}
-                                                    className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-indigo-300 font-bold text-[10px] cursor-pointer outline-none focus:border-blue-500"
+                                                    className="bg-slate-800/80 border border-white/10 rounded-lg px-2 py-1 text-indigo-300 label-native cursor-pointer outline-none focus:border-indigo-500"
                                                 >
                                                     <option value="Follow">Follow</option>
                                                     <option value="Like">Like</option>
@@ -81,7 +81,7 @@ export function PointSettingsSection({ pointSettings, onAddActivity, onRemoveAct
                                                 type="text"
                                                 value={item.activity_key}
                                                 onChange={(e) => onChange(item.id, 'activity_key', e.target.value)}
-                                                className="bg-black/30 border border-white/5 rounded-lg px-2 py-1 text-[10px] text-slate-400 font-mono outline-none"
+                                                className="bg-black/30 border border-white/5 rounded-lg px-2 py-1 label-native text-slate-400 font-mono outline-none"
                                                 placeholder="activity_key (internal)"
                                             />
                                         </div>
@@ -90,8 +90,8 @@ export function PointSettingsSection({ pointSettings, onAddActivity, onRemoveAct
                                         <input
                                             type="number"
                                             value={item.points_value}
-                                            onChange={(e) => onChange(item.id, 'points_value', e.target.value)}
-                                            className="w-16 bg-slate-800/60 border border-white/10 rounded-lg px-2 py-1 text-white focus:border-blue-500 font-mono text-xs"
+                                            onChange={(e) => onChange(item.id, 'points_value', Number(e.target.value))}
+                                            className="w-16 bg-slate-800/60 border border-white/10 rounded-lg px-2 py-1 text-white focus:border-indigo-500 font-mono value-native"
                                         />
                                     </td>
                                     <td className="px-4 py-4 text-center">
@@ -121,9 +121,8 @@ export function PointSettingsSection({ pointSettings, onAddActivity, onRemoveAct
                     </table>
                 </div>
             </div>
-            <button onClick={onSave} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-black text-white transition-all shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50">
-                <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Sync Point Settings'}
+            <button onClick={onSave} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 py-3 rounded-xl label-native transition-all shadow-lg active:scale-[0.98] disabled:opacity-30">
+                {saving ? 'SAVING...' : 'SYNC POINT SETTINGS'}
             </button>
         </div>
     );

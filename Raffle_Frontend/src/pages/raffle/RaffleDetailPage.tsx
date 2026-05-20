@@ -103,12 +103,15 @@ const RaffleDetailPage = () => {
 
     if (!id || isNaN(numericId)) {
         return (
-            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+            <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
                 <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-                <h1 className="text-2xl font-bold text-white mb-2">Invalid Raffle ID</h1>
-                <p className="text-zinc-400 mb-6">The raffle ID provided is not valid.</p>
-                <button onClick={() => navigate('/raffles')} className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all">
-                    <ChevronLeft className="w-5 h-5" /> Back to Raffles
+                <h1 className="text-xl font-black text-white uppercase tracking-wider mb-2">Invalid Raffle ID</h1>
+                <p className="text-[13px] font-medium text-zinc-400 mb-6 content-native">The raffle ID provided is not valid.</p>
+                <button
+                    onClick={() => navigate('/raffles')}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
+                >
+                    Back to Raffles
                 </button>
             </div>
         );
@@ -116,23 +119,22 @@ const RaffleDetailPage = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
             </div>
         );
     }
 
     if (!raffle) {
         return (
-            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+            <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
                 <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-                <h1 className="text-2xl font-bold text-white mb-2">Raffle Not Found</h1>
-                <p className="text-zinc-400 mb-6">The raffle you are looking for doesn&apos;t exist or hasn&apos;t been synced yet.</p>
+                <h1 className="text-xl font-black text-white uppercase tracking-wider mb-2">Raffle Not Found</h1>
+                <p className="text-[13px] font-medium text-zinc-400 mb-6 content-native">The raffle you are looking for doesn&apos;t exist or hasn&apos;t been synced yet.</p>
                 <button
                     onClick={() => navigate('/raffles')}
-                    className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                 >
-                    <ChevronLeft className="w-5 h-5" />
                     Back to Raffles
                 </button>
             </div>
@@ -154,7 +156,7 @@ const RaffleDetailPage = () => {
                         <ChevronLeft className="w-6 h-6 text-zinc-400 group-hover:text-white" />
                     </button>
                     <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest label-native ${
                             raffle.isActive ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
                         }`}>
                             {raffle.isFinalized ? 'Finalized' : (raffle.isActive ? 'Active' : 'Pending Approval')}
@@ -179,7 +181,7 @@ const RaffleDetailPage = () => {
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 to-black">
                                     <Trophy className="w-20 h-20 text-white/10 mb-4" />
-                                    <span className="text-zinc-600 font-medium">No Preview Available</span>
+                                    <span className="text-zinc-600 text-[13px] font-medium content-native">No Preview Available</span>
                                 </div>
                             )}
                             {/* Overlay info */}
@@ -190,16 +192,16 @@ const RaffleDetailPage = () => {
                                 <div className="flex flex-wrap gap-4 text-zinc-300">
                                     <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
                                         <Trophy className="w-4 h-4 text-yellow-400" />
-                                        <span className="text-sm font-semibold">{raffle.winnerCount} Winners</span>
+                                        <span className="text-[13px] font-medium content-native">{raffle.winnerCount} Winners</span>
                                     </div>
                                     <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
                                         <Users className="w-4 h-4 text-blue-400" />
-                                        <span className="text-sm font-semibold">{raffle.totalTickets} Participants</span>
+                                        <span className="text-[13px] font-medium content-native">{raffle.totalTickets} Participants</span>
                                     </div>
                                     {raffle.min_sbt_level && raffle.min_sbt_level > 0 && (
                                         <div className="flex items-center gap-2 bg-purple-500/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-purple-500/30">
                                             <ShieldCheck className="w-4 h-4 text-purple-400" />
-                                            <span className="text-sm font-semibold">Tier {raffle.min_sbt_level}+ Required</span>
+                                            <span className="text-[13px] font-medium content-native">Tier {raffle.min_sbt_level}+ Required</span>
                                         </div>
                                     )}
                                 </div>
@@ -208,12 +210,12 @@ const RaffleDetailPage = () => {
 
                         {/* Description & Metadata */}
                         <div className="bg-zinc-900/40 border border-white/5 rounded-3xl p-8 shadow-sm">
-                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <Info className="w-5 h-5 text-primary-400" />
+                            <h2 className="text-lg font-black text-white uppercase tracking-wider mb-6 flex items-center gap-2">
+                                <Info className="w-5 h-5 text-indigo-400" />
                                 About this Raffle
                             </h2>
                             <div className="prose prose-invert max-w-none">
-                                <p className="text-zinc-400 leading-relaxed text-lg whitespace-pre-wrap">
+                                <p className="text-[13px] font-medium leading-relaxed text-zinc-400 whitespace-pre-wrap content-native">
                                     {raffle.description || "The sponsor hasn't provided a description for this raffle yet."}
                                 </p>
                             </div>
@@ -225,9 +227,8 @@ const RaffleDetailPage = () => {
                                         href={raffle.twitter_link}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-2 bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20 text-[#1DA1F2] px-4 py-2 rounded-xl transition-all border border-[#1DA1F2]/20"
+                                        className="flex items-center justify-center gap-2 bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20 text-[#1DA1F2] px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border border-[#1DA1F2]/20 transition-all label-native"
                                     >
-                                        <Twitter className="w-4 h-4" />
                                         Twitter / X
                                     </a>
                                 )}
@@ -236,11 +237,9 @@ const RaffleDetailPage = () => {
                                         href={raffle.external_link}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl transition-all border border-white/10"
+                                        className="flex items-center justify-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all label-native"
                                     >
-                                        <Globe className="w-4 h-4" />
                                         Official Website
-                                        <ExternalLink className="w-3 h-3 opacity-50" />
                                     </a>
                                 )}
                             </div>
@@ -253,14 +252,14 @@ const RaffleDetailPage = () => {
 
                             {/* Prize Pool Display */}
                             <div className="text-center mb-8">
-                                <span className="text-zinc-500 text-sm font-medium uppercase tracking-widest mb-1 block">Total Prize Pool</span>
+                                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 block label-native">Total Prize Pool</span>
                                 <div className="flex items-center justify-center gap-2">
                                     <Trophy className="w-8 h-8 text-yellow-400" />
-                                    <span className="text-4xl font-black text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
+                                    <span className="text-3xl font-black text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400 value-native">
                                         {raffle.prizePool ? formatEther(raffle.prizePool) : '0'} ETH
                                     </span>
                                 </div>
-                                <div className="mt-2 text-zinc-500 text-sm">
+                                <div className="mt-2 text-[13px] font-medium text-slate-500 content-native">
                                     ~ {raffle.prizePerWinner ? formatEther(raffle.prizePerWinner) : '0'} ETH per winner
                                 </div>
                             </div>
@@ -268,14 +267,14 @@ const RaffleDetailPage = () => {
                             {/* Stats Grid */}
                             <div className="grid grid-cols-2 gap-4 mb-8">
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                    <span className="text-zinc-500 text-xs block mb-1">Time Left</span>
-                                    <span className={`text-sm font-bold ${isEnded ? 'text-red-400' : 'text-white'}`}>
+                                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 block label-native">Time Left</span>
+                                    <span className={`text-[12px] font-bold font-mono value-native ${isEnded ? 'text-red-400' : 'text-white'}`}>
                                         {timeLeft}
                                     </span>
                                 </div>
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                    <span className="text-zinc-500 text-xs block mb-1">Entry Limit</span>
-                                    <span className="text-sm font-bold text-white">
+                                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 block label-native">Entry Limit</span>
+                                    <span className="text-[12px] font-bold font-mono text-white value-native">
                                         {raffle.maxTickets} Max
                                     </span>
                                 </div>
@@ -284,12 +283,12 @@ const RaffleDetailPage = () => {
                             {/* Progress Bar */}
                             <div className="mb-8">
                                 <div className="flex justify-between items-end mb-2">
-                                    <span className="text-zinc-400 text-sm font-medium">Tickets Sold</span>
-                                    <span className="text-white text-sm font-bold">{raffle.totalTickets} / {raffle.maxTickets}</span>
+                                    <span className="text-[13px] font-medium text-slate-400 content-native">Tickets Sold</span>
+                                    <span className="text-[12px] font-bold text-white value-native">{raffle.totalTickets} / {raffle.maxTickets}</span>
                                 </div>
                                 <div className="h-3 w-full bg-zinc-800 rounded-full overflow-hidden border border-white/5 p-0.5">
                                     <div
-                                        className="h-full bg-gradient-to-r from-primary-600 to-primary-400 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(var(--primary-rgb),0.4)]"
+                                        className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all duration-1000 ease-out"
                                         style={{ width: `${Math.min(progress, 100)}%` }}
                                     />
                                 </div>
@@ -299,12 +298,12 @@ const RaffleDetailPage = () => {
                             {raffle.isFinalized ? (
                                 <div className="space-y-4">
                                     <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 text-center">
-                                        <p className="text-green-400 font-bold mb-1">Raffle Finalized</p>
-                                        <p className="text-green-400/70 text-xs">Winners have been drawn and prizes distributed.</p>
+                                        <p className="text-[13px] font-medium text-green-400 mb-1 content-native">Raffle Finalized</p>
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-green-400/70 label-native">Winners have been drawn and prizes distributed.</p>
                                     </div>
                                     <button
                                         onClick={() => navigate('/raffles')}
-                                        className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-2xl transition-all"
+                                        className="w-full py-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all label-native"
                                     >
                                         Back to Explore
                                     </button>
@@ -313,7 +312,7 @@ const RaffleDetailPage = () => {
                                 <div className="space-y-4">
                                     {raffle.isActive && !isEnded && (
                                         <div className="flex items-center justify-between bg-white/5 border border-white/10 p-2 rounded-2xl">
-                                            <span className="text-zinc-400 text-sm font-bold ml-3 uppercase tracking-widest">Quantity</span>
+                                            <span className="text-[11px] font-black text-slate-400 ml-3 uppercase tracking-widest label-native">Quantity</span>
                                             <div className="flex items-center bg-black/40 rounded-xl border border-white/5 p-1">
                                                 <button
                                                     onClick={() => setTicketAmount(p => Math.max(1, p - 1))}
@@ -323,7 +322,7 @@ const RaffleDetailPage = () => {
                                                 >
                                                     -
                                                 </button>
-                                                <span className="w-10 text-center font-mono font-black text-lg text-primary-400">
+                                                <span className="w-10 text-center font-mono font-black text-lg text-indigo-400">
                                                     {ticketAmount}
                                                 </span>
                                                 <button
@@ -340,44 +339,38 @@ const RaffleDetailPage = () => {
                                     <button
                                         onClick={handleBuy}
                                         disabled={isBuying || isEnded || !raffle.isActive}
-                                        className={`w-full py-5 rounded-2xl font-black text-lg transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 ${
+                                        className={`w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 label-native ${
                                             isBuying
-                                                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                                                ? 'bg-slate-800/20 border border-slate-800/30 text-slate-500 cursor-not-allowed'
                                                 : isEnded
                                                     ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
                                                     : !raffle.isActive
                                                         ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 cursor-not-allowed'
-                                                        : 'bg-primary-600 hover:bg-primary-500 text-white hover:shadow-primary-500/25'
+                                                        : 'bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400'
                                         }`}
                                     >
                                         {isBuying ? (
-                                            <>
-                                                <Loader2 className="w-6 h-6 animate-spin" />
-                                                Processing...
-                                            </>
+                                            'Processing...'
                                         ) : isEnded ? (
                                             'Raffle Ended'
                                         ) : !raffle.isActive ? (
                                             'Awaiting Approval'
                                         ) : (
-                                            <>
-                                                <Ticket className="w-6 h-6" />
-                                                Get {ticketAmount} Entries
-                                            </>
+                                            `Get ${ticketAmount} Entries`
                                         )}
                                     </button>
                                 </div>
                             )}
 
                             {/* Footer info */}
-                            <p className="mt-6 text-center text-zinc-500 text-xs px-4">
+                            <p className="mt-6 text-center text-slate-500 text-[11px] font-black uppercase tracking-widest px-4 label-native">
                                 100% On-chain & Provably Fair. Results are powered by Chainlink VRF or Base QRNG.
                             </p>
                         </div>
 
                         {/* Requirements Card */}
                         <div className="bg-zinc-900/40 border border-white/5 rounded-3xl p-6">
-                            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2 label-native">
                                 <ShieldCheck className="w-4 h-4" /> Entry Requirements
                             </h3>
                             <div className="space-y-3">
@@ -387,8 +380,8 @@ const RaffleDetailPage = () => {
                                             <Trophy className="w-4 h-4" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-white uppercase tracking-wider">SBT Level {raffle.min_sbt_level || 0}+</p>
-                                            <p className="text-[9px] text-zinc-500 font-bold uppercase">Reputation Check</p>
+                                            <p className="text-[11px] font-black text-white uppercase tracking-widest label-native">SBT Level {raffle.min_sbt_level || 0}+</p>
+                                            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest label-native">Reputation Check</p>
                                         </div>
                                     </div>
                                     <div className="text-zinc-600">
@@ -403,8 +396,8 @@ const RaffleDetailPage = () => {
                                                 <Globe className="w-4 h-4" />
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-black text-blue-300 uppercase tracking-wider">Basenames Identity</p>
-                                                <p className="text-[9px] text-blue-500/70 font-bold uppercase">Anti-Sybil Guard</p>
+                                                <p className="text-[11px] font-black text-blue-300 uppercase tracking-widest label-native">Basenames Identity</p>
+                                                <p className="text-[11px] font-black text-blue-500/70 uppercase tracking-widest label-native">Anti-Sybil Guard</p>
                                             </div>
                                         </div>
                                         {socialProfile?.isVerified ? (
@@ -422,7 +415,7 @@ const RaffleDetailPage = () => {
                                 {!socialProfile?.isVerified && raffle.is_base_social_required && (
                                     <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3">
                                         <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                                        <p className="text-[9px] font-bold text-amber-500/80 leading-relaxed uppercase tracking-tight">
+                                        <p className="text-[13px] font-medium leading-relaxed text-amber-500/80 content-native">
                                             You must link your Farcaster or Twitter account in your profile to participate.
                                         </p>
                                     </div>
@@ -432,16 +425,16 @@ const RaffleDetailPage = () => {
 
                         {/* Sponsor Info Card */}
                         <div className="bg-zinc-900/40 border border-white/5 rounded-3xl p-6">
-                            <span className="text-zinc-500 text-xs uppercase tracking-widest block mb-4">Presented By</span>
+                            <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-4 label-native">Presented By</span>
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-black">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black">
                                     {raffle.sponsor?.substring(2, 4).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-white font-bold truncate">
+                                    <p className="text-[12px] font-bold text-white truncate value-native">
                                         {raffle.sponsor}
                                     </p>
-                                    <p className="text-zinc-500 text-sm">Raffle Sponsor</p>
+                                    <p className="text-[13px] font-medium text-slate-500 content-native">Raffle Sponsor</p>
                                 </div>
                                 <a
                                     href={`https://sepolia.basescan.org/address/${raffle.sponsor}`}

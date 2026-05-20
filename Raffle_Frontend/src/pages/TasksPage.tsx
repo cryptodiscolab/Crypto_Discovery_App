@@ -127,7 +127,7 @@ export function TasksPage() {
     }, [isConnected, address, profileData, isSyncing, syncUser]);
 
     return (
-        <div className="w-full bg-[#050505] min-h-screen">
+        <div className="w-full max-w-[100vw] overflow-x-hidden bg-[#050505] min-h-screen">
             <div className="max-w-screen-lg mx-auto pb-28 md:pb-8">
                 <div className="px-4 py-8 border-b border-white/5">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

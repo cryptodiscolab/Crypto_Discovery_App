@@ -46,7 +46,7 @@ export function SponsorshipPortalSection({
     const tokens = whitelistedTokens as Array<{ address: string; symbol: string; decimals?: number }>;
     const selectedToken = tokens.find((t) => t.address?.toLowerCase() === selectedTokenAddr.toLowerCase());
     return (
-        <div className="glass-card p-10 bg-emerald-950/5 border border-emerald-500/10 rounded-[3rem] relative overflow-hidden group/main">
+        <div className="glass-card p-10 bg-[#121214] border border-white/5 rounded-[3rem] relative overflow-hidden group/main">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/5 blur-[120px] rounded-full -mr-48 -mt-48 transition-all duration-1000 group-hover/main:bg-emerald-600/10" />
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/5 blur-[120px] rounded-full -ml-48 -mb-48" />
 
@@ -56,13 +56,13 @@ export function SponsorshipPortalSection({
                         <Share2 className="w-8 h-8 text-emerald-400" />
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-white uppercase tracking-[0.2em] leading-none">SPONSOR <span className="text-emerald-500">HUB</span></h3>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mt-2">B2B Engagement Portal</p>
+                        <h3 className="text-xl font-black text-white uppercase tracking-[0.2em] leading-none">SPONSOR <span className="text-emerald-500">HUB</span></h3>
+                        <p className="label-native text-slate-500 mt-2">B2B Engagement Portal</p>
                     </div>
                 </div>
                 <div className="mt-6 md:mt-0 px-6 py-3 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">v3.42.0 HARDENED</span>
+                    <span className="label-native text-slate-400">v3.42.0 HARDENED</span>
                 </div>
             </div>
 
@@ -70,25 +70,25 @@ export function SponsorshipPortalSection({
                 <div className="lg:col-span-7 space-y-8">
                     <div className="grid grid-cols-1 gap-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Campaign Name</label>
-                            <input value={sponsorTitle} onChange={(e) => onSponsorTitleChange(e.target.value)} placeholder="e.g. Disco Gacha Season 1" className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-white text-lg font-black placeholder:text-slate-800 focus:border-emerald-500/50 outline-none transition-all" />
+                            <label className="block label-native text-slate-500 px-1 mb-1">Campaign Name</label>
+                            <input value={sponsorTitle} onChange={(e) => onSponsorTitleChange(e.target.value)} placeholder="e.g. Disco Gacha Season 1" className="w-full bg-[#0a0a0c] border border-white/5 p-5 rounded-[1.5rem] text-white content-native placeholder:text-slate-850 focus:border-emerald-500/50 outline-none transition-all" />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Landing Destination</label>
-                            <input value={sponsorLink} onChange={(e) => onSponsorLinkChange(e.target.value)} placeholder="https://" className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-emerald-400 font-mono text-sm focus:border-emerald-500/50 outline-none transition-all" />
+                            <label className="block label-native text-slate-500 px-1 mb-1">Landing Destination</label>
+                            <input value={sponsorLink} onChange={(e) => onSponsorLinkChange(e.target.value)} placeholder="https://" className="w-full bg-[#0a0a0c] border border-white/5 p-5 rounded-[1.5rem] text-emerald-400 value-native font-mono focus:border-emerald-500/50 outline-none transition-all" />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Internal Contact</label>
-                            <input value={sponsorEmail} onChange={(e) => onSponsorEmailChange(e.target.value)} placeholder="sponsor@example.com" className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-white font-black uppercase tracking-widest focus:border-emerald-500/50 outline-none transition-all text-sm" />
+                            <label className="block label-native text-slate-500 px-1 mb-1">Internal Contact</label>
+                            <input value={sponsorEmail} onChange={(e) => onSponsorEmailChange(e.target.value)} placeholder="sponsor@example.com" className="w-full bg-[#0a0a0c] border border-white/5 p-5 rounded-[1.5rem] text-white content-native focus:border-emerald-500/50 outline-none transition-all" />
                         </div>
 
                         {/* ASSET SELECTOR [v3.62.0] */}
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
+                            <label className="block label-native text-slate-500 px-1 mb-1">Payment Asset</label>
                             <select
                                 value={selectedTokenAddr}
                                 onChange={e => onTokenChange(e.target.value)}
-                                className="w-full bg-white/5 border border-white/5 p-5 rounded-[1.5rem] text-white text-sm font-black uppercase tracking-widest focus:border-emerald-500/50 outline-none appearance-none"
+                                className="w-full bg-[#0a0a0c] border border-white/5 p-5 rounded-[1.5rem] text-white content-native focus:border-emerald-500/50 outline-none cursor-pointer"
                             >
                                 {tokens.map((t, i: number) => (
                                     <option key={i} value={t.address} className="bg-zinc-900">
@@ -116,8 +116,8 @@ export function SponsorshipPortalSection({
                                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                             </div>
                             <div className="flex flex-col">
-                                <span className={`text-xs font-black uppercase tracking-[0.2em] ${isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Shield</span>
-                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1">Require Basenames / Social Linking</span>
+                                <span className={`label-native font-black uppercase tracking-[0.2em] ${isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Shield</span>
+                                <span className="label-native text-slate-600 mt-1">Require Basenames / Social Linking</span>
                             </div>
                         </div>
                         <div className={`w-14 h-7 rounded-full p-1.5 transition-all duration-500 ${isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
@@ -131,45 +131,45 @@ export function SponsorshipPortalSection({
                         <div className="space-y-8 relative">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Reward (USD)</label>
+                                    <label className="block label-native text-emerald-500/60 mb-1">Reward (USD)</label>
                                     <div className="flex items-center gap-3 bg-black/40 p-5 rounded-2xl border border-white/5 focus-within:border-emerald-500/50 transition-all">
                                         <span className="text-emerald-500 font-black text-xl">$</span>
-                                        <input type="number" step="0.01" value={rewardPerUserUSD} onChange={(e) => onRewardPerUserUSDChange(e.target.value)} className="w-full bg-transparent text-white font-black text-xl outline-none" />
+                                        <input type="number" step="0.01" value={rewardPerUserUSD} onChange={(e) => onRewardPerUserUSDChange(e.target.value)} className="w-full bg-transparent text-white value-native font-black outline-none" />
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Total Claims</label>
+                                    <label className="block label-native text-emerald-500/60 mb-1">Total Claims</label>
                                     <div className="flex items-center gap-3 bg-black/40 p-5 rounded-2xl border border-white/5 focus-within:border-emerald-500/50 transition-all">
-                                        <input type="number" value={targetClaims} onChange={(e) => onTargetClaimsChange(e.target.value)} className="w-full bg-transparent text-white font-black text-xl outline-none" />
+                                        <input type="number" value={targetClaims} onChange={(e) => onTargetClaimsChange(e.target.value)} className="w-full bg-transparent text-white value-native font-black outline-none" />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-4 p-6 bg-black/60 rounded-[1.5rem] border border-white/5">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Pool Value</span>
-                                    <span className="text-sm font-black text-white">${((parseFloat(rewardPerUserUSD) || 0) * (parseFloat(targetClaims) || 0)).toLocaleString()} USD</span>
+                                    <span className="label-native text-slate-500">Total Pool Value</span>
+                                    <span className="value-native text-white font-black">${((parseFloat(rewardPerUserUSD) || 0) * (parseFloat(targetClaims) || 0)).toLocaleString()} USD</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sponsorship Asset</span>
-                                    <span className="text-sm font-black text-emerald-400 uppercase">
+                                    <span className="label-native text-slate-500">Sponsorship Asset</span>
+                                    <span className="value-native text-emerald-400 uppercase font-black">
                                         {selectedToken?.symbol || 'ETH'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Asset Requirement</span>
+                                    <span className="label-native text-slate-500">Asset Requirement</span>
                                     <div className="text-right">
-                                        <span className="block text-sm font-black text-emerald-400 font-mono">
+                                        <span className="block value-native text-emerald-400 font-mono font-black">
                                             {formatUnits(requiredTokens, selectedToken?.decimals || 18)}
                                         </span>
-                                        <span className="block text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">
+                                        <span className="block label-native text-slate-500 mt-1">
                                             {isPriceReady ? `$${selectedTokenUsdPrice.toFixed(4)} / ${selectedToken?.symbol || 'ETH'}` : 'PRICE ORACLE PENDING'}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Platform Fee</span>
-                                    <span className="text-sm font-black text-emerald-500">
+                                    <span className="label-native text-slate-500">Platform Fee</span>
+                                    <span className="value-native text-emerald-500 font-black">
                                         {currentPlatformFee ? (Number(currentPlatformFee) / 1e6).toFixed(2) : '1.00'} USDC
                                     </span>
                                 </div>
@@ -179,7 +179,7 @@ export function SponsorshipPortalSection({
                         <button
                             onClick={onCreateSponsorship}
                             disabled={isSponsorSaving || !isPriceReady}
-                            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-6 rounded-[2rem] text-white font-black uppercase tracking-[0.3em] shadow-2xl shadow-emerald-500/30 active:scale-[0.98] transition-all disabled:opacity-50 mt-8"
+                            className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 disabled:bg-slate-800/20 disabled:border-slate-800/30 disabled:text-slate-600 py-6 rounded-[2rem] label-native transition-all"
                         >
                             {isSponsorSaving ? (
                                 <div className="flex items-center justify-center gap-3">

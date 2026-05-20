@@ -111,7 +111,7 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
     }
 
     return (
-        <div className="glass-card p-6 md:p-8 space-y-6 relative overflow-hidden border border-rose-500/20 mt-8">
+        <div className="bg-[#121214] p-6 md:p-8 space-y-6 relative overflow-hidden border border-rose-500/20 mt-8 rounded-2xl">
             <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                 <Power className="w-48 h-48 text-rose-500" />
             </div>
@@ -122,15 +122,15 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
                         <ShieldAlert className="w-6 h-6 text-rose-400" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white uppercase tracking-tight">Mainnet Feature Flags</h2>
-                        <p className="text-xs font-mono text-rose-300/80 mt-1 uppercase tracking-widest">Global Kill Switch & Phased Rollouts</p>
+                        <h2 className="text-md font-black text-white uppercase tracking-[0.2em] leading-none">Mainnet Feature Flags</h2>
+                        <p className="label-native font-mono text-rose-300/80 mt-2">Global Kill Switch & Phased Rollouts</p>
                     </div>
                 </div>
             </div>
 
             <div className="relative z-10 p-4 border border-rose-500/30 bg-rose-500/10 rounded-2xl flex items-start gap-4">
                 <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-rose-200/80 leading-relaxed font-bold">
+                <p className="label-native text-rose-200/80 leading-relaxed">
                     WARNING: Disabling a flag immediately locks out the feature on the React Client and rejects all Backend API requests. Only modify during governed Rollout Phases.
                 </p>
             </div>
@@ -146,8 +146,8 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
                         >
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <h3 className={`text-sm font-black uppercase tracking-wide ${isEnabled ? color : 'text-slate-500'}`}>{label}</h3>
-                                    <p className="text-[10px] text-slate-400 mt-1 uppercase leading-relaxed font-mono">{desc}</p>
+                                    <h3 className={`text-sm font-black uppercase tracking-widest ${isEnabled ? color : 'text-slate-500'}`}>{label}</h3>
+                                    <p className="label-native text-slate-400 mt-1 font-mono">{desc}</p>
                                 </div>
                                 <div className={`p-1.5 rounded-lg border transition-colors ${isEnabled ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400/50'}`}>
                                     {isEnabled ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
@@ -158,14 +158,13 @@ export function AdminFeatureFlagsSection({ address, signMessageAsync }: AdminFea
                 })}
             </div>
 
-            <div className="relative z-10 pt-4 flex justify-end">
+            <div className="relative z-10 pt-4">
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-rose-500/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                    className="w-full flex items-center justify-center bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 py-3 rounded-xl label-native transition-all shadow-lg active:scale-[0.98] disabled:opacity-30"
                 >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
-                    Broadcast Kill Switch Status
+                    {saving ? 'BROADCASTING...' : 'BROADCAST KILL SWITCH STATUS'}
                 </button>
             </div>
         </div>

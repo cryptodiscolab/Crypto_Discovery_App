@@ -407,7 +407,7 @@ export default function AdminSystemSettings() {
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex gap-2 p-1 bg-black/30 rounded-xl w-fit border border-white/5">
+                <div className="flex flex-wrap gap-2 p-1 bg-black/30 rounded-xl w-fit border border-white/5">
                     {[
                         { id: 'settings', label: 'Points & Logic', icon: Settings },
                         { id: 'blockchain', label: 'Blockchain Config', icon: Award },
@@ -419,7 +419,7 @@ export default function AdminSystemSettings() {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg label-native transition-all ${activeTab === tab.id ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
                         >
                             <tab.icon className="w-3.5 h-3.5" />
                             {tab.label}

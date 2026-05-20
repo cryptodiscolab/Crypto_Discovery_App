@@ -153,12 +153,12 @@ export default function ProfilePage() {
   if (isProfileLoading || !profileData) return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
       <div className="w-12 h-12 border-[3px] border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin shadow-[0_0_20px_rgba(99,102,241,0.2)]" />
-      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">LOADING PROFILE...</p>
+      <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest animate-pulse">LOADING PROFILE...</p>
     </div>
   );
 
   return (
-    <div className="pb-24 animate-in fade-in slide-in-from-bottom-2 duration-700">
+    <div className="pb-24 max-w-[100vw] overflow-x-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
       <ProfileHeader
         profileData={editableProfileData || (profileData as ProfileData)}
         isEditing={isEditing}
@@ -190,7 +190,7 @@ export default function ProfilePage() {
               onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
                 ? 'text-slate-400' : 'text-emerald-400'
             }`} size={24} />
-            <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">
+            <span className="text-[11px] font-black text-white uppercase tracking-widest text-center">
               {onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
                 ? 'CLAIMED ✓' : 'DAILY CLAIM'}
             </span>
@@ -201,7 +201,7 @@ export default function ProfilePage() {
             className="flex flex-col items-center justify-center p-4 bg-amber-500/10 border border-amber-500/20 rounded-3xl hover:bg-amber-500/20 transition-all group active:scale-95"
           >
             <Coins className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
-            <span className="text-[10px] font-black text-white uppercase tracking-widest">QUICK SWAP</span>
+            <span className="text-[11px] font-black text-white uppercase tracking-widest">QUICK SWAP</span>
           </button>
 
           <button
@@ -209,7 +209,7 @@ export default function ProfilePage() {
             className="flex flex-col items-center justify-center p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl hover:bg-indigo-500/20 transition-all group active:scale-95"
           >
             <Plus className="text-indigo-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
-            <span className="text-[10px] font-black text-white uppercase tracking-widest">NEW MISSION</span>
+            <span className="text-[11px] font-black text-white uppercase tracking-widest">NEW MISSION</span>
           </button>
         </div>
 
@@ -274,7 +274,7 @@ export default function ProfilePage() {
               <Coins className="text-white" size={20} />
               <div className="text-left">
                 <p className="text-[9px] font-black text-white/60 uppercase tracking-widest">CLAIMABLE REVENUE</p>
-                <p className="text-sm font-black text-white">{Number(claimableAmount) / 1e18} ETH</p>
+                <p className="text-[12px] font-black text-white">{Number(claimableAmount) / 1e18} ETH</p>
               </div>
             </div>
             <ArrowUpCircle className="text-white" size={20} />

@@ -46,7 +46,7 @@ export function DailyGoalCard() {
     const offset = circumference - (current / goal) * circumference;
 
     return (
-        <div className="relative overflow-hidden glass-card p-6 border-white/5 group transition-all duration-500 hover:shadow-[0_0_40px_rgba(99,102,241,0.1)]">
+        <div className="relative overflow-hidden glass-card p-6 border-white/5 group transition-all duration-500 hover:shadow-[0_0_40px_rgba(99,102,241,0.1)] max-w-[100vw] overflow-x-hidden">
             {/* Background Aesthetic */}
             <div className={`absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[120px] transition-all duration-1000 opacity-20 ${isCompleted ? 'bg-emerald-500' : 'bg-indigo-600'}`} />
 
@@ -57,12 +57,12 @@ export function DailyGoalCard() {
                             <Target className="w-4 h-4 text-indigo-400" />
                             <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Nexus Daily Goal</h3>
                         </div>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                             {isCompleted ? "Goal Reached! +50 XP Active 🚀" : `Complete 3 Tasks for +${bonusAmount} XP Bonus`}
                         </p>
                     </div>
 
-                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all ${
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest transition-all ${
                         isVerified
                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                             : 'bg-amber-500/10 border-amber-500/20 text-amber-400 animate-pulse'
@@ -154,7 +154,7 @@ export function DailyGoalCard() {
                                     <Trophy className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-white uppercase tracking-widest">
+                                    <p className="text-[11px] font-black text-white uppercase tracking-widest">
                                         {progress.bonus_claimed ? 'BONUS SECURED' : 'DAILY REWARD'}
                                     </p>
                                     <p className={`text-[11px] font-bold uppercase tracking-tight ${progress.bonus_claimed ? 'text-emerald-400' : 'text-slate-500'}`}>
@@ -188,7 +188,7 @@ export function DailyGoalCard() {
                 {!isVerified && (
                     <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center gap-3">
                         <Lock size={14} className="text-amber-400 shrink-0" />
-                        <p className="text-[10px] font-bold text-amber-200 uppercase tracking-tight leading-tight">
+                        <p className="text-[11px] font-bold text-amber-200 uppercase tracking-tight leading-tight">
                             Identity verification required to unlock daily XP bonuses.
                         </p>
                         <button

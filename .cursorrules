@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.13-Hardened)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.14-Hardened)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -802,7 +802,7 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 
 ## 53. SUPER KETAT - TOKEN OPTIMIZATION PROTOCOL (v3.54.0) 🏎️💨
 - **PRINCIPLE**: Maximize cache hits and minimize redundant processing to achieve "Super Tight" token efficiency.
-- **RTK MANDATE**: All agents MUST use Rust Token Killer for token-heavy shell work whenever available. On this Windows workspace, prefer the local binary form first (`.\.bin\rtk.exe git ...`, `.\.bin\rtk.exe read`, `.\.bin\rtk.exe npx`, `.\.bin\rtk.exe npm`, `.\.bin\rtk.exe grep`, `.\.bin\rtk.exe ls`, `.\.bin\rtk.exe gain`) because bare `rtk` may not be on the active PowerShell `PATH`. Review `.rtk/filters.toml` and run `.\.bin\rtk.exe trust` before relying on project-local filters. Fall back to native PowerShell only after stating the reason.
+- **RTK MANDATE**: All agents MUST use Rust Token Killer for token-heavy shell work whenever available. On this Windows workspace, prefer the local binary form first (`.\.bin\rtk.exe git ...`, `.\.bin\rtk.exe read`, `.\.bin\rtk.exe npx`, `.\.bin\rtk.exe npm`, `.\.bin\rtk.exe grep`, `.\.bin\rtk.exe ls`, `.\.bin\rtk.exe gain`) because bare `rtk` may not be on the active PowerShell `PATH`. Review `.rtk/filters.toml` and run `.\.bin\rtk.exe trust` before relying on project-local filters. Fall back to native PowerShell only after stating the reason. RTK presence is verified and enforced on every git commit.
 - **MANDATE**: Before reading any file > 500 lines (e.g., PRD, bundles, large components), the agent MUST run the `context-hasher` script.
 - **ACTION**:
   - Run `node scripts/sync/context-hasher.cjs check <path>` to verify cache status.
@@ -856,13 +856,14 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 - **NORMALIZATION**: Implementation MUST strictly follow the 18/6 decimal normalization standard (18 for ETH/WETH, 6 for USDC) using dynamic lookups from the `allowed_tokens` database table.
 - **SYMBOL RESOLUTION**: Currency symbols and labels MUST be resolved from metadata, never hardcoded. Use `formatUnits` and `parseUnits` from `viem` to handle conversions safely.
 
-## 61. AGENT ANTI-NEGLIGENCE HOOK MANDATE (v3.64.11-Hardened) 🛡️
-- **MANDATE**: Agents MUST execute the verification hook via `node scripts/audits/agent_anti_negligence_hook.cjs` before finalizing ANY task, code changes, or commits.
+## 61. AGENT ANTI-NEGLIGENCE HOOK MANDATE (v3.64.14-Hardened) 🛡️
+- **MANDATE**: Agents MUST execute the verification hook via `node scripts/audits/agent_anti_negligence_hook.cjs` before finalizing ANY task, code changes, or commits. This hook is automatically run in the Git `pre-commit` hook (husky) to block commits if checks fail or if RTK is missing/inactive.
 - **ACTION**: Any file containing `[dotenv]`, tip logs, duplicate artifacts, secret leaks, or unregistered documents in `WORKSPACE_MAP.md` will trigger an immediate block. Self-audit is mandatory.
 
 ---
-*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.64.11-Hardened. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.64.11.*
+*Berdasarkan protokol Full-Stack Sync... Ecosystem Synced. Identity Locked v2. Protocol Enforced. Traceability Guaranteed. Self-Managed. Multi-Agent Integrated. LLM Evolved. Zero Hardcode Mandated. Pre-Flight Verified. Clean Tree Maintained. PRD HTML Mandated. Audit-First Mandated. Re-Audit Verified. Defensive Cleaning Mandated. Multi-Project Synced. Admin Sync Mandated. Schema Immutable Protected v3.26.1. **Concurrent UI Mandated v3.56.0. WSL Optimization Active v1.0.0. TypeScript API Hardening v3.64.14-Hardened. Nexus War Room (Passive Mode) Active. Kejujuran & Manfaat Nyata (No Paper Protocol) Terjamin.** Lurah Approved v3.64.14.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
-*Audit Precision Hardened: 2026-05-14. v3.64.11 MILLISECOND PRECISION & MULTI-ASSET.*
-*Anti-Negligence Hook Activated: 2026-05-18. v3.64.11 AUTOMATED SCANNING & RTK INTEGRATED.*
+*Audit Precision Hardened: 2026-05-14. v3.64.14 MILLISECOND PRECISION & MULTI-ASSET.*
+*Anti-Negligence Hook Activated: 2026-05-18. v3.64.14 AUTOMATED SCANNING & RTK INTEGRATED.*
+

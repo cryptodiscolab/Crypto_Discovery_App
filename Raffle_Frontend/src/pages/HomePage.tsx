@@ -79,7 +79,7 @@ export function HomePage() {
 
   return (
     // Tidak perlu min-h-screen atau pt di sini — sudah di-handle App.jsx main
-    <div className={`w-full pb-28 md:pb-8 ${isLight ? 'bg-white text-zinc-900' : 'bg-[#050505] text-white'}`}>
+    <div className={`w-full max-w-[100vw] overflow-x-hidden pb-28 md:pb-8 ${isLight ? 'bg-white text-zinc-900' : 'bg-[#050505] text-white'}`}>
 
       {/* Farcaster Frame Immersion: Top Status Bar */}
       {isFrame && (
