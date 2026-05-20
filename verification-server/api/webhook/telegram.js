@@ -16,6 +16,88 @@ const orchestron = require('../lib/orchestron-core');
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+function getAllowedChatIds() {
+    return [
+        telegramChatId,
+        process.env.TELEGRAM_CHANNEL_ID,
+        process.env.TELEGRAM_GROUP_CHAT_ID,
+        ...(process.env.TELEGRAM_ALLOWED_CHAT_IDS || '').split(',')
+    ]
+        .map(id => String(id || '').trim())
+        .filter(Boolean);
+}
+
+function extractTelegramMessage(body) {
+    return body.message || body.channel_post || body.edited_message || body.edited_channel_post || null;
+}
+
+function isAllowedChat(chatId) {
+    const allowedIds = getAllowedChatIds();
+    return allowedIds.includes(String(chatId));
+}
+
+function summarizeTask(task) {
+    return String(task || '').replace(/\s+/g, ' ').trim().slice(0, 240);
+}
+
+function compactHistory(history) {
+    return (history || [])
+        .reverse()
+        .slice(-6)
+        .map(h => {
+            const role = h.role === 'user' ? 'Owner' : 'Lurah';
+            const content = String(h.content || '').replace(/\s+/g, ' ').slice(0, 300);
+            return `${role}: ${content}`;
+        })
+        .join('\n');
+}
+
+function buildOrchestronMenu() {
+    const agents = orchestron.getAgentRoster().map(agent => `• ${agent}`).join('\n');
+    return `⚔️ **NEXUS ORCHESTRON WAR ROOM**
+
+**Shared Telegram Hub**
+Tambahkan bot ke grup/channel, lalu set salah satu env:
+\`TELEGRAM_CHANNEL_ID\`, \`TELEGRAM_GROUP_CHAT_ID\`, atau \`TELEGRAM_ALLOWED_CHAT_IDS\`.
+
+**Command cepat**
+\`/warroom <task>\` - OrchestratorBot koordinasi dan bisa delegasi.
+\`/all <task>\` - Kirim task ke semua specialist dalam satu parent task.
+\`> agent: task\` - Kirim ke agent tertentu.
+\`> all: task\` - Broadcast ke semua specialist.
+
+**Agent tersedia**
+${agents}
+
+**Alias**
+\`lurah/orchestron/antigravity\` -> OrchestratorBot
+\`claw/openclaw\` -> SecurityBot
+\`qwen\` -> CodeBot
+\`deepseek\` -> BackendBot`;
+}
+
+async function dispatchWarRoom(chatId, taskQuery) {
+    if (!taskQuery) {
+        await sendTelegram(chatId, '⚠️ Tulis task setelah command. Contoh: `/warroom audit daily claim sync dan bagi tugas ke agent relevan`');
+        return;
+    }
+
+    const task = summarizeTask(taskQuery);
+    const result = await orchestron.dispatchOrchestrator(`Telegram War Room: ${task}`, taskQuery, `telegram:${chatId}`);
+    await sendTelegram(chatId, `✅ **OrchestratorBot aktif.**\nTask: _${task}_\nID: \`${result.id}\`\n\nCek progress di Nexus Monitor atau kirim \`/agents\`.`);
+}
+
+async function dispatchAllAgents(chatId, taskQuery) {
+    if (!taskQuery) {
+        await sendTelegram(chatId, '⚠️ Tulis task setelah command. Contoh: `/all audit risiko release dan beri laporan singkat per agent`');
+        return;
+    }
+
+    const task = summarizeTask(taskQuery);
+    const result = await orchestron.dispatchToAllAgents(`Telegram All Agents: ${task}`, taskQuery, `telegram:${chatId}`);
+    await sendTelegram(chatId, `✅ **War room dibuka untuk semua agent.**\nParent: \`${result.parent.id}\`\nSub-agent tasks: ${result.children.length}\nTask: _${task}_`);
+}
+
 module.exports = async (req, res) => {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -68,7 +150,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({ ok: true });
     }
 
-    const { message } = req.body;
+    const message = extractTelegramMessage(req.body);
 
     // 1. MAXIMUM Security Check (Anti-Spoofing & Zero Trust)
     // Telegram will send X-Telegram-Bot-Api-Secret-Token if configured.
@@ -88,14 +170,17 @@ module.exports = async (req, res) => {
         return res.status(401).json({ error: 'Unauthorized: Invalid Security Token' });
     }
 
-    // 2. Identity Check: Hanya balas chat dari owner (Anda)
-    if (!telegramChatId) {
-        console.error('❌ TELEGRAM_CHAT_ID is not configured!');
-        return res.status(500).json({ error: 'Server misconfigured: Chat ID missing' });
+    const chatId = message?.chat?.id;
+    const allowedChatIds = getAllowedChatIds();
+
+    // 2. Identity Check: Hanya balas chat owner/channel/grup yang diizinkan
+    if (allowedChatIds.length === 0) {
+        console.error('❌ Telegram allowed chat IDs are not configured!');
+        return res.status(500).json({ error: 'Server misconfigured: Telegram chat ID missing' });
     }
 
-    if (!message || !message.chat || String(message.chat.id) !== String(telegramChatId)) {
-        console.log(`[Webhook] Ignored unauthorized chat ID: ${message?.chat?.id}`);
+    if (!message || !message.chat || !isAllowedChat(chatId)) {
+        console.log(`[Webhook] Ignored unauthorized chat ID: ${chatId}`);
         return res.status(200).json({ ok: true });
     }
 
@@ -111,34 +196,27 @@ module.exports = async (req, res) => {
         // Don't error out entirely, can still show health/stats maybe
     }
 
-    const text = message.text || '';
-    const chatId = message.chat.id;
+    const text = (message.text || '').trim();
 
     console.log(`[Webhook] Received command: ${text} from ${chatId}`);
 
     // 2. Command Router
     try {
         if (text === '/start') {
-            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nKirim perintah berikut:\n/audit - Audit Ekosistem Instan\n/orchestron - Menu Kendali Nexus Orchestron\n/whitelist - Whitelist Token Baru\n/list_tokens - Lihat Token Terdaftar\n/user <wallet> - Audit Identitas Lengkap User\n/stats - Statistik User\n/health - Cek Koneksi DB & RPC\n/model - Pilih Otak AI (Model)\n/fix <error> - Perbaiki error via AI");
+            await sendTelegram(chatId, "Sampurasun! Saya **Lurah Ekosistem**.\n\nCommand utama:\n/warroom <task> - minta OrchestratorBot koordinasi agent\n/all <task> - broadcast task ke semua agent\n/orchestron - menu Nexus War Room\n/agents - daftar agent\n/audit - audit ekosistem\n/fix <error> - analisa error ringkas");
         }
         else if (text === '/orchestron') {
-            const clawStatus = await orchestron.getAgentStatus('openclaw');
-            const menu = `⚔️ **NEXUS ORCHESTRON COMMAND CENTER**
-            
-📡 **AGENT STATUS:**
-• @openclaw: ${clawStatus === 'ONLINE' ? '🟢 ONLINE' : '🔴 OFFLINE'}
-• @lurah: 🟢 ONLINE (Internal)
-
-🛠️ **MULTI-AGENT DISPATCH:**
-Gunakan format \`> [nama_agent]: [tugas]\`
-Contoh:
-\`> claw: audit contract 0xabc...\`
-\`> deepseek: optimize gas for swap function\`
-
-🚀 **SYSTEM WIDE:**
-/audit - Health check ekosistem.
-/health - Status konektivitas.`;
-            await sendTelegram(chatId, menu);
+            await sendTelegram(chatId, buildOrchestronMenu());
+        }
+        else if (text === '/agents') {
+            const agents = orchestron.getAgentRoster().map(agent => `• ${agent}`).join('\n');
+            await sendTelegram(chatId, `🤖 **AGENT ROSTER**\n${agents}\n\nGunakan \`> agent: task\`, \`/warroom <task>\`, atau \`/all <task>\`.`);
+        }
+        else if (text.startsWith('/warroom')) {
+            await dispatchWarRoom(chatId, text.replace('/warroom', '').trim());
+        }
+        else if (text.startsWith('/all')) {
+            await dispatchAllAgents(chatId, text.replace('/all', '').trim());
         }
         else if (text === '/model') {
             await sendTelegram(chatId, "🧠 **PILIH OTAK LURAH (AI MODEL - 2026 EDITION)**\n\nKetik perintah di bawah:\n`/model_flash` - Gemini 2.5 Flash (Super Cepat & Akurat)\n`/model_pro` - Gemini 2.5 Pro (Otak Paling Cerdas & Mendalam)\n`/model_3` - Gemini 3.1 Flash (Teknologi Masa Depan)\n\n*Pilihan Anda akan disimpan secara permanen di database.*");
@@ -166,9 +244,12 @@ Contoh:
             const helpMsg = `📖 **PANDUAN LURAH EKOSISTEM (ANTIGRAVITY NEXUS)**
 
 **🚀 AGENT NEXUS (Multi-Agent Commands):**
+• \`/warroom [tugas]\` - OrchestratorBot koordinasi dan delegasi agent.
+• \`/all [tugas]\` - Broadcast task ke semua specialist.
 • \`> claw: [tugas]\` - Panggil **OpenClaw** (Deep Security & Architecture Audit).
 • \`> deepseek: [tugas]\` - Panggil **DeepSeek** (Complex Logic & Backend Optimization).
 • \`> qwen: [tugas]\` - Panggil **Qwen-Coder** (Local File Refactoring & Build Check).
+• \`> all: [tugas]\` - Buka War Room semua agent.
 
 **🛠️ SMART TOOLS:**
 • \`/fix <error>\` - Analisa & solusi error berdasarkan protokol & skill.
@@ -545,28 +626,42 @@ Contoh:
             // Agent Dispatcher Pattern: "> agent: task"
             const match = text.match(/^>\s*(\w+):\s*(.*)/);
             if (!match) {
-                await sendTelegram(chatId, "⚠️ Format salah! Gunakan `> agent: tugas`. Contoh: `> claw: audit index.js`.");
+                await sendTelegram(chatId, "⚠️ Format salah! Gunakan `> agent: tugas`. Contoh: `> orchestron: audit claim sync` atau `> all: audit release`.");
                 return res.status(200).json({ ok: true });
             }
             
             const agent = match[1].toLowerCase();
             const taskQuery = match[2];
+            const normalizedAgent = orchestron.normalizeAgentName(agent);
             
-            const supportedAgents = ['claw', 'openclaw', 'deepseek', 'qwen', 'lurah'];
-            if (!supportedAgents.includes(agent)) {
-                await sendTelegram(chatId, `❌ Agent @${agent} tidak dikenal atau tidak tersedia.`);
+            if (!normalizedAgent) {
+                await sendTelegram(chatId, `❌ Agent @${agent} tidak dikenal. Ketik /agents untuk daftar agent.`);
                 return res.status(200).json({ ok: true });
             }
 
-            const targetAgent = agent === 'claw' ? 'openclaw' : agent;
-            await sendTelegram(chatId, `📡 Mengirim instruksi ke **@${targetAgent}**...\nTugas: _${taskQuery}_`);
-            
             try {
-                await orchestron.dispatchTask(targetAgent, `Telegram Command: ${taskQuery}`, taskQuery);
-                await sendTelegram(chatId, `✅ Instruksi diterima oleh buffer **@${targetAgent}**. Menunggu eksekusi oleh worker lokal/cloud...`);
+                if (normalizedAgent === 'ALL') {
+                    await dispatchAllAgents(chatId, taskQuery);
+                } else if (normalizedAgent === 'OrchestratorBot') {
+                    await dispatchWarRoom(chatId, taskQuery);
+                } else {
+                    const task = summarizeTask(taskQuery);
+                    const result = await orchestron.dispatchTask(normalizedAgent, `Telegram Command: ${task}`, taskQuery, `telegram:${chatId}`, {
+                        metadata: { source: 'telegram_war_room', mode: 'single_agent' }
+                    });
+                    await sendTelegram(chatId, `✅ Instruksi diterima **${normalizedAgent}**.\nID: \`${result.id}\`\nTask: _${task}_`);
+                }
             } catch (dispatchErr) {
                 await sendTelegram(chatId, `❌ Gagal mengirim instruksi: ${dispatchErr.message}`);
             }
+        }
+        else if (/^(orchestron|orchestrator|lurah|antigravity)\s*[:,-]\s*/i.test(text)) {
+            const taskQuery = text.replace(/^(orchestron|orchestrator|lurah|antigravity)\s*[:,-]\s*/i, '').trim();
+            await dispatchWarRoom(chatId, taskQuery);
+        }
+        else if (/^(semua agen|all agents|all)\s*[:,-]\s*/i.test(text)) {
+            const taskQuery = text.replace(/^(semua agen|all agents|all)\s*[:,-]\s*/i, '').trim();
+            await dispatchAllAgents(chatId, taskQuery);
         }
         else {
             // Conversational Mode: Interactive Agent (Antigravity/Lurah) with Memory
@@ -580,7 +675,7 @@ Contoh:
                 .order('created_at', { ascending: false })
                 .limit(10);
 
-            const formattedHistory = (history || []).reverse().map(h => `${h.role === 'user' ? 'Owner' : 'Lurah'}: ${h.content}`).join('\n');
+            const formattedHistory = compactHistory(history);
 
             // 2. Fetch knowledge & Settings from Vault
             const { data: vault } = await supabase.from('agent_vault').select('content, category, file_path');
@@ -609,7 +704,8 @@ Contoh:
                 [PERTANYAAN OWNER BARU]:
                 ${text}
 
-                Tugasmu: Balas Owner dengan cerdas, gunakan riwayat percakapan jika relevan. JANGAN kaku. Jadilah asisten yang proaktif.
+                Tugasmu: Balas Owner dengan cerdas, gunakan riwayat jika relevan. Default singkat: maksimal 5 bullet atau 900 karakter.
+                Jangan ulang protokol, jangan dump konteks, dan arahkan ke /warroom atau /all jika perlu bantuan agent.
             `;
 
             let chatResponse = "Gagal menghubungi AI Service.";
@@ -707,7 +803,11 @@ async function callGeminiWithFallback(initialModelId, promptText) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptText }] }]
+                        contents: [{ parts: [{ text: promptText }] }],
+                        generationConfig: {
+                            maxOutputTokens: 700,
+                            temperature: 0.35
+                        }
                     })
                 });
                 const result = await response.json();
