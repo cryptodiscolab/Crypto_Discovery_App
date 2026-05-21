@@ -1,9 +1,37 @@
 import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { ABIS, CONTRACTS } from '../lib/contracts';
+import { callUserBundle, USER_BUNDLE_ACTIONS } from '../lib/apiRoutes';
 import { useMemo } from 'react';
 import { formatEther, parseEther } from 'viem';
 
 const V12 = CONTRACTS.DAILY_APP as `0x${string}`;
+
+export interface SbtMintEntitlement {
+    wallet: string;
+    tier: number;
+    tier_name: string;
+    db_total_xp: number;
+    required_xp: number;
+    current_onchain_tier: number;
+    current_onchain_xp: number;
+    mint_price_wei: string;
+    contract_address: string;
+    verifier_address: string;
+    chain_id: number;
+    deadline: number;
+    expires_at: string;
+    nonce: string;
+    signature: string;
+}
+
+export interface SbtMintEntitlementResult {
+    success: boolean;
+    eligible: boolean;
+    voucher_status: 'signed' | 'not_issued';
+    voucher?: SbtMintEntitlement;
+    reason?: string;
+    error?: string;
+}
 
 export function useNFTTiers() {
     useAccount();
@@ -194,6 +222,41 @@ export function useNFTTiers() {
         return hash;
     };
 
+    const mintTierWithEntitlement = async (voucher: SbtMintEntitlement) => {
+        const hash = await writeContractAsync({
+            address: V12,
+            abi: ABIS.DAILY_APP,
+            functionName: 'mintNFTWithEntitlement',
+            args: [{
+                wallet: voucher.wallet as `0x${string}`,
+                targetContract: voucher.contract_address as `0x${string}`,
+                targetTier: voucher.tier,
+                requiredXp: BigInt(voucher.required_xp),
+                nonce: BigInt(voucher.nonce),
+                deadline: BigInt(voucher.deadline)
+            }, voucher.signature as `0x${string}`],
+            value: BigInt(voucher.mint_price_wei || '0')
+        });
+        return hash;
+    };
+
+    const requestMintEntitlement = async (
+        wallet: string,
+        requestedTier: number,
+        signature: string,
+        message: string
+    ): Promise<SbtMintEntitlementResult> => {
+        const response = await callUserBundle(USER_BUNDLE_ACTIONS.SBT_MINT_ENTITLEMENT, {
+            wallet,
+            requested_tier: requestedTier,
+            signature,
+            message
+        });
+        const data = await response.json() as SbtMintEntitlementResult;
+        if (!response.ok) throw new Error(data.error || data.reason || 'Failed to request SBT mint entitlement');
+        return data;
+    };
+
     const refetch = () => { r1(); r2(); r3(); r4(); r5(); };
 
     return {
@@ -205,6 +268,8 @@ export function useNFTTiers() {
         toggleTier,
         updateEconomy,
         mintTier,
+        mintTierWithEntitlement,
+        requestMintEntitlement,
         setCreatorToken,
         setUSDCToken,
         setMasterX,

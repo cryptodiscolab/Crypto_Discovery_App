@@ -8,7 +8,7 @@ import { referralUtils } from './utils/referralUtils';
  * @param {string} signature
  * @param {string} message
  */
-export async function ensureUserProfile(walletAddress: string, signature: string, message: string, fid: unknown = null) {
+export async function ensureUserProfile(walletAddress: string, signature: string, message: string, fid: unknown = null, token: string | null = null) {
     if (!walletAddress || !signature || !message) return null;
     const normalizedAddress = cleanWallet(walletAddress);
     const referred_by = referralUtils.getReferrer();
@@ -22,7 +22,8 @@ export async function ensureUserProfile(walletAddress: string, signature: string
                 signature,
                 message,
                 fid,
-                referred_by
+                referred_by,
+                token
             })
         });
 

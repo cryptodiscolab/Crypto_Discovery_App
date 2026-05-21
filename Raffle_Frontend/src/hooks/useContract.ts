@@ -194,15 +194,6 @@ export function useDailyAppAdmin() {
 export function useSyncXP() {
     const { writeContractAsync, isPending: isConfirming } = useWriteContract();
 
-    // Legacy support (to be deprecated once V13 is fully live)
-    const syncXP = async () => {
-        return await writeContractAsync({
-            address: V12_ADDRESS,
-            abi: ABIS.DAILY_APP,
-            functionName: 'syncMasterXPoints',
-        });
-    };
-
     // V13 Signature-based Sync
     const syncOffchainXP = async (totalDbXp: string | number | bigint, deadline: string | number | bigint, signature: unknown) => {
         return await writeContractAsync({
@@ -214,7 +205,6 @@ export function useSyncXP() {
     };
 
     return {
-        syncXP,
         syncOffchainXP,
         isLoading: isConfirming
     };

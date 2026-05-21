@@ -1,9 +1,21 @@
 # 🤖 CRYPTO DISCO — AGENT WORK REPORTS (CONSOLIDATED)
 
-- **Ecosystem Version:** v3.64.7-Hardened
-- **Consolidated At:** 2026-05-19T12:56:00+07:00
+- **Ecosystem Version:** v3.64.19-Hardened
+- **Consolidated At:** 2026-05-21T11:30:00+07:00
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+## 2026-05-21 Fix Report - Stateless SIWE EIP-4361 Authentication Implementation (v3.64.19-Hardened)
+- **Status**: Completed, audited, and verified via build and system checks.
+- **Surface**: `/api/user-bundle` (action: `nonce` and `sync`), frontend authentication logic (`useSIWE.ts` and `dailyAppLogic.ts`), and global PRD documentation.
+- **Root Cause & Fix Applied**:
+  1. **Stateless Nonce Generation (`/api/user/nonce`)**: Built an HMAC-signed nonce generation handler in `/api/user-bundle` that binds the wallet address, a cryptographically random UUID nonce, client IP address, and request timestamp into a single stateless HMAC-SHA256 signature using the `SUPABASE_SERVICE_ROLE_KEY`. This challenge token expires in 10 minutes, securing the login flow without needing database tables or active state.
+  2. **EIP-4361 Signature Verification (`/api/user/sync`)**: Upgraded the `sync` handler to accept the signature, message, and challenge token. The backend verifies the HMAC signature to validate the challenge token integrity and uses `viem` `verifyMessage` to cryptographically prove that the wallet address signed the valid SIWE message matching the nonce.
+  3. **Frontend EIP-4361 Integration (`useSIWE.ts` / `dailyAppLogic.ts`)**: Integrated the SIWE challenge-response sequence into the user onboarding workflow. On wallet connection, the client requests a nonce/token, builds a valid SIWE message, prompts the user's wallet for an EIP-191 signature, and passes the signature and challenge token to the profile verification/synchronization pipeline.
+  4. **Strict TypeScript & Lints**: Enforced explicit TypeScript typings for all new endpoints and hooks, resolving all implicit `any` types and ensuring a clean compilation.
+- **Verification**: `npx tsc --noEmit` resolved with **Exit Code 0** (zero compilation errors), and the system audit passed successfully.
+
+---
 
 ## 2026-05-19 Fix Report - Daily Claim Parity & Database Deadlock Recovery (v3.64.7-Hardened)
 - **Status**: Fixed, recovered, secured, and verified with 100% database parity and hardened source control.
@@ -3041,6 +3053,98 @@ npx vite-bundle-visualizer
 **Status:** Done  
 **Owner:** CTO  
 **Area:** Documentation, release decision  
+
+---
+
+## OPERATIONAL TASK LIST 2026-05-21
+
+Dokumen berikut merangkum pekerjaan yang **masih belum diaudit tuntas** atau **masih perlu dilakukan secara operasional** setelah remediation pass sebelumnya. Fokus section ini adalah eksekusi, bukan histori fix.
+
+### A. High-Risk Flows That Still Need Manual Audit
+
+| ID | Priority | Flow / Surface | Current Status | What Is Missing | Owner |
+|---|---|---|---|---|---|
+| OPS-P0-01 | P0 | Wallet connect / SIWE login | Not fully audited end-to-end | Real browser proof for nonce -> sign -> sync -> profile state | QA / Frontend |
+| OPS-P0-02 | P0 | Sponsorship raffle create | Not fully audited end-to-end | Need tx hash, API sync proof, DB write proof, pending-recovery failure-path proof | QA / Frontend / Backend |
+| OPS-P0-03 | P0 | Raffle reject / refund-first cancel | Not fully audited end-to-end | Need proof that on-chain cancel and DB status stay consistent | QA / Admin / Backend |
+| OPS-P0-04 | P0 | Campaign join | Not fully audited end-to-end | Need wallet/browser proof, API response, DB row, UI state | QA / Frontend |
+| OPS-P0-05 | P0 | Daily claim | Not fully audited end-to-end | Need tx hash, XP delta, activity log, leaderboard reflection, pending sync recovery proof | QA / Backend |
+| OPS-P0-06 | P0 | SBT upgrade via entitlement | New flow, not yet audited end-to-end | Need proof for entitlement issuance, mint receipt, post-mint sync, tier/log update | QA / Contract / Backend |
+| OPS-P0-07 | P0 | Admin contract config write | Not fully audited end-to-end | Need signer permission proof and post-write UI/API consistency | QA / Admin |
+| OPS-P0-08 | P0 | Pending sync recovery UI | Partial infra proof only | Need user-visible proof that failed sync becomes pending and later recovers | QA / Frontend / Backend |
+| OPS-P0-09 | P0 | Notification flow | Not fully audited end-to-end | Need proof that user/admin notification path works after success and failure cases | QA / Frontend |
+
+### B. New Audit Gap Introduced By Recent SBT Entitlement Work
+
+| ID | Priority | Area | Current Status | What Must Be Verified | Owner |
+|---|---|---|---|---|---|
+| OPS-P0-10 | P0 | `SBTMintEntitlementVerifier` deployment wiring | Code complete, runtime not proven | `SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS` env set, verifier configured in `DailyAppV15`, `CONSUMER_ROLE` granted to `DailyAppV15`, signer role granted to backend signer | Contract / Ops |
+| OPS-P0-11 | P0 | `mintNFTWithEntitlement` ABI/runtime parity | Local build proven, live path not proven | Deployed ABI must expose `mintNFTWithEntitlement` and frontend must point to matching contract address | Contract / Frontend |
+| OPS-P0-12 | P0 | MasterX auto-sync after SBT upgrade | Pending manual QA | After successful SBT mint/upgrade, verify MasterX tier also updates or explicitly document that it is deferred | QA / Backend / Ops |
+| OPS-P0-13 | P1 | Entitlement security invariants | Not manually tested | Verify nonce reuse fails, expired voucher fails, wrong wallet fails, wrong tier order fails | QA / Contract |
+
+### C. Social / Verifier Audit Still Open
+
+| ID | Priority | Area | Current Status | What Must Be Verified | Owner |
+|---|---|---|---|---|---|
+| OPS-P1-01 | P1 | Farcaster verify scenario | Health green, scenario not proven | Real test account + fixture task must pass full verification path | QA / Verifier |
+| OPS-P1-02 | P1 | X / Twitter verify scenario | Health green, scenario not proven | Real test account + fixture task must pass full verification path | QA / Verifier |
+
+### D. Release Governance Still Needed
+
+| ID | Priority | Area | Current Status | What Must Be Done | Owner |
+|---|---|---|---|---|---|
+| OPS-P1-03 | P1 | Release branch hygiene | Needs final discipline on current tree | Ensure release-bound diffs exclude unrelated dirty worktree changes | Release Engineer |
+| OPS-P1-04 | P1 | Generated DB types refresh | Open if target schema drifted | Regenerate types if `pending_sync_jobs`, `system_error_logs`, or new SBT fields changed in target DB | Backend / DB |
+| OPS-P2-01 | P2 | Bundle optimization / treeshake restoration | Deferred | Run separate performance branch and regression QA for LiFi / wallet stack | Frontend Performance |
+
+### E. Execution Checklist Per Owner
+
+#### QA / Frontend / Web3
+
+- [ ] Run browser E2E for wallet connect.
+- [ ] Run browser E2E for sponsorship raffle create.
+- [ ] Run browser E2E for raffle reject / refund-first cancel.
+- [ ] Run browser E2E for campaign join.
+- [ ] Run browser E2E for daily claim.
+- [ ] Run browser E2E for SBT upgrade via entitlement.
+- [ ] Run browser E2E for admin contract config write.
+- [ ] Capture one failure-path run that creates a `pending_sync_jobs` row.
+- [ ] Capture notification behavior for success and failure cases.
+- [ ] For every tested flow, record tx hash, API response, DB row impact, and final UI state.
+
+#### Contract / Ops
+
+- [ ] Confirm live `DailyAppV15` address used by frontend is the contract that exposes `mintNFTWithEntitlement`.
+- [ ] Deploy `SBTMintEntitlementVerifier` if not yet live in target environment.
+- [ ] Set `SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS` and frontend `VITE_*` counterpart.
+- [ ] Call `DailyAppV15.setSBTMintEntitlementVerifier(verifier)`.
+- [ ] Grant `CONSUMER_ROLE` on verifier to `DailyAppV15`.
+- [ ] Grant `ENTITLEMENT_SIGNER_ROLE` on verifier to backend signer wallet.
+- [ ] Re-run ABI parity after deployment wiring.
+
+#### Backend / DB
+
+- [ ] Validate `sbt-mint-entitlement` returns signed voucher in target environment.
+- [ ] Validate `sync-sbt-upgrade` still writes activity logs and tier sync after entitlement mint.
+- [ ] Validate pending sync cron can recover failed SBT post-mint sync.
+- [ ] Regenerate `database.types.ts` if target schema changed.
+
+#### Verifier / Social
+
+- [ ] Run one Farcaster verification fixture test.
+- [ ] Run one X/Twitter verification fixture test.
+- [ ] Record verifier endpoint health plus real scenario result, not health only.
+
+### F. Acceptance Criteria To Close This Operational List
+
+- [ ] All P0 flows have PASS/FAIL evidence.
+- [ ] Every on-chain audited flow has at least one tx hash recorded.
+- [ ] Every audited backend sync has API response and expected DB state recorded.
+- [ ] `mintNFTWithEntitlement` proven on deployed environment, not local only.
+- [ ] MasterX auto-sync behavior after SBT upgrade is proven or explicitly waived.
+- [ ] Social verifier path proven with real fixture or explicitly waived if out of release scope.
+- [ ] No unresolved pending sync item remains without explanation after QA pass.
 
 **Problem:**  
 Report lama menyimpan status historis untuk audit trail. Itu bagus, tapi final release tetap butuh satu dokumen ringkas yang hanya berisi status terbaru.

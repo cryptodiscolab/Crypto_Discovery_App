@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { MASTER_X_ABI, DAILY_APP_ABI, CONTRACTS } from '../lib/contracts';
+import { DAILY_APP_ABI, CONTRACTS } from '../lib/contracts';
 import { Zap, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useSocialGuard } from '../hooks/useSocialGuard';
 import { useVerification } from '../hooks/useVerification';
@@ -65,14 +65,6 @@ export function UnifiedDashboard() {
 
     const { data: fcUser } = useSocialGuard(address);
 
-    const { data: userData } = useReadContract({
-        address: CONTRACTS.MASTER_X,
-        abi: MASTER_X_ABI,
-        functionName: 'users',
-        args: [address],
-        query: { enabled: !!address },
-    });
-
     const { data: nextTaskIdRaw } = useReadContract({
         address: CONTRACTS.DAILY_APP,
         abi: DAILY_APP_ABI,
@@ -107,17 +99,6 @@ export function UnifiedDashboard() {
         }
         sponsorshipIds.reverse();
     }
-
-    const { data: unsyncedPointsRaw } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'unsyncedPoints',
-        args: [address],
-        query: { enabled: !!address },
-    });
-
-    const _userPoints = userData ? Number((userData as [bigint])[0]) : 0;
-    const _unsyncedPoints = unsyncedPointsRaw ? Number(unsyncedPointsRaw) : 0;
 
     const handleTransactionSuccess = useCallback(async (txHash: string) => {
         // BUG-SYNC fix: Trigger backend XP sync immediately after transaction confirmation

@@ -41,7 +41,8 @@ const neededFunctions = [
     'setGlobalRewards', 'setSponsorshipPlatformFee', 'setCreatorToken',
     'setUSDCToken', 'setSponsorDuration', 'setWithdrawalFee',
     'setAllowedToken', 'allowedPaymentTokens',
-    'userSponsorshipProgress', 'unsyncedPoints', 'syncMasterXPoints',
+    'userSponsorshipProgress', 'mintNFTWithEntitlement',
+    'sbtMintEntitlementVerifier', 'setSBTMintEntitlementVerifier',
     'setMasterX', 'doBatchTasks', 'renewSponsorship',
     'dailyBonusAmount', 'sponsorDuration', 'withdrawalFeeBP',
     'tasksForReward', 'baseReferralReward', 'rewardPerClaim'

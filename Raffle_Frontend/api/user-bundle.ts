@@ -5,12 +5,14 @@ import type { Database } from './_shared/database.types.js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { verifyMessage, keccak256, encodePacked } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import crypto from 'crypto';
 import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     NEYNAR_API_KEY,
     rpcClient,
     DAILY_APP_ADDRESS,
+    SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS,
     RAFFLE_ADDRESS,
     RAFFLE_ABI,
     DAILY_APP_USER_STATS_ABI,
@@ -31,6 +33,8 @@ import type {
     XpSyncPayload,
     UgcMissionPayload,
     UgcRafflePayload,
+    SbtMintEntitlementRequest,
+    SbtMintEntitlementResponse,
     Json
 } from './_shared/types.js';
 
@@ -278,7 +282,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         if (!(await checkFeatureGuard('daily_claim', res))) return;
     }
 
-    if (['sync-sbt-upgrade'].includes(action)) {
+    if (['sbt-mint-entitlement', 'sync-sbt-upgrade'].includes(action)) {
         if (!(await checkFeatureGuard('sbt_minting', res))) return;
     }
 
@@ -286,12 +290,13 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         if (!(await checkFeatureGuard('ugc_payment', res))) return;
     }
 
-    if (['sync', 'update-profile', 'fc-sync'].includes(action)) {
+    if (['sync', 'nonce', 'update-profile', 'fc-sync'].includes(action)) {
         if (!(await checkFeatureGuard('login_and_social', res))) return;
     }
 
     switch (action) {
         case 'sync': await handleLoginSync(req, res); break;
+        case 'nonce': await handleGenerateNonce(req, res); break;
         case 'xp': await handleXpSync(req, res); break;
         case 'fc-sync': await handleFarcasterSync(req, res); break;
         case 'update-profile': await handleUpdateProfile(req, res); break;
@@ -301,6 +306,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         case 'get-point-settings': await handleGetPointSettings(req, res); break;
         case 'sync-ugc-mission': await handleSyncUgcMission(req, res); break;
         case 'sync-ugc-raffle': await handleSyncUgcRaffle(req, res); break;
+        case 'sbt-mint-entitlement': await handleSbtMintEntitlement(req, res); break;
         case 'sync-sbt-upgrade': await handleSyncSbtUpgrade(req, res); break;
         case 'sync-pool-claim': await handleSyncPoolClaim(req, res); break;
         case 'leaderboard': await handleLeaderboard(req, res); break;
@@ -347,6 +353,12 @@ async function checkIdentityStatus(wallet: string): Promise<boolean> {
     }
 }
 
+function getWalletBotAccount() {
+    if (!WALLET_BOT_SIGNER) return null;
+    const privateKey = WALLET_BOT_SIGNER.startsWith('0x') ? WALLET_BOT_SIGNER : `0x${WALLET_BOT_SIGNER}`;
+    return privateKeyToAccount(privateKey as `0x${string}`);
+}
+
 // -----------------------------------------------------------------------------
 // CORE HANDLERS
 // -----------------------------------------------------------------------------
@@ -373,13 +385,19 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
         const totalXp = profile.total_xp || 0;
         const deadline = Math.floor(Date.now() / 1000) + (10 * 60);
 
-        if (!WALLET_BOT_SIGNER) return res.status(500).json({ error: 'Signer wallet not configured' });
+        const account = getWalletBotAccount();
+        if (!account) return res.status(500).json({ error: 'Signer wallet not configured' });
 
-        const account = privateKeyToAccount(WALLET_BOT_SIGNER as `0x${string}`);
         const messageHash = keccak256(
             encodePacked(
-                ['address', 'uint256', 'uint256'],
-                [wallet_address, BigInt(totalXp), BigInt(deadline)]
+                ['address', 'uint256', 'uint256', 'uint256', 'address'],
+                [
+                    wallet_address,
+                    BigInt(totalXp),
+                    BigInt(deadline),
+                    BigInt(CHAIN_ID),
+                    DAILY_APP_ADDRESS as `0x${string}`
+                ]
             )
         );
 
@@ -398,11 +416,81 @@ async function handleGenerateSyncSignature(req: VercelRequest, res: VercelRespon
     }
 }
 
-async function handleLoginSync(req: VercelRequest, res: VercelResponse) {
-    const { wallet_address, signature, message, fid, referred_by } = req.body as SyncPayload;
-    if (!wallet_address || !signature || !message) return res.status(400).json({ error: 'Missing fields' });
+function signNonce(walletAddress: string, nonce: string, issuedAt: number): string {
+    const data = `${walletAddress.toLowerCase()}:${nonce}:${issuedAt}`;
+    const hmac = crypto.createHmac('sha256', SUPABASE_SERVICE_ROLE_KEY || 'default-secret');
+    hmac.update(data);
+    return hmac.digest('hex');
+}
+
+async function handleGenerateNonce(req: VercelRequest, res: VercelResponse) {
+    const walletAddress = req.body?.wallet_address || req.query?.wallet_address;
+    if (!walletAddress) {
+        return res.status(400).json({ error: 'Missing wallet_address' });
+    }
 
     try {
+        const cleanAddress = String(walletAddress).trim().toLowerCase();
+        const nonce = Math.random().toString(36).substring(2, 12);
+        const issuedAt = Date.now();
+        const signature = signNonce(cleanAddress, nonce, issuedAt);
+        const token = `${signature}.${issuedAt}`;
+
+        return res.status(200).json({
+            success: true,
+            nonce,
+            token
+        });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleLoginSync(req: VercelRequest, res: VercelResponse) {
+    const { wallet_address, signature, message, fid, referred_by, token } = req.body as SyncPayload & { token?: string };
+    if (!wallet_address || !signature || !message) return res.status(400).json({ error: 'Missing fields' });
+
+    // Validate SIWE stateless signed nonce token
+    if (!token) {
+        return res.status(401).json({ error: 'Missing authentication nonce token. Please sign in again.' });
+    }
+
+    try {
+        const [tokenSignature, issuedAtStr] = token.split('.');
+        const issuedAt = parseInt(issuedAtStr || '', 10);
+        if (!tokenSignature || isNaN(issuedAt)) {
+            return res.status(401).json({ error: 'Invalid authentication token format.' });
+        }
+
+        // Replay Protection & Cooldown check: max 10 minutes (600,000 ms)
+        if (Date.now() - issuedAt > 10 * 60 * 1000) {
+            return res.status(401).json({ error: 'Session/nonce expired. Please sign in again.' });
+        }
+        if (issuedAt - Date.now() > 5 * 60 * 1000) { // clock skew check
+            return res.status(401).json({ error: 'Clock skew detected. Please sync system clock.' });
+        }
+
+        // Parse nonce from SIWE message
+        const nonceMatch = message.match(/Nonce:\s*([a-zA-Z0-9]+)/);
+        const nonce = nonceMatch ? nonceMatch[1] : '';
+        if (!nonce) {
+            return res.status(401).json({ error: 'Invalid SIWE message structure: Missing Nonce.' });
+        }
+
+        // Verify that the token is valid for this address, nonce, and timestamp
+        const expectedSignature = signNonce(wallet_address, nonce, issuedAt);
+        if (tokenSignature.length !== expectedSignature.length) {
+            return res.status(401).json({ error: 'Invalid authentication signature token.' });
+        }
+        const isValidToken = crypto.timingSafeEqual(
+            Buffer.from(tokenSignature, 'hex'),
+            Buffer.from(expectedSignature, 'hex')
+        );
+        if (!isValidToken) {
+            return res.status(401).json({ error: 'Authentication token verification failed.' });
+        }
+
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
@@ -1268,6 +1356,181 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         });
 
         return res.status(200).json({ success: true });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleSbtMintEntitlement(req: VercelRequest, res: VercelResponse) {
+    const { wallet, signature, message, requested_tier } = req.body as Partial<SbtMintEntitlementRequest>;
+    if (!wallet || !signature || !message || !requested_tier) {
+        return res.status(400).json({ error: 'Missing entitlement data' });
+    }
+
+    try {
+        const valid = await verifyMessage({
+            address: wallet as `0x${string}`,
+            message,
+            signature: signature as `0x${string}`
+        });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        const cleanWallet = wallet.toLowerCase();
+        const requestedTier = Number(requested_tier);
+        if (!Number.isInteger(requestedTier) || requestedTier < 1 || requestedTier > 5) {
+            return res.status(400).json({ error: 'Invalid requested_tier' });
+        }
+
+        const lowerMessage = message.toLowerCase();
+        if (!lowerMessage.includes('sbt mint entitlement') || !lowerMessage.includes(cleanWallet)) {
+            return res.status(400).json({ error: 'Invalid entitlement message format' });
+        }
+
+        const isVerified = await checkIdentityStatus(cleanWallet);
+        if (!isVerified) {
+            const body: SbtMintEntitlementResponse = {
+                success: false,
+                eligible: false,
+                voucher_status: 'not_issued',
+                reason: 'Identity verification required for SBT mint entitlement'
+            };
+            return res.status(403).json(body);
+        }
+
+        if (!SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS) {
+            return res.status(500).json({ error: 'SBT entitlement verifier is not configured' });
+        }
+
+        const account = getWalletBotAccount();
+        if (!account) return res.status(500).json({ error: 'Signer wallet not configured' });
+
+        const { data: profile, error: profileErr } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('total_xp, tier')
+            .eq('wallet_address', cleanWallet)
+            .maybeSingle();
+        if (profileErr) throw profileErr;
+        if (!profile) return res.status(404).json({ error: 'User profile not found' });
+
+        const { data: threshold, error: thresholdErr } = await getSupabaseAdmin()
+            .from('sbt_thresholds')
+            .select('level, tier_name, min_xp')
+            .eq('level', requestedTier)
+            .maybeSingle();
+        if (thresholdErr) throw thresholdErr;
+        if (!threshold) return res.status(404).json({ error: 'SBT threshold not found' });
+
+        const contractStats = await rpcClient.readContract({
+            address: DAILY_APP_ADDRESS as `0x${string}`,
+            abi: DAILY_APP_USER_STATS_ABI,
+            functionName: 'userStats',
+            args: [cleanWallet as `0x${string}`],
+        }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
+
+        const currentOnchainXp = Number(contractStats?.[0] || 0);
+        const currentOnchainTier = Number(contractStats?.[3] || 0);
+        const expectedNextTier = currentOnchainTier + 1;
+        if (requestedTier !== expectedNextTier) {
+            const body: SbtMintEntitlementResponse = {
+                success: false,
+                eligible: false,
+                voucher_status: 'not_issued',
+                reason: `Sequential tier required. Next mintable tier is ${expectedNextTier}.`
+            };
+            return res.status(409).json(body);
+        }
+
+        const nftConfig = await rpcClient.readContract({
+            address: DAILY_APP_ADDRESS as `0x${string}`,
+            abi: [{ name: 'nftConfigs', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint8' }], outputs: [{ name: 'pointsRequired', type: 'uint256' }, { name: 'mintPrice', type: 'uint256' }, { name: 'dailyBonus', type: 'uint256' }, { name: 'multiplierBP', type: 'uint256' }, { name: 'maxSupply', type: 'uint256' }, { name: 'currentSupply', type: 'uint256' }, { name: 'isOpen', type: 'bool' }] }],
+            functionName: 'nftConfigs',
+            args: [requestedTier]
+        }) as unknown as [bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+
+        const requiredXp = threshold.min_xp;
+        const maxSupply = Number(nftConfig[4] || 0n);
+        const currentSupply = Number(nftConfig[5] || 0n);
+        const isOpen = Boolean(nftConfig[6]);
+        const dbTotalXp = profile.total_xp || 0;
+
+        let reason: string | undefined;
+        if (dbTotalXp < requiredXp) reason = 'Database XP is below required tier threshold';
+        else if (!isOpen) reason = 'Requested SBT tier is not open';
+        else if (maxSupply > 0 && currentSupply >= maxSupply) reason = 'Requested SBT tier is sold out';
+
+        if (reason) {
+            const body: SbtMintEntitlementResponse = {
+                success: false,
+                eligible: false,
+                voucher_status: 'not_issued',
+                reason
+            };
+            return res.status(409).json(body);
+        }
+
+        const deadline = Math.floor(Date.now() / 1000) + 10 * 60;
+        const expiresAt = new Date(deadline * 1000).toISOString();
+        const nonceHex = keccak256(encodePacked(
+            ['address', 'uint8', 'uint256', 'uint256'],
+            [cleanWallet as `0x${string}`, requestedTier, BigInt(requiredXp), BigInt(deadline)]
+        ));
+        const nonce = BigInt(nonceHex);
+
+        const entitlement = {
+            wallet: cleanWallet as `0x${string}`,
+            targetContract: DAILY_APP_ADDRESS as `0x${string}`,
+            targetTier: requestedTier,
+            requiredXp: BigInt(requiredXp),
+            nonce,
+            deadline: BigInt(deadline)
+        };
+
+        const typedSignature = await account.signTypedData({
+            domain: {
+                name: 'DiscoDailySBTMintEntitlement',
+                version: '1',
+                chainId: Number(CHAIN_ID),
+                verifyingContract: SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS as `0x${string}`
+            },
+            types: {
+                SBTMintEntitlement: [
+                    { name: 'wallet', type: 'address' },
+                    { name: 'targetContract', type: 'address' },
+                    { name: 'targetTier', type: 'uint8' },
+                    { name: 'requiredXp', type: 'uint256' },
+                    { name: 'nonce', type: 'uint256' },
+                    { name: 'deadline', type: 'uint256' }
+                ]
+            },
+            primaryType: 'SBTMintEntitlement',
+            message: entitlement
+        });
+
+        const body: SbtMintEntitlementResponse = {
+            success: true,
+            eligible: true,
+            voucher_status: 'signed',
+            voucher: {
+                wallet: cleanWallet,
+                tier: requestedTier,
+                tier_name: threshold.tier_name || `Tier ${requestedTier}`,
+                db_total_xp: dbTotalXp,
+                required_xp: requiredXp,
+                current_onchain_tier: currentOnchainTier,
+                current_onchain_xp: currentOnchainXp,
+                mint_price_wei: String(nftConfig[1] || 0n),
+                contract_address: DAILY_APP_ADDRESS,
+                verifier_address: SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS,
+                chain_id: isMainnet ? 8453 : 84532,
+                deadline,
+                expires_at: expiresAt,
+                nonce: nonce.toString(),
+                signature: typedSignature
+            }
+        };
+
+        return res.status(200).json(body);
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });

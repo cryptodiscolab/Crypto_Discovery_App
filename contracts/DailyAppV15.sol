@@ -22,8 +22,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-interface IMasterX {
-    function addPoints(address user, uint256 points, string calldata reason) external;
+interface ISBTMintEntitlementVerifier {
+    struct SBTMintEntitlement {
+        address wallet;
+        address targetContract;
+        uint8 targetTier;
+        uint256 requiredXp;
+        uint256 nonce;
+        uint256 deadline;
+    }
+
+    function consumeEntitlement(
+        address claimant,
+        SBTMintEntitlement calldata entitlement,
+        bytes calldata signature
+    ) external;
 }
 
 contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
@@ -146,10 +159,10 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
     uint256 public tokenPriceUSD = 0.01 ether;
     uint256 public currentDiscountPercent = 0;
 
-    IMasterX public masterXContract;
-    mapping(address => uint256) public unsyncedPoints;
+    address public masterXContract;
 
     address public verifierWallet;
+    ISBTMintEntitlementVerifier public sbtMintEntitlementVerifier;
     mapping(address => uint256) public maxSyncedDbXp;
 
     mapping(address => TokenConfig) public tokenConfigs;
@@ -224,7 +237,7 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
     // V15 FIX: H-2 — burnPoints with per-call cap
     // ═══════════════════════════════════════════════════════
     function burnPoints(address _user, uint256 _amount) external {
-        if (msg.sender != address(masterXContract) && !hasRole(ADMIN_ROLE, msg.sender)) revert Unauthorized();
+        if (msg.sender != masterXContract && !hasRole(ADMIN_ROLE, msg.sender)) revert Unauthorized();
         if (_amount > MAX_BURN_PER_CALL) revert BurnExceedsLimit();
         if (userStats[_user].points < _amount) revert Unauthorized();
         userStats[_user].points -= _amount;
@@ -234,7 +247,7 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
     // V15 FIX: H-1 + M-2 — updateUserTier restricted + nonReentrant
     // ═══════════════════════════════════════════════════════
     function updateUserTier(address _user, NFTTier _tier) external nonReentrant {
-        if (msg.sender != address(masterXContract) && !hasRole(ADMIN_ROLE, msg.sender)) revert Unauthorized();
+        if (msg.sender != masterXContract && !hasRole(ADMIN_ROLE, msg.sender)) revert Unauthorized();
         userStats[_user].currentTier = _tier;
         if (balanceOf(_user) == 0) {
             uint256 tokenId = uint256(uint160(_user));
@@ -331,7 +344,6 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         uint256 diff = totalDbXp - maxSyncedDbXp[msg.sender];
         maxSyncedDbXp[msg.sender] = totalDbXp;
         userStats[msg.sender].points += diff;
-        unsyncedPoints[msg.sender] += diff;
 
         emit PointsSynced(msg.sender, diff);
     }
@@ -392,11 +404,15 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
     }
 
     function setMasterX(address _masterX) external onlyRole(ADMIN_ROLE) validAddress(_masterX) {
-        masterXContract = IMasterX(_masterX);
+        masterXContract = _masterX;
     }
 
     function setVerifierWallet(address _verifier) external onlyRole(ADMIN_ROLE) validAddress(_verifier) {
         verifierWallet = _verifier;
+    }
+
+    function setSBTMintEntitlementVerifier(address _verifier) external onlyRole(ADMIN_ROLE) validAddress(_verifier) {
+        sbtMintEntitlementVerifier = ISBTMintEntitlementVerifier(_verifier);
     }
 
     function batchMigrateUsers(
@@ -759,7 +775,6 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         uint256 reward = (task.baseReward * multiplier) / 10000;
         
         stats.points += reward;
-        unsyncedPoints[msg.sender] += reward;
         stats.totalTasksCompleted++;
         stats.tasksForReferralProgress++;
         lastTaskTime[msg.sender][_taskId] = block.timestamp;
@@ -799,17 +814,7 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         if (block.timestamp < stats.lastDailyBonusClaim + 24 hours) revert Unauthorized();
         stats.lastDailyBonusClaim = block.timestamp;
         stats.points += dailyBonusAmount;
-        unsyncedPoints[msg.sender] += dailyBonusAmount;
         emit TaskCompleted(msg.sender, 0, dailyBonusAmount, block.timestamp);
-    }
-
-    function syncMasterXPoints() external whenNotPaused nonReentrant notBlacklisted {
-        if (address(masterXContract) == address(0)) revert InvalidAddress();
-        uint256 pointsToSync = unsyncedPoints[msg.sender];
-        if (pointsToSync == 0) revert Unauthorized();
-        unsyncedPoints[msg.sender] = 0;
-        masterXContract.addPoints(msg.sender, pointsToSync, "DailyApp Sync");
-        emit PointsSynced(msg.sender, pointsToSync);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -824,7 +829,7 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         notBlacklisted 
         validTier(_tier)
     {
-        _mintOrUpgrade(_tier);
+        _mintOrUpgrade(_tier, true);
     }
 
     function upgradeNFT() 
@@ -837,10 +842,25 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         NFTTier currentTier = userStats[msg.sender].currentTier;
         if (currentTier >= NFTTier.DIAMOND) revert MaxLimitReached();
         NFTTier nextTier = NFTTier(uint256(currentTier) + 1);
-        _mintOrUpgrade(nextTier);
+        _mintOrUpgrade(nextTier, true);
     }
 
-    function _mintOrUpgrade(NFTTier _tier) internal {
+    function mintNFTWithEntitlement(
+        ISBTMintEntitlementVerifier.SBTMintEntitlement calldata entitlement,
+        bytes calldata signature
+    )
+        external
+        payable
+        whenNotPaused
+        nonReentrant
+        notBlacklisted
+    {
+        if (address(sbtMintEntitlementVerifier) == address(0)) revert InvalidAddress();
+        sbtMintEntitlementVerifier.consumeEntitlement(msg.sender, entitlement, signature);
+        _mintOrUpgrade(NFTTier(entitlement.targetTier), false);
+    }
+
+    function _mintOrUpgrade(NFTTier _tier, bool requireOnchainPoints) internal {
         NFTConfig storage config = nftConfigs[_tier];
         UserStats storage stats = userStats[msg.sender];
         NFTTier currentTier = stats.currentTier;
@@ -848,12 +868,12 @@ contract DailyAppV15 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         if (balanceOf(msg.sender) != 0 && currentTier >= _tier) revert Unauthorized();
         if (currentTier == _tier) revert Unauthorized();
         if (uint256(_tier) != uint256(currentTier) + 1) revert InvalidParameters();
-        if (stats.points < config.pointsRequired) revert Unauthorized();
+        if (requireOnchainPoints && stats.points < config.pointsRequired) revert Unauthorized();
         if (msg.value < config.mintPrice) revert Unauthorized();
         if (!config.isOpen) revert Unauthorized();
         if (config.currentSupply >= config.maxSupply) revert MaxLimitReached();
 
-        stats.points -= config.pointsRequired;
+        if (requireOnchainPoints) stats.points -= config.pointsRequired;
         config.currentSupply++;
         
         NFTTier oldTier = stats.currentTier;

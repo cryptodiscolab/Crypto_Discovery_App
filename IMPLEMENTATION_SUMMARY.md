@@ -4,6 +4,23 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.19-Hardened (Stateless SIWE EIP-4361 Authentication Implementation)
+- **Status**: Completed, audited, and verified via build and system checks.
+- **SIWE (EIP-4361) Integration**: Integrated EIP-4361 authentication into both the backend and frontend to secure user logins and profile synchronization.
+- **Backend Nonce Action**: Added a `/api/user/nonce` endpoint that generates a cryptographically signed HMAC-SHA256 token binding the wallet address, nonce, client IP, and timestamp, with a 10-minute validity window. This approach avoids storing nonces in the database.
+- **Backend Sync Verification**: Upgraded `/api/user/sync` (action: `sync`) in `user-bundle.ts` to verify the HMAC token integrity and cryptographically verify the user's signed SIWE message using `viem` `verifyMessage`.
+- **Frontend Integration**: Updated `useSIWE.ts` and `dailyAppLogic.ts` to request a fresh challenge nonce/token from the backend, compose and sign a standard SIWE message, and transmit the signature and token to the backend sync endpoint.
+- **Compliance & Hardening**: Retained strict TypeScript typing (zero implicit any), clean error boundaries, and millisecond-level precision ISO-8601 logging.
+
+## v3.64.18-Hardened (Daily Task Claim Sync & XP Non-Atomicity Hardening)
+- **Status**: Completed, audited, and verified via build.
+- **Backend Claim Atomicity**: Refactored the `tasks-bundle.ts` Serverless backend claim logic by migrating from sequential asynchronous operations (individual database checks, inserts, updates) to a single atomic database RPC call `fn_insert_claim_and_increment_xp` to prevent race conditions and transaction isolation failures under concurrent workloads.
+- **Zero-Trust Parity**: Ensured strict environment and database security invariants are preserved while retaining the full TypeScript compile/lint clean status.
+
+## v3.64.17-Hardened (TypeScript Linter Cleanout & Type Safety Hardening)
+- **Status**: Completed, audited, and verified via build.
+- **TypeScript & Lint Resolution**: Fixed a TS explicit any error on `output_data?: any;` in `NexusMonitorTab.tsx` by defining it as `unknown` and safely casting to `Record<string, string | undefined>` when accessing properties. This resolved the final linter error, resulting in 0 errors and 100% build synchronization.
+
 ## v3.64.16-Hardened (TypeScript Compilation & Live Fetching Hardening)
 - **Status**: Completed, audited, and verified via build.
 - **TypeScript Imports Resolved**: Surgically fixed compiler imports in `RaffleManagerTab.tsx` and `UgcConfigSection.tsx`. Adjusted `NexusMonitorTab.tsx` export type to named export to align with lazy loading imports in `AdminPage.tsx`.

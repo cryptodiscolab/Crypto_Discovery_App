@@ -74,7 +74,15 @@ ${resourceLines}`;
 
         try {
             const chainId = chain.id;
-            const nonce = generateNonce();
+
+            // Fetch server-side nonce and token
+            const nonceResponse = await fetch(`/api/user/nonce?wallet_address=${address}`);
+            const nonceData = await nonceResponse.json();
+            if (!nonceResponse.ok) {
+                throw new Error(nonceData.error || "Failed to generate nonce from server");
+            }
+            const { nonce, token } = nonceData;
+
             const message = createSIWEMessage(address, chainId, nonce, fid);
 
             // Trigger Wallet Signature
@@ -105,8 +113,8 @@ ${resourceLines}`;
             localStorage.setItem('crypto_disco_auth_status', JSON.stringify(authStatus));
             setSession(userSession);
 
-            // Ensure User Profile Exists (SECURE: Pass signature and message)
-            await ensureUserProfile(address, signature, message, fid);
+            // Ensure User Profile Exists (SECURE: Pass signature, message, and token)
+            await ensureUserProfile(address, signature, message, fid, token);
 
             return userSession;
 

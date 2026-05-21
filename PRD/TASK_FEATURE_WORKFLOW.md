@@ -333,7 +333,7 @@ Digunakan oleh **Lurah Brain** untuk memfilter laporan agen (Linter, Security, S
 | `POST /api/tasks-bundle` | `tasks-bundle.js` | Direct call (claim, verify, social-verify) |
 | `/api/tasks/:action` | `tasks-bundle.js?action=:action` | Rewrite pattern |
 | `/api/verify-action` | `tasks-bundle.js?action=social-verify` | Legacy alias |
-| `POST /api/user-bundle` | `user-bundle.js` | XP sync (on-chain daily claim) |
+| `POST /api/user-bundle` | `user-bundle.js` | XP sync, SBT entitlement voucher, post-mint sync |
 | `POST /api/campaigns` | `campaigns.js` | Partner Offers join |
 | `/api/admin/tasks/:action` | `admin-bundle.js?action=task-:action` | Admin task CRUD |
 
@@ -881,9 +881,10 @@ if (error.message.includes("already completed")) {
 Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Hardened Tier Ascension**:
 
 1. **Sequential Progression**: User **WAJIB** upgrade tier secara berurutan. Sistem tidak mengizinkan lompatan (misal: Rookie langsung ke Gold). Tier $N$ hanya bisa di-mint jika wallet memiliki Tier $N-1$.
-2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV13`.
+2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV15`.
 3. **Price Transparency**: UI `SBTUpgradeCard` wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.
-4. **XP Burn Compliance**: Setiap upgrade akan membakar XP sesuai konfigurasi `nftConfigs` on-chain. Pastikan sinkronisasi XP setelah minting dilakukan secara atomik melalui event listener.
+4. **DB-Canonical Eligibility**: Eligibility mint ditentukan oleh `user_profiles.total_xp` dan `sbt_thresholds.min_xp` di backend, lalu dibungkus sebagai signed EIP-712 entitlement voucher.
+5. **On-Chain Mint Enforcement**: `DailyAppV15.mintNFTWithEntitlement` dan `SBTMintEntitlementVerifier` menegakkan wallet binding, sequential tier, nonce replay protection, expiry, supply, dan mint price.
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
 *Antigravity ΓÇö Nexus Master Architect. Protocol v3.56.4 Locked.*

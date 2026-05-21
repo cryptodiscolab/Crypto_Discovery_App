@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Award, Loader2 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useUserV12Stats } from '../hooks/useContract';
@@ -23,7 +23,7 @@ export function TasksPage() {
     const [activeTab, setActiveTab] = useState<'tasks' | 'offers'>('tasks');
     const [offChainClaims, setOffChainClaims] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
+    const refetchClaims = useCallback(() => {
         if (address) {
             supabase
                 .from('user_task_claims')
@@ -39,85 +39,99 @@ export function TasksPage() {
         }
     }, [address]);
 
-    const refetchClaims = () => {
-        if (address) {
-            supabase
-                .from('user_task_claims')
-                .select('task_id')
-                .eq('wallet_address', address.toLowerCase())
-                .then(({ data, error }) => {
-                    if (data && !error) {
-                        setOffChainClaims(new Set((data as Array<{ task_id: string | number }>).map((d) => String(d.task_id).toLowerCase())));
-                    }
-                });
-        }
-    };
+    useEffect(() => {
+        refetchClaims();
+    }, [refetchClaims]);
 
     // Fetch active UGC campaigns + their sub-tasks
     const [ugcCampaigns, setUgcCampaigns] = useState<UGCCampaign[]>([]);
     const [isLoadingUgc, setIsLoadingUgc] = useState(false);
-    useEffect(() => {
-        const fetchUgcCampaigns = async () => {
-            setIsLoadingUgc(true);
-            try {
-                const { data: campaigns } = await supabase
-                    .from('campaigns')
-                    .select('id, title, platform_code, reward_amount_per_user, reward_symbol, is_active, is_verified_payment')
-                    .eq('is_active', true)
-                    .eq('is_verified_payment', true)
-                    .order('created_at', { ascending: false });
 
-                if (!campaigns || campaigns.length === 0) { setUgcCampaigns([]); return; }
+    const fetchUgcCampaigns = useCallback(async () => {
+        setIsLoadingUgc(true);
+        try {
+            const { data: campaigns } = await supabase
+                .from('campaigns')
+                .select('id, title, platform_code, reward_amount_per_user, reward_symbol, is_active, is_verified_payment')
+                .eq('is_active', true)
+                .eq('is_verified_payment', true)
+                .order('created_at', { ascending: false });
 
-                type CampaignRow = { id: string | number; title?: string; platform_code?: string; reward_amount_per_user?: number; reward_symbol?: string; is_active?: boolean; is_verified_payment?: boolean };
-                const typedCampaigns = campaigns as CampaignRow[];
-
-                const campaignIds = typedCampaigns.map((c) => c.id);
-                const { data: subTasks } = await supabase
-                    .from('daily_tasks')
-                    .select('id, title, action_type, platform, link, onchain_id, is_base_social_required')
-                    .in('onchain_id', campaignIds)
-                    .eq('task_type', 'ugc')
-                    .eq('is_active', true);
-
-                const tasksByCampaign: Record<string, Task[]> = {};
-                (subTasks as DailyTask[] | null || []).forEach((t) => {
-                    if (t.onchain_id === null || t.onchain_id === undefined) return;
-                    const onchainIdStr = String(t.onchain_id);
-                    if (!tasksByCampaign[onchainIdStr]) tasksByCampaign[onchainIdStr] = [];
-                    tasksByCampaign[onchainIdStr].push({
-                        id: t.id,
-                        title: t.title || '',
-                        link: t.link || '',
-                        baseReward: 0,
-                        isActive: true,
-                        cooldown: 0,
-                        minTier: 0,
-                        requiresVerification: true,
-                        sponsorshipId: 0,
-                        platform: t.platform || undefined,
-                        isBaseSocialRequired: !!t.is_base_social_required
-                    });
-                });
-
-                setUgcCampaigns(typedCampaigns.map((c) => ({
-                    id: String(c.id),
-                    title: c.title || '',
-                    platform_code: c.platform_code || '',
-                    reward_amount_per_user: Number(c.reward_amount_per_user || 0),
-                    reward_symbol: c.reward_symbol || 'USDC',
-                    is_active: !!c.is_active,
-                    is_verified_payment: !!c.is_verified_payment,
-                    subTasks: tasksByCampaign[String(c.id)] || []
-                })));
-            } catch (e) {
-                console.error('[UGC Fetch]', e);
-            } finally {
-                setIsLoadingUgc(false);
+            if (!campaigns || campaigns.length === 0) {
+                setUgcCampaigns([]);
+                return;
             }
-        };
-        fetchUgcCampaigns();
+
+            type CampaignRow = { id: string | number; title?: string; platform_code?: string; reward_amount_per_user?: number; reward_symbol?: string; is_active?: boolean; is_verified_payment?: boolean };
+            const typedCampaigns = campaigns as CampaignRow[];
+            const campaignIds = typedCampaigns.map((c) => String(c.id));
+
+            const { data: subTasks } = await supabase
+                .from('daily_tasks')
+                .select('id, title, action_type, platform, link, target_id, is_base_social_required')
+                .in('target_id', campaignIds)
+                .eq('task_type', 'ugc')
+                .eq('is_active', true);
+
+            const tasksByCampaign: Record<string, Task[]> = {};
+            (subTasks as DailyTask[] | null || []).forEach((t) => {
+                if (!t.target_id) return;
+                const campaignId = String(t.target_id);
+                if (!tasksByCampaign[campaignId]) tasksByCampaign[campaignId] = [];
+                tasksByCampaign[campaignId].push({
+                    id: t.id,
+                    title: t.title || t.description || '',
+                    link: t.link || '',
+                    baseReward: Number(t.xp_reward || 0),
+                    isActive: true,
+                    cooldown: 0,
+                    minTier: 0,
+                    requiresVerification: true,
+                    sponsorshipId: 0,
+                    platform: t.platform || undefined,
+                    action_type: t.action_type || undefined,
+                    isBaseSocialRequired: !!t.is_base_social_required
+                });
+            });
+
+            setUgcCampaigns(typedCampaigns.map((c) => ({
+                id: String(c.id),
+                title: c.title || '',
+                platform_code: c.platform_code || '',
+                reward_amount_per_user: Number(c.reward_amount_per_user || 0),
+                reward_symbol: c.reward_symbol || 'USDC',
+                is_active: !!c.is_active,
+                is_verified_payment: !!c.is_verified_payment,
+                subTasks: tasksByCampaign[String(c.id)] || []
+            })));
+        } catch (e) {
+            console.error('[UGC Fetch]', e);
+        } finally {
+            setIsLoadingUgc(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchUgcCampaigns();
+    }, [fetchUgcCampaigns]);
+
+    useEffect(() => {
+        const refreshUgc = () => {
+            void fetchUgcCampaigns();
+            refetchClaims();
+        };
+
+        const channel = supabase
+            .channel('tasks-page-ugc-live')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'campaigns' }, refreshUgc)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_tasks' }, refreshUgc)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'user_task_claims' }, refreshUgc)
+            .subscribe();
+
+        return () => {
+            void supabase.removeChannel(channel);
+        };
+    }, [fetchUgcCampaigns, refetchClaims]);
 
     const { profileData, syncUser, isLoading: isSyncing } = useFarcaster();
     useEffect(() => {

@@ -12,6 +12,12 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.abspath(os.path.join(current_dir, '../../'))
 sys.path.insert(0, root_dir)
 
+# Fix Windows console encoding for emoji/unicode characters
+if sys.platform.startswith('win'):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from antigravity_sdk import SUB_AGENTS_REGISTRY, save_agent_task
 
 MAX_WORKERS = max(1, int(os.getenv("ORCHESTRON_MAX_WORKERS", "12")))
@@ -44,7 +50,7 @@ def fetch_pending_tasks(limit):
         import ssl
         context = ssl._create_unverified_context()
         req = urllib.request.Request(url, headers=headers, method='GET')
-        with urllib.request.urlopen(req, context=context) as response:
+        with urllib.request.urlopen(req, context=context, timeout=30) as response:
             res_body = response.read().decode('utf-8')
             tasks = json.loads(res_body)
             return tasks or []

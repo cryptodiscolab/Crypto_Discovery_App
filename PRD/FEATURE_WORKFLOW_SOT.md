@@ -125,20 +125,24 @@ Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersif
 ### 5.1 The Upgrade Execution
 - **Triggers**: UI memunculkan tombol "Mint / Upgrade" jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.
 - **Rules (Mandatory)**:
-    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV13` akan me-revert transaksi jika `tier != currentTier + 1`.
+    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV15` akan me-revert transaksi jika `tier != currentTier + 1`.
     2. **Soulbound Mandate**: NFT SBT bersifat **Non-Transferable**. Setiap upaya transfer antar wallet (kecuali mint/burn) akan di-revert oleh kontrak.
 - **Workflow**:
-    1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 4 syarat: `hasTotalXP` (DB), `hasOnChainXP` (MASTER_X), `hasEnoughETH` (balance), dan `!isSoldOut` (DAILY_APP nftConfigs).
+    1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 3 syarat utama: `hasTotalXP` (DB canonical), `hasEnoughETH` (balance), dan `!isSoldOut` / `isOpen` dari `DAILY_APP.nftConfigs`.
     2. **Cost Transparency**: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.
     3. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.
-    4. **Minting**: Frontend memanggil `mintNFT(tierId, mintPrice)` dari `useNFTTiers` hook ΓÇö yang memanggil `DAILY_APP.mintNFT()`. 
-    5. **On-Chain Enforcement**: Kontrak memvalidasi urutan tier dan membakar XP yang sesuai.
-    6. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
-    7. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
-    8. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas.
+    4. **Entitlement Request**: Frontend meminta signed voucher ke `/api/user-bundle?action=sbt-mint-entitlement`. Backend memvalidasi identity, `user_profiles.total_xp`, tier saat ini, supply, dan status open sebelum menandatangani EIP-712 entitlement.
+    5. **Minting**: Frontend memanggil `useNFTTiers.mintTierWithEntitlement(...)`, yang menulis ke `DAILY_APP.mintNFTWithEntitlement()`.
+    6. **On-Chain Enforcement**: `SBTMintEntitlementVerifier` mengunci wallet, target contract, target tier, nonce, dan deadline. `DailyAppV15` tetap menegakkan sequential tier, price, dan supply, tetapi jalur entitlement tidak lagi bergantung pada XP on-chain yang bisa stale.
+    7. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
+    8. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
+    9. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas dan sinkronisasi tier/log pasca mint.
 
 > [!WARNING]
-> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Gunakan `useNFTTiers.mintNFT(id, price)` yang memanggil `DAILY_APP.mintNFT()`.
+> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Untuk jalur baru, gunakan `useNFTTiers.mintTierWithEntitlement(voucher)` yang memanggil `DAILY_APP.mintNFTWithEntitlement()`.
+
+> [!IMPORTANT]
+> Deployment jalur entitlement mewajibkan 3 langkah: set `SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS`, panggil `DailyAppV15.setSBTMintEntitlementVerifier(verifier)`, lalu grant `CONSUMER_ROLE` pada verifier ke alamat `DailyAppV15`.
 
 ---
 

@@ -19,6 +19,7 @@ export const USER_BUNDLE_ACTIONS = {
     GET_POINT_SETTINGS: 'get-point-settings',
     SYNC_UGC_MISSION: 'sync-ugc-mission',
     SYNC_UGC_RAFFLE: 'sync-ugc-raffle',
+    SBT_MINT_ENTITLEMENT: 'sbt-mint-entitlement',
     SYNC_SBT_UPGRADE: 'sync-sbt-upgrade',
     SYNC_POOL_CLAIM: 'sync-pool-claim',
     LEADERBOARD: 'leaderboard',

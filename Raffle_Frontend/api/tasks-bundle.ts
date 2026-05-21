@@ -21,6 +21,7 @@ import type {
 } from './_shared/types.js';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+type UserTaskClaimInsert = Database['public']['Tables']['user_task_claims']['Insert'];
 
 const publicClient = createPublicClient({
     chain: VIEM_CHAIN,
@@ -242,6 +243,44 @@ async function logActivity(wallet: string, category: string, type: string, descr
 }
 
 /**
+ * 🛡️ ATOMIC CLAIM + XP INCREMENT (v3.64.17)
+ *
+ * Replaces the old split two-step approach (INSERT claim → RPC fn_increment_xp)
+ * which was NOT equivalent to a real transaction and could leave the XP ledger
+ * in a drifted state if either step failed mid-flight.
+ *
+ * This now calls fn_insert_claim_and_increment_xp — a single Postgres PL/pgSQL
+ * function that performs both operations inside ONE transaction block.
+ * A unique_violation (duplicate claim) triggers a full rollback of both steps,
+ * so the ledger is ALWAYS consistent: either both succeed or neither does.
+ */
+async function insertClaimAndIncrementXp(claim: UserTaskClaimInsert, context: string): Promise<{ alreadyClaimed: boolean }> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabaseAdmin.rpc as any)('fn_insert_claim_and_increment_xp', {
+        p_wallet:      claim.wallet_address,
+        p_task_id:     claim.task_id as string,
+        p_xp_earned:   claim.xp_earned ?? 0,
+        p_platform:    claim.platform ?? null,
+        p_action_type: claim.action_type ?? null,
+        p_target_id:   claim.target_id ?? null,
+    });
+
+    if (error) {
+        await logSystemError({
+            severity: 'critical',
+            surface: 'api',
+            bundle: 'tasks-bundle',
+            action: context,
+            message: `fn_insert_claim_and_increment_xp failed: ${error.message}`
+        }).catch(() => {});
+        throw error;
+    }
+
+    const result = (data as unknown) as { already_claimed: boolean; claim_id: string | null; xp_earned: number };
+    return { alreadyClaimed: result.already_claimed };
+}
+
+/**
  * awardReferralBonus — Awards passive XP to referrer. Fire-and-forget.
  */
 async function awardReferralBonus(userWallet: string, xpEarned: number, source: string) {
@@ -391,28 +430,16 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
     try {
         const { xp, targetId } = await validateAndCalculateXP(wallet_address, signature, message, task_id);
 
-        const { error } = await supabaseAdmin.from('user_task_claims').insert({
+        const result = await insertClaimAndIncrementXp({
             wallet_address: wallet_address.toLowerCase(),
             task_id,
             xp_earned: xp,
             target_id: targetId
-        });
+        }, 'handleClaim');
 
-        if (error) {
-            if (error.code === '23505') {
-                // Dedup audit: log that a duplicate claim was attempted (no XP increment)
-                await logActivity(wallet_address, 'SYNC', 'Duplicate Claim Attempt', `Task ${task_id} already claimed`, 0, 'XP');
-                return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
-            }
-            throw error;
-        }
-
-        if (xp > 0) {
-            const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
-                p_wallet: wallet_address.toLowerCase(),
-                p_amount: xp
-            });
-            if (xpErr) throw xpErr;
+        if (result.alreadyClaimed) {
+            await logActivity(wallet_address, 'SYNC', 'Duplicate Claim Attempt', `Task ${task_id} already claimed`, 0, 'XP');
+            return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
         }
 
         await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`, xp, 'XP');
@@ -436,33 +463,18 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
 
     const { xp, targetId } = await validateAndCalculateXP(wallet_address, signature, message, task_id);
 
-    const { error } = await supabaseAdmin.from('user_task_claims').insert({
+    const result = await insertClaimAndIncrementXp({
         wallet_address: wallet_address.toLowerCase(),
         task_id,
         platform,
         action_type,
         xp_earned: xp,
         target_id: targetId
-    });
+    }, 'handleVerify');
 
-    if (error) {
-        if (error.code === '23505') {
-            // Dedup audit: log that a duplicate verify was attempted
-            await logActivity(wallet_address, 'SYNC', 'Duplicate Verify Attempt', `Task ${task_id} already verified on ${platform || 'unknown'}`, 0, 'XP');
-            return res.status(200).json({ success: true, message: "Already verified.", already_claimed: true });
-        }
-        throw error;
-    }
-
-    if (xp > 0) {
-        const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
-            p_wallet: wallet_address.toLowerCase(),
-            p_amount: xp
-        });
-        if (xpErr) {
-            console.error('[handleVerify] fn_increment_xp failed:', xpErr.message);
-            return res.status(500).json({ error: "Failed to update XP. Please try again." });
-        }
+    if (result.alreadyClaimed) {
+        await logActivity(wallet_address, 'SYNC', 'Duplicate Verify Attempt', `Task ${task_id} already verified on ${platform || 'unknown'}`, 0, 'XP');
+        return res.status(200).json({ success: true, message: "Already verified.", already_claimed: true });
     }
 
     if (task_id.startsWith('raffle_buy_')) {
@@ -503,29 +515,17 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
         throw verifyErr;
     }
 
-    const { error } = await supabaseAdmin.from('user_task_claims').insert({
+    const result = await insertClaimAndIncrementXp({
         wallet_address: wallet_address.toLowerCase(),
         task_id,
         platform: platform || 'regular',
         action_type: action_type || 'task',
         xp_earned: xp,
         target_id: targetId
-    });
+    }, 'handleSocialVerify');
 
-    if (error) {
-        if (error.code === '23505') return res.status(200).json({ success: true, message: "Already recorded.", already_claimed: true });
-        throw error;
-    }
-
-    if (xp > 0) {
-        const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
-            p_wallet: wallet_address.toLowerCase(),
-            p_amount: xp
-        });
-        if (xpErr) {
-            console.error('[handleSocialVerify] fn_increment_xp failed:', xpErr.message);
-            return res.status(500).json({ error: "Failed to update XP. Please try again." });
-        }
+    if (result.alreadyClaimed) {
+        return res.status(200).json({ success: true, message: "Already recorded.", already_claimed: true });
     }
 
     await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`, xp, 'XP');
@@ -622,19 +622,16 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             .eq('id', campaign_id)
             .maybeSingle();
 
-        const { error: insErr } = await supabaseAdmin.from('user_task_claims').insert({
+        const claimResult = await insertClaimAndIncrementXp({
             wallet_address: wallet_address.toLowerCase(),
             task_id: `ugc_campaign_${campaign_id}`,
             xp_earned: totalXp,
             platform: 'ugc',
             action_type: 'campaign_complete'
-        });
+        }, 'handleClaimUgcCampaign');
 
-        if (insErr) {
-            if (insErr.code === '23505') {
-                return res.status(200).json({ success: true, already_claimed: true, message: 'Campaign reward already claimed.' });
-            }
-            throw insErr;
+        if (claimResult.alreadyClaimed) {
+            return res.status(200).json({ success: true, already_claimed: true, message: 'Campaign reward already claimed.' });
         }
 
         // [SECURITY FIX] Update Campaign Join State
@@ -642,14 +639,6 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             .update({ is_claimed: true })
             .eq('user_address', wallet_address.toLowerCase())
             .eq('campaign_id', campaign_id);
-
-        if (totalXp > 0) {
-            const { error: xpErr } = await supabaseAdmin.rpc('fn_increment_xp', {
-                p_wallet: wallet_address.toLowerCase(),
-                p_amount: totalXp
-            });
-            if (xpErr) throw xpErr;
-        }
 
         await logActivity(
             wallet_address, 

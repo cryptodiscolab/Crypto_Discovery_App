@@ -73,14 +73,23 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
   5. **Identity Lock**: Backend mengecek apakah `fid`/`twitter_id` sudah tertaut ke `wallet_address` lain (Sybil Prevention).
   6. Jika lolos, Supabase membuat/memperbarui baris di `user_profiles`.
 
-### 1.2 Wallet Connect (Web3)
-- **Tujuan**: Autentikasi wallet ke ekosistem Base Sepolia.
+### 1.2 Wallet Connect (Web3 & SIWE EIP-4361)
+- **Tujuan**: Autentikasi wallet ke ekosistem Base Sepolia menggunakan standard SIWE (EIP-4361).
 - **Workflow**:
-  1. (A) **Auto-Login via Platform**: Jika `useEnvironment` mendeteksi `isFarcaster` atau `isBaseApp`, Wagmi akan melakukan `connect` otomatis ke connector spesifik (`injected` untuk Farcaster, `coinbaseWalletSDK` untuk Base App) dan langsung menembak `signIn()` ke Backend (SIWE).
+  1. (A) **Auto-Login via Platform**: Jika `useEnvironment` mendeteksi `isFarcaster` atau `isBaseApp`, Wagmi melakukan `connect` otomatis ke connector spesifik (`injected` untuk Farcaster, `coinbaseWalletSDK` untuk Base App).
   2. (B) **Manual Login**: Jika browser Web biasa, user harus klik "Connect Wallet".
-  3. `Web3Provider.jsx` memastikan `window.ethereum` tidak crash oleh konflik ekstensi.
-  4. Frontend membaca `chainId`. Jika salah jaringan, memunculkan prompt pindah ke Base Sepolia (84532).
-  5. Jika dompet terhubung + social terhubung = Akun siap menerima XP dan tier.
+  3. **SIWE Challenge Generation**:
+     - Frontend meminta cryptographic challenge nonce dari `/api/user/nonce?wallet_address=...`.
+     - Backend memvalidasi network dan wallet, lalu mengembalikan random `nonce` dan stateless authorization `token` (signed HMAC-SHA256 yang mem-binding wallet, nonce, IP, dan timestamp, kadaluarsa dalam 10 menit).
+  4. **SIWE Message Signing**:
+     - Frontend menyusun standard EIP-4361 SIWE Message berisi domain, uri, address, statement, issuedAt, expirationTime, dan nonce yang didapat.
+     - User melakukan tanda tangan (signature) pesan tersebut menggunakan personal_sign.
+  5. **Cryptographic Authentication**:
+     - Frontend mengirim signature, message, and token ke `/api/user/sync` (action: `sync`).
+     - Backend memvalidasi signature token HMAC-SHA256 dengan `SUPABASE_SERVICE_ROLE_KEY` untuk membuktikan integritas challenge.
+     - Backend memverifikasi tanda tangan pesan SIWE menggunakan `viem` `verifyMessage`.
+     - Jika lolos, backend melakukan sync profil ke database `user_profiles` dan mengembalikan metadata profil lengkap.
+     - Jika dompet terhubung + social terhubung = Akun siap menerima XP dan tier.
 
 ---
 
@@ -166,20 +175,24 @@ Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersif
 ### 5.1 The Upgrade Execution
 - **Triggers**: UI memunculkan tombol "Mint / Upgrade" jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.
 - **Rules (Mandatory)**:
-    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV13` akan me-revert transaksi jika `tier != currentTier + 1`.
+    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV15` akan me-revert transaksi jika `tier != currentTier + 1`.
     2. **Soulbound Mandate**: NFT SBT bersifat **Non-Transferable**. Setiap upaya transfer antar wallet (kecuali mint/burn) akan di-revert oleh kontrak.
 - **Workflow**:
-    1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 4 syarat: `hasTotalXP` (DB), `hasOnChainXP` (MASTER_X), `hasEnoughETH` (balance), dan `!isSoldOut` (DAILY_APP nftConfigs).
+    1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 3 syarat utama: `hasTotalXP` (DB canonical), `hasEnoughETH` (balance), dan `!isSoldOut` / `isOpen` dari `DAILY_APP.nftConfigs`.
     2. **Cost Transparency**: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.
     3. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.
-    4. **Minting**: Frontend memanggil `mintNFT(tierId, mintPrice)` dari `useNFTTiers` hook — yang memanggil `DAILY_APP.mintNFT()`. 
-    5. **On-Chain Enforcement**: Kontrak memvalidasi urutan tier dan membakar XP yang sesuai.
-    6. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
-    7. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
-    8. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas.
+    4. **Entitlement Request**: Frontend meminta signed voucher ke `/api/user-bundle?action=sbt-mint-entitlement`. Backend memvalidasi identity, `user_profiles.total_xp`, tier saat ini, supply, dan status open sebelum menandatangani EIP-712 entitlement.
+    5. **Minting**: Frontend memanggil `useNFTTiers.mintTierWithEntitlement(...)`, yang menulis ke `DAILY_APP.mintNFTWithEntitlement()`.
+    6. **On-Chain Enforcement**: `SBTMintEntitlementVerifier` mengunci wallet, target contract, target tier, nonce, dan deadline. `DailyAppV15` tetap menegakkan sequential tier, price, dan supply, tetapi jalur entitlement tidak lagi bergantung pada XP on-chain yang bisa stale.
+    7. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
+    8. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
+    9. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas dan sinkronisasi tier/log pasca mint.
 
 > [!WARNING]
-> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Gunakan `useNFTTiers.mintNFT(id, price)` yang memanggil `DAILY_APP.mintNFT()`.
+> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Untuk jalur baru, gunakan `useNFTTiers.mintTierWithEntitlement(voucher)` yang memanggil `DAILY_APP.mintNFTWithEntitlement()`.
+
+> [!IMPORTANT]
+> Deployment jalur entitlement mewajibkan 3 langkah: set `SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS`, panggil `DailyAppV15.setSBTMintEntitlementVerifier(verifier)`, lalu grant `CONSUMER_ROLE` pada verifier ke alamat `DailyAppV15`.
 
 ---
 
@@ -895,7 +908,7 @@ Digunakan oleh **Lurah Brain** untuk memfilter laporan agen (Linter, Security, S
 | `POST /api/tasks-bundle` | `tasks-bundle.js` | Direct call (claim, verify, social-verify) |
 | `/api/tasks/:action` | `tasks-bundle.js?action=:action` | Rewrite pattern |
 | `/api/verify-action` | `tasks-bundle.js?action=social-verify` | Legacy alias |
-| `POST /api/user-bundle` | `user-bundle.js` | XP sync (on-chain daily claim) |
+| `POST /api/user-bundle` | `user-bundle.js` | XP sync, SBT entitlement voucher, post-mint sync |
 | `/api/cron/reconcile-pending` | `audit-bundle.js?action=reconcile-pending` | Vercel Cron pending sync recovery for stuck XP jobs |
 | `POST /api/campaigns` | `campaigns.js` | Partner Offers join |
 | `/api/admin/tasks/:action` | `admin-bundle.js?action=task-:action` | Admin task CRUD |
@@ -1444,9 +1457,10 @@ if (error.message.includes("already completed")) {
 Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Hardened Tier Ascension**:
 
 1. **Sequential Progression**: User **WAJIB** upgrade tier secara berurutan. Sistem tidak mengizinkan lompatan (misal: Rookie langsung ke Gold). Tier $N$ hanya bisa di-mint jika wallet memiliki Tier $N-1$.
-2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV13`.
+2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV15`.
 3. **Price Transparency**: UI `SBTUpgradeCard` wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.
-4. **XP Burn Compliance**: Setiap upgrade akan membakar XP sesuai konfigurasi `nftConfigs` on-chain. Pastikan sinkronisasi XP setelah minting dilakukan secara atomik melalui event listener.
+4. **DB-Canonical Eligibility**: Eligibility mint ditentukan oleh `user_profiles.total_xp` dan `sbt_thresholds.min_xp` di backend, lalu dibungkus sebagai signed EIP-712 entitlement voucher.
+5. **On-Chain Mint Enforcement**: `DailyAppV15.mintNFTWithEntitlement` dan `SBTMintEntitlementVerifier` menegakkan wallet binding, sequential tier, nonce replay protection, expiry, supply, dan mint price.
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
 *Antigravity — Nexus Master Architect. Protocol v3.56.4 Locked.*

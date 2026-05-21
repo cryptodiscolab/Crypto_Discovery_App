@@ -1,12 +1,11 @@
-<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.11-Hardened)</h1>
+<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.16-Hardened)</h1>
 <ul>
-<li><strong>Ecosystem Version:</strong> v3.64.11-Hardened</li>
-<li><strong>Last Updated:</strong> 2026-05-20T08:21:00+07:00</li>
+<li><strong>Ecosystem Version:</strong> v3.64.16-Hardened</li>
+<li><strong>Last Updated:</strong> 2026-05-20T18:00:00+07:00</li>
 <li><strong>Author:</strong> Antigravity (Lead Blockchain Architect)</li>
 <li><strong>Status:</strong> [🟢] DEPLOYED &amp; HARDENED (Source of Truth)</li>
 <li><strong>Master Registry:</strong> <a href="file:///.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a> | <a href="file:///AGENTS.md">AGENTS.md</a></li>
 </ul>
-<hr>
 <h2>📋 Table of Contents</h2>
 <ol>
 <li><a href="#1-supreme-source-of-truth-sot-hierarchy">Supreme Source of Truth (SOT) Hierarchy</a></li>
@@ -109,15 +108,30 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 </ol>
 </li>
 </ul>
-<h3>1.2 Wallet Connect (Web3)</h3>
+<h3>1.2 Wallet Connect (Web3 &amp; SIWE EIP-4361)</h3>
 <ul>
-<li><strong>Tujuan</strong>: Autentikasi wallet ke ekosistem Base Sepolia.</li>
+<li><strong>Tujuan</strong>: Autentikasi wallet ke ekosistem Base Sepolia menggunakan standard SIWE (EIP-4361).</li>
 <li><strong>Workflow</strong>:<ol>
-<li>(A) <strong>Auto-Login via Platform</strong>: Jika <code>useEnvironment</code> mendeteksi <code>isFarcaster</code> atau <code>isBaseApp</code>, Wagmi akan melakukan <code>connect</code> otomatis ke connector spesifik (<code>injected</code> untuk Farcaster, <code>coinbaseWalletSDK</code> untuk Base App) dan langsung menembak <code>signIn()</code> ke Backend (SIWE).</li>
+<li>(A) <strong>Auto-Login via Platform</strong>: Jika <code>useEnvironment</code> mendeteksi <code>isFarcaster</code> atau <code>isBaseApp</code>, Wagmi melakukan <code>connect</code> otomatis ke connector spesifik (<code>injected</code> untuk Farcaster, <code>coinbaseWalletSDK</code> untuk Base App).</li>
 <li>(B) <strong>Manual Login</strong>: Jika browser Web biasa, user harus klik &quot;Connect Wallet&quot;.</li>
-<li><code>Web3Provider.jsx</code> memastikan <code>window.ethereum</code> tidak crash oleh konflik ekstensi.</li>
-<li>Frontend membaca <code>chainId</code>. Jika salah jaringan, memunculkan prompt pindah ke Base Sepolia (84532).</li>
+<li><strong>SIWE Challenge Generation</strong>:<ul>
+<li>Frontend meminta cryptographic challenge nonce dari <code>/api/user/nonce?wallet_address=...</code>.</li>
+<li>Backend memvalidasi network dan wallet, lalu mengembalikan random <code>nonce</code> dan stateless authorization <code>token</code> (signed HMAC-SHA256 yang mem-binding wallet, nonce, IP, dan timestamp, kadaluarsa dalam 10 menit).</li>
+</ul>
+</li>
+<li><strong>SIWE Message Signing</strong>:<ul>
+<li>Frontend menyusun standard EIP-4361 SIWE Message berisi domain, uri, address, statement, issuedAt, expirationTime, dan nonce yang didapat.</li>
+<li>User melakukan tanda tangan (signature) pesan tersebut menggunakan personal_sign.</li>
+</ul>
+</li>
+<li><strong>Cryptographic Authentication</strong>:<ul>
+<li>Frontend mengirim signature, message, and token ke <code>/api/user/sync</code> (action: <code>sync</code>).</li>
+<li>Backend memvalidasi signature token HMAC-SHA256 dengan <code>SUPABASE_SERVICE_ROLE_KEY</code> untuk membuktikan integritas challenge.</li>
+<li>Backend memverifikasi tanda tangan pesan SIWE menggunakan <code>viem</code> <code>verifyMessage</code>.</li>
+<li>Jika lolos, backend melakukan sync profil ke database <code>user_profiles</code> dan mengembalikan metadata profil lengkap.</li>
 <li>Jika dompet terhubung + social terhubung = Akun siap menerima XP dan tier.</li>
+</ul>
+</li>
 </ol>
 </li>
 </ul>
@@ -2379,6 +2393,282 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 <td>Pemenang (saat Claim)</td>
 <td>Biaya pemrosesan klaim dan maintenance hadiah.</td>
 </tr>
+<tr>
+<td><em>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.</em></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><em>Antigravity — Nexus Master Architect. Protocol v3.56.4 Locked.</em></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>19. UGC Multi-Action &amp; All-or-Nothing Campaign Workflow</h2>
+<p>Sistem ini berevolusi dari tugas tunggal menjadi kampanye terstruktur guna meningkatkan retensi dan kualitas engagement.</p>
+<h3>19.1 Arsitektur Data Kampanye</h3>
+<ul>
+<li><strong>Tabel <code>campaigns</code></strong>: Bertindak sebagai entitas parent yang menyimpan <code>title</code>, <code>reward_amount</code>, dan metadata global.</li>
+<li><strong>Tabel <code>daily_tasks</code></strong>: Menyimpan sub-tugas individu. Kunci penghubungnya adalah <code>onchain_id</code> yang diisi dengan ID Kampanye.</li>
+<li><strong>Tabel <code>user_task_claims</code></strong>: <ul>
+<li>Mencatat verifikasi individual sub-tugas (reward 0).</li>
+<li>Mencatat klaim final kampanye (ID Kampanye) untuk memicu reward XP/USDC.</li>
+</ul>
+</li>
+</ul>
+<h3>19.2 Alur Pembuatan (Batching)</h3>
+<pre><code class="language-javascript">// admin-bundle.js
+const { data: tasks, error: taskError } = await supabaseAdmin
+    .from(&#39;daily_tasks&#39;)
+    .insert(action_types.map(act =&gt; ({
+        title: `${title} (${act})`,
+        action_type: act,
+        onchain_id: campaignId,
+        task_type: &#39;ugc&#39;,
+        // ... metadata lainnya
+    })));
+</code></pre>
+<h3>19.3 Alur Klaim (Atomic All-or-Nothing)</h3>
+<ol>
+<li><strong>Frontend</strong>: Menghitung <code>completedCount</code> dari sub-tugas yang ada di <code>offChainClaims</code>.</li>
+<li><strong>Logic</strong>: Jika <code>completedCount === subTasks.length</code>, tampilkan tombol klaim.</li>
+<li><strong>Backend (<code>claim-ugc-campaign</code>)</strong>:<ul>
+<li>Query seluruh sub-tugas kampanye X.</li>
+<li>Query seluruh claim user untuk sub-tugas kampanye X.</li>
+<li>Bandingkan: <code>count(subTasks) == count(userClaims)</code>.</li>
+<li>Jika <code>true</code>, eksekusi <code>fn_increment_xp</code> dan increment saldo USDC.</li>
+<li>Tandai kampanye sebagai <code>claimed</code> untuk user tersebut.</li>
+</ul>
+</li>
+</ol>
+<h3>19.4 Checklist Kesehatan UGC v3.57.0</h3>
+<ol>
+<li><input disabled="" type="checkbox"> <strong>Regex Link Guard</strong>: Link harus valid sesuai platform (Warpcast/X/TikTok).</li>
+<li><input disabled="" type="checkbox"> <strong>Multi-Action Bound</strong>: Maksimal 3 aksi per kampanye untuk menjaga UX.</li>
+<li><input disabled="" type="checkbox"> <strong>Atomic Claims</strong>: Reward tidak boleh bocor per sub-tugas, hanya di level parent kampanye.</li>
+<li><input disabled="" type="checkbox"> <strong>Referral Loop</strong>: Setiap klaim sukses harus memicu CTA sharing sosial.</li>
+</ol>
+<hr>
+<h2>20. Zero-Hardcode Infrastructure Mandate (v3.59.1)</h2>
+<p>Protokol untuk memastikan portabilitas ekosistem antara Testnet dan Mainnet tanpa risiko <em>manual error</em>.</p>
+<h3>20.1 Dynamic Address Resolution</h3>
+<ul>
+<li><strong>Frontend</strong>: Menggunakan helper <code>getAddr()</code> dari <code>src/lib/contracts.js</code> yang menarik nilai dari <code>import.meta.env</code>.</li>
+<li><strong>ABI Mapping</strong>: File <code>abis_data.txt</code> sekarang bertindak murni sebagai registry fungsi, dengan alamat kontrak yang disuntikkan secara dinamis saat runtime.</li>
+</ul>
+<h3>20.2 Synchronization Triggers</h3>
+<ul>
+<li>Setiap kali alamat kontrak diubah di <code>.env</code>, developer <strong>WAJIB</strong> menjalankan:<ul>
+<li><code>node scripts/sync/sync-all-envs.cjs</code> (Environment Sync)</li>
+<li><code>node scripts/sync/rebuild_abis_data.cjs</code> (ABI Placeholder Sync)</li>
+<li><code>node scripts/audits/check_sync_status.cjs</code> (Integritas Audit)</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>21. Absolute Parity &amp; Hardening Audit Protocol (v3.59.2)</h2>
+<p>Setiap agen yang mengelola tugas berantai (Multi-Action) atau distribusi reward wajib menjalankan audit paritas.</p>
+<h3>21.1 Parity Audit Checklist</h3>
+<ol>
+<li><strong>XP Drift</strong>: Pastikan <code>total_xp</code> database sinkron dengan <code>points</code> on-chain.</li>
+<li><strong>Tier Drift</strong>: Pastikan level database sinkron dengan <code>currentTier</code> on-chain.</li>
+<li><strong>Metadata Parity</strong>: Pastikan URL Pinata di database sinkron dengan <code>BaseURI</code> on-chain via <code>setTierURI</code>.</li>
+</ol>
+<h3>21.2 Tools &amp; Endpoints</h3>
+<ul>
+<li><strong>Audit Tool</strong>: Dashboard Hardening Center di Tab Admin.</li>
+<li><strong>API</strong>: <code>/api/admin/parity-audit</code> (High-precision comparison).</li>
+<li><strong>Manual Sync</strong>: Gunakan tombol &quot;Batch Sync&quot; jika terdeteksi drift &gt; 1% pada Top 50 users.</li>
+</ul>
+<hr>
+<h2>22. DailyApp V14 Multi-Token Sponsorship &amp; Decimal Normalization (v3.59.3)</h2>
+<p>Peningkatan infrastruktur sponsor untuk mendukung ekonomi multi-aset dan normalisasi parameter moneter.</p>
+<h3>22.1 Multi-Token Rewards</h3>
+<ul>
+<li><strong>Storage Strategy</strong>: Reward disimpan di <code>mapping(address =&gt; mapping(address =&gt; uint256)) public claimableRewards</code> (user =&gt; token =&gt; amount).</li>
+<li><strong>Default Tokens</strong>: USDC (Base) dan ETH.</li>
+<li><strong>Claim Logic</strong>: User memanggil <code>claimRewards(tokenAddress)</code> secara spesifik untuk menarik saldo per-token.</li>
+</ul>
+<h3>22.2 Decimal Normalization (6-Decimal Base)</h3>
+<p>Seluruh parameter ekonomi dikonfigurasi menggunakan basis <strong>6-desimal</strong> (USDC-native) untuk menghindari fragmentasi unit.</p>
+<ul>
+<li><strong>buySponsorshipWithToken</strong>: Mengonversi deposit token ke 6-desimal internal.<ul>
+<li>ETH (18 dec) -&gt; Normalisasi ke 6 dec.</li>
+<li>USDC (6 dec) -&gt; Langsung.</li>
+</ul>
+</li>
+<li><strong>Validation</strong>: Pengecekan <code>minPool</code> (threshold minimal sponsor) dilakukan terhadap nilai hasil normalisasi ini.</li>
+</ul>
+<h3>22.3 UI Persistence Mandate</h3>
+<ul>
+<li><strong>Card Visibility</strong>: <code>SponsoredTaskCard</code> tidak boleh menghilang hanya karena user sudah menyelesaikan tugas.</li>
+<li><strong>Enforcement</strong>: Kartu tetap ditampilkan selama <code>claimableRewards(user, token) &gt; 0</code> untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.</li>
+</ul>
+<hr>
+<p><em>End of Task Feature Workflow - Nexus v3.59.3 LOCKED.</em></p>
+<hr>
+<h2>Chapter C: Accountant Ledger &amp; Financial Balances SOT</h2>
+<ul>
+<li><strong>Specification:</strong> Accountant Ledger &amp; Financial Balances SOT</li>
+<li><strong>Version:</strong> v3.63.0</li>
+<li><strong>Date Stamp:</strong> 2026-05-18T19:01:52+07:00</li>
+<li><strong>Author:</strong> Antigravity (Lead Blockchain Architect)</li>
+<li><strong>Status:</strong> HARDENED SOT</li>
+</ul>
+<h2>1. Arsitektur Akuntan Ledger</h2>
+<p>Sistem Ledger bekerja dengan menggabungkan data dari dua sumber utama:</p>
+<ol>
+<li><strong>On-Chain (Blockchain)</strong>: Saldo real-time dari kontrak pintar (Smart Contracts).</li>
+<li><strong>Off-Chain (Database)</strong>: Log aktivitas pengguna (<code>user_activity_logs</code>) yang mencatat kategori transaksi.</li>
+</ol>
+<h3>📍 Komponen Utama</h3>
+<ul>
+<li><strong>Dashboard UI</strong>: <code>AdminPage.tsx</code> -&gt; <code>TaskManager.tsx</code> (Modular sections in <code>src/features/admin/components/</code>).</li>
+<li><strong>Backend Logic</strong>: <code>admin-bundle.js</code> (Endpoint <code>/api/admin/accountant-ledger</code>).</li>
+<li><strong>Hook</strong>: <code>useSBT.js</code> (Fungsi <code>withdrawTreasury</code>).</li>
+<li><strong>Database Table</strong>: <code>user_activity_logs</code>.</li>
+</ul>
+<hr>
+<h2>2. Kategorisasi Transaksi</h2>
+<p>Seluruh aktivitas finansial di dalam ekosistem wajib dipetakan ke dalam salah satu kategori berikut untuk memastikan laporan balancing yang akurat:</p>
+<table>
+<thead>
+<tr>
+<th>Kategori</th>
+<th>Tipe</th>
+<th>Deskripsi</th>
+<th>Contoh Aktivitas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PURCHASE</strong></td>
+<td>Income (🟢)</td>
+<td>Dana masuk ke kas ekosistem.</td>
+<td>UGC Listing Fee, SBT Upgrade/Mint, Raffle Tickets.</td>
+</tr>
+<tr>
+<td><strong>REWARD</strong></td>
+<td>Expense (🔴)</td>
+<td>Pengeluaran untuk hadiah pengguna.</td>
+<td>SBT Pool Reward, Raffle Prize Payouts.</td>
+</tr>
+<tr>
+<td><strong>EXPENSE</strong></td>
+<td>Expense (🔴)</td>
+<td>Biaya operasional atau penarikan manual.</td>
+<td>Server costs, manual treasury rebalancing.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>3. On-Chain Balancing Report</h2>
+<p>Sistem melakukan verifikasi saldo secara langsung pada alamat kontrak berikut untuk dibandingkan dengan catatan Ledger:</p>
+<table>
+<thead>
+<tr>
+<th>Kontrak / Wallet</th>
+<th>Kegunaan</th>
+<th>Asset</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>SAFE_MULTISIG</strong></td>
+<td>Treasury Pusat (End-point Penarikan)</td>
+<td>ETH, USDC</td>
+</tr>
+<tr>
+<td><strong>MASTER_X_ADDRESS</strong></td>
+<td>Smart Contract XP &amp; SBT Pool</td>
+<td>ETH, USDC</td>
+</tr>
+<tr>
+<td><strong>DAILY_APP_ADDRESS</strong></td>
+<td>Smart Contract Core (UGC &amp; Mints)</td>
+<td>ETH, USDC</td>
+</tr>
+<tr>
+<td><strong>RAFFLE_ADDRESS</strong></td>
+<td>Smart Contract Raffle (Ticket Revenue)</td>
+<td>ETH, USDC</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>Zero-Hardcode Compliance</strong>: Seluruh alamat di atas wajib ditarik secara dinamis dari environment variables via <code>lib/contracts.js</code>.</p>
+</blockquote>
+<hr>
+<h2>4. Modul Treasury (ETH Withdrawal)</h2>
+<p>Admin memiliki otoritas untuk menarik akumulasi dana ETH dari kontrak operasional ke Treasury Pusat melalui fungsi <code>withdrawTreasury</code>.</p>
+<ul>
+<li><strong>Alur</strong>: <code>UI (AccountantLedgerTab)</code> -&gt; <code>useSBT (hook)</code> -&gt; <code>Contract (DailyApp/Raffle)</code> -&gt; <code>Transfer to SAFE_MULTISIG</code>.</li>
+<li><strong>Security</strong>: Hanya wallet dengan role Admin/Owner yang dapat mengeksekusi penarikan ini.</li>
+</ul>
+<h2>5. Multi-Token Audit Protocol (V14.1)</h2>
+<p>Sistem Ledger kini mendukung audit multi-token otomatis (USDC/ETH) dengan standar sinkronisasi event-driven:</p>
+<ol>
+<li><strong>On-Chain Event SOT</strong>:<ul>
+<li><code>SponsorshipRequested</code>: Mencatat pemasukan fee platform (USDC).</li>
+<li><code>RewardsClaimed</code>: Mencatat pengeluaran hadiah pengguna (USDC/ETH/DISCO). <em>Diperkenalkan di V14.1</em>.</li>
+</ul>
+</li>
+<li><strong>Decimal Normalization Engine</strong>:<ul>
+<li>Seluruh jumlah dana dinormalisasi secara otomatis berdasarkan desimal token (USDC=6, ETH=18) sebelum dicatat ke <code>user_activity_logs</code>.</li>
+<li>Payout dicatat dalam kategori <code>REWARD</code> dan ditampilkan sebagai pengeluaran (expense) di dashboard.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2>6. Ecosystem Hardening Center (v3.59.4)</h2>
+<p>Modul tambahan untuk menjamin paritas antara database dan blockchain, mencegah terjadinya &quot;Data Drift&quot; pada XP dan Tier pengguna.</p>
+<h3>📍 Fitur Utama:</h3>
+<ol>
+<li><strong>Parity Audit</strong>: Membandingkan <code>total_xp</code> dan <code>tier</code> di Supabase dengan <code>userStats</code> di blockchain secara real-time.</li>
+<li><strong>Batch Synchronization</strong>:<ul>
+<li><strong>Sync XP</strong>: Memperbarui status poin di kontrak MasterX berdasarkan data database.</li>
+<li><strong>Sync Tiers</strong>: Memaksa pembaruan tier di blockchain jika terdeteksi inkonsistensi.</li>
+<li><strong>Sync NFT URIs</strong>: Sinkronisasi metadata IPFS (Pinata) dari database ke kontrak on-chain.</li>
+</ul>
+</li>
+<li><strong>Manual Ledger Sync Protocol</strong>:<ul>
+<li><strong>On-Demand Trigger</strong>: Memungkinkan admin memicu sinkronisasi event blockchain (<code>accountant-sync</code>) secara manual untuk mengatasi kegagalan cron otomatis.</li>
+<li><strong>Block Height Visibility</strong>: Dashboard menampilkan <code>last_synced_block</code> dan menghitung selisih (<em>drift</em>) terhadap <code>current_block</code> jaringan.</li>
+<li><strong>Freshness Indicator</strong>: Memberikan feedback visual (Success/Warning) berdasarkan usia sinkronisasi terakhir untuk menjamin kemutakhiran data audit.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<hr>
+<h2>7. Raffle Economy Architecture (v3.59.5)</h2>
+<p>Ekosistem Raffle menggunakan sistem biaya tiga lapis untuk menjamin keberlanjutan operasional dan profitabilitas platform:</p>
+<table>
+<thead>
+<tr>
+<th>Komponen Biaya</th>
+<th>Nominal (Default)</th>
+<th>Pihak yang Membayar</th>
+<th>Tujuan</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Project Rake</strong></td>
+<td>20%</td>
+<td>Creator (dari Tiket)</td>
+<td>Revenue murni platform dari penjualan tiket.</td>
+</tr>
+<tr>
+<td><strong>Gas Surcharge</strong></td>
+<td>10%</td>
+<td>Creator (saat Create)</td>
+<td>Biaya operasional gas untuk API3 QRNG (Randomness).</td>
+</tr>
+<tr>
+<td><strong>Claim Fee</strong></td>
+<td>5%</td>
+<td>Pemenang (saat Claim)</td>
+<td>Biaya pemrosesan klaim dan maintenance hadiah.</td>
+</tr>
 </tbody></table>
 <h3>📍 Mekanisme Aliran Dana:</h3>
 <ol>
@@ -2397,17 +2687,6 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 </ul>
 </li>
 </ol>
-<hr>
-<h2>8. Panduan Integrasi Modul Baru</h2>
-<p>Jika ada fitur baru (misal: Single NFT Market atau Swap) yang ingin terkoneksi ke Accountant Ledger, pengembang <strong>WAJIB</strong> mengikuti langkah berikut:</p>
-<ol>
-<li><strong>Emit Log di Database</strong>: Gunakan kategori <code>PURCHASE</code> untuk setiap revenue.</li>
-<li><strong>Metadata Lengkap</strong>: Sertakan <code>tx_hash</code>, <code>value_amount</code>, dan <code>value_symbol</code> (&#39;USDC&#39; atau &#39;ETH&#39;).</li>
-<li><strong>Automatic Inclusion</strong>: Ledger akan secara otomatis menarik data log tersebut ke dalam dashboard tanpa perubahan kode di sisi Ledger.</li>
-</ol>
-<hr>
-<hr>
-<p><em>End of Accountant Ledger SOT - Nexus v3.63.0 Locked.</em></p>
 <hr>
 <h2>Chapter D: Swap &amp; Profit Engine Specification</h2>
 <ul>
@@ -2492,6 +2771,56 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 </ul>
 <hr>
 <h1>Section II: Chronological Development Log</h1>
+<h2>47. Work Report v3.64.15-Hardened</h2>
+<p><strong>Date:</strong> 2026-05-20
+<strong>Subject:</strong> Native+ Typography &amp; Viewport Containment Refactoring
+<strong>Author:</strong> Antigravity (Lead Blockchain Architect)</p>
+<h3>Executive Summary</h3>
+<ol>
+<li>Refactored typography on <code>ProfilePage.tsx</code>, <code>SBTRewardsDashboard.tsx</code>, and <code>DailyGoalCard.tsx</code> to align with the Native+ design standards.</li>
+<li>Removed legacy typography classes (<code>text-xs</code>, <code>text-sm</code>, <code>text-[10px]</code>) and normalized text components to use <code>.label-native</code> (<code>text-[11px] font-black uppercase tracking-widest</code>), <code>.content-native</code> (<code>text-[13px] font-medium leading-relaxed</code>), and <code>.value-native</code> (<code>text-[12px] font-bold tracking-wide</code>) formats.</li>
+<li>Hardened layouts on all three files to add <code>max-w-[100vw]</code> and <code>overflow-x-hidden</code> on the root elements, achieving complete mobile viewport containment and preventing content clipping.</li>
+<li>Compiled and verified frontend bundle code with zero build-time warnings or regressions.</li>
+</ol>
+<h3>Key Implementation Details</h3>
+<ol>
+<li><strong>ProfilePage Typography Normalization</strong>: Changed legacy loading status and mission/swap labels from <code>text-[10px]</code> to <code>text-[11px]</code>. Converted the claimable revenue value from legacy <code>text-sm</code> to standard <code>text-[12px]</code> to follow the Native+ <code>.value-native</code> format.</li>
+<li><strong>SBTRewardsDashboard Normalization</strong>: Standardized transaction proof link, community tier metadata, and scaling factors from legacy <code>text-xs</code>/<code>text-[10px]</code> to standard <code>text-[11px]</code>.</li>
+<li><strong>DailyGoalCard Normalization</strong>: Standardized targets, verification status, and daily reward labels from <code>text-[10px]</code> to <code>text-[11px]</code>.</li>
+<li><strong>Viewport Containment</strong>: Added mobile containment container class overrides (<code>max-w-[100vw] overflow-x-hidden</code>) to all elements.</li>
+<li><strong>Compilation Verification</strong>: Verified build integrity using <code>npm run build</code> in the <code>Raffle_Frontend</code> directory.</li>
+</ol>
+<h3>Verification Matrix</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>Typography Compliance</strong>: Purged all legacy sizes from modified files.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Viewport Containment</strong>: Horizontal scrolling blocked; root containers fit strictly within view width.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Production Build</strong>: 100% success across 7,274 modules without compilation warnings.</li>
+</ul>
+<hr>
+<h2>46. Work Report v3.64.14-Hardened</h2>
+<p><strong>Date:</strong> 2026-05-20
+<strong>Subject:</strong> Git Pre-Commit Hook Integration &amp; RTK Hardening Mandate
+<strong>Author:</strong> Antigravity (Lead Blockchain Architect)</p>
+<h3>Executive Summary</h3>
+<ol>
+<li>Hardened the agent anti-negligence hook (<code>agent_anti_negligence_hook.cjs</code>) to promote the missing RTK (Rust Token Killer) check from a warning to a strict failure.</li>
+<li>Integrated the agent anti-negligence hook into the Git <code>pre-commit</code> hook (via Husky) alongside Gitleaks, preventing any code commits if the anti-negligence check fails or if RTK is missing/inactive.</li>
+<li>Updated core documentation (Ecosystem Sentinel, Git Hygiene, <code>.cursorrules</code>, and Master PRD) to document the mandatory pre-commit hooks and RTK enforcement rule.</li>
+</ol>
+<h3>Key Implementation Details</h3>
+<ol>
+<li><strong>RTK Verification Hardening</strong>: Modified <code>scripts/audits/agent_anti_negligence_hook.cjs</code> to add a failure to <code>failures</code> and set <code>hasFailure = true</code> when <code>rtk.exe</code> is missing from <code>.bin/</code>.</li>
+<li><strong>Husky pre-commit Hook Update</strong>: Appended <code>node scripts/audits/agent_anti_negligence_hook.cjs</code> with exit code status checks to <code>.husky/pre-commit</code> to prevent committing invalid, leaking, or non-RTK compliant work.</li>
+<li><strong>Core Skills Synced</strong>: Updated <code>.agents/skills/git-hygiene/SKILL.md</code> (v3.64.14-Hardened) and <code>.agents/skills/ecosystem-sentinel/SKILL.md</code> (v3.64.14-Hardened) to detail the new pre-commit hook and RTK enforcement mechanism.</li>
+<li><strong>Master Architect Protocol Synced</strong>: Updated <code>.cursorrules</code> (v3.64.14-Hardened) sections 53 and 61 to enforce the mandatory RTK pre-commit verification.</li>
+</ol>
+<h3>Verification Matrix</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>Pre-Commit Audit</strong>: Passed <code>agent_anti_negligence_hook.cjs</code> with 100% operational status.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>RTK Availability</strong>: Confirmed <code>rtk 0.40.0</code> is active and available in <code>.bin/rtk.exe</code>.</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>Git Hook Integrity</strong>: Verified <code>.husky/pre-commit</code> executes hook and blocks on error.</li>
+</ul>
+<hr>
 <h2>45. Work Report v3.64.6-Hardened</h2>
 <p><strong>Date:</strong> 2026-05-19
 <strong>Subject:</strong> UGC Admin Multi-Asset Reward Conversion &amp; RTK Global Optimization
@@ -5411,5 +5740,55 @@ system documents.
 </li>
 </ul>
 <hr>
+<h2>50. Work Report v3.64.13 — Nexus Monitor Live Dashboard</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-20
+<strong>Focus</strong>: Designing and generating a live hierarchical multi-agent delegation dashboard with dynamic filtering, collapsible terminal logs, and compiling it with zero warnings.</p>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>Orchestration Loop Stability</strong>:<ul>
+<li>Addressed Freemodel API 504 timeouts by transitioning <code>OrchestratorBot</code>&#39;s base LLM model from <code>gpt-5.5</code>/<code>claude</code> to <code>gpt-5.4</code> on the Freemodel endpoint, preventing task loops from timing out.</li>
+</ul>
+</li>
+<li><strong>Nexus Monitor Dashboard</strong>:<ul>
+<li>Implemented <code>NexusMonitorTab.tsx</code> with a premium glassmorphic &quot;Midnight Cyber&quot; style, matching all typography guidelines.</li>
+<li>Added real-time agent filtering cards, hierarchical task expansion with visual nesting lines, and collapsible pre-formatted Output Log sections with clipboard copying capability.</li>
+</ul>
+</li>
+<li><strong>TypeScript &amp; Lint Resolution</strong>:<ul>
+<li>Surgically removed unused imports to compile the React code with 100% success and 0 compiler/linter warnings.</li>
+</ul>
+</li>
+<li><strong>Anti-Negligence Auditing</strong>:<ul>
+<li>Successfully ran <code>check_sync_status.cjs</code> and the mandatory anti-negligence hook, passing all check suites with exit code 0.</li>
+</ul>
+</li>
+</ul>
+<hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
-<em>Integrity First. Nexus Synchronized. v3.64.11 LOCKED.</em></p>
+<em>Integrity First. Nexus Synchronized. v3.64.13 LOCKED.</em></p>
+<hr>
+<h2>51. Work Report v3.64.16-Hardened</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-20
+<strong>Focus</strong>: Surgical refactoring of remaining admin/system and user-facing pages/shared components to Midnight Cyber/Native+ compliance, and hardening overall mobile viewport containment.</p>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>Typography &amp; Button Compliance</strong>:<ul>
+<li>Eliminated legacy sizing classes (<code>text-xs</code>, <code>text-sm</code>, <code>text-[10px]</code>) and integrated <code>.label-native</code>, <code>.content-native</code>, and <code>.value-native</code> across <code>ModerationCenterTab.tsx</code>, <code>PoolTab.tsx</code>, <code>HealthDashboardSection.tsx</code>, <code>ProfilePage.tsx</code>, <code>SBTRewardsDashboard.tsx</code>, and <code>DailyGoalCard.tsx</code>.</li>
+<li>Audited <code>UgcRevenueTab.tsx</code>, <code>PointSettingsSection.tsx</code>, <code>SbtThresholdsSection.tsx</code>, <code>AuditLogsSection.tsx</code>, <code>HomePage.tsx</code>, <code>TasksPage.tsx</code>, <code>RafflesPage.tsx</code>, and <code>LoginPage.tsx</code> for Native+ compliance.</li>
+</ul>
+</li>
+<li><strong>Mobile Viewport Containment</strong>:<ul>
+<li>Ensured root-level components have <code>max-w-[100vw]</code> and <code>overflow-x-hidden</code> to prevent horizontal overflow and safeguard BottomNav layout integrity on mobile screens.</li>
+</ul>
+</li>
+<li><strong>Ecosystem Integrity</strong>:<ul>
+<li>Ran <code>npm run build</code> inside <code>Raffle_Frontend</code> with 100% success (0 build warnings/errors).</li>
+<li>Executed <code>check_sync_status.cjs</code> and the mandatory agent anti-negligence hook, securing a perfect operational check suite.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><em>Created by Antigravity — Nexus Master Architect</em>
+<em>Integrity First. Nexus Synchronized. v3.64.16 LOCKED.</em></p>

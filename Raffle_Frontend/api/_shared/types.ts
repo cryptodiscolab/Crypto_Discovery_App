@@ -102,6 +102,38 @@ export interface UgcRafflePayload {
     txHash: string;
 }
 
+export interface SbtMintEntitlementRequest {
+    wallet: string;
+    signature: string;
+    message: string;
+    requested_tier: number;
+}
+
+export interface SbtMintEntitlementVoucher {
+    wallet: string;
+    tier: number;
+    tier_name: string;
+    db_total_xp: number;
+    required_xp: number;
+    current_onchain_tier: number;
+    current_onchain_xp: number;
+    mint_price_wei: string;
+    contract_address: string;
+    verifier_address: string;
+    chain_id: number;
+    deadline: number;
+    expires_at: string;
+    nonce: string;
+    signature: string;
+}
+
+export interface SbtMintEntitlementResponse extends BaseResponse {
+    eligible: boolean;
+    voucher_status: 'signed' | 'not_issued';
+    voucher?: SbtMintEntitlementVoucher;
+    reason?: string;
+}
+
 export interface AdminActionPayload {
     action: string;
     payload?: unknown;
