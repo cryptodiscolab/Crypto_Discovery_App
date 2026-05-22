@@ -228,15 +228,20 @@ If you think something should be optimized, explain the trade-offs and ask permi
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
-| **DailyApp V15** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` |
+| **DailyApp V16** | `[RESERVED]` | `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353` |
+| **DailyApp V15** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` (LEGACY) |
 | **DailyApp V14** | `[RESERVED]` | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` |
 | **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` |
 | **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
 | **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
-| **ENV Key** | `VITE_V12_CONTRACT_ADDRESS` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
-| *---
-| *Last Updated: 2026-05-12T09:00:00+07:00 | Ecosystem Hardening & Kiro Audit Verification (v3.63.5-Hardened). |
+| **Active DailyApp ENV Key** | `VITE_DAILY_APP_V16_ADDRESS` | `VITE_DAILY_APP_V16_ADDRESS` |
+
+**DailyApp V16 AccessControl:** Admin dashboard `Role Management -> DailyApp V16 AccessControl` MUST be used for production role handover via `grantRole` then `revokeRole`. Frontend contract resolution MUST prefer `VITE_DAILY_APP_V16_ADDRESS`; legacy `VITE_V12_CONTRACT_ADDRESS*` keys are fallback only.
+
+**DailyApp V16 ABI/runtime rule:** `Raffle_Frontend/src/lib/daily_app_abi.json` and `Raffle_Frontend/src/lib/abis_data.txt` MUST be synced from `artifacts/contracts/DailyAppV16.sol/DailyAppV16.json`. Do not call V13/V15-only selectors against V16, including `syncOffchainXP`, `mintNFTWithEntitlement`, `claimRewards`, `setSponsorshipParams`, `approveSponsorship`, `rejectSponsorship`, `buySponsorshipWithToken`, or `userSponsorshipProgress`.
+
+*Last Updated: 2026-05-22 | DailyApp V16 deployment, role wiring, admin AccessControl dashboard, and ABI/runtime compatibility update.*
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.
@@ -866,4 +871,3 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
 *Audit Precision Hardened: 2026-05-14. v3.64.19 MILLISECOND PRECISION & MULTI-ASSET.*
 *Anti-Negligence Hook Activated: 2026-05-18. v3.64.19 AUTOMATED SCANNING & RTK INTEGRATED.*
-

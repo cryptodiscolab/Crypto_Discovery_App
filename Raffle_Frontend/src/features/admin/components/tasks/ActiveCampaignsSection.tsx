@@ -137,57 +137,31 @@ function OrganicTaskRow({ id, onToggle }: { id: bigint; onToggle: (id: bigint, _
 }
 
 function AuditRequestRow({ id, onApprove, onReject, isModerationEnabled }: { id: bigint; onApprove: (_id: string) => void; onReject: (_id: string) => void; isModerationEnabled: boolean }) {
-    const { data: request } = useReadContract({ address: DAILY_APP_ADDRESS, abi: ABIS.DAILY_APP as readonly unknown[], functionName: 'sponsorRequests', args: [id] });
-    if (!request || Number((request as unknown[])[8]) === 2) return null;
-    const reqArr = request as [string, unknown, string, string, unknown, unknown, bigint, bigint, bigint | number, ...unknown[]];
-    const [sponsor, , title, _link, , , rewardPerUserUSD, targetClaims, statusRaw] = reqArr;
-    void _link;
-    const status = Number(statusRaw);
-    return (
-        <div className="p-8 rounded-[2.5rem] border border-white/5 bg-[#0a0a0c]/40 flex flex-col lg:flex-row justify-between items-center gap-8 hover:bg-[#0a0a0c]/60 hover:border-indigo-500/40 transition-all duration-500">
-            <div className="flex gap-8 items-start w-full">
-                <div className="w-16 h-16 rounded-[1.5rem] bg-indigo-600/10 border border-indigo-500/30 flex items-center justify-center shadow-2xl"><Share2 className="w-8 h-8 text-indigo-400" /></div>
-                <div className="text-left flex-1">
-                    <div className="flex items-center gap-3 mb-2"><span className="label-native text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded">ID: #{id.toString()}</span><h4 className="font-black text-white uppercase text-[11px] tracking-widest">{title}</h4></div>
-                    <p className="label-native text-slate-600 font-mono mb-4">CREATOR: {sponsor}</p>
-                    <div className="flex flex-wrap gap-3">
-                        <span className="label-native text-slate-400 bg-white/5 border border-white/5 px-4 py-2 rounded-xl">CAPACITY: {targetClaims.toString()}</span>
-                        <span className="label-native text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl">UNIT: ${(Number(rewardPerUserUSD) / 1e18).toFixed(2)} USD</span>
-                        <span className={`label-native px-4 py-2 rounded-xl border ${status === 0 ? 'bg-yellow-500/5 border-yellow-500/20 text-yellow-500' : 'bg-green-500/10 border-green-500/20 text-green-500'}`}>{status === 0 ? 'AWAITING_REVIEW' : 'SYSTEM_ACTIVE'}</span>
-                    </div>
-                </div>
-            </div>
-            {status === 0 && (
-                <div className="flex items-center gap-4 w-full lg:w-auto">
-                    <button disabled={!isModerationEnabled} onClick={() => onReject(id.toString())} className={`flex-1 lg:flex-none px-10 py-4 border border-red-500/30 text-red-500 label-native rounded-2xl transition-all ${isModerationEnabled ? 'hover:bg-red-500/20' : 'opacity-40 cursor-not-allowed'}`}>REJECT</button>
-                    <button disabled={!isModerationEnabled} onClick={() => onApprove(id.toString())} className={`flex-1 lg:flex-none px-10 py-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 label-native rounded-2xl transition-all ${isModerationEnabled ? 'hover:bg-indigo-600/40' : 'opacity-40 cursor-not-allowed'}`}>APPROVE</button>
-                </div>
-            )}
-        </div>
-    );
+    void id;
+    void onApprove;
+    void onReject;
+    void isModerationEnabled;
+    return null;
 }
 
 function SponsorCardItem({ id }: { id: bigint }) {
-    const { data: request } = useReadContract({ address: DAILY_APP_ADDRESS, abi: ABIS.DAILY_APP as readonly unknown[], functionName: 'sponsorRequests', args: [id] });
     const [dbMeta, setDbMeta] = React.useState<SponsorDbMeta | null>(null);
     useEffect(() => {
         if (!id) return;
         supabase.from('daily_tasks').select('is_base_social_required, created_at, expires_at').eq('onchain_id', Number(id)).maybeSingle().then(({ data }) => { if (data) setDbMeta(data as SponsorDbMeta); });
     }, [id]);
-    if (!request || Number((request as unknown[])[8]) !== 1) return null;
-    const reqArr = request as [unknown, unknown, string, string, unknown, unknown, bigint, bigint, ...unknown[]];
-    const [, , title, link, , , rewardPerUserUSD, targetClaims] = reqArr;
+    void dbMeta;
     return (
         <div className="p-8 bg-[#0a0a0c]/40 border border-white/5 rounded-[2.5rem] relative overflow-hidden hover:bg-[#0a0a0c]/80 hover:border-emerald-500/30 transition-all duration-500 text-left">
             <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-xl shadow-emerald-500/20"><span className="font-black text-white text-lg">{title.charAt(0).toUpperCase()}</span></div>
-                <div><h4 className="font-black text-white text-[11px] tracking-widest truncate max-w-[180px]">{title}</h4><p className="label-native mt-1">{dbMeta?.is_base_social_required ? <span className="text-blue-400">IDENTITY GUARDED</span> : <span className="text-slate-600">PUBLIC NODE</span>}</p></div>
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-xl shadow-emerald-500/20"><Share2 className="w-6 h-6 text-white" /></div>
+                <div><h4 className="font-black text-white text-[11px] tracking-widest truncate max-w-[180px]">Legacy Sponsorship</h4><p className="label-native mt-1 text-slate-600">Moved off DailyApp V16</p></div>
             </div>
             <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-2xl border border-white/5">
-                <div className="flex justify-between"><span className="label-native text-slate-500">LIQUIDITY</span><span className="value-native text-emerald-400">${(Number(rewardPerUserUSD) / 1e18).toFixed(2)} USD</span></div>
-                <div className="flex justify-between pt-3 border-t border-white/5"><span className="label-native text-slate-500">TARGETS</span><span className="value-native text-white">{targetClaims.toString()} USERS</span></div>
+                <div className="flex justify-between"><span className="label-native text-slate-500">SOURCE</span><span className="value-native text-emerald-400">Raffle / UGC flow</span></div>
+                <div className="flex justify-between pt-3 border-t border-white/5"><span className="label-native text-slate-500">ON-CHAIN DAILYAPP</span><span className="value-native text-white">DISABLED</span></div>
             </div>
-            <a href={link} target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 py-4 rounded-2xl label-native text-center block transition-all">PREVIEW MISSION</a>
+            <span className="w-full bg-slate-800/60 border border-white/5 text-slate-500 py-4 rounded-2xl label-native text-center block">V16 COMPATIBILITY MODE</span>
         </div>
     );
 }

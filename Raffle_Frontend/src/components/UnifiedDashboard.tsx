@@ -82,23 +82,7 @@ export function UnifiedDashboard() {
         }
     }
 
-    const { data: nextSponsorId } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'totalSponsorRequests',
-    });
-
     const sponsorshipIds: number[] = [];
-    if (nextSponsorId) {
-        const maxSponsors = 8;
-        const total = Number(nextSponsorId);
-        const start = Math.max(1, total - maxSponsors);
-
-        for (let i = start; i < total; i++) {
-            sponsorshipIds.push(i);
-        }
-        sponsorshipIds.reverse();
-    }
 
     const handleTransactionSuccess = useCallback(async (txHash: string) => {
         // BUG-SYNC fix: Trigger backend XP sync immediately after transaction confirmation

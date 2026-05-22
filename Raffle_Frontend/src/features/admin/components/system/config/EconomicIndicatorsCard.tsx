@@ -1,6 +1,4 @@
-import { useAdminContract } from '../../../../../hooks/useAdminContract';
 import { TrendingUp } from 'lucide-react';
-import { CONTRACTS, DAILY_APP_ABI } from '../../../../../lib/contracts';
 import toast from 'react-hot-toast';
 import { SponsorSettings } from '../../../../types/admin';
 
@@ -23,42 +21,14 @@ export function EconomicIndicatorsCard({
     getUsdValue,
     isSaving, setIsSaving
 }: EconomicIndicatorsCardProps) {
-    const { writeContractAsync } = useAdminContract();
-
     const handleSaveEconomical = async () => {
         setIsSaving(true);
         const tid = toast.loading("Syncing Economic Indicators...");
         try {
-            // 1. Withdrawal Fee
-            await writeContractAsync({
-                address: CONTRACTS.DAILY_APP as `0x${string}`,
-                abi: DAILY_APP_ABI,
-                functionName: 'setWithdrawalFee',
-                args: [BigInt(withdrawFee)],
-            });
-
-            // 2. Sponsorship Settings
-            await writeContractAsync({
-                address: CONTRACTS.DAILY_APP as `0x${string}`,
-                abi: DAILY_APP_ABI,
-                functionName: 'setSponsorshipParams',
-                args: [
-                    BigInt(Math.floor(Number(sponsorSettings.reward) * 1e18)),
-                    BigInt(sponsorSettings.tasks),
-                    BigInt(Math.floor(Number(sponsorSettings.minPool) * 1e18)),
-                    BigInt(Math.floor(Number(sponsorSettings.fee) * 1e6))
-                ],
-            });
-
-            // 3. Auto Approve
-            await writeContractAsync({
-                address: CONTRACTS.DAILY_APP as `0x${string}`,
-                abi: DAILY_APP_ABI,
-                functionName: 'setAutoApproveSponsorship',
-                args: [autoApprove],
-            });
-
-            toast.success("Economic Indicators Updated!", { id: tid });
+            void withdrawFee;
+            void sponsorSettings;
+            void autoApprove;
+            toast.error("DailyApp V16 does not expose legacy sponsorship or withdrawal-fee setters. Use Raffle, MasterX, and system settings.", { id: tid });
         } catch (e: unknown) {
             const error = e as { shortMessage?: string; message?: string };
             toast.error(error.shortMessage || error.message || "Action failed", { id: tid });

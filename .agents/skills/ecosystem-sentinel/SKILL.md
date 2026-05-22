@@ -517,7 +517,7 @@ Setiap kali Agent melakukan aksi berikut, dokumen terkait **WAJIB** diperbarui s
 Dokumen ini mencakup:
 - Arsitektur E2E (Frontend → Hooks → API → DB → Blockchain)
 - Dual Task Pipeline (On-Chain vs Off-Chain)
-- Smart Contract function registry (DailyApp V13.2)
+- Smart Contract function registry (DailyApp V16 active, V15/V14/V13 legacy)
 - Database schema lengkap (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs)
 - XP Hybrid Formula (fn_increment_xp)
 - Social verification flow (EIP-191 + 30s anti-fraud)

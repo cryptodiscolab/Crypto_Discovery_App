@@ -65,16 +65,10 @@ export function useV12Stats() {
         functionName: 'userCount',
     });
 
-    const { data: totalSponsors } = useReadContract({
-        address: V12_ADDRESS,
-        abi: ABIS.DAILY_APP,
-        functionName: 'totalSponsorRequests',
-    });
-
     return {
         totalUsers: userCount ? Number(userCount) : 0,
         totalTransactions: 0, // Not explicitly tracked
-        totalSponsors: totalSponsors ? Number(totalSponsors) : 0,
+        totalSponsors: 0,
     };
 }
 
@@ -192,16 +186,12 @@ export function useDailyAppAdmin() {
 }
 
 export function useSyncXP() {
-    const { writeContractAsync, isPending: isConfirming } = useWriteContract();
-
-    // V13 Signature-based Sync
+    const isConfirming = false;
     const syncOffchainXP = async (totalDbXp: string | number | bigint, deadline: string | number | bigint, signature: unknown) => {
-        return await writeContractAsync({
-            address: V12_ADDRESS, // This will point to V13 once CONTRACTS.DAILY_APP is updated in lib/contracts
-            abi: ABIS.DAILY_APP,
-            functionName: 'syncOffchainXP',
-            args: [BigInt(totalDbXp), BigInt(deadline), signature]
-        });
+        void totalDbXp;
+        void deadline;
+        void signature;
+        throw new Error('syncOffchainXP is not available on DailyApp V16. XP must be awarded through V16 role-gated on-chain channels.');
     };
 
     return {

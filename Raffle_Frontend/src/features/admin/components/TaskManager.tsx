@@ -56,12 +56,13 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     const [pointSettings, setPointSettings] = useState<PointSetting[]>([]);
     const [isLoadingPoints, setIsLoadingPoints] = useState(true);
 
-    const { data: platformFee } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
-    const { data: minPoolUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
-    const { data: minRewardUSD } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
-    const { data: tokenPrice } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'tokenPriceUSD' });
     const { data: nextTaskId, refetch: refetchTasks } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'nextTaskId' });
-    const { data: nextSponsorId, refetch: refetchSponsors } = useReadContract({ address: DAILY_APP_ADDRESS as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'totalSponsorRequests' });
+    const platformFee = undefined;
+    const minPoolUSD = undefined;
+    const minRewardUSD = undefined;
+    const tokenPrice = undefined;
+    const nextSponsorId = undefined;
+    const refetchSponsors = () => {};
 
     // --- QUICK MODE STATES ---
     const [dailyDesc, setDailyDesc] = useState('');
@@ -210,18 +211,13 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     };
 
     const buildQuickSponsorCall = () => {
-        const totalPool = quickSponsorRequiredTokens;
-        const isNative = selectedTokenAddr === NATIVE_TOKEN_ADDRESS;
-
-        return [{
-            to: DAILY_APP_ADDRESS,
-            data: encodeFunctionData({
-                abi: DAILY_APP_ABI as Abi,
-                functionName: 'buySponsorshipWithToken',
-                args: [0n, [quickSponsorTitle], [quickSponsorLink], quickSponsorEmail, isNative ? 0n : totalPool, selectedTokenAddr]
-            }),
-            value: isNative ? totalPool : 0n
-        }];
+        void quickSponsorRequiredTokens;
+        void selectedTokenAddr;
+        void quickSponsorTitle;
+        void quickSponsorLink;
+        void quickSponsorEmail;
+        toast.error('DailyApp V16 does not support legacy on-chain sponsorship creation. Use the raffle/UGC flow.');
+        return [];
     };
 
     // --- BATCH MODE LOGIC ---
@@ -252,25 +248,11 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     };
 
     const handleCreateBatchSponsorship = async () => {
-        if (!batchSponsorTitle || !batchSponsorLink) return toast.error("Missing fields");
-        if (!isSelectedTokenPriceReady) return toast.error(`[Price Oracle] Waiting for live ${selectedTokenSymbol} price data.`);
-        const tid = toast.loading("Processing Batch Sponsorship...");
-        try {
-            const totalPool = batchSponsorRequiredTokens;
-            const isNative = selectedTokenAddr === NATIVE_TOKEN_ADDRESS;
-
-            await writeContractAsync({
-                address: DAILY_APP_ADDRESS as `0x${string}`,
-                abi: DAILY_APP_ABI,
-                functionName: 'buySponsorshipWithToken',
-                args: [0n, [batchSponsorTitle], [batchSponsorLink], batchSponsorEmail, isNative ? 0n : totalPool, selectedTokenAddr],
-                value: isNative ? totalPool : 0n
-            });
-            toast.success("Sponsorship transaction submitted!", { id: tid });
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? ((e as { shortMessage?: string }).shortMessage || e.message) : "Deployment failed";
-            toast.error(msg, { id: tid });
-        }
+        void batchSponsorTitle;
+        void batchSponsorLink;
+        void batchSponsorEmail;
+        void batchSponsorRequiredTokens;
+        toast.error('DailyApp V16 does not support legacy on-chain sponsorship creation. Use the raffle/UGC flow.');
     };
 
     const updateTaskLine = <K extends keyof TaskBatchItem>(idx: number, field: K, value: TaskBatchItem[K]) => {
@@ -371,7 +353,7 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
 
             {/* Sub-Tabs */}
             <div className="flex gap-2 p-1 bg-[#121214] border border-white/5 rounded-xl">
-                {(controlMode === 'quick' ? ['daily', 'sponsor', 'config', 'analytics'] : ['BATCH_CREATOR', 'SPONSOR_PORTAL', 'ADMIN_CONFIG', 'VIEW_TASKS']).map(t => (
+                {(controlMode === 'quick' ? ['daily', 'analytics'] : ['BATCH_CREATOR', 'VIEW_TASKS']).map(t => (
                     <button
                         key={t}
                         onClick={() => setSubTab(t)}

@@ -195,12 +195,17 @@ graph TD
 |----------|---------------------|----------------------|------------|
 | **MasterX** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` ✅ |
 | **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` ✅ |
-| **DailyApp V15** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | `AccessControl` ✅ |
+| **DailyApp V16** | `[RESERVED]` | `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353` | `UUPS + role-gated XP + Admin AccessControl UI` ✅ |
+| **DailyApp V15** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | `AccessControl` (LEGACY) |
 | **DailyApp V14** | `[RESERVED]` | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` (DEPRECATED) |
 | **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` (DEPRECATED) |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
+
+**DailyApp V16 ENV / Admin Rule**: Frontend and agents MUST prefer `VITE_DAILY_APP_V16_ADDRESS`. Production role handover uses Admin Dashboard -> Role Management -> DailyApp V16 AccessControl (`grantRole` first, verify, then `revokeRole` old deployer target).
+
+**DailyApp V16 ABI/runtime rule**: DailyApp frontend ABI sources are `Raffle_Frontend/src/lib/daily_app_abi.json` and `Raffle_Frontend/src/lib/abis_data.txt`, synced from `artifacts/contracts/DailyAppV16.sol/DailyAppV16.json`. V13/V15-only sponsorship, off-chain XP sync, and entitlement selectors are legacy-only and must not be called against the V16 proxy.
 
 ## 7. Mandatory Agent Reading Protocol
 

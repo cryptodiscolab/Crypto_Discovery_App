@@ -51,34 +51,34 @@ function auditSync() {
     const checkList = [
         // --- BASE MAINNET ---
         {
-            label: 'DailyApp V12 (Mainnet)',
-            envKey: 'VITE_V12_CONTRACT_ADDRESS',
-            cursorrulesAddr: '[RESERVED]',
+            label: 'DailyApp V16 (Active)',
+            envKey: 'VITE_DAILY_APP_V16_ADDRESS',
+            cursorrulesAddr: '0xb592D6819Ea310d83034cD80FDDC2e754D0a5353',
             required: true
         },
         // --- BASE SEPOLIA ---
         {
-            label: 'DailyApp V12 (Sepolia)',
+            label: 'DailyApp Legacy V15 (Sepolia fallback)',
             envKey: 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA',
-            cursorrulesAddr: '0xaC430adE9217e2280b852EA29b91d14b12b3E151',
-            required: true
+            cursorrulesAddr: '0x0D6f339795EeA5129461388F25dE4f87e92b8DA2',
+            required: false
         },
         {
             label: 'Raffle V2 (Sepolia)',
             envKey: 'VITE_RAFFLE_ADDRESS_SEPOLIA',
-            cursorrulesAddr: '0x012FAdd087540e1B51a587f420e77D007fED2a84',
+            cursorrulesAddr: '0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3',
             required: true
         },
         {
             label: 'MasterX V2 (Sepolia)',
             envKey: 'VITE_MASTER_X_ADDRESS_SEPOLIA',
-            cursorrulesAddr: '0x1ED8B135F01522505717D1E620c4EF869D7D25e7',
+            cursorrulesAddr: '0x980770dAcE8f13E10632D3EC1410FAA4c707076c',
             required: true
         },
         {
             label: 'CMS V2 (Sepolia)',
             envKey: 'VITE_CMS_CONTRACT_ADDRESS_SEPOLIA',
-            cursorrulesAddr: '0x8D5ef43A69DDc9f9d4bCc6dF3DcCcDBEDa53A302',
+            cursorrulesAddr: '0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC',
             required: true
         }
     ];

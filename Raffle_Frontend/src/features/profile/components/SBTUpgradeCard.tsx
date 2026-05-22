@@ -19,7 +19,7 @@ export function SBTUpgradeCard() {
     const { signMessageAsync } = useSignMessage();
     const { userPoints, userTier, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
     const { isGasExpensive, isGasHigh } = gasTracker || {};
-    const { tiers, mintTierWithEntitlement, requestMintEntitlement, refetch: refetchTiers } = useNFTTiers();
+    const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
     const { ethPrice } = useCMS();
     const { refetchAll } = useSBT();
     const { stats: userOnChainStats, refetch: refetchUserInfo } = useUserInfo(address);
@@ -102,15 +102,7 @@ export function SBTUpgradeCard() {
 
         const tid = toast.loading(`Minting ${nextTier.name} NFT...`);
         try {
-            const timestamp = new Date().toISOString();
-            const message = `SBT mint entitlement for ${address}\nTier: ${nextTier.id}\nTimestamp: ${timestamp}`;
-            const userSig = await signMessageAsync({ message });
-            const entitlement = await requestMintEntitlement(address!, nextTier.id, userSig, message);
-            if (!entitlement.eligible || entitlement.voucher_status !== 'signed' || !entitlement.voucher) {
-                throw new Error(entitlement.reason || entitlement.error || 'SBT mint entitlement was not issued');
-            }
-
-            const hash = await mintTierWithEntitlement(entitlement.voucher);
+            const hash = await mintTier(nextTier.id, effectiveMintPrice);
 
             toast.loading(`Waiting for confirmation...`, { id: tid });
 
@@ -236,7 +228,7 @@ export function SBTUpgradeCard() {
                         </div>
                         {hasDbCanonicalXP && (
                             <p className="text-[9px] font-bold text-yellow-500/80 uppercase tracking-widest animate-pulse">
-                                DB XP verified. Mint uses a signed entitlement voucher, no XP sync transaction required.
+                                XP verified. V16 mints directly on-chain and burns required points.
                             </p>
                         )}
                     </div>
@@ -294,7 +286,7 @@ export function SBTUpgradeCard() {
 
                 <button
                     onClick={handleUpgrade}
-                    disabled={!hasDbCanonicalXP || isSoldOut || !isSbtFeatureEnabled || isGasExpensive}
+                    disabled={!hasDbCanonicalXP || isSoldOut || !isSbtFeatureEnabled || isGasExpensive || !hasEnoughETH}
                     className={`w-full min-h-[56px] py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-1
                         ${isGasExpensive
                             ? 'bg-red-900/20 text-red-500 border border-red-500/30 cursor-not-allowed'

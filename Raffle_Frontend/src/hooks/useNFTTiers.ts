@@ -1,37 +1,9 @@
 import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { ABIS, CONTRACTS } from '../lib/contracts';
-import { callUserBundle, USER_BUNDLE_ACTIONS } from '../lib/apiRoutes';
 import { useMemo } from 'react';
-import { formatEther, parseEther } from 'viem';
+import toast from 'react-hot-toast';
 
 const V12 = CONTRACTS.DAILY_APP as `0x${string}`;
-
-export interface SbtMintEntitlement {
-    wallet: string;
-    tier: number;
-    tier_name: string;
-    db_total_xp: number;
-    required_xp: number;
-    current_onchain_tier: number;
-    current_onchain_xp: number;
-    mint_price_wei: string;
-    contract_address: string;
-    verifier_address: string;
-    chain_id: number;
-    deadline: number;
-    expires_at: string;
-    nonce: string;
-    signature: string;
-}
-
-export interface SbtMintEntitlementResult {
-    success: boolean;
-    eligible: boolean;
-    voucher_status: 'signed' | 'not_issued';
-    voucher?: SbtMintEntitlement;
-    reason?: string;
-    error?: string;
-}
 
 export function useNFTTiers() {
     useAccount();
@@ -78,26 +50,18 @@ export function useNFTTiers() {
         };
     }), [bConfig, sConfig, gConfig, pConfig, dConfig, bURI, sURI, gURI, pURI, dURI]);
 
-    // Global Economic Variables
-    const { data: tokenPrice } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'tokenPriceUSD' });
-    const { data: withdrawalFee } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'withdrawalFeeBP' });
     const { data: dailyBonus } = useReadContract({ address: V12, abi: ABIS.DAILY_APP, functionName: 'dailyBonusAmount' });
 
     const economy = useMemo(() => ({
-        tokenPriceUSD: tokenPrice ? formatEther(tokenPrice as bigint) : "0",
-        withdrawalFeeBP: withdrawalFee ? Number(withdrawalFee) : 0,
+        tokenPriceUSD: "0",
+        withdrawalFeeBP: 0,
         dailyBonusAmount: dailyBonus ? Number(dailyBonus) : 0
-    }), [tokenPrice, withdrawalFee, dailyBonus]);
+    }), [dailyBonus]);
 
-    const updateEconomy = async (tokenP: string) => {
-        if (tokenP) {
-            await writeAndWait({
-                address: V12,
-                abi: ABIS.DAILY_APP,
-                functionName: 'setTokenPriceUSD',
-                args: [parseEther(tokenP)]
-            });
-        }
+    const unsupportedV16Setting = async (label: string) => {
+        const message = `${label} is not available on DailyApp V16. Use system settings, Raffle, MasterX, or token pointer controls instead.`;
+        toast.error(message);
+        throw new Error(message);
     };
 
     const setCreatorToken = async (tokenAddr: `0x${string}`) => {
@@ -128,21 +92,16 @@ export function useNFTTiers() {
     };
 
     const setPaymentTokenStatus = async (tokenAddr: `0x${string}`, status: boolean, decimals = 18, symbol = '') => {
-        return await writeAndWait({
-            address: V12,
-            abi: ABIS.DAILY_APP,
-            functionName: 'setAllowedToken',
-            args: [tokenAddr, status, decimals, symbol]
-        });
+        void tokenAddr;
+        void status;
+        void decimals;
+        void symbol;
+        return unsupportedV16Setting('DailyApp token allowlist');
     };
 
     const setWithdrawalFeeBP = async (feeBP: number | string | bigint) => {
-        return await writeAndWait({
-            address: V12,
-            abi: ABIS.DAILY_APP,
-            functionName: 'setWithdrawalFee',
-            args: [BigInt(feeBP as string | number | bigint)]
-        });
+        void feeBP;
+        return unsupportedV16Setting('DailyApp withdrawal fee');
     };
 
     const setDailyBonusAmount = async (amount: number | string | bigint) => {
@@ -157,21 +116,16 @@ export function useNFTTiers() {
     };
 
     const setAutoApproveSponsorship = async (status: boolean) => {
-        return await writeAndWait({
-            address: V12,
-            abi: ABIS.DAILY_APP,
-            functionName: 'setAutoApproveSponsorship',
-            args: [status]
-        });
+        void status;
+        return unsupportedV16Setting('DailyApp sponsorship auto-approve');
     };
 
     const setSponsorshipSettings = async (rewardClaim: number | string | bigint, tasksGoal: number | string | bigint, minPool: number | string | bigint, fee: number | string | bigint) => {
-        return await writeAndWait({
-            address: V12,
-            abi: ABIS.DAILY_APP,
-            functionName: 'setSponsorshipParams',
-            args: [BigInt(rewardClaim as string | number | bigint), BigInt(tasksGoal as string | number | bigint), BigInt(minPool as string | number | bigint), BigInt(fee as string | number | bigint)]
-        });
+        void rewardClaim;
+        void tasksGoal;
+        void minPool;
+        void fee;
+        return unsupportedV16Setting('DailyApp sponsorship settings');
     };
 
     const updateTierConfig = async (id: number, points: number | string | bigint, price: bigint, multiplier: number | string | bigint, bonus: number | string | bigint, maxSupply: number | string | bigint, isOpen: boolean) => {
@@ -222,41 +176,6 @@ export function useNFTTiers() {
         return hash;
     };
 
-    const mintTierWithEntitlement = async (voucher: SbtMintEntitlement) => {
-        const hash = await writeContractAsync({
-            address: V12,
-            abi: ABIS.DAILY_APP,
-            functionName: 'mintNFTWithEntitlement',
-            args: [{
-                wallet: voucher.wallet as `0x${string}`,
-                targetContract: voucher.contract_address as `0x${string}`,
-                targetTier: voucher.tier,
-                requiredXp: BigInt(voucher.required_xp),
-                nonce: BigInt(voucher.nonce),
-                deadline: BigInt(voucher.deadline)
-            }, voucher.signature as `0x${string}`],
-            value: BigInt(voucher.mint_price_wei || '0')
-        });
-        return hash;
-    };
-
-    const requestMintEntitlement = async (
-        wallet: string,
-        requestedTier: number,
-        signature: string,
-        message: string
-    ): Promise<SbtMintEntitlementResult> => {
-        const response = await callUserBundle(USER_BUNDLE_ACTIONS.SBT_MINT_ENTITLEMENT, {
-            wallet,
-            requested_tier: requestedTier,
-            signature,
-            message
-        });
-        const data = await response.json() as SbtMintEntitlementResult;
-        if (!response.ok) throw new Error(data.error || data.reason || 'Failed to request SBT mint entitlement');
-        return data;
-    };
-
     const refetch = () => { r1(); r2(); r3(); r4(); r5(); };
 
     return {
@@ -266,10 +185,11 @@ export function useNFTTiers() {
         updateBatchConfig,
         updateTierURI,
         toggleTier,
-        updateEconomy,
+        updateEconomy: async (tokenP: string) => {
+            void tokenP;
+            return unsupportedV16Setting('DailyApp token price');
+        },
         mintTier,
-        mintTierWithEntitlement,
-        requestMintEntitlement,
         setCreatorToken,
         setUSDCToken,
         setMasterX,

@@ -1,5 +1,5 @@
 ﻿# ≡ƒÄ» FEATURE WORKFLOW: SOURCE OF TRUTH (v3.63.0)
-**Last Updated**: 2026-05-11T12:00:00+07:00 ΓÇö Admin Architecture Consolidation (v3.63.0)
+**Last Updated**: 2026-05-22 ΓÇö DailyApp V16 deployment, AccessControl dashboard, and ABI/runtime compatibility update
 **Status**: ≡ƒ¢í∩╕Å ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -12,13 +12,18 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 | Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
 | :--- | :--- | :--- | :--- |
 | **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
-| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | 09 Mei 2026 | Satellite Tugas Multi-Token (USDC/ETH). Decimal-Aware (6-dec base). |
-| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Legacy Satellite. Masih didukung untuk klaim reward lama. |
+| **DailyApp V16** | `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353` | 22 Mei 2026 | Active unified XP ledger + Soulbound NFT. Semua XP on-chain. UUPS upgradeable. |
+| **DailyApp V15** | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | 18 Mei 2026 | Legacy fallback. Digantikan V16. |
+| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | 09 Mei 2026 | Deprecated Satellite Tugas Multi-Token (USDC/ETH). |
+| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Deprecated Satellite. |
 | **Raffle Manager** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
 
 > [!WARNING]
 > Mismatched Contract Alert: Jika API atau interaksi on-chain `revert`, hal pertama yang harus dicek oleh Sentinel Agent adalah apakah `.env` (`VITE_MASTER_X_ADDRESS_SEPOLIA`, dll) sudah persis menunjuk ke alamat tabel di atas.
+
+> [!IMPORTANT]
+> DailyApp frontend resolution MUST prefer `VITE_DAILY_APP_V16_ADDRESS`. Admin role handover is performed in Admin Dashboard -> Role Management -> DailyApp V16 AccessControl via `grantRole` / `revokeRole`.
 
 ---
 
@@ -52,7 +57,7 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 ### 2.1 The Claim Execution
 - **Triggers**: User klik "Claim" pada `DailyClaimModal`.
 - **Pre-Check (Frontend)**: `ProfilePage.jsx` membaca **HANYA** dari `userData.lastDailyBonusClaim` (on-chain) untuk menghitung sisa waktu cooldown (Single Source of Truth).
-- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V13.2** (`0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D`).
+- **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V16** (`0xb592D6819Ea310d83034cD80FDDC2e754D0a5353`) melalui `VITE_DAILY_APP_V16_ADDRESS`.
 - **Success**: MetaMask/Wallet mengembalikan `tx_hash`.
 
 ### 2.2 The Backend Synchronization (Hardened v3.61.0)
@@ -125,24 +130,23 @@ Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersif
 ### 5.1 The Upgrade Execution
 - **Triggers**: UI memunculkan tombol "Mint / Upgrade" jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.
 - **Rules (Mandatory)**:
-    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV15` akan me-revert transaksi jika `tier != currentTier + 1`.
+    1. **Sequential Upgrade**: User **DILARANG** melompat tier. Upgrade harus mengikuti urutan Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond. Kontrak `DailyAppV16` akan me-revert transaksi jika `tier != currentTier + 1`.
     2. **Soulbound Mandate**: NFT SBT bersifat **Non-Transferable**. Setiap upaya transfer antar wallet (kecuali mint/burn) akan di-revert oleh kontrak.
 - **Workflow**:
     1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 3 syarat utama: `hasTotalXP` (DB canonical), `hasEnoughETH` (balance), dan `!isSoldOut` / `isOpen` dari `DAILY_APP.nftConfigs`.
     2. **Cost Transparency**: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.
     3. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.
-    4. **Entitlement Request**: Frontend meminta signed voucher ke `/api/user-bundle?action=sbt-mint-entitlement`. Backend memvalidasi identity, `user_profiles.total_xp`, tier saat ini, supply, dan status open sebelum menandatangani EIP-712 entitlement.
-    5. **Minting**: Frontend memanggil `useNFTTiers.mintTierWithEntitlement(...)`, yang menulis ke `DAILY_APP.mintNFTWithEntitlement()`.
-    6. **On-Chain Enforcement**: `SBTMintEntitlementVerifier` mengunci wallet, target contract, target tier, nonce, dan deadline. `DailyAppV15` tetap menegakkan sequential tier, price, dan supply, tetapi jalur entitlement tidak lagi bergantung pada XP on-chain yang bisa stale.
-    7. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
-    8. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
-    9. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas dan sinkronisasi tier/log pasca mint.
+    4. **Minting**: Frontend memanggil `useNFTTiers.mintTier(...)`, yang menulis langsung ke `DAILY_APP.mintNFT(uint8 tier)` pada `DailyAppV16`.
+    5. **On-Chain Enforcement**: `DailyAppV16` menegakkan sequential tier, price, supply, status tier, dan XP on-chain. Tidak ada jalur entitlement voucher untuk mint V16.
+    6. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
+    7. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
+    8. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas dan sinkronisasi tier/log pasca mint.
 
 > [!WARNING]
-> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Untuk jalur baru, gunakan `useNFTTiers.mintTierWithEntitlement(voucher)` yang memanggil `DAILY_APP.mintNFTWithEntitlement()`.
+> Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Untuk jalur V16, gunakan `useNFTTiers.mintTier(tier, value)` yang memanggil `DAILY_APP.mintNFT(uint8)`.
 
 > [!IMPORTANT]
-> Deployment jalur entitlement mewajibkan 3 langkah: set `SBT_MINT_ENTITLEMENT_VERIFIER_ADDRESS`, panggil `DailyAppV15.setSBTMintEntitlementVerifier(verifier)`, lalu grant `CONSUMER_ROLE` pada verifier ke alamat `DailyAppV15`.
+> Jalur entitlement V15/Voucher sekarang legacy dan tidak boleh dipakai untuk DailyApp V16. Frontend ABI harus berasal dari `artifacts/contracts/DailyAppV16.sol/DailyAppV16.json`, lalu disinkronkan ke `Raffle_Frontend/src/lib/daily_app_abi.json` dan `Raffle_Frontend/src/lib/abis_data.txt`.
 
 ---
 
@@ -323,7 +327,7 @@ Integrasi Basename untuk eliminasi bot dan standardisasi identitas on-chain.
 Dokumen tersebut mencakup (15 section):
 1. Arsitektur tingkat tinggi (Mermaid diagram)
 2. Dual Task Pipeline (On-Chain vs Off-Chain)
-3. Smart Contract Registry & Functions (DailyApp V13.2)
+3. Smart Contract Registry & Functions (DailyApp V16 active, V15/V14/V13 legacy)
 4. Database Schema (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs, fn_increment_xp)
 5. API Routing & Bundle Map (tasks-bundle.js handlers)
 6. On-Chain Task Workflow E2E (Sequence diagram)
@@ -505,4 +509,3 @@ Sistem ekonomi sirkular yang memberikan transparansi bagi admin dan insentif bag
 
 ---
 *End of Source of Truth Document - Nexus v3.59.5 LOCKED.*
-

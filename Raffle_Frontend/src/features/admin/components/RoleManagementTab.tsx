@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Shield, Crown, Wrench, AlertCircle, RefreshCw } from 'lucide-react';
+import { Shield, Crown, Wrench, AlertCircle, RefreshCw, KeyRound } from 'lucide-react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { useCMS } from '../../../hooks/useCMS';
 import { supabase } from '../../../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { isAddress, keccak256, stringToHex } from 'viem';
+import { isAddress, keccak256, toBytes } from 'viem';
 import { useDailyAppAdmin } from '../../../hooks/useContract';
 
 interface Operator {
@@ -12,14 +12,38 @@ interface Operator {
     role: 'Operator' | 'Admin';
 }
 
+const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000'; // gitleaks:allow - OpenZeppelin DEFAULT_ADMIN_ROLE is zero bytes32, not a private key.
+const DAILY_APP_ACCESS_ROLES = [
+    { label: 'ADMIN_ROLE', value: 'ADMIN_ROLE' },
+    { label: 'VERIFIER_ROLE', value: 'VERIFIER_ROLE' },
+    { label: 'RAFFLE_ROLE', value: 'RAFFLE_ROLE' },
+    { label: 'SOCIAL_ROLE', value: 'SOCIAL_ROLE' },
+    { label: 'UGC_ROLE', value: 'UGC_ROLE' },
+    { label: 'MOJO_ROLE', value: 'MOJO_ROLE' },
+    { label: 'SWAP_ROLE', value: 'SWAP_ROLE' },
+    { label: 'PURCHASE_ROLE', value: 'PURCHASE_ROLE' },
+    { label: 'DEFAULT_ADMIN_ROLE', value: 'DEFAULT_ADMIN_ROLE' },
+] as const;
+
+type DailyAppAccessRole = typeof DAILY_APP_ACCESS_ROLES[number]['value'];
+type RoleAction = 'grant' | 'revoke';
+
+const getRoleId = (role: DailyAppAccessRole) => {
+    if (role === 'DEFAULT_ADMIN_ROLE') return DEFAULT_ADMIN_ROLE;
+    return keccak256(toBytes(role));
+};
+
 export function RoleManagementTab() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
     const { grantOperator, revokeOperator, showSuccessToast, refetchAll, isAdmin, isLoading: loadingCMS } = useCMS();
-    const { grantRole, revokeRole: _revokeRole } = useDailyAppAdmin();
+    const { grantRole, revokeRole } = useDailyAppAdmin();
     const [isSaving, setIsSaving] = useState(false);
     const [operatorAddress, setOperatorAddress] = useState('');
     const [verifierAddress, setVerifierAddress] = useState(import.meta.env.VITE_VERIFIER_ADDRESS || '0x52260c30697674a7C837FEB2af21bBf3606795C8');
+    const [accessControlAddress, setAccessControlAddress] = useState('');
+    const [selectedDailyAppRole, setSelectedDailyAppRole] = useState<DailyAppAccessRole>('UGC_ROLE');
+    const [selectedRoleAction, setSelectedRoleAction] = useState<RoleAction>('grant');
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     // Operators list (fetched from database)
@@ -168,7 +192,7 @@ export function RoleManagementTab() {
         const tid = toast.loading("Granting verifier role...");
 
         try {
-            const VERIFIER_ROLE = keccak256(stringToHex('VERIFIER_ROLE', { size: 32 }));
+            const VERIFIER_ROLE = getRoleId('VERIFIER_ROLE');
             const hash = await grantRole(VERIFIER_ROLE, verifierAddress);
             showSuccessToast("Verifier Role Granted on Blockchain!", hash);
 
@@ -196,6 +220,34 @@ export function RoleManagementTab() {
         } catch (e: unknown) {
             const err = e as { message?: string };
             toast.error(err.message || "Grant verifier failed", { id: tid });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleApplyDailyAppRole = async () => {
+        if (!isAddress(accessControlAddress)) {
+            toast.error("Invalid target address");
+            return;
+        }
+
+        setIsSaving(true);
+        const roleId = getRoleId(selectedDailyAppRole);
+        const actionLabel = selectedRoleAction === 'grant' ? 'Granting' : 'Revoking';
+        const tid = toast.loading(`${actionLabel} ${selectedDailyAppRole}...`);
+
+        try {
+            const hash = selectedRoleAction === 'grant'
+                ? await grantRole(roleId, accessControlAddress)
+                : await revokeRole(roleId, accessControlAddress);
+
+            showSuccessToast(`${selectedDailyAppRole} ${selectedRoleAction === 'grant' ? 'granted' : 'revoked'} on DailyApp!`, hash);
+            toast.success("DailyApp AccessControl updated", { id: tid });
+            setAccessControlAddress('');
+            refetchAll();
+        } catch (e: unknown) {
+            const err = e as { shortMessage?: string; message?: string };
+            toast.error(err.shortMessage || err.message || "Role transaction failed", { id: tid });
         } finally {
             setIsSaving(false);
         }
@@ -293,6 +345,57 @@ export function RoleManagementTab() {
                     >
                         Authorize Verifier
                     </button>
+                </div>
+            </div>
+
+            {/* DailyApp V16 AccessControl */}
+            <div className="glass-card p-6 bg-[#121214] border border-white/5 rounded-3xl text-left">
+                <h3 className="label-native text-white mb-4 flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-emerald-400" />
+                    DailyApp V16 AccessControl
+                </h3>
+                <p className="label-native text-slate-500 mb-4 leading-relaxed">
+                    Manage runtime contract permissions using <code className="text-emerald-400">grantRole</code> and <code className="text-red-400">revokeRole</code>.
+                </p>
+
+                <div className="grid grid-cols-1 lg:grid-cols-[160px_220px_minmax(0,1fr)_140px] gap-3">
+                    <select
+                        value={selectedRoleAction}
+                        onChange={(e) => setSelectedRoleAction(e.target.value as RoleAction)}
+                        className="bg-black/40 border border-white/5 p-3 rounded-xl text-white focus:border-emerald-500/50 outline-none transition-all label-native"
+                    >
+                        <option value="grant">Grant</option>
+                        <option value="revoke">Revoke</option>
+                    </select>
+                    <select
+                        value={selectedDailyAppRole}
+                        onChange={(e) => setSelectedDailyAppRole(e.target.value as DailyAppAccessRole)}
+                        className="bg-black/40 border border-white/5 p-3 rounded-xl text-white focus:border-emerald-500/50 outline-none transition-all label-native"
+                    >
+                        {DAILY_APP_ACCESS_ROLES.map((role) => (
+                            <option key={role.value} value={role.value}>{role.label}</option>
+                        ))}
+                    </select>
+                    <input
+                        type="text"
+                        value={accessControlAddress}
+                        onChange={(e) => setAccessControlAddress(e.target.value)}
+                        placeholder="0x... (wallet or contract address)"
+                        className="min-w-0 bg-black/40 border border-white/5 p-3 rounded-xl text-white focus:border-emerald-500/50 outline-none transition-all font-mono value-native"
+                    />
+                    <button
+                        onClick={handleApplyDailyAppRole}
+                        disabled={isSaving || !accessControlAddress}
+                        className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 disabled:bg-slate-800/20 disabled:border-slate-800/30 disabled:text-slate-600 px-6 py-3 rounded-xl label-native transition-all"
+                    >
+                        Apply
+                    </button>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-3">
+                    <p className="label-native text-yellow-200 leading-relaxed">
+                        Production handover: grant the role to the new service wallet or multisig first, verify the transaction, then revoke the old deployer role.
+                    </p>
                 </div>
             </div>
 

@@ -1,10 +1,17 @@
 {
   "type": "module",
+  "engines": {
+    "node": ">=20 <22"
+  },
   "scripts": {
     "lurah": "node test-lurah.cjs",
     "gitleaks-check": "gitleaks-secret-scanner",
     "gitleaks-full": "gitleaks-secret-scanner --diff-mode all",
     "gitleaks-history": "gitleaks-secret-scanner --diff-mode history",
+    "compile:contracts": "hardhat compile",
+    "size:contracts": "hardhat size-contracts",
+    "predeploy:v16": "node --check hardhat.config.cjs && node --check scripts/deployments/deployV16.cjs && hardhat compile && hardhat size-contracts",
+    "deploy:v16": "hardhat run scripts/deployments/deployV16.cjs --network base-sepolia",
     "prepare": "husky",
     "orchestron": "node scripts/orchestrator/nexus_orchestrator.cjs",
     "ncc-sentinel": "node scripts/nexus/ncc-sentinel.cjs",
@@ -27,9 +34,10 @@
     "@nomicfoundation/hardhat-verify": "2.1.3",
     "@nomicfoundation/ignition-core": "0.15.15",
     "@openzeppelin/contracts": "5.4.0",
+    "@openzeppelin/contracts-upgradeable": "^5.4.0",
+    "@openzeppelin/hardhat-upgrades": "^3.9.1",
     "@supabase/mcp-server-supabase": "0.7.0",
     "@typechain/ethers-v6": "0.5.1",
-    "zod": "^3.25.0",
     "@typechain/hardhat": "9.1.0",
     "@types/chai": "^4.3.14",
     "@types/mocha": "^10.0.6",
@@ -45,7 +53,8 @@
     "solidity-coverage": "0.8.11",
     "ts-node": "10.9.2",
     "typechain": "8.3.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "zod": "^3.25.0"
   },
   "dependencies": {
     "@sentry/node": "^10.53.1",

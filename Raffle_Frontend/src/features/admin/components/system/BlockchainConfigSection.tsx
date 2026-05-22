@@ -126,7 +126,7 @@ export function BlockchainConfigSection() {
     const { data: qSilverWeight } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'silverWeight' });
     const { data: qBronzeWeight } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'bronzeWeight' });
     const { data: qLastDist } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'lastDistributeTimestamp' });
-    const { data: qWithdrawFee } = useReadContract({ address: CONTRACTS.DAILY_APP as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'withdrawalFeeBP' });
+    const qWithdrawFee = undefined;
     const { data: qTicketPriceUSDC } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'ticketPriceUSDC' });
     const { data: qMaxGasPrice } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'maxGasPrice' });
     const { data: qPointsPerTicket } = useReadContract({ address: CONTRACTS.MASTER_X as `0x${string}`, abi: MASTER_X_ABI, functionName: 'pointsPerTicket' });

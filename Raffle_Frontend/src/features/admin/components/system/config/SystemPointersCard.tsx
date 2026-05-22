@@ -119,18 +119,8 @@ export function SystemPointersCard({
                                                     setIsSaving(true);
                                                     const tid = toast.loading(`Removing ${token.symbol}...`);
                                                     try {
-                                                        // Sequential: 1. Contract call with correct decimals
-                                                        const hash = await writeContractAsync({
-                                                            address: CONTRACTS.DAILY_APP as `0x${string}`,
-                                                            abi: DAILY_APP_ABI,
-                                                            functionName: 'setAllowedToken',
-                                                            args: [token.address, false, token.decimals || 18, token.symbol || ''],
-                                                        });
-                                                        await publicClient!.waitForTransactionReceipt({ hash });
-
-                                                        // Sequential: 2. DB sync only after contract success
                                                         await handleSyncTokenToDb('REMOVE_TOKEN_DB', { address: token.address, chain_id: token.chain_id });
-                                                        toast.success(`${token.symbol} removed!`, { id: tid });
+                                                        toast.success(`${token.symbol} removed from DB allowlist. DailyApp V16 has no token allowlist setter.`, { id: tid });
                                                     } catch (e: unknown) {
                                                         const err = e as { shortMessage?: string; message?: string };
                                                         toast.error(err.shortMessage || err.message || "Remove failed", { id: tid });
@@ -205,17 +195,6 @@ export function SystemPointersCard({
                                         return;
                                     }
 
-                                    // Sequential: 1. Contract call first
-                                    toast.loading("Setting on-chain allowlist...", { id: tid });
-                                    const hash = await writeContractAsync({
-                                        address: CONTRACTS.DAILY_APP as `0x${string}`,
-                                        abi: DAILY_APP_ABI,
-                                        functionName: 'setAllowedToken',
-                                        args: [addr, true, decimals, newTokenWhitelist.symbol.trim()],
-                                    });
-                                    await publicClient!.waitForTransactionReceipt({ hash });
-
-                                    // Sequential: 2. DB sync only after contract success
                                     toast.loading("Syncing to database...", { id: tid });
                                     await handleSyncTokenToDb('WHITELIST_TOKEN_DB', {
                                         address: addr.toLowerCase(),
@@ -224,7 +203,7 @@ export function SystemPointersCard({
                                         chain_id: chainId
                                     });
 
-                                    toast.success("Token whitelisted on-chain & synced to DB!", { id: tid });
+                                    toast.success("Token synced to DB allowlist. DailyApp V16 has no token allowlist setter.", { id: tid });
                                     setNewTokenWhitelist({ address: '', symbol: '', decimals: '18', chain_id: String(chainId) });
                                 } catch (e: unknown) {
                                     const err = e as { shortMessage?: string; message?: string };

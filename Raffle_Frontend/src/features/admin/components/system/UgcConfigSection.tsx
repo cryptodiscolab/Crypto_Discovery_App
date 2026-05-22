@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Shield, Loader2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import { useAccount, useSignMessage } from 'wagmi';
-import { CONTRACTS, DAILY_APP_ABI, RAFFLE_ABI } from '../../../../lib/contracts';
+import { CONTRACTS, RAFFLE_ABI } from '../../../../lib/contracts';
 import { useReadContract } from 'wagmi';
-import { formatUnits } from 'viem';
 import toast from 'react-hot-toast';
 
 export function UgcConfigSection() {
@@ -22,11 +21,7 @@ export function UgcConfigSection() {
     const [drifts, setDrifts] = useState<Record<string, string>>({});
 
     // On-chain Data for Parity Audit
-    const { data: minRewardPool } = useReadContract({
-        address: CONTRACTS.DAILY_APP,
-        abi: DAILY_APP_ABI,
-        functionName: 'minRewardPoolValue',
-    });
+    const minRewardPool = undefined;
 
     const { data: maintenanceFee } = useReadContract({
         address: CONTRACTS.RAFFLE,
@@ -64,7 +59,7 @@ export function UgcConfigSection() {
 
         // Audit Listing Fee vs Contract minRewardPool (assuming Listing Fee >= minRewardPool)
         if (minRewardPool) {
-            const contractMin = parseFloat(formatUnits(minRewardPool, 6)); // Assuming 6 decimals for USDC/Points
+            const contractMin = 0;
             if (parseFloat(currentConfig.listing_fee_usdc || '0') < contractMin) {
                 newDrifts.listing_fee = `Contract requires min ${contractMin} USDC`;
             }
@@ -76,7 +71,7 @@ export function UgcConfigSection() {
     async function handleEmergencySync() {
         if (!minRewardPool) return toast.error("Contract data not available");
 
-        const contractMin = formatUnits(minRewardPool, 6);
+        const contractMin = String(minRewardPool || 0);
         const updated = {
             ...config,
             listing_fee_usdc: contractMin

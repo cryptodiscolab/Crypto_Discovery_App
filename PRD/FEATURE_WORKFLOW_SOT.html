@@ -1,5 +1,5 @@
 <p>﻿# ≡ƒÄ» FEATURE WORKFLOW: SOURCE OF TRUTH (v3.63.0)
-<strong>Last Updated</strong>: 2026-05-11T12:00:00+07:00 ΓÇö Admin Architecture Consolidation (v3.63.0)
+<strong>Last Updated</strong>: 2026-05-22 ΓÇö DailyApp V16 deployment, AccessControl dashboard, and ABI/runtime compatibility update
 <strong>Status</strong>: ≡ƒ¢í∩╕Å ARCHITECTURALLY HARDENED</p>
 <p>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. <strong>JANGAN berhalusinasi atau menebak</strong>. Jika ada yang error, rujuk dokumen ini.</p>
 <hr>
@@ -21,16 +21,28 @@
 <td align="left">Controller utama, Distribusi XP, NFT/SBT Mint &amp; Upgrade.</td>
 </tr>
 <tr>
+<td align="left"><strong>DailyApp V16</strong></td>
+<td align="left"><code>0xb592D6819Ea310d83034cD80FDDC2e754D0a5353</code></td>
+<td align="left">22 Mei 2026</td>
+<td align="left">Active unified XP ledger + Soulbound NFT. Semua XP on-chain. UUPS upgradeable.</td>
+</tr>
+<tr>
+<td align="left"><strong>DailyApp V15</strong></td>
+<td align="left"><code>0x0D6f339795EeA5129461388F25dE4f87e92b8DA2</code></td>
+<td align="left">18 Mei 2026</td>
+<td align="left">Legacy fallback. Digantikan V16.</td>
+</tr>
+<tr>
 <td align="left"><strong>DailyApp V14</strong></td>
 <td align="left"><code>0x888fE02bd09642de385E55DdC6D8a7Ab5580f834</code></td>
 <td align="left">09 Mei 2026</td>
-<td align="left">Satellite Tugas Multi-Token (USDC/ETH). Decimal-Aware (6-dec base).</td>
+<td align="left">Deprecated Satellite Tugas Multi-Token (USDC/ETH).</td>
 </tr>
 <tr>
 <td align="left"><strong>DailyApp V13.2</strong></td>
 <td align="left"><code>0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D</code></td>
 <td align="left">02 April 2026</td>
-<td align="left">Legacy Satellite. Masih didukung untuk klaim reward lama.</td>
+<td align="left">Deprecated Satellite.</td>
 </tr>
 <tr>
 <td align="left"><strong>Raffle Manager</strong></td>
@@ -48,6 +60,10 @@
 <blockquote>
 <p>[!WARNING]
 Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>, hal pertama yang harus dicek oleh Sentinel Agent adalah apakah <code>.env</code> (<code>VITE_MASTER_X_ADDRESS_SEPOLIA</code>, dll) sudah persis menunjuk ke alamat tabel di atas.</p>
+</blockquote>
+<blockquote>
+<p>[!IMPORTANT]
+DailyApp frontend resolution MUST prefer <code>VITE_DAILY_APP_V16_ADDRESS</code>. Admin role handover is performed in Admin Dashboard -&gt; Role Management -&gt; DailyApp V16 AccessControl via <code>grantRole</code> / <code>revokeRole</code>.</p>
 </blockquote>
 <hr>
 <h2>≡ƒöæ 1. Login &amp; Identity Management Flow</h2>
@@ -83,7 +99,7 @@ Mismatched Contract Alert: Jika API atau interaksi on-chain <code>revert</code>,
 <ul>
 <li><strong>Triggers</strong>: User klik &quot;Claim&quot; pada <code>DailyClaimModal</code>.</li>
 <li><strong>Pre-Check (Frontend)</strong>: <code>ProfilePage.jsx</code> membaca <strong>HANYA</strong> dari <code>userData.lastDailyBonusClaim</code> (on-chain) untuk menghitung sisa waktu cooldown (Single Source of Truth).</li>
-<li><strong>Execution</strong>: Frontend memanggil fungsi <code>claimDailyBonus()</code> di kontrak <strong>DailyApp V13.2</strong> (<code>0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D</code>).</li>
+<li><strong>Execution</strong>: Frontend memanggil fungsi <code>claimDailyBonus()</code> di kontrak <strong>DailyApp V16</strong> (<code>0xb592D6819Ea310d83034cD80FDDC2e754D0a5353</code>) melalui <code>VITE_DAILY_APP_V16_ADDRESS</code>.</li>
 <li><strong>Success</strong>: MetaMask/Wallet mengembalikan <code>tx_hash</code>.</li>
 </ul>
 <h3>2.2 The Backend Synchronization (Hardened v3.61.0)</h3>
@@ -180,25 +196,29 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <ul>
 <li><strong>Triggers</strong>: UI memunculkan tombol &quot;Mint / Upgrade&quot; jika tier database (misal: Fan) lebih tinggi dari tier NFT di wallet.</li>
 <li><strong>Rules (Mandatory)</strong>:<ol>
-<li><strong>Sequential Upgrade</strong>: User <strong>DILARANG</strong> melompat tier. Upgrade harus mengikuti urutan Rookie -&gt; Bronze -&gt; Silver -&gt; Gold -&gt; Platinum -&gt; Diamond. Kontrak <code>DailyAppV13</code> akan me-revert transaksi jika <code>tier != currentTier + 1</code>.</li>
+<li><strong>Sequential Upgrade</strong>: User <strong>DILARANG</strong> melompat tier. Upgrade harus mengikuti urutan Rookie -&gt; Bronze -&gt; Silver -&gt; Gold -&gt; Platinum -&gt; Diamond. Kontrak <code>DailyAppV16</code> akan me-revert transaksi jika <code>tier != currentTier + 1</code>.</li>
 <li><strong>Soulbound Mandate</strong>: NFT SBT bersifat <strong>Non-Transferable</strong>. Setiap upaya transfer antar wallet (kecuali mint/burn) akan di-revert oleh kontrak.</li>
 </ol>
 </li>
 <li><strong>Workflow</strong>:<ol>
-<li><strong>Pre-Check UI</strong>: <code>SBTUpgradeCard</code> memverifikasi 4 syarat: <code>hasTotalXP</code> (DB), <code>hasOnChainXP</code> (MASTER_X), <code>hasEnoughETH</code> (balance), dan <code>!isSoldOut</code> (DAILY_APP nftConfigs).</li>
+<li><strong>Pre-Check UI</strong>: <code>SBTUpgradeCard</code> memverifikasi 3 syarat utama: <code>hasTotalXP</code> (DB canonical), <code>hasEnoughETH</code> (balance), dan <code>!isSoldOut</code> / <code>isOpen</code> dari <code>DAILY_APP.nftConfigs</code>.</li>
 <li><strong>Cost Transparency</strong>: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.</li>
 <li><strong>ETH Pre-Check</strong>: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.</li>
-<li><strong>Minting</strong>: Frontend memanggil <code>mintNFT(tierId, mintPrice)</code> dari <code>useNFTTiers</code> hook ΓÇö yang memanggil <code>DAILY_APP.mintNFT()</code>. </li>
-<li><strong>On-Chain Enforcement</strong>: Kontrak memvalidasi urutan tier dan membakar XP yang sesuai.</li>
+<li><strong>Minting</strong>: Frontend memanggil <code>useNFTTiers.mintTier(...)</code>, yang menulis langsung ke <code>DAILY_APP.mintNFT(uint8 tier)</code> pada <code>DailyAppV16</code>.</li>
+<li><strong>On-Chain Enforcement</strong>: <code>DailyAppV16</code> menegakkan sequential tier, price, supply, status tier, dan XP on-chain. Tidak ada jalur entitlement voucher untuk mint V16.</li>
 <li><strong>Event Emitted</strong>: Blockchain mencatat perubahan kepemilikan NFT.</li>
 <li><strong>State Sync</strong>: UI menampilkan banner &quot;NFT Minted!&quot; dan menghapus tombol upgrade.</li>
-<li><strong>DB Log</strong>: Signature request ke <code>/api/user-bundle?action=sync-sbt-upgrade</code> untuk logging aktivitas.</li>
+<li><strong>DB Log</strong>: Signature request ke <code>/api/user-bundle?action=sync-sbt-upgrade</code> untuk logging aktivitas dan sinkronisasi tier/log pasca mint.</li>
 </ol>
 </li>
 </ul>
 <blockquote>
 <p>[!WARNING]
-Jangan pernah memanggil <code>useSBT.upgradeTier()</code> untuk minting tier NFT dari <code>SBTUpgradeCard</code>. Itu adalah contract yang berbeda (<code>MASTER_X</code>) dengan logika yang berbeda. Gunakan <code>useNFTTiers.mintNFT(id, price)</code> yang memanggil <code>DAILY_APP.mintNFT()</code>.</p>
+Jangan pernah memanggil <code>useSBT.upgradeTier()</code> untuk minting tier NFT dari <code>SBTUpgradeCard</code>. Itu adalah contract yang berbeda (<code>MASTER_X</code>) dengan logika yang berbeda. Untuk jalur V16, gunakan <code>useNFTTiers.mintTier(tier, value)</code> yang memanggil <code>DAILY_APP.mintNFT(uint8)</code>.</p>
+</blockquote>
+<blockquote>
+<p>[!IMPORTANT]
+Jalur entitlement V15/Voucher sekarang legacy dan tidak boleh dipakai untuk DailyApp V16. Frontend ABI harus berasal dari <code>artifacts/contracts/DailyAppV16.sol/DailyAppV16.json</code>, lalu disinkronkan ke <code>Raffle_Frontend/src/lib/daily_app_abi.json</code> dan <code>Raffle_Frontend/src/lib/abis_data.txt</code>.</p>
 </blockquote>
 <hr>
 <h2>≡ƒÜª 6. Definisi &quot;Healthy State&quot; Ekosistem (CHECKLIST)</h2>
@@ -415,7 +435,7 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 <ol>
 <li>Arsitektur tingkat tinggi (Mermaid diagram)</li>
 <li>Dual Task Pipeline (On-Chain vs Off-Chain)</li>
-<li>Smart Contract Registry &amp; Functions (DailyApp V13.2)</li>
+<li>Smart Contract Registry &amp; Functions (DailyApp V16 active, V15/V14/V13 legacy)</li>
 <li>Database Schema (daily_tasks, user_task_claims, point_settings, user_profiles, user_activity_logs, fn_increment_xp)</li>
 <li>API Routing &amp; Bundle Map (tasks-bundle.js handlers)</li>
 <li>On-Chain Task Workflow E2E (Sequence diagram)</li>

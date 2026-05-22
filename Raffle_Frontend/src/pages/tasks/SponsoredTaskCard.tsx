@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Shield, Award, Gift, Loader2 } from 'lucide-react';
-import { useAccount, useSignMessage, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { useVerification } from '../../hooks/useVerification';
 import { useFarcaster } from '../../hooks/useFarcaster';
-import { CONTRACTS, DAILY_APP_ABI } from '../../lib/contracts';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Task, FarcasterProfile } from '../../types/tasks';
@@ -21,28 +20,14 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
     const { profileData } = useFarcaster() as { profileData: FarcasterProfile | null };
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
-    const { writeContractAsync } = useWriteContract();
     const { verifyTask, registerTaskStart, isVerifying } = useVerification(refetchStats);
     const [verifyingStatus, setVerifyingStatus] = useState<'success' | 'fail' | null>(null);
     const [timer, setTimer] = useState(0);
     const [isClaiming, setIsClaiming] = useState(false);
 
-    const usdcAddr = CONTRACTS.USDC;
-    const { data: rawClaimable, refetch: refetchRewards } = useReadContract({
-        address: CONTRACTS.DAILY_APP as `0x${string}`,
-        abi: DAILY_APP_ABI,
-        functionName: 'claimableRewards',
-        args: [address as `0x${string}`, usdcAddr as `0x${string}`],
-        query: { enabled: !!address && !!usdcAddr }
-    });
-
-    const { data: progress } = useReadContract({
-        address: CONTRACTS.DAILY_APP as `0x${string}`,
-        abi: DAILY_APP_ABI,
-        functionName: 'userSponsorshipProgress',
-        args: [address as `0x${string}`, BigInt(sponsorshipId)],
-        query: { enabled: !!address }
-    });
+    const rawClaimable = 0n;
+    const progress = 0;
+    const refetchRewards = async () => {};
 
     const progressCount = Number(progress || 0);
     const isGlobalCompleted = progressCount >= tasks.length;
@@ -92,15 +77,8 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
         const tid = toast.loading("Claiming Mission Reward...");
         setIsClaiming(true);
         try {
-            const hash = await writeContractAsync({
-                address: CONTRACTS.DAILY_APP as `0x${string}`,
-                abi: DAILY_APP_ABI,
-                functionName: 'claimRewards',
-                args: [usdcAddr as `0x${string}`],
-            });
-
-            toast.loading("Mining & Syncing XP...", { id: tid });
-            const syncMsg = `Sync Claim Rewards\nTx: ${hash}\nWallet: ${address}`;
+            toast.loading("Syncing verified mission...", { id: tid });
+            const syncMsg = `Sync verified sponsored mission\nWallet: ${address}\nSponsorship: ${sponsorshipId}`;
             const syncSig = await signMessageAsync({ message: syncMsg });
 
             const res = await fetch('/api/user-bundle', {
@@ -111,7 +89,6 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
                     wallet_address: address,
                     signature: syncSig,
                     message: syncMsg,
-                    tx_hash: hash,
                 }),
             });
 
@@ -170,7 +147,7 @@ export function SponsoredTaskCard({ sponsorshipId, tasks, refetchStats, offChain
                     </div>
                 )}
 
-                {( (verifyingStatus === 'success' && timer === 0) || (rawClaimable && rawClaimable > 0n) ) && (
+                {((verifyingStatus === 'success' && timer === 0) || rawClaimable > 0n) && (
                     <button
                         onClick={handleClaim}
                         disabled={isClaiming}

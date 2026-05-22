@@ -1,8 +1,5 @@
-import { useAdminContract } from '../../../../hooks/useAdminContract';
 import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
-import { useReadContract, usePublicClient } from 'wagmi';
-import { CONTRACTS, DAILY_APP_ABI } from '../../../../lib/contracts';
 import toast from 'react-hot-toast';
 
 export function SponsorshipConfigSection() {
@@ -13,12 +10,11 @@ export function SponsorshipConfigSection() {
     const [minPool, setMinPool] = useState('10');
     const [isSaving, setIsSaving] = useState(false);
 
-    // ✅ Verified function names against active ABI (abis_data.txt)
-    const { data: currentFee } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'sponsorshipPlatformFee' });
-    const { data: currentAutoApprove } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'autoApproveSponsorship' });
-    const { data: currentReward } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'rewardPerClaim' });
-    const { data: currentTasks } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'tasksForReward' });
-    const { data: currentMinPool } = useReadContract({ address: CONTRACTS.DAILY_APP, abi: DAILY_APP_ABI, functionName: 'minRewardPoolValue' });
+    const currentFee = undefined;
+    const currentAutoApprove = undefined;
+    const currentReward = undefined;
+    const currentTasks = undefined;
+    const currentMinPool = undefined;
 
     useEffect(() => {
         if (currentFee) setFee((Number(currentFee) / 1e6).toString());
@@ -28,37 +24,16 @@ export function SponsorshipConfigSection() {
         if (currentMinPool) setMinPool((Number(currentMinPool) / 1e18).toString()); // minRewardPoolValue is in wei
     }, [currentFee, currentAutoApprove, currentReward, currentTasks, currentMinPool]);
 
-    const { writeContractAsync } = useAdminContract();
-    const publicClient = usePublicClient();
-
     const handleSaveSponsorshipConfig = async () => {
         setIsSaving(true);
-        const tid = toast.loading("Updating Sponsorship Params...");
+        const tid = toast.loading("Checking Sponsorship Params...");
         try {
-            const hash1 = await writeContractAsync({
-                address: CONTRACTS.DAILY_APP as `0x${string}`,
-                abi: DAILY_APP_ABI,
-                functionName: 'setSponsorshipParams',
-                args: [
-                    BigInt(Math.floor(Number(rewardPerClaim) * 1e18)),
-                    BigInt(tasksForReward),
-                    BigInt(Math.floor(Number(minPool) * 1e18)),
-                    BigInt(Math.floor(Number(fee) * 1e6))
-                ],
-            });
-            await publicClient!.waitForTransactionReceipt({ hash: hash1 });
-
-            if (autoApprove !== currentAutoApprove) {
-                const hash2 = await writeContractAsync({
-                    address: CONTRACTS.DAILY_APP as `0x${string}`,
-                    abi: DAILY_APP_ABI,
-                    functionName: 'setAutoApproveSponsorship',
-                    args: [autoApprove],
-                });
-                await publicClient!.waitForTransactionReceipt({ hash: hash2 });
-            }
-
-            toast.success("Sponsorship Settings Updated!", { id: tid });
+            void fee;
+            void autoApprove;
+            void rewardPerClaim;
+            void tasksForReward;
+            void minPool;
+            toast.error("DailyApp V16 does not expose legacy sponsorship settings. Use UGC DB settings and Raffle config.", { id: tid });
         } catch (error: unknown) {
             console.error(error);
             const err = error as { shortMessage?: string; message?: string };

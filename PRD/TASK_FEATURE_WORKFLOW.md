@@ -79,7 +79,7 @@ graph TB
     end
 
     subgraph "Γ¢ô∩╕Å Blockchain (Base Sepolia)"
-        DA["DailyApp V13.2<br/>0x81D6...4B5D"]
+        DA["DailyApp V16<br/>0xb592...5353"]
         MX["MasterX<br/>0x9807...076c"]
     end
 
@@ -87,7 +87,7 @@ graph TB
     TL -->|Claim| UVA -->|POST| VS
     TR -->|doTask| UC -->|Write| DA
     TR -->|Verify| UV -->|POST| VS
-    STC -->|claimRewards| DA
+    STC -->|Legacy on-chain claim disabled| UB
     STC -->|XP Sync| UB
     OL -->|Join| CB
     SM -->|Swap Quote| LS[Li.Fi SDK]
@@ -114,7 +114,7 @@ graph TB
 
 | Aspek | ≡ƒƒª On-Chain Tasks | ≡ƒƒ⌐ Off-Chain Tasks |
 |---|---|---|
-| **Sumber Data** | Smart Contract `DailyApp V13.2` | Tabel Supabase `daily_tasks` |
+| **Sumber Data** | Smart Contract `DailyApp V16` | Tabel Supabase `daily_tasks` |
 | **Penyimpanan Tugas** | Disimpan on-chain via `addTask()` | Disimpan di database via Admin |
 | **Komponen UI** | `TaskRow` di `TasksPage.jsx` | `TaskList.jsx` (standalone) |
 | **Verifikasi Sosial** | Ya ΓÇö via `useVerification.js` | Tidak ΓÇö klaim langsung |
@@ -155,8 +155,10 @@ flowchart LR
 
 | Contract | Address | Governance |
 |---|---|---|
-| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` |
-| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` |
+| **DailyApp V16** | `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353` | `UUPS + role-gated AccessControl` |
+| **DailyApp V15** | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | `AccessControl` (LEGACY) |
+| **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` (DEPRECATED) |
+| **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` (DEPRECATED) |
 | **MasterX (XP)** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` |
 | **Raffle** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` |
 | **CMS V2** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` |
@@ -164,27 +166,27 @@ flowchart LR
 > [!WARNING]
 > Mainnet addresses are `[RESERVED]` ΓÇö NEVER use Sepolia addresses on Mainnet labels.
 
-### 3.2 DailyApp V13.2 ΓÇö Task-Related Functions
+> [!IMPORTANT]
+> DailyApp task flows now target `VITE_DAILY_APP_V16_ADDRESS` first. Admin role handover is managed from Admin Dashboard -> Role Management -> DailyApp V16 AccessControl using `grantRole` / `revokeRole`. Frontend ABI must be the compiled `DailyAppV16` ABI; V13/V15 sponsorship and entitlement selectors are legacy-only and must not be called from the V16 frontend.
+
+### 3.2 DailyApp V16 - Active Frontend Functions
 
 | Function | Type | Signature | Purpose |
 |---|---|---|---|
-| `getTask` | `view` | `(uint256 taskId) ΓåÆ (baseReward, isActive, cooldown, minTier, title, link, createdAt, requiresVerification, sponsorshipId)` | Membaca detail tugas |
-| `getTasksInRange` | `view` | `(uint256 from, uint256 to) ΓåÆ Task[]` | Batch baca seluruh tugas |
-| `nextTaskId` | `view` | `() ΓåÆ uint256` | Total tugas yang terdaftar |
+| `getTask` / `tasks` | `view` | `(uint256 taskId)` | Membaca detail tugas V16 |
+| `nextTaskId` | `view` | `() -> uint256` | Total tugas yang terdaftar |
 | `doTask` | `write` | `(uint256 taskId, address referrer)` | Registrasi intent/cooldown user |
-| `hasCompletedTask` | `view` | `(address user, uint256 taskId) ΓåÆ bool` | Cek apakah tugas sudah selesai |
-| `isTaskVerified` | `view` | `(address user, uint256 taskId) ΓåÆ bool` | Cek status verifikasi |
-| `userStats` | `view` | `(address user) ΓåÆ (points, totalTasksCompleted, referralCount, currentTier, tasksForReferralProgress, lastDailyBonusClaim, isBlacklisted)` | Statistik user |
-| `userSponsorshipProgress` | `view` | `(address user, uint256 sponsorshipId) ΓåÆ uint256 count` | Progress sponsorship mission |
-| `claimableRewards` | `view` | `(address user) ΓåÆ uint256` | Reward yang bisa diklaim |
-| `claimRewards` | `write` | `()` | Klaim akumulasi reward |
-| `lastActivityTime` | `view` | `(address user) ΓåÆ uint256` | Timestamp aktivitas terakhir |
-| `addTask` | `write` | `(baseReward, isActive, cooldown, minTier, title, link, requiresVerification, sponsorshipId)` | Admin: Tambah tugas |
-| `setSponsorshipParams` | `write` | `(rewardPerClaim, tasksRequired, minPool, platformFee)` | Admin: Config sponsorship parameters |
-| `setTokenPriceUSD` | `write` | `(uint256 newPrice)` | Admin: Direct update token price |
-| `approveSponsorship` | `write` | `(uint256 requestId)` | Admin: Setujui sponsorship |
-| `rejectSponsorship` | `write` | `(uint256 requestId, string reason)` | Admin: Tolak sponsorship |
-| `buySponsorshipWithToken` | `write` | `(sponsorshipId, titles[], links[], email, rewardPerClaim, paymentToken)` | Sponsor: Buy sponsorship mission |
+| `hasCompletedTask` / `isTaskVerified` | `view` | `(address user, uint256 taskId) -> bool` | Cek status tugas |
+| `userStats` | `view` | `(address user) -> points, totalTasksCompleted, referralCount, currentTier, tasksForReferralProgress, lastDailyBonusClaim, isBlacklisted` | Statistik user on-chain |
+| `lastActivityTime` | `view` | `(address user) -> uint256` | Timestamp aktivitas terakhir |
+| `addTask` | `write` | `(baseReward, cooldown, minTier, title, link, requiresVerification)` | Admin: tambah tugas V16 |
+| `addTaskBatch` | `write` | `(baseRewards[], cooldowns[], minTiers[], titles[], links[], requiresVerifications[])` | Admin: tambah tugas batch |
+| `mintNFT` | `write` | `(uint8 tier)` | Mint/upgrade SBT langsung di DailyApp V16 |
+| `claimDailyBonus` | `write` | `()` | Klaim bonus harian on-chain |
+| `setGlobalRewards` | `write` | `(daily, referral)` | Admin: set reward global |
+| `grantRole` / `revokeRole` | `write` | `(bytes32 role, address account)` | Admin dashboard AccessControl |
+
+Legacy functions such as `syncOffchainXP`, `mintNFTWithEntitlement`, `claimableRewards`, `claimRewards`, `setSponsorshipParams`, `approveSponsorship`, `rejectSponsorship`, `buySponsorshipWithToken`, and `userSponsorshipProgress` are not exposed by DailyApp V16. UI surfaces that still represent those legacy flows must disable on-chain writes and route through database/off-chain workflows until a new V16-compatible contract function exists.
 
 ### 3.3 ABI Source of Truth
 
@@ -376,14 +378,14 @@ if (['claim', 'verify'].includes(action)) {
 sequenceDiagram
     participant U as User
     participant FE as TasksPage/TaskRow
-    participant SC as DailyApp V13.2
+    participant SC as DailyApp V16
     participant UV as useVerification
     participant API as tasks-bundle.js
     participant DB as Supabase DB
 
     Note over FE: Page Load
-    FE->>SC: getTasksInRange(1, nextTaskId)
-    SC-->>FE: Task[] (title, link, reward, sponsorshipId...)
+    FE->>SC: tasks(i) / getTask(i)
+    SC-->>FE: Task data (title, link, reward, sponsorshipId...)
     FE->>SC: hasCompletedTask(user, taskId)
     SC-->>FE: bool (filter completed)
 
@@ -423,18 +425,13 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant STC as SponsoredTaskCard
-    participant SC as DailyApp V13.2
+    participant SC as DailyApp V16
     participant UV as useVerification
     participant API as tasks-bundle.js
     participant DB as Supabase
 
     Note over STC: Render grouped tasks by sponsorshipId
-    STC->>SC: userSponsorshipProgress(user, sponsorshipId)
-    SC-->>STC: completedCount
-
-    alt completedCount >= tasks.length
-        Note over STC: return null (card disappears)
-    end
+    STC->>STC: Disable legacy sponsorship progress read on V16
 
     Note over U: Step 1: Open External Links
     U->>STC: Click each task link (IndividualTaskRow)
@@ -456,12 +453,10 @@ sequenceDiagram
         Note over STC: Show "Verification Failed"
     end
 
-    Note over U: Step 3: Claim On-Chain Reward
+    Note over U: Step 3: Log verified reward state
     U->>STC: Click "Claim Task Reward"
-    STC->>SC: claimRewards()
-    SC-->>STC: tx_hash
-
-    STC->>API: POST /api/user-bundle {action: 'xp', tx_hash}
+    STC->>STC: Disable legacy claimRewards write on V16
+    STC->>API: POST /api/user-bundle {action: 'xp'}
     API->>SC: readContract(userStats)
     API->>DB: Upsert user_profiles.total_xp
     API-->>STC: {success: true}
@@ -867,7 +862,7 @@ if (error.message.includes("already completed")) {
 - [x] **Swap Quote Error Visibility**: SwapModal menampilkan error visible + Jumper fallback jika Li.Fi SDK gagal quote (v3.47.1).
 - [x] **NFT Mint Contract Parity**: SBTUpgradeCard memanggil `mintNFT` (DAILY_APP) bukan `upgradeTier` (MASTER_X) (v3.47.1).
 - [x] **Batch Resilience**: Create Mission menggunakan `useCallsStatus` (EIP-5792) untuk mencegah UI hang pada batch transactions.
-- [x] **ABI Parity**: `abis_data.txt` sinkron dengan deployed contract (157 entries).
+- [x] **ABI Parity**: `abis_data.txt` dan `daily_app_abi.json` sinkron dengan compiled `DailyAppV16` ABI; live selector parity Base Sepolia passed.
 - [x] **Verification Server Sync**: `VITE_VERIFY_SERVER_URL` & `VITE_VERIFY_API_SECRET` disinkronkan di ekosistem Vercel (v3.49.0).
 - [x] **Global Lockout Fix**: Target ID uniqueness sekarang berbasis per-user (`wallet_address` + `target_id`) (v3.49.0).
 - [x] **Vercel < 12**: Total serverless functions under Hobby Plan limit (8/12).
@@ -881,10 +876,10 @@ if (error.message.includes("already completed")) {
 Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Hardened Tier Ascension**:
 
 1. **Sequential Progression**: User **WAJIB** upgrade tier secara berurutan. Sistem tidak mengizinkan lompatan (misal: Rookie langsung ke Gold). Tier $N$ hanya bisa di-mint jika wallet memiliki Tier $N-1$.
-2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV15`.
+2. **Soulbound (Non-Transferable)**: Seluruh NFT SBT terkunci secara permanen di wallet pengguna. Setiap upaya transfer akan di-revert oleh kontrak `DailyAppV16`.
 3. **Price Transparency**: UI `SBTUpgradeCard` wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.
-4. **DB-Canonical Eligibility**: Eligibility mint ditentukan oleh `user_profiles.total_xp` dan `sbt_thresholds.min_xp` di backend, lalu dibungkus sebagai signed EIP-712 entitlement voucher.
-5. **On-Chain Mint Enforcement**: `DailyAppV15.mintNFTWithEntitlement` dan `SBTMintEntitlementVerifier` menegakkan wallet binding, sequential tier, nonce replay protection, expiry, supply, dan mint price.
+4. **On-Chain Eligibility**: Eligibility mint ditentukan dan ditegakkan oleh XP on-chain di `DailyAppV16`; database tetap dipakai untuk tampilan/log pendukung.
+5. **On-Chain Mint Enforcement**: `DailyAppV16.mintNFT(uint8 tier)` menegakkan wallet binding, sequential tier, supply, status tier, XP requirement, dan mint price. Jalur entitlement voucher V15 adalah legacy dan tidak dipakai untuk V16.
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
 *Antigravity ΓÇö Nexus Master Architect. Protocol v3.56.4 Locked.*

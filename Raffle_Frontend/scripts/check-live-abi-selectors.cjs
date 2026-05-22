@@ -30,7 +30,7 @@ const CONTRACT_ENV = {
         defaultRpc: 'https://mainnet.base.org',
         contracts: {
             MASTER_X: ['VITE_MASTER_X_ADDRESS'],
-            DAILY_APP: ['VITE_DAILY_APP_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS'],
+            DAILY_APP: ['VITE_DAILY_APP_V16_ADDRESS', 'VITE_DAILY_APP_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS'],
             RAFFLE: ['VITE_RAFFLE_ADDRESS'],
             CMS: ['VITE_CMS_CONTRACT_ADDRESS'],
         },
@@ -41,7 +41,7 @@ const CONTRACT_ENV = {
         defaultRpc: 'https://sepolia.base.org',
         contracts: {
             MASTER_X: ['VITE_MASTER_X_ADDRESS_SEPOLIA'],
-            DAILY_APP: ['VITE_DAILY_APP_ADDRESS_SEPOLIA', 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA', 'DAILY_APP_ADDRESS'],
+            DAILY_APP: ['VITE_DAILY_APP_V16_ADDRESS', 'VITE_DAILY_APP_ADDRESS_SEPOLIA', 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA', 'DAILY_APP_ADDRESS'],
             RAFFLE: ['VITE_RAFFLE_ADDRESS_SEPOLIA'],
             CMS: ['VITE_CMS_CONTRACT_ADDRESS_SEPOLIA'],
         },
