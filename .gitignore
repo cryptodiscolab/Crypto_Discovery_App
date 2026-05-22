@@ -35,10 +35,13 @@ hardhat.config.js.backup
 .DS_Store
 
 # === AGENT LOCAL/PRIVATE CONFIG (Track scripts, not secrets) ===
+.agents/
 .agents/**/credentials*
 .agents/**/secrets*
 .agents/**/*.key
 .agents/**/.env*
+.clinerules
+.rtk/
 .litellm/
 litellm*.local.yaml
 ag.py
