@@ -5,7 +5,7 @@ import { FEATURE_IDS, FEATURE_NAMES } from '../../../shared/constants/cmsFeature
 import { supabase } from '../../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { isAddress } from 'viem';
-import { AlertCircle, CheckCircle, RefreshCw, Shield, UserPlus } from 'lucide-react';
+import { AlertCircle, RefreshCw, Shield } from 'lucide-react';
 
 interface WhitelistedUser {
     address: string;

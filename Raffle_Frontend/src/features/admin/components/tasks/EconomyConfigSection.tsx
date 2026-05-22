@@ -1,4 +1,4 @@
-import { Shield, BarChart3, Zap, RefreshCw } from 'lucide-react';
+import { Shield, BarChart3, RefreshCw } from 'lucide-react';
 
 interface EconomyConfigSectionProps {
     newPlatformFee: string;

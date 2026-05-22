@@ -9,165 +9,59 @@ Your supreme governing document is [`.cursorrules`](.cursorrules). **Read it at 
 
 ---
 
-## ⚠️ MANDATORY FIRST ACTION (Before Anything Else)
+## ⚠️ FIRST ACTION — MINIMAL (⛽ Savings)
 
-Before responding to ANY request, read these files IN ORDER:
+Before responding, `📄>.rtk/RTK.md` + `📄>.rtk/SYMBOLIC.md` ONLY. Rules 1-78 di file ini sudah cukup.
+**Lazy-load ONLY when needed**: `📄>PRD/`, `📄>.agents/skills/`, `📄>.cursorrules` (>500L → `rtk smart`).
+`> re-read skills` = reset, `> sync end to end` = full sync. Protocol: 🟢 Healthy (v3.64.17).
 
-1. **`.agents/skills/ecosystem-sentinel/SKILL.md`** — Audit protocol, fix cycle, sentinel rules
-2. **`.agents/skills/secure-infrastructure-manager/SKILL.md`** — Security, contract lifecycle
-3. **`.agents/skills/git-hygiene/SKILL.md`** — Clean tree, commit rules
-4. **`.agents/WORKSPACE_MAP.md`** — Canonical Workspace Map (Mandatory Navigation)
-5. **`PRD/DISCO_DAILY_MASTER_PRD.md`** — Master Source of Truth
-6. **`PRD/ACCOUNTANT_LEDGER_SOT.md`** — Accountant Ledger Source of Truth (v3.59.5)
-7. **`DESIGN.md`** — Design Source of Truth (v3.44.0)
-8. **`.cursorrules`** — Full Master Architect Protocol (all sections)
-
-> ❗ Skipping this step = **Protocol Breach**. **Protocol Status**: `🟢 Healthy (v3.64.17-Hardened)` User can say `> re-read skills` to reset, `> update docs` for docs sync, or `> sync end to end` for a full Frontend-to-Backend ecosystem synchronization (v3.64.17).
+## 🛡️ SECURE INSTALL (v3.63.5): `npm install --ignore-scripts` or `npm ci`.
+SOT: Contracts > Supabase `system_settings`/`point_settings` > PRD/ > `.cursorrules` + `CLAUDE.md` > DESIGN.md > SKILL.md.
 
 ---
 
-## 🛡️ SECURE INSTALLATION MANDATE (v3.63.5)
+## Rule 0 — THINKING BUDGET + SYMBOLIC (⛽ Max Savings).
+Skip `<thinking>` for routine ops. Use ONLY for arch, bugs, security, refactors. Max 3 bullets OR 3 symbolic tokens.
+**SYMBOLIC PROTOCOL** (`.rtk/SYMBOLIC.md`): ALL agent communication wajib symbolic shorthand.
+`📄>f`=read, `✏️>f`=edit, `▶️rtk cmd`=run, `✅`=done, `❌`=err, `🧠🐛`=complex bug, `📊`=summary.
+Natural lang ONLY for: complex explanations, security, user docs. Thinking: skip or max 3 symbolic tokens.
 
-To prevent supply-chain malware injection, ALL installations MUST follow these commands:
-- **`npm install --ignore-scripts`** — For general dependency addition.
-- **`npm ci`** — For clean, reproducible, and script-safe environment setup.
-
----
-
-### ⚠️ SUPREME SOURCE OF TRUTH (SOT) HIERARCHY
-To prevent documentation conflict and context fragmentation, all AI agents and models MUST strictly resolve contradictions using this deterministic, absolute command chain:
-
-1. **On-Chain Smart Contracts** — The final and absolute execution state on the Base Network.
-2. **Supabase Dynamic Settings** — Dynamic variables stored in `system_settings` and `point_settings` tables (Source of Truth for rewards, caps, and parameters).
-3. **Product Requirements (PRD)** — Master SOT docs located in the `PRD/` folder (`PRD/DISCO_DAILY_MASTER_PRD.md`, `PRD/ACCOUNTANT_LEDGER_SOT.md`, etc.).
-4. **Supreme Codebase Protocols** — `.cursorrules` and `CLAUDE.md`.
-5. **Design Guidelines** — `DESIGN.md` and `.agents/skills/design-protocol/SKILL.md`.
-6. **Local Code Documentation** — Relative `SKILL.md` registries and source code comments.
-
-*Rule: If a rule in `DESIGN.md` contradicts `PRD/DISCO_DAILY_MASTER_PRD.md`, the PRD overrides. If an instructions/value in `.cursorrules` conflicts with the live Supabase database settings or contracts, the database/contracts override. There is no blend or compromise.*
-
----
-
-## Rule 1 — Think Before Coding.
-No silent assumptions. State what you're assuming. Surface tradeoffs. Ask before guessing. Push back when a simpler approach exists.
-## Rule 2 — Simplicity First.
-Minimum code that solves the problem. No speculative features. No abstractions for single-use code. If a senior engineer would call it overcomplicated — simplify.
-## Rule 3 — Surgical Changes.
-Touch only what you must. Don't "improve" adjacent code, comments, or formatting. Don't refactor what isn't broken. Match existing style.
-## Rule 4 — Goal-Driven Execution.
-Define success criteria. Loop until verified. Don't tell Claude what steps to follow, tell it what success looks like and let it iterate.
-## Rule 5 — Use the model only for judgment calls
-Use Claude for: classification, drafting, summarization, extraction from unstructured text.
-Do NOT use Claude for: routing, retries, status-code handling, deterministic transforms.
-If a status code already answers the question, plain code answers the question.
-## Rule 6 — Token budgets are not advisory
-Per-task budget: 4,000 tokens.
-Per-session budget: 30,000 tokens.
-If a task is approaching budget, summarize and start fresh. Do not push through.
-Surfacing the breach > silently overrunning.
-## Rule 7 — Surface conflicts, don't average them
-If two existing patterns in the codebase contradict, don't blend them.
-Pick one (the more recent / more tested), explain why, and flag the other for cleanup.
-"Average" code that satisfies both rules is the worst code.
-## Rule 8 — Read before you write
-Before adding code in a file, read the file's exports, the immediate caller, and any obvious shared utilities.
-If you don't understand why existing code is structured the way it is, ask before adding to it.
-"Looks orthogonal to me" is the most dangerous phrase in this codebase.
-## Rule 9 — Tests verify intent, not just behavior
-Every test must encode WHY the behavior matters, not just WHAT it does.
-A test like `expect(getUserName()).toBe('John')` is worthless if the function takes a hardcoded ID.
-If you can't write a test that would fail when business logic changes, the function is wrong.
-## Rule 10 — Checkpoint after every significant step
-After completing each step in a multi-step task: summarize what was done, what's verified, what's left.
-Don't continue from a state you can't describe back to me.
-If you lose track, stop and restate.
-## Rule 11 — Match the codebase's conventions, even if you disagree
-If the codebase uses snake_case and you'd prefer camelCase: snake_case.
-If the codebase uses class-based components and you'd prefer hooks: class-based.
-Disagreement is a separate conversation. Inside the codebase, conformance > taste.
-If you genuinely think the convention is harmful, surface it. Don't fork it silently.
-## Rule 12 — Fail loud
-If you can't be sure something worked, say so explicitly.
-"Migration completed" is wrong if 30 records were skipped silently.
-"Tests pass" is wrong if you skipped any.
-"Feature works" is wrong if you didn't verify the edge case I asked about.
-Default to surfacing uncertainty, not hiding it.
-## Rule 13 — Verify before declaring victory
-Before you say "done", "completed", or "fixed":
-1. Rerun any automated checks you touched
-2. Manually verify the user-facing behavior you changed
-3. Check console logs for errors
-4. Verify related functionality still works
-If you can't verify, say "Partial: [what's done], needs verification for: [what's not]".
-## Rule 14 — Don't "optimize" without user permission
-If you see code that's "inefficient", "not idiomatic", or "needs refactoring", DO NOT change it unless:
-1. The user explicitly asks for optimization
-2. The inefficiency is causing a documented bug
-3. The pattern is clearly broken, not just suboptimal
-"Premature optimization is the root of all evil" applies to LLMs too.
-If you think something should be optimized, explain the trade-offs and ask permission first.
+## Rule 1-14 — Compact
+1. Think first: state assumptions, reject complexity. 2. Min code, no speculation. 3. Surgical: touch only needed, match style.
+4. Goal-driven: define→execute→verify. 5. Model for judgment only. 6. 💰4000/task, 30000/session.
+7. Conflicts: pick newer/tested. 8. 📄 before ✏️. 9. Tests = intent. 10. Checkpoint each step.
+11. Conformance > taste. 12. Fail loud. 13. Verify: rerun+console+edges. 14. No unpermissioned optimize.
 
 --
 
 
-## 🔴 ABSOLUTE LAWS (Nexus v3.61.0)
-
-1. **AUDIT-FIRST**: NEVER write fix code before running `node scripts/audits/check_sync_status.cjs`. **Schedule: Every Sunday 00:00 UTC.**
-2. **RE-AUDIT AFTER FIX**: Re-run audit after every fix. Only notify user when `✅ ALL SYSTEMS SYNCHRONIZED` using standardized reporting.
-3. **ZERO HARDCODE**: No literal XP, fee, or reward numbers. All values from `point_settings`/`system_settings` in Supabase
-3.1 **SINGLETON FETCH HARDENING (PGRST116)**: ALWAYS use `.maybeSingle()` instead of `.single()` for all singleton record fetches to prevent transaction-blocking coercion errors (v3.42.2).
-4. **ZERO SECRETS**: No Private Keys (EIP-191), Service Role Keys, or API Keys as string literals. Always `process.env.*`
-5. **ZERO RIBA**: Never implement interest-bearing, inflationary staking APY, or deceptive tokenomics
-6. **ZERO SCREENSHOT**: Strictly NO screenshots/media files (`.png`, `.webp`, etc.) in the Git repository. Cleanup all audit artifacts before closing a task.
-7. **ZERO-LEAK**: Strictly prohibit pushing files with `role_key`, `secret`, `jwt_secret`, or sensitive extensions (`.pem`, `.key`, `.p12`). Files in `tools/nexus-monitor/` must be ignored via `.gitleaks.toml` and `.gitignore`.
-8.  **VERCEL LIMIT**: Strictly < 12 Serverless Functions. Always bundle into `*-bundle.js`
-9.  **SURGICAL FIX**: NEVER delete entire blocks or replace whole files if only a few lines are erroneous. Use surgical edits only.
-10. **DEFENSIVE ADDRESS**: EVERY contract address from `.env` MUST be sanitized for quotes/spaces via `cleanAddr` or `.trim()`.
-11. **MULTI-PROJECT VERCEL SYNC**: Mandatory CLI environment sync across all projects (DailyApp + Verification Server).
-12. **SOCIAL RELIABILITY**: All social verifications MUST use iterative pagination (500 items) and Profile Page linking must be interactive (v3.3.3).
-13. **SDK-FIRST**: Never construct manual OAuth/Social URLs or raw REST calls for Auth/Payments if an official SDK (Supabase, Viem, etc.) exists.
-14. **ENV-SANITY**: NEVER use raw `process.env` in cloud initializations. Always apply `.trim()` via `cleanEnv` or inline to prevent "Silent Corruption" (quotes/newlines) during audits and coding. **Clean-Pipe Sync Protocol** is MANDATORY for all sync tools.
-15. **LIMIT ENFORCEMENT**: Strictly enforce `PROFILE_LIMITS` (Name: 50, Bio: 160, User: 30, Avatar: 1MB) and `STREAK_WINDOW` (20-48h). No magic numbers allowed.
-16. **ATOMIC SCRIPTS**: NO scripts allowed in root `scripts/`. Must use categorised sub-folders (`audits`, `deployments`, `sync`, `debug`).
-17. **NEXUS EVOLUTION (A-D-R-R-E)**: Every system/environment failure MUST trigger the Audit-Determine-Resolve-Reflect-Evolve cycle to ensure zero recurrence.
-18. **MISSION-DRIVEN**: Every line of code must serve the mission of transparency, honesty, and providing real value to the community and those in need.
-19. **LOCAL HYGIENE**: ALWAYS terminate local servers (Vite/Express) after verification. Do not consume local CPU/RAM in the background.
-20. **ADMIN SYNC**: EVERY admin action changing on-chain state MUST be synchronized with the database immediately upon transaction confirmation. No state drift allowed.
-21. **SCHEMA IMMUTABLE PROTECTION**: NEVER delete, rename, or drop the `last_seen_at` column in `user_profiles`. It is strictly required for XP Sync and Anti-Whale Underdog logic. Deleting this column breaks the Leaderboard synchronization.
-22. **POST-FIX DOC SYNC (MANDATORY)**: After EVERY code change, bug fix, or work session, MUST update: `PRD/DISCO_DAILY_MASTER_PRD.md`, `CLAUDE.md`, `.agents/WORKSPACE_MAP.md`, `ROADMAP.md`, `IMPLEMENTATION_SUMMARY.md`, `.cursorrules`, and relevant `SKILL.md` files. **NEW: AFTER EDITING PROTOCOLS, A VISUAL AUDIT (view_file) OF THE EDITED LINES IS MANDATORY TO PREVENT ACCIDENTAL DELETIONS (v3.38.2).**
-23. **VERIFICATION-FIRST XP SYNC (v3.27.0)**: Frontend MUST pass `tx_hash` to backend. Backend MUST verify via `waitForTransactionReceipt`. NEVER rely on passive DB triggers for `total_xp` updates.
-48. **RPC INDEXING FALLBACK**: When syncing XP or Claims, APIs MUST accept `tx_hash` and verify signatures/receipts directly via RPC if the indexer/Supabase state is lagging (v3.26.0).
-49. **VIEW SYNCHRONIZATION**: Any addition of columns to `user_profiles` MUST be immediately followed by an update to `v_user_full_profile` SQL View to prevent frontend data-ghosting (v3.26.0).
-50. **NO-LOST-AGENT**: Prohibit explorative file listing without first checking [.agents/WORKSPACE_MAP.md](file:///e:/Disco%20Gacha/Disco_DailyApp/.agents/WORKSPACE_MAP.md). This mapping MANDATE is automatically reset and MUST be followed every time `> re-read skills` is triggered.
-51. **NATIVE+ UI STANDARD**: ALL UI labels, metadata, and sub-headers MUST be `text-[11px] font-black uppercase tracking-widest` (`.label-native`). Body content MUST be `text-[13px] font-medium leading-relaxed` (`.content-native`). Eradicate legacy `text-xs`, `text-sm`, and `text-[10px]` from the workspace (v3.41.0).
-52. **REFERRAL GROWTH LOOP v2**: Referral bonuses (50 XP) MUST ONLY be awarded after the **500 XP threshold**. Tier 1 referrers MUST receive a **10% lifetime XP dividend**, handled atomically via `fn_increment_xp` (v3.42.0).
-53. **BASE SOCIAL IDENTITY GUARD**: High-value tasks MUST be gated behind `is_base_social_verified`. Basename resolution is the canonical proof of identity (v3.42.0).
-54. **DISAPPEARING TASK MANDATE**: Completed or claimed tasks MUST be immediately hidden from the UI (`return null` or data filter). Card-level containers MUST vanish once all internal tasks are done. Catch-up feedback ("YOU ARE ALL CAUGHT UP!") is mandatory for empty states (v3.42.2).
-55. **NATIVE+ BUTTON BASELINE**: All primary action buttons MUST strictly use `bg-indigo-600/20`, `border-indigo-500/30`, and `text-indigo-400` with NO decorative icons (Zap/Ticket) for a premium minimalist feel (v3.42.7).
-56. **MOBILE VIEWPORT CONTAINMENT**: Layouts MUST use `overflow-x-hidden` and `max-w-[100vw]` to ensure mobile UI integrity and BottomNav visibility (v3.42.7).
-57. **TYPE-SAFE TASK KEY COMPARISON**: ALWAYS use `String()` conversion when filtering/comparing Task IDs (Contract/Supabase) to avoid silent type-mismatch bugs (v3.42.7).
-58. **FAIL-SAFE UI SYNC**: UI `handleClaim` logic MUST explicitly handle `already_claimed: true` and force a data refetch to resolve state race conditions (v3.42.8).
-60. **ECOSYSTEM SECURITY REMEDIATION MANDATE**: Strictly enforce **Clean-Pipe Sync Protocol** via `robust_sync.cjs`. Multi-project parity is mandatory for all env changes (v3.43.0).
-61. **DESIGN PROTOCOL MANDATE**: Agents MUST read `DESIGN.md` and use the `.agents/skills/design-protocol/SKILL.md` before any frontend changes. Aesthetic: "Midnight Cyber" (v3.44.0).
-62. **SDK-FIRST SWAP ENGINE**: NEVER use `@lifi/widget` or other heavy monolithic UI libraries that crash Rollup AST parsers on Vercel. Always build custom lightweight interfaces using `@lifi/sdk` directly (v3.47.0).
-63. **GAS TRACKER HARDENING**: All high-value on-chain interactions (Raffle, SBT Mint) MUST be gated by the `Expensive` gas threshold (> 0.5 Gwei). Handler-level guards are mandatory to prevent DevTools bypass and ensure user financial safety (v3.51.0).
-64. **NEXUS UI PARITY**: ALL mission and raffle cards MUST display transparent metadata stamps: Unique ID (`Hash`), Creator (`ShieldCheck`), and Created/Expires timestamps (`Clock`). Home summary MUST be dynamic (Supabase-sourced) to eliminate placeholder drift (v3.53.0).
-65. **SUPER KETAT TOKEN OPTIMIZATION**: Agents MUST execute `context-hasher` check before reading files >500 lines. Maximize cache hits via SHA-256 persistent memory in `agent_vault` (v3.54.0).
-66. **CONCURRENT UI RESPONSIVENESS MANDATE**: High-load components (Modals with heavy hooks) MUST be triggered using React `startTransition` to prevent main-thread blocking and maintain < 50ms INP responsiveness (v3.56.0).
-67. **MULTI-AGENT ORCHESTRATION MANDATE**: All heavy-duty sub-agent delegations (audits, mass refactoring) MUST use `scripts/orchestrator/gemini_agent_bridge.js` (v1.3.7). This ensures automatic 9-key rotation and model fallback (2.5 -> 3.1) resilience (v3.56.3).
-68. **ZERO-HARDCODE INFRASTRUCTURE MANDATE**: ALL contract addresses in `abis_data.txt` MUST be placeholders (`[RESOLVED_VIA_ENV]`). Hardcoding static addresses in source code or ABI definitions is strictly FORBIDDEN to ensure mainnet portability (v3.59.1).
-69. **TYPESCRIPT HARDENING MANDATE**: All frontend business logic and Serverless API bundles MUST be strictly typed (.tsx / .ts). Implicit `any` is strictly forbidden. All catch blocks MUST use `unknown` with explicit type guards to prevent runtime leakage (v3.61.0).
-70. **GIT HYGIENE ENFORCEMENT**: Strictly prohibit untracked `.env.vercel*` and audit artifacts (`tsc_output*.txt`, `tsc-errors*.txt`). RUN `Remove-Item tsc-errors*.txt` before each commit (v3.61.0).
-71. **RETENTION HARDENING MANDATE**: All daily retention mechanisms MUST use identity gating (`is_base_social_verified`) and concurrent transitions for UI smoothness. UGC campaigns MUST use signature-based verification hooks for audit integrity (v3.61.0).
-72. **LURAH CRON HARDENING MANDATE**: All ecosystem cron jobs MUST use individual task timeouts (runWithTimeout) and parallel isolation (allSettled) to prevent 504 Vercel timeouts. Heartbeat updates MUST be atomic and final to ensure accurate system health visibility (v3.63.1).
-## Rule 73 — ESM RUNTIME RESOLUTION MANDATE.
-If `"type": "module"` is configured in `package.json`, ALL relative imports within Serverless functions (Node.js/Vercel) MUST include explicit file extensions (`.js`) or be strongly segregated as `import type` (if TypeScript interface) to prevent `ERR_MODULE_NOT_FOUND` deployment crashes (v3.63.5).
-## Rule 74 — DATABASE SECURITY REMEDIATION MANDATE.
-Strictly enforce `SECURITY INVOKER` for all public-facing database views. Revoke `EXECUTE` on sensitive `SECURITY DEFINER` functions from public roles. Enforce explicit `search_path = public, extensions` on all functions to prevent shadowing attacks (v3.63.6).
-## Rule 75 — MILLISECOND AUDIT PRECISION MANDATE.
-All high-fidelity activity logging MUST use 23-character ISO-8601 timestamps (YYYY-MM-DDTHH:MM:SS.mmmZ) to ensure millisecond-level deduplication and prevent event collapsing during high-frequency transactions. (v3.63.7-Hardened).
-## Rule 76 — MULTI-ASSET UI PARITY MANDATE.
-All financial UI components (Missions, Sponsorships, Claims) MUST handle Native ETH, WETH, and USDC dynamically. This includes fetching allowed tokens from the database, handling 18/6 decimal normalization, and displaying accurate currency symbols. Hardcoding "USDC" or "ETH" labels is strictly forbidden. (v3.63.7-Hardened).
+## 🔴 ABSOLUTE LAWS (Compact)
+1. 📊 audit-first: `▶️node scripts/audits/check_sync_status.cjs` before fix. Sun 00:00 UTC.
+2. re-audit after fix. 3. ❌ hardcode: Supabase `point_settings`/`system_settings` only.
+3.1 `.maybeSingle()` not `.single()`. 4. ❌ secrets: `process.env.*` only.
+5. ❌ riba. 6. ❌ screenshots in git. 7. ❌ leaks (role_key, .pem, .key).
+8. <12 Vercel functions, bundle as `*-bundle.js`. 9. Surgical fix only. 10. `cleanAddr`/`.trim()` all addresses.
+11. Multi-project Vercel sync. 12. Social: pagination 500, interactive linking.
+13. SDK-first. 14. ENV: `.trim()` + Clean-Pipe Sync. 15. PROFILE_LIMITS + STREAK_WINDOW.
+16. Scripts in sub-folders only. 17. A-D-R-R-E cycle. 18. Mission-driven.
+19. Kill local servers after verify. 20. Admin sync: on-chain→DB immediately.
+21. ❌ delete `last_seen_at`. 22. Post-fix doc sync: PRD, CLAUDE, WORKSPACE_MAP, ROADMAP, IMPLEMENTATION, .cursorrules, SKILL.md.
+23. Verification-first XP sync: pass `tx_hash`, verify via RPC.
+48. RPC indexing fallback. 49. View sync: update `v_user_full_profile` after column add.
+50. 📎WORKSPACE_MAP before file exploration. 51. UI: `.label-native` + `.content-native`.
+52. Referral: 50 XP after 500 threshold, 10% lifetime dividend. 53. `is_base_social_verified` gate.
+54. Disappearing tasks. 55. Buttons: `bg-indigo-600/20 border-indigo-500/30 text-indigo-400`.
+56. `overflow-x-hidden max-w-[100vw]`. 57. `String()` task ID comparison.
+58. `already_claimed: true` + refetch. 60. Clean-Pipe Sync via `robust_sync.cjs`.
+61. 📄DESIGN.md + design-protocol/SKILL.md. 62. @lifi/sdk not @lifi/widget.
+63. Gas >0.5 Gwei gate. 64. Metadata stamps: Hash, ShieldCheck, Clock.
+65. context-hasher for >500L files. 66. `startTransition` for modals.
+67. `gemini_agent_bridge.js` for sub-agents. 68. ❌ hardcode addresses in abis_data.txt.
+69. Strict TS: ❌ implicit `any`, `unknown` in catch. 70. ❌ `.env.vercel*` + audit artifacts.
+71. Retention: identity-gated + signature verification. 72. runWithTimeout + allSettled for cron.
+73. ESM: `.js` extensions in imports. 74. SECURITY INVOKER + `search_path`.
+75. ISO-8601 milliseconds. 76. Multi-asset: ETH/WETH/USDC dynamic.
+77. `agent_anti_negligence_hook.cjs` before finalize.
 
 ---
 
@@ -236,9 +130,8 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
 *Audit Precision Hardened: 2026-05-14. v3.64.17 MILLISECOND PRECISION & MULTI-ASSET.*
 
-## RTK TOKEN OPTIMIZATION MANDATE
-All agents MUST use Rust Token Killer for token-heavy shell work whenever available. On this Windows workspace, prefer the local binary form first: `.\.bin\rtk.exe git ...`, `.\.bin\rtk.exe read <file>`, `.\.bin\rtk.exe npx tsc --noEmit`, `.\.bin\rtk.exe npm run <script>`, `.\.bin\rtk.exe grep <pattern> <paths>`, `.\.bin\rtk.exe ls`, and `.\.bin\rtk.exe gain` before raw equivalents, because bare `rtk` may not be on the active PowerShell `PATH`.
+## ⛽ RTK + SYMBOLIC (Universal Mandate)
 
-PowerShell/Windows note: do not call Unix-only wrappers such as raw `rtk diff` when the underlying binary is unavailable. Use RTK subcommands that proxy existing tools (`.\.bin\rtk.exe git diff`, `.\.bin\rtk.exe read`, `.\.bin\rtk.exe npx`, `.\.bin\rtk.exe npm`). Review `.rtk/filters.toml` and run `.\.bin\rtk.exe trust` before relying on project-local filters. Fall back to native PowerShell only after stating why RTK cannot wrap that command safely.
-
-Before finalizing work, run `.\.bin\rtk.exe gain` or the repository anti-negligence hook so token savings/adoption are visible in the report.
+Semua command `▶️rtk <cmd>`. Windows: `.\.bin\rtk.exe <cmd>`. `📄>.rtk/RTK.md` + `📄>.rtk/SYMBOLIC.md` untuk protocol lengkap.
+`📄>f` WAJIB `rtk read --level aggressive --max-lines 80 <f>`. `📄>f` (>500 baris) → `rtk smart <f>`.
+Finalisasi: `▶️rtk gain`. Target: 90% savings.

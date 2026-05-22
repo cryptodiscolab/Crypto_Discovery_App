@@ -11,7 +11,7 @@ import {
     MASTER_X_ADDRESS, DAILY_APP_ADDRESS, RAFFLE_ADDRESS, SAFE_MULTISIG, USDC_ADDRESS, WETH_ADDRESS
 } from '../../../../lib/contracts';
 import { usePriceOracle } from '../../../../hooks/usePriceOracle';
-import { ShieldCheck, HardDrive, DatabaseZap, FileJson, Award, Wallet } from 'lucide-react';
+import { ShieldCheck, Wallet } from 'lucide-react';
 
 interface Aggregate {
     income: Record<string, number>;

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Loader2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import { useAccount, useSignMessage } from 'wagmi';
-import { CONTRACTS, RAFFLE_ABI } from '../../../../lib/contracts';
-import { useReadContract } from 'wagmi';
+import { CONTRACTS } from '../../../../lib/contracts';
 import toast from 'react-hot-toast';
 
 export function UgcConfigSection() {
@@ -22,12 +21,6 @@ export function UgcConfigSection() {
 
     // On-chain Data for Parity Audit
     const minRewardPool = undefined;
-
-    const { data: maintenanceFee } = useReadContract({
-        address: CONTRACTS.RAFFLE,
-        abi: RAFFLE_ABI,
-        functionName: 'maintenanceFeeBP',
-    });
 
     useEffect(() => {
         fetchConfig();

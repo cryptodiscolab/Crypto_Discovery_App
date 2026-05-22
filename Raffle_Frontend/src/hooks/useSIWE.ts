@@ -57,11 +57,6 @@ ${resourceLines}`;
         return message;
     }, []);
 
-    // 2. Generate Unique Nonce (8-12 alphanumeric characters)
-    const generateNonce = () => {
-        return Math.random().toString(36).substring(2, 12);
-    };
-
     // 3. Main Sign-In Function
     const signIn = useCallback(async (fid: number | string | null = null) => {
         if (!address || !chain) {

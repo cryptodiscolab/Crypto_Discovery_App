@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Database, TrendingUp, Timer as TimerIcon, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Database, TrendingUp, Timer as TimerIcon, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatUnits } from 'viem';
 import { useAccount } from 'wagmi';
 import { useSBT } from '../../../../hooks/useSBT';

@@ -1,13 +1,350 @@
-# Project-local RTK filters — commit this file with your repo.
-# Filters here override user-global and built-in filters.
+# Project-local RTK filters — Disco DailyApp (Antigravity Protocol v3.64.19)
+# Target: 90% token savings across all agent CLI operations
 # Docs: https://github.com/rtk-ai/rtk#custom-filters
 schema_version = 1
 
-# Example: suppress build noise from a custom tool
-# [filters.my-tool]
-# description = "Compact my-tool output"
-# match_command = "^my-tool\\s+build"
-# strip_ansi = true
-# strip_lines_matching = ["^\\s*$", "^Downloading", "^Installing"]
-# max_lines = 30
-# on_empty = "my-tool: ok"
+# ─── FILE READING (Highest impact — 151+ calls/day) ───
+[filters.read-source]
+description = "Aggressive file read: strip comments, blanks, imports from source files"
+match_command = "^rtk\\s+read\\s+.*\\.(sol|ts|tsx|js|jsx|cjs|mjs|py|toml|json|yaml|yml)$"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^//",
+    "^import\\s",
+    "^\\s*\\*\\s",
+    "^\\s*\\*\\/",
+    "^\\/\\*\\*",
+    "^\\s*\\/\\*",
+    "^#",
+    "^\\s*#",
+]
+max_lines = 80
+
+[filters.read-config]
+description = "Strip comments and blanks from config/settings files"
+match_command = "^rtk\\s+read\\s+.*\\.(env|json|toml|yaml|yml|config|cfg|ini)$"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^#",
+    "^\\s*#",
+    "^//",
+    "^\\s*//",
+]
+max_lines = 60
+
+[filters.read-general]
+description = "Strip blank lines from any file read"
+match_command = "^rtk\\s+read\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+]
+max_lines = 100
+
+# ─── SMART SUMMARY (Alternative to read for large files) ───
+[filters.smart-summary]
+description = "Force limits on smart summaries"
+match_command = "^rtk\\s+smart\\s"
+strip_ansi = true
+max_lines = 30
+
+# ─── GREP OPTIMIZATION ───
+[filters.grep-compact]
+description = "Truncate grep output, remove path prefixes"
+match_command = "^rtk\\s+grep\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+]
+max_lines = 40
+
+# ─── HARDHAT (Solidity Compilation & Deployment) ───
+[filters.hardhat-compile]
+description = "Strip Solidity compiler noise, keep only warnings/errors"
+match_command = "^(npx\\s+)?hardhat\\s+(compile|size-contracts)"
+strip_ansi = true
+strip_lines_matching = [
+    "^Compiled \\d+ Solidity",
+    "^Compiling \\d+ files",
+    "^Generating typings",
+    "^Nothing to compile",
+    "^Solidity \\d+",
+    "^Downloading compiler",
+    "^Compiler run successful",
+    "^\\s*$",
+]
+max_lines = 20
+on_empty = "hardhat: ✓ compiled"
+
+[filters.hardhat-deploy]
+description = "Compact deployment output, keep only contract addresses and gas"
+match_command = "^(npx\\s+)?hardhat\\s+run"
+strip_ansi = true
+strip_lines_matching = [
+    "^Compiled \\d+ Solidity",
+    "^Generating typings",
+    "^Nothing to compile",
+    "^\\s*$",
+]
+max_lines = 30
+on_empty = "hardhat: ✓ deployed"
+
+[filters.hardhat-test]
+description = "Compact test runner output"
+match_command = "^(npx\\s+)?hardhat\\s+test"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^  (Compiled|Generating|Nothing)",
+]
+max_lines = 25
+on_empty = "hardhat: ✓ tests passed"
+
+# ─── NPM / NPX ───
+[filters.npm-install]
+description = "Strip npm install noise"
+match_command = "^npm\\s+(install|ci|i)\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^npm (warn|notice|ERR!)",
+    "^up to date",
+    "^added \\d+ packages",
+    "^removed \\d+ packages",
+    "^changed \\d+ packages",
+    "^audited \\d+ packages",
+    "^found \\d+ vulnerabilities",
+    "^\\d+ packages? (are|is) looking",
+]
+max_lines = 15
+on_empty = "npm: ✓ installed"
+
+[filters.npm-run]
+description = "Compact npm run output"
+match_command = "^npm\\s+run\\s+"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^> .*",
+    "^npm (warn|notice)",
+]
+max_lines = 30
+
+[filters.npx]
+description = "Compact npx output"
+match_command = "^npx\\s+"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^Need to install",
+    "^npm (warn|notice)",
+]
+max_lines = 40
+
+# ─── NODE SCRIPTS ───
+[filters.node-scripts]
+description = "Compact Node.js script output"
+match_command = "^node\\s+scripts?/"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+]
+max_lines = 40
+on_empty = "node: ✓ done"
+
+[filters.node-audit]
+description = "Compact audit script output (check_sync_status, agent_anti_negligence)"
+match_command = "^node\\s+scripts?/audits?/"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^═+$",
+    "^─+$",
+    "^\\*+$",
+]
+max_lines = 30
+
+# ─── VITE (Frontend Dev Server) ───
+[filters.vite-dev]
+description = "Strip Vite dev server boilerplate"
+match_command = "^(npx\\s+)?vite\\s+(dev|build|preview)"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^  VITE v\\d",
+    "^  ➜  Local:",
+    "^  ➜  Network:",
+    "^  ➜  press h",
+    "^  Shortcuts",
+    "^  press r",
+    "^  press u",
+    "^  press o",
+    "^  press c",
+    "^  press q",
+]
+max_lines = 20
+on_empty = "vite: ✓ running"
+
+[filters.vite-build]
+description = "Strip Vite/Rollup build noise"
+match_command = "^(npx\\s+)?vite\\s+build"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^vite v\\d",
+    "^✓ built in",
+    "^✓ \\d+ modules",
+    "^ optimized",
+    "^rendering chunks",
+    "^computing gzip",
+]
+max_lines = 15
+on_empty = "vite: ✓ built"
+
+# ─── TYPESCRIPT ───
+[filters.tsc]
+description = "Compact TypeScript errors only"
+match_command = "^(npx\\s+)?tsc\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+]
+max_lines = 25
+on_empty = "tsc: ✓ no errors"
+
+[filters.tsc-noemit]
+description = "Compact tsc --noEmit check"
+match_command = "^(npx\\s+)?tsc\\s+.*--noEmit"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+]
+max_lines = 20
+on_empty = "tsc: ✓ typecheck passed"
+
+# ─── ESLINT ───
+[filters.eslint]
+description = "Compact ESLint violations only"
+match_command = "^(npx\\s+)?eslint\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+]
+max_lines = 30
+on_empty = "eslint: ✓ clean"
+
+# ─── GITLEAKS ───
+[filters.gitleaks]
+description = "Compact gitleaks secret scanner output"
+match_command = "^(npx\\s+)?gitleaks-secret-scanner"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^    ○",
+    "^    ├",
+    "^    └",
+    "^    │",
+]
+max_lines = 10
+on_empty = "gitleaks: ✓ no leaks"
+
+# ─── GIT ───
+[filters.git-status]
+description = "Compact git status"
+match_command = "^git\\s+status"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^On branch",
+    "^Your branch is",
+    "^nothing to commit",
+    "^no changes added",
+]
+max_lines = 25
+
+[filters.git-diff]
+description = "Ultra-condensed git diff"
+match_command = "^git\\s+diff"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^diff --git",
+    "^index ",
+    "^--- ",
+    "^\\+\\+\\+ ",
+]
+max_lines = 50
+
+[filters.git-log]
+description = "Compact git log"
+match_command = "^git\\s+log"
+strip_ansi = true
+max_lines = 15
+
+# ─── SUPABASE ───
+[filters.supabase]
+description = "Compact Supabase CLI output"
+match_command = "^(npx\\s+)?supabase\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^Linked project",
+    "^  • ",
+]
+max_lines = 30
+
+# ─── VERIFICATION SERVER ───
+[filters.verification-server]
+description = "Compact verification server output"
+match_command = "^node\\s+verification-server/"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+]
+max_lines = 30
+
+# ─── RAFFLE FRONTEND (sub-directory) ───
+[filters.raffle-npm]
+description = "Compact Raffle_Frontend npm commands"
+match_command = "^cd\\s+.*Raffle_Frontend.*&&.*npm\\s+"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^> .*",
+    "^npm (warn|notice)",
+]
+max_lines = 40
+
+# ─── PYTHON / PIP ───
+[filters.python]
+description = "Compact Python/pip output"
+match_command = "^(python|pip|pip3)\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^Requirement already satisfied",
+    "^Collecting ",
+    "^  Downloading ",
+    "^  Using cached ",
+    "^Installing collected",
+    "^Successfully installed",
+]
+max_lines = 20
+
+# ─── CARGO / RUST ───
+[filters.cargo]
+description = "Compact Cargo output"
+match_command = "^cargo\\s"
+strip_ansi = true
+strip_lines_matching = [
+    "^\\s*$",
+    "^   Compiling",
+    "^    Checking",
+    "^    Finished",
+    "^    Building",
+]
+max_lines = 30
+on_empty = "cargo: ✓ done"
+

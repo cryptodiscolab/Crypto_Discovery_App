@@ -384,7 +384,7 @@ contract DailyAppV13 is ERC721, AccessControl, Pausable, ReentrancyGuard {
         allowedPaymentTokens[_token] = _status;
     }
 
-    function setGlobalRewards(uint256 _daily, uint256 _referral) external onlyRole(ADMIN_ROLE) {
+    function setGlobalRewards(uint256 _daily, uint256) external onlyRole(ADMIN_ROLE) {
         dailyBonusAmount = _daily;
         // baseReferralReward = _referral; // If added in future
     }

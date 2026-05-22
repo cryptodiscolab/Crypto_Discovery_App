@@ -4,8 +4,6 @@
  * v3.64.19-Hardened
  */
 
-import React from 'react';
-
 interface TierProgressBarProps {
   currentXP: number;
   requiredXP: number;

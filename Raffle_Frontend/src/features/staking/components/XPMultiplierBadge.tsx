@@ -4,8 +4,6 @@
  * v3.64.19-Hardened
  */
 
-import React from 'react';
-
 interface XPMultiplierBadgeProps {
   multiplierDisplay: string; // e.g. "+10%"
   bonusBP: number;           // raw bonus basis points above 10000

@@ -11,13 +11,10 @@ import {
     Trophy,
     ChevronLeft,
     ExternalLink,
-    Twitter,
     Globe,
     ShieldCheck,
-    Ticket,
     Info,
     AlertCircle,
-    Loader2,
     Lock
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';

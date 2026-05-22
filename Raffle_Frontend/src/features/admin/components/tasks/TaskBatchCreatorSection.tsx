@@ -1,4 +1,4 @@
-import { Plus, Zap, Shield, Send, RefreshCw, Repeat, MessageCircle, Heart, Twitter, Share2, Video, Instagram } from 'lucide-react';
+import { Plus, Zap, RefreshCw, Repeat, MessageCircle, Heart, Twitter, Share2, Video, Instagram } from 'lucide-react';
 import React from 'react';
 
 const PLATFORMS: Record<string, { id: string; domain: string; icon: React.ReactNode }> = {

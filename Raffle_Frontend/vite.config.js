@@ -42,14 +42,15 @@ export default defineConfig({
     minify: 'esbuild',
     sourcemap: false,
     cssCodeSplit: true,
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
-      treeshake: false, // Disabled to fix Li.Fi AST parsing error (even with lazy loading)
+      treeshake: true,
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-web3': ['wagmi', 'viem', '@rainbow-me/rainbowkit'],
-          'vendor-ui': ['lucide-react', 'react-hot-toast']
-        },
+          'vendor-ui': ['lucide-react', 'react-hot-toast'],
+        }
       },
       onwarn(warning, warn) {
         if (warning.code === 'CIRCULAR_DEPENDENCY') return;
