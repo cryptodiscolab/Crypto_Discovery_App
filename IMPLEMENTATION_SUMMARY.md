@@ -4,6 +4,49 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.21-Hardened (Contract Redeployment + Automated Backup System)
+- **Status**: Completed. Ownable2Step contracts deployed, backup system live.
+- **MasterX Redeployed (Ownable2Step)**: `0x5916E4A76Ec2a790373FDC2C7410d5065856F142` (was `0x9807...`)
+- **Raffle Redeployed (Ownable2Step)**: `0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7` (was `0xE7CB...`)
+- **7 Init Transactions**: V16→MasterX linked, V16→Raffle ROLE granted, MasterX→Raffle satellite, QRNG params set, first raffle initialized (raffleId=1 ✅)
+- **Backup System**: `scripts/backup/backup_supabase.cjs` (manual) + `api/cron/backup.ts` (daily 05:00 UTC). Initial backup: 15 tables · 735 rows → Supabase Storage `db-backups/2026-05-23T02-14-29` + local `backups/`.
+- **Retention**: 30 daily backups auto-rotated. Telegram alert on completion/failure.
+- **Vercel Env**: MasterX/Raffle addresses updated via `scripts/sync/update_vercel_contracts.cjs`.
+- **Files Changed**: `scripts/backup/backup_supabase.cjs`, `api/cron/backup.ts`, `vercel.json` (+backup cron), `scripts/deployments/deploy_master_x_v3_17.cjs` (existing), `scripts/deployments/deploy_raffle_v2.cjs` (existing), `scripts/deployments/init_new_contracts.cjs` (new), `.env.local` (new addresses), `.cursorrules` Section 10.
+
+## v3.64.20-Hardened (E2E Security Audit + Full Codebase Fix Session)
+- **Status**: Completed. All code fixes applied, contracts upgraded on-chain, env vars synced to Vercel.
+- **E2E Audit**: Full codebase audit across Smart Contracts, Frontend, Off-chain Services, .cursorrules compliance.
+
+### Contract Fixes:
+- **C3 Fix — Ownable2Step**: `CryptoDiscoMasterX.sol` + `CryptoDiscoRaffle.sol`: `Ownable` → `Ownable2Step` (two-step ownership transfer).
+- **L2 Fix — Emergency Stop DailyAppV16**: Added inline `_paused` + `whenNotPaused` + `pause()`/`unpause()` (ADMIN_ROLE). Applied to `doTask`, `claimDailyBonus`, `mintNFT`, `upgradeNFT`.
+- **C2b Fix — ReentrancyGuard DailyAppV16**: Added inline `_locked` + `nonReentrant` to `withdrawTreasury`.
+- **DailyAppV16 UUPS Upgrade Deployed**: New implementation `0xFEAA096a0b5334F9F4C46Fc1624d647c2f97D251` — tx `0x40d5804...65ba78f2` (BaseScan). Proxy unchanged at `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353`.
+
+### Frontend Fixes:
+- **FM2 Fix — Sentry SDK**: `@sentry/node` → `@sentry/react 10.53.1` (exact pin, browser SDK).
+- **Section 57 Fix — Exact Pinning**: `axios` pinned to exact `1.16.1` (no `^`).
+- **Critical .env.local Fix**: Malformed `VITE_DAILY_APP_ADDRESS` and `VITE_MASTER_X_ADDRESS` (key embedded in value) corrected. Added 14 missing `VITE_` vars: `VITE_DAILY_APP_V16_ADDRESS`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_REOWN_PROJECT_ID`, `VITE_NEYNAR_CLIENT_ID`, etc.
+- **ABI Updated**: `daily_app_abi.json` regenerated from compiled artifact (145 entries, +4 new: pause/unpause/Paused/Unpaused). `abis_data.txt` rebuilt via `rebuild_abis_data.cjs`.
+- **TypeScript**: 0 errors — `npx tsc --noEmit` passes clean.
+
+### Backend Fixes:
+- **CORS Restricted**: `verification-server/api/index.js` now allows only known origins (Vercel frontend URL + localhost dev).
+
+### Vercel Env Sync:
+- **18 env vars pushed** to Vercel (production + preview + development) via `push_vercel_env_cli.cjs`.
+- Fixed: `VITE_DAILY_APP_ADDRESS`, `VITE_MASTER_X_ADDRESS`, `RAFFLE_ADDRESS`.
+- Added: `VITE_DAILY_APP_V16_ADDRESS`, `VITE_MASTER_X_ADDRESS_SEPOLIA`, `VITE_V12_CONTRACT_ADDRESS_SEPOLIA`, `VITE_RAFFLE_ADDRESS`, `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA`, `VITE_REOWN_PROJECT_ID`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_NEYNAR_CLIENT_ID`, `VITE_PRICE_FEED_ADDRESS`, `VITE_EXPLORER_URL`, `VITE_CHAIN_ID`.
+
+### Audit Results:
+- **Sync Audit**: 13/13 checks PASSED ✅
+- **Compiled**: 60 Solidity files (evm: paris) ✅
+- **False Positives Cleared**: 7 initial findings were false positives (block.prevrandao, ReentrancyGuard, EIP712, expiry, hardcoded addresses, rate limiting, webhook auth — all already correctly implemented).
+
+### Files Changed:
+`contracts/CryptoDiscoMasterX.sol`, `contracts/CryptoDiscoRaffle.sol`, `contracts/DailyAppV16.sol`, `Raffle_Frontend/package.json`, `Raffle_Frontend/.env.local`, `Raffle_Frontend/src/lib/daily_app_abi.json`, `Raffle_Frontend/src/lib/abis_data.txt`, `verification-server/api/index.js`, `scripts/deployments/upgrade_v16_impl.cjs`, `scripts/sync/push_vercel_env_cli.cjs`, `AUDIT_E2E_REPORT.md`, `.cursorrules`.
+
 ## v3.64.19-Hardened (Stateless SIWE EIP-4361 Authentication Implementation)
 - **Status**: Completed, audited, and verified via build and system checks.
 - **SIWE (EIP-4361) Integration**: Integrated EIP-4361 authentication into both the backend and frontend to secure user logins and profile synchronization.

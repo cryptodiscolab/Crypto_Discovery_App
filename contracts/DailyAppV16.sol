@@ -168,6 +168,26 @@ contract DailyAppV16 is UUPSUpgradeable {
         _;
     }
 
+    // ── Minimal Pausable (avoids PausableUpgradeable import to stay < 24 KiB) ──
+    bool private _paused;
+    event Paused(address account);
+    event Unpaused(address account);
+
+    modifier whenNotPaused() {
+        if (_paused) revert Unauthorized();
+        _;
+    }
+
+    // ── Minimal ReentrancyGuard (avoids extra import) ──
+    bool private _locked;
+
+    modifier nonReentrant() {
+        if (_locked) revert Unauthorized();
+        _locked = true;
+        _;
+        _locked = false;
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -327,7 +347,7 @@ contract DailyAppV16 is UUPSUpgradeable {
         }
     }
 
-    function doTask(uint256 taskId, address referrer) external notBlacklisted {
+    function doTask(uint256 taskId, address referrer) external notBlacklisted whenNotPaused {
         Task memory task = tasks[taskId];
         UserStats storage stats = userStats[msg.sender];
 
@@ -375,7 +395,19 @@ contract DailyAppV16 is UUPSUpgradeable {
         emit TaskCompleted(msg.sender, taskId, reward, block.timestamp);
     }
 
-    function claimDailyBonus() external notBlacklisted {
+    /// @notice Emergency pause — stops doTask, claimDailyBonus, mintNFT, upgradeNFT
+    function pause() external onlyRole(ADMIN_ROLE) {
+        _paused = true;
+        emit Paused(msg.sender);
+    }
+
+    /// @notice Resume contract operations
+    function unpause() external onlyRole(ADMIN_ROLE) {
+        _paused = false;
+        emit Unpaused(msg.sender);
+    }
+
+    function claimDailyBonus() external notBlacklisted whenNotPaused {
         UserStats storage stats = userStats[msg.sender];
         if (block.timestamp < stats.lastDailyBonusClaim + 24 hours) revert Unauthorized();
         _joinIfNeeded(msg.sender);
@@ -404,11 +436,11 @@ contract DailyAppV16 is UUPSUpgradeable {
         return taskVerified[user][taskId];
     }
 
-    function mintNFT(NFTTier tier) external payable notBlacklisted validTier(tier) {
+    function mintNFT(NFTTier tier) external payable notBlacklisted validTier(tier) whenNotPaused {
         _mintOrUpgrade(tier);
     }
 
-    function upgradeNFT() external payable notBlacklisted {
+    function upgradeNFT() external payable notBlacklisted whenNotPaused {
         NFTTier currentTier = userStats[msg.sender].currentTier;
         if (currentTier >= NFTTier.DIAMOND) revert MaxLimitReached();
         _mintOrUpgrade(NFTTier(uint256(currentTier) + 1));
@@ -599,7 +631,7 @@ contract DailyAppV16 is UUPSUpgradeable {
         usdcToken = token;
     }
 
-    function withdrawTreasury(address payable to, uint256 amount) external onlyRole(ADMIN_ROLE) validAddress(to) {
+    function withdrawTreasury(address payable to, uint256 amount) external onlyRole(ADMIN_ROLE) validAddress(to) nonReentrant {
         uint256 value = amount == 0 ? address(this).balance : amount;
         if (value == 0 || value > address(this).balance) revert InvalidParameters();
         (bool ok, ) = to.call{value: value}("");

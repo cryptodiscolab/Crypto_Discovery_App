@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 interface AggregatorV3Interface {
     function decimals() external view returns (uint8);
@@ -29,7 +29,7 @@ interface IDailyApp {
  * @notice Optimized Revenue Distribution & Point System
  * @dev Modularized to stay under 24KB ceiling. Integrated with CryptoDiscoRaffle.
  */
-contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable {
+contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable2Step {
     
     // ============ Enums & Structs ============
     

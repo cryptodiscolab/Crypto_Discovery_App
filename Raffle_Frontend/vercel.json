@@ -120,6 +120,10 @@
         {
             "path": "/api/cron/reconcile-pending",
             "schedule": "0 3 * * *"
+        },
+        {
+            "path": "/api/cron/backup",
+            "schedule": "0 5 * * *"
         }
     ]
 }

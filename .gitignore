@@ -14,6 +14,10 @@ node_modules/
 .env.vercel
 .env.vercel.prod
 
+# === DATABASE BACKUPS (contain user PII — NEVER COMMIT) ===
+backups/
+backups/**
+
 # === BUILD & COMPILE OUTPUTS ===
 dist/
 artifacts/

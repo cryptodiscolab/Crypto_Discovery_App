@@ -6,8 +6,29 @@ const adminRoutes = require('../routes/admin.routes');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Middleware — restrict CORS to known frontend origins
+const allowedOrigins = [
+    'https://crypto-disco-raffle.vercel.app',
+    'https://dailyapp-verification-server.vercel.app',
+    process.env.VITE_VERIFY_SERVER_URL,
+    process.env.ALLOWED_ORIGIN,
+    // Allow localhost in development
+    ...(process.env.NODE_ENV !== 'production'
+        ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173']
+        : []),
+].filter(Boolean);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, Vercel cron)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: Origin ${origin} not allowed`));
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'x-api-secret', 'Authorization', 'x-telegram-bot-api-secret-token'],
+    credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

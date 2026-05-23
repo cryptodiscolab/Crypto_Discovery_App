@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 // Manual interface definition to avoid buggy constructor calls in inherited Requesters
 interface IAirnodeRrpV0 {
@@ -29,7 +29,7 @@ interface ICryptoDiscoMaster {
  * @notice Modular Raffle system for Crypto Disco App
  * @dev Hardened version with Manual RRP to bypass Airnode Protocol v0.15 constructor reverts.
  */
-contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable {
+contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable2Step {
     
     struct RaffleData {
         uint256 raffleId;
