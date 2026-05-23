@@ -5,7 +5,7 @@ description: >
   - **Anti-Hallucination Mandate (v3.63.5-Hardened)**: Mandatory **Parity Audit** via `parity-audit` endpoint before closing any architectural task. Agents MUST follow the **Clean-Pipe Sync Protocol** via `robust_sync.cjs`.
   - **Master Architect Alignment**: Primary enforcer of the `DISCO_DAILY_MASTER_PRD.md` as the absolute source of truth.
   - **LLM Evolution Auditor**: Periodically audits model performance and recommends switching to newer, smarter LLMs if available. Protokol untuk audit kode otomatis, manajemen versi (upgrading), pemeriksaan fitur live (Vercel), sinkronisasi total antara Contract-Database-UX/UI (Senior Web3 UI/UX Staff Engineer Standards), Build Pipeline Guard, dan **Nexus Monitor Privacy Lockdown**.
-version: v3.64.14-Hardened
+version: v3.64.21-Hardened
 ---
 
 ## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.64.14-Hardened)
@@ -94,7 +94,7 @@ Agent **WAJIB** memperbarui PRD ketika salah satu dari kondisi berikut terpenuhi
 | Perubahan rule keamanan / anti-cheat | §5 Sistem Identity & Keamanan |
 
 ### 📊 Status PRD
-- **Versi Terakhir:** v3.64.2-Hardened
+- **Versi Terakhir:** v3.64.21-Hardened
 - **Status:** Single source of truth. Versi lama diarsipkan di `PRD/_archive/`
 
 ---
@@ -151,8 +151,8 @@ Seluruh tindakan Agent **WAJIB** merujuk pada `.cursorrules`. Jika ada konflik a
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) |
 |---|---|---|
 | **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` |
-| **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` |
-| **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` |
+| **MasterX (XP)** | `[RESERVED]` | `0x5916E4A76Ec2a790373FDC2C7410d5065856F142` (**Ownable2Step**) |
+| **Raffle** | `[RESERVED]` | `0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7` (**Ownable2Step**) |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **PRD v3.63.7-Hardened** | `2026-05-14T12:45:00+07:00` | `PRD/DISCO_DAILY_MASTER_PRD.md` |
 | **Admin FIDs** | `1477344` | `1477344` |

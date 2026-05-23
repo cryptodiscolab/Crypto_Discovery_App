@@ -1,6 +1,6 @@
 name: Secure Infrastructure & Contract Manager
 description: Manages smart contract lifecycle, environmental synchronization, and absolute privacy for sensitive data. Includes ABI Proxy architecture and build safety protocols.
-version: v3.63.5-Hardened
+version: v3.64.21-Hardened
 ---
 
 # Secure Infrastructure & Master Protocol Architect (v3.63.5-Hardened)
@@ -30,8 +30,8 @@ Setiap keputusan infrastruktur (pemilihan RPC, update alamat kontrak, atau manaj
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | ENV Key |
 |---|---|---|---|
-| **MasterX (XP)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
-| **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
+| **MasterX (XP)** | `[RESERVED]` | `0x5916E4A76Ec2a790373FDC2C7410d5065856F142` (**Ownable2Step**) | `VITE_MASTER_X_ADDRESS_SEPOLIA` |
+| **Raffle** | `[RESERVED]` | `0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7` (**Ownable2Step**) | `VITE_RAFFLE_ADDRESS_SEPOLIA` |
 | **DailyApp V16** | `[RESERVED]` | `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353` | `VITE_DAILY_APP_V16_ADDRESS` |
 | **DailyApp Legacy** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | `VITE_V12_CONTRACT_ADDRESS_SEPOLIA` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `VITE_CMS_CONTRACT_ADDRESS_SEPOLIA` |
@@ -120,4 +120,23 @@ ABIs WAJIB diekspor menggunakan **Proxy pattern** di `src/lib/contracts.js` untu
 - **Corrupted Env Usage (Silent Corruption)**: Menggunakan variabel lingkungan tanpa `.trim()` atau pembersihan "sampah" karakter (literal double quotes/newlines).
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.63.5-Hardened*
+## 🗄️ Automated DB Backup System (v3.64.21-Hardened)
+
+### Manual Backup
+```bash
+node scripts/backup/backup_supabase.cjs
+# Output: backups/YYYY-MM-DDTHH-mm-ss/ (local) + Supabase Storage db-backups/
+# Tables: 15 | Retention: 30 days | Alert: Telegram
+```
+
+### Daily Cron (Vercel)
+- File: `Raffle_Frontend/api/cron/backup.ts`
+- Schedule: `0 5 * * *` (05:00 UTC) via `vercel.json`
+
+### Aturan Backup
+- `backups/` WAJIB di `.gitignore` — berisi PII user, TIDAK BOLEH di-commit
+- Backup cloud di Supabase Storage bucket `db-backups`
+- Auto-rotate: 30 backups terbaru, sisanya dihapus otomatis
+
+---
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.64.21-Hardened*

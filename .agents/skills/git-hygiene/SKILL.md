@@ -1,7 +1,7 @@
 ---
 name: Git Hygiene & Clean Tree Manager
 description: Protokol untuk menjaga repositori Git tetap bersih dan organized. Skill ini menegakkan Clean Git Tree Mandate dari gemini.md (Section 27) yang melarang file sementara, secrets, dan artefak lainnya masuk ke source control. Berlaku untuk Antigravity dan semua sub-agents.
-version: v3.64.14-Hardened
+version: v3.64.21-Hardened
 ---
 
 ## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.64.14-Hardened)
@@ -34,6 +34,7 @@ Git adalah **Single Source of Truth** untuk kode sumber. Polutan berikut ini **D
 | `*.log`, `*.tmp`, `*.scratch.*` | Log & file sementara |
 | `*.png`, `*.jpg`, `*.webp`, `*.gif`, `*.mp4` | Screenshot & media — DILARANG MUTLAK |
 | `*.pem`, `*.key`, `*.p12`, `*.cert` | Certificates & Private Keys — DILARANG MUTLAK |
+| `backups/` | **DB backup dumps — berisi PII user — TIDAK BOLEH PERNAH di-commit!** |
 | `node_modules/`, `dist/`, `artifacts/`, `cache/` | Dependencies & build output |
 
 ### ✅ ALWAYS TRACK (Wajib masuk Git)
@@ -133,4 +134,17 @@ Skill ini WAJIB dipahami dan diterapkan oleh **semua 12 agents**:
 
 ---
 
-*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.64.14-Hardened.*
+## ⚠️ Lessons Learned (v3.64.21-Hardened)
+
+### Transaction Hash vs Private Key Pattern
+Anti-negligence hook menggunakan regex `/[0-9a-fA-F]{64}/` yang akan mendeteksi tx hash (64 hex chars) sebagai private key. **Solusi**: Abbreviated form `0x40d5804...65ba78f2` bukan full hash.
+
+### `vercel env add` — 1 environment per call
+Vercel CLI tidak mendukung `vercel env add KEY production preview development` sekaligus. Harus dipanggil terpisah per environment. Gunakan `scripts/sync/update_vercel_contracts.cjs` yang sudah handle ini.
+
+### `backups/` WAJIB di .gitignore
+DB backup dumps (`backups/`) berisi PII user — tidak boleh pernah di-commit. Pastikan selalu ada di `.gitignore` sebelum membuat backup system.
+
+---
+
+*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.64.21-Hardened.*
