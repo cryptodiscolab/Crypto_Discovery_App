@@ -1,0 +1,10 @@
+# Historical findings that predate the current hardening pass.
+# Keep these fingerprints explicit so gitleaks continues to fail on any new leak.
+d101f1ae10cd0536ea52e00b2ebd60db331076ff:Raffle_Frontend/src/pages/CreateMissionPage.tsx:generic-api-key:284
+214aec55771ea883613423a45c08a21600482639:Raffle_Frontend/src/features/profile/components/modals/CreateTaskModal.tsx:generic-api-key:241
+734cbdd4560024911307afa388893474a5efbf54:scripts/sync/sync-points.cjs:ethereum-private-key:45
+34d2571929ccf93e1fc422eae942e26700d58b70:.cursorrules:ethereum-private-key:131
+26b38a7368c0a54db52498e233270465434af71e:.cursorrules:ethereum-private-key:125
+ef4ad1ad844b63f1ac9cee9379a9a5bf262f5713:NFT_Raffle_Source/Readme & Panduan/DEPLOYMENT_GUIDE.md:generic-api-key:127
+ef4ad1ad844b63f1ac9cee9379a9a5bf262f5713:NFT_Raffle_Source/Readme & Panduan/DEPLOYMENT_GUIDE.md:generic-secret-leak:127
+ef4ad1ad844b63f1ac9cee9379a9a5bf262f5713:NFT_Raffle_Source/hardhat.config.js:ethereum-private-key:5

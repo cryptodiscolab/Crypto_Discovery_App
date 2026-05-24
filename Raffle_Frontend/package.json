@@ -14,7 +14,7 @@
     "check-live-rls": "node scripts/check-live-rls.cjs",
     "audit-checks": "npm run check-routes && npm run check-abi",
     "check-sync": "node scripts/audits/check_sync_status.cjs",
-    "gitleaks-check": "gitleaks detect --source . --config .gitleaks.toml --redact 2>&1 || echo 'gitleaks not installed — run: brew install gitleaks'",
+    "gitleaks-check": "gitleaks detect --source . --config ../.gitleaks.toml --gitleaks-ignore-path ../.gitleaksignore --redact",
     "postinstall": "patch-package"
   },
   "dependencies": {

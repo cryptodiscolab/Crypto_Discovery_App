@@ -15,6 +15,9 @@ export const useProfile = (address: string | undefined) => {
         queryFn: () => userService.getProfile(address!),
         enabled: !!address,
         staleTime: 1000 * 60 * 5, // 5 minutes
+        refetchInterval: 60_000,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
     });
 
     useEffect(() => {
@@ -49,6 +52,9 @@ export const useActivityLogs = (address: string | undefined, category?: string) 
         enabled: !!address,
         staleTime: 0, // Always refetch on mount/category change
         refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        refetchInterval: 30_000,
+        refetchIntervalInBackground: true,
     });
 
     useEffect(() => {

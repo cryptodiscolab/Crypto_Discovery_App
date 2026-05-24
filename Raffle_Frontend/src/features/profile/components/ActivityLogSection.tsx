@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useActivityLogs } from '../hooks/useProfileQueries';
 import { ActivityLog } from '../types';
-import { Award, Calendar, Clock, ExternalLink, Fingerprint, Gem, History, RefreshCw, ShoppingCart, Ticket, Users, Zap } from 'lucide-react';
+import { Award, Calendar, Clock, ExternalLink, Fingerprint, Gem, History, RefreshCw, Repeat2, ShoppingCart, Ticket, Users, Zap } from 'lucide-react';
 
 interface ActivityLogSectionProps {
     walletAddress?: string;
@@ -19,8 +19,10 @@ export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) =
     const categories = [
         { id: 'ALL', label: 'ALL', icon: History },
         { id: 'XP', label: 'XP', icon: Zap },
+        { id: 'REFERRAL', label: 'REFERRAL', icon: Users },
         { id: 'DAILY', label: 'DAILY', icon: Calendar },
         { id: 'PURCHASE', label: 'PURCHASES', icon: ShoppingCart },
+        { id: 'SWAP', label: 'SWAPS', icon: Repeat2 },
         { id: 'REWARD', label: 'REWARDS', icon: Award },
         { id: 'RAFFLE', label: 'RAFFLE', icon: Ticket },
         { id: 'SBT', label: 'SBT', icon: Gem },
@@ -37,6 +39,7 @@ export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) =
     const getCategoryStyle = (cat: string) => {
         switch (cat) {
             case 'XP': return 'bg-purple-500/20 text-purple-400';
+            case 'REFERRAL': return 'bg-emerald-500/20 text-emerald-400';
             case 'PURCHASE': case 'SWAP': case 'EXPENSE': return 'bg-blue-500/20 text-blue-400';
             case 'SBT': return 'bg-indigo-500/20 text-indigo-400';
             case 'DAILY': return 'bg-green-500/20 text-green-400';
@@ -53,6 +56,8 @@ export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) =
     const getCategoryIcon = (cat: string) => {
         switch (cat) {
             case 'XP': return Zap;
+            case 'REFERRAL': return Users;
+            case 'SWAP': return Repeat2;
             case 'PURCHASE': case 'SWAP': case 'EXPENSE': return ShoppingCart;
             case 'SBT': return Gem;
             case 'DAILY': return Calendar;
