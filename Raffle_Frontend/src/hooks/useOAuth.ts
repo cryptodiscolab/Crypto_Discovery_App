@@ -39,7 +39,7 @@ export function useOAuth() {
         // Use SDK to get the authorization URL.
         // skipBrowserRedirect: true prevents it from redirecting the current tab.
         const { data, error } = await supabase.auth.signInWithOAuth({
-            provider,
+            provider: provider === 'twitter' ? ('x' as unknown as 'twitter') : provider,
             options: {
                 redirectTo,
                 skipBrowserRedirect: true,
@@ -129,6 +129,11 @@ export function useOAuth() {
             // 1. OAuth popup
             const oauthUser = await openSupabaseOAuth('google');
 
+            // Get session token (Zero-Trust)
+            const { supabase } = await import('../lib/supabaseClient');
+            const { data: { session } } = await supabase.auth.getSession();
+            const oauthToken = session?.access_token;
+
             // 2. Sign wallet message (Zero-Trust)
             const timestamp = new Date().toISOString();
             const message = `Link Google Account to Wallet\nWallet: ${address}\nGoogle: ${oauthUser.email}\nTimestamp: ${timestamp}`;
@@ -146,6 +151,7 @@ export function useOAuth() {
                     signature,
                     message,
                     provider: 'google',
+                    oauth_token: oauthToken,
                     oauth_data: {
                         google_id: oauthUser.id,
                         google_email: oauthUser.email,
@@ -191,6 +197,11 @@ export function useOAuth() {
             const twitterUsername = oauthUser.user_metadata?.user_name || oauthUser.user_metadata?.preferred_username;
             const twitterId = oauthUser.user_metadata?.provider_id || oauthUser.id;
 
+            // Get session token (Zero-Trust)
+            const { supabase } = await import('../lib/supabaseClient');
+            const { data: { session } } = await supabase.auth.getSession();
+            const oauthToken = session?.access_token;
+
             // 2. Sign wallet message (Zero-Trust)
             const timestamp = new Date().toISOString();
             const message = `Link X Account to Wallet\nWallet: ${address}\nX: @${twitterUsername}\nTimestamp: ${timestamp}`;
@@ -208,6 +219,7 @@ export function useOAuth() {
                     signature,
                     message,
                     provider: 'x',
+                    oauth_token: oauthToken,
                     oauth_data: {
                         twitter_id: twitterId,
                         twitter_username: twitterUsername,

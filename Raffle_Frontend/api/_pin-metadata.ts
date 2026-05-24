@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getEnv, sanitizeError } from './_shared/constants.js';
+import { getEnv, sanitizeError, PINATA_API_URL } from './_shared/constants.js';
 
 const PINATA_JWT = getEnv('PINATA_JWT');
 
@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Invalid metadata' });
         }
 
-        const pinRes = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
+        const pinRes = await fetch(PINATA_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

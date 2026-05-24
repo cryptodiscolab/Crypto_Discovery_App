@@ -1,0 +1,258 @@
+{
+  "name": "Raffle Winner Announcement",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "raffle-winner-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "name": "Webhook - Raffle Winner",
+      "webhookId": "disco-raffle-winner"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract winner data from webhook payload\nconst payload = $input.first().json;\n\nreturn [{\n  json: {\n    raffle_id: payload.raffle_id || 'unknown',\n    winner_address: payload.winner_address,\n    winner_farcaster_fid: payload.farcaster_fid || null,\n    winner_twitter_handle: payload.twitter_handle || null,\n    winner_display_name: payload.display_name || 'Disco User',\n    prize_name: payload.prize_name || 'Mystery Prize',\n    prize_value: payload.prize_value || 'N/A',\n    tx_hash: payload.tx_hash || null,\n    raffle_name: payload.raffle_name || 'Community Raffle'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "name": "Code - Parse Winner Data"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "raffles",
+        "columns": "raffle_id, winner_address, prize_name, tx_hash, announced_at, notified",
+        "values": "={{ $json.raffle_id }}, {{ $json.winner_address }}, {{ $json.prize_name }}, {{ $json.tx_hash }}, NOW(), false"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "name": "Supabase - Record Winner",
+      "credentials": {
+        "supabaseApi": "disco-dailyapp-supabase"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $json.winner_farcaster_fid }}",
+            "typeValue": "string",
+            "rightValue": "",
+            "operator": {
+              "type": "string",
+              "operation": "notEquals"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 250],
+      "name": "IF - Has Farcaster?"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.neynar.com/v2/farcaster/cast",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $credentials.neynarApiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "signer_uuid",
+              "value": "={{ $credentials.farcasterSignerUuid }}"
+            },
+            {
+              "name": "text",
+              "value": "=🎉 CONGRATULATIONS! @{{ $json.winner_display_name }} just won **{{ $json.prize_name }}** in the {{ $json.raffle_name }}!\n\nPrize Value: {{ $json.prize_value }}\n\nJoin the next raffle: https://disco-daily.vercel.app/raffles\n\n#DiscoDaily #CryptoRaffle #Base"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200],
+      "name": "HTTP - Post FC Cast",
+      "credentials": {
+        "httpHeaderAuth": "neynar-credentials"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $json.winner_twitter_handle }}",
+            "typeValue": "string",
+            "rightValue": "",
+            "operator": {
+              "type": "string",
+              "operation": "notEquals"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 450],
+      "name": "IF - Has Twitter?"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.twitter.com/2/tweets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.twitterBearerToken }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "=🎉 @{{ $json.winner_twitter_handle }} just won {{ $json.prize_name }} in the {{ $json.raffle_name }} on Disco DailyApp!\n\nJoin us on Base: https://disco-daily.vercel.app\n\n#DiscoDaily #CryptoRaffle #Base"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 400],
+      "name": "HTTP - Post Twitter Tweet"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot{{ $credentials.telegramBotToken }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $credentials.telegramChatId }}"
+            },
+            {
+              "name": "text",
+              "value": "=🎉 *Raffle Winner!*\n\n🏆 Prize: {{ $json.prize_name }}\n💎 Value: {{ $json.prize_value }}\n👤 Winner: {{ $json.winner_address }}\n🎫 Raffle: {{ $json.raffle_name }}\n🔗 TX: https://basescan.org/tx/{{ $json.tx_hash }}\n\n_Announced by Disco DailyApp n8n_"
+            },
+            {
+              "name": "parse_mode",
+              "value": "Markdown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 600],
+      "name": "HTTP - Telegram Announcement"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "raffles",
+        "updateKey": "raffle_id",
+        "columns": "notified = true, announced_at = NOW()",
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $json.raffle_id }}",
+            "typeValue": "string",
+            "rightValue": "",
+            "operator": {
+              "type": "string",
+              "operation": "equals"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "name": "Supabase - Mark Notified",
+      "credentials": {
+        "supabaseApi": "disco-dailyapp-supabase"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Raffle Winner": {
+      "main": [[ { "node": "Code - Parse Winner Data", "type": "main", "index": 0 } ]]
+    },
+    "Code - Parse Winner Data": {
+      "main": [[ { "node": "Supabase - Record Winner", "type": "main", "index": 0 } ]]
+    },
+    "Supabase - Record Winner": {
+      "main": [[
+        { "node": "IF - Has Farcaster?", "type": "main", "index": 0 },
+        { "node": "IF - Has Twitter?", "type": "main", "index": 0 }
+      ]]
+    },
+    "IF - Has Farcaster?": {
+      "main": [
+        [{ "node": "HTTP - Post FC Cast", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "IF - Has Twitter?": {
+      "main": [
+        [{ "node": "HTTP - Post Twitter Tweet", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "HTTP - Post FC Cast": {
+      "main": [[ { "node": "HTTP - Telegram Announcement", "type": "main", "index": 0 } ]]
+    },
+    "HTTP - Post Twitter Tweet": {
+      "main": [[ { "node": "HTTP - Telegram Announcement", "type": "main", "index": 0 } ]]
+    },
+    "HTTP - Telegram Announcement": {
+      "main": [[ { "node": "Supabase - Mark Notified", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "disco-dailyapp" },
+    { "name": "notifications" },
+    { "name": "raffle" }
+  ],
+  "pinData": {},
+  "versionId": "1.0.0"
+}

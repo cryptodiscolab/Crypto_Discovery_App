@@ -1,5 +1,9 @@
 const { TwitterApi } = require('twitter-api-v2');
 const config = require('../config');
+const { withRetry } = require('./retry.util');
+
+// Default retry options for Twitter API (rate-limited at ~300 req/15min per endpoint)
+const TWITTER_RETRY_OPTS = { retries: 3, baseDelay: 2000, maxDelay: 30000, label: 'Twitter' };
 
 class TwitterService {
     constructor() {
@@ -28,10 +32,10 @@ class TwitterService {
             const MAX_PAGES = 5;
 
             while (page <= MAX_PAGES) {
-                const response = await this.readOnlyClient.v2.following(userId, {
+                const response = await withRetry(() => this.readOnlyClient.v2.following(userId, {
                     max_results: 100,
                     pagination_token: nextToken || undefined
-                });
+                }), TWITTER_RETRY_OPTS);
 
                 const isFollowing = response.data?.some(user => user.id === targetUserId);
                 if (isFollowing) return true;
@@ -61,10 +65,10 @@ class TwitterService {
             const MAX_PAGES = 5;
 
             while (page <= MAX_PAGES) {
-                const response = await this.readOnlyClient.v2.tweetLikedBy(tweetId, {
+                const response = await withRetry(() => this.readOnlyClient.v2.tweetLikedBy(tweetId, {
                     max_results: 100,
                     pagination_token: nextToken || undefined
-                });
+                }), TWITTER_RETRY_OPTS);
 
                 const hasLiked = response.data?.some(user => user.id === userId);
                 if (hasLiked) return true;
@@ -94,10 +98,10 @@ class TwitterService {
             const MAX_PAGES = 5;
 
             while (page <= MAX_PAGES) {
-                const response = await this.readOnlyClient.v2.tweetRetweetedBy(tweetId, {
+                const response = await withRetry(() => this.readOnlyClient.v2.tweetRetweetedBy(tweetId, {
                     max_results: 100,
                     pagination_token: nextToken || undefined
-                });
+                }), TWITTER_RETRY_OPTS);
 
                 const hasRetweeted = response.data?.some(user => user.id === userId);
                 if (hasRetweeted) return true;
@@ -127,11 +131,11 @@ class TwitterService {
             const MAX_PAGES = 2; // Scannya timeline user (sedalam 200 tweet)
 
             while (page <= MAX_PAGES) {
-                const response = await this.readOnlyClient.v2.userTimeline(userId, {
+                const response = await withRetry(() => this.readOnlyClient.v2.userTimeline(userId, {
                     max_results: 100,
                     pagination_token: nextToken || undefined,
                     expansions: ['referenced_tweets.id'],
-                });
+                }), TWITTER_RETRY_OPTS);
 
                 const hasQuoted = response.data?.some(tweet => {
                     return tweet.referenced_tweets?.some(
@@ -166,11 +170,11 @@ class TwitterService {
             const MAX_PAGES = 2; // Scannya timeline user (sedalam 200 tweet)
 
             while (page <= MAX_PAGES) {
-                const response = await this.readOnlyClient.v2.userTimeline(userId, {
+                const response = await withRetry(() => this.readOnlyClient.v2.userTimeline(userId, {
                     max_results: 100,
                     pagination_token: nextToken || undefined,
                     expansions: ['referenced_tweets.id'],
-                });
+                }), TWITTER_RETRY_OPTS);
 
                 const hasReplied = response.data?.some(tweet => {
                     return tweet.referenced_tweets?.some(
@@ -199,7 +203,7 @@ class TwitterService {
      */
     async getUserByUsername(username) {
         try {
-            const response = await this.readOnlyClient.v2.userByUsername(username);
+            const response = await withRetry(() => this.readOnlyClient.v2.userByUsername(username), TWITTER_RETRY_OPTS);
             return response.data || null;
         } catch (error) {
             console.error('Error fetching Twitter user:', error);
@@ -214,9 +218,9 @@ class TwitterService {
      */
     async getUserById(userId) {
         try {
-            const response = await this.readOnlyClient.v2.user(userId, {
+            const response = await withRetry(() => this.readOnlyClient.v2.user(userId, {
                 'user.fields': ['profile_image_url', 'description']
-            });
+            }), TWITTER_RETRY_OPTS);
             return response.data || null;
         } catch (error) {
             console.error('Error fetching Twitter user:', error);
@@ -234,9 +238,9 @@ class TwitterService {
     async verifyLinkage(userId, walletAddress, verificationCode) {
         try {
             // Get user's recent tweets
-            const response = await this.readOnlyClient.v2.userTimeline(userId, {
+            const response = await withRetry(() => this.readOnlyClient.v2.userTimeline(userId, {
                 max_results: 10,
-            });
+            }), TWITTER_RETRY_OPTS);
 
             if (!response.data || response.data.length === 0) return false;
 

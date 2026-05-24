@@ -5,6 +5,7 @@ import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
     NEYNAR_API_KEY,
+    NEYNAR_API_URL,
     getEnv,
     sanitizeError
 } from './_shared/constants.js';
@@ -34,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (!profile || Number(profile.fid) !== Number(fid)) return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        const response = await fetch('https://api.neynar.com/v2/farcaster/cast', {
+        const response = await fetch(NEYNAR_API_URL, {
             method: 'POST',
             headers: { 'api_key': NEYNAR_API_KEY || '', 'content-type': 'application/json' },
             body: JSON.stringify({

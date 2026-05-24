@@ -1,5 +1,9 @@
 const { NeynarAPIClient } = require('@neynar/nodejs-sdk');
 const config = require('../config');
+const { withRetry } = require('./retry.util');
+
+// Default retry options for Neynar API (Farcaster)
+const NEYNAR_RETRY_OPTS = { retries: 3, baseDelay: 1500, maxDelay: 20000, label: 'Neynar' };
 
 class NeynarService {
     constructor() {
@@ -22,10 +26,10 @@ class NeynarService {
             const maxPages = 5; // Safety cap: 500 followings checked
 
             while (attempts < maxPages) {
-                const response = await this.client.v2.fetchUserFollowing(fid, {
+                const response = await withRetry(() => this.client.v2.fetchUserFollowing(fid, {
                     limit: 100,
                     cursor: cursor || undefined
-                });
+                }), NEYNAR_RETRY_OPTS);
 
                 const isFollowing = response.users.some(user => user.fid === targetFid);
                 if (isFollowing) return true;
@@ -55,10 +59,10 @@ class NeynarService {
             const maxPages = 5; // Safety cap: 500 reactions checked
 
             while (attempts < maxPages) {
-                const response = await this.client.v2.fetchCastReactions(castHash, {
+                const response = await withRetry(() => this.client.v2.fetchCastReactions(castHash, {
                     limit: 100,
                     cursor: cursor || undefined
-                });
+                }), NEYNAR_RETRY_OPTS);
 
                 const hasLiked = response.reactions.some(
                     reaction => reaction.user.fid === fid && reaction.reaction_type === 'like'
@@ -90,10 +94,10 @@ class NeynarService {
             const maxPages = 3; // Safety cap for recasts
 
             while (attempts < maxPages) {
-                const response = await this.client.v2.fetchCastReactions(castHash, {
+                const response = await withRetry(() => this.client.v2.fetchCastReactions(castHash, {
                     limit: 100,
                     cursor: cursor || undefined
-                });
+                }), NEYNAR_RETRY_OPTS);
 
                 const hasRecasted = response.reactions.some(
                     reaction => reaction.user.fid === fid && reaction.reaction_type === 'recast'
@@ -121,9 +125,9 @@ class NeynarService {
     async verifyQuote(fid, castHash) {
         try {
             // Get user's recent casts
-            const response = await this.client.v2.fetchCastsForUser(fid, {
+            const response = await withRetry(() => this.client.v2.fetchCastsForUser(fid, {
                 limit: 50,
-            });
+            }), NEYNAR_RETRY_OPTS);
 
             // Check if any cast is a quote of the target cast
             const hasQuoted = response.casts.some(cast => {
@@ -146,7 +150,7 @@ class NeynarService {
     async verifyComment(fid, castHash) {
         try {
             // Get cast replies
-            const response = await this.client.v2.fetchConversation(castHash, { type: 'farcaster' });
+            const response = await withRetry(() => this.client.v2.fetchConversation(castHash, { type: 'farcaster' }), NEYNAR_RETRY_OPTS);
 
             // Check if user has replied to the cast
             const hasCommented = response.conversation.cast.replies.some(
@@ -167,7 +171,7 @@ class NeynarService {
      */
     async getUserByAddress(walletAddress) {
         try {
-            const response = await this.client.v2.fetchBulkUsersByAddress([walletAddress.toLowerCase()]);
+            const response = await withRetry(() => this.client.v2.fetchBulkUsersByAddress([walletAddress.toLowerCase()]), NEYNAR_RETRY_OPTS);
             // The API returns an object where keys are addresses
             const users = response[walletAddress.toLowerCase()];
             return (users && users.length > 0) ? users[0] : null;

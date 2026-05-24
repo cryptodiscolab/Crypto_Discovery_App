@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as Sentry from "@sentry/node";
+import * as Sentry from "@sentry/node"; // serverless/Node.js context — correct package for Vercel API functions
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './database.types.js';
 import { getEnv } from './constants.js';

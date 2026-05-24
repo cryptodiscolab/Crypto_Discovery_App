@@ -80,67 +80,108 @@ class SupabaseService {
     async recordClaim(walletAddress, taskId, xpEarned, platform, actionType, targetId = null) {
         if (!this.client) throw new Error('Supabase client not initialized');
 
-        const normalizedWallet = walletAddress.toLowerCase();
+        const normalizedWallet = walletAddress.toLowerCase().trim();
 
         try {
-            // Ensure user profile exists first
-            await this.ensureProfile(normalizedWallet);
-
-            // Check for existing claim (safety check)
-            const { data: existing, error: checkError } = await this.client
-                .from('user_task_claims')
-                .select('id')
-                .eq('wallet_address', normalizedWallet)
-                .eq('task_id', taskId)
-                .maybeSingle();
-
-            if (checkError) throw checkError;
-            if (existing) {
-                console.warn(`[Supabase] Claim already exists for wallet ${walletAddress} and task ${taskId}`);
-                return { success: false, error: 'Task already claimed in database today' };
-            }
-
-            // NEW: Anti-Cheat - Double check by target_id if provided
-            if (targetId) {
-                const hasClaimedTarget = await this.hasAlreadyClaimedTarget(
-                    normalizedWallet,
-                    platform,
-                    actionType,
-                    targetId
-                );
-                if (hasClaimedTarget) {
-                    console.warn(`[Supabase] Anti-Cheat: User ${walletAddress} already claimed target ${targetId}`);
-                    return { success: false, error: '[Security] Target account already claimed by this user' };
+            // [VS5] Atomic DB write via fn_record_claim_and_award_xp RPC
+            // Eliminates partial-write race condition between claim insert and XP increment
+            const { data: rpcResult, error: rpcError } = await this.client.rpc(
+                'fn_record_claim_and_award_xp',
+                {
+                    p_wallet_address: normalizedWallet,
+                    p_task_id: String(taskId),
+                    p_xp_earned: xpEarned,
+                    p_platform: platform || '',
+                    p_action_type: actionType || '',
+                    p_target_id: targetId || ''
                 }
-            }
+            );
 
-            // Insert new claim
-            const { data, error } = await this.client
-                .from('user_task_claims')
-                .insert({
-                    wallet_address: normalizedWallet,
-                    task_id: taskId,
-                    xp_earned: xpEarned,
-                    platform: platform,
-                    action_type: actionType,
-                    target_id: targetId,
-                    claimed_at: new Date().toISOString()
-                })
-                .select()
-                .single(); // Changed to single to match the new implementation's return type
-
-            if (error) {
-                if (error.code === '23505') {
-                    console.log(`[Supabase] Graceful handled duplicate claim for wallet ${walletAddress} on task ${taskId}`);
-                    return { success: true, message: 'Task already claimed' };
+            if (rpcError) {
+                // RPC not yet deployed — fallback to legacy two-step approach
+                if (rpcError.message && rpcError.message.includes('function fn_record_claim_and_award_xp')) {
+                    console.warn('[Supabase][VS5] Atomic RPC not deployed — falling back to two-step write. Apply 20260523_atomic_claim_rpc.sql migration.');
+                    return await this._recordClaimLegacy(normalizedWallet, taskId, xpEarned, platform, actionType, targetId);
                 }
-                throw error;
+                throw rpcError;
             }
-            return { success: true, data };
+
+            if (!rpcResult) {
+                throw new Error('[Supabase] fn_record_claim_and_award_xp returned null');
+            }
+
+            // Handle structured response from RPC
+            if (rpcResult.alreadyClaimed) {
+                console.warn(`[Supabase][VS5] Already claimed: wallet=${walletAddress} task=${taskId}`);
+                return { success: false, alreadyClaimed: true, error: rpcResult.error };
+            }
+
+            if (!rpcResult.success) {
+                console.warn(`[Supabase][VS5] Claim rejected: ${rpcResult.error}`);
+                return { success: false, error: rpcResult.error };
+            }
+
+            return { success: true, data: { id: rpcResult.claim_id }, xpAwarded: rpcResult.xpAwarded };
         } catch (error) {
-            console.error('[SupabaseService] Error recording claim:', error.message);
+            console.error('[SupabaseService][VS5] Error in atomic recordClaim:', error.message);
             throw error;
         }
+    }
+
+    /**
+     * [VS5 Fallback] Legacy two-step claim recording (used until migration is deployed).
+     * @private
+     */
+    async _recordClaimLegacy(normalizedWallet, taskId, xpEarned, platform, actionType, targetId) {
+        // Check for existing claim (safety check)
+        const { data: existing, error: checkError } = await this.client
+            .from('user_task_claims')
+            .select('id')
+            .eq('wallet_address', normalizedWallet)
+            .eq('task_id', String(taskId))
+            .maybeSingle();
+
+        if (checkError) throw checkError;
+        if (existing) {
+            console.warn(`[Supabase][Legacy] Claim already exists for wallet ${normalizedWallet} and task ${taskId}`);
+            return { success: false, error: 'Task already claimed in database today' };
+        }
+
+        // Anti-Cheat: Double check by target_id if provided
+        if (targetId) {
+            const hasClaimedTarget = await this.hasAlreadyClaimedTarget(
+                normalizedWallet,
+                platform,
+                actionType,
+                targetId
+            );
+            if (hasClaimedTarget) {
+                console.warn(`[Supabase][Legacy] Anti-Cheat: User ${normalizedWallet} already claimed target ${targetId}`);
+                return { success: false, error: '[Security] Target account already claimed by this user' };
+            }
+        }
+
+        const { data, error } = await this.client
+            .from('user_task_claims')
+            .insert({
+                wallet_address: normalizedWallet,
+                task_id: String(taskId),
+                xp_earned: xpEarned,
+                platform: platform,
+                action_type: actionType,
+                target_id: targetId,
+                claimed_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === '23505') {
+                return { success: true, message: 'Task already claimed' };
+            }
+            throw error;
+        }
+        return { success: true, data };
     }
 
     /**

@@ -131,6 +131,17 @@ export const TELEGRAM_CHAT_ID = getEnv('TELEGRAM_CHAT_ID');
 export const USDC_ADDRESS = getEnv('VITE_USDC_ADDRESS', getEnv('USDC_ADDRESS', ''));
 if (!USDC_ADDRESS) console.warn('[Zero-Hardcode] USDC_ADDRESS is empty — set VITE_USDC_ADDRESS env var');
 
+// Zero-address sentinel for filtering
+export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+export const NATIVE_TOKEN_ALIASES = new Set([ZERO_ADDRESS, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee']);
+
+// External API endpoints
+export const PINATA_API_URL = getEnv('PINATA_API_URL', 'https://api.pinata.cloud/pinning/pinJSONToIPFS');
+export const NEYNAR_API_URL = getEnv('NEYNAR_API_URL', 'https://api.neynar.com/v2/farcaster/cast');
+export const DEX_SCREENER_API_URL = getEnv('DEX_SCREENER_API_URL', 'https://api.dexscreener.com/latest/dex/tokens');
+export const TELEGRAM_API_URL = getEnv('TELEGRAM_API_URL', 'https://api.telegram.org');
+export const DISCO_APP_URL = getEnv('DISCO_APP_URL', getEnv('NEXT_PUBLIC_APP_URL', 'https://disco-daily.vercel.app'));
+
 export const MASTER_X_ADDRESS = IS_MAINNET
     ? getEnv('VITE_MASTER_X_ADDRESS', '')
     : getEnv('VITE_MASTER_X_ADDRESS_SEPOLIA', '');

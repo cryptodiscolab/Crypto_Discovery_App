@@ -25,7 +25,9 @@ import {
     isMainnet,
     getEnv,
     sanitizeError,
-    logSystemError
+    logSystemError,
+    NATIVE_TOKEN_ALIASES,
+    DEX_SCREENER_API_URL
 } from './_shared/constants.js';
 import type {
     UserProfile,
@@ -83,11 +85,6 @@ type UnknownTableClient = {
 };
 
 const toJson = (value: unknown): Json => value as Json;
-const DEX_SCREENER_BASE_URL = 'https://api.dexscreener.com/latest/dex/tokens';
-const NATIVE_TOKEN_ADDRESSES = new Set([
-    '0x0000000000000000000000000000000000000000',
-    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
-]);
 
 type TokenPriceMap = Record<string, unknown>;
 type DexScreenerPair = {
@@ -133,10 +130,10 @@ async function fetchEthPriceUsd(): Promise<number> {
 
 async function fetchDexScreenerTokenPriceUsd(tokenAddress: string): Promise<number> {
     const normalizedAddress = normalizeTokenAddress(tokenAddress);
-    if (!normalizedAddress || NATIVE_TOKEN_ADDRESSES.has(normalizedAddress)) return 0;
+    if (!normalizedAddress || NATIVE_TOKEN_ALIASES.has(normalizedAddress)) return 0;
 
     try {
-        const response = await fetch(`${DEX_SCREENER_BASE_URL}/${normalizedAddress}`);
+        const response = await fetch(`${DEX_SCREENER_API_URL}/${normalizedAddress}`);
         if (!response.ok) return 0;
         const data = await response.json() as { pairs?: DexScreenerPair[] };
         const pairs = Array.isArray(data.pairs) ? data.pairs : [];
@@ -162,7 +159,7 @@ async function resolveTokenPriceUsd(
     const configuredPrice = lookupConfiguredTokenPrice(tokenPrices, normalizedSymbol, normalizedAddress);
     if (configuredPrice > 0) return configuredPrice;
 
-    if (normalizedSymbol === 'ETH' || normalizedSymbol === 'WETH' || NATIVE_TOKEN_ADDRESSES.has(normalizedAddress)) {
+    if (normalizedSymbol === 'ETH' || normalizedSymbol === 'WETH' || NATIVE_TOKEN_ALIASES.has(normalizedAddress)) {
         const ethPrice = await fetchEthPriceUsd();
         if (ethPrice > 0) return ethPrice;
     }
@@ -2046,15 +2043,95 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }async function handleSyncOAuth(req: VercelRequest, res: VercelResponse) {
-    const { wallet_address, signature, message, provider, oauth_data } = req.body;
-    if (!wallet_address || !signature || !message || !provider || !oauth_data) return res.status(400).json({ error: 'Missing fields' });
+    const { wallet_address, signature, message, provider, oauth_token, oauth_data } = req.body;
+    if (!wallet_address || !signature || !message || !provider || !oauth_token || !oauth_data) {
+        return res.status(400).json({ error: 'Missing fields (wallet_address, signature, message, provider, oauth_token, oauth_data)' });
+    }
 
     try {
-        // [SECURITY FIX] Client-Side OAuth Trust Vulnerability
-        // Accepting 'oauth_data' directly from the frontend without a server-side Provider JWT validation 
-        // allows attackers to pass {"twitter_id": "1", "twitter_username": "elonmusk"} and instantly bypass Identity Gating.
-        // Endpoint MUST be disabled until a proper server-side token validation (e.g. Supabase Auth verifyOTP/getSession) is implemented.
-        return res.status(501).json({ error: 'OAuth endpoint disabled: Server-side token validation required.' });
+        // 1. Verify EIP-191 signature to ensure the request is from the wallet owner
+        const validSig = await verifyMessage({
+            address: wallet_address as `0x${string}`,
+            message,
+            signature: signature as `0x${string}`
+        });
+        if (!validSig) {
+            return res.status(401).json({ error: 'Cryptographic signature verification failed' });
+        }
+
+        const cleanWallet = wallet_address.toLowerCase();
+
+        // 2. Verify Supabase OAuth session JWT token securely on the server
+        const { data: { user }, error: authErr } = await getSupabaseAdmin().auth.getUser(oauth_token);
+        if (authErr || !user) {
+            return res.status(401).json({ error: 'Invalid or expired Supabase Auth session token' });
+        }
+
+        // 3. Prevent Client-Side Trust: verify that the user retrieved from Supabase owns the requested identity
+        const expectedId = provider === 'google' ? oauth_data.google_id : oauth_data.twitter_id;
+        if (!expectedId) {
+            return res.status(400).json({ error: 'Missing provider identifier in oauth_data' });
+        }
+
+        const matchesIdentity = user.identities?.some(identity => {
+            const prov = identity.provider?.toLowerCase();
+            const idStr = String(identity.id || '');
+            if (provider === 'google' && prov === 'google' && idStr === String(expectedId)) return true;
+            if ((provider === 'x' || provider === 'twitter') && (prov === 'twitter' || prov === 'x') && idStr === String(expectedId)) return true;
+            return false;
+        }) || (provider === 'google' && user.id === expectedId) || ((provider === 'x' || provider === 'twitter') && user.id === expectedId);
+
+        if (!matchesIdentity) {
+            return res.status(403).json({ error: `Verification mismatch: The Supabase session does not own the requested ${provider === 'google' ? 'Google' : 'X (Twitter)'} identity.` });
+        }
+
+        // 4. Identity Lock: Ensure no other wallet is already linked to this social identity
+        const targetColumn = provider === 'google' ? 'google_id' : 'twitter_id';
+        const { data: existingLink } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('wallet_address')
+            .eq(targetColumn, expectedId)
+            .neq('wallet_address', cleanWallet)
+            .maybeSingle();
+
+        if (existingLink) {
+            return res.status(400).json({ error: `This ${provider === 'google' ? 'Google' : 'X (Twitter)'} account is already linked to another wallet.` });
+        }
+
+        // 5. Update user profile database record
+        const updatePayload: Partial<Database['public']['Tables']['user_profiles']['Update']> = {
+            updated_at: new Date().toISOString()
+        };
+
+        if (provider === 'google') {
+            updatePayload.google_id = oauth_data.google_id;
+            updatePayload.google_email = oauth_data.google_email || null;
+            if (oauth_data.name) updatePayload.display_name = oauth_data.name.substring(0, PROFILE_LIMITS.MAX_NAME_LEN);
+            if (oauth_data.pfp_url) updatePayload.pfp_url = oauth_data.pfp_url;
+        } else {
+            updatePayload.twitter_id = oauth_data.twitter_id;
+            updatePayload.twitter_username = oauth_data.twitter_username || null;
+            if (oauth_data.name) updatePayload.display_name = oauth_data.name.substring(0, PROFILE_LIMITS.MAX_NAME_LEN);
+            if (oauth_data.pfp_url) updatePayload.pfp_url = oauth_data.pfp_url;
+        }
+
+        const { error: dbErr } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .update(updatePayload)
+            .eq('wallet_address', cleanWallet);
+
+        if (dbErr) throw dbErr;
+
+        // 6. Log the link action in activity history
+        const socialDetail = provider === 'google' ? oauth_data.google_email : `@${oauth_data.twitter_username}`;
+        await logActivity({
+            wallet: cleanWallet,
+            category: 'IDENTITY',
+            type: `${provider === 'google' ? 'Google' : 'X'} Link`,
+            description: `Successfully linked ${provider === 'google' ? 'Google: ' + socialDetail : 'X: ' + socialDetail} to wallet.`
+        });
+
+        return res.status(200).json({ success: true, provider });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });

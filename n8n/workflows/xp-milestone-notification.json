@@ -1,0 +1,222 @@
+{
+  "name": "XP Milestone Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */6 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [250, 300],
+      "name": "Cron - Every 6 Hours"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "user_profiles",
+        "columns": ["wallet_address", "farcaster_fid", "twitter_handle", "display_name", "total_xp", "rank_name", "xp_milestone_notified_at"],
+        "conditions": {
+          "options": {
+            "limit": 200,
+            "order": {
+              "orderType": "desc",
+              "orderColumn": "total_xp"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "name": "Supabase - Query Profiles",
+      "credentials": {
+        "supabaseApi": "disco-dailyapp-supabase"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Define tier thresholds and milestone checks\nconst TIERS = [\n  { name: 'ROOKIE', minXP: 0, emoji: '🟢' },\n  { name: 'BRONZE', minXP: 10000, emoji: '🥉' },\n  { name: 'SILVER', minXP: 50000, emoji: '🥈' },\n  { name: 'GOLD', minXP: 100000, emoji: '🥇' },\n  { name: 'PLATINUM', minXP: 250000, emoji: '🔷' },\n  { name: 'DIAMOND', minXP: 500000, emoji: '💎' }\n];\n\nconst XP_MILESTONES = [500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000];\nconst now = new Date();\nconst notifications = [];\n\nfor (const item of $input.all()) {\n  const json = item.json;\n  const totalXP = Number(json.total_xp || 0);\n  const currentTier = (json.rank_name || 'ROOKIE').toUpperCase();\n  const lastNotified = json.xp_milestone_notified_at ? new Date(json.xp_milestone_notified_at) : null;\n  const hoursSinceLastNotify = lastNotified ? (now - lastNotified) / 3600000 : Infinity;\n\n  // Skip if notified in last 24h\n  if (hoursSinceLastNotify < 24) continue;\n\n  // Check tier upgrade\n  const currentTierIndex = TIERS.findIndex(t => t.name === currentTier);\n  const nextTier = currentTierIndex < TIERS.length - 1 ? TIERS[currentTierIndex + 1] : null;\n  \n  let reason = null;\n  let message = null;\n\n  // Tier upgrade milestone\n  if (nextTier && totalXP >= nextTier.minXP) {\n    reason = 'tier_upgrade';\n    message = `${nextTier.emoji} LEVEL UP! You've reached **${nextTier.name}** tier! New perks unlocked.`;\n  }\n  \n  // XP milestone check (check most recent milestone passed)\n  if (!reason) {\n    for (let i = XP_MILESTONES.length - 1; i >= 0; i--) {\n      if (totalXP >= XP_MILESTONES[i] && (!lastNotified || XP_MILESTONES[i] > (Number(json.previous_milestone_xp) || 0))) {\n        reason = 'xp_milestone';\n        message = `⭐ XP MILESTONE: You've earned **${XP_MILESTONES[i].toLocaleString()} XP**! Keep grinding!`;\n        break;\n      }\n    }\n  }\n\n  if (reason && message) {\n    notifications.push({\n      json: {\n        wallet_address: json.wallet_address,\n        farcaster_fid: json.farcaster_fid,\n        twitter_handle: json.twitter_handle,\n        display_name: json.display_name || 'Disco User',\n        total_xp: totalXP,\n        current_tier: currentTier,\n        next_tier: nextTier?.name || null,\n        reason,\n        message,\n        platform: json.farcaster_fid ? 'farcaster' : (json.twitter_handle ? 'twitter' : null)\n      }\n    });\n  }\n}\n\nreturn notifications.slice(0, 30);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "name": "Code - Check Milestones"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $json.platform }}",
+            "typeValue": "string",
+            "rightValue": "farcaster",
+            "operator": {
+              "type": "string",
+              "operation": "equals"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "name": "IF - Has Farcaster?"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.neynar.com/v2/farcaster/user/bulk",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $credentials.neynarApiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "fids",
+              "value": "={{ [$json.farcaster_fid] }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.message }}\n\n💫 Total XP: {{ $json.total_xp.toLocaleString() }} XP\n🏆 Current Tier: {{ $json.current_tier }}\n\nKeep earning on Disco DailyApp! 🔥"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 250],
+      "name": "HTTP - Send FC DM",
+      "credentials": {
+        "httpHeaderAuth": "neynar-credentials"
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.twitter.com/2/dm_conversations/with/{{$json.twitter_handle}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.twitterBearerToken }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.message }}\n\n💫 Total: {{ $json.total_xp.toLocaleString() }} XP\n🏆 Tier: {{ $json.current_tier }}\n\n🔗 https://disco-daily.vercel.app"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 450],
+      "name": "HTTP - Send Twitter DM"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "user_profiles",
+        "updateKey": "wallet_address",
+        "columns": "xp_milestone_notified_at = NOW()",
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $json.wallet_address }}",
+            "typeValue": "string",
+            "rightValue": "",
+            "operator": {
+              "type": "string",
+              "operation": "equals"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "name": "Supabase - Update Notified Timestamp",
+      "credentials": {
+        "supabaseApi": "disco-dailyapp-supabase"
+      }
+    },
+    {
+      "parameters": {
+        "text": "=✅ Milestone Sent: {{ $json.display_name }} - {{ $json.reason }} ({{ $json.total_xp }} XP)"
+      },
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1450, 300],
+      "name": "NoOp - Log"
+    }
+  ],
+  "connections": {
+    "Cron - Every 6 Hours": {
+      "main": [[ { "node": "Supabase - Query Profiles", "type": "main", "index": 0 } ]]
+    },
+    "Supabase - Query Profiles": {
+      "main": [[ { "node": "Code - Check Milestones", "type": "main", "index": 0 } ]]
+    },
+    "Code - Check Milestones": {
+      "main": [[ { "node": "IF - Has Farcaster?", "type": "main", "index": 0 } ]]
+    },
+    "IF - Has Farcaster?": {
+      "main": [
+        [{ "node": "HTTP - Send FC DM", "type": "main", "index": 0 }],
+        [{ "node": "HTTP - Send Twitter DM", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Send FC DM": {
+      "main": [[ { "node": "Supabase - Update Notified Timestamp", "type": "main", "index": 0 } ]]
+    },
+    "HTTP - Send Twitter DM": {
+      "main": [[ { "node": "Supabase - Update Notified Timestamp", "type": "main", "index": 0 } ]]
+    },
+    "Supabase - Update Notified Timestamp": {
+      "main": [[ { "node": "NoOp - Log", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "disco-dailyapp" },
+    { "name": "notifications" },
+    { "name": "gamification" }
+  ],
+  "pinData": {},
+  "versionId": "1.0.0"
+}

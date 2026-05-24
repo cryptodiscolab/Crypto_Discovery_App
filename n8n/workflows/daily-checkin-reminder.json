@@ -1,0 +1,192 @@
+{
+  "name": "Daily Check-in Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [250, 300],
+      "name": "Cron - Daily 09:00 WIB"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "user_profiles",
+        "columns": ["wallet_address", "farcaster_fid", "twitter_handle", "display_name", "last_checkin_at"],
+        "conditions": {
+          "options": {
+            "limit": 200,
+            "order": {
+              "orderType": "desc",
+              "orderColumn": "last_checkin_at"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "name": "Supabase - Query Users",
+      "credentials": {
+        "supabaseApi": "disco-dailyapp-supabase"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter users who missed check-in today\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\nconst missedCheckIn = [];\nfor (const item of $input.all()) {\n  const json = item.json;\n  const lastCheckin = json.last_checkin_at ? new Date(json.last_checkin_at) : null;\n  \n  // User hasn't checked in today\n  if (!lastCheckin || lastCheckin < today) {\n    missedCheckIn.push({\n      json: {\n        wallet_address: json.wallet_address,\n        farcaster_fid: json.farcaster_fid,\n        twitter_handle: json.twitter_handle,\n        display_name: json.display_name || 'Disco User',\n        platform: json.farcaster_fid ? 'farcaster' : (json.twitter_handle ? 'twitter' : null)\n      }\n    });\n  }\n}\n\n// Limit to 50 users per run to avoid rate limits\nreturn missedCheckIn.slice(0, 50);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "name": "Code - Filter Missed Check-in"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $json.platform }}",
+            "typeValue": "string",
+            "rightValue": "farcaster",
+            "operator": {
+              "type": "string",
+              "operation": "equals"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "name": "IF - Has Farcaster?"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.neynar.com/v2/farcaster/user/bulk",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $credentials.neynarApiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "fids",
+              "value": "={{ [$json.farcaster_fid] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 250],
+      "name": "HTTP - Send FC DM",
+      "credentials": {
+        "httpHeaderAuth": "neynar-credentials"
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.twitter.com/2/dm_conversations/with/{{$json.twitter_handle}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.twitterBearerToken }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "=Hey {{ $json.display_name }}! 👋 Don't forget to check in today on Disco DailyApp and earn your XP!\n\n🔗 https://disco-daily.vercel.app/tasks\n\nYour streak is waiting! 🔥"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 450],
+      "name": "HTTP - Send Twitter DM"
+    },
+    {
+      "parameters": {
+        "text": "=✅ Check-in Reminder Sent: {{ $json.display_name }} ({{ $json.platform }})"
+      },
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "name": "NoOp - Log Success"
+    }
+  ],
+  "connections": {
+    "Cron - Daily 09:00 WIB": {
+      "main": [[ { "node": "Supabase - Query Users", "type": "main", "index": 0 } ]]
+    },
+    "Supabase - Query Users": {
+      "main": [[ { "node": "Code - Filter Missed Check-in", "type": "main", "index": 0 } ]]
+    },
+    "Code - Filter Missed Check-in": {
+      "main": [[ {
+        "node": "IF - Has Farcaster?",
+        "type": "main",
+        "index": 0
+      } ]]
+    },
+    "IF - Has Farcaster?": {
+      "main": [
+        [{ "node": "HTTP - Send FC DM", "type": "main", "index": 0 }],
+        [{ "node": "HTTP - Send Twitter DM", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Send FC DM": {
+      "main": [[ { "node": "NoOp - Log Success", "type": "main", "index": 0 } ]]
+    },
+    "HTTP - Send Twitter DM": {
+      "main": [[ { "node": "NoOp - Log Success", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "disco-dailyapp" },
+    { "name": "notifications" },
+    { "name": "cron" }
+  ],
+  "pinData": {},
+  "versionId": "1.0.0"
+}

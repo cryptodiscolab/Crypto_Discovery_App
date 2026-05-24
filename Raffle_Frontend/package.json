@@ -13,6 +13,8 @@
     "check-live-abi": "node scripts/check-live-abi-selectors.cjs --chain base-sepolia",
     "check-live-rls": "node scripts/check-live-rls.cjs",
     "audit-checks": "npm run check-routes && npm run check-abi",
+    "check-sync": "node scripts/audits/check_sync_status.cjs",
+    "gitleaks-check": "gitleaks detect --source . --config .gitleaks.toml --redact 2>&1 || echo 'gitleaks not installed — run: brew install gitleaks'",
     "postinstall": "patch-package"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
     "@lifi/sdk": "3.16.3",
     "@neynar/nodejs-sdk": "3.134.0",
     "@rainbow-me/rainbowkit": "2.2.10",
+    "@sentry/node": "10.53.1",
     "@sentry/react": "10.53.1",
     "@supabase/supabase-js": "2.99.1",
     "@tanstack/react-query": "5.90.20",

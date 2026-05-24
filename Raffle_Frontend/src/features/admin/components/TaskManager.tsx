@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useAccount, useSignMessage, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
 import { encodeFunctionData, parseUnits, type Abi } from 'viem';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabaseClient';
@@ -45,6 +46,7 @@ interface AllowedToken {
 export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
     const { address, chainId } = useAccount();
     const { signMessageAsync } = useSignMessage();
+    const queryClient = useQueryClient();
     const { writeContractAsync, data: hash, error: writeError } = useWriteContract();
     const { data: receipt, isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
 
@@ -321,6 +323,8 @@ export function TaskManager({ initialMode = 'quick' }: TaskManagerProps) {
                     });
 
                     toast.success("Ecosystem Hardened & Synced", { id: tid });
+                    // FM1: Fix stale data by forcing full refetch
+                    void queryClient.invalidateQueries();
                     refetchTasks();
                     refetchSponsors();
                 } catch (e) { toast.error("Sync partial failure", { id: tid }); }

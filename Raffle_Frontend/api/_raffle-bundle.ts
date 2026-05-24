@@ -11,6 +11,9 @@ import {
     RAFFLE_ABI,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
+    TELEGRAM_API_URL,
+    ZERO_ADDRESS,
+    DISCO_APP_URL,
     isMainnet,
     sanitizeError,
     MASTER_ADMINS
@@ -44,7 +47,7 @@ async function notifyTelegramWinner(walletAddress: string, raffleId: string, xpA
             `XP Bonus: +${xpAwarded} XP\n\n` +
             `🎉 Prize claimed successfully on-chain.`;
 
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        await fetch(`${TELEGRAM_API_URL}/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -138,7 +141,7 @@ async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
 
         if (!raffleInfo.isFinalized) return res.status(400).json({ error: 'Raffle is not finalized' });
 
-        const winners = (raffleInfo.winners || []).filter((w: string) => w !== '0x0000000000000000000000000000000000000000');
+        const winners = (raffleInfo.winners || []).filter((w: string) => w !== ZERO_ADDRESS);
         if (winners.length === 0) return res.status(400).json({ error: 'No winners found' });
 
         if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
@@ -149,9 +152,9 @@ async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
                 `量子サイコロが振られ、当選者が決定しました！ \n\n` +
                 `💰 *Total Prize:* ${prizeETH} ETH\n` +
                 `🏆 *Winners:*\n${winnersList}\n\n` +
-                `🔗 Status & Claim: \nhttps://disco-daily.vercel.app/raffles`;
+                `🔗 Status & Claim: \n${DISCO_APP_URL}/raffles`;
 
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            await fetch(`${TELEGRAM_API_URL}/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

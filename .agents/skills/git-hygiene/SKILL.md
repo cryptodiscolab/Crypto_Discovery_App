@@ -1,5 +1,5 @@
 ---
-name: Git Hygiene & Clean Tree Manager
+name: git-hygiene
 description: Protokol untuk menjaga repositori Git tetap bersih dan organized. Skill ini menegakkan Clean Git Tree Mandate dari gemini.md (Section 27) yang melarang file sementara, secrets, dan artefak lainnya masuk ke source control. Berlaku untuk Antigravity dan semua sub-agents.
 version: v3.64.21-Hardened
 ---

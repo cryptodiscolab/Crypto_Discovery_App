@@ -4,6 +4,7 @@ import { useWriteContracts } from 'wagmi/experimental';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import { Abi } from 'viem';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface AdminContractCall {
     to: `0x${string}`;
@@ -39,6 +40,7 @@ export function AdminTransactionButton({
 }: AdminTransactionButtonProps) {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
+    const queryClient = useQueryClient();
 
     // 1. Single Transaction Hook
     const { writeContract, data: hash, isPending: isSinglePending, error: singleError } = useWriteContract();
@@ -56,10 +58,12 @@ export function AdminTransactionButton({
     useEffect(() => {
         if (isSuccess && (hash || bundleId)) {
             toast.success(successMessage);
+            // FM1: Fix stale data by forcing full refetch
+            void queryClient.invalidateQueries();
             const finalId = hash || (typeof bundleId === 'string' ? bundleId : (bundleId as { id?: string } | undefined)?.id);
             if (onSuccess && finalId) onSuccess(finalId);
         }
-    }, [isSuccess, hash, bundleId, onSuccess, successMessage]);
+    }, [isSuccess, hash, bundleId, onSuccess, successMessage, queryClient]);
 
     useEffect(() => {
         if (singleError) toast.error((singleError as { shortMessage?: string }).shortMessage || "Transaction failed");

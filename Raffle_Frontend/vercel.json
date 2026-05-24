@@ -1,60 +1,8 @@
 {
     "rewrites": [
         {
-            "source": "/api/rpc",
-            "destination": "/api/audit-bundle?action=rpc"
-        },
-        {
-            "source": "/api/farcaster-check",
-            "destination": "/api/audit-bundle?action=check"
-        },
-        {
-            "source": "/api/farcaster/:action",
-            "destination": "/api/user-bundle?action=fc-:action"
-        },
-        {
-            "source": "/api/cron/sync-events",
-            "destination": "/api/audit-bundle?action=sync"
-        },
-        {
-            "source": "/api/cron/reconcile-pending",
-            "destination": "/api/audit-bundle?action=reconcile-pending"
-        },
-        {
-            "source": "/api/user/:action",
-            "destination": "/api/user-bundle?action=:action"
-        },
-        {
-            "source": "/api/farcaster/sync",
-            "destination": "/api/user-bundle?action=fc-sync"
-        },
-        {
-            "source": "/api/tasks/:action",
-            "destination": "/api/tasks-bundle?action=:action"
-        },
-        {
-            "source": "/api/verify-action",
-            "destination": "/api/tasks-bundle?action=social-verify"
-        },
-        {
-            "source": "/api/admin/tasks/:action",
-            "destination": "/api/admin-bundle?action=task-:action"
-        },
-        {
-            "source": "/api/admin/system/update",
-            "destination": "/api/admin-bundle"
-        },
-        {
-            "source": "/api/admin/:action",
-            "destination": "/api/admin-bundle?action=:action"
-        },
-        {
-            "source": "/api/leaderboard",
-            "destination": "/api/user-bundle?action=leaderboard"
-        },
-        {
-            "source": "/api/raffle/:action",
-            "destination": "/api/raffle-bundle?action=:action"
+            "source": "/api/(.*)",
+            "destination": "/api/[...route]"
         },
         {
             "source": "/((?!api/).*)",

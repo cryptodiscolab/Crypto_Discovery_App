@@ -49,6 +49,8 @@ const OAuthCallbackPage = lazy(async () => {
   return { default: OAuthCallbackPage };
 });
 const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage'));
+const NFTGalleryPage = lazy(() => import('./pages/NFTGalleryPage').then(m => ({ default: m.NFTGalleryPage })));
+const SBTMintPage = lazy(() => import('./pages/SBTMintPage').then(m => ({ default: m.SBTMintPage })));
 
 const AdminGuard = lazy(async () => {
   const { default: AdminGuard } = await import('./features/admin/components/AdminGuard');
@@ -155,6 +157,8 @@ function AppContent() {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/create-raffle" element={<CreateRafflePage />} />
                   <Route path="/create-mission" element={<CreateMissionPage />} />
+                  <Route path="/nft-gallery" element={<NFTGalleryPage />} />
+                  <Route path="/sbt-mint" element={<SBTMintPage />} />
                   <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                 </Route>
                 <Route path="*" element={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><p className="text-[11px] font-black uppercase tracking-widest text-slate-400">404 — PAGE NOT FOUND</p><a href="/" className="mt-4 inline-block text-indigo-400 text-[11px] font-black uppercase tracking-widest">RETURN HOME</a></div></div>} />

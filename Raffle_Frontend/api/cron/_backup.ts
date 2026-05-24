@@ -8,7 +8,8 @@
  * Authentication: requires CRON_SECRET in Authorization header.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '../_shared/database.types.js';
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -42,27 +43,34 @@ const BACKUP_TABLES: Array<{ name: string; critical: boolean }> = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function fetchTableData(
-    supabase: ReturnType<typeof createClient>,
+    supabase: SupabaseClient<Database>,
     tableName: string
 ): Promise<unknown[]> {
     let allRows: unknown[] = [];
     let page = 0;
     const PAGE_SIZE = 1000;
-    while (true) {
+    let hasMore = true;
+    while (hasMore) {
         const { data, error } = await supabase
-            .from(tableName)
+            .from(tableName as keyof Database['public']['Tables'])
             .select('*')
             .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
         if (error) throw new Error(`${tableName}: ${error.message}`);
-        if (!data || data.length === 0) break;
+        if (!data || data.length === 0) {
+            hasMore = false;
+            break;
+        }
         allRows = allRows.concat(data);
-        if (data.length < PAGE_SIZE) break;
+        if (data.length < PAGE_SIZE) {
+            hasMore = false;
+            break;
+        }
         page++;
     }
     return allRows;
 }
 
-async function ensureBackupBucket(supabase: ReturnType<typeof createClient>) {
+async function ensureBackupBucket(supabase: SupabaseClient<Database>) {
     const { data: buckets } = await supabase.storage.listBuckets();
     const exists = buckets?.some((b: { name: string }) => b.name === STORAGE_BUCKET);
     if (!exists) {
@@ -77,7 +85,7 @@ async function ensureBackupBucket(supabase: ReturnType<typeof createClient>) {
 }
 
 async function uploadFile(
-    supabase: ReturnType<typeof createClient>,
+    supabase: SupabaseClient<Database>,
     folder: string,
     filename: string,
     content: string
@@ -91,7 +99,7 @@ async function uploadFile(
     if (error) throw new Error(`Upload ${folder}/${filename}: ${error.message}`);
 }
 
-async function rotateOldBackups(supabase: ReturnType<typeof createClient>) {
+async function rotateOldBackups(supabase: SupabaseClient<Database>) {
     const { data: items } = await supabase.storage.from(STORAGE_BUCKET).list('', {
         limit: 200,
         sortBy: { column: 'name', order: 'asc' },
@@ -148,7 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const now = new Date();
     const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+    const supabase = createClient<Database>(SUPABASE_URL, SERVICE_KEY);
     const manifest: {
         timestamp: string;
         environment: string;
