@@ -947,7 +947,15 @@ export function CreateMissionPage() {
                     </div>
                 </div>
             </div>
-            {isSwapModalOpen && <SwapModal isOpen={true} onClose={() => setIsSwapModalOpen(false)} />}
+            {isSwapModalOpen && (
+                <SwapModal
+                    isOpen={true}
+                    onClose={() => setIsSwapModalOpen(false)}
+                    onSuccess={() => {
+                        fetchCurrentBalance();
+                    }}
+                />
+            )}
         </div>
     );
 }

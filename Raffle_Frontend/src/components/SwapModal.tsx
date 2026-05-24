@@ -5,6 +5,7 @@ import { createConfig, getQuote, executeRoute } from '@lifi/sdk';
 import { parseUnits, formatUnits } from 'viem';
 import toast from 'react-hot-toast';
 import { usePoints } from '../shared/context/PointsContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 const NETWORKS = [
   { id: 8453, name: 'Base Mainnet' },
@@ -49,14 +50,12 @@ const TOKENS: Record<number, Token[]> = (() => {
   }
 })();
 
-// Li.Fi SDK init flag
-// let _lifiConfigured = false; // Unused, keeping as comment for reference
-
-export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function SwapModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
   const { address, chainId: activeChainId } = useAccount();
   const { data: walletClient } = useWalletClient();
   const wagmiConfig = useConfig();
   const { ecosystemSettings } = usePoints();
+  const queryClient = useQueryClient();
 
   // States - default to activeChainId from wallet, fallback to env or 8453
   const [selectedChainId, setSelectedChainId] = useState<number>(() => {
@@ -143,10 +142,10 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           integrator: 'crypto-disco-app'
         });
         setQuote(result as unknown as LiFiQuote);
-        } catch (error: unknown) {
-          console.error("Quote Error:", error);
-          setQuote(null);
-          const errMsg = error instanceof Error ? error.message : String(error);
+      } catch (error: unknown) {
+        console.error("Quote Error:", error);
+        setQuote(null);
+        const errMsg = error instanceof Error ? error.message : String(error);
         if (errMsg.includes('No route found') || errMsg.includes('no route')) {
           setQuoteError('No swap route found for this pair/amount.');
         } else if (errMsg.includes('amount') || errMsg.includes('too small')) {
@@ -170,11 +169,25 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     const tid = toast.loading("Executing Swap via Li.Fi...");
 
     try {
-      await executeRoute(quote as unknown as Parameters<typeof executeRoute>[0], {
+      const routeResult = await executeRoute(quote as unknown as Parameters<typeof executeRoute>[0], {
         updateRouteHook: () => {
 
         },
       });
+
+      // Extract txHash from routeResult steps
+      let txHash = '';
+      if (routeResult && routeResult.steps) {
+        for (const step of routeResult.steps) {
+          if (step.execution?.process) {
+            for (const process of step.execution.process) {
+              if (process.txHash) {
+                txHash = process.txHash;
+              }
+            }
+          }
+        }
+      }
 
       // Log Swap to User Activity History [v3.63.7]
       try {
@@ -197,7 +210,8 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             type: 'Token Conversion',
             description: `Swapped ${amountIn} ${fromToken.symbol} for ${estimatedOut} ${toToken.symbol}`,
             amount: parseFloat(amountIn),
-            symbol: fromToken.symbol
+            symbol: fromToken.symbol,
+            txHash: txHash || undefined
           })
         });
       } catch (logErr) {
@@ -207,6 +221,18 @@ export function SwapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       toast.success("Swap Successful!", { id: tid });
       setAmountIn('');
       setQuote(null);
+
+      // Invalidate queries to refresh state globally
+      try {
+        queryClient.invalidateQueries({ queryKey: ['balance'] });
+        queryClient.invalidateQueries({ queryKey: ['readContract'] });
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        queryClient.invalidateQueries({ queryKey: ['activity-logs'] });
+      } catch (queryErr) {
+        console.warn("Query invalidation failed:", queryErr);
+      }
+
+      onSuccess?.();
       onClose();
     } catch (error: unknown) {
       console.error("Swap Error:", error);

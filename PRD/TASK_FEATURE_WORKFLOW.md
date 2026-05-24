@@ -1,4 +1,6 @@
-﻿- **v3.63.0**: Admin Architecture Consolidation & Technical Debt Liquidation. Unified `TaskManager` components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (`ActiveCampaignsSection`, `EconomyConfigSection`, etc.). Archival of legacy Python/SQL scripts.
+- **v3.64.23-Hardened**: Nexus Command Center (NCC) Audit & Hardening. Cleared legacy typography to strictly adopt NATIVE+ (v3.41.0) standards, implemented DOM XSS sanitization helper `escapeHtml()` for dynamic payload injection, and restored full system health compile checks.
+- **v3.64.22-Hardened**: Swap Auto-Refresh & Global Invalidation. Implemented telemetry extraction for verified `txHash` from Li.Fi SDK execution, integrated dynamic `onSuccess` callbacks to trigger React Query invalidation for `['balance']`, `['readContract']`, `['profile']`, and `['activity-logs']`, and resolved React/TypeScript compiler warnings.
+- **v3.63.0**: Admin Architecture Consolidation & Technical Debt Liquidation. Unified `TaskManager` components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (`ActiveCampaignsSection`, `EconomyConfigSection`, etc.). Archival of legacy Python/SQL scripts.
 - **v3.61.0**: Serverless API Hardening & 100% TS Migration. Refaktor `user-bundle.ts`, `tasks-bundle.ts`, dan `admin-bundle.ts` ke strict TypeScript. Integrasi `database.types.ts` dan implementasi `unknown` error guard pattern.
 - **v3.59.5**: Raffle Admin Hardening & Platform Economics. Implementasi `AdminRaffleSettings` (Rake, Claim Fee, Surcharge), `CreatorEarningsCard` untuk penarikan revenue sponsor (80%), dan penegakan **Zero-Hardcode Mandate** pada seluruh form pembuatan raffle.
 - **v3.59.4**: Final Polish & Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added `daily_task_completion` reward keys.
@@ -882,7 +884,7 @@ Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Har
 5. **On-Chain Mint Enforcement**: `DailyAppV16.mintNFT(uint8 tier)` menegakkan wallet binding, sequential tier, supply, status tier, XP requirement, dan mint price. Jalur entitlement voucher V15 adalah legacy dan tidak dipakai untuk V16.
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
-*Antigravity ΓÇö Nexus Master Architect. Protocol v3.56.4 Locked.*
+*Antigravity ΓÇö Nexus Master Architect. Protocol v3.64.23 Locked.*
 
 ---
 
@@ -982,4 +984,4 @@ Seluruh parameter ekonomi dikonfigurasi menggunakan basis **6-desimal** (USDC-na
 - **Enforcement**: Kartu tetap ditampilkan selama `claimableRewards(user, token) > 0` untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.
 
 ---
-*End of Task Feature Workflow - Nexus v3.59.3 LOCKED.*
+*End of Task Feature Workflow - Nexus v3.64.23 LOCKED.*

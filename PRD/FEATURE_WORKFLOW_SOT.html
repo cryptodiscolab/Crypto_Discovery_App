@@ -1,6 +1,6 @@
-<p>﻿# ≡ƒÄ» FEATURE WORKFLOW: SOURCE OF TRUTH (v3.63.0)
-<strong>Last Updated</strong>: 2026-05-22 ΓÇö DailyApp V16 deployment, AccessControl dashboard, and ABI/runtime compatibility update
-<strong>Status</strong>: ≡ƒ¢í∩╕Å ARCHITECTURALLY HARDENED</p>
+<h1>📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.23-Hardened)</h1>
+<p><strong>Last Updated</strong>: 2026-05-25 — Nexus Command Center (NCC) Audit &amp; Hardening
+<strong>Status</strong>: 🛡️ ARCHITECTURALLY HARDENED</p>
 <p>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. <strong>JANGAN berhalusinasi atau menebak</strong>. Jika ada yang error, rujuk dokumen ini.</p>
 <hr>
 <h2>≡ƒÅ¢∩╕Å 0. Active Contract Index &amp; Network Registry (DO NOT DEVIATE)</h2>
@@ -635,4 +635,12 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 </li>
 </ul>
 <hr>
-<p><em>End of Source of Truth Document - Nexus v3.59.5 LOCKED.</em></p>
+<h2>🔄 22. Swap Invalidation &amp; Auto-Refresh Protocol (v3.64.22-Hardened)</h2>
+<p>Untuk menjamin UX tanpa reload setelah transaksi swap diselesaikan di frontend:</p>
+<ol>
+<li><strong>Telemetry &amp; Verification</strong>: Frontend wajib mengekstrak <code>txHash</code> dari detail eksekusi SDK Li.Fi (<code>executeRoute</code>) dan menyertakannya ke payload <code>/api/user-bundle?action=log-activity</code> agar lolos filter <code>forbiddenCategories</code> di backend.</li>
+<li><strong>Cache Invalidation</strong>: Setelah swap berhasil, frontend wajib menginvalasi query TanStack untuk key <code>[&#39;balance&#39;]</code>, <code>[&#39;readContract&#39;]</code>, <code>[&#39;profile&#39;]</code>, dan <code>[&#39;activity-logs&#39;]</code>.</li>
+<li><strong>Propagation Callback</strong>: Komponen <code>SwapModal</code> memicu prop callback <code>onSuccess</code> untuk memicu refetch saldo, profil, status on-chain, dan SBT pada view induk (<code>ProfilePage.tsx</code> dan <code>CreateMissionPage.tsx</code>).</li>
+</ol>
+<hr>
+<p><em>End of Source of Truth Document - Nexus v3.64.23-Hardened LOCKED.</em></p>

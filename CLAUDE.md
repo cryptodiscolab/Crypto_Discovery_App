@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.17-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.23-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -13,7 +13,7 @@ Your supreme governing document is [`.cursorrules`](.cursorrules). **Read it at 
 
 Before responding, `📄>.rtk/RTK.md` + `📄>.rtk/SYMBOLIC.md` ONLY. Rules 1-78 di file ini sudah cukup.
 **Lazy-load ONLY when needed**: `📄>PRD/`, `📄>.agents/skills/`, `📄>.cursorrules` (>500L → `rtk smart`).
-`> re-read skills` = reset, `> sync end to end` = full sync. Protocol: 🟢 Healthy (v3.64.17).
+`> re-read skills` = reset, `> sync end to end` = full sync. Protocol: 🟢 Healthy (v3.64.23).
 
 ## 🛡️ SECURE INSTALL (v3.63.5): `npm install --ignore-scripts` or `npm ci`.
 SOT: Contracts > Supabase `system_settings`/`point_settings` > PRD/ > `.cursorrules` + `CLAUDE.md` > DESIGN.md > SKILL.md.
@@ -125,10 +125,10 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.17 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War Room Mode: Active. v3.64.23 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
-*Audit Precision Hardened: 2026-05-14. v3.64.17 MILLISECOND PRECISION & MULTI-ASSET.*
+*Audit Precision Hardened: 2026-05-14. v3.64.23 MILLISECOND PRECISION & MULTI-ASSET.*
 
 ## ⛽ RTK + SYMBOLIC (Universal Mandate)
 

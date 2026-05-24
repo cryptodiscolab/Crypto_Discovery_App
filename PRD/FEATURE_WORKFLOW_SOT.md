@@ -1,6 +1,6 @@
-﻿# ≡ƒÄ» FEATURE WORKFLOW: SOURCE OF TRUTH (v3.63.0)
-**Last Updated**: 2026-05-22 ΓÇö DailyApp V16 deployment, AccessControl dashboard, and ABI/runtime compatibility update
-**Status**: ≡ƒ¢í∩╕Å ARCHITECTURALLY HARDENED
+# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.23-Hardened)
+**Last Updated**: 2026-05-25 — Nexus Command Center (NCC) Audit & Hardening
+**Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
 
@@ -508,4 +508,11 @@ Sistem ekonomi sirkular yang memberikan transparansi bagi admin dan insentif bag
   3. UI melakukan refetch saldo dan menampilkan histori penarikan di `ActivityLogSection`.
 
 ---
-*End of Source of Truth Document - Nexus v3.59.5 LOCKED.*
+## 🔄 22. Swap Invalidation & Auto-Refresh Protocol (v3.64.22-Hardened)
+Untuk menjamin UX tanpa reload setelah transaksi swap diselesaikan di frontend:
+1. **Telemetry & Verification**: Frontend wajib mengekstrak `txHash` dari detail eksekusi SDK Li.Fi (`executeRoute`) dan menyertakannya ke payload `/api/user-bundle?action=log-activity` agar lolos filter `forbiddenCategories` di backend.
+2. **Cache Invalidation**: Setelah swap berhasil, frontend wajib menginvalasi query TanStack untuk key `['balance']`, `['readContract']`, `['profile']`, dan `['activity-logs']`.
+3. **Propagation Callback**: Komponen `SwapModal` memicu prop callback `onSuccess` untuk memicu refetch saldo, profil, status on-chain, dan SBT pada view induk (`ProfilePage.tsx` dan `CreateMissionPage.tsx`).
+
+---
+*End of Source of Truth Document - Nexus v3.64.23-Hardened LOCKED.*

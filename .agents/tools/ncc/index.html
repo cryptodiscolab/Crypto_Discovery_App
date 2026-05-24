@@ -16,10 +16,40 @@
         window.mermaid = mermaid;
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Outfit:wght@400;900&display=swap');
-        :root { --glass: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.1); }
-        body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
-        .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Outfit:wght@400;900&display=swap');
+        :root { 
+            --glass: rgba(255, 255, 255, 0.05); 
+            --glass-border: rgba(255, 255, 255, 0.08); 
+        }
+        body { 
+            background: #050505; 
+            color: #fff; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
+            max-w: 100vw;
+        }
+        .glass { 
+            background: var(--glass); 
+            backdrop-filter: blur(24px); 
+            border: 1px solid var(--glass-border); 
+        }
+        .label-native {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .content-native {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.625;
+        }
+        .value-native {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.025em;
+        }
         .tab-content.hidden { display: none; }
         .node-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .node-card:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.08); }
@@ -47,12 +77,12 @@
             <div>
                 <h1 class="text-4xl font-black tracking-tighter uppercase leading-none">Nexus Command <span class="text-indigo-500">Center</span></h1>
                 <div class="flex items-center gap-3 mt-2">
-                    <p class="text-[10px] text-gray-500 uppercase tracking-[0.3em]" id="last-updated">Audit Pulse: Syncing...</p>
-                    <div class="px-2 py-0.5 rounded bg-indigo-500/10 text-[8px] font-bold text-indigo-400 uppercase tracking-widest border border-indigo-500/20">
+                    <p class="label-native text-gray-500" id="last-updated">Audit Pulse: Syncing...</p>
+                    <div class="px-2 py-0.5 rounded bg-indigo-500/10 label-native text-[9px] text-indigo-400 border border-indigo-500/20">
                         Live Auto-Refresh in <span id="refresh-timer">60</span>s
                     </div>
                 </div>
-                <div class="flex gap-4 mt-4 text-[9px] font-bold uppercase tracking-widest text-gray-600">
+                <div class="flex gap-4 mt-4 label-native text-gray-600">
                     <span id="stat-env">INFRA: 0</span>
                     <span id="stat-db">DATA: 0</span>
                     <span id="stat-logic">LOGIC: 0</span>
@@ -60,11 +90,11 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="switchTab('tab-overview')" id="btn-overview" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest glass text-indigo-400 border-indigo-500/50">Dashboard</button>
-                <button onclick="switchTab('tab-flows')" id="btn-flows" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest glass text-gray-500 border-transparent hover:text-white transition-all">SBT Lifecycle</button>
-                <button onclick="switchTab('tab-graph')" id="btn-graph" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest glass text-gray-500 border-transparent hover:text-white transition-all">Ecosystem Map</button>
+                <button onclick="switchTab('tab-overview')" id="btn-overview" class="px-4 py-2 rounded-xl label-native glass text-indigo-400 border-indigo-500/50">Dashboard</button>
+                <button onclick="switchTab('tab-flows')" id="btn-flows" class="px-4 py-2 rounded-xl label-native glass text-gray-500 border-transparent hover:text-white transition-all">SBT Lifecycle</button>
+                <button onclick="switchTab('tab-graph')" id="btn-graph" class="px-4 py-2 rounded-xl label-native glass text-gray-500 border-transparent hover:text-white transition-all">Ecosystem Map</button>
             </div>
-            <div id="overall-status-box" class="px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest glass flex items-center gap-3">
+            <div id="overall-status-box" class="px-6 py-3 rounded-2xl label-native glass flex items-center gap-3">
                 <span id="status-dot" class="w-3 h-3 rounded-full animate-pulse bg-gray-500"></span>
                 <span id="overall-status-text">System Status: Checking...</span>
             </div>
@@ -75,38 +105,38 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
                 <!-- Alerts / Priority Tasks -->
                 <div class="lg:col-span-2">
-                    <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-6 text-gray-500 flex items-center gap-2">
+                    <h3 class="label-native mb-6 text-gray-500 flex items-center gap-2">
                         <span class="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> Priority Audit Findings
                     </h3>
                     <div id="alerts-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                     <div id="no-alerts" class="hidden glass p-8 rounded-3xl text-center border-dashed border-gray-800">
-                        <p class="text-sm text-gray-500">All systems within normal parameters. 🟢</p>
+                        <p class="content-native text-gray-500">All systems within normal parameters. 🟢</p>
                     </div>
                 </div>
                 <!-- Mini Metrics -->
                 <div class="glass p-8 rounded-[2rem] flex flex-col justify-center text-center">
-                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Total System Nodes</p>
+                    <p class="label-native text-gray-500 mb-2">Total System Nodes</p>
                     <h4 class="text-6xl font-black text-white mb-2" id="total-nodes">0</h4>
-                    <p class="text-[10px] text-indigo-400 uppercase font-black" id="sync-quality">Sync Quality: 100%</p>
+                    <p class="label-native text-indigo-400" id="sync-quality">Sync Quality: 100%</p>
                 </div>
             </div>
 
             <!-- Infrastructure & Logic Layers -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="glass p-6 rounded-3xl">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest mb-4 text-indigo-400">Environment</h3>
+                    <h3 class="label-native mb-4 text-indigo-400">Environment</h3>
                     <div id="env-nodes" class="space-y-2"></div>
                 </div>
                 <div class="glass p-6 rounded-3xl">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest mb-4 text-indigo-400">Database</h3>
+                    <h3 class="label-native mb-4 text-indigo-400">Database</h3>
                     <div id="db-nodes" class="space-y-2"></div>
                 </div>
                 <div class="glass p-6 rounded-3xl">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest mb-4 text-indigo-400">Contracts</h3>
+                    <h3 class="label-native mb-4 text-indigo-400">Contracts</h3>
                     <div id="logic-nodes" class="space-y-2"></div>
                 </div>
                 <div class="glass p-6 rounded-3xl">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest mb-4 text-indigo-400">Knowledge</h3>
+                    <h3 class="label-native mb-4 text-indigo-400">Knowledge</h3>
                     <div id="knowledge-nodes" class="space-y-2"></div>
                 </div>
             </div>
@@ -118,9 +148,9 @@
                 <div class="flex justify-between items-end mb-8">
                     <div>
                         <h3 class="text-2xl font-black uppercase">SBT Lifecycle & XP Mining</h3>
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest">Auditing Parity between Supabase and On-chain States</p>
+                        <p class="label-native text-gray-500">Auditing Parity between Supabase and On-chain States</p>
                     </div>
-                    <div class="glass px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-400 border-indigo-500/20">
+                    <div class="glass px-4 py-2 rounded-xl label-native text-indigo-400 border-indigo-500/20">
                         Live Data Streaming
                     </div>
                 </div>
@@ -137,20 +167,20 @@
                 <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
                     <h2 class="text-9xl font-black tracking-tighter uppercase leading-none">MAP</h2>
                 </div>
-                <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-10 text-indigo-400 text-center relative z-10">System Dependency Graph</h3>
+                <h3 class="label-native mb-10 text-indigo-400 text-center relative z-10">System Dependency Graph</h3>
                 <div id="mermaid-container" class="transition-opacity duration-1000 opacity-0 overflow-auto p-4 border border-white/5 rounded-3xl bg-black/20 max-h-[800px]">
                     <div class="mermaid flex justify-center" id="mermaid-graph"></div>
                 </div>
                 <div class="flex justify-center gap-6 mt-8 relative z-10">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> <span class="text-[10px] uppercase font-bold text-gray-500">Nominal</span></div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span> <span class="text-[10px] uppercase font-bold text-gray-500">Degraded</span></div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span> <span class="text-[10px] uppercase font-bold text-gray-500">Critical Error</span></div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> <span class="label-native text-gray-500">Nominal</span></div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span> <span class="label-native text-gray-500">Degraded</span></div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span> <span class="label-native text-gray-500">Critical Error</span></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script id="ncc-data-payload" type="application/json">{"timestamp":"2026-05-12T09:27:16.059Z","status":"HEALTHY","alerts":[],"layers":{"environment":{"status":"OK","nodes":[{"id":".env","status":"GREEN","path":".env"},{"id":".env.example","status":"GREEN","path":".env.example"},{"id":".env.local","status":"GREEN","path":".env.local"},{"id":".env.vercel.production","status":"GREEN","path":".env.vercel.production"}]},"database":{"status":"OK","nodes":[{"id":"user_profiles","status":"GREEN","rows":5,"category":"User","error":null},{"id":"user_task_claims","status":"GREEN","rows":41,"category":"Task","error":null},{"id":"daily_tasks","status":"GREEN","rows":9,"category":"Task","error":null},{"id":"agent_vault","status":"GREEN","rows":75,"category":"Cognitive","error":null},{"id":"point_settings","status":"GREEN","rows":37,"category":"Economy","error":null},{"id":"system_settings","status":"GREEN","rows":22,"category":"Admin","error":null}]},"contracts":{"status":"OK","nodes":[{"id":"ContentCMSV2.json","status":"GREEN"},{"id":"AggregatorV3Interface.json","status":"GREEN"},{"id":"CryptoDiscoMasterX.json","status":"GREEN"},{"id":"IDailyApp.json","status":"GREEN"},{"id":"CryptoDiscoRaffle.json","status":"GREEN"},{"id":"IAirnodeRrpV0.json","status":"GREEN"},{"id":"ICryptoDiscoMaster.json","status":"GREEN"},{"id":"DailyAppV12Secured.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"DailyAppV13.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"DailyAppV14.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"DailyAppV15.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"ContentCMS.json","status":"GREEN"},{"id":"CryptoDiscoRaffleDebug.json","status":"GREEN"},{"id":"IAirnodeRrpV0.json","status":"GREEN"},{"id":"DailyAppCore.json","status":"GREEN"},{"id":"DailyAppSponsorship.json","status":"GREEN"},{"id":"AggregatorV3Interface.json","status":"GREEN"},{"id":"DailyAppV13.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"AggregatorV3Interface.json","status":"GREEN"},{"id":"MockAggregatorV3.json","status":"GREEN"},{"id":"MockAirnodeRrp.json","status":"GREEN"},{"id":"MockERC20.json","status":"GREEN"},{"id":"DailyApp_Contract","status":"GREEN","address":"0x0D6f339795EeA5129461388F25dE4f87e92b8DA2"},{"id":"MasterX_Contract","status":"GREEN","address":"0x980770dAcE8f13E10632D3EC1410FAA4c707076c"},{"id":"Raffle_Contract","status":"GREEN","address":"0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3"}]},"api":{"status":"OK","nodes":[{"id":"SBT_Mining_Pool","status":"GREEN","value":"0.0003 ETH","last_dist":"04/04/2026"},{"id":"SBT_Tier_BRONZE","status":"GREEN","req_xp":"100","msg":"Active & Synced"},{"id":"SBT_Tier_SILVER","status":"GREEN","req_xp":"500","msg":"Active & Synced"},{"id":"SBT_Tier_GOLD","status":"GREEN","req_xp":"1500","msg":"Active & Synced"},{"id":"SBT_Tier_PLATINUM","status":"GREEN","req_xp":"4000","msg":"Active & Synced"},{"id":"SBT_Tier_DIAMOND","status":"GREEN","req_xp":"10000","msg":"Active & Synced"},{"id":"Referral_System","status":"GREEN","total_referrals":0},{"id":"Raffle_Moderation_Sync","status":"GREEN","msg":"Protocol V2.1 Active (1 Raffles)"}]},"knowledge":{"status":"OK","nodes":[{"id":"05f1c30a-2c5c-4646-b245-62bed1621114","status":"GREEN","category":"protocol","fullId":"05f1c30a-2c5c-4646-b245-62bed1621114"},{"id":"d710ed25-2c11-4242-9f15-21caea202329","status":"GREEN","category":"skill","fullId":"d710ed25-2c11-4242-9f15-21caea202329"},{"id":"918e1913-f79b-4ef0-90c3-44311e32be03","status":"GREEN","category":"skill","fullId":"918e1913-f79b-4ef0-90c3-44311e32be03"},{"id":"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b","status":"GREEN","category":"skill","fullId":"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b"},{"id":"37e2576e-4bbc-492e-b2dd-15c4341c099b","status":"GREEN","category":"skill","fullId":"37e2576e-4bbc-492e-b2dd-15c4341c099b"}]}},"relationships":[{"from":".env","to":"user_profiles","label":"config"},{"from":".env","to":"user_task_claims","label":"config"},{"from":".env","to":"daily_tasks","label":"config"},{"from":".env","to":"agent_vault","label":"config"},{"from":".env","to":"point_settings","label":"config"},{"from":".env","to":"system_settings","label":"config"},{"from":"ContentCMSV2.json","to":"Logic Layer"},{"from":"AggregatorV3Interface.json","to":"Logic Layer"},{"from":"CryptoDiscoMasterX.json","to":"Logic Layer"},{"from":"IDailyApp.json","to":"Logic Layer"},{"from":"CryptoDiscoRaffle.json","to":"Logic Layer"},{"from":"IAirnodeRrpV0.json","to":"Logic Layer"},{"from":"ICryptoDiscoMaster.json","to":"Logic Layer"},{"from":"DailyAppV12Secured.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"DailyAppV13.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"DailyAppV14.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"DailyAppV15.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"ContentCMS.json","to":"Logic Layer"},{"from":"CryptoDiscoRaffleDebug.json","to":"Logic Layer"},{"from":"IAirnodeRrpV0.json","to":"Logic Layer"},{"from":"DailyAppCore.json","to":"Logic Layer"},{"from":"DailyAppSponsorship.json","to":"Logic Layer"},{"from":"AggregatorV3Interface.json","to":"Logic Layer"},{"from":"DailyAppV13.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"AggregatorV3Interface.json","to":"Logic Layer"},{"from":"MockAggregatorV3.json","to":"Logic Layer"},{"from":"MockAirnodeRrp.json","to":"Logic Layer"},{"from":"MockERC20.json","to":"Logic Layer"},{"from":"MasterX_Contract","to":"SBT_Mining_Pool","label":"funds"},{"from":"MasterX_Contract","to":"SBT_Tier_BRONZE","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_BRONZE","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_SILVER","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_SILVER","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_GOLD","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_GOLD","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_PLATINUM","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_PLATINUM","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_DIAMOND","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_DIAMOND","label":"mint"},{"from":"user_profiles","to":"Referral_System","label":"graph"},{"from":"Referral_System","to":"MasterX_Contract","label":"accounting"},{"from":"Raffle_Contract","to":"Raffle_Moderation_Sync","label":"moderation"},{"from":"05f1c30a-2c5c-4646-b245-62bed1621114","to":"Knowledge_Base","label":"cached"},{"from":"d710ed25-2c11-4242-9f15-21caea202329","to":"Knowledge_Base","label":"cached"},{"from":"918e1913-f79b-4ef0-90c3-44311e32be03","to":"Knowledge_Base","label":"cached"},{"from":"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b","to":"Knowledge_Base","label":"cached"},{"from":"37e2576e-4bbc-492e-b2dd-15c4341c099b","to":"Knowledge_Base","label":"cached"}],"graphDefinition":"graph TD\n    classDef green fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff,glow:0 0 10px #10b98133\n    classDef amber fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff\n    classDef red fill:#ef4444,stroke:#dc2626,stroke-width:2px,color:#fff,glow:0 0 15px #ef444466\n    _env[\".env\"]\n    class _env green\n    _env_example[\".env.example\"]\n    class _env_example green\n    _env_local[\".env.local\"]\n    class _env_local green\n    _env_vercel_production[\".env.vercel.production\"]\n    class _env_vercel_production green\n    user_profiles[\"user_profiles\"]\n    class user_profiles green\n    user_task_claims[\"user_task_claims\"]\n    class user_task_claims green\n    daily_tasks[\"daily_tasks\"]\n    class daily_tasks green\n    agent_vault[\"agent_vault\"]\n    class agent_vault green\n    point_settings[\"point_settings\"]\n    class point_settings green\n    system_settings[\"system_settings\"]\n    class system_settings green\n    ContentCMSV2_json[\"ContentCMSV2.json\"]\n    class ContentCMSV2_json green\n    AggregatorV3Interface_json[\"AggregatorV3Interface.json\"]\n    class AggregatorV3Interface_json green\n    CryptoDiscoMasterX_json[\"CryptoDiscoMasterX.json\"]\n    class CryptoDiscoMasterX_json green\n    IDailyApp_json[\"IDailyApp.json\"]\n    class IDailyApp_json green\n    CryptoDiscoRaffle_json[\"CryptoDiscoRaffle.json\"]\n    class CryptoDiscoRaffle_json green\n    IAirnodeRrpV0_json[\"IAirnodeRrpV0.json\"]\n    class IAirnodeRrpV0_json green\n    ICryptoDiscoMaster_json[\"ICryptoDiscoMaster.json\"]\n    class ICryptoDiscoMaster_json green\n    DailyAppV12Secured_json[\"DailyAppV12Secured.json\"]\n    class DailyAppV12Secured_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    DailyAppV13_json[\"DailyAppV13.json\"]\n    class DailyAppV13_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    DailyAppV14_json[\"DailyAppV14.json\"]\n    class DailyAppV14_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    DailyAppV15_json[\"DailyAppV15.json\"]\n    class DailyAppV15_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    ContentCMS_json[\"ContentCMS.json\"]\n    class ContentCMS_json green\n    CryptoDiscoRaffleDebug_json[\"CryptoDiscoRaffleDebug.json\"]\n    class CryptoDiscoRaffleDebug_json green\n    IAirnodeRrpV0_json[\"IAirnodeRrpV0.json\"]\n    class IAirnodeRrpV0_json green\n    DailyAppCore_json[\"DailyAppCore.json\"]\n    class DailyAppCore_json green\n    DailyAppSponsorship_json[\"DailyAppSponsorship.json\"]\n    class DailyAppSponsorship_json green\n    AggregatorV3Interface_json[\"AggregatorV3Interface.json\"]\n    class AggregatorV3Interface_json green\n    DailyAppV13_json[\"DailyAppV13.json\"]\n    class DailyAppV13_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    AggregatorV3Interface_json[\"AggregatorV3Interface.json\"]\n    class AggregatorV3Interface_json green\n    MockAggregatorV3_json[\"MockAggregatorV3.json\"]\n    class MockAggregatorV3_json green\n    MockAirnodeRrp_json[\"MockAirnodeRrp.json\"]\n    class MockAirnodeRrp_json green\n    MockERC20_json[\"MockERC20.json\"]\n    class MockERC20_json green\n    DailyApp_Contract[\"DailyApp_Contract\"]\n    class DailyApp_Contract green\n    MasterX_Contract[\"MasterX_Contract\"]\n    class MasterX_Contract green\n    Raffle_Contract[\"Raffle_Contract\"]\n    class Raffle_Contract green\n    SBT_Mining_Pool[\"SBT_Mining_Pool\"]\n    class SBT_Mining_Pool green\n    SBT_Tier_BRONZE[\"SBT_Tier_BRONZE\"]\n    class SBT_Tier_BRONZE green\n    SBT_Tier_SILVER[\"SBT_Tier_SILVER\"]\n    class SBT_Tier_SILVER green\n    SBT_Tier_GOLD[\"SBT_Tier_GOLD\"]\n    class SBT_Tier_GOLD green\n    SBT_Tier_PLATINUM[\"SBT_Tier_PLATINUM\"]\n    class SBT_Tier_PLATINUM green\n    SBT_Tier_DIAMOND[\"SBT_Tier_DIAMOND\"]\n    class SBT_Tier_DIAMOND green\n    Referral_System[\"Referral_System\"]\n    class Referral_System green\n    Raffle_Moderation_Sync[\"Raffle_Moderation_Sync\"]\n    class Raffle_Moderation_Sync green\n    05f1c30a_2c5c_4646_b245_62bed1621114[\"05f1c30a-2c5c-4646-b245-62bed1621114\"]\n    class 05f1c30a_2c5c_4646_b245_62bed1621114 green\n    d710ed25_2c11_4242_9f15_21caea202329[\"d710ed25-2c11-4242-9f15-21caea202329\"]\n    class d710ed25_2c11_4242_9f15_21caea202329 green\n    918e1913_f79b_4ef0_90c3_44311e32be03[\"918e1913-f79b-4ef0-90c3-44311e32be03\"]\n    class 918e1913_f79b_4ef0_90c3_44311e32be03 green\n    e952808a_0d39_45ea_8d3f_e57e2a0d2f7b[\"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b\"]\n    class e952808a_0d39_45ea_8d3f_e57e2a0d2f7b green\n    37e2576e_4bbc_492e_b2dd_15c4341c099b[\"37e2576e-4bbc-492e-b2dd-15c4341c099b\"]\n    class 37e2576e_4bbc_492e_b2dd_15c4341c099b green\n    _env -->|\"config\"| user_profiles\n    _env -->|\"config\"| user_task_claims\n    _env -->|\"config\"| daily_tasks\n    _env -->|\"config\"| agent_vault\n    _env -->|\"config\"| point_settings\n    _env -->|\"config\"| system_settings\n    ContentCMSV2_json --> Logic_Layer\n    AggregatorV3Interface_json --> Logic_Layer\n    CryptoDiscoMasterX_json --> Logic_Layer\n    IDailyApp_json --> Logic_Layer\n    CryptoDiscoRaffle_json --> Logic_Layer\n    IAirnodeRrpV0_json --> Logic_Layer\n    ICryptoDiscoMaster_json --> Logic_Layer\n    DailyAppV12Secured_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    DailyAppV13_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    DailyAppV14_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    DailyAppV15_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    ContentCMS_json --> Logic_Layer\n    CryptoDiscoRaffleDebug_json --> Logic_Layer\n    IAirnodeRrpV0_json --> Logic_Layer\n    DailyAppCore_json --> Logic_Layer\n    DailyAppSponsorship_json --> Logic_Layer\n    AggregatorV3Interface_json --> Logic_Layer\n    DailyAppV13_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    AggregatorV3Interface_json --> Logic_Layer\n    MockAggregatorV3_json --> Logic_Layer\n    MockAirnodeRrp_json --> Logic_Layer\n    MockERC20_json --> Logic_Layer\n    MasterX_Contract -->|\"funds\"| SBT_Mining_Pool\n    MasterX_Contract -->|\"rule\"| SBT_Tier_BRONZE\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_BRONZE\n    MasterX_Contract -->|\"rule\"| SBT_Tier_SILVER\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_SILVER\n    MasterX_Contract -->|\"rule\"| SBT_Tier_GOLD\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_GOLD\n    MasterX_Contract -->|\"rule\"| SBT_Tier_PLATINUM\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_PLATINUM\n    MasterX_Contract -->|\"rule\"| SBT_Tier_DIAMOND\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_DIAMOND\n    user_profiles -->|\"graph\"| Referral_System\n    Referral_System -->|\"accounting\"| MasterX_Contract\n    Raffle_Contract -->|\"moderation\"| Raffle_Moderation_Sync\n    05f1c30a_2c5c_4646_b245_62bed1621114 -->|\"cached\"| Knowledge_Base\n    d710ed25_2c11_4242_9f15_21caea202329 -->|\"cached\"| Knowledge_Base\n    918e1913_f79b_4ef0_90c3_44311e32be03 -->|\"cached\"| Knowledge_Base\n    e952808a_0d39_45ea_8d3f_e57e2a0d2f7b -->|\"cached\"| Knowledge_Base\n    37e2576e_4bbc_492e_b2dd_15c4341c099b -->|\"cached\"| Knowledge_Base\n"}</script>
+    <script id="ncc-data-payload" type="application/json">{"timestamp":"2026-05-24T23:26:32.037Z","status":"HEALTHY","alerts":[],"layers":{"environment":{"status":"OK","nodes":[{"id":".env","status":"GREEN","path":".env"},{"id":".env.example","status":"YELLOW","path":".env.example"},{"id":".env.local","status":"GREEN","path":".env.local"},{"id":".env.vercel.production","status":"GREEN","path":".env.vercel.production"}]},"database":{"status":"OK","nodes":[{"id":"user_profiles","status":"GREEN","rows":5,"category":"User","error":null},{"id":"user_task_claims","status":"GREEN","rows":41,"category":"Task","error":null},{"id":"daily_tasks","status":"GREEN","rows":9,"category":"Task","error":null},{"id":"agent_vault","status":"GREEN","rows":317,"category":"Cognitive","error":null},{"id":"point_settings","status":"GREEN","rows":37,"category":"Economy","error":null},{"id":"system_settings","status":"GREEN","rows":22,"category":"Admin","error":null}]},"contracts":{"status":"OK","nodes":[{"id":"ContentCMSV2.json","status":"GREEN"},{"id":"AggregatorV3Interface.json","status":"GREEN"},{"id":"CryptoDiscoMasterX.json","status":"GREEN"},{"id":"IDailyApp.json","status":"GREEN"},{"id":"CryptoDiscoRaffle.json","status":"GREEN"},{"id":"IAirnodeRrpV0.json","status":"GREEN"},{"id":"ICryptoDiscoMaster.json","status":"GREEN"},{"id":"DailyAppV12Secured.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"DailyAppV13.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"DailyAppV14.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"DailyAppV15.json","status":"GREEN"},{"id":"ISBTMintEntitlementVerifier.json","status":"GREEN"},{"id":"DailyAppV16.json","status":"GREEN"},{"id":"DailyAppV17.json","status":"GREEN"},{"id":"ContentCMS.json","status":"GREEN"},{"id":"CryptoDiscoRaffleDebug.json","status":"GREEN"},{"id":"IAirnodeRrpV0.json","status":"GREEN"},{"id":"DailyAppCore.json","status":"GREEN"},{"id":"DailyAppSponsorship.json","status":"GREEN"},{"id":"AggregatorV3Interface.json","status":"GREEN"},{"id":"DailyAppV13.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"IMasterX.json","status":"GREEN"},{"id":"AggregatorV3Interface.json","status":"GREEN"},{"id":"MockAggregatorV3.json","status":"GREEN"},{"id":"MockAirnodeRrp.json","status":"GREEN"},{"id":"MockERC20.json","status":"GREEN"},{"id":"SBTMintEntitlementVerifier.json","status":"GREEN"},{"id":"DailyApp_Contract","status":"GREEN","address":"0x0D6f339795EeA5129461388F25dE4f87e92b8DA2"},{"id":"MasterX_Contract","status":"GREEN","address":"0x980770dAcE8f13E10632D3EC1410FAA4c707076c"},{"id":"Raffle_Contract","status":"GREEN","address":"0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3"}]},"api":{"status":"OK","nodes":[{"id":"SBT_Mining_Pool","status":"GREEN","value":"0.0003 ETH","last_dist":"04/04/2026"},{"id":"SBT_Tier_BRONZE","status":"GREEN","req_xp":"100","msg":"Active & Synced"},{"id":"SBT_Tier_SILVER","status":"GREEN","req_xp":"500","msg":"Active & Synced"},{"id":"SBT_Tier_GOLD","status":"GREEN","req_xp":"1500","msg":"Active & Synced"},{"id":"SBT_Tier_PLATINUM","status":"GREEN","req_xp":"4000","msg":"Active & Synced"},{"id":"SBT_Tier_DIAMOND","status":"GREEN","req_xp":"10000","msg":"Active & Synced"},{"id":"Referral_System","status":"GREEN","total_referrals":0},{"id":"Raffle_Moderation_Sync","status":"GREEN","msg":"Protocol V2.1 Active (1 Raffles)"}]},"knowledge":{"status":"OK","nodes":[{"id":"918e1913-f79b-4ef0-90c3-44311e32be03","status":"GREEN","category":"skill","fullId":"918e1913-f79b-4ef0-90c3-44311e32be03"},{"id":"b0ca9ee2-c883-484e-80df-2ff2644df60d","status":"GREEN","category":"skill","fullId":"b0ca9ee2-c883-484e-80df-2ff2644df60d"},{"id":"851ba262-5aba-4858-a362-2e9b416b23d4","status":"GREEN","category":"skill","fullId":"851ba262-5aba-4858-a362-2e9b416b23d4"},{"id":"b3c0478d-37ca-4786-ad0f-e1fb1f9ee3c9","status":"GREEN","category":"skill","fullId":"b3c0478d-37ca-4786-ad0f-e1fb1f9ee3c9"},{"id":"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b","status":"GREEN","category":"skill","fullId":"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b"}]}},"relationships":[{"from":".env","to":"user_profiles","label":"config"},{"from":".env","to":"user_task_claims","label":"config"},{"from":".env","to":"daily_tasks","label":"config"},{"from":".env","to":"agent_vault","label":"config"},{"from":".env","to":"point_settings","label":"config"},{"from":".env","to":"system_settings","label":"config"},{"from":"ContentCMSV2.json","to":"Logic Layer"},{"from":"AggregatorV3Interface.json","to":"Logic Layer"},{"from":"CryptoDiscoMasterX.json","to":"Logic Layer"},{"from":"IDailyApp.json","to":"Logic Layer"},{"from":"CryptoDiscoRaffle.json","to":"Logic Layer"},{"from":"IAirnodeRrpV0.json","to":"Logic Layer"},{"from":"ICryptoDiscoMaster.json","to":"Logic Layer"},{"from":"DailyAppV12Secured.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"DailyAppV13.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"DailyAppV14.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"DailyAppV15.json","to":"Logic Layer"},{"from":"ISBTMintEntitlementVerifier.json","to":"Logic Layer"},{"from":"DailyAppV16.json","to":"Logic Layer"},{"from":"DailyAppV17.json","to":"Logic Layer"},{"from":"ContentCMS.json","to":"Logic Layer"},{"from":"CryptoDiscoRaffleDebug.json","to":"Logic Layer"},{"from":"IAirnodeRrpV0.json","to":"Logic Layer"},{"from":"DailyAppCore.json","to":"Logic Layer"},{"from":"DailyAppSponsorship.json","to":"Logic Layer"},{"from":"AggregatorV3Interface.json","to":"Logic Layer"},{"from":"DailyAppV13.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"IMasterX.json","to":"Logic Layer"},{"from":"AggregatorV3Interface.json","to":"Logic Layer"},{"from":"MockAggregatorV3.json","to":"Logic Layer"},{"from":"MockAirnodeRrp.json","to":"Logic Layer"},{"from":"MockERC20.json","to":"Logic Layer"},{"from":"SBTMintEntitlementVerifier.json","to":"Logic Layer"},{"from":"MasterX_Contract","to":"SBT_Mining_Pool","label":"funds"},{"from":"MasterX_Contract","to":"SBT_Tier_BRONZE","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_BRONZE","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_SILVER","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_SILVER","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_GOLD","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_GOLD","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_PLATINUM","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_PLATINUM","label":"mint"},{"from":"MasterX_Contract","to":"SBT_Tier_DIAMOND","label":"rule"},{"from":"DailyApp_Contract","to":"SBT_Tier_DIAMOND","label":"mint"},{"from":"user_profiles","to":"Referral_System","label":"graph"},{"from":"Referral_System","to":"MasterX_Contract","label":"accounting"},{"from":"Raffle_Contract","to":"Raffle_Moderation_Sync","label":"moderation"},{"from":"918e1913-f79b-4ef0-90c3-44311e32be03","to":"Knowledge_Base","label":"cached"},{"from":"b0ca9ee2-c883-484e-80df-2ff2644df60d","to":"Knowledge_Base","label":"cached"},{"from":"851ba262-5aba-4858-a362-2e9b416b23d4","to":"Knowledge_Base","label":"cached"},{"from":"b3c0478d-37ca-4786-ad0f-e1fb1f9ee3c9","to":"Knowledge_Base","label":"cached"},{"from":"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b","to":"Knowledge_Base","label":"cached"}],"graphDefinition":"graph TD\n    classDef green fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff,glow:0 0 10px #10b98133\n    classDef amber fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff\n    classDef red fill:#ef4444,stroke:#dc2626,stroke-width:2px,color:#fff,glow:0 0 15px #ef444466\n    _env[\".env\"]\n    class _env green\n    _env_example[\".env.example\"]\n    class _env_example amber\n    _env_local[\".env.local\"]\n    class _env_local green\n    _env_vercel_production[\".env.vercel.production\"]\n    class _env_vercel_production green\n    user_profiles[\"user_profiles\"]\n    class user_profiles green\n    user_task_claims[\"user_task_claims\"]\n    class user_task_claims green\n    daily_tasks[\"daily_tasks\"]\n    class daily_tasks green\n    agent_vault[\"agent_vault\"]\n    class agent_vault green\n    point_settings[\"point_settings\"]\n    class point_settings green\n    system_settings[\"system_settings\"]\n    class system_settings green\n    ContentCMSV2_json[\"ContentCMSV2.json\"]\n    class ContentCMSV2_json green\n    AggregatorV3Interface_json[\"AggregatorV3Interface.json\"]\n    class AggregatorV3Interface_json green\n    CryptoDiscoMasterX_json[\"CryptoDiscoMasterX.json\"]\n    class CryptoDiscoMasterX_json green\n    IDailyApp_json[\"IDailyApp.json\"]\n    class IDailyApp_json green\n    CryptoDiscoRaffle_json[\"CryptoDiscoRaffle.json\"]\n    class CryptoDiscoRaffle_json green\n    IAirnodeRrpV0_json[\"IAirnodeRrpV0.json\"]\n    class IAirnodeRrpV0_json green\n    ICryptoDiscoMaster_json[\"ICryptoDiscoMaster.json\"]\n    class ICryptoDiscoMaster_json green\n    DailyAppV12Secured_json[\"DailyAppV12Secured.json\"]\n    class DailyAppV12Secured_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    DailyAppV13_json[\"DailyAppV13.json\"]\n    class DailyAppV13_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    DailyAppV14_json[\"DailyAppV14.json\"]\n    class DailyAppV14_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    DailyAppV15_json[\"DailyAppV15.json\"]\n    class DailyAppV15_json green\n    ISBTMintEntitlementVerifier_json[\"ISBTMintEntitlementVerifier.json\"]\n    class ISBTMintEntitlementVerifier_json green\n    DailyAppV16_json[\"DailyAppV16.json\"]\n    class DailyAppV16_json green\n    DailyAppV17_json[\"DailyAppV17.json\"]\n    class DailyAppV17_json green\n    ContentCMS_json[\"ContentCMS.json\"]\n    class ContentCMS_json green\n    CryptoDiscoRaffleDebug_json[\"CryptoDiscoRaffleDebug.json\"]\n    class CryptoDiscoRaffleDebug_json green\n    IAirnodeRrpV0_json[\"IAirnodeRrpV0.json\"]\n    class IAirnodeRrpV0_json green\n    DailyAppCore_json[\"DailyAppCore.json\"]\n    class DailyAppCore_json green\n    DailyAppSponsorship_json[\"DailyAppSponsorship.json\"]\n    class DailyAppSponsorship_json green\n    AggregatorV3Interface_json[\"AggregatorV3Interface.json\"]\n    class AggregatorV3Interface_json green\n    DailyAppV13_json[\"DailyAppV13.json\"]\n    class DailyAppV13_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    IMasterX_json[\"IMasterX.json\"]\n    class IMasterX_json green\n    AggregatorV3Interface_json[\"AggregatorV3Interface.json\"]\n    class AggregatorV3Interface_json green\n    MockAggregatorV3_json[\"MockAggregatorV3.json\"]\n    class MockAggregatorV3_json green\n    MockAirnodeRrp_json[\"MockAirnodeRrp.json\"]\n    class MockAirnodeRrp_json green\n    MockERC20_json[\"MockERC20.json\"]\n    class MockERC20_json green\n    SBTMintEntitlementVerifier_json[\"SBTMintEntitlementVerifier.json\"]\n    class SBTMintEntitlementVerifier_json green\n    DailyApp_Contract[\"DailyApp_Contract\"]\n    class DailyApp_Contract green\n    MasterX_Contract[\"MasterX_Contract\"]\n    class MasterX_Contract green\n    Raffle_Contract[\"Raffle_Contract\"]\n    class Raffle_Contract green\n    SBT_Mining_Pool[\"SBT_Mining_Pool\"]\n    class SBT_Mining_Pool green\n    SBT_Tier_BRONZE[\"SBT_Tier_BRONZE\"]\n    class SBT_Tier_BRONZE green\n    SBT_Tier_SILVER[\"SBT_Tier_SILVER\"]\n    class SBT_Tier_SILVER green\n    SBT_Tier_GOLD[\"SBT_Tier_GOLD\"]\n    class SBT_Tier_GOLD green\n    SBT_Tier_PLATINUM[\"SBT_Tier_PLATINUM\"]\n    class SBT_Tier_PLATINUM green\n    SBT_Tier_DIAMOND[\"SBT_Tier_DIAMOND\"]\n    class SBT_Tier_DIAMOND green\n    Referral_System[\"Referral_System\"]\n    class Referral_System green\n    Raffle_Moderation_Sync[\"Raffle_Moderation_Sync\"]\n    class Raffle_Moderation_Sync green\n    918e1913_f79b_4ef0_90c3_44311e32be03[\"918e1913-f79b-4ef0-90c3-44311e32be03\"]\n    class 918e1913_f79b_4ef0_90c3_44311e32be03 green\n    b0ca9ee2_c883_484e_80df_2ff2644df60d[\"b0ca9ee2-c883-484e-80df-2ff2644df60d\"]\n    class b0ca9ee2_c883_484e_80df_2ff2644df60d green\n    851ba262_5aba_4858_a362_2e9b416b23d4[\"851ba262-5aba-4858-a362-2e9b416b23d4\"]\n    class 851ba262_5aba_4858_a362_2e9b416b23d4 green\n    b3c0478d_37ca_4786_ad0f_e1fb1f9ee3c9[\"b3c0478d-37ca-4786-ad0f-e1fb1f9ee3c9\"]\n    class b3c0478d_37ca_4786_ad0f_e1fb1f9ee3c9 green\n    e952808a_0d39_45ea_8d3f_e57e2a0d2f7b[\"e952808a-0d39-45ea-8d3f-e57e2a0d2f7b\"]\n    class e952808a_0d39_45ea_8d3f_e57e2a0d2f7b green\n    _env -->|\"config\"| user_profiles\n    _env -->|\"config\"| user_task_claims\n    _env -->|\"config\"| daily_tasks\n    _env -->|\"config\"| agent_vault\n    _env -->|\"config\"| point_settings\n    _env -->|\"config\"| system_settings\n    ContentCMSV2_json --> Logic_Layer\n    AggregatorV3Interface_json --> Logic_Layer\n    CryptoDiscoMasterX_json --> Logic_Layer\n    IDailyApp_json --> Logic_Layer\n    CryptoDiscoRaffle_json --> Logic_Layer\n    IAirnodeRrpV0_json --> Logic_Layer\n    ICryptoDiscoMaster_json --> Logic_Layer\n    DailyAppV12Secured_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    DailyAppV13_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    DailyAppV14_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    DailyAppV15_json --> Logic_Layer\n    ISBTMintEntitlementVerifier_json --> Logic_Layer\n    DailyAppV16_json --> Logic_Layer\n    DailyAppV17_json --> Logic_Layer\n    ContentCMS_json --> Logic_Layer\n    CryptoDiscoRaffleDebug_json --> Logic_Layer\n    IAirnodeRrpV0_json --> Logic_Layer\n    DailyAppCore_json --> Logic_Layer\n    DailyAppSponsorship_json --> Logic_Layer\n    AggregatorV3Interface_json --> Logic_Layer\n    DailyAppV13_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    IMasterX_json --> Logic_Layer\n    AggregatorV3Interface_json --> Logic_Layer\n    MockAggregatorV3_json --> Logic_Layer\n    MockAirnodeRrp_json --> Logic_Layer\n    MockERC20_json --> Logic_Layer\n    SBTMintEntitlementVerifier_json --> Logic_Layer\n    MasterX_Contract -->|\"funds\"| SBT_Mining_Pool\n    MasterX_Contract -->|\"rule\"| SBT_Tier_BRONZE\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_BRONZE\n    MasterX_Contract -->|\"rule\"| SBT_Tier_SILVER\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_SILVER\n    MasterX_Contract -->|\"rule\"| SBT_Tier_GOLD\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_GOLD\n    MasterX_Contract -->|\"rule\"| SBT_Tier_PLATINUM\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_PLATINUM\n    MasterX_Contract -->|\"rule\"| SBT_Tier_DIAMOND\n    DailyApp_Contract -->|\"mint\"| SBT_Tier_DIAMOND\n    user_profiles -->|\"graph\"| Referral_System\n    Referral_System -->|\"accounting\"| MasterX_Contract\n    Raffle_Contract -->|\"moderation\"| Raffle_Moderation_Sync\n    918e1913_f79b_4ef0_90c3_44311e32be03 -->|\"cached\"| Knowledge_Base\n    b0ca9ee2_c883_484e_80df_2ff2644df60d -->|\"cached\"| Knowledge_Base\n    851ba262_5aba_4858_a362_2e9b416b23d4 -->|\"cached\"| Knowledge_Base\n    b3c0478d_37ca_4786_ad0f_e1fb1f9ee3c9 -->|\"cached\"| Knowledge_Base\n    e952808a_0d39_45ea_8d3f_e57e2a0d2f7b -->|\"cached\"| Knowledge_Base\n"}</script>
 
     <script>
         let countdown = 60;
@@ -196,8 +226,18 @@
                 container.style.opacity = '1';
             } catch (e) {
                 console.error("Mermaid error:", e);
-                graphDiv.innerHTML = `<p class="text-red-500 text-[10px]">Graph Render Error</p>`;
+                graphDiv.innerHTML = `<p class="text-red-500 content-native">Graph Render Error</p>`;
             }
+        }
+
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return str;
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         function init() {
@@ -234,10 +274,10 @@
                     div.className = `p-4 rounded-2xl glass border-l-4 ${alert.level === 'RED' ? 'border-red-500' : 'border-amber-500'}`;
                     div.innerHTML = `
                         <div class="flex justify-between items-start mb-1">
-                            <span class="text-[9px] font-black uppercase tracking-widest ${alert.level === 'RED' ? 'text-red-400' : 'text-amber-400'}">${alert.area}</span>
-                            <span class="text-[8px] opacity-40 font-mono">${alert.level}</span>
+                            <span class="label-native ${alert.level === 'RED' ? 'text-red-400' : 'text-amber-400'}">${escapeHtml(alert.area)}</span>
+                            <span class="value-native opacity-40 font-mono">${escapeHtml(alert.level)}</span>
                         </div>
-                        <p class="text-[11px] leading-relaxed text-gray-300 font-medium">${alert.msg}</p>
+                        <p class="content-native text-gray-300">${escapeHtml(alert.msg)}</p>
                     `;
                     alertsCont.appendChild(div);
                 });
@@ -252,13 +292,13 @@
                 cont.innerHTML = '';
                 nodes.forEach(node => {
                     const div = document.createElement('div');
-                    div.className = "node-card p-3 rounded-xl glass text-[10px] flex justify-between items-center";
+                    div.className = "node-card p-3 rounded-xl glass content-native flex justify-between items-center";
                     let metadata = '';
                     if (node.rows !== undefined) metadata = `<span class="opacity-40">${node.rows}r</span>`;
-                    if (node.category) metadata = `<span class="text-[8px] uppercase tracking-tighter opacity-30">${node.category}</span>`;
+                    if (node.category) metadata = `<span class="label-native opacity-30">${escapeHtml(node.category)}</span>`;
                     
                     div.innerHTML = `
-                        <span class="font-bold ${node.status === 'GREEN' ? 'text-gray-300' : (node.status === 'RED' ? 'text-red-400' : 'text-amber-400')}">${node.id}</span>
+                        <span class="font-bold ${node.status === 'GREEN' ? 'text-gray-300' : (node.status === 'RED' ? 'text-red-400' : 'text-amber-400')}">${escapeHtml(node.id)}</span>
                         <div class="flex items-center gap-2">${metadata} <span class="w-1.5 h-1.5 rounded-full ${node.status === 'GREEN' ? 'bg-emerald-500' : (node.status === 'RED' ? 'bg-red-500 animate-pulse' : 'bg-amber-500')}"></span></div>
                     `;
                     cont.appendChild(div);
@@ -282,40 +322,40 @@
                     if (node.id === 'SBT_Mining_Pool') {
                         content = `
                             <div class="mb-4">
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Pool Balance</p>
-                                <h5 class="text-2xl font-black">${node.value}</h5>
+                                <p class="label-native text-gray-500 mb-1">Pool Balance</p>
+                                <h5 class="text-2xl font-black value-native">${escapeHtml(node.value)}</h5>
                             </div>
-                            <div class="text-[9px] opacity-50 uppercase tracking-tighter">Last Dist: ${node.last_dist}</div>
+                            <div class="label-native opacity-50">Last Dist: ${escapeHtml(node.last_dist)}</div>
                         `;
                     } else if (node.id === 'Referral_System') {
                         content = `
                             <div class="mb-4">
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Network Scale</p>
-                                <h5 class="text-2xl font-black">${node.total_referrals} Connections</h5>
+                                <p class="label-native text-gray-500 mb-1">Network Scale</p>
+                                <h5 class="text-2xl font-black value-native">${node.total_referrals} Connections</h5>
                             </div>
                         `;
                     } else if (node.id.startsWith('SBT_Tier')) {
                          content = `
                             <div class="mb-4">
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Requirements</p>
-                                <h5 class="text-xl font-black">${node.req_xp} XP</h5>
+                                <p class="label-native text-gray-500 mb-1">Requirements</p>
+                                <h5 class="text-xl font-black value-native">${escapeHtml(node.req_xp)} XP</h5>
                             </div>
-                            <p class="text-[10px] text-gray-400 italic">${node.msg}</p>
+                            <p class="content-native text-gray-400 italic">${escapeHtml(node.msg)}</p>
                         `;
                     } else if (node.id.startsWith('Flow_User')) {
                         content = `
                             <div class="mb-4">
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">State Sync Drift</p>
-                                <h5 class="text-2xl font-black ${node.status === 'RED' ? 'text-red-400' : 'text-emerald-400'}">${node.drift} XP</h5>
+                                <p class="label-native text-gray-500 mb-1">State Sync Drift</p>
+                                <h5 class="text-2xl font-black value-native ${node.status === 'RED' ? 'text-red-400' : 'text-emerald-400'}">${node.drift} XP</h5>
                             </div>
-                            <div class="text-[9px] uppercase tracking-tighter text-gray-500">Ref: ${node.ref_status}</div>
-                            <p class="text-[10px] text-gray-400 mt-2 italic">"${node.msg}"</p>
+                            <div class="label-native text-gray-500">Ref: ${escapeHtml(node.ref_status)}</div>
+                            <p class="content-native text-gray-400 mt-2 italic">"${escapeHtml(node.msg)}"</p>
                         `;
                     }
 
                     div.innerHTML = `
                         <div class="flex justify-between items-start mb-6">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400">${node.id.replace(/_/g, ' ')}</span>
+                            <span class="label-native text-indigo-400">${escapeHtml(node.id.replace(/_/g, ' '))}</span>
                             <span class="w-2 h-2 rounded-full ${node.status === 'GREEN' ? 'bg-emerald-500' : (node.status === 'RED' ? 'bg-red-500 animate-pulse' : 'bg-amber-500')}"></span>
                         </div>
                         ${content}

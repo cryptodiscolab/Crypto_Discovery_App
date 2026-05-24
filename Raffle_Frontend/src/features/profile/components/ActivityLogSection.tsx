@@ -58,7 +58,7 @@ export const ActivityLogSection = ({ walletAddress }: ActivityLogSectionProps) =
             case 'XP': return Zap;
             case 'REFERRAL': return Users;
             case 'SWAP': return Repeat2;
-            case 'PURCHASE': case 'SWAP': case 'EXPENSE': return ShoppingCart;
+            case 'PURCHASE': case 'EXPENSE': return ShoppingCart;
             case 'SBT': return Gem;
             case 'DAILY': return Calendar;
             case 'RAFFLE': return Ticket;

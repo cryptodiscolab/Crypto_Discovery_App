@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-05-21*
-*PRD Version: v3.64.19-Hardened (Stateless SIWE EIP-4361 Authentication Implementation)*
+*Last Updated: 2026-05-25*
+*PRD Version: v3.64.23-Hardened (Nexus Command Center (NCC) Audit & Hardening)*
 
 ---
 
@@ -118,6 +118,9 @@ Before responding to ANY request, read these files IN ORDER:
 | **BP-008** | **TS `never` Property Access** | State initializers `useState([])` tanpa generic `<any[]>` menyebabkan TS menyimpulkan type `never[]`. Property access pada array elemen (e.g., `item.id`) gagal. | `TaskList.tsx`, `UnifiedDashboard.tsx` | Gunakan explicit casting `item as any` atau definisikan interface. Untuk state, gunakan `useState<any[]>([])`. | v3.60.2 |
 | **BP-009** | **Implicit `any` in Hooks** | Hook parameters (e.g., `taskId` di `useTaskInfo`) tanpa type menyebabkan implicit `any` error di strict mode. | `useTaskInfo.ts` | Tambahkan type explicit: `taskId: string | number`. | v3.60.2 |
 | **BP-010** | **Vercel `.env` Leak Risk** | File `.env.vercel*` tertinggal di root dan berisiko ter-commit. | `.gitignore` | Tambahkan `.env.vercel*` dan `.env.prod.vercel` ke `.gitignore` secara permanen. | v3.60.2 |
+| **BP-011** | **Broken SwapModal.tsx Header** | `replace_file_content` memotong baris imports, konstanta token, dan parameter `SwapModal` secara tidak sengaja. | `SwapModal.tsx` | Selalu view file minimal 15 baris ke atas dan ke bawah sebelum melakukan replacement parsial guna memverifikasi cakupan kode. | v3.64.19 |
+| **BP-012** | **Missing txHash Verification on Swap events** | Log aktivitas `SWAP` dari frontend ditolak oleh filter backend `forbiddenCategories` (403) karena tidak mengirim `txHash`. | `SwapModal.tsx`, `_user-bundle.ts` | Tangkap `txHash` dari executeRoute di Li.Fi SDK dan sertakan ke parameter request `log-activity` API. | v3.64.19 |
+| **BP-013** | **Duplicate Switch Case Warning** | case `'SWAP'` dideklarasikan dua kali di switch statement `getCategoryIcon` sehingga memicu warning esbuild compiler. | `ActivityLogSection.tsx` | Hindari duplikasi case di switch statement dan pastikan untuk merapikan case yang berlebih. | v3.64.19 |
 
 > 💡 **Agent Self-Check**: Sebelum menulis kode yang menyentuh contract write, selalu tanyakan: *"Apakah contract address yang di-call SAMA dengan sumber data yang digunakan?"*
 
@@ -520,5 +523,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.64.19 - Hardened & Synchronized.*
+*Constitution v3.64.23 - Hardened & Synchronized.*
 *Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened. Live Agent Delegation Dashboard Activated.*

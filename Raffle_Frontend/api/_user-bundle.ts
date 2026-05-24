@@ -1008,20 +1008,30 @@ async function handleFrontendLogActivity(req: VercelRequest, res: VercelResponse
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
-        // [SECURITY FIX] Disallow frontend from logging financial/XP categories to prevent Admin Metrics Poisoning via Fake Receipts.
-        const forbiddenCategories = ['PURCHASE', 'REWARD', 'SWAP', 'XP', 'ADMIN'];
+        // [SECURITY FIX] Disallow frontend from logging sensitive/admin categories to prevent Admin Metrics Poisoning.
+        // Financial/Swap categories are allowed ONLY if they include a txHash that is successfully verified on-chain.
+        const forbiddenCategories = ['XP', 'ADMIN'];
         if (forbiddenCategories.includes(category?.toUpperCase())) {
             return res.status(403).json({ error: `Category ${category} must be logged by the backend.` });
         }
 
-        // For financial activities (PURCHASE/REWARD) with tx_hash, verify receipt on-chain
+        // For financial activities (PURCHASE/REWARD/SWAP), verify receipt on-chain
         let receiptVerified = false;
-        if (txHash && (category === 'PURCHASE' || category === 'REWARD' || category === 'SWAP')) {
+        const isFinancialOrSwap = ['PURCHASE', 'REWARD', 'SWAP'].includes(category?.toUpperCase());
+
+        if (isFinancialOrSwap) {
+            if (!txHash) {
+                return res.status(400).json({ error: `Category ${category} requires a transaction hash (txHash) for verification.` });
+            }
             try {
                 const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
                 receiptVerified = receipt?.status === 'success' && receipt.from.toLowerCase() === wallet_address.toLowerCase();
-            } catch {
-                // Receipt verification is best-effort; log anyway with unverified flag
+            } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : String(err);
+                console.error('[handleFrontendLogActivity] Transaction receipt verification error:', msg);
+            }
+            if (!receiptVerified) {
+                return res.status(400).json({ error: `On-chain transaction verification failed for category ${category}.` });
             }
         }
 

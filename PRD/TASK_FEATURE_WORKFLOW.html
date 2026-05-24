@@ -1,5 +1,7 @@
-<p>﻿- <strong>v3.63.0</strong>: Admin Architecture Consolidation &amp; Technical Debt Liquidation. Unified <code>TaskManager</code> components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (<code>ActiveCampaignsSection</code>, <code>EconomyConfigSection</code>, etc.). Archival of legacy Python/SQL scripts.</p>
 <ul>
+<li><strong>v3.64.23-Hardened</strong>: Nexus Command Center (NCC) Audit &amp; Hardening. Cleared legacy typography to strictly adopt NATIVE+ (v3.41.0) standards, implemented DOM XSS sanitization helper <code>escapeHtml()</code> for dynamic payload injection, and restored full system health compile checks.</li>
+<li><strong>v3.64.22-Hardened</strong>: Swap Auto-Refresh &amp; Global Invalidation. Implemented telemetry extraction for verified <code>txHash</code> from Li.Fi SDK execution, integrated dynamic <code>onSuccess</code> callbacks to trigger React Query invalidation for <code>[&#39;balance&#39;]</code>, <code>[&#39;readContract&#39;]</code>, <code>[&#39;profile&#39;]</code>, and <code>[&#39;activity-logs&#39;]</code>, and resolved React/TypeScript compiler warnings.</li>
+<li><strong>v3.63.0</strong>: Admin Architecture Consolidation &amp; Technical Debt Liquidation. Unified <code>TaskManager</code> components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (<code>ActiveCampaignsSection</code>, <code>EconomyConfigSection</code>, etc.). Archival of legacy Python/SQL scripts.</li>
 <li><strong>v3.61.0</strong>: Serverless API Hardening &amp; 100% TS Migration. Refaktor <code>user-bundle.ts</code>, <code>tasks-bundle.ts</code>, dan <code>admin-bundle.ts</code> ke strict TypeScript. Integrasi <code>database.types.ts</code> dan implementasi <code>unknown</code> error guard pattern.</li>
 <li><strong>v3.59.5</strong>: Raffle Admin Hardening &amp; Platform Economics. Implementasi <code>AdminRaffleSettings</code> (Rake, Claim Fee, Surcharge), <code>CreatorEarningsCard</code> untuk penarikan revenue sponsor (80%), dan penegakan <strong>Zero-Hardcode Mandate</strong> pada seluruh form pembuatan raffle.</li>
 <li><strong>v3.59.4</strong>: Final Polish &amp; Performance Optimization. Filtered UGC sub-tasks from main list, implemented DB-First Raffle Indexing (Supabase), and added <code>daily_task_completion</code> reward keys.</li>
@@ -1389,7 +1391,7 @@ setTimeout(() =&gt; fetchData(), 1500); // Full server sync
 <li><strong>On-Chain Mint Enforcement</strong>: <code>DailyAppV16.mintNFT(uint8 tier)</code> menegakkan wallet binding, sequential tier, supply, status tier, XP requirement, dan mint price. Jalur entitlement voucher V15 adalah legacy dan tidak dipakai untuk V16.</li>
 </ol>
 <p><em>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.</em>
-<em>Antigravity ΓÇö Nexus Master Architect. Protocol v3.56.4 Locked.</em></p>
+<em>Antigravity ΓÇö Nexus Master Architect. Protocol v3.64.23 Locked.</em></p>
 <hr>
 <h2>19. UGC Multi-Action &amp; All-or-Nothing Campaign Workflow</h2>
 <p>Sistem ini berevolusi dari tugas tunggal menjadi kampanye terstruktur guna meningkatkan retensi dan kualitas engagement.</p>
@@ -1492,4 +1494,4 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 <li><strong>Enforcement</strong>: Kartu tetap ditampilkan selama <code>claimableRewards(user, token) &gt; 0</code> untuk setidaknya satu token yang didukung. Hal ini menjamin user tidak kehilangan akses ke tombol klaim.</li>
 </ul>
 <hr>
-<p><em>End of Task Feature Workflow - Nexus v3.59.3 LOCKED.</em></p>
+<p><em>End of Task Feature Workflow - Nexus v3.64.23 LOCKED.</em></p>

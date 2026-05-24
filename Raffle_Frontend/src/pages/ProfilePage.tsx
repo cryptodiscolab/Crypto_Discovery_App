@@ -238,7 +238,18 @@ export default function ProfilePage() {
             }}
           />
         )}
-        {activeModal === 'swap' && <SwapModal isOpen={true} onClose={() => setActiveModal(null)} />}
+        {activeModal === 'swap' && (
+          <SwapModal
+            isOpen={true}
+            onClose={() => setActiveModal(null)}
+            onSuccess={() => {
+              refetchProfile();
+              refetchPoints();
+              refetchOnChainStats();
+              refetchSBT();
+            }}
+          />
+        )}
 
         {/* STATS & IDENTITY */}
         <ProfileStats

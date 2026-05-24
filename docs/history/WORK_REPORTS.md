@@ -4,6 +4,19 @@ This document serves as the central registry for historical Work Reports within 
 
 ---
 
+## 🟢 Work Report v3.64.22-Hardened: Swap Engine Restoration & Global Invalidation Auto-Refresh
+**Status**: ✅ IMPLEMENTED & VERIFIED
+**Summary**: Restored SwapModal frontend components, fixed transaction verification on Swap activity logging to comply with security proxy backend policies, implemented global TanStack Query invalidation on successful swap settlement, and cleaned up duplicate case compiler warning.
+**Changes**:
+1. **Swap Restoration**: Restored `SwapModal.tsx` imports, interface `Token`, constants `NETWORKS`, `FALLBACK_TOKENS`, `TOKENS`, and parameter callback hooks.
+2. **Transaction Logging**: Modified `SwapModal.tsx` to dynamically extract the `txHash` from Li.Fi `executeRoute` results and send it to the backend `/api/user-bundle?action=log-activity` request payload for on-chain verification, satisfying security constraints.
+3. **Query Invalidation**: Added `useQueryClient` and triggered invalidation for `['balance']`, `['readContract']`, `['profile']`, and `['activity-logs']` queries upon swap completion.
+4. **UX Integration**: Wired the `onSuccess` callback into `ProfilePage.tsx` (to trigger profile/on-chain stats/SBT refetching) and `CreateMissionPage.tsx` (to instantly update available token balance).
+5. **Code Cleanup**: Removed duplicate `case 'SWAP'` from `getCategoryIcon` switch statement inside `ActivityLogSection.tsx` to eliminate esbuild compilation warnings.
+6. **Ecosystem Build**: Re-ran standard build checklist (`npm run build`) on main web app Raffle_Frontend; verified zero compiler warnings, zero errors, and passed all gitleaks & system checks.
+
+---
+
 ## 🟢 Work Report v3.64.21-Hardened: Contract Redeployment + Automated DB Backup
 **Status**: ✅ IMPLEMENTED & COMMITTED `3b31e88`
 **Summary**: Redeployed MasterX + Raffle with Ownable2Step, upgraded DailyAppV16 (UUPS) with pause/nonReentrant, fixed CORS, synced 18 Vercel env vars, built automated daily backup system.

@@ -1,6 +1,6 @@
 name: Secure Infrastructure & Contract Manager
 description: Manages smart contract lifecycle, environmental synchronization, and absolute privacy for sensitive data. Includes ABI Proxy architecture and build safety protocols.
-version: v3.64.21-Hardened
+version: v3.64.22-Hardened
 ---
 
 # Secure Infrastructure & Master Protocol Architect (v3.63.5-Hardened)
@@ -139,4 +139,4 @@ node scripts/backup/backup_supabase.cjs
 - Auto-rotate: 30 backups terbaru, sisanya dihapus otomatis
 
 ---
-*Protokol ini sinkron dengan .cursorrules dan PRD v3.64.21-Hardened*
+*Protokol ini sinkron dengan .cursorrules dan PRD v3.64.22-Hardened*

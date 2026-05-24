@@ -14,18 +14,18 @@
 
 ## 1. Non-Negotiable Scope
 
-- [ ] Reuse existing API surfaces only:
-  - [ ] `/api/user-bundle`
-  - [ ] `/api/tasks-bundle`
-  - [ ] `/api/admin-bundle` where admin-only refresh is needed
-  - [ ] Existing raffle/swap/user service calls already wired in the frontend
-  - [ ] Existing `/api/leaderboard`
-- [ ] Do **not** add new files under `api/` or `Raffle_Frontend/api/`.
-- [ ] Do **not** increase Vercel Serverless Function count.
-- [ ] Do **not** move sensitive writes to the frontend.
-- [ ] Keep backend as the write + `logActivity` source of truth.
-- [ ] Use Supabase Realtime only as an invalidation trigger, not as a trusted write path.
-- [ ] Use TanStack Query invalidation/refetch as the frontend cache refresh layer.
+- [x] Reuse existing API surfaces only:
+  - [x] `/api/user-bundle`
+  - [x] `/api/tasks-bundle`
+  - [x] `/api/admin-bundle` where admin-only refresh is needed
+  - [x] Existing raffle/swap/user service calls already wired in the frontend
+  - [x] Existing `/api/leaderboard`
+- [x] Do **not** add new files under `api/` or `Raffle_Frontend/api/`.
+- [x] Do **not** increase Vercel Serverless Function count.
+- [x] Do **not** move sensitive writes to the frontend.
+- [x] Keep backend as the write + `logActivity` source of truth.
+- [x] Use Supabase Realtime only as an invalidation trigger, not as a trusted write path.
+- [x] Use TanStack Query invalidation/refetch as the frontend cache refresh layer.
 
 ---
 
@@ -39,7 +39,7 @@
   - [x] `refetchOnWindowFocus`
   - [x] `refetchOnReconnect`
   - [x] 60s interval fallback
-- [ ] Confirm all profile-mutating flows invalidate `['profile', address]` after mutation success.
+- [x] Confirm all profile-mutating flows invalidate `['profile', address]` after mutation success.
 
 ### 2.2 Activity Log History
 
@@ -60,63 +60,63 @@
   - [x] `UGC`
   - [x] `IDENTITY`
   - [x] `SYNC`
-- [ ] Confirm every backend event below calls `logActivity` with category + metadata:
-  - [ ] Swap
-  - [ ] Payment
-  - [ ] Purchase
-  - [ ] Referral XP vesting
-  - [ ] Referral dividend XP
-  - [ ] Raw XP grant
-  - [ ] Daily claim
-  - [ ] UGC task claim
-  - [ ] UGC raffle creation
-  - [ ] UGC raffle participation
-  - [ ] Buy ticket
-  - [ ] Reward claim
-  - [ ] SBT tier upgrade minting
-
+- [x] Confirm every backend event below calls `logActivity` with category + metadata:
+  - [x] Swap
+  - [x] Payment
+  - [x] Purchase
+  - [x] Referral XP vesting
+  - [x] Referral dividend XP
+  - [x] Raw XP grant
+  - [x] Daily claim
+  - [x] UGC task claim
+  - [x] UGC raffle creation
+  - [x] UGC raffle participation
+  - [x] Buy ticket
+  - [x] Reward claim
+  - [x] SBT tier upgrade minting
+  
 ### 2.3 Leaderboard
 
 - [x] `LeaderboardPage` already fetches `/api/leaderboard?limit=100`.
 - [x] `LeaderboardPage` already subscribes to `user_profiles` changes.
 - [x] Realtime callback already refetches leaderboard without introducing a new endpoint.
-- [ ] Confirm all XP-changing flows update `user_profiles.total_xp` through the canonical DB RPC so the existing realtime listener fires.
+- [x] Confirm all XP-changing flows update `user_profiles.total_xp` through the canonical DB RPC so the existing realtime listener fires.
 - [ ] Add/query-key wrapper later only if the page is migrated to TanStack Query; avoid unnecessary refactor for now.
 
 ### 2.4 SBT Tier Upgrade Minting
 
-- [ ] Inventory current SBT hooks/components before implementation:
-  - [ ] `SBTUpgradeCard` or current tier upgrade card component
-  - [ ] `useSBT`
-  - [ ] `useNFTTiers`
-  - [ ] `PointsContext` / profile points source
-- [ ] Ensure successful mint/upgrade invalidates or refetches:
-  - [ ] `['profile', address]`
-  - [ ] profile points / XP context
-  - [ ] SBT/tier reads
-  - [ ] `['activity-logs', address]`
-  - [ ] leaderboard view
-- [ ] Ensure on-chain write waits for transaction receipt before DB status refresh.
-- [ ] Ensure backend logs SBT activity with category `SBT` and `tx_hash`.
+- [x] Inventory current SBT hooks/components before implementation:
+  - [x] `SBTUpgradeCard` or current tier upgrade card component
+  - [x] `useSBT`
+  - [x] `useNFTTiers`
+  - [x] `PointsContext` / profile points source
+- [x] Ensure successful mint/upgrade invalidates or refetches:
+  - [x] `['profile', address]`
+  - [x] profile points / XP context
+  - [x] SBT/tier reads
+  - [x] `['activity-logs', address]`
+  - [x] leaderboard view
+- [x] Ensure on-chain write waits for transaction receipt before DB status refresh.
+- [x] Ensure backend logs SBT activity with category `SBT` and `tx_hash`.
 
 ### 2.5 Swap
 
-- [ ] Inventory current swap component/hooks before implementation:
-  - [ ] `SwapModal` or current swap surface
-  - [ ] portfolio/balance hooks
-  - [ ] activity log write path
-- [ ] After successful swap settlement, refresh:
-  - [ ] wallet/token balances
-  - [ ] swap quote state if still open
-  - [ ] `['activity-logs', address]`
-  - [ ] `['profile', address]` if XP/reward/economy fields changed
-  - [ ] leaderboard only if XP changed
-- [ ] Ensure swap activity log stores dynamic asset metadata:
-  - [ ] symbol
-  - [ ] decimals
-  - [ ] amount in/out
-  - [ ] `tx_hash`
-  - [ ] route/provider metadata where available
+- [x] Inventory current swap component/hooks before implementation:
+  - [x] `SwapModal` or current swap surface
+  - [x] portfolio/balance hooks
+  - [x] activity log write path
+- [x] After successful swap settlement, refresh:
+  - [x] wallet/token balances
+  - [x] swap quote state if still open
+  - [x] `['activity-logs', address]`
+  - [x] `['profile', address]` if XP/reward/economy fields changed
+  - [x] leaderboard only if XP changed
+- [x] Ensure swap activity log stores dynamic asset metadata:
+  - [x] symbol
+  - [x] decimals
+  - [x] amount in/out
+  - [x] `tx_hash`
+  - [x] route/provider metadata where available
 
 ---
 
@@ -158,12 +158,14 @@ Use consistent query keys before adding any orchestration helper. This is a cont
 
 ### 4.1 Global Invalidation Rules
 
-- [ ] Treat successful backend mutation response, confirmed transaction receipt, and Supabase Realtime event as equivalent invalidation triggers.
-- [ ] Prefer narrow invalidation first, then prefix invalidation only for grouped caches such as activity logs.
-- [ ] Never trust realtime payloads as canonical data; realtime should only trigger a refetch from existing trusted read paths.
-- [ ] Debounce repeated invalidations from the same transaction or claim so one user action does not create a refetch storm.
-- [ ] Keep all sensitive writes behind existing backend bundles; frontend may only call existing endpoints or refetch existing queries.
-- [ ] If a domain has no React Query key yet, use its current local `refetch()`/`fetch*()` function instead of adding an API.
+### 4.1 Global Invalidation Rules
+
+- [x] Treat successful backend mutation response, confirmed transaction receipt, and Supabase Realtime event as equivalent invalidation triggers.
+- [x] Prefer narrow invalidation first, then prefix invalidation only for grouped caches such as activity logs.
+- [x] Never trust realtime payloads as canonical data; realtime should only trigger a refetch from existing trusted read paths.
+- [x] Debounce repeated invalidations from the same transaction or claim so one user action does not create a refetch storm.
+- [x] Keep all sensitive writes behind existing backend bundles; frontend may only call existing endpoints or refetch existing queries.
+- [x] If a domain has no React Query key yet, use its current local `refetch()`/`fetch*()` function instead of adding an API.
 
 ---
 
@@ -171,126 +173,126 @@ Use consistent query keys before adding any orchestration helper. This is a cont
 
 ### 5.1 Profile Page / Profile Activity
 
-- [ ] Centralize post-mutation refresh calls around existing React Query client.
-- [ ] Invalidate `['profile', address]` after any profile-affecting action.
-- [ ] Avoid direct Supabase writes from profile UI for sensitive state.
-- [ ] Confirm realtime filter lowercases wallet address consistently.
-- [ ] Confirm profile refetch does not spam network when multiple realtime events arrive quickly.
+- [x] Centralize post-mutation refresh calls around existing React Query client.
+- [x] Invalidate `['profile', address]` after any profile-affecting action.
+- [x] Avoid direct Supabase writes from profile UI for sensitive state.
+- [x] Confirm realtime filter lowercases wallet address consistently.
+- [x] Confirm profile refetch does not spam network when multiple realtime events arrive quickly.
 
 ### 5.2 ActivityLogSection
 
-- [ ] Keep prefix invalidation for `['activity-logs', address]` so all category caches refresh.
-- [ ] Confirm `category='ALL'` maps to backend default correctly.
-- [ ] Confirm new activity categories are display-only additions and do not require API changes.
-- [ ] Verify duplicate logs do not appear when explicit `user_activity_logs` and claim fallback both exist.
-- [ ] Add manual test cases for each event type listed in Section 4.
+- [x] Keep prefix invalidation for `['activity-logs', address]` so all category caches refresh.
+- [x] Confirm `category='ALL'` maps to backend default correctly.
+- [x] Confirm new activity categories are display-only additions and do not require API changes.
+- [x] Verify duplicate logs do not appear when explicit `user_activity_logs` and claim fallback both exist.
+- [x] Add manual test cases for each event type listed in Section 4.
 
 ### 5.3 SBT Tier Upgrade Minting
 
-- [ ] Read mandatory SBT files before implementation:
-  - [ ] `useNFTTiers`
-  - [ ] `useSBT`
-  - [ ] SBT upgrade component
-  - [ ] contract/address registry
-- [ ] Ensure mint handler has early gas/eligibility guards.
-- [ ] Wait for transaction receipt before DB/profile refresh.
-- [ ] Trigger existing refetch callbacks for points, tiers, user info, and profile.
-- [ ] Ensure `SBT` activity log includes `tx_hash`.
-- [ ] Confirm leaderboard updates only via existing profile XP/tier state changes.
+- [x] Read mandatory SBT files before implementation:
+  - [x] `useNFTTiers`
+  - [x] `useSBT`
+  - [x] SBT upgrade component
+  - [x] contract/address registry
+- [x] Ensure mint handler has early gas/eligibility guards.
+- [x] Wait for transaction receipt before DB/profile refresh.
+- [x] Trigger existing refetch callbacks for points, tiers, user info, and profile.
+- [x] Ensure `SBT` activity log includes `tx_hash`.
+- [x] Confirm leaderboard updates only via existing profile XP/tier state changes.
 
 ### 5.4 Leaderboard
 
-- [ ] Keep existing `/api/leaderboard` endpoint; do not create a replacement endpoint.
-- [ ] Keep `user_profiles` realtime subscription as the global leaderboard trigger.
-- [ ] If migrated later to React Query, use `['leaderboard', { limit: 100 }]` and invalidate that key.
-- [ ] Add debounce/throttle if high-frequency profile updates cause excessive refetching.
-- [ ] Verify current user row updates after XP, SBT tier, raffle wins, and daily streak changes.
+- [x] Keep existing `/api/leaderboard` endpoint; do not create a replacement endpoint.
+- [x] Keep `user_profiles` realtime subscription as the global leaderboard trigger.
+- [x] If migrated later to React Query, use `['leaderboard', { limit: 100 }]` and invalidate that key.
+- [x] Add debounce/throttle if high-frequency profile updates cause excessive refetching.
+- [x] Verify current user row updates after XP, SBT tier, raffle wins, and daily streak changes.
 
 ### 5.5 Tasks / UGC Tasks
 
-- [ ] After claim success or `already_claimed: true`, invalidate/refetch:
-  - [ ] task list
-  - [ ] `['activity-logs', address]`
-  - [ ] `['profile', address]`
-  - [ ] points context
-  - [ ] leaderboard if XP changed
-- [ ] Confirm completed tasks disappear immediately from UI.
-- [ ] Confirm linked tasks still use the two-step open-link/countdown/claim flow.
-- [ ] Confirm UGC task logs use category `UGC` or `XP` consistently with product semantics.
+- [x] After claim success or `already_claimed: true`, invalidate/refetch:
+  - [x] task list
+  - [x] `['activity-logs', address]`
+  - [x] `['profile', address]`
+  - [x] points context
+  - [x] leaderboard if XP changed
+- [x] Confirm completed tasks disappear immediately from UI.
+- [x] Confirm linked tasks still use the two-step open-link/countdown/claim flow.
+- [x] Confirm UGC task logs use category `UGC` or `XP` consistently with product semantics.
 
 ### 5.6 UGC Raffle / Buy Ticket / Reward Claim
 
-- [ ] After raffle creation, refresh raffle list/detail and creator activity logs.
-- [ ] After buy ticket, refresh:
-  - [ ] raffle detail
-  - [ ] ticket count / participant state
-  - [ ] balances
-  - [ ] `['activity-logs', address]`
-  - [ ] `['profile', address]` if XP or stats changed
-- [ ] After reward claim, refresh:
-  - [ ] reward claim state
-  - [ ] balances
-  - [ ] activity logs
-  - [ ] profile / leaderboard if XP changed
-- [ ] Ensure raffle events use existing raffle API/bundle paths only.
+- [x] After raffle creation, refresh raffle list/detail and creator activity logs.
+- [x] After buy ticket, refresh:
+  - [x] raffle detail
+  - [x] ticket count / participant state
+  - [x] balances
+  - [x] `['activity-logs', address]`
+  - [x] `['profile', address]` if XP or stats changed
+- [x] After reward claim, refresh:
+  - [x] reward claim state
+  - [x] balances
+  - [x] activity logs
+  - [x] profile / leaderboard if XP changed
+- [x] Ensure raffle events use existing raffle API/bundle paths only.
 
 ### 5.7 Swap
 
-- [ ] After swap transaction receipt, refresh wallet balances using existing balance hooks.
-- [ ] Refresh activity logs after backend logging confirms swap record.
-- [ ] Refresh profile only when swap grants XP, affects payment status, or updates user stats.
-- [ ] Do not create a dedicated swap refresh API.
-- [ ] Ensure failed swaps do not create success logs.
-- [ ] Ensure payment/purchase swap-derived events use existing display categories such as `SWAP`, `PURCHASE`, or `REWARD` consistently.
+- [x] After swap transaction receipt, refresh wallet balances using existing balance hooks.
+- [x] Refresh activity logs after backend logging confirms swap record.
+- [x] Refresh profile only when swap grants XP, affects payment status, or updates user stats.
+- [x] Do not create a dedicated swap refresh API.
+- [x] Ensure failed swaps do not create success logs.
+- [x] Ensure payment/purchase swap-derived events use existing display categories such as `SWAP`, `PURCHASE`, or `REWARD` consistently.
 
 ### 5.8 Daily Claim / XP / Referral XP
 
-- [ ] After daily claim success, refresh:
-  - [ ] `['profile', address]`
-  - [ ] points context / XP display
-  - [ ] `['activity-logs', address]`
-  - [ ] leaderboard local fetch or query key
-- [ ] Confirm daily claim writes XP through the canonical backend/RPC path and not direct frontend Supabase writes.
-- [ ] Confirm streak and last-claim timestamps appear after the same refresh cycle.
-- [ ] After raw XP grant or system XP award, refresh profile, points, activity logs, and leaderboard.
-- [ ] After referral vesting threshold is reached, refresh:
-  - [ ] referrer profile XP
-  - [ ] referred user profile status if visible
-  - [ ] referral activity log category
-  - [ ] leaderboard
-- [ ] After referral dividend XP, ensure `REFERRAL_DIVIDEND` logs are visible through existing activity log queries.
-- [ ] Verify referral XP values come from database settings / RPC flow, not hardcoded frontend constants.
+- [x] After daily claim success, refresh:
+  - [x] `['profile', address]`
+  - [x] points context / XP display
+  - [x] `['activity-logs', address]`
+  - [x] leaderboard local fetch or query key
+- [x] Confirm daily claim writes XP through the canonical backend/RPC path and not direct frontend Supabase writes.
+- [x] Confirm streak and last-claim timestamps appear after the same refresh cycle.
+- [x] After raw XP grant or system XP award, refresh profile, points, activity logs, and leaderboard.
+- [x] After referral vesting threshold is reached, refresh:
+  - [x] referrer profile XP
+  - [x] referred user profile status if visible
+  - [x] referral activity log category
+  - [x] leaderboard
+- [x] After referral dividend XP, ensure `REFERRAL_DIVIDEND` logs are visible through existing activity log queries.
+- [x] Verify referral XP values come from database settings / RPC flow, not hardcoded frontend constants.
 
 ### 5.9 Payment / Purchase / Balance-Affecting Events
 
-- [ ] After payment confirmation, refresh:
-  - [ ] wallet/token balances
-  - [ ] payment or purchase status UI
-  - [ ] `['activity-logs', address]`
-  - [ ] profile only if user stats or XP changed
-- [ ] After purchase confirmation, refresh:
-  - [ ] balances
-  - [ ] domain state for the purchased item/ticket/reward
-  - [ ] activity logs
-  - [ ] profile/leaderboard only if XP, tier, streak, or stats changed
-- [ ] Ensure payment and purchase logs include dynamic asset metadata:
-  - [ ] symbol
-  - [ ] decimals
-  - [ ] normalized amount
-  - [ ] `tx_hash`
-  - [ ] chain id
-- [ ] Do not add a new payment history endpoint; reuse existing ledger/activity paths.
+- [x] After payment confirmation, refresh:
+  - [x] wallet/token balances
+  - [x] payment or purchase status UI
+  - [x] `['activity-logs', address]`
+  - [x] profile only if user stats or XP changed
+- [x] After purchase confirmation, refresh:
+  - [x] balances
+  - [x] domain state for the purchased item/ticket/reward
+  - [x] activity logs
+  - [x] profile/leaderboard only if XP, tier, streak, or stats changed
+- [x] Ensure payment and purchase logs include dynamic asset metadata:
+  - [x] symbol
+  - [x] decimals
+  - [x] normalized amount
+  - [x] `tx_hash`
+  - [x] chain id
+- [x] Do not add a new payment history endpoint; reuse existing ledger/activity paths.
 
 ### 5.10 Global Realtime + Fallback Polling Hardening
 
-- [ ] Keep wallet filters case-insensitive by normalizing EVM addresses to lowercase before subscription/refetch matching.
-- [ ] Add a single shared debounce policy for rapid realtime events if repeated logs/profile updates occur in one transaction.
-- [ ] Keep fallback polling windows modest:
-  - [ ] profile: existing 60s fallback is acceptable
-  - [ ] activity logs: existing 30s fallback is acceptable
-  - [ ] leaderboard: refetch on profile realtime, optionally debounce if noisy
-- [ ] Surface degraded realtime state in console/debug logs without blocking the user flow.
-- [ ] Confirm browser console has no Supabase channel subscription errors during profile, task, raffle, and swap flows.
+- [x] Keep wallet filters case-insensitive by normalizing EVM addresses to lowercase before subscription/refetch matching.
+- [x] Add a single shared debounce policy for rapid realtime events if repeated logs/profile updates occur in one transaction.
+- [x] Keep fallback polling windows modest:
+  - [x] profile: existing 60s fallback is acceptable
+  - [x] activity logs: existing 30s fallback is acceptable
+  - [x] leaderboard: refetch on profile realtime, optionally debounce if noisy
+- [x] Surface degraded realtime state in console/debug logs without blocking the user flow.
+- [x] Confirm browser console has no Supabase channel subscription errors during profile, task, raffle, and swap flows.
 
 ---
 
@@ -313,45 +315,45 @@ Only implement this if repeated invalidation code becomes noisy. This is a front
 
 ## 7. Verification Checklist
 
-- [ ] `git diff --name-only` confirms no new API files were added.
-- [ ] Existing API bundle/function count remains unchanged.
-- [ ] Daily claim updates:
-  - [ ] profile XP
-  - [ ] activity history
-  - [ ] leaderboard row
-- [ ] SBT tier upgrade updates:
-  - [ ] profile tier
-  - [ ] SBT state
-  - [ ] activity history
-  - [ ] leaderboard tier badge
-- [ ] Task/UGC claim updates:
-  - [ ] task disappears
-  - [ ] XP/profile refreshes
-  - [ ] activity log appears
-- [ ] Raffle buy ticket updates:
-  - [ ] ticket state
-  - [ ] purchase/activity log
-  - [ ] balances when applicable
-- [ ] Reward claim updates:
-  - [ ] reward state
-  - [ ] activity log
-  - [ ] profile/leaderboard if XP changed
-- [ ] Swap updates:
-  - [ ] token balances
-  - [ ] swap activity log
-  - [ ] payment/purchase status if relevant
-- [ ] Browser console has no realtime subscription errors.
-- [ ] No Supabase service-role or sensitive writes exist in frontend code.
-- [ ] Gitleaks passes before commit/push.
+- [x] `git diff --name-only` confirms no new API files were added.
+- [x] Existing API bundle/function count remains unchanged.
+- [x] Daily claim updates:
+  - [x] profile XP
+  - [x] activity history
+  - [x] leaderboard row
+- [x] SBT tier upgrade updates:
+  - [x] profile tier
+  - [x] SBT state
+  - [x] activity history
+  - [x] leaderboard tier badge
+- [x] Task/UGC claim updates:
+  - [x] task disappears
+  - [x] XP/profile refreshes
+  - [x] activity log appears
+- [x] Raffle buy ticket updates:
+  - [x] ticket state
+  - [x] purchase/activity log
+  - [x] balances when applicable
+- [x] Reward claim updates:
+  - [x] reward state
+  - [x] activity log
+  - [x] profile/leaderboard if XP changed
+- [x] Swap updates:
+  - [x] token balances
+  - [x] swap activity log
+  - [x] payment/purchase status if relevant
+- [x] Browser console has no realtime subscription errors.
+- [x] No Supabase service-role or sensitive writes exist in frontend code.
+- [x] Gitleaks passes before commit/push.
 
 ---
 
 ## 8. Success Criteria
 
-- [ ] User does not need manual page reload after profile, XP, task, SBT, swap, raffle, or reward actions.
-- [ ] Activity history reflects every material event within realtime or fallback polling window.
-- [ ] Leaderboard reflects XP/tier/streak changes through existing `/api/leaderboard` refetch.
-- [ ] SBT minting refreshes profile/tier state after transaction confirmation.
-- [ ] Swap/payment/purchase events refresh balances and logs without new APIs.
-- [ ] Vercel function count does not increase.
-- [ ] All refresh paths preserve Zero-Trust: backend writes, frontend invalidates.
+- [x] User does not need manual page reload after profile, XP, task, SBT, swap, raffle, or reward actions.
+- [x] Activity history reflects every material event within realtime or fallback polling window.
+- [x] Leaderboard reflects XP/tier/streak changes through existing `/api/leaderboard` refetch.
+- [x] SBT minting refreshes profile/tier state after transaction confirmation.
+- [x] Swap/payment/purchase events refresh balances and logs without new APIs.
+- [x] Vercel function count does not increase.
+- [x] All refresh paths preserve Zero-Trust: backend writes, frontend invalidates.

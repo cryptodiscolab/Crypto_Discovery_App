@@ -1,7 +1,7 @@
 ---
 name: git-hygiene
 description: Protokol untuk menjaga repositori Git tetap bersih dan organized. Skill ini menegakkan Clean Git Tree Mandate dari gemini.md (Section 27) yang melarang file sementara, secrets, dan artefak lainnya masuk ke source control. Berlaku untuk Antigravity dan semua sub-agents.
-version: v3.64.21-Hardened
+version: v3.64.22-Hardened
 ---
 
 ## 🛡️ ESM RUNTIME RESOLUTION MANDATE (v3.64.14-Hardened)
@@ -134,7 +134,7 @@ Skill ini WAJIB dipahami dan diterapkan oleh **semua 12 agents**:
 
 ---
 
-## ⚠️ Lessons Learned (v3.64.21-Hardened)
+## ⚠️ Lessons Learned (v3.64.22-Hardened)
 
 ### Transaction Hash vs Private Key Pattern
 Anti-negligence hook menggunakan regex `/[0-9a-fA-F]{64}/` yang akan mendeteksi tx hash (64 hex chars) sebagai private key. **Solusi**: Abbreviated form `0x40d5804...65ba78f2` bukan full hash.
@@ -147,4 +147,4 @@ DB backup dumps (`backups/`) berisi PII user — tidak boleh pernah di-commit. P
 
 ---
 
-*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.64.21-Hardened.*
+*Protokol ini adalah bagian dari gemini.md Section 27: CLEAN GIT TREE MANDATE. Sync with PRD v3.64.22-Hardened.*
