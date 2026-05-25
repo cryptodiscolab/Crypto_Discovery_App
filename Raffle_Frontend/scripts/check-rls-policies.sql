@@ -60,4 +60,21 @@ WHERE p.schemaname = 'public'
   AND p.cmd = 'SELECT'
   AND p.qual = 'true'
 
+UNION ALL
+
+-- 4. agents_vault and system_error_logs MUST have explicit deny-all policy (resolves lint rls_enabled_no_policy)
+SELECT
+    'MISSING_DENY_ALL_POLICY' AS issue,
+    t.table_name
+FROM (VALUES ('agents_vault'), ('system_error_logs')) AS t(table_name)
+WHERE NOT EXISTS (
+    SELECT 1 FROM pg_policies p
+    WHERE p.schemaname = 'public'
+      AND p.tablename = t.table_name
+      AND p.policyname IN (
+          t.table_name || '_deny_all',
+          'No public access ' || t.table_name
+      )
+)
+
 ORDER BY 1, 2;
