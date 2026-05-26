@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Award, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useUserV12Stats } from '../hooks/useContract';
 import { TaskList } from '../components/tasks/TaskList';
@@ -141,55 +141,57 @@ export function TasksPage() {
     }, [isConnected, address, profileData, isSyncing, syncUser]);
 
     return (
-        <div className="w-full max-w-[100vw] overflow-x-hidden bg-[#050505] min-h-screen">
+        <div className="w-full max-w-[100vw] overflow-x-hidden">
             <div className="max-w-screen-lg mx-auto pb-28 md:pb-8">
-                <div className="px-4 py-8 border-b border-white/5">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                {/* Midnight Cyber Header */}
+                <div className="card-title-row px-1 mb-6">
+                    <h2 className="text-xl text-white" style={{ fontFamily: 'var(--typography-family-heading)' }}>Quest Board</h2>
+                    <span className="badge-cyber badge-cyber-blue">Disappearing Tasks Mode Active</span>
+                </div>
+
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <button
+                            onClick={() => navigate('/create-mission')}
+                            className="btn-cyber-native-action"
+                        >
+                            <i className="fa-solid fa-plus"></i>
+                            <span>Sponsor Mission</span>
+                        </button>
+                    </div>
+
+                    {isConnected && (
+                        <div className="flex items-center gap-6 glass-card p-4" style={{ margin: 0 }}>
                             <div>
-                                <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">EARN REWARDS</h1>
-                                <p className="label-native text-slate-500">COMPLETE MISSIONS AND LEVEL UP YOUR STATUS.</p>
+                                <p className="label-native text-slate-500 mb-0.5">YOUR XP</p>
+                                <p className="value-native text-lg text-white">{String(userPoints)}</p>
                             </div>
-                            <button
-                                onClick={() => navigate('/create-mission')}
-                                className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white label-native transition-all flex items-center justify-center w-fit"
-                            >
-                                Sponsor Mission
-                            </button>
+                            <div className="w-px h-8 bg-white/10" />
+                            <div>
+                                <p className="label-native text-slate-500 mb-0.5">CURRENT RANK</p>
+                                <div className="flex items-center gap-1.5">
+                                    <i className="fa-solid fa-award text-indigo-400"></i>
+                                    <p className="value-native text-indigo-400">{rankName || `LVL ${userTier}`}</p>
+                                </div>
+                            </div>
                         </div>
+                    )}
+                </div>
 
-                        {isConnected && (
-                            <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl">
-                                <div>
-                                    <p className="label-native text-slate-500 mb-0.5">YOUR XP</p>
-                                    <p className="text-xl font-mono font-black text-white">{String(userPoints)}</p>
-                                </div>
-                                <div className="w-px h-8 bg-white/10" />
-                                <div>
-                                    <p className="label-native text-slate-500 mb-0.5">CURRENT RANK</p>
-                                    <div className="flex items-center gap-1.5">
-                                        <Award className="w-4 h-4 text-indigo-400" />
-                                        <p className="text-xl font-black text-indigo-400 uppercase tracking-tighter">{rankName || `LVL ${userTier}`}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex gap-2 mt-8 p-1 bg-[#080808] border border-white/5 rounded-xl w-full max-w-sm mx-auto md:mx-0 shadow-lg">
-                        <button
-                            onClick={() => setActiveTab('tasks')}
-                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center ${activeTab === 'tasks' ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400' : 'text-zinc-500 hover:text-zinc-300 border border-transparent'}`}
-                        >
-                            Daily Tasks
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('offers')}
-                            className={`flex-1 py-3 rounded-xl label-native transition-all flex items-center justify-center ${activeTab === 'offers' ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400' : 'text-zinc-500 hover:text-zinc-300 border border-transparent'}`}
-                        >
-                            Partner Offers
-                        </button>
-                    </div>
+                {/* Midnight Cyber Tabs */}
+                <div className="tabs-cyber">
+                    <button
+                        onClick={() => setActiveTab('tasks')}
+                        className={`tab-cyber-btn ${activeTab === 'tasks' ? 'active' : ''}`}
+                    >
+                        Daily Tasks
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('offers')}
+                        className={`tab-cyber-btn ${activeTab === 'offers' ? 'active' : ''}`}
+                    >
+                        Partner Offers
+                    </button>
                 </div>
 
                 {activeTab === 'tasks' ? (

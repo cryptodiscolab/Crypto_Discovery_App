@@ -12,7 +12,10 @@ paths = [
     # Narrowed: only allow markdown documentation in skills, not config/scripts
     '''\.agents/skills/.*\.md$''',
     '''\.agents/skills/.*/references/.*\.md$''',
-    '''\.agents/skills/.*/CHECKLIST\.md$'''
+    '''\.agents/skills/.*/CHECKLIST\.md$''',
+    # Official app assets (NOT screenshots) — SBT tier images, icons, logos
+    '''NEW UI DESIGN/assets/''',
+    '''Raffle_Frontend/public/.*\.(png|svg|ico)$''',
 ]
 
 [[rules]]

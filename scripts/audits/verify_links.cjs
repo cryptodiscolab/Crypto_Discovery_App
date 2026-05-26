@@ -10,7 +10,7 @@ async function main() {
     const MasterXFactory = await hre.ethers.getContractFactory("CryptoDiscoMasterX");
     const masterX = MasterXFactory.attach(masterXAddr);
 
-    const DailyAppFactory = await hre.ethers.getContractFactory("DailyAppV13");
+    const DailyAppFactory = await hre.ethers.getContractFactory("contracts/DailyAppV13.sol:DailyAppV13");
     const dailyApp = DailyAppFactory.attach(dailyAppAddr);
 
     console.log(`Checking Addresses:`);

@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { Web3Provider } from './Web3Provider';
 import { Header } from './Header';
 import { BottomNav } from './components/BottomNav';
+import { Sidebar } from './components/Sidebar';
 import { PointsProvider } from './shared/context/PointsContext';
 import { Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -125,47 +126,51 @@ function AppContent() {
     <BrowserRouter>
       <ReferralTracker />
       <DebugMockConnect />
-      <div className={`${theme} min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col overflow-x-hidden w-full max-w-[100vw] relative`}>
-        {!isFrame && <Header />}
-        {!isFrame && <RaffleWinBanner />}
+      <div className={`${theme} flex min-h-screen bg-[#050505] text-slate-100 overflow-x-hidden w-full max-w-[100vw] relative`}>
+        {/* Midnight Cyber Sidebar (Desktop only) */}
+        {!isFrame && <Sidebar />}
         
-        <main 
-          className={`flex-1 ${!isFrame ? 'pt-16 pb-20 md:pb-6' : ''}`}
-          style={isFrame ? { 
-            paddingTop: `${safePaddingTop}px`,
-            paddingBottom: `calc(58px + ${safePaddingBottom}px)` // Keep BottomNav space
-          } : {
-            paddingBottom: 'max(80px, calc(58px + env(safe-area-inset-bottom, 0px)))'
-          }}
-        >
-          <ErrorBoundary>
-            <Suspense fallback={
-              <div className="min-h-[60vh] flex items-center justify-center">
-                <SkeletonLoader />
-              </div>
-            }>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
-                <Route path="/" element={<HomePage />} />
-                <Route path="/profile/:userAddress" element={<ProfilePage />} />
-                <Route element={<ProtectedLayout />}>
-                  <Route path="/tasks" element={<TasksPage />} />
-                  <Route path="/raffles" element={<RafflesPage />} />
-                  <Route path="/raffles/:id" element={<RaffleDetailPage />} />
-                  <Route path="/leaderboard" element={<LeaderboardPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/create-raffle" element={<CreateRafflePage />} />
-                  <Route path="/create-mission" element={<CreateMissionPage />} />
-                  <Route path="/nft-gallery" element={<NFTGalleryPage />} />
-                  <Route path="/sbt-mint" element={<SBTMintPage />} />
-                  <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
-                </Route>
-                <Route path="*" element={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><p className="text-[11px] font-black uppercase tracking-widest text-slate-400">404 — PAGE NOT FOUND</p><a href="/" className="mt-4 inline-block text-indigo-400 text-[11px] font-black uppercase tracking-widest">RETURN HOME</a></div></div>} />
-              </Routes>
-            </Suspense>
-          </ErrorBoundary>
-        </main>
+        {/* Main Wrapper */}
+        <div className="main-wrapper-cyber">
+          {!isFrame && <Header />}
+          {!isFrame && <RaffleWinBanner />}
+          
+          <main 
+            className="screen-content-cyber"
+            style={isFrame ? { 
+              paddingTop: `${safePaddingTop}px`,
+              paddingBottom: `calc(58px + ${safePaddingBottom}px)`
+            } : {}}
+          >
+            <ErrorBoundary>
+              <Suspense fallback={
+                <div className="min-h-[60vh] flex items-center justify-center">
+                  <SkeletonLoader />
+                </div>
+              }>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/profile/:userAddress" element={<ProfilePage />} />
+                  <Route element={<ProtectedLayout />}>
+                    <Route path="/tasks" element={<TasksPage />} />
+                    <Route path="/raffles" element={<RafflesPage />} />
+                    <Route path="/raffles/:id" element={<RaffleDetailPage />} />
+                    <Route path="/leaderboard" element={<LeaderboardPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/create-raffle" element={<CreateRafflePage />} />
+                    <Route path="/create-mission" element={<CreateMissionPage />} />
+                    <Route path="/nft-gallery" element={<NFTGalleryPage />} />
+                    <Route path="/sbt-mint" element={<SBTMintPage />} />
+                    <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+                  </Route>
+                  <Route path="*" element={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><p className="text-[11px] font-black uppercase tracking-widest text-slate-400">404 — PAGE NOT FOUND</p><a href="/" className="mt-4 inline-block text-indigo-400 text-[11px] font-black uppercase tracking-widest">RETURN HOME</a></div></div>} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
+          </main>
+        </div>
 
         <BottomNav />
         <Toaster

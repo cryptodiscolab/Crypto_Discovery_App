@@ -54,4 +54,41 @@
   --components-button-primary-text: #ffffff;
   --components-button-glass-bg: rgba(255, 255, 255, 0.05);
   --components-button-glass-border: 1px solid rgba(255, 255, 255, 0.1);
+
+  /* ━━━ Midnight Cyber Glows ━━━ */
+  --colors-brand-primary-glow: rgba(59, 130, 246, 0.4);
+  --colors-brand-success-glow: rgba(16, 185, 129, 0.25);
+  --colors-brand-error-glow: rgba(239, 68, 68, 0.25);
+  --colors-brand-warning-glow: rgba(245, 158, 11, 0.25);
+  --colors-brand-indigo-native-bg: rgba(99, 102, 241, 0.12);
+  --colors-brand-indigo-native-border: rgba(99, 102, 241, 0.25);
+  --colors-brand-indigo-native-text: #818cf8;
+
+  /* ━━━ Border Colors ━━━ */
+  --colors-border-default: rgba(255, 255, 255, 0.06);
+  --colors-border-hover: rgba(59, 130, 246, 0.3);
+  --colors-border-glow: rgba(59, 130, 246, 0.15);
+
+  /* ━━━ Badge Colors ━━━ */
+  --colors-badge-blue-bg: rgba(59, 130, 246, 0.15);
+  --colors-badge-blue-border: rgba(59, 130, 246, 0.3);
+  --colors-badge-blue-text: #60a5fa;
+  --colors-badge-green-bg: rgba(16, 185, 129, 0.15);
+  --colors-badge-green-border: rgba(16, 185, 129, 0.3);
+  --colors-badge-green-text: #34d399;
+  --colors-badge-purple-bg: rgba(139, 92, 246, 0.15);
+  --colors-badge-purple-border: rgba(139, 92, 246, 0.3);
+  --colors-badge-purple-text: #a78bfa;
+  --colors-badge-orange-bg: rgba(245, 158, 11, 0.15);
+  --colors-badge-orange-border: rgba(245, 158, 11, 0.3);
+  --colors-badge-orange-text: #fbbf24;
+  --colors-badge-slate-bg: rgba(148, 163, 184, 0.15);
+  --colors-badge-slate-border: rgba(148, 163, 184, 0.3);
+  --colors-badge-slate-text: #cbd5e1;
+  --colors-badge-purple-glow-bg: rgba(168, 85, 247, 0.20);
+  --colors-badge-purple-glow-border: rgba(168, 85, 247, 0.4);
+  --colors-badge-purple-glow-text: #e9d5ff;
+
+  /* ━━━ Safe Area ━━━ */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }

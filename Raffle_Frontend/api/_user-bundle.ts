@@ -1558,7 +1558,7 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
 
         const { tierName, ethSpent, txHash } = payload;
 
-        const { data: thresholds } = await getSupabaseAdmin().from('sbt_thresholds').select('level, tier_name, min_xp');
+        const { data: thresholds } = await getSupabaseAdmin().from('sbt_thresholds').select('level, tier_name, min_xp, badge_url');
         const tierMap: Record<string, number> = thresholds?.reduce((acc, t) => { if (t.tier_name) acc[t.tier_name] = t.level; return acc; }, {} as Record<string, number>) || {};
         const minXpMap: Record<number, number> = thresholds?.reduce((acc, t) => { acc[t.level] = t.min_xp; return acc; }, {} as Record<number, number>) || {};
         const tierIndex = tierMap[tierName] || 0;
@@ -1628,6 +1628,9 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         });
 
         // Dedicated SBT / Mint event for profile/admin filter
+        const thresholdMeta = thresholds?.find((t) => Number(t.level) === actualTierOnChain);
+        const tokenId = actualTierOnChain > 0 ? String(actualTierOnChain) : String(txHash || 'unknown');
+
         await logActivity({
             wallet,
             category: 'SBT',
@@ -1639,6 +1642,9 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             metadata: {
                 tier: actualTierOnChain,
                 tier_name: tierName,
+                token_id: tokenId,
+                name: `${tierName} SBT #${tokenId}`,
+                image_url: thresholdMeta?.badge_url || null,
                 mint_price_eth: ethSpent,
                 contract_address: DAILY_APP_ADDRESS,
                 chain_id: isMainnet ? 8453 : 84532

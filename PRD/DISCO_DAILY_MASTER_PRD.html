@@ -3446,7 +3446,7 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 </ul>
 </li>
 <li><strong>GitHub Action Pacemaker (<code>lurah-cron.yml</code>)</strong>:<ul>
-<li>Deployment workflow GitHub Action menggunakan <code>nick-fields/retry@v3</code> sebagai cadangan redundansi (pacemaker) jika <em>Vercel Cron</em> gagal memicu siklus audit.</li>
+<li>Deployment workflow GitHub Action menggunakan native bash retry loop sebagai cadangan redundansi (pacemaker) jika <em>Vercel Cron</em> gagal memicu siklus audit.</li>
 </ul>
 </li>
 <li><strong>Multi-Key Gemini Fallback Integration</strong>:<ul>
@@ -3737,7 +3737,7 @@ const { data: tasks, error: taskError } = await supabaseAdmin
 </ul>
 </li>
 <li><strong>GitHub Action Pacemaker (<code>lurah-cron.yml</code>)</strong>:<ul>
-<li>Deployment workflow GitHub Action menggunakan <code>nick-fields/retry@v3</code> sebagai cadangan redundansi (pacemaker) jika <em>Vercel Cron</em> gagal memicu siklus audit.</li>
+<li>Deployment workflow GitHub Action menggunakan native bash retry loop sebagai cadangan redundansi (pacemaker) jika <em>Vercel Cron</em> gagal memicu siklus audit.</li>
 </ul>
 </li>
 <li><strong>Multi-Key Gemini Fallback Integration</strong>:<ul>

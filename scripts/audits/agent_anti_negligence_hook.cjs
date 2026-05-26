@@ -97,7 +97,7 @@ function scanDirForHygiene(dir) {
         const stat = fs.statSync(fullPath);
         
         if (stat.isDirectory()) {
-            if (!['node_modules', '.git', '.venv', 'venv', '_archive', 'artifacts', 'cache', '.next', 'dist', 'build', '.vercel'].includes(item)) {
+            if (!['node_modules', '.git', '.venv', 'venv', '_archive', 'artifacts', 'cache', '.next', 'dist', 'build', '.vercel', 'NEW UI DESIGN'].includes(item)) {
                 scanDirForHygiene(fullPath);
             }
         } else if (stat.isFile()) {
@@ -165,7 +165,7 @@ function scanSecrets(dir) {
         
         if (stat.isDirectory()) {
             // Ignore build, archive, artifacts, and script/test folders to prevent false positives
-            if (!['node_modules', '.git', '.next', 'dist', 'build', '_archive', 'artifacts', 'cache', '.vercel', 'scripts'].includes(item)) {
+            if (!['node_modules', '.git', '.next', 'dist', 'build', '_archive', 'artifacts', 'cache', '.vercel', 'scripts', 'NEW UI DESIGN'].includes(item)) {
                 scanSecrets(fullPath);
             }
         } else if (stat.isFile()) {

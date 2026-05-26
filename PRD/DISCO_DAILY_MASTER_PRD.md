@@ -2586,7 +2586,7 @@ Implementasi pengerasan (hardening) infrastruktur pada agen otonom **Lurah Ekosi
    - Penghapusan seluruh alamat kontrak *hardcoded* (`DailyAppV13`, `MasterX`, `Raffle`) dari skrip `scripts/audits/` dan `scripts/sync/`.
    - Seluruh alamat kini dimuat secara dinamis dari variabel lingkungan (`process.env`) melalui koordinasi `global-sync-env.js`.
 3. **GitHub Action Pacemaker (`lurah-cron.yml`)**:
-   - Deployment workflow GitHub Action menggunakan `nick-fields/retry@v3` sebagai cadangan redundansi (pacemaker) jika *Vercel Cron* gagal memicu siklus audit.
+   - Deployment workflow GitHub Action menggunakan native bash retry loop sebagai cadangan redundansi (pacemaker) jika *Vercel Cron* gagal memicu siklus audit.
 4. **Multi-Key Gemini Fallback Integration**:
    - Konsolidasi sistem rotasi API Key (hingga 9 kunci aktif) dan fallback model lintas-versi (Gemini 2.0 s.d 3.1) ke dalam alur kerja `Verification Server` dan `Lurah Agent`.
    - Penjaminan 100% *uptime* untuk analisa AI dan interaksi bot Telegram bahkan saat terjadi lonjakan kuota atau rate limiting.
@@ -2832,7 +2832,7 @@ Implementasi pengerasan (hardening) infrastruktur pada agen otonom **Lurah Ekosi
    - Penghapusan seluruh alamat kontrak *hardcoded* (`DailyAppV13`, `MasterX`, `Raffle`) dari skrip `scripts/audits/` dan `scripts/sync/`.
    - Seluruh alamat kini dimuat secara dinamis dari variabel lingkungan (`process.env`) melalui koordinasi `global-sync-env.js`.
 3. **GitHub Action Pacemaker (`lurah-cron.yml`)**:
-   - Deployment workflow GitHub Action menggunakan `nick-fields/retry@v3` sebagai cadangan redundansi (pacemaker) jika *Vercel Cron* gagal memicu siklus audit.
+   - Deployment workflow GitHub Action menggunakan native bash retry loop sebagai cadangan redundansi (pacemaker) jika *Vercel Cron* gagal memicu siklus audit.
 4. **Multi-Key Gemini Fallback Integration**:
    - Konsolidasi sistem rotasi API Key (hingga 9 kunci aktif) dan fallback model lintas-versi (Gemini 2.0 s.d 3.1) ke dalam alur kerja `Verification Server` dan `Lurah Agent`.
    - Penjaminan 100% *uptime* untuk analisa AI dan interaksi bot Telegram bahkan saat terjadi lonjakan kuota atau rate limiting.

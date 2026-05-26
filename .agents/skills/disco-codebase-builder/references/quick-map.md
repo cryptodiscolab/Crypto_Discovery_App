@@ -34,16 +34,24 @@ Use this file only when a task needs fast routing.
 Use the narrowest check that proves the change:
 
 | Change | Checks |
-|---|---|
+|---|---|---|
 | API syntax | `node -c Raffle_Frontend/api/<file>.js` or TS build check |
 | API/runtime imports | verify relative imports include `.js` |
 | Frontend TS | `cd Raffle_Frontend && npx tsc --noEmit` |
-| Frontend build | `cd Raffle_Frontend && npm run build` |
+| Frontend build | `cd Raffle_Frontend && npm run build` (pakai Vite lokal) |
+| Vite 8 build fix | Jika `npx vite build` gagal error `[UNRESOLVED_ENTRY]`, gunakan: `cd Raffle_Frontend && node node_modules/vite/bin/vite.js build` |
 | Repo health | `node scripts/audits/check_sync_status.cjs` |
 | DB/backend | `node scripts/audits/verify-db-sync.cjs` |
 | Secrets | `npm run gitleaks-check` |
 
 For heavy builds, consider `NODE_OPTIONS="--max-old-space-size=4096"` on the user's low-spec environment.
+
+### ⚠️ Vite 8 Windows Issue
+- `npx vite build` memanggil Vite 8 global (rolldown) yang gagal resolve `index.html` di subdirektori `Raffle_Frontend/`.
+- **Solusi**: panggil Vite lokal via `node node_modules/vite/bin/vite.js build` atau `npm run build`.
+- **Vercel deploy tidak terpengaruh** — pakai Vite lokal.
+- **Jangan upgrade Vite ke v8** — tetap di 5/6 dengan Rollup.
+- Detail lengkap lihat `.agents/WORKSPACE_MAP.md §6b`.
 
 ## Active Contract Registry Snapshot
 

@@ -207,6 +207,35 @@ graph TD
 
 **DailyApp V16 ABI/runtime rule**: DailyApp frontend ABI sources are `Raffle_Frontend/src/lib/daily_app_abi.json` and `Raffle_Frontend/src/lib/abis_data.txt`, synced from `artifacts/contracts/DailyAppV16.sol/DailyAppV16.json`. V13/V15-only sponsorship, off-chain XP sync, and entitlement selectors are legacy-only and must not be called against the V16 proxy.
 
+## 6b. Vite 8 Windows Build Resolution Protocol (v2026-05-26)
+
+⚠️ **SEMUA AGEN WAJIB TAHU**: Vite 8 menggunakan **rolldown** (bundler Rust) sebagai default, menggantikan Rollup.
+
+### Masalah
+- `npx vite build` dari root `e:\Disco Gacha\Disco_DailyApp\` memanggil Vite 8 global dari npm cache
+- rolldown gagal resolve `index.html` di subdirektori `Raffle_Frontend\` di Windows
+- Error: `[UNRESOLVED_ENTRY] Cannot resolve entry module index.html`
+
+### Solusi Aman
+```bash
+cd Raffle_Frontend && node node_modules/vite/bin/vite.js build
+```
+Ini memanggil Vite **lokal** project (masih Rollup), bukan Vite 8 global dengan rolldown.
+
+### Aturan Build:
+1. **Vercel Deploy tidak terpengaruh** — Vercel pakai Vite lokal dari `node_modules` project
+2. **npm run build** otomatis pakai Vite lokal karena npm prioritaskan `node_modules/.bin` lokal
+3. **Jangan upgrade Vite ke v8** — tetap di versi 5/6 (Rollup) sampai rolldown stabil di Windows + ekosistem React
+4. **Jika build gagal** → cek dulu apakah menggunakan Vite global dengan `npx vite --version`. Jika versi >= 8, panggil Vite lokal manual
+
+### Verifikasi Build Berhasil
+```
+Raffle_Frontend/dist/
+├── .well-known/
+├── assets/
+└── index.html
+```
+
 ## 7. Mandatory Agent Reading Protocol
 
 Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut secara berurutan:

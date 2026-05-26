@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, ExternalLink, Filter, Sparkles, AlertTriangle } from 'lucide-react';
+import { Image, ExternalLink, Filter, AlertTriangle } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
 
@@ -15,8 +15,21 @@ interface NFTItem {
 
 const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
 const DAILY_APP_ADDRESS = import.meta.env.VITE_DAILY_APP_ADDRESS || '';
+const IPFS_GATEWAY = (import.meta.env.VITE_IPFS_GATEWAY || 'https://ipfs.io/ipfs/').trim();
+const BASESCAN_URL = CHAIN_ID === 84532 ? 'https://sepolia.basescan.org' : 'https://basescan.org';
 
 const EMPTY_NFT: NFTItem[] = [];
+
+const resolveNftAssetUrl = (value?: string | null): string | undefined => {
+  const raw = String(value || '').trim();
+  if (!raw) return undefined;
+  if (raw.startsWith('ipfs://')) {
+    const cid = raw.replace('ipfs://', '').replace(/^ipfs\//, '');
+    const gateway = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
+    return `${gateway}${cid}`;
+  }
+  return raw;
+};
 
 function NFTCard({ nft }: { nft: NFTItem }) {
   const tierColors: Record<string, string> = {
@@ -62,7 +75,7 @@ function NFTCard({ nft }: { nft: NFTItem }) {
           </span>
           {nft.chain_id && (
             <a
-              href={`https://basescan.org/token/${nft.contract_address}?a=${nft.token_id}`}
+              href={`${BASESCAN_URL}/token/${nft.contract_address}?a=${nft.token_id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -108,12 +121,13 @@ export function NFTGalleryPage() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch SBT NFTs from Supabase metadata cache
+      // Fetch SBT mint logs from Supabase metadata cache; metadata image_url is Pinata/IPFS-backed.
       const { data, error: supaError } = await supabase
         .from('user_activity_logs')
         .select('*')
         .eq('wallet_address', address?.toLowerCase())
-        .eq('event_type', 'nft_mint')
+        .eq('category', 'SBT')
+        .eq('activity_type', 'Mint')
         .order('created_at', { ascending: false });
 
       if (supaError) throw supaError;
@@ -122,10 +136,10 @@ export function NFTGalleryPage() {
         const mapped: NFTItem[] = data.map((d: Record<string, unknown>) => {
           const meta = (d.metadata || {}) as Record<string, string>;
           return {
-            token_id: String(meta?.token_id || d.event_id || 'unknown'),
+            token_id: String(meta?.token_id || d.tx_hash || d.id || 'unknown'),
             contract_address: String(meta?.contract_address || DAILY_APP_ADDRESS),
             name: String(meta?.name || `SBT #${String(meta?.token_id || '?').substring(0, 6)}`),
-            image_url: meta?.image_url || undefined,
+            image_url: resolveNftAssetUrl(meta?.image_url || meta?.image || meta?.badge_url),
             tier: String(meta?.tier || 'ROOKIE'),
             minted_at: String(d.created_at || ''),
             chain_id: CHAIN_ID,
@@ -186,20 +200,26 @@ export function NFTGalleryPage() {
   }
 
   return (
-    <div className="min-h-screen max-w-[100vw] overflow-x-hidden bg-[#050505] pb-28 md:pb-8">
-      <div className="max-w-screen-lg mx-auto px-4 pt-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="space-y-1">
-            <h1 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-3">
-              <Sparkles size={20} className="text-yellow-500" />
-              NFT Gallery
-            </h1>
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">
-              {nfts.length} SBT{nfts.length !== 1 ? 's' : ''} collected
-            </p>
+    <div className="w-full max-w-[100vw] overflow-x-hidden pb-28 md:pb-8">
+      <div className="max-w-screen-lg mx-auto">
+        {/* Midnight Cyber Header */}
+        <div className="card-title-row mb-6">
+          <div>
+            <h2 className="text-xl text-white" style={{ fontFamily: 'var(--typography-family-heading)' }}>SBT Collection Gallery</h2>
+            <p className="label-native text-[9px] text-slate-500 mt-1">{nfts.length} SBTs Collected</p>
           </div>
+          <select className="input-cyber" style={{ padding: '8px 12px', fontSize: '12px', width: '140px' }}>
+            <option value="ALL">All Tiers</option>
+            <option value="DIAMOND">Diamond</option>
+            <option value="PLATINUM">Platinum</option>
+            <option value="GOLD">Gold</option>
+            <option value="SILVER">Silver</option>
+            <option value="BRONZE">Bronze</option>
+            <option value="ROOKIE">Rookie</option>
+          </select>
         </div>
+
+        <div className="px-4">
 
         {/* Tier Filter Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
@@ -253,6 +273,7 @@ export function NFTGalleryPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
