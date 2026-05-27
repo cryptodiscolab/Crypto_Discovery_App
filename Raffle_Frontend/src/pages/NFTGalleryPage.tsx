@@ -122,7 +122,7 @@ export function NFTGalleryPage() {
     setError(null);
     try {
       // Fetch SBT mint logs from Supabase metadata cache; metadata image_url is Pinata/IPFS-backed.
-      const { data, error: supaError } = await supabase
+      const { data: supaLogs, error: supaError } = await supabase
         .from('user_activity_logs')
         .select('*')
         .eq('wallet_address', address?.toLowerCase())
@@ -132,24 +132,61 @@ export function NFTGalleryPage() {
 
       if (supaError) throw supaError;
 
-      if (data && data.length > 0) {
-        const mapped: NFTItem[] = data.map((d: Record<string, unknown>) => {
+      // Fetch user's current tier level from profile
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('tier')
+        .eq('wallet_address', address?.toLowerCase())
+        .maybeSingle();
+
+      // Fetch all thresholds to match levels to details
+      const { data: thresholds } = await supabase
+        .from('sbt_thresholds')
+        .select('level, tier_name, badge_url')
+        .order('level', { ascending: true });
+
+      const currentTier = profile?.tier || 0;
+
+      const mapped: NFTItem[] = [];
+      const loggedTiers = new Set<string>();
+
+      if (supaLogs && supaLogs.length > 0) {
+        supaLogs.forEach((d: Record<string, unknown>) => {
           const meta = (d.metadata || {}) as Record<string, string>;
-          return {
+          const tier = String(meta?.tier_name || meta?.tier || 'ROOKIE').toUpperCase();
+          loggedTiers.add(tier);
+          mapped.push({
             token_id: String(meta?.token_id || d.tx_hash || d.id || 'unknown'),
             contract_address: String(meta?.contract_address || DAILY_APP_ADDRESS),
-            name: String(meta?.name || `SBT #${String(meta?.token_id || '?').substring(0, 6)}`),
+            name: String(meta?.name || `${meta?.tier_name || tier} SBT`),
             image_url: resolveNftAssetUrl(meta?.image_url || meta?.image || meta?.badge_url),
-            // Use tier_name (string "Bronze") not tier (number 1) — tierColors map requires uppercase string keys
-            tier: String(meta?.tier_name || meta?.tier || 'ROOKIE').toUpperCase(),
+            tier,
             minted_at: String(d.created_at || ''),
             chain_id: CHAIN_ID,
-          };
+          });
         });
-        setNfts(mapped);
-      } else {
-        setNfts(EMPTY_NFT);
       }
+
+      // Dynamic Fallback: if user has a tier level in profile, generate mock SBT cards for their collection
+      // this ensures SBTs show up in the gallery even if the user_activity_logs table is missing entries.
+      if (thresholds) {
+        thresholds.forEach((t) => {
+          const tierUpper = t.tier_name.toUpperCase();
+          if (t.level <= currentTier && !loggedTiers.has(tierUpper)) {
+            mapped.push({
+              token_id: `onchain-${t.level}-${address.substring(2, 8)}`,
+              contract_address: DAILY_APP_ADDRESS,
+              name: `${t.tier_name} SBT`,
+              image_url: resolveNftAssetUrl(t.badge_url),
+              tier: tierUpper,
+              minted_at: new Date().toISOString(), // Fallback to current time
+              chain_id: CHAIN_ID,
+            });
+          }
+        });
+      }
+
+      setNfts(mapped);
     } catch (err) {
       console.warn('[NFTGallery] Failed to fetch NFTs:', err);
       setError('Failed to load NFT collection');
