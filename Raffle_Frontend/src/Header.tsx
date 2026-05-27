@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useSwitchChain, useAccount } from 'wagmi';
-import { Link, useLocation } from 'react-router-dom';
-import { Sparkles, Shield, Wallet, Fuel } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sparkles, Wallet, Fuel } from 'lucide-react';
 import { baseSepolia } from 'wagmi/chains';
 import { usePoints } from './shared/context/PointsContext';
 import { useCMS } from './hooks/useCMS';
@@ -19,7 +19,6 @@ export function Header() {
   const { switchChain } = useSwitchChain();
   const { chain } = useAccount();
   const { frameUser } = useFarcaster();
-  const location = useLocation();
   const { isAdmin: isSBTAdmin, gasTracker, userPoints } = usePoints();
   const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
 
