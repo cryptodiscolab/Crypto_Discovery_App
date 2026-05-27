@@ -14,7 +14,7 @@ const CONTRACTS    = path.join(ROOT, '../../contracts');
 const ENV_EXAMPLE  = path.join(ROOT, '.env.example');
 const PACKAGE_JSON = path.join(ROOT, 'package.json');
 const MAIN_TSX     = path.join(ROOT, 'src', 'main.tsx');
-const BACKUP_TS    = path.join(ROOT, 'api', 'cron', 'backup.ts');
+const BACKUP_TS    = path.join(ROOT, 'api', 'cron', '_backup.ts');
 const MIDDLEWARE   = path.join(ROOT, 'api', '_shared', 'middleware.ts');
 
 let passed = 0;
@@ -67,9 +67,9 @@ check('[axios] exact version pinned (no ^ or ~)', () => {
 });
 
 // 5. .env.example has new MasterX address (not the old blacklisted one)
-check('[.env.example] uses new MasterX address (0x5916E4A...)', () => {
+check('[.env.example] uses new MasterX address (0x1b573D...)', () => {
     const content = readFile(ENV_EXAMPLE);
-    return content.includes('0x5916E4A76Ec2a790373FDC2C7410d5065856F142') &&
+    return content.includes('0x1b573DdD9a1679505ae64498564523222c758EC2') &&
            !content.includes('VITE_MASTER_X_ADDRESS_SEPOLIA=0x980770');
 });
 
@@ -84,10 +84,10 @@ check('[.env.example] uses new Raffle address (0xaE8fe1d...)', () => {
 check('[.env.example] contains VITE_SENTRY_DSN entry', () =>
     readFile(ENV_EXAMPLE).includes('VITE_SENTRY_DSN'));
 
-// 8. backup.ts uses SupabaseClient<any> (not ReturnType<typeof createClient>)
-check('[backup.ts] SupabaseClient<any> (TS2345 fix applied)', () => {
+// 8. backup.ts uses SupabaseClient (not ReturnType<typeof createClient>)
+check('[backup.ts] SupabaseClient (TS2345 fix applied)', () => {
     const content = readFile(BACKUP_TS);
-    return content.includes('SupabaseClient<any>') &&
+    return (content.includes('SupabaseClient<any>') || content.includes('SupabaseClient<Database>')) &&
            !content.includes('ReturnType<typeof createClient>');
 });
 

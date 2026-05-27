@@ -18,7 +18,7 @@ const { privateKeyToAccount } = require('viem/accounts');
 
 // === CONFIG (CORRECT ADDRESSES) ===
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const MASTER_X_ADDRESS = '0x5916E4A76Ec2a790373FDC2C7410d5065856F142';
+const MASTER_X_ADDRESS = '0x1b573DdD9a1679505ae64498564523222c758EC2';
 const DAILY_APP_V16_PROXY = '0xb592D6819Ea310d83034cD80FDDC2e754D0a5353';
 const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
 
