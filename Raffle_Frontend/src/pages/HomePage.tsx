@@ -130,7 +130,7 @@ export function HomePage() {
   }, [address]);
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden pb-28 md:pb-8">
+    <div className="w-full max-w-[100vw] overflow-x-hidden pb-safe md:pb-8">
       {/* Farcaster Frame Immersion */}
       {isFrame && (
         <div className="sticky top-0 z-50 w-full px-4 py-3 backdrop-blur-3xl border-b border-white/5 bg-[#050505]/80 flex items-center justify-between">

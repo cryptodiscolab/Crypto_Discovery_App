@@ -142,7 +142,7 @@ export function TasksPage() {
 
     return (
         <div className="w-full max-w-[100vw] overflow-x-hidden">
-            <div className="max-w-screen-lg mx-auto pb-28 md:pb-8">
+            <div className="max-w-screen-lg mx-auto pb-safe md:pb-8">
                 {/* Midnight Cyber Header */}
                 <div className="card-title-row px-1 mb-6">
                     <h2 className="text-xl text-white" style={{ fontFamily: 'var(--typography-family-heading)' }}>Quest Board</h2>

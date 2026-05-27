@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import '@rainbow-me/rainbowkit/styles.css'
+import '../node_modules/@fortawesome/fontawesome-free/css/all.min.css'
 import App from './App.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './index.css'

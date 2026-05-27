@@ -145,7 +145,7 @@ export function SBTMintPage() {
   // Connected state
   if (!isConnected) {
     return (
-      <div className="w-full max-w-[100vw] overflow-x-hidden pb-28 md:pb-8 flex items-center justify-center min-h-[60vh]">
+      <div className="w-full max-w-[100vw] overflow-x-hidden pb-safe md:pb-8 flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4 px-4">
           <Shield size={64} className="mx-auto text-slate-700" />
           <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Connect wallet to mint SBT</p>
@@ -167,7 +167,7 @@ export function SBTMintPage() {
   const currentTierColor = tierColors[progress?.currentTier || 'ROOKIE'] || tierColors.ROOKIE;
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden pb-28 md:pb-8">
+    <div className="w-full max-w-[100vw] overflow-x-hidden pb-safe md:pb-8">
       <div className="max-w-screen-lg mx-auto">
         {/* Midnight Cyber Header */}
         <div className="card-title-row mb-6">

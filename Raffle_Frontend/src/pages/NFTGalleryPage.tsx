@@ -190,7 +190,7 @@ export function NFTGalleryPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen max-w-[100vw] overflow-x-hidden bg-[#050505] pb-28 md:pb-8 flex items-center justify-center">
+      <div className="min-h-screen max-w-[100vw] overflow-x-hidden bg-[#050505] pb-safe flex items-center justify-center">
         <div className="text-center space-y-4 px-4">
           <Image size={64} className="mx-auto text-slate-700" />
           <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Connect wallet to view NFT collection</p>
@@ -200,7 +200,7 @@ export function NFTGalleryPage() {
   }
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden pb-28 md:pb-8">
+    <div className="w-full max-w-[100vw] overflow-x-hidden pb-safe md:pb-8">
       <div className="max-w-screen-lg mx-auto">
         {/* Midnight Cyber Header */}
         <div className="card-title-row mb-6">

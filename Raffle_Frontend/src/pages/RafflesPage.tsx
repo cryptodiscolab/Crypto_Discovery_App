@@ -13,7 +13,7 @@ export function RafflesPage() {
   const { raffleIds, isLoading, refetch } = useRaffleList();
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden pb-28 md:pb-8">
+    <div className="w-full max-w-[100vw] overflow-x-hidden pb-safe md:pb-8">
       <div className="max-w-screen-lg mx-auto">
         {/* Midnight Cyber Header */}
         <div className="card-title-row mb-6">

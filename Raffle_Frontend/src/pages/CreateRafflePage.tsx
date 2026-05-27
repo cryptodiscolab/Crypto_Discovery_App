@@ -228,7 +228,7 @@ export function CreateRafflePage() {
 
     if (!isConnected) {
         return (
-            <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
+            <div className="min-h-screen flex items-center justify-center px-4 bg-[#050505]">
                 <div className="text-center glass-card p-12 max-w-md w-full border border-white/5">
                     <Gift className="w-16 h-16 text-blue-500 mx-auto mb-6 opacity-20" />
                     <h2 className="text-[11px] font-black text-white uppercase tracking-widest mb-2">CONNECT WALLET</h2>
@@ -239,7 +239,7 @@ export function CreateRafflePage() {
     }
 
     return (
-        <div className="min-h-screen pt-24 pb-28 md:pb-8 px-4 bg-slate-950">
+        <div className="min-h-screen pb-safe md:pb-8 px-4 bg-[#050505]">
             <div className="container mx-auto max-w-5xl">
                 <div className="flex flex-col md:flex-row gap-8">
                     <div className="flex-1 space-y-6">
