@@ -10,6 +10,7 @@ import { FeatureCardSkeleton } from '../components/FeatureCardSkeleton';
 import { HypeFeed } from '../components/HypeFeed';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 import { supabase } from '../lib/supabaseClient';
+import { DailyClaimModal } from '../features/profile/components/modals/DailyClaimModal';
 
 interface PoolSettings {
   targetUSDC: number;
@@ -83,6 +84,8 @@ export function HomePage() {
   const dailyClaimXp = ecosystemSettings?.daily_claim ?? 0;
   const recentLogs = activityLogs.slice(0, 4);
   const unclaimedRewardsCount = Array.isArray(_unclaimedRewards) ? _unclaimedRewards.length : 0;
+  const [showDailyClaimModal, setShowDailyClaimModal] = useState(false);
+  const { refetch: refetchPoints } = usePoints();
 
   useEffect(() => {
     if (!address) {
@@ -340,7 +343,7 @@ export function HomePage() {
                   <div className="label-native">Last Check-In</div>
                   <div className="value-native text-white">{lastClaimLabel}</div>
                 </div>
-                <button className="btn-cyber-primary">
+                <button onClick={() => setShowDailyClaimModal(true)} className="btn-cyber-primary">
                   <i className="fa-solid fa-bolt"></i>
                   <span>Claim Daily +{dailyClaimXp} XP</span>
                 </button>
@@ -424,6 +427,15 @@ export function HomePage() {
         </div>
 
       </div>
+      {showDailyClaimModal && (
+        <DailyClaimModal
+          onClose={() => setShowDailyClaimModal(false)}
+          onSuccess={() => {
+            refetchPoints();
+          }}
+          streakCount={displayStreak}
+        />
+      )}
     </div>
   );
 }

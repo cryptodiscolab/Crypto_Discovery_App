@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Image, ExternalLink, Filter, AlertTriangle } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
+import { DAILY_APP_ADDRESS } from '../lib/contracts';
 
 interface NFTItem {
   token_id: string;
@@ -14,7 +15,6 @@ interface NFTItem {
 }
 
 const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
-const DAILY_APP_ADDRESS = import.meta.env.VITE_DAILY_APP_ADDRESS || '';
 const IPFS_GATEWAY = (import.meta.env.VITE_IPFS_GATEWAY || 'https://ipfs.io/ipfs/').trim();
 const BASESCAN_URL = CHAIN_ID === 84532 ? 'https://sepolia.basescan.org' : 'https://basescan.org';
 
@@ -140,7 +140,8 @@ export function NFTGalleryPage() {
             contract_address: String(meta?.contract_address || DAILY_APP_ADDRESS),
             name: String(meta?.name || `SBT #${String(meta?.token_id || '?').substring(0, 6)}`),
             image_url: resolveNftAssetUrl(meta?.image_url || meta?.image || meta?.badge_url),
-            tier: String(meta?.tier || 'ROOKIE'),
+            // Use tier_name (string "Bronze") not tier (number 1) — tierColors map requires uppercase string keys
+            tier: String(meta?.tier_name || meta?.tier || 'ROOKIE').toUpperCase(),
             minted_at: String(d.created_at || ''),
             chain_id: CHAIN_ID,
           };

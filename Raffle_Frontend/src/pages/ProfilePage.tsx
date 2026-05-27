@@ -45,6 +45,7 @@ export default function ProfilePage() {
   const { claimableAmount, refetchAll: refetchSBT } = useSBTData();
 
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editableProfileData, setEditableProfileData] = useState<ProfileData | null>(null);
@@ -176,102 +177,80 @@ export default function ProfilePage() {
       />
 
       <main className="max-w-screen-md mx-auto space-y-6">
-        {/* QUICK ACTIONS */}
-        <div className="grid grid-cols-3 gap-3 px-4 mt-6">
-          <button
-            onClick={() => setActiveModal('claim')}
-            className={`flex flex-col items-center justify-center p-4 border rounded-3xl transition-all group active:scale-95 ${
-              onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
-                ? 'bg-slate-500/10 border-slate-500/20 opacity-60'
-                : 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20'
-            }`}
-          >
-            <Zap className={`mb-2 group-hover:scale-110 transition-transform ${
-              onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
-                ? 'text-slate-400' : 'text-emerald-400'
-            }`} size={24} />
-            <span className="text-[11px] font-black text-white uppercase tracking-widest text-center">
-              {onChainStats?.lastDailyBonusClaim && (Date.now() / 1000 - onChainStats.lastDailyBonusClaim) < 72000
-                ? 'CLAIMED ✓' : 'DAILY CLAIM'}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveModal('swap')}
-            className="flex flex-col items-center justify-center p-4 bg-amber-500/10 border border-amber-500/20 rounded-3xl hover:bg-amber-500/20 transition-all group active:scale-95"
-          >
-            <Coins className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
-            <span className="text-[11px] font-black text-white uppercase tracking-widest">QUICK SWAP</span>
-          </button>
-
-          <button
-            onClick={() => setActiveModal('task')}
-            className="flex flex-col items-center justify-center p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl hover:bg-indigo-500/20 transition-all group active:scale-95"
-          >
-            <Plus className="text-indigo-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
-            <span className="text-[11px] font-black text-white uppercase tracking-widest">NEW MISSION</span>
-          </button>
+        {/* TAB CONTROLS (NEW UI DESIGN) */}
+        <div className="px-4 mb-6">
+          <div className="flex gap-1 bg-slate-900/60 p-1 rounded-2xl border border-white/5 overflow-x-auto max-w-[100vw] scrollbar-none">
+            {[
+              { id: 'overview', label: 'OVERVIEW' },
+              { id: 'sbt', label: 'SBT & WALLET' },
+              { id: 'referrals', label: 'REFERRALS' },
+              { id: 'logs', label: 'LOGS' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 min-w-[110px] py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* MODALS */}
-        {activeModal === 'task' && <CreateTaskModal onClose={() => setActiveModal(null)} onRequestSwap={() => setActiveModal('swap')} />}
-        {activeModal === 'claim' && (
-          <DailyClaimModal
-            onClose={() => setActiveModal(null)}
-            onSuccess={() => {
-              refetchProfile();
-              refetchPoints();
-              refetchOnChainStats();
-              refetchSBT();
-            }}
-            streakCount={(profileData as { streakCount?: number; streak_count?: number })?.streakCount || (profileData as { streak_count?: number })?.streak_count || 0}
-          />
-        )}
-        {activeModal === 'renew' && <RenewSponsorshipModal onClose={() => setActiveModal(null)} />}
-        {activeModal === 'revenue' && (
-          <RevenueClaimModal
-            onClose={() => setActiveModal(null)}
-            claimable={claimableAmount}
-            onSuccess={() => {
-              refetchOnChainStats();
-              refetchSBT();
-            }}
-          />
-        )}
-        {activeModal === 'swap' && (
-          <SwapModal
-            isOpen={true}
-            onClose={() => setActiveModal(null)}
-            onSuccess={() => {
-              refetchProfile();
-              refetchPoints();
-              refetchOnChainStats();
-              refetchSBT();
-            }}
-          />
+        {/* TAB CONTENTS */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <ProfileStats
+              profileData={profileData}
+              linkGoogle={linkGoogle}
+              linkX={linkX}
+              isOAuthLinking={isOAuthLinking}
+              fetchProfile={refetchProfile}
+            />
+            {/* QUICK ACTIONS */}
+            <div className="grid grid-cols-2 gap-3 px-4">
+              <button
+                onClick={() => setActiveModal('swap')}
+                className="flex flex-col items-center justify-center p-4 bg-amber-500/10 border border-amber-500/20 rounded-3xl hover:bg-amber-500/20 transition-all group active:scale-95"
+              >
+                <Coins className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">QUICK SWAP</span>
+              </button>
+
+              <button
+                onClick={() => setActiveModal('task')}
+                className="flex flex-col items-center justify-center p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl hover:bg-indigo-500/20 transition-all group active:scale-95"
+              >
+                <Plus className="text-indigo-400 mb-2 group-hover:scale-110 transition-transform" size={24} />
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">NEW MISSION</span>
+              </button>
+            </div>
+          </div>
         )}
 
-        {/* STATS & IDENTITY */}
-        <ProfileStats
-          profileData={profileData}
-          linkGoogle={linkGoogle}
-          linkX={linkX}
-          isOAuthLinking={isOAuthLinking}
-          fetchProfile={refetchProfile}
-        />
+        {activeTab === 'sbt' && (
+          <div className="px-4 space-y-6">
+            <SBTUpgradeCard />
+            <WalletPortfolio />
+            <SBTGallery />
+          </div>
+        )}
 
-        {/* TIER & ACHIEVEMENTS */}
-        <div className="px-4 space-y-6">
-          <SBTUpgradeCard />
-          <WalletPortfolio />
-          <SBTGallery />
-          <ReferralCard />
-        </div>
+        {activeTab === 'referrals' && (
+          <div className="px-4 space-y-6">
+            <ReferralCard />
+          </div>
+        )}
 
-        {/* ACTIVITY LOGS */}
-        <div className="px-4 pb-12">
-          <ActivityLogSection walletAddress={address} />
-        </div>
+        {activeTab === 'logs' && (
+          <div className="px-4 pb-12">
+            <ActivityLogSection walletAddress={address} />
+          </div>
+        )}
       </main>
 
       {/* REVENUE BAR (Floating Mini) */}

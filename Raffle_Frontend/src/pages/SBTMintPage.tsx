@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Shield, Sparkles, AlertTriangle, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
-import { useAccount, useSignTypedData } from 'wagmi';
+import { useAccount, useSignMessage, useWriteContract, usePublicClient } from 'wagmi';
+import { CONTRACTS, ABIS } from '../lib/contracts';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
+import { BUNDLE_ROUTES, USER_BUNDLE_ACTIONS } from '../lib/apiRoutes';
+import { formatEther } from 'viem';
 
 // Tier config fetched dynamically from sbt_thresholds (Zero-Hardcode Mandate)
 interface SBTThreshold {
@@ -102,7 +105,8 @@ export function SBTMintPage() {
         nextTier: nextThreshold?.tier_name?.toUpperCase() || null,
         xpToNextTier,
         nextTierMinXP: nextThreshold?.min_xp ?? null,
-        canMint: totalXP > 0,
+        // canMint: user has a next tier AND has enough XP for it
+        canMint: !!nextThreshold && totalXP >= nextThreshold.min_xp,
       });
     } catch (err) {
       console.warn('[SBTMint] Failed to fetch progress:', err);
@@ -116,72 +120,126 @@ export function SBTMintPage() {
     fetchProgress();
   }, [fetchProgress]);
 
-  const { signTypedDataAsync } = useSignTypedData();
+  const { signMessageAsync } = useSignMessage();
+
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
 
   const handleMint = async () => {
-    if (!address || !progress?.canMint) return;
+    if (!address || !progress?.canMint || !progress.nextTier) return;
     setMinting(true);
     try {
-      // 1. Generate EIP-712 signature for SBT entitlement verification
-      const domain = {
-        name: 'SBTMintEntitlementVerifier',
-        version: '1',
-        chainId: parseInt(import.meta.env.VITE_CHAIN_ID || '8453'),
-        verifyingContract: import.meta.env.VITE_SBT_VERIFIER_ADDRESS || '',
-      };
+      const cleanWallet = address.toLowerCase();
+      const message = `sbt mint entitlement ${cleanWallet}`;
+      const signature = await signMessageAsync({ message });
 
-      const types = {
-        Entitlement: [
-          { name: 'recipient', type: 'address' },
-          { name: 'tier', type: 'string' },
-          { name: 'nonce', type: 'uint256' },
-          { name: 'deadline', type: 'uint256' },
-        ],
-      };
+      // FIX: Look up NEXT tier level (not current) — backend validates sequential upgrade
+      const nextTierLevel = thresholds.find(
+        (t) => t.tier_name?.toUpperCase() === progress.nextTier
+      )?.level;
+      if (!nextTierLevel) throw new Error('Cannot determine next tier level');
 
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // 1 hour
-      const nonce = BigInt(Date.now());
-
-      const value = {
-        recipient: address as `0x${string}`,
-        tier: progress.currentTier,
-        nonce,
-        deadline,
-      };
-
-      const signature = await signTypedDataAsync({
-        domain,
-        types,
-        primaryType: 'Entitlement',
-        message: value,
-      });
-
-      // 2. Call backend to verify and trigger mint
-      const res = await fetch('/api/sbt-mint', {
+      // Step 1: Get signed entitlement voucher from backend
+      const res = await fetch(BUNDLE_ROUTES.USER, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-SECRET': import.meta.env.VITE_API_SECRET || '' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          wallet_address: address,
-          tier: progress.currentTier,
-          nonce: nonce.toString(),
-          deadline: deadline.toString(),
+          action: USER_BUNDLE_ACTIONS.SBT_MINT_ENTITLEMENT,
+          wallet: cleanWallet,
           signature,
+          message,
+          requested_tier: nextTierLevel,
         }),
       });
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        throw new Error((errBody as Record<string, string>)?.error || 'Mint failed');
+        throw new Error((errBody as Record<string, string>)?.error || 'Entitlement request failed');
       }
 
       const result = await res.json();
-      toast.success(`SBT Minted! TX: ${(result as Record<string, string>)?.tx_hash?.substring(0, 10)}...`);
+      const voucherStatus = (result as Record<string, string>)?.voucher_status;
+      if (voucherStatus !== 'signed') {
+        const reason = (result as Record<string, string>)?.reason || 'Not eligible for SBT mint';
+        throw new Error(reason);
+      }
 
-      // Refresh progress after mint
+      // Step 2: Call mintNFTWithEntitlement() on-chain with the signed voucher
+      const voucher = (result as Record<string, unknown>)?.voucher as {
+        wallet: string;
+        tier: number;
+        tier_name: string;
+        db_total_xp: number;
+        required_xp: number;
+        mint_price_wei: string;
+        contract_address: string;
+        verifier_address: string;
+        chain_id: number;
+        deadline: number;
+        nonce: string;
+        signature: string;
+      } | undefined;
+
+      if (!voucher) throw new Error('Backend returned no voucher data');
+
+      toast.loading('Sending mint transaction…', { id: 'sbt-mint' });
+
+      const contractAddress = (voucher.contract_address || CONTRACTS.DAILY_APP) as `0x${string}`;
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: ABIS.DAILY_APP,
+        functionName: 'mintNFTWithEntitlement',
+        args: [
+          {
+            wallet: voucher.wallet as `0x${string}`,
+            targetContract: contractAddress,
+            targetTier: voucher.tier,
+            requiredXp: BigInt(voucher.required_xp),
+            nonce: BigInt(voucher.nonce),
+            deadline: BigInt(voucher.deadline),
+          },
+          voucher.signature as `0x${string}`,
+        ],
+        value: BigInt(voucher.mint_price_wei || '0'),
+      });
+
+      toast.loading('Waiting for confirmation…', { id: 'sbt-mint' });
+      await publicClient?.waitForTransactionReceipt({ hash: txHash });
+
+      toast.success(
+        `✅ ${voucher.tier_name} SBT minted on-chain!`,
+        { id: 'sbt-mint' }
+      );
+
+      // Step 3: Sync mint to backend (creates user_activity_logs record so NFT appears in gallery)
+      try {
+        const syncMsg = `Log activity for ${cleanWallet}\nAction: SBT Tier Ascension\nTimestamp: ${new Date().toISOString()}`;
+        const syncSig = await signMessageAsync({ message: syncMsg });
+        await fetch(BUNDLE_ROUTES.USER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: USER_BUNDLE_ACTIONS.SYNC_SBT_UPGRADE,
+            wallet: cleanWallet,
+            signature: syncSig,
+            message: syncMsg,
+            payload: {
+              tierName: voucher.tier_name,
+              ethSpent: formatEther(BigInt(voucher.mint_price_wei || '0')),
+              txHash,
+            },
+          }),
+        });
+      } catch (syncErr) {
+        // Non-critical: on-chain mint succeeded; gallery will refresh when backend catches up
+        console.warn('[SBTMint] Backend sync failed (non-critical):', syncErr);
+      }
+
+      // Refresh progress after successful mint
       fetchProgress();
     } catch (err) {
       console.error('[SBTMint] Mint failed:', err);
-      toast.error(err instanceof Error ? err.message : 'Mint transaction failed');
+      toast.error(err instanceof Error ? err.message : 'Mint failed', { id: 'sbt-mint' });
     } finally {
       setMinting(false);
     }
@@ -312,9 +370,9 @@ export function SBTMintPage() {
             {/* Mint Button */}
             <button
               onClick={handleMint}
-              disabled={!progress.canMint || minting}
+              disabled={!progress.canMint || minting || !progress.nextTier}
               className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 transition-all ${
-                progress.canMint && !minting
+                progress.canMint && !minting && progress.nextTier
                   ? 'btn-cyber-native-action active:scale-[0.98]'
                   : 'btn-cyber-disabled'
               }`}
@@ -324,22 +382,29 @@ export function SBTMintPage() {
                   <Loader2 size={16} className="animate-spin" />
                   MINTING SBT...
                 </>
-              ) : progress.canMint ? (
+              ) : progress.canMint && progress.nextTier ? (
                 <>
-                  MINT {progress.currentTier} SBT
+                  MINT {progress.nextTier} SBT
                   <Sparkles size={16} />
+                </>
+              ) : !progress.nextTier ? (
+                <>
+                  MAX TIER REACHED
+                  <CheckCircle2 size={16} />
                 </>
               ) : (
                 <>
-                  EARN XP TO MINT
+                  {progress.xpToNextTier !== null
+                    ? `NEED ${progress.xpToNextTier.toLocaleString()} MORE XP`
+                    : 'EARN XP TO MINT'}
                   <ArrowRight size={16} />
                 </>
               )}
             </button>
 
-            {!progress.canMint && (
+            {!progress.canMint && progress.nextTier && (
               <p className="label-native text-slate-600 text-center mb-0">
-                Complete daily check-ins and missions to earn XP
+                You need {progress.xpToNextTier?.toLocaleString()} more XP to mint {progress.nextTier} SBT
               </p>
             )}
           </div>
