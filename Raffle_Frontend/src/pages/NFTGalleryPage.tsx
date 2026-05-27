@@ -208,15 +208,9 @@ export function NFTGalleryPage() {
             <h2 className="text-xl text-white" style={{ fontFamily: 'var(--typography-family-heading)' }}>SBT Collection Gallery</h2>
             <p className="label-native text-[9px] text-slate-500 mt-1">{nfts.length} SBTs Collected</p>
           </div>
-          <select className="input-cyber" style={{ padding: '8px 12px', fontSize: '12px', width: '140px' }}>
-            <option value="ALL">All Tiers</option>
-            <option value="DIAMOND">Diamond</option>
-            <option value="PLATINUM">Platinum</option>
-            <option value="GOLD">Gold</option>
-            <option value="SILVER">Silver</option>
-            <option value="BRONZE">Bronze</option>
-            <option value="ROOKIE">Rookie</option>
-          </select>
+          <span className="badge-cyber badge-cyber-blue">
+            {tierFilter === 'ALL' ? 'All Tiers' : tierFilter}
+          </span>
         </div>
 
         <div className="px-4">

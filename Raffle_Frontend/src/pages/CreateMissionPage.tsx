@@ -471,7 +471,7 @@ export function CreateMissionPage() {
     }
 
     return (
-        <div className="min-h-screen pt-24 pb-28 md:pb-20 px-4 bg-[#050505] selection:bg-indigo-500/30">
+        <div className="min-h-screen pt-24 pb-safe md:pb-8 px-4 bg-[#050505] selection:bg-indigo-500/30">
             {/* Background Glows */}
             <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
             <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[120px] pointer-events-none" />

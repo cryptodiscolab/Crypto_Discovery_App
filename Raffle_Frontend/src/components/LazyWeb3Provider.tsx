@@ -23,7 +23,7 @@ export default function LazyWeb3Provider({ children }: { children: React.ReactNo
                     initialChain={import.meta.env.VITE_CHAIN_ID === '84532' ? baseSepolia : base}
                 >
                     <GlobalAccountDetector />
-                    <div className="min-h-screen bg-slate-950 text-slate-50">
+                    <div className="min-h-screen bg-[#050505] text-slate-50">
                         {children}
                     </div>
                 </RainbowKitProvider>

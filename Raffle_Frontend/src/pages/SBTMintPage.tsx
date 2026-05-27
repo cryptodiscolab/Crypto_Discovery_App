@@ -4,60 +4,105 @@ import { useAccount, useSignTypedData } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 
-// SBT tier configuration (matching smart contract tiers)
-const SBTTiers = {
-  DIAMOND: { minXP: 500000, label: 'DIAMOND', desc: 'Top 1% — maximum revenue share, exclusive rewards', icon: '💎' },
-  PLATINUM: { minXP: 250000, label: 'PLATINUM', desc: 'Top 5% — premium revenue share, priority access', icon: '🔷' },
-  GOLD: { minXP: 100000, label: 'GOLD', desc: 'Top 15% — enhanced revenue share, early access', icon: '🥇' },
-  SILVER: { minXP: 50000, label: 'SILVER', desc: 'Top 35% — moderate revenue share, bonus rewards', icon: '🥈' },
-  BRONZE: { minXP: 10000, label: 'BRONZE', desc: 'Top 55% — entry-level revenue share', icon: '🥉' },
-  ROOKIE: { minXP: 0, label: 'ROOKIE', desc: 'Starting tier — earn XP to upgrade', icon: '🟢' },
-} as const;
+// Tier config fetched dynamically from sbt_thresholds (Zero-Hardcode Mandate)
+interface SBTThreshold {
+  level: number;
+  tier_name: string;
+  min_xp: number;
+  badge_url: string | null;
+  level_name: string | null;
+}
+
+const TIER_ICONS: Record<string, string> = {
+  DIAMOND: '💎',
+  PLATINUM: '🔷',
+  GOLD: '🥇',
+  SILVER: '🥈',
+  BRONZE: '🥉',
+  ROOKIE: '🟢',
+};
+
+const TIER_DESCS: Record<string, string> = {
+  DIAMOND: 'Top 1% — maximum revenue share, exclusive rewards',
+  PLATINUM: 'Top 5% — premium revenue share, priority access',
+  GOLD: 'Top 15% — enhanced revenue share, early access',
+  SILVER: 'Top 35% — moderate revenue share, bonus rewards',
+  BRONZE: 'Top 55% — entry-level revenue share',
+  ROOKIE: 'Starting tier — earn XP to upgrade',
+};
 
 interface UserProgress {
   totalXP: number;
   currentTier: string;
   nextTier: string | null;
   xpToNextTier: number | null;
+  nextTierMinXP: number | null;
   canMint: boolean;
 }
 
+const TIER_COLORS: Record<string, string> = {
+  DIAMOND: 'from-blue-500/20 to-purple-500/20 border-blue-500/30 text-blue-400',
+  PLATINUM: 'from-slate-400/20 to-slate-500/20 border-slate-400/30 text-slate-300',
+  GOLD: 'from-yellow-500/20 to-amber-500/20 border-yellow-500/30 text-yellow-400',
+  SILVER: 'from-gray-400/20 to-gray-500/20 border-gray-400/30 text-gray-300',
+  BRONZE: 'from-amber-700/20 to-orange-700/20 border-amber-700/30 text-amber-500',
+  ROOKIE: 'from-slate-800/30 to-slate-900/30 border-slate-700/30 text-slate-400',
+};
+
 export function SBTMintPage() {
   const { address, isConnected } = useAccount();
+  const [thresholds, setThresholds] = useState<SBTThreshold[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [minting, setMinting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch tier thresholds from Supabase (Zero-Hardcode: all XP values from DB)
+  const fetchThresholds = useCallback(async (): Promise<SBTThreshold[]> => {
+    const { data, error: tErr } = await supabase
+      .from('sbt_thresholds')
+      .select('level, tier_name, min_xp, badge_url, level_name')
+      .order('level', { ascending: true });
+    if (tErr) throw tErr;
+    return (data || []) as SBTThreshold[];
+  }, []);
 
   const fetchProgress = useCallback(async () => {
     if (!address) return;
     setLoading(true);
     setError(null);
     try {
-      const { data: profile, error: profileError } = await supabase
-        .from('v_user_full_profile')
-        .select('total_xp, rank_name')
-        .eq('wallet_address', address.toLowerCase())
-        .maybeSingle();
+      const [profileResult, tiers] = await Promise.all([
+        supabase
+          .from('v_user_full_profile')
+          .select('total_xp, rank_name')
+          .eq('wallet_address', address.toLowerCase())
+          .maybeSingle(),
+        fetchThresholds(),
+      ]);
 
-      if (profileError && profileError.code !== 'PGRST116') throw profileError;
+      if (profileResult.error && profileResult.error.code !== 'PGRST116') {
+        throw profileResult.error;
+      }
 
-      const totalXP = Number(profile?.total_xp || 0);
-      const currentTier = String(profile?.rank_name || 'ROOKIE').toUpperCase();
+      setThresholds(tiers);
 
-      // Determine next tier
-      const tierOrder = ['ROOKIE', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'];
-      const currentIndex = tierOrder.indexOf(currentTier);
-      const nextTierKey = currentIndex < tierOrder.length - 1 ? tierOrder[currentIndex + 1] : null;
-      const nextTier = nextTierKey ? (SBTTiers[nextTierKey as keyof typeof SBTTiers] || null) : null;
-      const xpToNextTier = nextTier ? Math.max(0, nextTier.minXP - totalXP) : null;
+      const totalXP = Number(profileResult.data?.total_xp || 0);
+      const currentTier = String(profileResult.data?.rank_name || 'ROOKIE').toUpperCase();
+
+      // Determine next tier from live DB thresholds (Sequential Upgrade Only — BP-007)
+      const sorted = [...tiers].sort((a, b) => a.level - b.level);
+      const currentIdx = sorted.findIndex((t) => t.tier_name?.toUpperCase() === currentTier);
+      const nextThreshold = currentIdx >= 0 && currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
+      const xpToNextTier = nextThreshold ? Math.max(0, nextThreshold.min_xp - totalXP) : null;
 
       setProgress({
         totalXP,
         currentTier,
-        nextTier: nextTier?.label || null,
+        nextTier: nextThreshold?.tier_name?.toUpperCase() || null,
         xpToNextTier,
-        canMint: totalXP > 0, // Can mint if has any XP (rookie tier as well)
+        nextTierMinXP: nextThreshold?.min_xp ?? null,
+        canMint: totalXP > 0,
       });
     } catch (err) {
       console.warn('[SBTMint] Failed to fetch progress:', err);
@@ -65,7 +110,7 @@ export function SBTMintPage() {
     } finally {
       setLoading(false);
     }
-  }, [address]);
+  }, [address, fetchThresholds]);
 
   useEffect(() => {
     fetchProgress();
@@ -142,7 +187,7 @@ export function SBTMintPage() {
     }
   };
 
-  // Connected state
+  // Not connected state
   if (!isConnected) {
     return (
       <div className="w-full max-w-[100vw] overflow-x-hidden pb-safe md:pb-8 flex items-center justify-center min-h-[60vh]">
@@ -154,17 +199,10 @@ export function SBTMintPage() {
     );
   }
 
-  // Tier colors
-  const tierColors: Record<string, string> = {
-    DIAMOND: 'from-blue-500/20 to-purple-500/20 border-blue-500/30 text-blue-400',
-    PLATINUM: 'from-slate-400/20 to-slate-500/20 border-slate-400/30 text-slate-300',
-    GOLD: 'from-yellow-500/20 to-amber-500/20 border-yellow-500/30 text-yellow-400',
-    SILVER: 'from-gray-400/20 to-gray-500/20 border-gray-400/30 text-gray-300',
-    BRONZE: 'from-amber-700/20 to-orange-700/20 border-amber-700/30 text-amber-500',
-    ROOKIE: 'from-slate-800/30 to-slate-900/30 border-slate-700/30 text-slate-400',
-  };
+  const currentTierColor = TIER_COLORS[progress?.currentTier || 'ROOKIE'] || TIER_COLORS.ROOKIE;
 
-  const currentTierColor = tierColors[progress?.currentTier || 'ROOKIE'] || tierColors.ROOKIE;
+  // Sort thresholds descending for display (Diamond first)
+  const displayTiers = [...thresholds].sort((a, b) => b.level - a.level);
 
   return (
     <div className="w-full max-w-[100vw] overflow-x-hidden pb-safe md:pb-8">
@@ -195,18 +233,18 @@ export function SBTMintPage() {
             <div className={`rounded-2xl border bg-gradient-to-br ${currentTierColor} p-6`}>
               <div className="flex items-center justify-between mb-4">
                 <span className="label-native mb-0 opacity-70">Current Tier</span>
-                <span className="label-native mb-0">{SBTTiers[progress.currentTier as keyof typeof SBTTiers]?.icon}</span>
+                <span className="label-native mb-0 text-lg">{TIER_ICONS[progress.currentTier] || '🟢'}</span>
               </div>
               <h2 className="text-2xl font-black uppercase tracking-widest mb-1">{progress.currentTier}</h2>
               <p className="content-native mb-4">
-                {SBTTiers[progress.currentTier as keyof typeof SBTTiers]?.desc}
+                {TIER_DESCS[progress.currentTier] || 'Earn XP to unlock rewards'}
               </p>
               <div className="space-y-2">
                 <div className="flex justify-between label-native mb-0">
                   <span>Total XP</span>
                   <span className="value-native">{progress.totalXP.toLocaleString()}</span>
                 </div>
-                {progress.nextTier && progress.xpToNextTier !== null && (
+                {progress.nextTier && progress.xpToNextTier !== null && progress.nextTierMinXP !== null && (
                   <div className="space-y-1">
                     <div className="flex justify-between label-native mb-0 text-slate-500">
                       <span>Next: {progress.nextTier}</span>
@@ -216,7 +254,7 @@ export function SBTMintPage() {
                       <div
                         className="h-full bg-yellow-500/50 rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.min(100, ((progress.totalXP / (progress.totalXP + progress.xpToNextTier)) * 100))}%`,
+                          width: `${Math.min(100, ((progress.totalXP / progress.nextTierMinXP) * 100))}%`,
                         }}
                       />
                     </div>
@@ -225,15 +263,21 @@ export function SBTMintPage() {
               </div>
             </div>
 
-            {/* Tier Ladder */}
+            {/* Tier Ladder — dynamic from DB */}
             <div className="space-y-2">
-              <h3 className="label-native text-slate-400 mb-3">Tier Requirements</h3>
-              {Object.entries(SBTTiers).map(([key, tier]) => {
+              <h3 className="label-native text-slate-400 mb-3">
+                Tier Requirements
+                {thresholds.length === 0 && (
+                  <span className="text-slate-600 ml-2">(Loading…)</span>
+                )}
+              </h3>
+              {displayTiers.map((tier) => {
+                const key = (tier.tier_name || '').toUpperCase();
                 const isCurrent = key === progress.currentTier;
-                const isUnlocked = tier.minXP <= progress.totalXP;
+                const isUnlocked = tier.min_xp <= progress.totalXP;
                 return (
                   <div
-                    key={key}
+                    key={tier.level}
                     className={`rounded-xl border p-4 flex items-center justify-between transition-all ${
                       isCurrent
                         ? 'bg-white/5 border-white/20'
@@ -243,15 +287,15 @@ export function SBTMintPage() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">{tier.icon}</span>
+                      <span className="text-lg">{TIER_ICONS[key] || '🟢'}</span>
                       <div>
-                        <p className="label-native text-white mb-0">{tier.label}</p>
-                        <p className="label-native text-slate-500 mb-0">{tier.desc}</p>
+                        <p className="label-native text-white mb-0">{key}</p>
+                        <p className="label-native text-slate-500 mb-0">{TIER_DESCS[key] || tier.level_name || ''}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="value-native text-slate-500">
-                        {tier.minXP.toLocaleString()} XP
+                        {tier.min_xp.toLocaleString()} XP
                       </p>
                       {isCurrent && (
                         <span className="label-native text-yellow-500 mb-0">CURRENT</span>
