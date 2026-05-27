@@ -878,3 +878,22 @@ body::after {
 .text-glow-gold {
     text-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
 }
+
+/* Responsive Adaptations for Midnight Cyber Layout (v3.64.23-Hardened) */
+@media (max-width: 768px) {
+    .sidebar-desktop {
+        display: none !important;
+    }
+
+    .main-wrapper-cyber {
+        padding-left: 0 !important;
+    }
+
+    .app-header-cyber {
+        padding: 12px 16px !important;
+    }
+
+    .screen-content-cyber {
+        padding: 16px !important;
+    }
+}

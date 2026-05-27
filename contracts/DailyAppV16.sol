@@ -401,6 +401,10 @@ contract DailyAppV16 is UUPSUpgradeable {
         emit Paused(msg.sender);
     }
 
+    function paused() public view returns (bool) {
+        return _paused;
+    }
+
     /// @notice Resume contract operations
     function unpause() external onlyRole(ADMIN_ROLE) {
         _paused = false;

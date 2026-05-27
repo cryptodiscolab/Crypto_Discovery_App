@@ -143,6 +143,7 @@ All identified drifts have been synchronized with `DailyAppV12Secured.json`.
 - [x] **Contract Redeployment & Supabase Backup System (v3.64.21-Hardened)**: Redeployed MasterX and Raffle contracts, synced addresses to Vercel, and built automated Supabase db backup cron.
 - [x] **Swap Auto-Refresh & Global Invalidation (v3.64.22-Hardened)**: Integrated Li.Fi SDK execution txHash retrieval for activity logs, enabled TanStack Query invalidation for balance/profile/logs, and enabled reload-free dynamic data refresh via parent view callbacks.
 - [x] **Nexus Command Center (NCC) Audit & Hardening (v3.64.23-Hardened)**: Cleared legacy typography to strictly adopt NATIVE+ (v3.41.0) standards, implemented DOM XSS sanitization helper `escapeHtml()` for dynamic payload injection, and restored full system health compile checks.
+- [x] **Smart Contract CI & Responsive UI Layout (v3.64.24-Hardened)**: Fixed proxy deployment initialization arguments in `DailyAppV16` tests, rewrote `CryptoDiscoRaffle` Airnode tests with impersonated signer balances, removed duplicate header navigation links on desktop, and added responsive layout CSS media queries under 768px.
 
 ## Immediate Protocol Constraints
 - **Immutable Architect Protocol**: `viaIR: true`, `runs: 200`.
