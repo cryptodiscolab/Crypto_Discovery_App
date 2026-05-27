@@ -15,19 +15,36 @@ interface NFTItem {
 }
 
 const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
-const IPFS_GATEWAY = (import.meta.env.VITE_IPFS_GATEWAY || 'https://ipfs.io/ipfs/').trim();
+const PINATA_GATEWAY = (import.meta.env.VITE_PINATA_GATEWAY || 'https://gateway.pinata.cloud/ipfs').trim();
 const BASESCAN_URL = CHAIN_ID === 84532 ? 'https://sepolia.basescan.org' : 'https://basescan.org';
 
 const EMPTY_NFT: NFTItem[] = [];
 
-const resolveNftAssetUrl = (value?: string | null): string | undefined => {
+const normalizePinataGateway = (value: string): string => {
+  const trimmed = value.trim().replace(/\/+$/, '');
+  return trimmed || 'https://gateway.pinata.cloud/ipfs';
+};
+
+const resolvePinataAssetUrl = (value?: string | null): string | undefined => {
   const raw = String(value || '').trim();
   if (!raw) return undefined;
+
+  const pinataGateway = normalizePinataGateway(PINATA_GATEWAY);
+
   if (raw.startsWith('ipfs://')) {
     const cid = raw.replace('ipfs://', '').replace(/^ipfs\//, '');
-    const gateway = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
-    return `${gateway}${cid}`;
+    return `${pinataGateway}/${cid}`;
   }
+
+  if (/^https?:\/\/[^/]*pinata\.[^/]+\/ipfs\//i.test(raw)) {
+    return raw;
+  }
+
+  const ipfsMatch = raw.match(/^https?:\/\/[^/]+\/ipfs\/(.+)$/i);
+  if (ipfsMatch?.[1]) {
+    return `${pinataGateway}/${ipfsMatch[1]}`;
+  }
+
   return raw;
 };
 
@@ -159,7 +176,7 @@ export function NFTGalleryPage() {
             token_id: String(meta?.token_id || d.tx_hash || d.id || 'unknown'),
             contract_address: String(meta?.contract_address || DAILY_APP_ADDRESS),
             name: String(meta?.name || `${meta?.tier_name || tier} SBT`),
-            image_url: resolveNftAssetUrl(meta?.image_url || meta?.image || meta?.badge_url),
+            image_url: resolvePinataAssetUrl(meta?.image_url || meta?.image || meta?.badge_url),
             tier,
             minted_at: String(d.created_at || ''),
             chain_id: CHAIN_ID,
@@ -175,9 +192,9 @@ export function NFTGalleryPage() {
           if (t.level <= currentTier && !loggedTiers.has(tierUpper)) {
             mapped.push({
               token_id: `onchain-${t.level}-${address.substring(2, 8)}`,
-              contract_address: DAILY_APP_ADDRESS,
+              contract_address: DAILY_APP_ADDRESS || '',
               name: `${t.tier_name} SBT`,
-              image_url: resolveNftAssetUrl(t.badge_url),
+              image_url: resolvePinataAssetUrl(t.badge_url),
               tier: tierUpper,
               minted_at: new Date().toISOString(), // Fallback to current time
               chain_id: CHAIN_ID,

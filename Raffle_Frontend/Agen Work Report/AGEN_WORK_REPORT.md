@@ -1,9 +1,19 @@
 # 🤖 CRYPTO DISCO — AGENT WORK REPORTS (CONSOLIDATED)
 
-- **Ecosystem Version:** v3.64.19-Hardened
-- **Consolidated At:** 2026-05-21T11:30:00+07:00
+- **Ecosystem Version:** v3.64.25-Hardened
+- **Consolidated At:** 2026-05-27T20:25:00+07:00
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+## 2026-05-27 Fix Report - SBT Badge Image IPFS URL Correction (v3.64.25-Hardened)
+- **Status**: Completed, verified via database audits and system checks.
+- **Surface**: Supabase database (`sbt_thresholds` table), frontend pages (`SBTMintPage.tsx` and `NFTGalleryPage.tsx`), and global system documentation.
+- **Root Cause & Fix Applied**:
+  1. **IPFS URL Resolution Correction**: Discovered that the `badge_url` column in the `sbt_thresholds` table was populated with JSON metadata CIDs instead of direct image CIDs, which caused broken badge image rendering in both the SBT minting and NFT gallery views.
+  2. **Database Refactoring**: Executed a Node.js utility script (`update_sbt_images.js`) to map levels 1–5 to direct `ipfs://<IMAGE_CID>` image locations.
+  3. **Verification**: Executed a validation script (`verify_sbt_images.js`) and ran a global ecosystem sync audit (`check_sync_status.cjs`), confirming all 13 security/pipeline sync gates passed successfully with zero environment drift.
+
+---
 
 ## 2026-05-21 Fix Report - Stateless SIWE EIP-4361 Authentication Implementation (v3.64.19-Hardened)
 - **Status**: Completed, audited, and verified via build and system checks.

@@ -1,7 +1,7 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.24-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.25-Hardened)
 
-- **Ecosystem Version:** v3.64.24-Hardened
-- **Last Updated:** 2026-05-27T07:20:00+07:00
+- **Ecosystem Version:** v3.64.25-Hardened
+- **Last Updated:** 2026-05-27T20:25:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
@@ -4834,3 +4834,21 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
 ---
 *Created by Antigravity — Nexus Master Architect*
 *Integrity First. Nexus Synchronized. v3.64.24 LOCKED.*
+
+---
+## 55. Work Report v3.64.25-Hardened — SBT Badge Image IPFS URL Correction
+**Status**: COMPLETED
+**Date**: 2026-05-27
+**Focus**: Correcting the stored SBT badge URLs in the database to prevent broken media assets on the SBT Mint and NFT Gallery pages.
+
+### Key Results:
+- **SBT Thresholds Table Correction**:
+  - Successfully mapped the `badge_url` fields in the `sbt_thresholds` table for levels 1–5 from JSON metadata CIDs to direct `ipfs://<IMAGE_CID>` targets.
+  - Verified that the updated URLs point directly to the badge PNG files, preventing rendering failures on the user interfaces.
+- **Verification & Parity Audit**:
+  - Validated that the frontend's native `resolvePinataAssetUrl` correctly handles the direct `ipfs://` protocol.
+  - Executed a global E2E sync status audit (`check_sync_status.cjs`) confirming that the DB integrity, task claim pipeline, and security checkpoints are 100% operational with zero drift.
+
+---
+*Created by Antigravity — Nexus Master Architect*
+*Integrity First. Nexus Synchronized. v3.64.25 LOCKED.*

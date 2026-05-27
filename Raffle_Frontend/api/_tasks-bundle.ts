@@ -414,6 +414,7 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
             case 'verify': await handleVerify(req, res); break;
             case 'social-verify': await handleSocialVerify(req, res); break;
             case 'claim-ugc-campaign': await handleClaimUgcCampaign(req, res); break;
+            case 'spin-gacha': await handleSpinGacha(req, res); break;
             default: res.status(400).json({ error: 'Invalid action' }); break;
         }
     } catch (error: unknown) {
@@ -672,6 +673,131 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('[handleClaimUgcCampaign]', msg);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) {
+    const { wallet_address, signature, message } = req.body;
+    if (!wallet_address || !signature || !message) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+
+        // Signature freshness guard: 5-minute threshold
+        const timestampMatch = message.match(/Time:\s*([^\n]+)/i);
+        const timeStr = timestampMatch ? timestampMatch[1].trim() : null;
+        if (!timeStr) return res.status(400).json({ error: 'Message missing timestamp' });
+
+        const sigTime = new Date(timeStr).getTime();
+        const now = Date.now();
+        if (Math.abs(now - sigTime) > 5 * 60 * 1000) {
+            return res.status(400).json({ error: 'Signature expired (must be under 5 minutes)' });
+        }
+
+        const wallet = wallet_address.toLowerCase();
+
+        // 1. Fetch current profile state
+        const { data: profile, error: profileErr } = await supabaseAdmin
+            .from('user_profiles')
+            .select('raffle_tickets_bought, total_xp, streak_count, tier')
+            .eq('wallet_address', wallet)
+            .maybeSingle();
+
+        if (profileErr) throw profileErr;
+        if (!profile) return res.status(404).json({ error: 'User profile not found' });
+
+        const currentTickets = Number(profile.raffle_tickets_bought || 0);
+        if (currentTickets < 1) {
+            return res.status(400).json({ error: 'Insufficient ticket balance to spin the Gacha Wheel.' });
+        }
+
+        // 2. Resolve Win Segment (0-5)
+        const segmentPrizes = [
+            { text: '+50 XP', category: 'XP', amount: 50 },
+            { text: '+100 XP', category: 'XP', amount: 100 },
+            { text: 'Double Streak', category: 'STREAK', amount: 1 },
+            { text: 'Bronze Upgrade', category: 'TIER', amount: 1 },
+            { text: '+3 Tickets', category: 'TICKET', amount: 3 },
+            { text: 'Bonus Multiplier', category: 'XP', amount: 150 }
+        ];
+
+        const winIdx = Math.floor(Math.random() * segmentPrizes.length);
+        const winPrize = segmentPrizes[winIdx];
+
+        // 3. Deduct 1 ticket atomically
+        await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
+            p_wallet: wallet,
+            p_amount: -1
+        });
+
+        // 4. Distribute reward
+        let prizeDetail = '';
+        if (winPrize.category === 'XP') {
+            await supabaseAdmin.rpc('fn_increment_xp', {
+                p_wallet: wallet,
+                p_amount: winPrize.amount
+            });
+            prizeDetail = `Earned +${winPrize.amount} XP`;
+        } else if (winPrize.category === 'TICKET') {
+            await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
+                p_wallet: wallet,
+                p_amount: winPrize.amount
+            });
+            prizeDetail = `Earned +${winPrize.amount} tickets`;
+        } else if (winPrize.category === 'STREAK') {
+            await supabaseAdmin
+                .from('user_profiles')
+                .update({ streak_count: Number(profile.streak_count || 0) + 1 })
+                .eq('wallet_address', wallet);
+            prizeDetail = 'Incremented daily check-in streak (+1 Day)';
+        } else if (winPrize.category === 'TIER') {
+            if (Number(profile.tier || 0) === 0) {
+                await supabaseAdmin
+                    .from('user_profiles')
+                    .update({ tier: 1 })
+                    .eq('wallet_address', wallet);
+                prizeDetail = 'Upgraded tier: Rookie -> Bronze!';
+            } else {
+                // Fallback reward if already Bronze or higher
+                await supabaseAdmin.rpc('fn_increment_xp', {
+                    p_wallet: wallet,
+                    p_amount: 100
+                });
+                prizeDetail = 'Earned +100 XP (already upgraded)';
+            }
+        }
+
+        // Generate telemetric txHash for logging
+        const txHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
+        // 5. Log Activity with millisecond-precision ISO timestamp
+        await logActivity(
+            wallet,
+            'GACHA',
+            'Wheel Spin',
+            `Spun Gacha Wheel. Won: ${winPrize.text} (${prizeDetail})`,
+            winPrize.amount,
+            winPrize.category,
+            { segment_index: winIdx, prize_label: winPrize.text, prize_detail: prizeDetail },
+            txHash
+        );
+
+        triggerOnchainSync();
+
+        return res.status(200).json({
+            success: true,
+            winIndex: winIdx,
+            prizeLabel: winPrize.text,
+            prizeDetail,
+            txHash
+        });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[handleSpinGacha Error]', msg);
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }

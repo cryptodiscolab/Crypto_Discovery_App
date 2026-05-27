@@ -23,7 +23,9 @@ export function Sidebar() {
     { path: '/tasks', label: 'Tasks & Quests', icon: 'fa-list-check' },
     { path: '/raffles', label: 'Raffles & Gacha', icon: 'fa-ticket' },
     { path: '/nft-gallery', label: 'NFT Gallery', icon: 'fa-images' },
-    { path: '/create-raffle', label: 'UGC Sponsor Hub', icon: 'fa-rectangle-ad' },
+    { path: '/ugc', label: 'UGC Sponsor Hub', icon: 'fa-rectangle-ad' },
+    { path: '/meteora', label: 'Meteora LP Cockpit', icon: 'fa-chart-line' },
+    { path: '/swap', label: 'Swap & Bridge', icon: 'fa-rotate' },
     { path: '/leaderboard', label: 'Leaderboard', icon: 'fa-trophy' },
     { path: '/sbt-mint', label: 'SBT Mint', icon: 'fa-id-card' },
   ];

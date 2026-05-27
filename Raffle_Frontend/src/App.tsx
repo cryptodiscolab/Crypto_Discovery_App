@@ -4,6 +4,7 @@ import { Web3Provider } from './Web3Provider';
 import { Header } from './Header';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
+import { MobileTopBar } from './components/MobileTopBar';
 import { PointsProvider } from './shared/context/PointsContext';
 import { Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -52,6 +53,9 @@ const OAuthCallbackPage = lazy(async () => {
 const RaffleDetailPage = lazy(() => import('./pages/raffle/RaffleDetailPage'));
 const NFTGalleryPage = lazy(() => import('./pages/NFTGalleryPage').then(m => ({ default: m.NFTGalleryPage })));
 const SBTMintPage = lazy(() => import('./pages/SBTMintPage').then(m => ({ default: m.SBTMintPage })));
+const UgcPage = lazy(() => import('./pages/UgcPage').then(m => ({ default: m.UgcPage })));
+const MeteoraPage = lazy(() => import('./pages/MeteoraPage').then(m => ({ default: m.MeteoraPage })));
+const SwapPage = lazy(() => import('./pages/SwapPage').then(m => ({ default: m.SwapPage })));
 
 const AdminGuard = lazy(async () => {
   const { default: AdminGuard } = await import('./features/admin/components/AdminGuard');
@@ -133,6 +137,7 @@ function AppContent() {
         {/* Main Wrapper */}
         <div className="main-wrapper-cyber">
           {!isFrame && <Header />}
+          {!isFrame && <MobileTopBar />}
           {!isFrame && <RaffleWinBanner />}
           
           <main 
@@ -163,6 +168,9 @@ function AppContent() {
                     <Route path="/create-mission" element={<CreateMissionPage />} />
                     <Route path="/nft-gallery" element={<NFTGalleryPage />} />
                     <Route path="/sbt-mint" element={<SBTMintPage />} />
+                    <Route path="/ugc" element={<UgcPage />} />
+                    <Route path="/meteora" element={<MeteoraPage />} />
+                    <Route path="/swap" element={<SwapPage />} />
                     <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                   </Route>
                   <Route path="*" element={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><p className="text-[11px] font-black uppercase tracking-widest text-slate-400">404 — PAGE NOT FOUND</p><a href="/" className="mt-4 inline-block text-indigo-400 text-[11px] font-black uppercase tracking-widest">RETURN HOME</a></div></div>} />

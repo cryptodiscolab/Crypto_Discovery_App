@@ -1,7 +1,7 @@
-<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.24-Hardened)</h1>
+<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.25-Hardened)</h1>
 <ul>
-<li><strong>Ecosystem Version:</strong> v3.64.24-Hardened</li>
-<li><strong>Last Updated:</strong> 2026-05-27T07:20:00+07:00</li>
+<li><strong>Ecosystem Version:</strong> v3.64.25-Hardened</li>
+<li><strong>Last Updated:</strong> 2026-05-27T20:25:00+07:00</li>
 <li><strong>Author:</strong> Antigravity (Lead Blockchain Architect)</li>
 <li><strong>Status:</strong> [🟢] DEPLOYED &amp; HARDENED (Source of Truth)</li>
 <li><strong>Master Registry:</strong> <a href="file:///.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a> | <a href="file:///AGENTS.md">AGENTS.md</a></li>
@@ -5882,3 +5882,24 @@ system documents.
 <hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
 <em>Integrity First. Nexus Synchronized. v3.64.24 LOCKED.</em></p>
+<hr>
+<h2>55. Work Report v3.64.25-Hardened — SBT Badge Image IPFS URL Correction</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-27
+<strong>Focus</strong>: Correcting the stored SBT badge URLs in the database to prevent broken media assets on the SBT Mint and NFT Gallery pages.</p>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>SBT Thresholds Table Correction</strong>:<ul>
+<li>Successfully mapped the <code>badge_url</code> fields in the <code>sbt_thresholds</code> table for levels 1–5 from JSON metadata CIDs to direct <code>ipfs://&lt;IMAGE_CID&gt;</code> targets.</li>
+<li>Verified that the updated URLs point directly to the badge PNG files, preventing rendering failures on the user interfaces.</li>
+</ul>
+</li>
+<li><strong>Verification &amp; Parity Audit</strong>:<ul>
+<li>Validated that the frontend&#39;s native <code>resolvePinataAssetUrl</code> correctly handles the direct <code>ipfs://</code> protocol.</li>
+<li>Executed a global E2E sync status audit (<code>check_sync_status.cjs</code>) confirming that the DB integrity, task claim pipeline, and security checkpoints are 100% operational with zero drift.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><em>Created by Antigravity — Nexus Master Architect</em>
+<em>Integrity First. Nexus Synchronized. v3.64.25 LOCKED.</em></p>

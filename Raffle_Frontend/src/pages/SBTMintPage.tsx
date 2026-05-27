@@ -7,6 +7,36 @@ import { toast } from 'react-hot-toast';
 import { BUNDLE_ROUTES, USER_BUNDLE_ACTIONS } from '../lib/apiRoutes';
 import { formatEther } from 'viem';
 
+const PINATA_GATEWAY = (import.meta.env.VITE_PINATA_GATEWAY || 'https://gateway.pinata.cloud/ipfs').trim();
+
+const normalizePinataGateway = (value: string): string => {
+  const trimmed = value.trim().replace(/\/+$/, '');
+  return trimmed || 'https://gateway.pinata.cloud/ipfs';
+};
+
+const resolvePinataAssetUrl = (value?: string | null): string | undefined => {
+  const raw = String(value || '').trim();
+  if (!raw) return undefined;
+
+  const pinataGateway = normalizePinataGateway(PINATA_GATEWAY);
+
+  if (raw.startsWith('ipfs://')) {
+    const cid = raw.replace('ipfs://', '').replace(/^ipfs\//, '');
+    return `${pinataGateway}/${cid}`;
+  }
+
+  if (/^https?:\/\/[^/]*pinata\.[^/]+\/ipfs\//i.test(raw)) {
+    return raw;
+  }
+
+  const ipfsMatch = raw.match(/^https?:\/\/[^/]+\/ipfs\/(.+)$/i);
+  if (ipfsMatch?.[1]) {
+    return `${pinataGateway}/${ipfsMatch[1]}`;
+  }
+
+  return raw;
+};
+
 // Tier config fetched dynamically from sbt_thresholds (Zero-Hardcode Mandate)
 interface SBTThreshold {
   level: number;
@@ -289,15 +319,36 @@ export function SBTMintPage() {
           <div className="space-y-6">
             {/* Current Tier Card */}
             <div className={`rounded-2xl border bg-gradient-to-br ${currentTierColor} p-6`}>
-              <div className="flex items-center justify-between mb-4">
-                <span className="label-native mb-0 opacity-70">Current Tier</span>
-                <span className="label-native mb-0 text-lg">{TIER_ICONS[progress.currentTier] || '🟢'}</span>
-              </div>
-              <h2 className="text-2xl font-black uppercase tracking-widest mb-1">{progress.currentTier}</h2>
-              <p className="content-native mb-4">
-                {TIER_DESCS[progress.currentTier] || 'Earn XP to unlock rewards'}
-              </p>
-              <div className="space-y-2">
+              <div className="grid gap-5 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                <div className="aspect-square w-full max-w-[180px] overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-2xl">
+                  {resolvePinataAssetUrl(
+                    thresholds.find((tier) => tier.tier_name?.toUpperCase() === progress.currentTier)?.badge_url
+                  ) ? (
+                    <img
+                      src={resolvePinataAssetUrl(
+                        thresholds.find((tier) => tier.tier_name?.toUpperCase() === progress.currentTier)?.badge_url
+                      )}
+                      alt={`${progress.currentTier} SBT`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-5xl">
+                      {TIER_ICONS[progress.currentTier] || '🟢'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="label-native mb-0 opacity-70">Current Tier</span>
+                    <span className="label-native mb-0 text-lg">{TIER_ICONS[progress.currentTier] || '🟢'}</span>
+                  </div>
+                  <h2 className="text-2xl font-black uppercase tracking-widest mb-1">{progress.currentTier}</h2>
+                  <p className="content-native mb-4">
+                    {TIER_DESCS[progress.currentTier] || 'Earn XP to unlock rewards'}
+                  </p>
+                  <div className="space-y-2">
                 <div className="flex justify-between label-native mb-0">
                   <span>Total XP</span>
                   <span className="value-native">{progress.totalXP.toLocaleString()}</span>
@@ -318,6 +369,8 @@ export function SBTMintPage() {
                     </div>
                   </div>
                 )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -344,9 +397,22 @@ export function SBTMintPage() {
                         : 'bg-white/[0.01] border-white/[0.03] opacity-50'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{TIER_ICONS[key] || '🟢'}</span>
-                      <div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-14 w-14 overflow-hidden rounded-2xl border border-white/10 bg-black/30 shrink-0">
+                        {resolvePinataAssetUrl(tier.badge_url) ? (
+                          <img
+                            src={resolvePinataAssetUrl(tier.badge_url)}
+                            alt={`${key} SBT`}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-lg">
+                            {TIER_ICONS[key] || '🟢'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
                         <p className="label-native text-white mb-0">{key}</p>
                         <p className="label-native text-slate-500 mb-0">{TIER_DESCS[key] || tier.level_name || ''}</p>
                       </div>

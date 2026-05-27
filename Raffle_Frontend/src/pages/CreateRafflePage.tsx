@@ -74,7 +74,7 @@ const RafflePreview = ({ data }: { data: {
     );
 };
 
-export function CreateRafflePage() {
+export function CreateRafflePage({ isEmbed = false }: { isEmbed?: boolean }) {
     const { isConnected } = useAccount();
     const navigate = useNavigate();
     const { createSponsorshipRaffle } = useRaffle();
@@ -226,7 +226,7 @@ export function CreateRafflePage() {
         }
     };
 
-    if (!isConnected) {
+    if (!isEmbed && !isConnected) {
         return (
             <div className="min-h-screen flex items-center justify-center px-4 bg-[#050505]">
                 <div className="text-center glass-card p-12 max-w-md w-full border border-white/5">
@@ -238,322 +238,330 @@ export function CreateRafflePage() {
         );
     }
 
-    return (
-        <div className="min-h-screen pb-safe md:pb-8 px-4 bg-[#050505]">
-            <div className="container mx-auto max-w-5xl">
-                <div className="flex flex-col md:flex-row gap-8">
-                    <div className="flex-1 space-y-6">
-                        <div className="mb-8">
-                            <h1 className="text-2xl font-black text-white uppercase tracking-widest mb-2">SPONSOR AN EVENT</h1>
-                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">HOST YOUR OWN NFT RAFFLE AND REACH THE DISCO COMMUNITY.</p>
-                            {!isUgcFeatureEnabled && (
-                                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-black uppercase text-[11px] tracking-widest flex items-center gap-2">
-                                    <Shield className="w-5 h-5 font-black uppercase tracking-widest" />
-                                    FEATURE ACCESSIBILITY: PHASE 4 MAINNET ROLLOUT ENFORCED.
+    const formContent = (
+        <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex-1 space-y-6">
+                {!isEmbed && (
+                    <div className="mb-8">
+                        <h1 className="text-2xl font-black text-white uppercase tracking-widest mb-2">SPONSOR AN EVENT</h1>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">HOST YOUR OWN NFT RAFFLE AND REACH THE DISCO COMMUNITY.</p>
+                        {!isUgcFeatureEnabled && (
+                            <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-black uppercase text-[11px] tracking-widest flex items-center gap-2">
+                                <Shield className="w-5 h-5 font-black uppercase tracking-widest" />
+                                FEATURE ACCESSIBILITY: PHASE 4 MAINNET ROLLOUT ENFORCED.
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <form onSubmit={handleCreate} className={`space-y-4 ${!isUgcFeatureEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="glass-card p-4 space-y-4 border-white/5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Event Title</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Legendary CyberPunk Giveaway"
+                                        className="input-native"
+                                        value={formData.title}
+                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    />
                                 </div>
-                            )}
-                        </div>
-
-                        <form onSubmit={handleCreate} className={`space-y-4 ${!isUgcFeatureEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="glass-card p-4 space-y-4 border-white/5">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Event Title</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                placeholder="e.g. Legendary CyberPunk Giveaway"
-                                                className="input-native"
-                                                value={formData.title}
-                                                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="admin-label">Image URL</label>
-                                            <div className="relative">
-                                                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                                <input
-                                                    type="url"
-                                                    placeholder="https://example.com/image.png"
-                                                    className="input-native pl-10"
-                                                    value={formData.imageUrl}
-                                                    onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Description</label>
-                                        <textarea
-                                            placeholder="Tell the community about this prize and any requirements..."
-                                            className="input-native min-h-[100px] resize-none"
-                                            value={formData.description}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                <div>
+                                    <label className="admin-label">Image URL</label>
+                                    <div className="relative">
+                                        <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                        <input
+                                            type="url"
+                                            placeholder="https://example.com/image.png"
+                                            className="input-native pl-10"
+                                            value={formData.imageUrl}
+                                            onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
                                         />
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[11px] font-black text-indigo-400/60 uppercase tracking-widest">Prize Reward (ETH)</label>
-                                            <div className="relative group">
-                                                <input
-                                                    type="number"
-                                                    step="0.001"
-                                                    className="input-native font-mono text-base pr-4"
-                                                    value={formData.prizeDeposit}
-                                                    onChange={e => setFormData({ ...formData, prizeDeposit: e.target.value })}
-                                                />
-                                            </div>
-                                            <p className="text-[10px] font-bold text-indigo-300/50 mt-1">≈ ${stats.depositUsd}</p>
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Duration</label>
-                                            <div className="select-wrapper">
-                                                <select
-                                                    className="select-native"
-                                                    value={formData.durationDays}
-                                                    onChange={e => setFormData({ ...formData, durationDays: e.target.value })}
-                                                >
-                                                    <option value="1">24 Hours</option>
-                                                    <option value="3">3 Days</option>
-                                                    <option value="7">7 Days</option>
-                                                    <option value="14">14 Days</option>
-                                                    <option value="25">25 Days (Max)</option>
-                                                </select>
-                                                <ChevronDown className="select-chevron w-4 h-4" />
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
+                            </div>
 
-                                <div className="glass-card p-4 space-y-4 border-white/5">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[11px] font-black uppercase text-indigo-400/60 tracking-widest mb-1.5 block">Ticket Price (ETH)</label>
-                                            <input
-                                                type="text"
-                                                readOnly
-                                                className="w-full bg-black/20 border border-white/5 rounded-2xl py-3 px-4 text-slate-400 focus:outline-none font-mono text-sm"
-                                                value={formData.ticketPrice}
-                                            />
-                                            <p className="text-[10px] font-bold text-indigo-300/40 mt-1">FIXED BY ADMIN</p>
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 block">MAX TICKETS</label>
-                                            <input
-                                                type="number"
-                                                className="input-native font-mono text-sm"
-                                                value={formData.maxTickets}
-                                                onChange={e => setFormData({ ...formData, maxTickets: e.target.value })}
-                                            />
-                                            <p className="text-[10px] font-bold text-slate-500/50 mt-1">CAP</p>
-                                        </div>
-                                    </div>
+                            <div>
+                                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Description</label>
+                                <textarea
+                                    placeholder="Tell the community about this prize and any requirements..."
+                                    className="input-native min-h-[100px] resize-none"
+                                    value={formData.description}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                />
+                            </div>
 
-                                    {/* WINNER COUNT OPTION */}
-                                    <div className="pt-4 border-t border-white/5">
-                                        <label className="text-[11px] font-black uppercase text-amber-400/60 tracking-widest mb-1.5 block">Number of Winners</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[11px] font-black text-indigo-400/60 uppercase tracking-widest">Prize Reward (ETH)</label>
+                                    <div className="relative group">
                                         <input
                                             type="number"
-                                            min="1"
-                                            max="10"
-                                            className="input-native font-mono text-base"
-                                            value={formData.winnerCount}
-                                            onChange={e => setFormData({ ...formData, winnerCount: e.target.value })}
+                                            step="0.001"
+                                            className="input-native font-mono text-base pr-4"
+                                            value={formData.prizeDeposit}
+                                            onChange={e => setFormData({ ...formData, prizeDeposit: e.target.value })}
                                         />
-                                        <p className="text-[9px] font-bold text-slate-600 uppercase mt-2 tracking-tight">Prize pool will be split equally among all winners.</p>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-indigo-300/50 mt-1">≈ ${stats.depositUsd}</p>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Duration</label>
+                                    <div className="select-wrapper">
+                                        <select
+                                            className="select-native"
+                                            value={formData.durationDays}
+                                            onChange={e => setFormData({ ...formData, durationDays: e.target.value })}
+                                        >
+                                            <option value="1">24 Hours</option>
+                                            <option value="3">3 Days</option>
+                                            <option value="7">7 Days</option>
+                                            <option value="14">14 Days</option>
+                                            <option value="25">25 Days (Max)</option>
+                                        </select>
+                                        <ChevronDown className="select-chevron w-4 h-4" />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <div className="glass-card p-4 space-y-4 border-white/5 bg-indigo-500/5">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Shield className="w-4 h-4 text-indigo-400" />
-                                        <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-widest">REQUIREMENTS & CATEGORY</h3>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Category</label>
-                                            <div className="select-wrapper">
-                                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
-                                                <select
-                                                    className="select-native pl-10"
-                                                    value={formData.category}
-                                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                                >
-                                                    <option value="NFT">NFT</option>
-                                                    <option value="Gaming">Gaming</option>
-                                                    <option value="DeFi">DeFi</option>
-                                                    <option value="Social">Social</option>
-                                                    <option value="Event">Event</option>
-                                                </select>
-                                                <ChevronDown className="select-chevron w-4 h-4" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Min SBT Level</label>
-                                            <div className="select-wrapper">
-                                                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
-                                                <select
-                                                    className="select-native pl-10"
-                                                    value={formData.minSbtLevel}
-                                                    onChange={e => setFormData({ ...formData, minSbtLevel: e.target.value })}
-                                                >
-                                                    <option value="0">Unrestricted</option>
-                                                    <option value="1">Level 1+</option>
-                                                    <option value="2">Level 2+</option>
-                                                    <option value="3">Level 3+</option>
-                                                </select>
-                                                <ChevronDown className="select-chevron w-4 h-4" />
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div className="glass-card p-4 space-y-4 border-white/5">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[11px] font-black uppercase text-indigo-400/60 tracking-widest mb-1.5 block">Ticket Price (ETH)</label>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        className="w-full bg-black/20 border border-white/5 rounded-2xl py-3 px-4 text-slate-400 focus:outline-none font-mono text-sm"
+                                        value={formData.ticketPrice}
+                                    />
+                                    <p className="text-[10px] font-bold text-indigo-300/40 mt-1">FIXED BY ADMIN</p>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 block">MAX TICKETS</label>
+                                    <input
+                                        type="number"
+                                        className="input-native font-mono text-sm"
+                                        value={formData.maxTickets}
+                                        onChange={e => setFormData({ ...formData, maxTickets: e.target.value })}
+                                    />
+                                    <p className="text-[10px] font-bold text-slate-500/50 mt-1">CAP</p>
+                                </div>
+                            </div>
 
-                                    {/* IDENTITY GUARD (v3.42.0) */}
-                                    <div className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between group ${formData.isBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30' : 'bg-slate-900/50 border-white/5 hover:border-white/10'}`}
-                                         onClick={() => setFormData(prev => ({ ...prev, isBaseSocialRequired: !prev.isBaseSocialRequired }))}>
-                                        <div className="flex items-center gap-4 text-left">
-                                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${formData.isBaseSocialRequired ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 text-slate-500'}`}>
-                                                <Shield className="w-4 h-4" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className={`text-[10px] font-black uppercase tracking-widest ${formData.isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Guard</span>
-                                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">Require Basenames Verification</span>
-                                            </div>
-                                        </div>
-                                        <div className={`w-10 h-5 rounded-full p-1 transition-colors ${formData.isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
-                                            <div className={`w-3 h-3 bg-white rounded-full transition-transform transform ${formData.isBaseSocialRequired ? 'translate-x-5' : 'translate-x-0'}`} />
-                                        </div>
-                                    </div>
+                            <div className="pt-4 border-t border-white/5">
+                                <label className="text-[11px] font-black uppercase text-amber-400/60 tracking-widest mb-1.5 block">Number of Winners</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    className="input-native font-mono text-base"
+                                    value={formData.winnerCount}
+                                    onChange={e => setFormData({ ...formData, winnerCount: e.target.value })}
+                                />
+                                <p className="text-[9px] font-bold text-slate-600 uppercase mt-2 tracking-tight">Prize pool will be split equally among all winners.</p>
+                            </div>
+                        </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Twitter Link</label>
-                                            <div className="relative">
-                                                <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                                <input
-                                                    type="url"
-                                                    placeholder="https://x.com/yourproject"
-                                                    className="input-native pl-10"
-                                                    value={formData.twitterLink}
-                                                    onChange={e => setFormData({ ...formData, twitterLink: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">External Link</label>
-                                            <div className="relative">
-                                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                                <input
-                                                    type="url"
-                                                    placeholder="https://yourproject.com"
-                                                    className="input-native pl-10"
-                                                    value={formData.externalLink}
-                                                    onChange={e => setFormData({ ...formData, externalLink: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
+                        <div className="glass-card p-4 space-y-4 border-white/5 bg-indigo-500/5">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Shield className="w-4 h-4 text-indigo-400" />
+                                <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-widest">REQUIREMENTS & CATEGORY</h3>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Category</label>
+                                    <div className="select-wrapper">
+                                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                                        <select
+                                            className="select-native pl-10"
+                                            value={formData.category}
+                                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        >
+                                            <option value="NFT">NFT</option>
+                                            <option value="Gaming">Gaming</option>
+                                            <option value="DeFi">DeFi</option>
+                                            <option value="Social">Social</option>
+                                            <option value="Event">Event</option>
+                                        </select>
+                                        <ChevronDown className="select-chevron w-4 h-4" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest text-[#00ff88]">Min SBT Level</label>
+                                    <div className="select-wrapper">
+                                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                                        <select
+                                            className="select-native pl-10"
+                                            value={formData.minSbtLevel}
+                                            onChange={e => setFormData({ ...formData, minSbtLevel: e.target.value })}
+                                        >
+                                            <option value="0">Unrestricted</option>
+                                            <option value="1">Level 1+</option>
+                                            <option value="2">Level 2+</option>
+                                            <option value="3">Level 3+</option>
+                                        </select>
+                                        <ChevronDown className="select-chevron w-4 h-4" />
                                     </div>
                                 </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || !isUgcFeatureEnabled}
-                                className="btn-native btn-primary w-full"
-                            >
-                                {!isUgcFeatureEnabled ? (
-                                    <>Feature Locked: Phase 4 <Lock className="w-5 h-5" /></>
-                                ) : isSubmitting ? (
-                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                ) : (
-                                    <>Sponsor Event Now <ArrowRight className="w-5 h-5" /></>
-                                )}
-                            </button>
-                        </form>
+                            <div className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between group ${formData.isBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30' : 'bg-slate-900/50 border-white/5 hover:border-white/10'}`}
+                                 onClick={() => setFormData(prev => ({ ...prev, isBaseSocialRequired: !prev.isBaseSocialRequired }))}>
+                                <div className="flex items-center gap-4 text-left">
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${formData.isBaseSocialRequired ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 text-slate-500'}`}>
+                                        <Shield className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${formData.isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Identity Guard</span>
+                                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">Require Basenames Verification</span>
+                                    </div>
+                                </div>
+                                <div className={`w-10 h-5 rounded-full p-1 transition-colors ${formData.isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                                    <div className={`w-3 h-3 bg-white rounded-full transition-transform transform ${formData.isBaseSocialRequired ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Twitter Link</label>
+                                    <div className="relative">
+                                        <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                        <input
+                                            type="url"
+                                            placeholder="https://x.com/yourproject"
+                                            className="input-native pl-10"
+                                            value={formData.twitterLink}
+                                            onChange={e => setFormData({ ...formData, twitterLink: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">External Link</label>
+                                    <div className="relative">
+                                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                        <input
+                                            type="url"
+                                            placeholder="https://yourproject.com"
+                                            className="input-native pl-10"
+                                            value={formData.externalLink}
+                                            onChange={e => setFormData({ ...formData, externalLink: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="w-full md:w-[380px] space-y-6">
-                        <div className="space-y-2">
-                            <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.2em] px-1">LIVE PREVIEW</h3>
-                            <RafflePreview data={formData} />
-                        </div>
+                    <button
+                        type="submit"
+                        disabled={isSubmitting || !isUgcFeatureEnabled}
+                        className="btn-native btn-primary w-full"
+                    >
+                        {!isUgcFeatureEnabled ? (
+                            <>Feature Locked: Phase 4 <Lock className="w-5 h-5" /></>
+                        ) : isSubmitting ? (
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                            <>Sponsor Event Now <ArrowRight className="w-5 h-5" /></>
+                        )}
+                    </button>
+                </form>
+            </div>
 
-                        <div className="glass-card p-6 border-blue-500/20 bg-blue-500/5 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                <Calculator className="w-12 h-12 text-blue-400" />
+            <div className="w-full md:w-[380px] space-y-6">
+                <div className="space-y-2">
+                    <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.2em] px-1">LIVE PREVIEW</h3>
+                    <RafflePreview data={formData} />
+                </div>
+
+                <div className="glass-card p-6 border-blue-500/20 bg-blue-500/5 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Calculator className="w-12 h-12 text-blue-400" />
+                    </div>
+
+                    <h3 className="text-[11px] font-black uppercase text-blue-400 tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Info className="w-4 h-4 font-black uppercase tracking-widest" /> EARNINGS CALCULATOR
+                    </h3>
+
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center group">
+                            <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">GAS SURCHARGE ({(surchargeBP ? Number(surchargeBP)/100 : 5)}%)</span>
+                            <div className="flex flex-col items-end">
+                                <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">+{stats.surcharge} ETH</span>
+                                <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.surchargeUsd}</span>
                             </div>
-
-                            <h3 className="text-[11px] font-black uppercase text-blue-400 tracking-[0.2em] mb-6 flex items-center gap-2">
-                                <Info className="w-4 h-4 font-black uppercase tracking-widest" /> EARNINGS CALCULATOR
-                            </h3>
-
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center group">
-                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">GAS SURCHARGE ({(surchargeBP ? Number(surchargeBP)/100 : 5)}%)</span>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">+{stats.surcharge} ETH</span>
-                                        <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.surchargeUsd}</span>
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-white font-black text-[11px] uppercase tracking-widest">INITIAL PAYMENT</span>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-white font-black font-mono text-[11px] uppercase tracking-widest">{stats.totalPayment} ETH</span>
-                                        <span className="text-[11px] text-indigo-400 font-black uppercase tracking-widest">≈ ${stats.totalPaymentUsd} USDC</span>
-                                    </div>
-                                </div>
-
-                                <div className="h-px bg-white/10 my-4" />
-
-                                <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">ESTIMATED SALES</span>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-emerald-400 font-mono text-[11px] font-black uppercase tracking-widest">{stats.totalRevenue} ETH</span>
-                                        <span className="text-[11px] text-emerald-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.totalRevenueUsd}</span>
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">PROJECT RAKE ({(maintenanceFeeBP ? Number(maintenanceFeeBP)/100 : 20)}%)</span>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">-{stats.projectRake} ETH</span>
-                                        <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.projectRakeUsd}</span>
-                                    </div>
-                                </div>
-
-                                <div className="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 mt-4 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-indigo-500/5 animate-pulse" />
-                                    <p className="text-[11px] font-black uppercase text-indigo-400 mb-1 relative z-10 tracking-widest">YOUR POTENTIAL PROFIT</p>
-                                    <div className="flex items-baseline gap-2 relative z-10">
-                                        <p className="text-2xl font-black text-white font-mono uppercase tracking-widest">{stats.profit}</p>
-                                        <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">ETH</span>
-                                    </div>
-                                    <p className="text-[11px] font-black text-indigo-400 relative z-10 uppercase tracking-widest">≈ ${stats.profitUsd} USDC</p>
-                                    <p className="text-[11px] font-black text-slate-500 mt-2 italic leading-tight uppercase tracking-widest">
-                                        *YOU WILL RECEIVE YOUR PROFIT + ORIGINAL DEPOSIT ({formData.prizeDeposit} ETH) AFTER THE EVENT ENDS.
-                                    </p>
-                                </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-white font-black text-[11px] uppercase tracking-widest">INITIAL PAYMENT</span>
+                            <div className="flex flex-col items-end">
+                                <span className="text-white font-black font-mono text-[11px] uppercase tracking-widest">{stats.totalPayment} ETH</span>
+                                <span className="text-[11px] text-indigo-400 font-black uppercase tracking-widest">≈ ${stats.totalPaymentUsd} USDC</span>
                             </div>
                         </div>
 
-                        <div className="glass-card p-4 border-white/5 bg-slate-900/40">
-                            <ul className="space-y-3">
-                                {[
-                                    "English-speaking global audience support",
-                                    `Project Rake (${(maintenanceFeeBP ? Number(maintenanceFeeBP) : 2000) / 100}%) applied`,
-                                    "Funds remain in contract until draw",
-                                    `${(surchargeBP ? Number(surchargeBP) : 500) / 100}% Transaction Fee applied at creation`
-                                ].map((term, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-[11px] text-slate-400">
-                                        <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
-                                        {term}
-                                    </li>
-                                ))}
-                            </ul>
+                        <div className="h-px bg-white/10 my-4" />
+
+                        <div className="flex justify-between items-center">
+                            <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">ESTIMATED SALES</span>
+                            <div className="flex flex-col items-end">
+                                <span className="text-emerald-400 font-mono text-[11px] font-black uppercase tracking-widest">{stats.totalRevenue} ETH</span>
+                                <span className="text-[11px] text-emerald-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.totalRevenueUsd}</span>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-slate-400 text-[11px] font-black uppercase tracking-widest">PROJECT RAKE ({(maintenanceFeeBP ? Number(maintenanceFeeBP)/100 : 20)}%)</span>
+                            <div className="flex flex-col items-end">
+                                <span className="text-red-400 font-mono text-[11px] font-black uppercase tracking-widest">-{stats.projectRake} ETH</span>
+                                <span className="text-[11px] text-red-400/50 font-mono font-black uppercase tracking-widest">≈ ${stats.projectRakeUsd}</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 mt-4 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-indigo-500/5 animate-pulse" />
+                            <p className="text-[11px] font-black uppercase text-indigo-400 mb-1 relative z-10 tracking-widest">YOUR POTENTIAL PROFIT</p>
+                            <div className="flex items-baseline gap-2 relative z-10">
+                                <p className="text-2xl font-black text-white font-mono uppercase tracking-widest">{stats.profit}</p>
+                                <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">ETH</span>
+                            </div>
+                            <p className="text-[11px] font-black text-indigo-400 relative z-10 uppercase tracking-widest">≈ ${stats.profitUsd} USDC</p>
+                            <p className="text-[11px] font-black text-slate-500 mt-2 italic leading-tight uppercase tracking-widest">
+                                *YOU WILL RECEIVE YOUR PROFIT + ORIGINAL DEPOSIT ({formData.prizeDeposit} ETH) AFTER THE EVENT ENDS.
+                            </p>
                         </div>
                     </div>
                 </div>
+
+                <div className="glass-card p-4 border-white/5 bg-slate-900/40">
+                    <ul className="space-y-3">
+                        {[
+                            "English-speaking global audience support",
+                            `Project Rake (${(maintenanceFeeBP ? Number(maintenanceFeeBP) : 2000) / 100}%) applied`,
+                            "Funds remain in contract until draw",
+                            `${(surchargeBP ? Number(surchargeBP) : 500) / 100}% Transaction Fee applied at creation`
+                        ].map((term, i) => (
+                            <li key={i} className="flex items-start gap-2 text-[11px] text-slate-400">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
+                                {term}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (isEmbed) {
+        return formContent;
+    }
+
+    return (
+        <div className="min-h-screen pb-safe md:pb-8 px-4 bg-[#050505] pt-24">
+            <div className="container mx-auto max-w-5xl">
+                {formContent}
             </div>
         </div>
     );

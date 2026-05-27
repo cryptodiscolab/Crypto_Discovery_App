@@ -93,7 +93,7 @@ interface WhitelistedToken {
     decimals?: number;
 }
 
-export function CreateMissionPage() {
+export function CreateMissionPage({ isEmbed = false }: { isEmbed?: boolean }) {
     const { address, isConnected } = useAccount();
     const chainId = useChainId();
     const navigate = useNavigate();
@@ -449,7 +449,7 @@ export function CreateMissionPage() {
         }
     };
 
-    if (!isConnected) {
+    if (!isEmbed && !isConnected) {
         return (
             <div className="min-h-screen flex items-center justify-center px-4 bg-[#050505]">
                 <div className="text-center glass-card p-12 max-w-md w-full border border-white/5 relative overflow-hidden group">
@@ -464,486 +464,480 @@ export function CreateMissionPage() {
 
     if (isConfigLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+            <div className={`flex items-center justify-center ${isEmbed ? 'py-12' : 'min-h-screen bg-[#050505]'}`}>
                 <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
             </div>
         );
     }
 
-    return (
-        <div className="min-h-screen pt-24 pb-safe md:pb-8 px-4 bg-[#050505] selection:bg-indigo-500/30">
-            {/* Background Glows */}
-            <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[120px] pointer-events-none" />
-
-            <div className="container mx-auto max-w-6xl relative">
-                <div className="flex flex-col lg:flex-row gap-8 items-start">
-                    {/* Main Form Section */}
-                    <div className="flex-1 space-y-8">
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 flex items-center justify-center border border-indigo-500/30">
-                                    <Zap className="w-6 h-6 text-indigo-400 fill-indigo-400/20" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">CREATE <span className="text-indigo-500">MISSION</span></h1>
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">DISCOVERY ENGINE v3.50.0</p>
-                                </div>
+    const formContent = (
+        <div className="w-full">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+                {/* Main Form Section */}
+                <div className="flex-1 space-y-8">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 flex items-center justify-center border border-indigo-500/30">
+                                <Zap className="w-6 h-6 text-indigo-400 fill-indigo-400/20" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">CREATE <span className="text-indigo-500">MISSION</span></h1>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">DISCOVERY ENGINE v3.50.0</p>
                             </div>
                         </div>
-
-                        <form onSubmit={handleCreate} className="space-y-6">
-                            {/* Core Details */}
-                            <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-8 rounded-[2.5rem] relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-
-                                <div className="grid grid-cols-1 gap-6 relative">
-                                    <div className="space-y-3">
-                                        <label className="label-native text-slate-500 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> MISSION TITLE
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="e.g. Follow Crypto Disco on Warpcast"
-                                            className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-tight focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-700"
-                                            value={formData.title}
-                                            onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <label className="label-native text-slate-500 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-700" /> DESCRIPTION (OPTIONAL)
-                                        </label>
-                                        <textarea
-                                            placeholder="Enter additional details or requirements..."
-                                            className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-medium text-sm h-32 resize-none focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-700"
-                                            value={formData.description}
-                                            onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-3">
-                                            <label className="label-native text-slate-500 flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> PLATFORM
-                                            </label>
-                                            <div className="relative group">
-                                                 <select
-                                                    className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-blue-500/50 transition-all cursor-pointer"
-                                                    value={formData.platform}
-                                                    onChange={e => handlePlatformChange(e.target.value)}
-                                                >
-                                                    <option value="farcaster">Farcaster</option>
-                                                    <option value="twitter">X / Twitter</option>
-                                                    <option value="tiktok">TikTok</option>
-                                                    <option value="instagram">Instagram</option>
-                                                    <option value="onchain">On-Chain Action</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none group-hover:text-white transition-colors" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className="label-native text-slate-500 flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> TARGET LINK
-                                            </label>
-                                            <div className="relative group">
-                                                <LinkIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-emerald-500 transition-colors" />
-                                                <input
-                                                    type="url"
-                                                    required
-                                                    placeholder={`https://${PLATFORM_URL_RULES[formData.platform]?.hint || '...'}`}
-                                                    className={`w-full bg-white/5 border p-5 pl-12 rounded-2xl text-white font-mono text-sm outline-none transition-all placeholder:text-slate-700 ${
-                                                        formData.link && !validatePlatformUrl(formData.link, formData.platform)
-                                                            ? 'border-red-500/50 focus:border-red-500'
-                                                            : 'border-white/5 focus:border-emerald-500/50'
-                                                    }`}
-                                                    value={formData.link}
-                                                    onChange={e => setFormData(prev => ({ ...prev, link: e.target.value }))}
-                                                />
-                                                {/* [v3.59.0] Platform-specific validation feedback */}
-                                                {formData.link && !validatePlatformUrl(formData.link, formData.platform) ? (
-                                                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1.5 pl-1">
-                                                        ⚠ [Link Guard] Link harus dari {PLATFORM_URL_RULES[formData.platform]?.hint}
-                                                    </p>
-                                                ) : formData.link && validatePlatformUrl(formData.link, formData.platform) && (
-                                                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1.5 pl-1">
-                                                        ✓ Link valid
-                                                    </p>
-                                                )}
-                                                {/* Pro Tip per platform */}
-                                                {!formData.link && (
-                                                    <p className="text-[9px] font-bold text-slate-700 tracking-wide mt-1.5 pl-1 italic">
-                                                        {formData.platform === 'farcaster' && 'Pro Tip: Use full Warpcast thread URL for Quote tasks.'}
-                                                        {formData.platform === 'twitter' && 'Pro Tip: Use specific Tweet/profile links, not homepage.'}
-                                                        {formData.platform === 'tiktok' && 'Pro Tip: Use TikTok video link for Like/Comment tasks.'}
-                                                        {formData.platform === 'instagram' && 'Pro Tip: Ensure account/post is not private.'}
-                                                        {formData.platform === 'onchain' && 'Pro Tip: Use a link to the relevant dApp or contract.'}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Multi-Action Selector */}
-                                <div className="space-y-3">
-                                    <label className="label-native text-slate-500 flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                                        AKSI YANG HARUS DILAKUKAN
-                                        <span className={`font-black text-[10px] px-2 py-0.5 rounded-lg ${
-                                            selectedActions.length >= 3 ? 'bg-amber-500/20 text-amber-400' : 'bg-violet-500/20 text-violet-400'
-                                        }`}>{selectedActions.length}/3 MAX</span>
-                                    </label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(PLATFORM_ACTIONS[formData.platform] || []).map(act => {
-                                            const active = selectedActions.includes(act.value);
-                                            return (
-                                                <button
-                                                    key={act.value}
-                                                    type="button"
-                                                    onClick={() => toggleAction(act.value)}
-                                                    className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-                                                        active
-                                                            ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20'
-                                                            : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
-                                                    }`}
-                                                >
-                                                    {active && <span className="mr-1">✓</span>}{act.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    {selectedActions.length === 0 && (
-                                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Pilih minimal 1 aksi.</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Anti-Sybil Guards */}
-                            <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-6 rounded-[2.5rem]">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30 text-blue-400">
-                                            <Shield className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-black text-white uppercase tracking-widest">ANTI-SYBIL <span className="text-blue-500">GUARDS</span></h3>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">PROTECT YOUR BUDGET FROM BOTS</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Identity Guard Toggle */}
-                                    <div className={`p-5 rounded-[2rem] border transition-all cursor-pointer flex items-center justify-between group ${formData.isBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30 shadow-lg shadow-blue-500/5' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
-                                         onClick={() => setFormData(prev => ({ ...prev, isBaseSocialRequired: !prev.isBaseSocialRequired }))}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${formData.isBaseSocialRequired ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-600'}`}>
-                                                <Users className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className={`text-[10px] font-black uppercase tracking-widest ${formData.isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Basenames Only</span>
-                                                <span className="text-[9px] font-bold text-slate-600 uppercase tracking-tighter">Verified identities only</span>
-                                            </div>
-                                        </div>
-                                        <div className={`w-12 h-6 rounded-full p-1 transition-colors ${formData.isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
-                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform transform ${formData.isBaseSocialRequired ? 'translate-x-6' : 'translate-x-0'}`} />
-                                        </div>
-                                    </div>
-
-                                    {/* Min Followers */}
-                                    <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
-                                        <label className="label-native text-slate-500 flex items-center gap-2">
-                                            <Users size={12} className="text-slate-600 group-focus-within:text-indigo-400" /> MIN FOLLOWERS
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            className="w-full bg-transparent text-white font-black text-lg outline-none placeholder:text-slate-800"
-                                            placeholder="0"
-                                            value={formData.minFollowers}
-                                            onChange={e => setFormData(prev => ({ ...prev, minFollowers: e.target.value }))}
-                                        />
-                                    </div>
-
-                                    {/* Account Age */}
-                                    <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
-                                        <label className="label-native text-slate-500 flex items-center gap-2">
-                                            <Calculator size={12} className="text-slate-600 group-focus-within:text-indigo-400" /> MIN AGE (DAYS)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            className="w-full bg-transparent text-white font-black text-lg outline-none placeholder:text-slate-800"
-                                            placeholder="0"
-                                            value={formData.minAccountAge}
-                                            onChange={e => setFormData(prev => ({ ...prev, minAccountAge: e.target.value }))}
-                                        />
-                                    </div>
-
-                                    {/* Neynar Score */}
-                                    <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
-                                        <label className="label-native text-slate-500 flex items-center gap-2">
-                                            <Zap size={12} className="text-slate-600 group-focus-within:text-blue-400" /> NEYNAR SCORE (0-100)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            className="w-full bg-transparent text-white font-black text-lg outline-none placeholder:text-slate-800"
-                                            placeholder="0"
-                                            value={formData.minNeynarScore}
-                                            onChange={e => setFormData(prev => ({ ...prev, minNeynarScore: e.target.value }))}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Budget Section */}
-                            <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-6 rounded-[2.5rem]">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
-                                            <div className="relative group">
-                                                <select
-                                                    value={selectedTokenAddr}
-                                                    onChange={(e) => setSelectedTokenAddr(e.target.value)}
-                                                    className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer pr-12"
-                                                >
-                                                    {whitelistedTokens.map((t, i) => (
-                                                        <option key={i} value={t.address} className="bg-[#0B0E14]">
-                                                            {t.symbol} — {t.address === '0x0000000000000000000000000000000000000000' ? 'NATIVE' : `${t.address.slice(0,6)}...${t.address.slice(-4)}`}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none group-hover:text-white transition-colors" />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                <DollarSign className="w-4 h-4" /> REWARD PER USER ({selectedToken?.symbol || 'USDC'})
-                                            </label>
-                                            <div className="bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[2rem] group focus-within:border-emerald-500/30 transition-all">
-                                                <input
-                                                    type="number"
-                                                    step="any"
-                                                    min="0"
-                                                    className="w-full bg-transparent text-white font-black text-3xl outline-none font-mono"
-                                                    value={formData.reward_amount_per_user}
-                                                    onChange={e => setFormData(prev => ({ ...prev, reward_amount_per_user: e.target.value }))}
-                                                />
-                                                <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-2 flex justify-between items-center">
-                                                    <span>Paid in {selectedToken?.symbol || 'USDC'} via Base</span>
-                                                    {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
-                                                        <span className="text-slate-400 font-mono font-bold lowercase tracking-normal">
-                                                            (≈ {((parseFloat(formData.reward_amount_per_user) || 0) * stats.tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDC)
-                                                        </span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <label className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                            <Users className="w-4 h-4" /> MAX PARTICIPANTS
-                                        </label>
-                                        <div className="bg-indigo-500/5 border border-indigo-500/10 p-6 rounded-[2rem] group focus-within:border-indigo-500/30 transition-all">
-                                            <input
-                                                type="number"
-                                                min="10"
-                                                className="w-full bg-transparent text-white font-black text-3xl outline-none font-mono"
-                                                value={formData.max_participants}
-                                                onChange={e => setFormData(prev => ({ ...prev, max_participants: e.target.value }))}
-                                            />
-                                            <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mt-2">Estimated reach</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || !ugcConfig.is_active || !stats.isPriceAvailable}
-                                className={`w-full p-6 rounded-[2.5rem] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all transform active:scale-[0.98] ${
-                                    isSubmitting || !ugcConfig.is_active || !stats.isPriceAvailable
-                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-[0_0_40px_-10px_rgba(79,70,229,0.4)]'
-                                }`}
-                            >
-                                {!ugcConfig.is_active ? (
-                                    <>SYSTEM MAINTENANCE <Lock className="w-5 h-5" /></>
-                                ) : isSubmitting ? (
-                                    <div className="flex items-center gap-3">
-                                        <Loader2 className="w-6 h-6 animate-spin" />
-                                        <span>VERIFYING PAYMENT...</span>
-                                    </div>
-                                ) : !stats.isPriceAvailable ? (
-                                    <>{isPriceLoading ? 'LOADING MARKET PRICE' : 'PRICE ORACLE UNAVAILABLE'} <Lock className="w-5 h-5" /></>
-                                ) : (
-                                    <>LAUNCH MISSION — {stats.totalAmount} {selectedToken?.symbol || 'USDC'} <ArrowRight className="w-5 h-5" /></>
-                                )}
-                            </button>
-                        </form>
                     </div>
 
-                    {/* Settlement Quote Sidebar */}
-                    <div className="w-full lg:w-[400px] space-y-6 sticky top-24">
-                        <div className="glass-card p-10 border-indigo-500/20 bg-indigo-500/5 relative overflow-hidden rounded-[3rem] group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                                <Calculator className="w-32 h-32 text-indigo-400" />
+                    <form onSubmit={handleCreate} className="space-y-6">
+                        {/* Core Details */}
+                        <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-8 rounded-[2.5rem] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+
+                            <div className="grid grid-cols-1 gap-6 relative">
+                                <div className="space-y-3">
+                                    <label className="label-native text-slate-500 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> MISSION TITLE
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Follow Crypto Disco on Warpcast"
+                                        className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-tight focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-700"
+                                        value={formData.title}
+                                        onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="label-native text-slate-500 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-700" /> DESCRIPTION (OPTIONAL)
+                                    </label>
+                                    <textarea
+                                        placeholder="Enter additional details or requirements..."
+                                        className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-medium text-sm h-32 resize-none focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-700"
+                                        value={formData.description}
+                                        onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-3">
+                                        <label className="label-native text-slate-500 flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> PLATFORM
+                                        </label>
+                                        <div className="relative group">
+                                             <select
+                                                className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-blue-500/50 transition-all cursor-pointer"
+                                                value={formData.platform}
+                                                onChange={e => handlePlatformChange(e.target.value)}
+                                            >
+                                                <option value="farcaster">Farcaster</option>
+                                                <option value="twitter">X / Twitter</option>
+                                                <option value="tiktok">TikTok</option>
+                                                <option value="instagram">Instagram</option>
+                                                <option value="onchain">On-Chain Action</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none group-hover:text-white transition-colors" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="label-native text-slate-500 flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> TARGET LINK
+                                        </label>
+                                        <div className="relative group">
+                                            <LinkIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-emerald-500 transition-colors" />
+                                            <input
+                                                type="url"
+                                                required
+                                                placeholder={`https://${PLATFORM_URL_RULES[formData.platform]?.hint || '...'}`}
+                                                className={`w-full bg-white/5 border p-5 pl-12 rounded-2xl text-white font-mono text-sm outline-none transition-all placeholder:text-slate-700 ${
+                                                    formData.link && !validatePlatformUrl(formData.link, formData.platform)
+                                                        ? 'border-red-500/50 focus:border-red-500'
+                                                        : 'border-white/5 focus:border-emerald-500/50'
+                                                }`}
+                                                value={formData.link}
+                                                onChange={e => setFormData(prev => ({ ...prev, link: e.target.value }))}
+                                            />
+                                            {/* [v3.59.0] Platform-specific validation feedback */}
+                                            {formData.link && !validatePlatformUrl(formData.link, formData.platform) ? (
+                                                <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1.5 pl-1">
+                                                    ⚠ [Link Guard] Link harus dari {PLATFORM_URL_RULES[formData.platform]?.hint}
+                                                </p>
+                                            ) : formData.link && validatePlatformUrl(formData.link, formData.platform) && (
+                                                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1.5 pl-1">
+                                                    ✓ Link valid
+                                                </p>
+                                            )}
+                                            {/* Pro Tip per platform */}
+                                            {!formData.link && (
+                                                <p className="text-[9px] font-bold text-slate-700 tracking-wide mt-1.5 pl-1 italic">
+                                                    {formData.platform === 'farcaster' && 'Pro Tip: Use full Warpcast thread URL for Quote tasks.'}
+                                                    {formData.platform === 'twitter' && 'Pro Tip: Use specific Tweet/profile links, not homepage.'}
+                                                    {formData.platform === 'tiktok' && 'Pro Tip: Use TikTok video link for Like/Comment tasks.'}
+                                                    {formData.platform === 'instagram' && 'Pro Tip: Ensure account/post is not private.'}
+                                                    {formData.platform === 'onchain' && 'Pro Tip: Use a link to the relevant dApp or contract.'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] mb-10 flex items-center gap-3">
-                                <Info className="w-4 h-4" /> SETTLEMENT QUOTE
-                            </h3>
-
-                            <div className="space-y-10 relative">
-                                <div className="flex justify-between items-start">
-                                    <div className="space-y-1">
-                                        <span className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">REWARD POOL</span>
-                                        <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest">{formData.reward_amount_per_user} {selectedToken?.symbol || 'USDC'} × {formData.max_participants} USERS</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl font-black text-white font-mono tracking-tighter">{stats.rewardPool} <span className="text-xs text-slate-500 font-bold">{selectedToken?.symbol || 'USDC'}</span></p>
-                                        {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
-                                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">
-                                                ≈ {stats.rewardPoolUsd} USDC
-                                            </p>
-                                        )}
-                                    </div>
+                            {/* Multi-Action Selector */}
+                            <div className="space-y-3">
+                                <label className="label-native text-slate-500 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                                    AKSI YANG HARUS DILAKUKAN
+                                    <span className={`font-black text-[10px] px-2 py-0.5 rounded-lg ${
+                                        selectedActions.length >= 3 ? 'bg-amber-500/20 text-amber-400' : 'bg-violet-500/20 text-violet-400'
+                                    }`}>{selectedActions.length}/3 MAX</span>
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {(PLATFORM_ACTIONS[formData.platform] || []).map(act => {
+                                        const active = selectedActions.includes(act.value);
+                                        return (
+                                            <button
+                                                key={act.value}
+                                                type="button"
+                                                onClick={() => toggleAction(act.value)}
+                                                className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                                    active
+                                                        ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20'
+                                                        : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
+                                                }`}
+                                            >
+                                                {active && <span className="mr-1">✓</span>}{act.label}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-
-                                <div className="flex justify-between items-start">
-                                    <div className="space-y-1">
-                                        <span className="text-indigo-400/60 text-[10px] font-black uppercase tracking-[0.2em]">PLATFORM FEE</span>
-                                        <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest italic">DYNAMIC LISTING FEE</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl font-black text-indigo-400 font-mono tracking-tighter">
-                                            {!stats.isPriceAvailable ? (
-                                                <span className="animate-pulse opacity-50">...</span>
-                                            ) : (
-                                                stats.listingFee
-                                            )}
-                                            <span className="text-xs text-slate-500 font-bold ml-1">{selectedToken?.symbol || 'USDC'}</span>
-                                        </p>
-                                        {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
-                                            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-tight">
-                                                ≈ {ugcConfig.listing_fee_usdc} USDC
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="h-px bg-white/5" />
-
-                                <div className="pt-2">
-                                    {/* [v3.62.0] Balance Verification Guard */}
-                                    {tokenBalance < stats.totalAmountRaw && (
-                                        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl border-dashed">
-                                            <div className="flex items-start gap-3">
-                                                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                                <div className="space-y-2">
-                                                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Insufficient Balance</p>
-                                                    <p className="text-[9px] font-bold text-amber-400/70 uppercase tracking-tight leading-relaxed">
-                                                        Your balance ({formatUnits(tokenBalance, selectedToken?.decimals || 18)} {selectedToken?.symbol || 'USDC'}) is insufficient to cover the total cost ({stats.totalAmount} {selectedToken?.symbol || 'USDC'}).
-                                                    </p>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsSwapModalOpen(true)}
-                                                        className="w-full mt-2 py-2 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/30 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
-                                                    >
-                                                        <Coins className="w-3.5 h-3.5" />
-                                                        GET {selectedToken?.symbol || 'USDC'} via SWAP
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-between items-end mb-6">
-                                        <span className="text-white text-[12px] font-black uppercase tracking-[0.3em]">TOTAL DUE</span>
-                                        <div className="text-right">
-                                            <p className="text-5xl font-black text-white font-mono tracking-tighter mb-1">{stats.totalAmount}</p>
-                                            {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
-                                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-tight mb-2">
-                                                    ≈ {stats.totalAmountUsd} USDC
-                                                </p>
-                                            )}
-                                            <div className="flex items-center justify-end gap-2 text-indigo-500">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                                                <span className="text-[11px] font-black uppercase tracking-widest">{selectedToken?.symbol || 'USDC'} ON BASE</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-5 bg-black/60 rounded-[2rem] border border-white/5 space-y-3 group/wallet overflow-hidden relative">
-                                        <div className="absolute inset-0 bg-indigo-600/5 opacity-0 group-hover/wallet:opacity-100 transition-opacity" />
-                                        <div className="flex justify-between items-center py-4 border-t border-white/5 mb-2">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Targeting</p>
-                                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Score {formData.minNeynarScore}+ Only</p>
-                                        </div>
-                                        <div className="flex items-start gap-3 relative">
-                                            <Wallet className="w-4 h-4 text-indigo-500 mt-1 shrink-0" />
-                                            <div className="space-y-1">
-                                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">TARGET TREASURY</p>
-                                                <p className="text-[10px] text-white font-mono break-all opacity-40 hover:opacity-100 transition-all uppercase leading-relaxed tracking-wider">
-                                                    {ugcConfig.treasury_address}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {selectedActions.length === 0 && (
+                                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Pilih minimal 1 aksi.</p>
+                                )}
                             </div>
                         </div>
 
-                        {/* [v3.63.9] Wallet Assets Peek */}
-                        <div className="space-y-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowPortfolio(!showPortfolio)}
-                                className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-3xl hover:bg-white/10 transition-all group"
-                            >
+                        {/* Anti-Sybil Guards */}
+                        <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-6 rounded-[2.5rem]">
+                            <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-3">
-                                    <Wallet className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors" />
-                                    <span className="text-[10px] font-black text-slate-400 group-hover:text-white transition-colors uppercase tracking-widest">
-                                        {showPortfolio ? 'HIDE WALLET ASSETS' : 'VIEW WALLET ASSETS'}
-                                    </span>
+                                    <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30 text-blue-400">
+                                        <Shield className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-widest">ANTI-SYBIL <span className="text-blue-500">GUARDS</span></h3>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">PROTECT YOUR BUDGET FROM BOTS</p>
+                                    </div>
                                 </div>
-                                <div className={`w-2 h-2 rounded-full ${showPortfolio ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-slate-700'}`} />
-                            </button>
+                            </div>
 
-                            {showPortfolio && (
-                                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                    <WalletPortfolio highlightSymbol={selectedToken?.symbol} />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Protocol Assurance */}
-                        <div className="glass-card p-8 border-white/5 bg-slate-900/10 rounded-[2.5rem] space-y-6">
-                            <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">PROTOCOL ASSURANCE</h4>
-                            <ul className="space-y-4">
-                                {[
-                                    { text: "Pending Manual Moderation", icon: <Clock className="w-3.5 h-3.5" /> },
-                                    { text: "On-Chain Verification Required", icon: <Shield className="w-3.5 h-3.5" /> },
-                                    { text: "Anti-Spam Filter Enabled", icon: <Zap className="w-3.5 h-3.5" /> },
-                                    { text: "Automated Reward Payouts", icon: <CheckCircle2 className="w-3.5 h-3.5" /> }
-                                ].map((rule, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-[10px] text-slate-400 uppercase tracking-widest font-black group/item">
-                                        <div className="text-indigo-500 group-hover/item:scale-110 transition-transform">
-                                            {rule.icon}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Identity Guard Toggle */}
+                                <div className={`p-5 rounded-[2rem] border transition-all cursor-pointer flex items-center justify-between group ${formData.isBaseSocialRequired ? 'bg-blue-600/10 border-blue-500/30 shadow-lg shadow-blue-500/5' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                     onClick={() => setFormData(prev => ({ ...prev, isBaseSocialRequired: !prev.isBaseSocialRequired }))}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${formData.isBaseSocialRequired ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-600'}`}>
+                                            <Users className="w-5 h-5" />
                                         </div>
-                                        {rule.text}
-                                    </li>
-                                ))}
-                            </ul>
+                                        <div className="flex flex-col">
+                                            <span className={`text-[10px] font-black uppercase tracking-widest ${formData.isBaseSocialRequired ? 'text-blue-400' : 'text-slate-500'}`}>Basenames Only</span>
+                                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-tighter">Verified identities only</span>
+                                        </div>
+                                    </div>
+                                    <div className={`w-12 h-6 rounded-full p-1 transition-colors ${formData.isBaseSocialRequired ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform transform ${formData.isBaseSocialRequired ? 'translate-x-6' : 'translate-x-0'}`} />
+                                    </div>
+                                </div>
+
+                                {/* Min Followers */}
+                                <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
+                                    <label className="label-native text-slate-500 flex items-center gap-2">
+                                        <Users size={12} className="text-slate-600 group-focus-within:text-indigo-400" /> MIN FOLLOWERS
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="w-full bg-transparent text-white font-black text-lg outline-none placeholder:text-slate-800"
+                                        placeholder="0"
+                                        value={formData.minFollowers}
+                                        onChange={e => setFormData(prev => ({ ...prev, minFollowers: e.target.value }))}
+                                    />
+                                </div>
+
+                                {/* Account Age */}
+                                <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
+                                    <label className="label-native text-slate-500 flex items-center gap-2">
+                                        <Calculator size={12} className="text-slate-600 group-focus-within:text-indigo-400" /> MIN AGE (DAYS)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="w-full bg-transparent text-white font-black text-lg outline-none placeholder:text-slate-800"
+                                        placeholder="0"
+                                        value={formData.minAccountAge}
+                                        onChange={e => setFormData(prev => ({ ...prev, minAccountAge: e.target.value }))}
+                                    />
+                                </div>
+
+                                {/* Neynar Score */}
+                                <div className="bg-white/5 border border-white/5 p-5 rounded-[2rem] space-y-2 group focus-within:border-indigo-500/30 transition-all">
+                                    <label className="label-native text-slate-500 flex items-center gap-2">
+                                        <Zap size={12} className="text-slate-600 group-focus-within:text-blue-400" /> NEYNAR SCORE (0-100)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        className="w-full bg-transparent text-white font-black text-lg outline-none placeholder:text-slate-800"
+                                        placeholder="0"
+                                        value={formData.minNeynarScore}
+                                        onChange={e => setFormData(prev => ({ ...prev, minNeynarScore: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
                         </div>
+
+                        {/* Budget Section */}
+                        <div className="glass-card p-8 bg-slate-900/20 border-white/5 space-y-6 rounded-[2.5rem]">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Payment Asset</label>
+                                        <div className="relative group">
+                                            <select
+                                                value={selectedTokenAddr}
+                                                onChange={(e) => setSelectedTokenAddr(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl text-white font-black uppercase tracking-widest outline-none appearance-none focus:border-indigo-500/50 transition-all cursor-pointer pr-12"
+                                            >
+                                                {whitelistedTokens.map((t, i) => (
+                                                    <option key={i} value={t.address} className="bg-[#0B0E14]">
+                                                        {t.symbol} — {t.address === '0x0000000000000000000000000000000000000000' ? 'NATIVE' : `${t.address.slice(0,6)}...${t.address.slice(-4)}`}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none group-hover:text-white transition-colors" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <DollarSign className="w-4 h-4" /> REWARD PER USER ({selectedToken?.symbol || 'USDC'})
+                                        </label>
+                                        <div className="bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[2rem] group focus-within:border-emerald-500/30 transition-all">
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                min="0"
+                                                className="w-full bg-transparent text-white font-black text-3xl outline-none font-mono"
+                                                value={formData.reward_amount_per_user}
+                                                onChange={e => setFormData(prev => ({ ...prev, reward_amount_per_user: e.target.value }))}
+                                            />
+                                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-2 flex justify-between items-center">
+                                                <span>Paid in {selectedToken?.symbol || 'USDC'} via Base</span>
+                                                {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                                    <span className="text-slate-400 font-mono font-bold lowercase tracking-normal">
+                                                        (≈ {((parseFloat(formData.reward_amount_per_user) || 0) * stats.tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDC)
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <label className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <Users className="w-4 h-4" /> MAX PARTICIPANTS
+                                    </label>
+                                    <div className="bg-indigo-500/5 border border-indigo-500/10 p-6 rounded-[2rem] group focus-within:border-indigo-500/30 transition-all">
+                                        <input
+                                            type="number"
+                                            min="10"
+                                            className="w-full bg-transparent text-white font-black text-3xl outline-none font-mono"
+                                            value={formData.max_participants}
+                                            onChange={e => setFormData(prev => ({ ...prev, max_participants: e.target.value }))}
+                                        />
+                                        <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mt-2">Estimated reach</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting || !ugcConfig.is_active || !stats.isPriceAvailable}
+                            className={`w-full p-6 rounded-[2.5rem] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all transform active:scale-[0.98] ${
+                                isSubmitting || !ugcConfig.is_active || !stats.isPriceAvailable
+                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-[0_0_40px_-10px_rgba(79,70,229,0.4)]'
+                            }`}
+                        >
+                            {!ugcConfig.is_active ? (
+                                <>SYSTEM MAINTENANCE <Lock className="w-5 h-5" /></>
+                            ) : isSubmitting ? (
+                                <div className="flex items-center gap-3">
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <span>VERIFYING PAYMENT...</span>
+                                </div>
+                            ) : !stats.isPriceAvailable ? (
+                                <>{isPriceLoading ? 'LOADING MARKET PRICE' : 'PRICE ORACLE UNAVAILABLE'} <Lock className="w-5 h-5" /></>
+                            ) : (
+                                <>LAUNCH MISSION — {stats.totalAmount} {selectedToken?.symbol || 'USDC'} <ArrowRight className="w-5 h-5" /></>
+                            )}
+                        </button>
+                    </form>
+                </div>
+
+                {/* Settlement Quote Sidebar */}
+                <div className="w-full lg:w-[400px] space-y-6 sticky top-24">
+                    <div className="glass-card p-10 border-indigo-500/20 bg-indigo-500/5 relative overflow-hidden rounded-[3rem] group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                            <Calculator className="w-32 h-32 text-indigo-400" />
+                        </div>
+
+                        <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] mb-10 flex items-center gap-3">
+                            <Info className="w-4 h-4" /> SETTLEMENT QUOTE
+                        </h3>
+
+                        <div className="space-y-10 relative">
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">REWARD POOL</span>
+                                    <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest">{formData.reward_amount_per_user} {selectedToken?.symbol || 'USDC'} × {formData.max_participants} USERS</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-black text-white font-mono tracking-tighter">{stats.rewardPool} <span className="text-xs text-slate-500 font-bold">{selectedToken?.symbol || 'USDC'}</span></p>
+                                    {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">
+                                            ≈ {stats.rewardPoolUsd} USDC
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                    <span className="text-indigo-400/60 text-[10px] font-black uppercase tracking-[0.2em]">PLATFORM FEE</span>
+                                    <p className="text-[11px] text-slate-600 uppercase font-black tracking-widest italic">DYNAMIC LISTING FEE</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-black text-indigo-400 font-mono tracking-tighter">
+                                        {!stats.isPriceAvailable ? (
+                                            <span className="animate-pulse opacity-50">...</span>
+                                        ) : (
+                                            stats.listingFee
+                                        )}
+                                        <span className="text-xs text-slate-500 font-bold ml-1">{selectedToken?.symbol || 'USDC'}</span>
+                                    </p>
+                                    {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-tight">
+                                            ≈ {ugcConfig.listing_fee_usdc} USDC
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-white/5" />
+
+                            <div className="pt-2">
+                                {/* [v3.62.0] Balance Verification Guard */}
+                                {tokenBalance < stats.totalAmountRaw && (
+                                    <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl border-dashed">
+                                        <div className="flex items-start gap-3">
+                                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                            <div className="space-y-2">
+                                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Insufficient Balance</p>
+                                                <p className="text-[9px] font-bold text-amber-400/70 uppercase tracking-tight leading-relaxed">
+                                                    Your balance ({formatUnits(tokenBalance, selectedToken?.decimals || 18)} {selectedToken?.symbol || 'USDC'}) is insufficient to cover the total cost ({stats.totalAmount} {selectedToken?.symbol || 'USDC'}).
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsSwapModalOpen(true)}
+                                                    className="w-full mt-2 py-2 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/30 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <Coins className="w-3.5 h-3.5" />
+                                                    GET {selectedToken?.symbol || 'USDC'} via SWAP
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-end mb-6">
+                                    <span className="text-white text-[12px] font-black uppercase tracking-[0.3em]">TOTAL DUE</span>
+                                    <div className="text-right">
+                                        <p className="text-5xl font-black text-white font-mono tracking-tighter mb-1">{stats.totalAmount}</p>
+                                        {selectedToken?.symbol !== 'USDC' && stats.tokenPrice > 0 && (
+                                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-tight mb-2">
+                                                ≈ {stats.totalAmountUsd} USDC
+                                            </p>
+                                        )}
+                                        <div className="flex items-center justify-end gap-2 text-indigo-500">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                            <span className="text-[11px] font-black uppercase tracking-widest">{selectedToken?.symbol || 'USDC'} ON BASE</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-5 bg-black/60 rounded-[2rem] border border-white/5 space-y-3 group/wallet overflow-hidden relative">
+                                    <div className="absolute inset-0 bg-indigo-600/5 opacity-0 group-hover/wallet:opacity-100 transition-opacity" />
+                                    <div className="flex justify-between items-center py-4 border-t border-white/5 mb-2">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Targeting</p>
+                                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Score {formData.minNeynarScore}+ Only</p>
+                                    </div>
+                                    <div className="flex items-start gap-3 relative">
+                                        <Wallet className="w-4 h-4 text-indigo-500 mt-1 shrink-0" />
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">TARGET TREASURY</p>
+                                            <p className="text-[10px] text-white font-mono break-all opacity-40 hover:opacity-100 transition-all uppercase leading-relaxed tracking-wider">
+                                                {ugcConfig.treasury_address}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* [v3.63.9] Wallet Assets Peek */}
+                    <div className="space-y-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowPortfolio(!showPortfolio)}
+                            className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-3xl hover:bg-white/10 transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <Wallet className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                                <span className="text-[10px] font-black text-slate-400 group-hover:text-white transition-colors uppercase tracking-widest">
+                                    {showPortfolio ? 'HIDE WALLET ASSETS' : 'VIEW WALLET ASSETS'}
+                                </span>
+                            </div>
+                            <div className={`w-2 h-2 rounded-full ${showPortfolio ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-slate-700'}`} />
+                        </button>
+
+                        {showPortfolio && (
+                            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                <WalletPortfolio highlightSymbol={selectedToken?.symbol} />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Protocol Assurance */}
+                    <div className="glass-card p-8 border-white/5 bg-slate-900/10 rounded-[2.5rem] space-y-6">
+                        <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">PROTOCOL ASSURANCE</h4>
+                        <ul className="space-y-4">
+                            {[
+                                { text: "Pending Manual Moderation", icon: <Clock className="w-3.5 h-3.5" /> },
+                                { text: "On-Chain Verification Required", icon: <Shield className="w-3.5 h-3.5" /> },
+                                { text: "Anti-Spam Filter Enabled", icon: <Zap className="w-3.5 h-3.5" /> },
+                                { text: "Automated Reward Payouts", icon: <CheckCircle2 className="w-3.5 h-3.5" /> }
+                            ].map((rule, i) => (
+                                <li key={i} className="flex items-center gap-3 text-[10px] text-slate-400 uppercase tracking-widest font-black group/item">
+                                    <div className="text-indigo-500 group-hover/item:scale-110 transition-transform">
+                                        {rule.icon}
+                                    </div>
+                                    {rule.text}
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -956,6 +950,21 @@ export function CreateMissionPage() {
                     }}
                 />
             )}
+        </div>
+    );
+
+    if (isEmbed) {
+        return formContent;
+    }
+
+    return (
+        <div className="min-h-screen pt-24 pb-safe md:pb-8 px-4 bg-[#050505] selection:bg-indigo-500/30 relative">
+            <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[120px] pointer-events-none" />
+
+            <div className="container mx-auto max-w-6xl relative">
+                {formContent}
+            </div>
         </div>
     );
 }

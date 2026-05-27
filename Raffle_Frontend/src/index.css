@@ -932,10 +932,181 @@ body::after {
     }
 
     .app-header-cyber {
-        padding: 12px 16px !important;
+        display: none !important; /* Hide desktop header */
+    }
+
+    .mobile-top-bar {
+        display: flex !important;
     }
 
     .screen-content-cyber {
         padding: 16px !important;
     }
+}
+
+/* Mobile Drawer & Top Bar Integration for Parity with NEW UI DESIGN */
+.mobile-top-bar {
+    display: none;
+    height: 60px;
+    background: rgba(5, 5, 5, 0.9);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--colors-border-default);
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+}
+
+.mobile-drawer-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10001; /* Ensure it is above bottom-nav */
+    align-items: flex-end;
+}
+
+.mobile-drawer-overlay.active {
+    display: flex;
+}
+
+.mobile-drawer-content {
+    width: 100%;
+    background: #09090b;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px 20px 0 0;
+    padding: 24px;
+    padding-bottom: calc(24px + var(--safe-bottom));
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.9);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--colors-border-default);
+}
+
+.drawer-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.drawer-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.drawer-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--typography-family-sans);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.drawer-menu-item i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drawer-menu-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+/* GACHA SPIN WHEEL */
+.gacha-wheel-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.gacha-canvas-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin-bottom: 24px;
+}
+
+.gacha-wheel-outer {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 6px solid #1e293b;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 35px rgba(59, 130, 246, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.8);
+    transition: transform 5s cubic-bezier(0.1, 0.8, 0.1, 1);
+    background: radial-gradient(circle, #0e1726, #020617);
+}
+
+.gacha-wheel-outer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        repeating-conic-gradient(
+            from 0deg,
+            rgba(255, 255, 255, 0.02) 0deg 30deg,
+            rgba(0, 0, 0, 0.2) 30deg 60deg
+        );
+}
+
+.wheel-indicator {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 25px solid var(--colors-brand-primary, #3b82f6);
+    z-index: 10;
+    filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.4));
+}
+
+.wheel-center-pin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, #fff, #3b82f6);
+    border-radius: 50%;
+    box-shadow: 0 0 15px #3b82f6;
+    z-index: 5;
 }
