@@ -8,7 +8,7 @@ const { baseSepolia } = require('viem/chains');
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 const MASTER_X_ADDRESS = process.env.MASTER_X_ADDRESS || process.env.VITE_MASTER_X_ADDRESS_SEPOLIA;
-const DAILY_APP_ADDRESS = process.env.DAILY_APP_ADDRESS || process.env.VITE_V12_CONTRACT_ADDRESS_SEPOLIA;
+const DAILY_APP_ADDRESS = process.env.DAILY_APP_V16_ADDRESS || process.env.VITE_DAILY_APP_V16_ADDRESS || '0xb592D6819Ea310d83034cD80FDDC2e754D0a5353';
 const RAFFLE_ADDRESS = process.env.VITE_RAFFLE_ADDRESS_SEPOLIA || process.env.RAFFLE_ADDRESS_SEPOLIA;
 const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
 

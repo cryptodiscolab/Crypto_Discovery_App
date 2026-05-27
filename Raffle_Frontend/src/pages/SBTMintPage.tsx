@@ -35,10 +35,10 @@ export function SBTMintPage() {
     setError(null);
     try {
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
+        .from('v_user_full_profile')
         .select('total_xp, rank_name')
         .eq('wallet_address', address.toLowerCase())
-        .single();
+        .maybeSingle();
 
       if (profileError && profileError.code !== 'PGRST116') throw profileError;
 
@@ -184,8 +184,8 @@ export function SBTMintPage() {
         ) : error ? (
           <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4">
             <AlertTriangle size={48} className="text-red-500/50" />
-            <p className="text-[11px] font-black uppercase tracking-widest text-red-400">{error}</p>
-            <button onClick={fetchProgress} className="px-6 py-3 rounded-full bg-white/5 border border-white/10 text-[11px] font-black uppercase tracking-widest text-white">
+            <p className="label-native text-red-400 mb-0">{error}</p>
+            <button onClick={fetchProgress} className="btn-cyber-native-action px-6 py-3 rounded-full">
               Retry
             </button>
           </div>
@@ -194,21 +194,21 @@ export function SBTMintPage() {
             {/* Current Tier Card */}
             <div className={`rounded-2xl border bg-gradient-to-br ${currentTierColor} p-6`}>
               <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-black uppercase tracking-widest opacity-70">Current Tier</span>
-                <span className="text-[11px] font-black uppercase tracking-widest">{SBTTiers[progress.currentTier as keyof typeof SBTTiers]?.icon}</span>
+                <span className="label-native mb-0 opacity-70">Current Tier</span>
+                <span className="label-native mb-0">{SBTTiers[progress.currentTier as keyof typeof SBTTiers]?.icon}</span>
               </div>
               <h2 className="text-2xl font-black uppercase tracking-widest mb-1">{progress.currentTier}</h2>
-              <p className="text-[11px] font-black uppercase tracking-widest opacity-70 mb-4">
+              <p className="content-native mb-4">
                 {SBTTiers[progress.currentTier as keyof typeof SBTTiers]?.desc}
               </p>
               <div className="space-y-2">
-                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                <div className="flex justify-between label-native mb-0">
                   <span>Total XP</span>
-                  <span>{progress.totalXP.toLocaleString()}</span>
+                  <span className="value-native">{progress.totalXP.toLocaleString()}</span>
                 </div>
                 {progress.nextTier && progress.xpToNextTier !== null && (
                   <div className="space-y-1">
-                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    <div className="flex justify-between label-native mb-0 text-slate-500">
                       <span>Next: {progress.nextTier}</span>
                       <span>{progress.xpToNextTier.toLocaleString()} XP needed</span>
                     </div>
@@ -227,7 +227,7 @@ export function SBTMintPage() {
 
             {/* Tier Ladder */}
             <div className="space-y-2">
-              <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">Tier Requirements</h3>
+              <h3 className="label-native text-slate-400 mb-3">Tier Requirements</h3>
               {Object.entries(SBTTiers).map(([key, tier]) => {
                 const isCurrent = key === progress.currentTier;
                 const isUnlocked = tier.minXP <= progress.totalXP;
@@ -245,16 +245,16 @@ export function SBTMintPage() {
                     <div className="flex items-center gap-3">
                       <span className="text-lg">{tier.icon}</span>
                       <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-white">{tier.label}</p>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{tier.desc}</p>
+                        <p className="label-native text-white mb-0">{tier.label}</p>
+                        <p className="label-native text-slate-500 mb-0">{tier.desc}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                      <p className="value-native text-slate-500">
                         {tier.minXP.toLocaleString()} XP
                       </p>
                       {isCurrent && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-yellow-500">CURRENT</span>
+                        <span className="label-native text-yellow-500 mb-0">CURRENT</span>
                       )}
                       {isUnlocked && !isCurrent && (
                         <CheckCircle2 size={16} className="text-green-500 ml-auto" />
@@ -269,10 +269,10 @@ export function SBTMintPage() {
             <button
               onClick={handleMint}
               disabled={!progress.canMint || minting}
-              className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+              className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 transition-all ${
                 progress.canMint && !minting
-                  ? 'bg-white text-black hover:bg-white/90 active:scale-[0.98]'
-                  : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                  ? 'btn-cyber-native-action active:scale-[0.98]'
+                  : 'btn-cyber-disabled'
               }`}
             >
               {minting ? (
@@ -294,7 +294,7 @@ export function SBTMintPage() {
             </button>
 
             {!progress.canMint && (
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 text-center">
+              <p className="label-native text-slate-600 text-center mb-0">
                 Complete daily check-ins and missions to earn XP
               </p>
             )}
