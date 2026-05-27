@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, ExternalLink, Filter, AlertTriangle } from 'lucide-react';
+import { Image, ExternalLink, Filter, AlertTriangle, Lock } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { supabase } from '../lib/supabaseClient';
 import { DAILY_APP_ADDRESS } from '../lib/contracts';
@@ -12,6 +12,9 @@ interface NFTItem {
   tier?: string;
   minted_at?: string;
   chain_id?: number;
+  level?: number;
+  min_xp?: number;
+  isLocked?: boolean;
 }
 
 const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
@@ -58,50 +61,75 @@ function NFTCard({ nft }: { nft: NFTItem }) {
     ROOKIE: 'from-slate-800/30 to-slate-900/30 border-slate-700/30',
   };
 
-  const tierGradient = tierColors[nft.tier || 'ROOKIE'] || tierColors.ROOKIE;
+  const tierGradient = nft.isLocked
+    ? 'from-zinc-950/80 to-slate-950/80 border-white/5'
+    : (tierColors[nft.tier || 'ROOKIE'] || tierColors.ROOKIE);
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden border bg-gradient-to-br ${tierGradient} group hover:scale-[1.02] transition-transform duration-300`}>
+    <div className={`relative rounded-2xl overflow-hidden border bg-gradient-to-br ${tierGradient} group ${!nft.isLocked ? 'hover:scale-[1.02]' : ''} transition-transform duration-300`}>
       <div className="aspect-square relative bg-slate-900 flex items-center justify-center">
         {nft.image_url ? (
           <img
             src={nft.image_url}
             alt={nft.name || `NFT #${nft.token_id}`}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-all duration-300 ${
+              nft.isLocked ? 'grayscale opacity-25 contrast-75' : ''
+            }`}
             loading="lazy"
           />
         ) : (
           <div className="flex flex-col items-center gap-4 text-slate-600">
-            <Image size={48} />
+            <Image size={48} className={nft.isLocked ? 'opacity-25' : ''} />
             <span className="text-[11px] font-black uppercase tracking-widest">No Image</span>
           </div>
         )}
+        {nft.isLocked && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
+            <div className="p-3 rounded-full bg-black/60 border border-white/10 text-slate-500">
+              <Lock size={20} className="animate-pulse" />
+            </div>
+          </div>
+        )}
         {nft.tier && (
-          <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm border border-white/10">
-            <span className="text-[9px] font-black uppercase tracking-widest text-white/80">{nft.tier}</span>
+          <div className={`absolute top-3 right-3 px-3 py-1 rounded-full backdrop-blur-sm border ${
+            nft.isLocked ? 'bg-black/40 border-white/5' : 'bg-black/60 border-white/10'
+          }`}>
+            <span className={`text-[9px] font-black uppercase tracking-widest ${
+              nft.isLocked ? 'text-slate-500' : 'text-white/80'
+            }`}>{nft.tier}</span>
           </div>
         )}
       </div>
       <div className="p-4 space-y-3">
-        <h3 className="text-[11px] font-black uppercase tracking-widest text-white truncate">
+        <h3 className={`text-[11px] font-black uppercase tracking-widest truncate ${
+          nft.isLocked ? 'text-slate-500' : 'text-white'
+        }`}>
           {nft.name || `NFT #${nft.token_id}`}
         </h3>
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-            ID: {nft.token_id?.substring(0, 8)}...
-          </span>
-          {nft.chain_id && (
-            <a
-              href={`${BASESCAN_URL}/token/${nft.contract_address}?a=${nft.token_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              <ExternalLink size={14} />
-            </a>
+          {nft.isLocked ? (
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">
+              Req: Lvl {nft.level} ({nft.min_xp?.toLocaleString()} XP)
+            </span>
+          ) : (
+            <>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                ID: {nft.token_id?.substring(0, 8)}...
+              </span>
+              {nft.chain_id && (
+                <a
+                  href={`${BASESCAN_URL}/token/${nft.contract_address}?a=${nft.token_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
+            </>
           )}
         </div>
-        {nft.minted_at && (
+        {!nft.isLocked && nft.minted_at && (
           <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">
             Minted: {new Date(nft.minted_at).toLocaleDateString()}
           </p>
@@ -159,13 +187,18 @@ export function NFTGalleryPage() {
       // Fetch all thresholds to match levels to details
       const { data: thresholds } = await supabase
         .from('sbt_thresholds')
-        .select('level, tier_name, badge_url')
+        .select('level, tier_name, min_xp, badge_url')
         .order('level', { ascending: true });
 
       const currentTier = profile?.tier || 0;
 
       const mapped: NFTItem[] = [];
       const loggedTiers = new Set<string>();
+
+      const tierMap: Record<string, number> = thresholds?.reduce((acc, t) => {
+        if (t.tier_name) acc[t.tier_name.toUpperCase()] = t.level;
+        return acc;
+      }, {} as Record<string, number>) || {};
 
       if (supaLogs && supaLogs.length > 0) {
         supaLogs.forEach((d: Record<string, unknown>) => {
@@ -180,16 +213,20 @@ export function NFTGalleryPage() {
             tier,
             minted_at: String(d.created_at || ''),
             chain_id: CHAIN_ID,
+            level: tierMap[tier] || 0,
+            isLocked: false,
           });
         });
       }
 
-      // Dynamic Fallback: if user has a tier level in profile, generate mock SBT cards for their collection
-      // this ensures SBTs show up in the gallery even if the user_activity_logs table is missing entries.
+      // Dynamic Fallback & Locked Tiers: If user has a tier level in profile, generate mock SBT cards for their collection.
+      // If user hasn't unlocked a tier, show it as locked.
       if (thresholds) {
         thresholds.forEach((t) => {
           const tierUpper = t.tier_name.toUpperCase();
-          if (t.level <= currentTier && !loggedTiers.has(tierUpper)) {
+          const hasLog = loggedTiers.has(tierUpper);
+
+          if (t.level <= currentTier && !hasLog) {
             mapped.push({
               token_id: `onchain-${t.level}-${address.substring(2, 8)}`,
               contract_address: DAILY_APP_ADDRESS || '',
@@ -198,10 +235,28 @@ export function NFTGalleryPage() {
               tier: tierUpper,
               minted_at: new Date().toISOString(), // Fallback to current time
               chain_id: CHAIN_ID,
+              level: t.level,
+              isLocked: false,
+            });
+          } else if (t.level > currentTier && !hasLog) {
+            mapped.push({
+              token_id: `locked-${t.level}`,
+              contract_address: DAILY_APP_ADDRESS || '',
+              name: `${t.tier_name} SBT`,
+              image_url: resolvePinataAssetUrl(t.badge_url),
+              tier: tierUpper,
+              minted_at: undefined,
+              chain_id: CHAIN_ID,
+              level: t.level,
+              min_xp: t.min_xp,
+              isLocked: true,
             });
           }
         });
       }
+
+      // Sort all NFTs by level ascending to keep gallery display ordered
+      mapped.sort((a, b) => (a.level || 0) - (b.level || 0));
 
       setNfts(mapped);
     } catch (err) {
@@ -242,6 +297,7 @@ export function NFTGalleryPage() {
   }, [address, fetchNFTs]);
 
   const filteredNFTs = tierFilter === 'ALL' ? nfts : nfts.filter((n) => n.tier === tierFilter);
+  const collectedCount = nfts.filter((n) => !n.isLocked).length;
 
   if (!isConnected) {
     return (
@@ -261,7 +317,7 @@ export function NFTGalleryPage() {
         <div className="card-title-row mb-6">
           <div>
             <h2 className="text-xl text-white" style={{ fontFamily: 'var(--typography-family-heading)' }}>SBT Collection Gallery</h2>
-            <p className="label-native text-[9px] text-slate-500 mt-1">{nfts.length} SBTs Collected</p>
+            <p className="label-native text-[9px] text-slate-500 mt-1">{collectedCount} SBTs Collected</p>
           </div>
           <span className="badge-cyber badge-cyber-blue">
             {tierFilter === 'ALL' ? 'All Tiers' : tierFilter}

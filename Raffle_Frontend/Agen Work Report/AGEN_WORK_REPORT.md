@@ -1,9 +1,20 @@
 # 🤖 CRYPTO DISCO — AGENT WORK REPORTS (CONSOLIDATED)
 
-- **Ecosystem Version:** v3.64.25-Hardened
-- **Consolidated At:** 2026-05-27T20:25:00+07:00
+- **Ecosystem Version:** v3.64.26-Hardened
+- **Consolidated At:** 2026-05-27T22:40:00+07:00
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+## 2026-05-27 Fix Report - SBT Gallery Locked Tiers Grayed-Out Display (v3.64.26-Hardened)
+- **Status**: Completed, verified via frontend production build and database audits.
+- **Surface**: NFT Gallery Page (`NFTGalleryPage.tsx`), Supreme Master PRD, and agent workspace documentation.
+- **Root Cause & Fix Applied**:
+  1. **Locked SBT presentation in Gray**: Mapped all unminted tiers (tiers with levels greater than the user's current profile tier level) into the NFT Gallery cards with locked configurations.
+  2. **Styling Overlay**: Configured locked cards with grayscale filter (`grayscale opacity-25 contrast-75`), a dynamic zinc-based dark gradient background, an embedded SVG lock icon overlay, and required Level & XP milestone indicators instead of external links.
+  3. **Collected Stat Alignment**: Excluded the Rookie level (level 0) from the layout and updated `collectedCount` to only count unlocked on-chain SBT collectibles.
+- **Verification**: Frontend successfully built in production mode.
+
+---
 
 ## 2026-05-27 Fix Report - SBT Badge Image IPFS URL Correction (v3.64.25-Hardened)
 - **Status**: Completed, verified via database audits and system checks.
