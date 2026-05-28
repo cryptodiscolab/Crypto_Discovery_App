@@ -49,7 +49,12 @@ export function useRaffle() {
             value: requiredETH
         });
 
+        // ✅ v3.64.30: Wait for tx receipt before awarding XP (Zero-Trust Receipt Mandate §56)
         if (hash) {
+            const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+            if (receipt.status !== 'success') {
+                throw new Error(`buyTickets reverted on-chain (status: ${receipt.status})`);
+            }
             toast.success("Tickets bought! Signing for XP...");
             try {
                 const timestamp = new Date().toISOString();
@@ -189,6 +194,11 @@ export function useRaffle() {
                 functionName: 'drawWinner',
                 args: [BigInt(raffleId)],
             });
+            // ✅ v3.64.30: Wait for receipt before admin sync (Zero-Trust Receipt Mandate §56)
+            const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+            if (receipt.status !== 'success') {
+                throw new Error(`drawWinner reverted on-chain (status: ${receipt.status})`);
+            }
             toast.success("Winner draw requested!", { id: tid });
             // Log admin action for draw winner
             try {
@@ -226,7 +236,12 @@ export function useRaffle() {
                 args: [BigInt(raffleId)],
             });
 
+            // ✅ v3.64.30: Wait for receipt before awarding XP (Zero-Trust Receipt Mandate §56)
             if (hash) {
+                const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+                if (receipt.status !== 'success') {
+                    throw new Error(`claimRafflePrize reverted on-chain (status: ${receipt.status})`);
+                }
                 toast.success("🎉 Prize claimed on-chain! Signing for XP bonus...", { id: tid });
                 try {
                     const timestamp = new Date().toISOString();

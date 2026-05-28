@@ -364,7 +364,7 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable2Step {
         dailyApp.burnPoints(msg.sender, minXP);
         
         // 3. Update Tier
-        updateUserTier(msg.sender, nextTier);
+        _doUpdateUserTier(msg.sender, nextTier);
         
         // Store peak for season collectible eligibility
         if (nextTier > userSeasonPeak[msg.sender][currentSeasonId]) {
@@ -391,13 +391,17 @@ contract CryptoDiscoMasterX is ReentrancyGuard, Pausable, Ownable2Step {
         UserData storage user = users[userAddr];
         // Only reset if they were actually in a tier before
         if (user.tier != SBTTier.NONE) {
-            updateUserTier(userAddr, SBTTier.NONE);
+            _doUpdateUserTier(userAddr, SBTTier.NONE);
         }
         user.lastUpdateSeasonId = uint32(currentSeasonId);
     }
 
     function updateUserTier(address user, SBTTier newTier) public {
         require(msg.sender == owner() || msg.sender == address(this), "Unauthorized");
+        _doUpdateUserTier(user, newTier);
+    }
+
+    function _doUpdateUserTier(address user, SBTTier newTier) internal {
         SBTTier oldTier = users[user].tier;
         if (oldTier == newTier && users[user].lastUpdateSeasonId == currentSeasonId) return;
 

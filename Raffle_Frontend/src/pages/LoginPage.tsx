@@ -286,12 +286,28 @@ export function LoginPage() {
                         NEW TO FARCASTER?
                     </p>
                     <a
-                        href="https://farcaster.xyz/~/code/CJ393F"
+                        href={import.meta.env.VITE_OWNER_FARCASTER_REF || 'https://warpcast.com/~/signup'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-400 text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600/20 transition-all"
                     >
                          GET ACCOUNT & JOIN THE GACHA
+                        <ExternalLink className="w-3 h-3" />
+                    </a>
+                </div>
+
+                {/* BaseApp / Coinbase Wallet CTA */}
+                 <div className="mt-4 text-center relative z-10">
+                    <p className="text-[11px] text-slate-500 font-black uppercase tracking-wider mb-3">
+                        NEW TO BASEAPP / COINBASE WALLET?
+                    </p>
+                    <a
+                        href={import.meta.env.VITE_OWNER_BASE_REF || 'https://base.org/names'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400 text-[11px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all"
+                    >
+                         GET WALLET & REGISTER ON BASE
                         <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>

@@ -87,7 +87,7 @@ export const ProfileHeader = ({
                                 <button onClick={() => setIsEditing(true)} className="px-4 py-1.5 rounded-full border border-white/20 label-native hover:bg-white/10 active:scale-95 transition-transform">
                                     EDIT
                                 </button>
-                                <a href="https://farcaster.xyz/~/code/CJ393F" target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 active:scale-90 transition-all">
+                                <a href={import.meta.env.VITE_OWNER_FARCASTER_REF || "https://warpcast.com/~/signup?inviteCode=cryptodisco"} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 active:scale-90 transition-all">
                                     <Sparkles size={18} />
                                 </a>
                             </>

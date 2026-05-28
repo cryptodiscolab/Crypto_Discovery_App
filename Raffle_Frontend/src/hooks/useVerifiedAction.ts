@@ -82,6 +82,7 @@ export function useVerifiedAction() {
                     targetUserId: payload.targetUserId
                 },
                 xpEarned: payload.xp_earned,
+                target_id: payload.target_id ?? null, // ✅ v3.64.30: Anti-Sybil deduplication target
                 // Backward compatibility for tasks-bundle
                 fid: payload.fid,
                 targetFid: payload.targetFid,

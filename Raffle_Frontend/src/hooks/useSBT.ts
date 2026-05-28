@@ -11,7 +11,8 @@ export function useSBT() {
     const { writeContractAsync } = useWriteContract();
     const publicClient = usePublicClient();
 
-    const writeAndWait = async (params: Parameters<typeof writeContractAsync>[0]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const writeAndWait = async (params: any) => {
         const hash = await writeContractAsync(params);
         await publicClient!.waitForTransactionReceipt({ hash });
         return hash;
@@ -354,7 +355,7 @@ export function useSBT() {
     };
 
     const upgradeTier = async (feeValueWei: number | string | bigint) => {
-        return await writeContractAsync({
+        return await writeAndWait({ // ✅ v3.64.30: waitForTransactionReceipt
             address: MASTER_X_ADDRESS,
             abi: ABIS.MASTER_X,
             functionName: 'upgradeTier',

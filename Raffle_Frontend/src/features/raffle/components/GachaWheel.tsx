@@ -31,6 +31,7 @@ export function GachaWheel() {
   const [prizeResult, setPrizeResult] = useState<{ label: string; detail: string; txHash: string } | null>(null);
 
   // Calculator states
+  const [raffleId] = useState<number>(1); // ⚡ v3.64.30: Dynamic-ready (default=1)
   const [paymentToken, setPaymentToken] = useState<'ETH' | 'WETH' | 'USDC'>('ETH');
   const [quantity, setQuantity] = useState<number>(5);
   const [onchainTicketPrice, setOnchainTicketPrice] = useState<bigint>(0n);
@@ -118,9 +119,9 @@ export function GachaWheel() {
       if (paymentToken !== 'ETH') {
         toast.dismiss(tid);
         toast.error(`Buying with ${paymentToken} is simulated. Initiating swap to ETH first...`);
-        await buyTickets(1, quantity);
+        await buyTickets(raffleId, quantity);
       } else {
-        await buyTickets(1, quantity);
+        await buyTickets(raffleId, quantity);
       }
       toast.success('Ticket purchase successful! Syncing balance...', { id: tid });
       setTimeout(() => {
