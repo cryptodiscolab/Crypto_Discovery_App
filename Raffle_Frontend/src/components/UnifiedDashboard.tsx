@@ -169,6 +169,33 @@ export function UnifiedDashboard() {
                             <p className="text-[10px] font-bold uppercase tracking-tight text-slate-500 mt-0.5 leading-none">
                                 {fcUser?.isVerified ? 'SOCIAL IDENTITIES DETECTED & ACTIVE' : 'LINK SOCIAL PLATFORMS TO UNLOCK REWARDS'}
                             </p>
+                            {!fcUser?.isVerified && (
+                                <div className="flex items-center gap-2 mt-2">
+                                    {!fcUser?.farcaster?.verified && (
+                                        <a 
+                                            href="https://warpcast.com/~/signup?inviteCode=cryptodisco" 
+                                            target="_blank" 
+                                            rel="noreferrer" 
+                                            className="text-[9px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors"
+                                        >
+                                            Register Farcaster ➔
+                                        </a>
+                                    )}
+                                    {!fcUser?.farcaster?.verified && !fcUser?.base?.verified && (
+                                        <span className="text-slate-700 text-[9px] font-black">•</span>
+                                    )}
+                                    {!fcUser?.base?.verified && (
+                                        <a 
+                                            href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                            target="_blank" 
+                                            rel="noreferrer" 
+                                            className="text-[9px] font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors"
+                                        >
+                                            Get Basename ➔
+                                        </a>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

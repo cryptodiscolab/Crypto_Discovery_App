@@ -175,7 +175,20 @@ export const ProfileStats = ({
                                     toast.success("Farcaster linked successfully! 🎉", { id: toastId });
                                     fetchProfile();
                                 } else {
-                                    toast.error("No Farcaster profile matches this wallet.", { id: toastId });
+                                    toast.error(
+                                        <div className="text-left">
+                                            <p className="font-bold">No Farcaster profile matches this wallet.</p>
+                                            <a 
+                                                href="https://warpcast.com/~/signup?inviteCode=cryptodisco" 
+                                                target="_blank" 
+                                                rel="noreferrer" 
+                                                className="underline font-black text-purple-400 block mt-1 hover:text-purple-300"
+                                            >
+                                                Register on Warpcast (Owner Referral) ➔
+                                            </a>
+                                        </div>,
+                                        { id: toastId, duration: 6000 }
+                                    );
                                 }
                             } catch (e: any) {
                                 toast.error("Farcaster sync failed: " + (e.message || "Unknown error"), { id: toastId });
@@ -186,7 +199,7 @@ export const ProfileStats = ({
                         disabled={isFarcasterSyncing || (!!profileData.fid && profileData.fid !== 'N/A')}
                         className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${
                             profileData.fid && profileData.fid !== 'N/A'
-                                ? 'bg-[#8a63d2]/5 border-[#8a63d2]/20 text-[#8a63d2] cursor-default'
+                                ? 'bg-purple-500/5 border-purple-500/20 text-[#8a63d2] cursor-default'
                                 : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-[0.98]'
                         }`}
                     >
@@ -199,7 +212,7 @@ export const ProfileStats = ({
                         </div>
                         {profileData.fid && profileData.fid !== 'N/A' && <Check size={12} className="text-[#8a63d2] shrink-0" />}
                     </button>
-
+ 
                     {/* Base Social / Basename */}
                     <button
                         onClick={async () => {
@@ -213,10 +226,36 @@ export const ProfileStats = ({
                                     toast.success(`Basename linked: ${res.basename} 🔵`, { id: toastId });
                                     fetchProfile();
                                 } else {
-                                    toast.error("No Basename registered to this address.", { id: toastId });
+                                    toast.error(
+                                        <div className="text-left">
+                                            <p className="font-bold">No Basename registered to this address.</p>
+                                            <a 
+                                                href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                                target="_blank" 
+                                                rel="noreferrer" 
+                                                className="underline font-black text-blue-400 block mt-1 hover:text-blue-300"
+                                            >
+                                                Register Basename (Owner Referral) ➔
+                                            </a>
+                                        </div>,
+                                        { id: toastId, duration: 6000 }
+                                    );
                                 }
                             } catch (e: any) {
-                                toast.error(e.message || "Basename lookup failed.", { id: toastId });
+                                toast.error(
+                                    <div className="text-left">
+                                        <p className="font-bold">Basename lookup failed.</p>
+                                        <a 
+                                            href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                            target="_blank" 
+                                            rel="noreferrer" 
+                                            className="underline font-black text-blue-400 block mt-1 hover:text-blue-300"
+                                        >
+                                            Register Basename (Owner Referral) ➔
+                                        </a>
+                                    </div>, 
+                                    { id: toastId, duration: 6000 }
+                                );
                             } finally {
                                 setIsBaseSyncing(false);
                             }
@@ -224,7 +263,7 @@ export const ProfileStats = ({
                         disabled={isBaseSyncing || !!profileData.is_base_social_verified}
                         className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${
                             profileData.is_base_social_verified
-                                ? 'bg-[#0052ff]/5 border-[#0052ff]/20 text-[#0052ff] cursor-default'
+                                ? 'bg-blue-500/5 border-blue-500/20 text-[#0052ff] cursor-default'
                                 : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 active:scale-[0.98]'
                         }`}
                     >
@@ -238,6 +277,38 @@ export const ProfileStats = ({
                         {profileData.is_base_social_verified && <Check size={12} className="text-[#0052ff] shrink-0" />}
                     </button>
                 </div>
+
+                {/* Registration Assistance for New Users */}
+                {(!(profileData.fid && profileData.fid !== 'N/A') || !profileData.is_base_social_verified) && (
+                    <div className="mt-4 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl text-left">
+                        <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-1">New to Farcaster or Base?</p>
+                        <p className="text-[11px] text-slate-400 font-medium leading-relaxed mb-3">
+                            Create your accounts using the official owner referral links below to qualify for active member benefits:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {(!profileData.fid || profileData.fid === 'N/A') && (
+                                <a 
+                                    href="https://warpcast.com/~/signup?inviteCode=cryptodisco" 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#8a63d2]/10 border border-[#8a63d2]/20 rounded-xl text-[10px] font-black text-[#8a63d2] hover:bg-[#8a63d2]/20 uppercase tracking-widest transition-all"
+                                >
+                                    <FarcasterIcon className="w-3 h-3 text-[#8a63d2]" /> Register Farcaster
+                                </a>
+                            )}
+                            {!profileData.is_base_social_verified && (
+                                <a 
+                                    href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0052ff]/10 border border-[#0052ff]/20 rounded-xl text-[10px] font-black text-[#0052ff] hover:bg-[#0052ff]/20 uppercase tracking-widest transition-all"
+                                >
+                                    <BaseIcon className="w-3 h-3 text-[#0052ff]" /> Get Basename
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
