@@ -193,13 +193,15 @@ graph TD
 
 | Contract | Base Mainnet (8453) | Base Sepolia (84532) | Governance |
 |----------|---------------------|----------------------|------------|
-| **MasterX** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` ✅ |
-| **Raffle** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` ✅ |
+| **MasterX (New)** | `[RESERVED]` | `0x1b573DdD9a1679505ae64498564523222c758EC2` | `Ownable2Step` ✅ |
+| **Raffle (New)** | `[RESERVED]` | `0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7` | `Ownable2Step` ✅ |
 | **DailyApp V16** | `[RESERVED]` | `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353` | `UUPS + role-gated XP + Admin AccessControl UI` ✅ |
 | **DailyApp V15** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | `AccessControl` (LEGACY) |
 | **DailyApp V14** | `[RESERVED]` | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | `AccessControl` (DEPRECATED) |
 | **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | `AccessControl` (DEPRECATED) |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | `AccessControl` ✅ |
+| **MasterX (Legacy)** | `[RESERVED]` | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | `Ownable` |
+| **Raffle (Legacy)** | `[RESERVED]` | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | `Ownable` |
 
 **Active Admin Wallet**: `0x52260C30697674A7C837feb2Af21BbF3606795C8`
 

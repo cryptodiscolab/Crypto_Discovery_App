@@ -9,9 +9,22 @@ export interface TwitterData {
     verified: boolean;
 }
 
+export interface GoogleData {
+    email?: string;
+    id?: string;
+    verified: boolean;
+}
+
+export interface BaseData {
+    username?: string;
+    verified: boolean;
+}
+
 export interface SocialProfile {
     farcaster?: FarcasterData;
     twitter?: TwitterData;
+    google?: GoogleData;
+    base?: BaseData;
     isVerified: boolean;
 }
 

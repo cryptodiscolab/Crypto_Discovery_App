@@ -108,6 +108,25 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSyncBaseSocial = async (addr: string) => {
+    if (!addr) return;
+    try {
+      const timestamp = new Date().toISOString();
+      const message = `Sync Base Social Identity\nWallet: ${addr}\nTimestamp: ${timestamp}`;
+      const signature = await signMessageAsync({ message });
+
+      const res = await userService.syncBaseSocial({ wallet_address: addr, signature, message });
+      if (res?.success) {
+        refetchProfile();
+        return res;
+      }
+      return null;
+    } catch (e: unknown) {
+      console.error("[handleSyncBaseSocial] Error:", e);
+      throw e;
+    }
+  };
+
   if (!address) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-8 text-center animate-in fade-in zoom-in duration-500">
@@ -210,6 +229,8 @@ export default function ProfilePage() {
               linkX={linkX}
               isOAuthLinking={isOAuthLinking}
               fetchProfile={refetchProfile}
+              syncFarcaster={handleSyncUser}
+              syncBaseSocial={handleSyncBaseSocial}
             />
             {/* QUICK ACTIONS */}
             <div className="grid grid-cols-2 gap-3 px-4">

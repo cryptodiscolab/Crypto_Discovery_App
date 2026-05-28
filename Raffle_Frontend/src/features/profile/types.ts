@@ -14,6 +14,7 @@ export interface ProfileData {
     display_name?: string;
     username?: string;
     is_base_social_verified?: boolean;
+    base_username?: string | null;
     neynarScore?: number;
     neynar_score?: number;
     total_xp?: number;

@@ -54,5 +54,13 @@ export const userService = {
     updateProfile: async (payload: { wallet: string; signature: string; message: string; payload: unknown }) => {
         const { data } = await axios.post('/api/user-bundle?action=update-profile', payload);
         return data;
+    },
+
+    /**
+     * Sync Base Social (Basename) Identity
+     */
+    syncBaseSocial: async (payload: { wallet_address: string; signature: string; message: string }) => {
+        const { data } = await axios.post('/api/user-bundle?action=sync-base-social', payload);
+        return data;
     }
 };

@@ -112,10 +112,9 @@ Notify user format (Standard Reporting v3.26.0):
 
 -   **Chain**: Base Mainnet (8453) + Base Sepolia (84532)
 -   **DailyAppV12Secured (Mainnet)**: `[RESERVED]`
--   **DailyAppV13.2 (Sepolia)**: `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D`
--   **DailyAppV15 (Sepolia, ACTIVE)**: `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2`
--   **MasterX (Sepolia)**: `0x980770dAcE8f13E10632D3EC1410FAA4c707076c`
--   **Raffle (Sepolia)**: `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3`
+-   **DailyAppV16 (Sepolia, ACTIVE)**: `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353`
+-   **MasterX (Sepolia, NEW)**: `0x1b573DdD9a1679505ae64498564523222c758EC2`
+-   **Raffle (Sepolia, NEW)**: `0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7`
 -   **CMS V2 (Sepolia)**: `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC`
 -   **Stack**: React + Vite + Wagmi + RainbowKit + Viem + Supabase + Vercel
 -   **Language**: Chat = Bahasa Indonesia | UI/Code = English

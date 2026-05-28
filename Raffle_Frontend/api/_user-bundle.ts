@@ -2449,16 +2449,24 @@ async function handleSocialStatus(req: VercelRequest, res: VercelResponse) {
     const { address } = req.query as { address: string };
     try {
         const cleanAddress = address.toLowerCase();
-        const { data: profile, error } = await getSupabaseAdmin().from('user_profiles').select('fid, twitter_username, twitter_id, is_base_social_verified').eq('wallet_address', cleanAddress).maybeSingle();
+        const { data: profile, error } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('fid, twitter_username, twitter_id, is_base_social_verified, google_id, google_email, base_username')
+            .eq('wallet_address', cleanAddress)
+            .maybeSingle();
         if (error) throw error;
 
         const hasFarcaster = !!profile?.fid;
         const hasTwitter = !!profile?.twitter_id;
-        const isVerified = hasFarcaster || hasTwitter || profile?.is_base_social_verified;
+        const hasGoogle = !!profile?.google_id;
+        const hasBase = !!profile?.is_base_social_verified;
+        const isVerified = hasFarcaster || hasTwitter || hasGoogle || hasBase;
 
         return res.status(200).json({
             farcaster: hasFarcaster ? { fid: profile.fid, verified: true } : null,
             twitter: hasTwitter ? { username: profile.twitter_username, id: profile.twitter_id, verified: true } : null,
+            google: hasGoogle ? { email: profile.google_email, id: profile.google_id, verified: true } : null,
+            base: hasBase ? { username: profile.base_username, verified: true } : null,
             isVerified: !!isVerified
         });
     } catch (e: unknown) { return res.status(500).json({ error: 'Internal Error', isVerified: false }); }
