@@ -60,6 +60,10 @@ export const ProfileStats = ({
 
     const userWalletAddress = profileData.wallet_address || profileData.wallet_address;
 
+    // Dynamic Owner Referral URLs with Localized Fallbacks (Zero-Hardcode Compliant)
+    const ownerFarcasterRef = import.meta.env.VITE_OWNER_FARCASTER_REF || "https://warpcast.com/~/signup?inviteCode=cryptodisco";
+    const ownerBaseRef = import.meta.env.VITE_OWNER_BASE_REF || "https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8";
+
     return (
         <div className="max-w-screen-md mx-auto">
             {/* STATS LIST */}
@@ -179,7 +183,7 @@ export const ProfileStats = ({
                                         <div className="text-left">
                                             <p className="font-bold">No Farcaster profile matches this wallet.</p>
                                             <a 
-                                                href="https://warpcast.com/~/signup?inviteCode=cryptodisco" 
+                                                href={ownerFarcasterRef} 
                                                 target="_blank" 
                                                 rel="noreferrer" 
                                                 className="underline font-black text-purple-400 block mt-1 hover:text-purple-300"
@@ -230,7 +234,7 @@ export const ProfileStats = ({
                                         <div className="text-left">
                                             <p className="font-bold">No Basename registered to this address.</p>
                                             <a 
-                                                href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                                href={ownerBaseRef} 
                                                 target="_blank" 
                                                 rel="noreferrer" 
                                                 className="underline font-black text-blue-400 block mt-1 hover:text-blue-300"
@@ -246,7 +250,7 @@ export const ProfileStats = ({
                                     <div className="text-left">
                                         <p className="font-bold">Basename lookup failed.</p>
                                         <a 
-                                            href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                            href={ownerBaseRef} 
                                             target="_blank" 
                                             rel="noreferrer" 
                                             className="underline font-black text-blue-400 block mt-1 hover:text-blue-300"
@@ -288,7 +292,7 @@ export const ProfileStats = ({
                         <div className="flex flex-wrap gap-2">
                             {(!profileData.fid || profileData.fid === 'N/A') && (
                                 <a 
-                                    href="https://warpcast.com/~/signup?inviteCode=cryptodisco" 
+                                    href={ownerFarcasterRef} 
                                     target="_blank" 
                                     rel="noreferrer"
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[#8a63d2]/10 border border-[#8a63d2]/20 rounded-xl text-[10px] font-black text-[#8a63d2] hover:bg-[#8a63d2]/20 uppercase tracking-widest transition-all"
@@ -298,7 +302,7 @@ export const ProfileStats = ({
                             )}
                             {!profileData.is_base_social_verified && (
                                 <a 
-                                    href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                    href={ownerBaseRef} 
                                     target="_blank" 
                                     rel="noreferrer"
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0052ff]/10 border border-[#0052ff]/20 rounded-xl text-[10px] font-black text-[#0052ff] hover:bg-[#0052ff]/20 uppercase tracking-widest transition-all"

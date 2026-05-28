@@ -173,7 +173,7 @@ export function UnifiedDashboard() {
                                 <div className="flex items-center gap-2 mt-2">
                                     {!fcUser?.farcaster?.verified && (
                                         <a 
-                                            href="https://warpcast.com/~/signup?inviteCode=cryptodisco" 
+                                            href={import.meta.env.VITE_OWNER_FARCASTER_REF || 'https://warpcast.com/~/signup'} 
                                             target="_blank" 
                                             rel="noreferrer" 
                                             className="text-[9px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors"
@@ -186,7 +186,7 @@ export function UnifiedDashboard() {
                                     )}
                                     {!fcUser?.base?.verified && (
                                         <a 
-                                            href="https://base.org/names?ref=0x52260C30697674A7C837feb2Af21BbF3606795C8" 
+                                            href={import.meta.env.VITE_OWNER_BASE_REF || 'https://base.org/names'} 
                                             target="_blank" 
                                             rel="noreferrer" 
                                             className="text-[9px] font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors"

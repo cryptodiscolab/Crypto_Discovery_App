@@ -188,3 +188,45 @@ This document serves as the central registry for historical Work Reports within 
 ## 🟢 Work Report v3.51.1: Dual Pipeline Routing Fix
 **Status**: ✅ IMPLEMENTED
 **Summary**: Resolution of dual routing logic between Web3 identity verification and daily reward claims to avoid transaction blockages.
+
+---
+
+## 🟢 Work Report v3.64.28: Social Verification & Brand Icon Integration
+**Status**: ✅ IMPLEMENTED
+**Date**: 2026-05-28
+**Protocol**: v3.64.28-Hardened
+
+### Changes
+1. **Official Brand Icons**: Replaced all placeholder/generic icons for Google, X (Twitter), Farcaster, and Base with authentic SVG assets on `ProfileStats.tsx` and `UnifiedDashboard.tsx`.
+2. **EIP-191 Cryptographic Verification**: Integrated proper signature-based verification for Farcaster and Base Social identities — no more mock/bypass flows.
+3. **Zero-Hardcode Referral Links**: Refactored owner referral links (Farcaster signup, Basename registration) to use `VITE_OWNER_FARCASTER_REF` and `VITE_OWNER_BASE_REF` environment variables with safe fallback defaults.
+4. **Registration Assistance UI**: New users without Farcaster/Basename accounts now see a contextual "Registration Assistance" block with owner referral links, guiding them through onboarding.
+5. **`.env` Placeholder Entry**: Added clearly commented placeholder vars in `Raffle_Frontend/.env` for the owner to configure before deployment.
+
+### Files Modified
+- `Raffle_Frontend/src/features/profile/components/ProfileStats.tsx`
+- `Raffle_Frontend/src/components/UnifiedDashboard.tsx`
+- `Raffle_Frontend/.env`
+
+### Owner Action Required
+Set the following env vars in Vercel (and local `.env`) before deploying to production:
+- `VITE_OWNER_FARCASTER_REF` — Your Warpcast invite URL (e.g. `https://warpcast.com/~/signup?inviteCode=YOUR_CODE`)
+- `VITE_OWNER_BASE_REF` — Your Base names referral URL (e.g. `https://base.org/names?ref=YOUR_WALLET`)
+
+---
+
+## 🟢 Work Report v3.64.29: Zero-Hardcode Audit & Final Build Sync
+**Status**: ✅ IMPLEMENTED
+**Date**: 2026-05-28
+**Protocol**: v3.64.29-Hardened
+
+### Changes
+1. **Full Hardcode Sweep**: Confirmed `UnifiedDashboard.tsx` referral links now use `import.meta.env` — zero hardcoded addresses or invite codes remain in the primary render paths.
+2. **Build Verified**: Production Vite build executed (`npm --prefix Raffle_Frontend run build`) with 0 errors.
+3. **Audit Compliance**: `check_sync_status.cjs` passed — all critical systems operational.
+4. **Git Sync**: Changes committed and pushed to origin.
+
+### SOT Hierarchy Respected
+- All reward/XP values: Supabase `point_settings` ✅
+- All referral URLs: `import.meta.env.*` ✅
+- All contract addresses: `.env` VITE_ vars ✅
