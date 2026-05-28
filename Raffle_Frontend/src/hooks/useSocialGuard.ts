@@ -20,8 +20,8 @@ export function useSocialGuard(address?: string): UseQueryResult<SocialProfile |
                 };
             }
 
-            // [FIX v3.56.5] Call the new unified endpoint in user-bundle.js
-            const res = await fetch(`/api/user/social-status?address=${address.toLowerCase()}`);
+            // [FIX v3.64.30] Corrected endpoint — was /api/user/social-status (non-existent), now correct bundle route
+            const res = await fetch(`/api/user-bundle?action=social-status&address=${address.toLowerCase()}`);
             if (!res.ok) {
                 console.warn('[useSocialGuard] Failed to fetch social status');
                 return { isVerified: false };

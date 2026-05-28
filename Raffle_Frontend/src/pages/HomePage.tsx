@@ -11,6 +11,7 @@ import { HypeFeed } from '../components/HypeFeed';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 import { supabase } from '../lib/supabaseClient';
 import { DailyClaimModal } from '../features/profile/components/modals/DailyClaimModal';
+import { ActivityLogSection } from '../features/profile/components/ActivityLogSection';
 
 interface PoolSettings {
   targetUSDC: number;
@@ -97,19 +98,16 @@ export function HomePage() {
     const cleanAddress = address.toLowerCase();
 
     const fetchActivityLogs = async () => {
-      const { data, error } = await supabase
-        .from('user_activity_logs')
-        .select('id, description, activity_type, created_at')
-        .eq('wallet_address', cleanAddress)
-        .order('created_at', { ascending: false })
-        .limit(4);
-
-      if (error) {
-        console.warn('[HomePage] Activity log fetch failed:', error);
-        return;
+      // [FIX v3.64.30] Use API route (service role key) instead of direct Supabase anon query
+      // Direct anon query was blocked by RLS. The API handler uses getSupabaseAdmin().
+      try {
+        const res = await fetch(`/api/user-bundle?action=get-activity-logs&wallet=${cleanAddress}&limit=4`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (isMounted) setActivityLogs((json?.logs || []) as ActivityLogItem[]);
+      } catch (e) {
+        console.warn('[HomePage] Activity log fetch failed:', e);
       }
-
-      if (isMounted) setActivityLogs((data as ActivityLogItem[]) || []);
     };
 
     void fetchActivityLogs();
@@ -435,6 +433,13 @@ export function HomePage() {
           }}
           streakCount={displayStreak}
         />
+      )}
+
+      {/* Full Activity Log with filter tabs — [v3.64.30] */}
+      {isConnected && address && (
+        <div className="max-w-4xl mx-auto px-4 pb-8">
+          <ActivityLogSection walletAddress={address} />
+        </div>
       )}
     </div>
   );

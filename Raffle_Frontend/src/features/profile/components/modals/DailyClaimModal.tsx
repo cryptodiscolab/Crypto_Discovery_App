@@ -29,7 +29,7 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
     const { writeContractAsync } = useWriteContract();
     const { signMessageAsync } = useSignMessage();
     const publicClient = usePublicClient();
-    const { refetch: refetchPoints, ecosystemSettings } = usePoints();
+    const { refetch: refetchPoints, ecosystemSettings, manualAddPoints } = usePoints();
     const [isClaiming, setIsClaiming] = useState(false);
     const [countdown, setCountdown] = useState('');
     const [isCooldown, setIsCooldown] = useState(false);
@@ -65,14 +65,21 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
             const hash = await writeContractAsync({ address: CONTRACTS.DAILY_APP as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'claimDailyBonus' });
             toast.loading('Mining transaction...', { id: tid });
             await publicClient!.waitForTransactionReceipt({ hash });
+
+            // [FIX v3.64.30] Optimistic XP update — instant UI feedback before backend confirms
+            if (dailyReward > 0) manualAddPoints(dailyReward);
+
             toast.loading('Syncing XP...', { id: tid });
             try {
                 const syncMsg = `Sync Daily Claim\nTx: ${hash}\nWallet: ${address}`;
                 const syncSig = await signMessageAsync({ message: syncMsg });
                 const syncRes = await fetch('/api/user-bundle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'xp', wallet_address: address, tx_hash: hash, signature: syncSig, message: syncMsg }) });
                 if (!syncRes.ok) throw new Error(`Sync API returned ${syncRes.status}`);
-                await new Promise(r => setTimeout(r, 1500));
+                // Wait longer for DB propagation before refetch
+                await new Promise(r => setTimeout(r, 3500));
                 await Promise.all([refetchOnChainStats(), refetchPoints()]);
+                // Second delayed refetch as fallback for slow DB writes
+                setTimeout(() => { void refetchPoints(); }, 7000);
                 toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
                 if (onSuccess) onSuccess();
                 onClose();
