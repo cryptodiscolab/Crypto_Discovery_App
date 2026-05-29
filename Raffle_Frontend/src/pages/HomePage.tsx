@@ -157,6 +157,15 @@ export function HomePage() {
               <p className="text-[11px] font-black uppercase tracking-tighter text-emerald-500 leading-none">Points</p>
               <p className="text-[11px] font-black text-white">{displayXp?.toString() || '0'} XP</p>
             </div>
+            <a 
+              href="https://crypto-discovery-app.vercel.app/profile" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="w-8 h-8 rounded-lg flex items-center justify-center border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 active:scale-90 transition-all cursor-pointer"
+              title="View Profile"
+            >
+              <i className="fa-solid fa-user text-xs"></i>
+            </a>
           </div>
         </div>
       )}
@@ -221,6 +230,18 @@ export function HomePage() {
               <span className="label-native text-[8px] text-slate-500">XP TIER</span>
               <span className="value-native text-xs" style={{ color: 'var(--colors-brand-primary)', fontWeight: 'bold', marginTop: '2px' }}>{displayTierName}</span>
             </div>
+            <a 
+              href="https://crypto-discovery-app.vercel.app/profile"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass-card p-2 min-w-[80px] flex flex-col items-center justify-center rounded-md border border-indigo-500/20 hover:bg-indigo-500/10 active:scale-95 transition-all text-center cursor-pointer"
+              style={{ background: 'rgba(99, 102, 241, 0.05)' }}
+            >
+              <span className="label-native text-[8px] text-indigo-400">PROFILE</span>
+              <div className="mt-1">
+                <i className="fa-solid fa-user text-indigo-400 text-xs"></i>
+              </div>
+            </a>
           </div>
         </div>
 
