@@ -4,6 +4,18 @@ This document serves as the central registry for historical Work Reports within 
 
 ---
 
+## 🟢 Work Report v3.64.33-Hardened: On-Chain XP Recovery Migration (Supabase → DailyAppV16)
+**Status**: ✅ EXECUTED, VERIFIED & COMMITTED
+**Summary**: Executed full XP state restoration from Supabase `user_profiles` backup into the DailyAppV16 contract for all 5 active users after the UUPS proxy redeployment reset all on-chain state to 0. The v3.64.32 watermark self-healing fixed future daily claims; this migration restores historical XP, tiers, and task counts on-chain.
+**Changes**:
+1. **Migration Script** (`scripts/sync/recover_xp_to_contract.cjs`) [NEW]: Admin-only tool that reads Supabase data, filters users needing recovery, calls `batchMigrateUsers()`, updates Supabase watermarks atomically, and auto-verifies results. Idempotent and safe to re-run. Supports `--dry-run`, `--execute`, `--verify` flags.
+2. **Migration Executed**: 5/5 users migrated in 1 TX on Base Sepolia (Block: 42,130,067). TX: `0x24d6a1fa...6f12b` (see Basescan)
+3. **Data Restored**: 9,726 XP total | 41 task completions | Tiers: `0x5226..`→3, `0x455d..`→2, rest→0
+4. **Verification**: 5/5 PASS — on-chain XP, tier, and tasksCompleted match Supabase. `lastDailyBonusClaim=0` (fresh daily claim available). Supabase `last_onchain_xp` watermarks updated to match `total_xp`.
+5. **RPC**: Public `sepolia.base.org` used (Alchemy free tier returned 'App inactive').
+
+---
+
 ## 🟢 Work Report v3.64.32-Hardened: Daily Claim XP Sync & Watermark Self-Healing
 **Status**: ✅ IMPLEMENTED & VERIFIED
 **Summary**: Resolved user daily claim XP deadlock caused by contract migration (V15 -> V16) resetting cumulative on-chain points to 0. Handled contract resets gracefully by treating the new contract's on-chain XP as the incremental delta, disabling legacy recovery deltas, and resetting the database `last_onchain_xp` watermark to the new contract points dynamically. Executed a real-time database alignment script for stuck active users, restoring their sync pipelines and successfully awarding their newly claimed XP.

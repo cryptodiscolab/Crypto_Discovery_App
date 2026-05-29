@@ -148,6 +148,7 @@ All identified drifts have been synchronized with `DailyAppV12Secured.json`.
 - [x] **Social Verification Integration & Official Brand Logos (v3.64.28-Hardened)**: Integrated full cryptographic Farcaster and Base Social verification via wallet signatures (EIP-191) with official SVG brand logos on the profile page and main dashboard.
 - [x] **E2E Feature Audit & Dynamic Referral Redirections (v3.64.31-Hardened)**: Conducted a thorough E2E code integrity audit for six core features, replaced hardcoded Warpcast invite links with environment placeholders, added Coinbase Wallet/BaseApp referral sign-ups, and added profile link buttons.
 - [x] **Daily Claim XP Sync & Watermark Self-Healing (v3.64.32-Hardened)**: Resolved user daily claim XP deadlock caused by contract migration (V15 -> V16) resetting cumulative on-chain points to 0. Implemented dynamic contract reset detection and DB watermark self-healing in user-bundle and audit-bundle, and executed an immediate recovery script to align database profiles for stuck active users.
+- [x] **On-Chain XP Recovery Migration (v3.64.33-Hardened)**: Executed full XP state restoration from Supabase backup into DailyAppV16 contract for all 5 active users. Created `scripts/sync/recover_xp_to_contract.cjs` (idempotent, batched, auto-verifying) calling `batchMigrateUsers()`. Restored 9,726 XP + 41 tasks + tiers in 1 TX. 5/5 PASS verification. Supabase watermarks updated atomically post-migration.
 
 ## Immediate Protocol Constraints
 - **Immutable Architect Protocol**: `viaIR: true`, `runs: 200`.

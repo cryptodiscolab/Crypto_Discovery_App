@@ -1,7 +1,7 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.32-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.33-Hardened)
 
-- **Ecosystem Version:** v3.64.32-Hardened
-- **Last Updated:** 2026-05-29T10:30:00+07:00
+- **Ecosystem Version:** v3.64.33-Hardened
+- **Last Updated:** 2026-05-29T11:42:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
@@ -4919,3 +4919,41 @@ The following scripts contain hardcoded, outdated addresses (`0x87a3...` / `0x1E
 *Created by Antigravity — Nexus Master Architect*
 *Integrity First. Nexus Synchronized. v3.64.32 LOCKED.*
 
+
+---
+## 60. Work Report v3.64.33-Hardened — On-Chain XP Recovery Migration (Supabase → DailyAppV16)
+**Status**: COMPLETED
+**Date**: 2026-05-29
+**Focus**: Full XP state restoration from Supabase backup into the DailyAppV16 contract for all 5 active users after contract redeployment reset all on-chain XP to 0.
+
+### Problem:
+After DailyAppV15 → V16 upgrade (UUPS proxy reset), all on-chain user XP and tier state was zeroed. While the Watermark Self-Healing (v3.64.32) fixed future daily claims, historical XP was not on-chain — users appeared to have 0 XP on-chain even though Supabase showed their full history.
+
+### Solution:
+Created admin migration script `scripts/sync/recover_xp_to_contract.cjs` that:
+1. Reads all users with `total_xp > 0` from Supabase `user_profiles`
+2. Counts `totalTasksCompleted` per wallet from `user_task_claims` table (41 total claims)
+3. Reads current on-chain XP via RPC (public Base Sepolia endpoint — Alchemy inactive)
+4. Filters to users needing migration (on-chain XP < Supabase total_xp)
+5. Calls `batchMigrateUsers(address[], UserStats[])` on DailyAppV16
+6. Updates Supabase `last_onchain_xp` watermarks atomically after each batch
+7. Auto-verifies on-chain state matches Supabase after migration
+
+### Key Results:
+- **5/5 users migrated** in a single transaction (Block: 42,130,067)
+- **TX**: `0x24d6a1fa...6f12b` ([Basescan](https://sepolia.basescan.org/address/0xb592D6819Ea310d83034cD80FDDC2e754D0a5353))
+- **Total XP Restored**: 9,726 XP
+- **Tasks Restored**: 41 completed tasks across all users
+- **Tier Restored**: Sequential validation (0-4) — `0x5226..` restored to Tier 3, `0x455d..` to Tier 2
+- **Verification**: 5/5 PASS — on-chain XP, tier, and tasksCompleted match Supabase exactly
+- **lastDailyBonusClaim**: Set to 0 → users can claim daily bonus fresh on new contract
+- **Supabase watermarks**: `last_onchain_xp` updated to match `total_xp` for all migrated users
+- **Idempotent**: Script skips users where on-chain XP already ≥ Supabase XP (safe to re-run)
+- **RPC Fallback**: Uses `sepolia.base.org` public RPC (Alchemy free tier returned 'App inactive')
+
+### Files Changed:
+- `scripts/sync/recover_xp_to_contract.cjs` [NEW] — Admin XP recovery migration tool
+
+---
+*Created by Antigravity — Nexus Master Architect*
+*Integrity First. Nexus Synchronized. v3.64.33 LOCKED.*
