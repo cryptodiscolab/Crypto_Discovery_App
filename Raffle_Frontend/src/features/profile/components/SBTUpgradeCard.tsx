@@ -50,6 +50,10 @@ export function SBTUpgradeCard() {
         ? nextTier.mintPrice
         : (masterXFee ? BigInt(masterXFee.toString()) : 0n);
 
+    // FIX v3.64.35: Guard against rendering before tier contract data is loaded.
+    // isOpen being undefined means data hasn't loaded yet — don't block button prematurely.
+    const isDataLoaded = nextTier?.isOpen !== undefined;
+
     // Safety check for Max Level
     if (currentTierIndex >= 5) {
         return (
@@ -67,9 +71,20 @@ export function SBTUpgradeCard() {
         );
     }
 
-    if (!nextTier) return null;
+    // FIX v3.64.36: Wait for tier data to load before rendering.
+    // Prevents false states: pointsRequired=0 causing hasTotalXP=true, isOpen=undefined causing premature button enable.
+    if (!nextTier || !isDataLoaded) return null;
 
-    const hasTotalXP = Number(userPoints) >= nextTier.pointsRequired;
+    // FIX v3.64.35: Use on-chain XP as authoritative source when available.
+    // This allows users restored via batchMigrateUsers (on-chain) but not yet DB-synced to mint.
+    const chainXP = userOnChainStats ? Number(userOnChainStats.points) : -1;
+    const dbXP = Number(userPoints);
+    // Prefer on-chain XP if it's loaded (>= 0), else fall back to Supabase XP
+    const effectiveXP = chainXP >= 0 ? chainXP : dbXP;
+
+    // FIX v3.64.36: Only compute XP sufficiency when data is loaded.
+    // When !isDataLoaded, pointsRequired is 0 (fallback), causing false positive.
+    const hasTotalXP = isDataLoaded && effectiveXP >= nextTier.pointsRequired;
     const hasDbCanonicalXP = hasTotalXP;
     const isSoldOut = nextTier.maxSupply > 0 && nextTier.currentSupply >= nextTier.maxSupply;
     const isTierClosed = nextTier.isOpen === false;
@@ -78,8 +93,8 @@ export function SBTUpgradeCard() {
         ? true
         : (balanceData?.value ?? 0n) >= effectiveMintPrice;
 
-    const xpShortfall = nextTier.pointsRequired - Number(userPoints);
-    const isReady = isSbtFeatureEnabled && hasDbCanonicalXP && !isSoldOut && !isTierClosed && hasEnoughETH;
+    const xpShortfall = nextTier.pointsRequired - effectiveXP;
+    const isReady = isSbtFeatureEnabled && hasDbCanonicalXP && !isSoldOut && !isTierClosed && hasEnoughETH && isDataLoaded;
 
     const handleUpgrade = async () => {
         if (isGasExpensive) return toast.error("⛔ Transaction paused: network gas too high. Please wait.", { icon: '⛽' });
@@ -215,15 +230,19 @@ export function SBTUpgradeCard() {
                     {/* XP Progress */}
                     <div className="space-y-2">
                         <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                            <span className="text-slate-500">XP Requirement</span>
+                            <span className="text-slate-500">XP Requirement
+                                {chainXP >= 0 && chainXP !== dbXP && (
+                                    <span className="ml-1 text-[9px] text-indigo-400 normal-case">(on-chain)</span>
+                                )}
+                            </span>
                             <span className={hasDbCanonicalXP ? "text-green-400" : "text-yellow-400"}>
-                                {Number(userPoints).toLocaleString()} / {nextTier.pointsRequired.toLocaleString()}
+                                {effectiveXP.toLocaleString()} / {nextTier.pointsRequired.toLocaleString()}
                             </span>
                         </div>
                         <div className="h-2 bg-black/40 rounded-full border border-white/5 overflow-hidden">
                             <div
                                 className={`h-full transition-all duration-1000 ${hasDbCanonicalXP ? 'bg-green-500' : 'bg-yellow-600'}`}
-                                style={{ width: `${Math.min((Number(userPoints) / nextTier.pointsRequired) * 100, 100)}%` }}
+                                style={{ width: `${Math.min((effectiveXP / nextTier.pointsRequired) * 100, 100)}%` }}
                             />
                         </div>
                         {hasDbCanonicalXP && (
