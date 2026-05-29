@@ -275,7 +275,7 @@ async function checkFeatureGuard(featureKey: string, res: VercelResponse): Promi
 async function handler(req: VercelRequest, res: VercelResponse) {
     const action = req.body?.action || req.query?.action;
 
-    if (['xp', 'sync-pool-claim'].includes(action)) {
+    if (['daily-claim', 'xp', 'sync-pool-claim'].includes(action)) {
         if (!(await checkFeatureGuard('daily_claim', res))) return;
     }
 
@@ -305,6 +305,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         case 'sync-ugc-raffle': await handleSyncUgcRaffle(req, res); break;
         case 'sbt-mint-entitlement': await handleSbtMintEntitlement(req, res); break;
         case 'sync-sbt-upgrade': await handleSyncSbtUpgrade(req, res); break;
+        case 'daily-claim': await handleDailyClaim(req, res); break;
         case 'sync-pool-claim': await handleSyncPoolClaim(req, res); break;
         case 'leaderboard': await handleLeaderboard(req, res); break;
         case 'sync-oauth': await handleSyncOAuth(req, res); break;
@@ -1778,6 +1779,158 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+/**
+ * handleDailyClaim — Synchronous single-signature daily claim handler.
+ * [v3.64.33-Hardened] Frontend sends tx_hash after claimDailyBonus() succeeds.
+ * Backend verifies on-chain receipt, reads contract userStats, and immediately
+ * updates user_profiles (streak, last_onchain_xp, total_xp via fn_increment_xp)
+ * and logs activity — all in one atomic flow. No extra signMessage needed.
+ */
+async function handleDailyClaim(req: VercelRequest, res: VercelResponse) {
+    const { wallet_address, tx_hash, chain_id } = req.body;
+    if (!wallet_address || !tx_hash) return res.status(400).json({ error: 'Missing wallet_address or tx_hash' });
+
+    try {
+        const cleanAddress = wallet_address.toLowerCase();
+        const cleanTxHash = String(tx_hash).trim().toLowerCase();
+
+        // 1. Prevent replay: check if this tx_hash was already synced
+        const { data: existingLog } = await getSupabaseAdmin()
+            .from('user_activity_logs')
+            .select('id')
+            .eq('tx_hash', cleanTxHash)
+            .maybeSingle();
+
+        if (existingLog) {
+            return res.status(200).json({ success: true, xp_synced: 0, already_synced: true });
+        }
+
+        // 2. Verify on-chain receipt
+        let receipt;
+        try {
+            receipt = await rpcClient.waitForTransactionReceipt({ hash: cleanTxHash as `0x${string}`, timeout: 15000 });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+            if (msg.includes('timeout') || msg.includes('could not be found')) {
+                return res.status(503).json({ error: 'RPC_SYNC_DELAYED', message: 'Transaction receipt not indexed yet. Sync queued for CRON.' });
+            }
+            throw err;
+        }
+
+        if (!receipt || receipt.status !== 'success') {
+            return res.status(400).json({ error: 'Transaction reverted or invalid on-chain' });
+        }
+
+        // 3. Verify sender matches wallet and target is DailyApp contract
+        if (receipt.from.toLowerCase() !== cleanAddress) {
+            return res.status(403).json({ error: 'Transaction sender does not match wallet' });
+        }
+        if (DAILY_APP_ADDRESS && receipt.to?.toLowerCase() !== DAILY_APP_ADDRESS.toLowerCase()) {
+            return res.status(403).json({ error: 'Transaction destination is not DailyApp contract' });
+        }
+
+        // 4. Read current on-chain stats
+        const contractStats = await rpcClient.readContract({
+            address: DAILY_APP_ADDRESS as `0x${string}`,
+            abi: DAILY_APP_USER_STATS_ABI,
+            functionName: 'userStats',
+            args: [cleanAddress as `0x${string}`],
+        }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
+
+        const currentOnChainXp = Number(contractStats?.[0] || 0);
+        const currentTierOnChain = Number(contractStats?.[3] || 0);
+
+        // 5. Read current DB profile
+        const { data: profile } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .select('last_onchain_xp, total_xp, streak_count, last_streak_claim')
+            .eq('wallet_address', cleanAddress)
+            .maybeSingle();
+
+        if (!profile) {
+            return res.status(404).json({ error: 'User profile not found' });
+        }
+
+        const lastOnChainXp = profile.last_onchain_xp || 0;
+        const xpDelta = currentOnChainXp > lastOnChainXp ? currentOnChainXp - lastOnChainXp : currentOnChainXp;
+
+        // 6. Calculate streak
+        const now = new Date();
+        const lastClaimDate = profile.last_streak_claim ? new Date(profile.last_streak_claim) : null;
+        let newStreak = profile.streak_count || 0;
+
+        if (!lastClaimDate) {
+            newStreak = 1;
+        } else {
+            const diffHours = (now.getTime() - lastClaimDate.getTime()) / (1000 * 60 * 60);
+            if (diffHours >= 20 && diffHours <= 48) newStreak += 1;
+            else if (diffHours > 48) newStreak = 1;
+        }
+
+        const streakIso = now.toISOString();
+
+        // 7. Atomic DB update: watermark + streak + XP increment
+        const { error: updateErr } = await getSupabaseAdmin()
+            .from('user_profiles')
+            .update({
+                last_onchain_xp: currentOnChainXp,
+                streak_count: newStreak,
+                last_streak_claim: streakIso,
+                tier: currentTierOnChain,
+                updated_at: streakIso
+            })
+            .eq('wallet_address', cleanAddress)
+            .eq('last_onchain_xp', lastOnChainXp);
+
+        if (updateErr) throw updateErr;
+
+        // 8. Increment XP via RPC
+        if (xpDelta > 0) {
+            const { error: rpcErr } = await getSupabaseAdmin().rpc('fn_increment_xp', {
+                p_wallet: cleanAddress,
+                p_amount: xpDelta
+            });
+
+            if (rpcErr && rpcErr.code !== '23505') throw rpcErr;
+        }
+
+        // 9. Log activity
+        await logActivity({
+            wallet: cleanAddress,
+            category: 'XP',
+            type: 'On-chain Daily Claim',
+            description: `Daily claim: +${xpDelta} XP (streak: ${newStreak})`,
+            amount: xpDelta,
+            symbol: 'XP',
+            txHash: cleanTxHash,
+            metadata: {
+                chain_id: chain_id || (isMainnet ? 8453 : 84532),
+                contract_address: DAILY_APP_ADDRESS,
+                on_chain_xp: currentOnChainXp,
+                sync_status: 'synced',
+                streak: newStreak
+            }
+        });
+
+        // 10. Fire-and-forget referral bonus
+        if (xpDelta > 0) {
+            awardReferralBonus(cleanAddress, xpDelta, 'Daily Claim').catch(() => {});
+        }
+
+        return res.status(200).json({ success: true, xp_synced: xpDelta, streak: newStreak });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        await logSystemError({
+            surface: 'api',
+            bundle: 'user-bundle',
+            action: 'daily-claim',
+            wallet_address: wallet_address || 'unknown',
+            message: sanitizeError(msg)
+        });
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }

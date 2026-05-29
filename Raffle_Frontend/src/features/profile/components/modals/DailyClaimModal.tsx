@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Flame } from 'lucide-react';
-import { useAccount, useWriteContract, usePublicClient, useSignMessage, useChainId } from 'wagmi';
+import { useAccount, useWriteContract, usePublicClient, useChainId } from 'wagmi';
 import toast from 'react-hot-toast';
 import { useUserInfo } from '../../../../hooks/useContract';
 import { usePoints } from '../../../../shared/context/PointsContext';
@@ -20,14 +20,15 @@ interface DailyClaimModalProps {
 
 /**
  * DailyClaimModal Component
- * [v3.60.0] Modular Feature-Based Architecture
+ * [v3.64.33-Hardened] ON-CHAIN ONLY daily claim — 1x wallet signature for claimDailyBonus().
+ * No extra backend calls. Off-chain DB sync is fire-and-forget backup only.
+ * UI updates purely from on-chain refetch.
  */
 export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount }: DailyClaimModalProps) {
     const { address } = useAccount();
     const chainId = useChainId();
     const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const { writeContractAsync } = useWriteContract();
-    const { signMessageAsync } = useSignMessage();
     const publicClient = usePublicClient();
     const { refetch: refetchPoints, ecosystemSettings, manualAddPoints } = usePoints();
     const [isClaiming, setIsClaiming] = useState(false);
@@ -62,42 +63,42 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
         setIsClaiming(true);
         const tid = toast.loading("Preparing claim...");
         try {
+            // [ON-CHAIN ONLY] 1x wallet signature for claimDailyBonus() — single sig, no extra backend calls
             const hash = await writeContractAsync({ address: CONTRACTS.DAILY_APP as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'claimDailyBonus' });
             toast.loading('Mining transaction...', { id: tid });
             await publicClient!.waitForTransactionReceipt({ hash });
 
-            // [FIX v3.64.30] Optimistic XP update — instant UI feedback before backend confirms
+            // Optimistic XP update — instant UI feedback
             if (dailyReward > 0) manualAddPoints(dailyReward);
 
-            toast.loading('Syncing XP...', { id: tid });
-            try {
-                const syncMsg = `Sync Daily Claim\nTx: ${hash}\nWallet: ${address}`;
-                const syncSig = await signMessageAsync({ message: syncMsg });
-                const syncRes = await fetch('/api/user-bundle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'xp', wallet_address: address, tx_hash: hash, signature: syncSig, message: syncMsg }) });
-                if (!syncRes.ok) throw new Error(`Sync API returned ${syncRes.status}`);
-                // Wait longer for DB propagation before refetch
-                await new Promise(r => setTimeout(r, 3500));
-                await Promise.all([refetchOnChainStats(), refetchPoints()]);
-                // Second delayed refetch as fallback for slow DB writes
-                setTimeout(() => { void refetchPoints(); }, 7000);
-                toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
-                if (onSuccess) onSuccess();
-                onClose();
-            } catch (syncErr: unknown) {
-                const syncMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
-                // Chain succeeded but backend XP sync failed — record for reconciliation cron.
+            // Refetch from on-chain for real-time data
+            await Promise.all([refetchOnChainStats(), refetchPoints()]);
+            setTimeout(() => { void refetchOnChainStats(); void refetchPoints(); }, 3000);
+
+            // [FIRE-AND-FORGET] Off-chain DB sync as backup only — never blocks user
+            fetch('/api/user-bundle', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'daily-claim',
+                    wallet_address: address,
+                    tx_hash: hash,
+                    chain_id: chainId
+                })
+            }).catch(() => {
                 recordPendingSync({
                     actionType: 'daily_claim',
                     txHash: hash,
                     chainId,
                     contractAddress: CONTRACTS.DAILY_APP as string,
                     payload: { reward_xp: dailyReward },
-                    errorMessage: syncMsg
+                    errorMessage: 'Backup sync failed'
                 }).catch(() => {});
-                toast.success('Claim confirmed on-chain. XP sync pending — will retry automatically.', { id: tid, duration: 6000 });
-                if (onSuccess) onSuccess();
-                onClose();
-            }
+            });
+
+            toast.success(`+${dailyReward} XP Claimed! 🎉`, { id: tid });
+            if (onSuccess) onSuccess();
+            onClose();
         } catch (err: unknown) {
             const error = err as { shortMessage?: string; message?: string };
             toast.error('Claim failed: ' + (error.shortMessage || error.message || 'Try again'), { id: tid });

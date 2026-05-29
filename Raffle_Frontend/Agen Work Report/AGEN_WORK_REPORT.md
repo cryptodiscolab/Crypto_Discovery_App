@@ -1,9 +1,27 @@
 # 🤖 CRYPTO DISCO — AGENT WORK REPORTS (CONSOLIDATED)
 
 - **Ecosystem Version:** v3.64.28-Hardened
-- **Consolidated At:** 2026-05-28T17:50:00Z
+- **Consolidated At:** 2026-05-29T18:15:00Z
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+## 2026-05-29 On-Chain XP Redesign — Full Ecosystem Overhaul (v3.64.33-Hardened)
+- **Status**: Completed, all syntax checks passed.
+- **Surface**: `DailyClaimModal.tsx`, `_shared/constants.ts`, `_user-bundle.ts`, `_tasks-bundle.ts`
+- **Root Cause & Fix Applied**:
+  1. **1x Signature Daily Claim**: Removed the second `signMessageAsync()` call in `DailyClaimModal.tsx`. Daily claim now requires only 1 wallet signature (`claimDailyBonus()`). Backend sync is fire-and-forget.
+  2. **On-Chain XP Infrastructure**: Added `DAILY_APP_XP_ABI` (7 award functions) and `awardOnChainXp()` helper to `constants.ts`. Bot signer calls DailyAppV16 contract functions directly.
+  3. **Social Verify On-Chain**: `handleSocialVerify()` in `_tasks-bundle.ts` now calls `awardSocialXp()` on-chain first, then DB backup.
+  4. **Raffle Buy On-Chain**: `handleVerify()` now calls `awardRaffleBuyXp()` on-chain first for ticket purchases.
+  5. **Gacha On-Chain**: `handleSpinGacha()` now calls `awardMojoXp()` on-chain first for XP prizes.
+  6. **Dead Code Cleanup**: Removed `triggerOnchainSync()` function and unused imports.
+  7. **Daily Claim Backup Handler**: Added `handleDailyClaim()` in `_user-bundle.ts` for DB backup sync.
+- **Gas Architecture**: User pays gas for on-chain txs (daily claim, raffle buy). Bot pays gas for off-chain verified XP awards (~$0.001 on Base L2).
+- **Admin Action Required**: Grant `RAFFLE_ROLE`, `SOCIAL_ROLE`, `MOJO_ROLE` to bot signer address.
+- **Verification**: All 3 bundles pass `node -c` syntax check. TypeScript error (2322) fixed with `args as any` cast.
+- **Detailed Report**: [ON_CHAIN_XP_REDESIGN_REPORT_2026-05-29.md](file:///Raffle_Frontend/Agen%20Work%20Report/ON_CHAIN_XP_REDESIGN_REPORT_2026-05-29.md)
+
+---
 
 ## 2026-05-28 Fix Report - Social Verification Redesign & Official Logos (v3.64.28-Hardened)
 - **Status**: Completed, verified via frontend production build, type check, and database audits.

@@ -10,7 +10,8 @@ import {
     RAFFLE_EVENT_ABI,
     IS_MAINNET,
     sanitizeError,
-    logSystemError
+    logSystemError,
+    awardOnChainXp
 } from './_shared/constants.js';
 import type { 
     PointSetting,
@@ -29,25 +30,6 @@ const publicClient = createPublicClient({
 });
 
 // 🛡️ REFACTORED HELPERS 🛡️
-
-// Fire-and-forget: trigger on-chain XP sync after DB update
-function triggerOnchainSync() {
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '';
-    if (!baseUrl) return;
-    fetch(`${baseUrl}/api/sync-xp-onchain`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || ''}` }
-    }).catch((err) => {
-        // Fire-and-forget but persist error for admin visibility
-        logSystemError({
-            severity: 'warn',
-            surface: 'api',
-            bundle: 'tasks-bundle',
-            action: 'triggerOnchainSync',
-            message: err?.message || 'Onchain sync trigger failed'
-        }).catch(() => {});
-    });
-}
 
 async function getPointValue(activityKey: string): Promise<number> {
     try {
@@ -449,7 +431,6 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
         awardReferralBonus(wallet_address, xp, 'Task Claim').catch(() => {});
 
         await checkAndGrantDailyBonus(wallet_address);
-        triggerOnchainSync();
         return res.status(200).json({ success: true, xp });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -485,12 +466,15 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
         const raffleId = parts[2] || null;
         const txHashFromId = parts[parts.length - 1] || null;
         
+        // [ON-CHAIN FIRST] Award raffle buy XP via bot signer (bot pays gas)
+        const onChainTx = await awardOnChainXp('awardRaffleBuyXp', [wallet_address.toLowerCase() as `0x${string}`, BigInt(ticketCount)]);
+        
         await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
             p_wallet: wallet_address.toLowerCase(),
             p_amount: ticketCount
         });
 
-        await logActivity(wallet_address, 'RAFFLE', 'Ticket Purchase', `Purchased ${ticketCount} ticket(s) for Raffle #${raffleId}`, ticketCount, 'TICKET', { raffle_id: raffleId, ticket_count: ticketCount }, txHashFromId);
+        await logActivity(wallet_address, 'RAFFLE', 'Ticket Purchase', `Purchased ${ticketCount} ticket(s) for Raffle #${raffleId}`, ticketCount, 'TICKET', { raffle_id: raffleId, ticket_count: ticketCount, onchain_tx: onChainTx || undefined }, txHashFromId);
     } else {
         await logActivity(wallet_address, 'XP', 'Task Verify', `Verified ${task_id} on ${platform}`, xp, 'XP');
     }
@@ -516,6 +500,10 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
         throw verifyErr;
     }
 
+    // [ON-CHAIN FIRST] Award XP on-chain via bot signer (bot pays gas ~$0.001)
+    const onChainTx = await awardOnChainXp('awardSocialXp', [wallet_address.toLowerCase() as `0x${string}`, BigInt(xp)]);
+
+    // DB backup (fire-and-forget) — insert claim + activity log
     const result = await insertClaimAndIncrementXp({
         wallet_address: wallet_address.toLowerCase(),
         task_id,
@@ -529,7 +517,7 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
         return res.status(200).json({ success: true, message: "Already recorded.", already_claimed: true });
     }
 
-    await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`, xp, 'XP');
+    await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`, xp, 'XP', { onchain_tx: onChainTx || undefined });
 
     // Award referral bonus to referrer (fire-and-forget)
     awardReferralBonus(wallet_address, xp, 'Social Verify').catch(() => {});
@@ -734,6 +722,11 @@ async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) 
             p_amount: -1
         });
 
+        // [ON-CHAIN FIRST] Award XP via bot signer for XP prizes
+        if (winPrize.category === 'XP') {
+            awardOnChainXp('awardMojoXp', [wallet as `0x${string}`, BigInt(winPrize.amount)]).catch(() => {});
+        }
+
         // 4. Distribute reward
         let prizeDetail = '';
         if (winPrize.category === 'XP') {
@@ -785,8 +778,6 @@ async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) 
             { segment_index: winIdx, prize_label: winPrize.text, prize_detail: prizeDetail },
             txHash
         );
-
-        triggerOnchainSync();
 
         return res.status(200).json({
             success: true,

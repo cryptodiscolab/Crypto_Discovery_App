@@ -1,6 +1,7 @@
-import { createPublicClient, http, fallback } from 'viem';
+import { createPublicClient, http, fallback, createWalletClient } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { createClient } from '@supabase/supabase-js';
+import { privateKeyToAccount } from 'viem/accounts';
 import type { Database } from './database.types.js';
 
 // 1. ENVIRONMENT VALIDATION
@@ -101,6 +102,81 @@ export const DAILY_APP_USER_STATS_ABI = [
             { "name": "isBlacklisted", "type": "bool" }
         ],
         "stateMutability": "view",
+        "type": "function"
+    }
+] as const;
+
+/**
+ * DAILY_APP_XP_ABI — ABI for on-chain XP award functions on DailyAppV16.
+ * [v3.64.33-Hardened] Bot signer calls these after verifying user activity.
+ * Each function is role-gated (RAFFLE_ROLE, SOCIAL_ROLE, MOJO_ROLE, etc.).
+ */
+export const DAILY_APP_XP_ABI = [
+    {
+        "inputs": [
+            { "name": "user", "type": "address" },
+            { "name": "tickets", "type": "uint256" }
+        ],
+        "name": "awardRaffleBuyXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "name": "user", "type": "address" }],
+        "name": "awardRaffleWinXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "name": "user", "type": "address" },
+            { "name": "amount", "type": "uint256" }
+        ],
+        "name": "awardSocialXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "name": "user", "type": "address" },
+            { "name": "amount", "type": "uint256" }
+        ],
+        "name": "awardUgcTaskXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "name": "user", "type": "address" },
+            { "name": "amount", "type": "uint256" }
+        ],
+        "name": "awardMojoXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "name": "user", "type": "address" },
+            { "name": "volumeInUsd", "type": "uint256" }
+        ],
+        "name": "awardSwapXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "name": "user", "type": "address" },
+            { "name": "amountInUsd", "type": "uint256" }
+        ],
+        "name": "awardPurchaseXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     }
 ] as const;
@@ -254,5 +330,50 @@ export async function logSystemError(params: SystemErrorParams): Promise<void> {
         });
     } catch {
         // Never throw from error logger
+    }
+}
+
+// ─── ON-CHAIN XP AWARD HELPER (v3.64.33) ─────────────────────────────────────
+// Bot signer calls DailyAppV16 reward functions after verifying user activity.
+// ON-CHAIN FIRST: award on-chain, DB backup is fire-and-forget.
+// Returns the tx hash on success, or null if the bot signer is not configured.
+
+export async function awardOnChainXp(
+    functionName: 'awardSocialXp' | 'awardRaffleBuyXp' | 'awardRaffleWinXp' | 'awardMojoXp' | 'awardUgcTaskXp' | 'awardSwapXp' | 'awardPurchaseXp',
+    args: readonly unknown[]
+): Promise<`0x${string}` | null> {
+    if (!WALLET_BOT_SIGNER || !DAILY_APP_ADDRESS) return null;
+
+    try {
+        const account = privateKeyToAccount(WALLET_BOT_SIGNER as `0x${string}`);
+        const walletClient = createWalletClient({
+            account,
+            chain: VIEM_CHAIN,
+            transport: http(RPC_URL)
+        });
+
+        const hash = await walletClient.writeContract({
+            address: DAILY_APP_ADDRESS as `0x${string}`,
+            abi: DAILY_APP_XP_ABI,
+            functionName,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            args: args as any
+        });
+
+        // Wait for 1 confirmation for safety
+        await rpcClient.waitForTransactionReceipt({ hash, timeout: 10000 });
+
+        return hash;
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[awardOnChainXp] ${functionName} failed:`, msg);
+        await logSystemError({
+            severity: 'error',
+            surface: 'api',
+            bundle: 'constants',
+            action: `awardOnChainXp:${functionName}`,
+            message: msg.slice(0, 500)
+        }).catch(() => {});
+        return null;
     }
 }
