@@ -1,7 +1,7 @@
 # 🤖 ANTIGRAVITY — GEMINI PROTOCOL DOCUMENT
 *Project: Crypto Discovery App | Agent: Antigravity (Google Gemini)*
-*Last Updated: 2026-05-25*
-*PRD Version: v3.64.23-Hardened (Nexus Command Center (NCC) Audit & Hardening)*
+*Last Updated: 2026-05-29*
+*PRD Version: v3.64.31-Hardened (E2E Feature Audit & Dynamic Referral Redirections)*
 
 ---
 
@@ -523,5 +523,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.64.23 - Hardened & Synchronized.*
+*Constitution v3.64.31 - Hardened & Synchronized.*
 *Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened. Live Agent Delegation Dashboard Activated.*

@@ -1,5 +1,5 @@
-# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.23-Hardened)
-**Last Updated**: 2026-05-25 — Nexus Command Center (NCC) Audit & Hardening
+# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.31-Hardened)
+**Last Updated**: 2026-05-29 — E2E Feature Audit & Dynamic Referral Redirections
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -11,12 +11,12 @@ Berikut adalah daftar Source of Truth untuk kontrak pintar yang saat ini memegan
 
 | Layanan / Kontrak | Alamat (Base Sepolia) | Tanggal Deployment | Fungsi / Keterangan |
 | :--- | :--- | :--- | :--- |
-| **New MasterX** | `0x980770dAcE8f13E10632D3EC1410FAA4c707076c` | 31 Maret 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
+| **New MasterX** | `0x1b573DdD9a1679505ae64498564523222c758EC2` | 23 Mei 2026 | Controller utama, Distribusi XP, NFT/SBT Mint & Upgrade. |
 | **DailyApp V16** | `0xb592D6819Ea310d83034cD80FDDC2e754D0a5353` | 22 Mei 2026 | Active unified XP ledger + Soulbound NFT. Semua XP on-chain. UUPS upgradeable. |
 | **DailyApp V15** | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` | 18 Mei 2026 | Legacy fallback. Digantikan V16. |
 | **DailyApp V14** | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` | 09 Mei 2026 | Deprecated Satellite Tugas Multi-Token (USDC/ETH). |
 | **DailyApp V13.2** | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` | 02 April 2026 | Deprecated Satellite. |
-| **Raffle Manager** | `0xE7CB85c307f1c368DCB9FFcfa5f3e02324eaf1f3` | 29 April 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
+| **Raffle Manager** | `0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7` | 23 Mei 2026 | Tiket Gacha, Undian Sponsor, Refund Protocol V2.1. |
 | **Content CMS** | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` | Maret 2026 | Content management text mapping. |
 
 > [!WARNING]

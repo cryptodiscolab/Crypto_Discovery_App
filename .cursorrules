@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.24-Hardened)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.31-Hardened)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -232,7 +232,7 @@ If you think something should be optimized, explain the trade-offs and ask permi
 | **DailyApp V15** | `[RESERVED]` | `0x0D6f339795EeA5129461388F25dE4f87e92b8DA2` (LEGACY) |
 | **DailyApp V14** | `[RESERVED]` | `0x888fE02bd09642de385E55DdC6D8a7Ab5580f834` |
 | **DailyApp V13.2** | `[RESERVED]` | `0x81D65Cc9267e2eBF88D079e3598Ec78f48aE4B5D` |
-| **MasterX (XP)** | `[RESERVED]` | `0x5916E4A76Ec2a790373FDC2C7410d5065856F142` |
+| **MasterX (XP)** | `[RESERVED]` | `0x1b573DdD9a1679505ae64498564523222c758EC2` |
 | **Raffle** | `[RESERVED]` | `0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7` |
 | **CMS V2** | `[RESERVED]` | `0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC` |
 | **Active DailyApp ENV Key** | `VITE_DAILY_APP_V16_ADDRESS` | `VITE_DAILY_APP_V16_ADDRESS` |
@@ -241,7 +241,7 @@ If you think something should be optimized, explain the trade-offs and ask permi
 
 **DailyApp V16 ABI/runtime rule:** `Raffle_Frontend/src/lib/daily_app_abi.json` and `Raffle_Frontend/src/lib/abis_data.txt` MUST be synced from `artifacts/contracts/DailyAppV16.sol/DailyAppV16.json`. Do not call V13/V15-only selectors against V16, including `syncOffchainXP`, `mintNFTWithEntitlement`, `claimRewards`, `setSponsorshipParams`, `approveSponsorship`, `rejectSponsorship`, `buySponsorshipWithToken`, or `userSponsorshipProgress`.
 
-*Last Updated: 2026-05-23 | MasterX redeployed with Ownable2Step: 0x5916E4A76Ec2a790373FDC2C7410d5065856F142. Raffle redeployed with Ownable2Step: 0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7. All contracts linked. DailyAppV16 UUPS upgraded: 0xFEAA096a0b5334F9F4C46Fc1624d647c2f97D251.*
+*Last Updated: 2026-05-29 | MasterX redeployed with Ownable2Step: 0x1b573DdD9a1679505ae64498564523222c758EC2. Raffle redeployed with Ownable2Step: 0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7. All contracts linked. DailyAppV16 UUPS upgraded: 0xb592D6819Ea310d83034cD80FDDC2e754D0a5353.*
 
 ## 11. BAHASA DAN KOMUNIKASI (LANGUAGE & COMMUNICATION)
 - **Komunikasi**: Gunakan **Bahasa Indonesia** sepenuhnya saat melakukan chat dan memberikan penjelasan teknis.

@@ -4,6 +4,35 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.31-Hardened (E2E Feature Audit & Dynamic Referral Redirections)
+- **Status**: Completed. Conducted E2E feature audits, resolved hardcoded links with environment placeholders, added profile navigation buttons, and pushed to production.
+- **E2E Feature Audit**:
+  - Audited and verified IPFS metadata pinning and payment synchronization for UGC Sponsor creation.
+  - Audited and verified the two-step timer verification flow, Neynar checks, Basename identity gating, and atomic XP claims.
+  - Audited and verified dynamic surcharge calculation and gasless paymaster operations in Buy Raffle.
+  - Audited and verified Raffle winner finalization, Telegram dispatch, on-chain signature/claims validation, and double-claim prevention.
+  - Audited and verified SBT pool dynamic balance reads and real-time polling.
+  - Audited and verified sequential SBT tier mint requirements and receipt checks.
+- **Dynamic Referral Redirections**:
+  - Replaced hardcoded Warpcast sign-up invite links in `LoginPage.tsx` and `ProfileHeader.tsx` with dynamic `VITE_OWNER_FARCASTER_REF` variables from the environment.
+  - Added Coinbase Wallet / BaseApp registration cards using dynamic `VITE_OWNER_BASE_REF` values to onboard new users under the owner's referral code.
+- **Absolute Profile Link Redirection**:
+  - Integrated profile buttons linking directly to the absolute URL `https://crypto-discovery-app.vercel.app/profile` to resolve frame viewport navigation constraints in Frame users.
+- **Ecosystem Compliance**:
+  - Vite production build succeeded with 0 errors. Passed E2E sync status audit (`check_sync_status.cjs`) and Gitleaks security scans with 100% success.
+- **Files Changed**: `Raffle_Frontend/src/pages/LoginPage.tsx`, `Raffle_Frontend/src/features/profile/components/ProfileHeader.tsx`, `Raffle_Frontend/src/pages/HomePage.tsx`, `Raffle_Frontend/.env.example`, `.env`, `PRD/DISCO_DAILY_MASTER_PRD.md`, `docs/history/WORK_REPORTS.md`, `ROADMAP.md`, `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.agents/gemini.md`.
+
+## v3.64.28-Hardened (Social Verification Integration & Official Brand Logos)
+- **Status**: Completed. Integrated cryptographic Farcaster and Base Social verification with EIP-191 signatures and custom SVG brand logos.
+- **Backend Signature Verification**:
+  - Expanded `handleSocialStatus` payload in `_user-bundle.ts` to return Google and Base social statuses.
+  - Deployed cryptographically signed EIP-191 verification logic in the serverless backend.
+- **Interactive UI badges**:
+  - Wired wallet signing prompts for Farcaster and Base Social. Integrated official brand SVG logos (Google, X, Farcaster, Base) glowing in brand colors upon verification.
+- **Ecosystem Compliance**:
+  - Passed all build checks and Gitleaks scans.
+- **Files Changed**: `Raffle_Frontend/api/_user-bundle.ts`, `Raffle_Frontend/src/services/userService.ts`, `Raffle_Frontend/src/types/index.ts`, `Raffle_Frontend/src/features/profile/types.ts`, `Raffle_Frontend/src/pages/ProfilePage.tsx`, `Raffle_Frontend/src/features/profile/components/ProfileStats.tsx`, `Raffle_Frontend/src/components/UnifiedDashboard.tsx`.
+
 ## v3.64.23-Hardened (Nexus Command Center (NCC) Audit & Hardening)
 - **Status**: Completed. Nexus Command Center fully audited, refactored, compiled, and hardened.
 - **Ecosystem Status Restored**:
