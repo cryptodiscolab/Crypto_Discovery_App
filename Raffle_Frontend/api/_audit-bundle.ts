@@ -315,17 +315,27 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                                 const currentOnChainXp = Number(stats[0] || 0);
                                 const currentTierOnChain = Number(stats[3] || 0);
 
-                                const xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
+                                let xpDelta = 0;
+                                let isReset = false;
+                                if (currentOnChainXp > lastOnChainXp) {
+                                    xpDelta = currentOnChainXp - lastOnChainXp;
+                                } else if (currentOnChainXp < lastOnChainXp) {
+                                    // Contract reset or upgrade occurred (e.g. V15 -> V16).
+                                    // Points earned on the new contract represent new XP that has not yet been synced.
+                                    xpDelta = currentOnChainXp;
+                                    isReset = true;
+                                    console.warn(`[Contract Reset Detected] for ${wallet} in Reconcile. db_last_onchain_xp: ${lastOnChainXp}, current_onchain_xp: ${currentOnChainXp}. Watermark will be reset to ${currentOnChainXp}.`);
+                                }
                                 const finalLastOnChainXpToSave = currentOnChainXp;
 
                                 let recoveryDelta = 0;
-                                if (currentTotalXp < lastOnChainXp) {
+                                if (!isReset && currentTotalXp < lastOnChainXp) {
                                     recoveryDelta = lastOnChainXp - currentTotalXp;
                                 }
 
                                 const totalXpToIncrement = xpDelta + recoveryDelta;
 
-                                if (totalXpToIncrement === 0) {
+                                if (totalXpToIncrement === 0 && !isReset) {
                                     if (currentTotalXp === currentOnChainXp && lastOnChainXp === currentOnChainXp) {
                                         console.log(`[Reconcile] Job ${job.id} already has DB/on-chain XP parity; resolving without XP mutation.`);
                                     } else {
@@ -335,7 +345,7 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                                     }
                                 }
 
-                                if (totalXpToIncrement > 0) {
+                                if (totalXpToIncrement > 0 || isReset) {
                                     // Calculate streak updates
                                     let currentStreakToSave = profile.streak_count || 0;
                                     let lastStreakClaimToSave = profile.last_streak_claim || null;
@@ -360,7 +370,7 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                                         updated_at: new Date().toISOString()
                                     };
 
-                                    if (xpDelta > 0) {
+                                    if (xpDelta > 0 || isReset) {
                                         updatePayload.last_onchain_xp = finalLastOnChainXpToSave;
                                     }
 
@@ -381,19 +391,23 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                                     }
 
                                     // Increment total_xp
-                                    const { error: rpcErr } = await (supabase as any).rpc('fn_increment_xp', {
-                                        p_wallet: wallet,
-                                        p_amount: totalXpToIncrement
-                                    });
+                                    if (totalXpToIncrement > 0) {
+                                        const { error: rpcErr } = await (supabase as any).rpc('fn_increment_xp', {
+                                            p_wallet: wallet,
+                                            p_amount: totalXpToIncrement
+                                        });
 
-                                    if (rpcErr) throw rpcErr;
+                                        if (rpcErr) throw rpcErr;
+                                    }
 
                                     // Log activity using logActivity helper
                                     const logDescription = xpDelta > 0 && recoveryDelta > 0
                                         ? `Daily claim (reconciled): +${xpDelta} XP (streak: ${currentStreakToSave}) and recovered +${recoveryDelta} XP from under-sync.`
                                         : xpDelta > 0
                                             ? `Daily claim (reconciled): +${xpDelta} XP (streak: ${currentStreakToSave})`
-                                            : `Ecosystem Parity Recovery (reconciled): Restored +${recoveryDelta} XP from under-sync.`;
+                                            : isReset
+                                                ? `Contract Upgrade Alignment (reconciled): Reset on-chain watermark to ${currentOnChainXp}`
+                                                : `Ecosystem Parity Recovery (reconciled): Restored +${recoveryDelta} XP from under-sync.`;
 
                                     await logActivity(supabase, {
                                         wallet,

@@ -603,15 +603,25 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             args: [cleanAddress as `0x${string}`],
         }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
 
-        const currentOnChainXp = Number(contractStats?.[0] || 0);
+                const currentOnChainXp = Number(contractStats?.[0] || 0);
         const currentTierOnChain = Number(contractStats?.[3] || 0);
 
-        const xpDelta = currentOnChainXp > lastOnChainXp ? (currentOnChainXp - lastOnChainXp) : 0;
+        let xpDelta = 0;
+        let isReset = false;
+        if (currentOnChainXp > lastOnChainXp) {
+            xpDelta = currentOnChainXp - lastOnChainXp;
+        } else if (currentOnChainXp < lastOnChainXp) {
+            // Contract reset or upgrade occurred (e.g. V15 -> V16).
+            // Points earned on the new contract represent new XP that has not yet been synced.
+            xpDelta = currentOnChainXp;
+            isReset = true;
+            console.warn(`[Contract Reset Detected] for ${cleanAddress}. db_last_onchain_xp: ${lastOnChainXp}, current_onchain_xp: ${currentOnChainXp}. Watermark will be reset to ${currentOnChainXp}.`);
+        }
         const finalLastOnChainXpToSave = currentOnChainXp;
 
         const currentTotalXp = profile?.total_xp || 0;
         let recoveryDelta = 0;
-        if (currentTotalXp < lastOnChainXp) {
+        if (!isReset && currentTotalXp < lastOnChainXp) {
             recoveryDelta = lastOnChainXp - currentTotalXp;
             console.warn(`[Deadlock Recovery] Under-sync detected for ${cleanAddress}. total_xp: ${currentTotalXp}, last_onchain_xp: ${lastOnChainXp}. Recovery amount: ${recoveryDelta} XP.`);
         }
@@ -646,7 +656,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
 
         const result = { success: true, xp_synced: 0, current_tier: currentTierOnChain };
 
-        if (totalXpToIncrement > 0) {
+        if (totalXpToIncrement > 0 || isReset) {
             // Rule 60: COOLDOWN ENFORCEMENT for Daily Claim — check BEFORE incrementing
             if (isDailyClaim && xpDelta > 0) {
                 if (profile?.last_streak_claim) {
@@ -664,7 +674,7 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 updated_at: new Date().toISOString()
             };
 
-            if (xpDelta > 0) {
+            if (xpDelta > 0 || isReset) {
                 updatePayload.last_onchain_xp = finalLastOnChainXpToSave;
             }
 
@@ -688,12 +698,14 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
             }
 
             // Safe to increment total_xp ONLY AFTER securing the watermark update
-            const { error: rpcErr } = await getSupabaseAdmin().rpc('fn_increment_xp', {
-                p_wallet: cleanAddress,
-                p_amount: totalXpToIncrement
-            });
+            if (totalXpToIncrement > 0) {
+                const { error: rpcErr } = await getSupabaseAdmin().rpc('fn_increment_xp', {
+                    p_wallet: cleanAddress,
+                    p_amount: totalXpToIncrement
+                });
 
-            if (rpcErr) throw rpcErr;
+                if (rpcErr) throw rpcErr;
+            }
 
             // Determine if this is a daily claim vs generic XP sync
             const logCategory = 'XP';
@@ -707,6 +719,8 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 logDescription = isDailyClaim
                     ? `Daily claim: +${xpDelta} XP (streak: ${currentStreakToSave})`
                     : `Synced ${xpDelta} XP from Base Ledger (Parity: ${currentOnChainXp})`;
+            } else if (isReset) {
+                logDescription = `Contract Upgrade Alignment: Reset on-chain watermark to ${currentOnChainXp}`;
             } else {
                 logDescription = `Ecosystem Parity Recovery: Restored +${recoveryDelta} XP from under-sync.`;
             }

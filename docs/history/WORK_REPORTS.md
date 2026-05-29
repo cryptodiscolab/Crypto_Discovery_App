@@ -4,6 +4,16 @@ This document serves as the central registry for historical Work Reports within 
 
 ---
 
+## 🟢 Work Report v3.64.32-Hardened: Daily Claim XP Sync & Watermark Self-Healing
+**Status**: ✅ IMPLEMENTED & VERIFIED
+**Summary**: Resolved user daily claim XP deadlock caused by contract migration (V15 -> V16) resetting cumulative on-chain points to 0. Handled contract resets gracefully by treating the new contract's on-chain XP as the incremental delta, disabling legacy recovery deltas, and resetting the database `last_onchain_xp` watermark to the new contract points dynamically. Executed a real-time database alignment script for stuck active users, restoring their sync pipelines and successfully awarding their newly claimed XP.
+**Changes**:
+1. **Contract Migration Reset Support**: Modified the XP sync endpoints in `Raffle_Frontend/api/_user-bundle.ts` and `_audit-bundle.ts` to check if `currentOnChainXp < lastOnChainXp`.
+2. **Watermark Self-Healing**: Allowed the watermark to reset dynamically to the new contract's cumulative points, using it as the new basis for future XP updates and disabling the recovery checks that were locked to the old contract's higher watermarks.
+3. **Database Alignment**: Created and executed `scratch/test_xp_sync.cjs` to force align and synch users `0x136e...` and `0x0845...` immediately, validating the calculations under real-world data and updating their profiles successfully.
+
+---
+
 ## 🟢 Work Report v3.64.31-Hardened: E2E Feature Audit & Dynamic Referral Redirections
 **Status**: ✅ IMPLEMENTED, AUDITED, & VERIFIED
 **Summary**: Conducted a thorough E2E code integrity audit for six core features (UGC Sponsor & Create Task, Claim Tasks, Buy Raffle, Raffle Winner, SBT Pool, and SBT Tier Upgrade) verifying zero-hardcode, zero-trust, and pipeline synchronization. Replaced hardcoded Farcaster sign-up links on the login and profile header pages with dynamic owner referral links fetched from environment variables, and added a BaseApp/Coinbase Wallet signup CTA.

@@ -4,6 +4,16 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.32-Hardened (Daily Claim XP Sync & Watermark Self-Healing)
+- **Status**: Completed. Resolved daily claim XP deadlock by implementing dynamic contract migration detection and DB watermark self-healing, and executed a database recovery alignment script.
+- **Contract Migration Reset Support**:
+  - Modified the XP sync endpoints in `Raffle_Frontend/api/_user-bundle.ts` and `_audit-bundle.ts` to detect when `currentOnChainXp < lastOnChainXp`.
+- **Watermark Self-Healing**:
+  - Handled contract resets gracefully by treating the new contract's on-chain XP as the incremental delta (`xpDelta = currentOnChainXp`), disabling legacy recovery deltas, and resetting the database `last_onchain_xp` watermark to the new contract points dynamically.
+- **Ecosystem Verification**:
+  - Executed a real-time alignment script for stuck active users (`0x136e...` and `0x0845...`), successfully restoring their sync pipelines and awarding the newly claimed on-chain XP. Passed `check_sync_status.cjs` and Gitleaks security scans with 100% success.
+- **Files Changed**: `Raffle_Frontend/api/_user-bundle.ts`, `Raffle_Frontend/api/_audit-bundle.ts`, `PRD/DISCO_DAILY_MASTER_PRD.md`, `docs/history/WORK_REPORTS.md`, `ROADMAP.md`, `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.agents/gemini.md`, `IMPLEMENTATION_SUMMARY.md`.
+
 ## v3.64.31-Hardened (E2E Feature Audit & Dynamic Referral Redirections)
 - **Status**: Completed. Conducted E2E feature audits, resolved hardcoded links with environment placeholders, added profile navigation buttons, and pushed to production.
 - **E2E Feature Audit**:

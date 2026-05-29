@@ -1,4 +1,4 @@
-# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.31-Hardened)
+# ANTIGRAVITY — CLAUDE NATIVE PROTOCOL (v3.64.32-Hardened)
 # Crypto Discovery App | Claude (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Claude sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -13,7 +13,7 @@ Your supreme governing document is [`.cursorrules`](.cursorrules). **Read it at 
 
 Before responding, `📄>.rtk/RTK.md` + `📄>.rtk/SYMBOLIC.md` ONLY. Rules 1-78 di file ini sudah cukup.
 **Lazy-load ONLY when needed**: `📄>PRD/`, `📄>.agents/skills/`, `📄>.cursorrules` (>500L → `rtk smart`).
-`> re-read skills` = reset, `> sync end to end` = full sync. Protocol: 🟢 Healthy (v3.64.31).
+`> re-read skills` = reset, `> sync end to end` = full sync. Protocol: 🟢 Healthy (v3.64.32).
 
 ## 🛡️ SECURE INSTALL (v3.63.5): `npm install --ignore-scripts` or `npm ci`.
 SOT: Contracts > Supabase `system_settings`/`point_settings` > PRD/ > `.cursorrules` + `CLAUDE.md` > DESIGN.md > SKILL.md.

@@ -147,6 +147,7 @@ All identified drifts have been synchronized with `DailyAppV12Secured.json`.
 - [x] **SBT Gallery Locked Tiers Grayed-Out Display (v3.64.26-Hardened)**: Updated the NFT Gallery page to dynamically map and display all locked SBT levels (those not yet reached or minted by the user) in a beautiful grayed-out state with a lock overlay icon and level/XP requirements, keeping the active collection count accurate.
 - [x] **Social Verification Integration & Official Brand Logos (v3.64.28-Hardened)**: Integrated full cryptographic Farcaster and Base Social verification via wallet signatures (EIP-191) with official SVG brand logos on the profile page and main dashboard.
 - [x] **E2E Feature Audit & Dynamic Referral Redirections (v3.64.31-Hardened)**: Conducted a thorough E2E code integrity audit for six core features, replaced hardcoded Warpcast invite links with environment placeholders, added Coinbase Wallet/BaseApp referral sign-ups, and added profile link buttons.
+- [x] **Daily Claim XP Sync & Watermark Self-Healing (v3.64.32-Hardened)**: Resolved user daily claim XP deadlock caused by contract migration (V15 -> V16) resetting cumulative on-chain points to 0. Implemented dynamic contract reset detection and DB watermark self-healing in user-bundle and audit-bundle, and executed an immediate recovery script to align database profiles for stuck active users.
 
 ## Immediate Protocol Constraints
 - **Immutable Architect Protocol**: `viaIR: true`, `runs: 200`.

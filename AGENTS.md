@@ -1,4 +1,4 @@
-# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.31-Hardened)
+# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.32-Hardened)
 # Crypto Discovery App | Codex (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Codex sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -13,7 +13,7 @@ Your supreme governing document is [`.cursorrules`](.cursorrules). **Read it at 
 
 Before responding, `📄>.rtk/RTK.md` + `📄>.rtk/SYMBOLIC.md` ONLY. Rules 1-78 di file ini sudah cukup.
 **Lazy-load ONLY when needed**: `📄>PRD/`, `📄>.agents/skills/`, `📄>.cursorrules` (>500L → `rtk smart`).
-`> re-read skills` = reset, `> sync end to end` = full ecosystem sync. Protocol: 🟢 Healthy (v3.64.31).
+`> re-read skills` = reset, `> sync end to end` = full ecosystem sync. Protocol: 🟢 Healthy (v3.64.32).
 
 ---
 
