@@ -3,14 +3,20 @@ import { ShieldCheck, Award, Crown, Check, Loader2 } from 'lucide-react';
 import { ProfileData } from '../types';
 import toast from 'react-hot-toast';
 
+type FarcasterSyncResult = { fid?: string | number | null };
+type BaseSocialSyncResult = { success?: boolean; basename?: string | null };
+
+const getErrorMessage = (error: unknown): string =>
+    error instanceof Error ? error.message : String(error || 'Unknown error');
+
 interface ProfileStatsProps {
     profileData: ProfileData;
     linkGoogle: () => Promise<{ success?: boolean } | void>;
     linkX: () => Promise<{ success?: boolean } | void>;
     isOAuthLinking: boolean;
     fetchProfile: () => void;
-    syncFarcaster: (address: string, force?: boolean) => Promise<any>;
-    syncBaseSocial: (address: string) => Promise<any>;
+    syncFarcaster: (address: string, force?: boolean) => Promise<FarcasterSyncResult | null | undefined>;
+    syncBaseSocial: (address: string) => Promise<BaseSocialSyncResult | null | undefined>;
 }
 
 // Custom Official Logos SVGs (Premium Branding)
@@ -194,8 +200,8 @@ export const ProfileStats = ({
                                         { id: toastId, duration: 6000 }
                                     );
                                 }
-                            } catch (e: any) {
-                                toast.error("Farcaster sync failed: " + (e.message || "Unknown error"), { id: toastId });
+                            } catch (e: unknown) {
+                                toast.error("Farcaster sync failed: " + getErrorMessage(e), { id: toastId });
                             } finally {
                                 setIsFarcasterSyncing(false);
                             }
@@ -245,7 +251,7 @@ export const ProfileStats = ({
                                         { id: toastId, duration: 6000 }
                                     );
                                 }
-                            } catch (e: any) {
+                            } catch {
                                 toast.error(
                                     <div className="text-left">
                                         <p className="font-bold">Basename lookup failed.</p>

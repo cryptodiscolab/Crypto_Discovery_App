@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Shield, Sparkles, AlertTriangle, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 import { useAccount, useSignMessage, useWriteContract, usePublicClient } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
 import { CONTRACTS, ABIS } from '../lib/contracts';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
@@ -84,6 +85,7 @@ const TIER_COLORS: Record<string, string> = {
 
 export function SBTMintPage() {
   const { address, isConnected } = useAccount();
+  const queryClient = useQueryClient();
   const [thresholds, setThresholds] = useState<SBTThreshold[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -234,35 +236,38 @@ export function SBTMintPage() {
       });
 
       toast.loading('Waiting for confirmation…', { id: 'sbt-mint' });
-      await publicClient?.waitForTransactionReceipt({ hash: txHash });
+      if (!publicClient) throw new Error('Wallet RPC client is not ready');
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status !== 'success') throw new Error('Transaction reverted on-chain');
 
       toast.success(
         `✅ ${voucher.tier_name} SBT minted on-chain!`,
         { id: 'sbt-mint' }
       );
 
-      // Step 3: Sync mint to backend (creates user_activity_logs record so NFT appears in gallery)
-      try {
-        const syncMsg = `Log activity for ${cleanWallet}\nAction: SBT Tier Ascension\nTimestamp: ${new Date().toISOString()}`;
-        const syncSig = await signMessageAsync({ message: syncMsg });
-        await fetch(BUNDLE_ROUTES.USER, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: USER_BUNDLE_ACTIONS.SYNC_SBT_UPGRADE,
-            wallet: cleanWallet,
-            signature: syncSig,
-            message: syncMsg,
-            payload: {
-              tierName: voucher.tier_name,
-              ethSpent: formatEther(BigInt(voucher.mint_price_wei || '0')),
-              txHash,
-            },
-          }),
-        });
-      } catch (syncErr) {
-        // Non-critical: on-chain mint succeeded; gallery will refresh when backend catches up
-        console.warn('[SBTMint] Backend sync failed (non-critical):', syncErr);
+      const syncRes = await fetch(BUNDLE_ROUTES.USER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: USER_BUNDLE_ACTIONS.SYNC_SBT_UPGRADE,
+          wallet: cleanWallet,
+          payload: {
+            tierName: voucher.tier_name,
+            ethSpent: formatEther(BigInt(voucher.mint_price_wei || '0')),
+            txHash,
+          },
+        }),
+      });
+
+      if (!syncRes.ok) {
+        const syncBody = await syncRes.json().catch(() => ({}));
+        const syncMessage = (syncBody as Record<string, string>)?.message || (syncBody as Record<string, string>)?.error || 'Backend SBT sync delayed';
+        toast.error(syncMessage, { id: 'sbt-mint-sync' });
+      } else {
+        await Promise.allSettled([
+          queryClient.invalidateQueries({ queryKey: ['profile', address] }),
+          queryClient.invalidateQueries({ queryKey: ['activity-logs', address] }),
+        ]);
       }
 
       // Refresh progress after successful mint

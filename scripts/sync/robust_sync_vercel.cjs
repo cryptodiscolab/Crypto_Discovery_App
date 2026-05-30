@@ -24,6 +24,15 @@ const PROJECTS = [
 const TEAM_ID = 'team_cGQwJrMBFOXFUfCzkPlSR7UF';
 const ENVIRONMENTS = ['production', 'preview', 'development'];
 
+const SENSITIVE_KEY_PATTERN = /(PRIVATE|SECRET|TOKEN|KEY|PASSWORD|DATABASE_URL|SIGNER|JWT|API_SECRET|BEARER)/i;
+
+function maskEnvValue(key, value) {
+    const text = String(value || '');
+    if (!text) return '[EMPTY]';
+    if (SENSITIVE_KEY_PATTERN.test(key)) return '[REDACTED]';
+    return `${text.substring(0, 35)}${text.length > 35 ? '...' : ''}`;
+}
+
 // Keys Registry to synchronize
 const KEYS_TO_SYNC = [
     // Blockchain & Contracts
@@ -199,10 +208,10 @@ async function syncProject(project) {
             await sleep(350);
 
             if (existingByKey[key]) {
-                console.log(`  ✅ Updated: ${key} → ${value.substring(0, 35)}${value.length > 35 ? '...' : ''}`);
+                console.log(`  ✅ Updated: ${key} → ${maskEnvValue(key, value)}`);
                 updated++;
             } else {
-                console.log(`  ✅ Created: ${key} → ${value.substring(0, 35)}${value.length > 35 ? '...' : ''}`);
+                console.log(`  ✅ Created: ${key} → ${maskEnvValue(key, value)}`);
                 created++;
             }
         } catch (err) {

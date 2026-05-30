@@ -121,6 +121,7 @@ Before responding to ANY request, read these files IN ORDER:
 | **BP-011** | **Broken SwapModal.tsx Header** | `replace_file_content` memotong baris imports, konstanta token, dan parameter `SwapModal` secara tidak sengaja. | `SwapModal.tsx` | Selalu view file minimal 15 baris ke atas dan ke bawah sebelum melakukan replacement parsial guna memverifikasi cakupan kode. | v3.64.19 |
 | **BP-012** | **Missing txHash Verification on Swap events** | Log aktivitas `SWAP` dari frontend ditolak oleh filter backend `forbiddenCategories` (403) karena tidak mengirim `txHash`. | `SwapModal.tsx`, `_user-bundle.ts` | Tangkap `txHash` dari executeRoute di Li.Fi SDK dan sertakan ke parameter request `log-activity` API. | v3.64.19 |
 | **BP-013** | **Duplicate Switch Case Warning** | case `'SWAP'` dideklarasikan dua kali di switch statement `getCategoryIcon` sehingga memicu warning esbuild compiler. | `ActivityLogSection.tsx` | Hindari duplikasi case di switch statement dan pastikan untuk merapikan case yang berlebih. | v3.64.19 |
+| **BP-014** | **SBT Post-Mint DB Drift** | Frontend mint berhasil on-chain tetapi post-mint `sync-sbt-upgrade` tidak dipanggil, sehingga `user_profiles.tier` tetap Rookie, NFT Gallery terkunci, dan `SBT / Mint` activity log tidak ada. | `SBTMintPage.tsx`, `SBTUpgradeCard.tsx`, `_user-bundle.ts`, `NFTGalleryPage.tsx`, `LeaderboardPage.tsx` | Setelah receipt sukses, kirim `txHash` ke `sync-sbt-upgrade` tanpa signature kedua. Backend wajib verifikasi receipt, sender, DailyApp target, dan event `NFTMinted` sebelum update DB dan log idempotent `PURCHASE / SBT Tier Ascension` + `SBT / Mint`. | v3.64.34 |
 
 > 💡 **Agent Self-Check**: Sebelum menulis kode yang menyentuh contract write, selalu tanyakan: *"Apakah contract address yang di-call SAMA dengan sumber data yang digunakan?"*
 
@@ -523,5 +524,5 @@ Untuk mencegah "Kebocoran Konteks" dan "Hallucination Drift", setiap sesi kerja 
 4. **Environment Friction Reporting**: Setiap kendala yang disebabkan oleh sistem operasi (seperti *Permission Denied* atau *Path Issues*) harus dilaporkan sebagai hambatan nyata, bukan diabaikan dengan percobaan buta.
 
 ---
-*Constitution v3.64.31 - Hardened & Synchronized.*
+*Constitution v3.64.34 - Hardened & Synchronized.*
 *Antigravity: Lead Orchestrator. Cognitive Sync v1.0: ENABLED. Multi-Agent Matrix: SYNCHRONIZED. Self-Improvement: AUTONOMOUS. Transparency Mandate: ACTIVE. TypeScript Mandate: STRICT. Security Mandate: Node.js Hardened. Live Agent Delegation Dashboard Activated.*

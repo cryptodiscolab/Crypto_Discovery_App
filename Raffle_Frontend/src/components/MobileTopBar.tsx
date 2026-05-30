@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 
 export function MobileTopBar() {
   const { isConnected } = useAccount();
-  const { userPoints, rankName, profileData } = usePoints();
+  const { userPoints, profileData } = usePoints();
   const { frameUser } = useFarcaster();
 
   const typedProfile = profileData as {

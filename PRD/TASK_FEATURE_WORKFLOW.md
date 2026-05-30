@@ -1,3 +1,4 @@
+- **v3.64.34-Hardened**: SBT Post-Mint Sync Hardening. `sync-sbt-upgrade` now verifies the mint `txHash`, DailyApp receipt target, sender wallet, and `NFTMinted` event before updating `user_profiles` and writing idempotent `PURCHASE / SBT Tier Ascension` plus `SBT / Mint` logs. `SBTMintPage` and `SBTUpgradeCard` call this sync after receipt success without a second wallet signature prompt.
 - **v3.64.23-Hardened**: Nexus Command Center (NCC) Audit & Hardening. Cleared legacy typography to strictly adopt NATIVE+ (v3.41.0) standards, implemented DOM XSS sanitization helper `escapeHtml()` for dynamic payload injection, and restored full system health compile checks.
 - **v3.64.22-Hardened**: Swap Auto-Refresh & Global Invalidation. Implemented telemetry extraction for verified `txHash` from Li.Fi SDK execution, integrated dynamic `onSuccess` callbacks to trigger React Query invalidation for `['balance']`, `['readContract']`, `['profile']`, and `['activity-logs']`, and resolved React/TypeScript compiler warnings.
 - **v3.63.0**: Admin Architecture Consolidation & Technical Debt Liquidation. Unified `TaskManager` components, implemented strict TypeScript interfaces for administrative tasks, and modularized the admin dashboard into specialized sub-components (`ActiveCampaignsSection`, `EconomyConfigSection`, etc.). Archival of legacy Python/SQL scripts.
@@ -882,9 +883,10 @@ Sebagai inti dari loop ekonomi, kenaikan tier (SBT) harus mengikuti aturan **Har
 3. **Price Transparency**: UI `SBTUpgradeCard` wajib menampilkan biaya ETH dan estimasi USDC secara real-time untuk kejelasan finansial.
 4. **On-Chain Eligibility**: Eligibility mint ditentukan dan ditegakkan oleh XP on-chain di `DailyAppV16`; database tetap dipakai untuk tampilan/log pendukung.
 5. **On-Chain Mint Enforcement**: `DailyAppV16.mintNFT(uint8 tier)` menegakkan wallet binding, sequential tier, supply, status tier, XP requirement, dan mint price. Jalur entitlement voucher V15 adalah legacy dan tidak dipakai untuk V16.
+6. **Receipt-Verified DB Sync**: Setelah receipt sukses, frontend WAJIB mengirim `txHash` ke `sync-sbt-upgrade`. Backend WAJIB memverifikasi receipt, sender, target DailyApp, dan event `NFTMinted` sebelum update `user_profiles` dan menulis log `SBT / Mint`.
 
 *Dokumen ini adalah **Source of Truth** absolut untuk Task Feature. Semua modifikasi WAJIB mematuhi alur ini.*
-*Antigravity ΓÇö Nexus Master Architect. Protocol v3.64.23 Locked.*
+*Antigravity ΓÇö Nexus Master Architect. Protocol v3.64.34 Locked.*
 
 ---
 

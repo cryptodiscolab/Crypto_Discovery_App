@@ -1,5 +1,4 @@
-import { NavLink, useLocation, Link } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { NavLink, Link } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { Home, Zap, Ticket, Images, LineChart, MoreHorizontal, X } from 'lucide-react';
 import { useCMS } from '../hooks/useCMS';
@@ -7,10 +6,8 @@ import { usePoints } from '../shared/context/PointsContext';
 import { useFarcaster } from '../shared/context/FarcasterContext';
 
 export function BottomNav() {
-    const { isConnected } = useAccount();
     const { isAdmin: isCMSAdmin, canEdit: canEditCMS } = useCMS();
     const { isAdmin: isSBTAdmin } = usePoints();
-    const location = useLocation();
     const { isFrame, safeAreaInsets, client } = useFarcaster();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 

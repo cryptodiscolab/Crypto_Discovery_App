@@ -1,5 +1,5 @@
-# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.31-Hardened)
-**Last Updated**: 2026-05-29 — E2E Feature Audit & Dynamic Referral Redirections
+# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.34-Hardened)
+**Last Updated**: 2026-05-30 — SBT Post-Mint Sync & Receipt-Verified Activity Logging
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -124,7 +124,7 @@ Setelah XP didapat dari Daily Claim atau Social Tasks, sistem harus menentukan a
 
 ---
 
-## ≡ƒÄ¿ 5. Tier Mint / Upgrade Workflow (On-Chain Mint) ΓÇö v3.56.4
+## ≡ƒÄ¿ 5. Tier Mint / Upgrade Workflow (On-Chain Mint) ΓÇö v3.64.34
 Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersifat **Soulbound** dan **Sequential**.
 
 ### 5.1 The Upgrade Execution
@@ -136,17 +136,18 @@ Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersif
     1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 3 syarat utama: `hasTotalXP` (DB canonical), `hasEnoughETH` (balance), dan `!isSoldOut` / `isOpen` dari `DAILY_APP.nftConfigs`.
     2. **Cost Transparency**: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.
     3. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.
-    4. **Minting**: Frontend memanggil `useNFTTiers.mintTier(...)`, yang menulis langsung ke `DAILY_APP.mintNFT(uint8 tier)` pada `DailyAppV16`.
-    5. **On-Chain Enforcement**: `DailyAppV16` menegakkan sequential tier, price, supply, status tier, dan XP on-chain. Tidak ada jalur entitlement voucher untuk mint V16.
-    6. **Event Emitted**: Blockchain mencatat perubahan kepemilikan NFT.
-    7. **State Sync**: UI menampilkan banner "NFT Minted!" dan menghapus tombol upgrade.
-    8. **DB Log**: Signature request ke `/api/user-bundle?action=sync-sbt-upgrade` untuk logging aktivitas dan sinkronisasi tier/log pasca mint.
+    4. **Minting**: Frontend memanggil `useNFTTiers.mintTier(...)` untuk `DAILY_APP.mintNFT(uint8 tier)` atau `SBTMintPage` memanggil `DAILY_APP.mintNFTWithEntitlement(...)` jika backend sudah menerbitkan voucher EIP-712.
+    5. **On-Chain Enforcement**: `DailyAppV16` menegakkan sequential tier, price, supply, status tier, XP on-chain, dan event `NFTMinted`.
+    6. **Receipt-Verified Post-Mint Sync**: Setelah receipt sukses, frontend WAJIB memanggil `/api/user-bundle` action `sync-sbt-upgrade` dengan `wallet`, `txHash`, `tierName`, dan `ethSpent`. Tidak boleh meminta signature wallet kedua untuk sync.
+    7. **Backend Verification**: `handleSyncSbtUpgrade()` WAJIB memverifikasi receipt status, sender wallet, DailyApp destination, dan event `NFTMinted(user,tier,tokenId)` sebelum update DB.
+    8. **DB Mirror + Logs**: Backend mengupdate `user_profiles.tier`, `total_xp`, `last_onchain_xp`, lalu menulis log idempotent `PURCHASE / SBT Tier Ascension` dan `SBT / Mint` agar NFT Gallery, Activity Log, dan Leaderboard sinkron.
+    9. **State Sync**: UI menginvalidasi cache `profile` dan `activity-logs`; `LeaderboardPage` realtime listener refetch `/api/leaderboard` dari perubahan `user_profiles`.
 
 > [!WARNING]
 > Jangan pernah memanggil `useSBT.upgradeTier()` untuk minting tier NFT dari `SBTUpgradeCard`. Itu adalah contract yang berbeda (`MASTER_X`) dengan logika yang berbeda. Untuk jalur V16, gunakan `useNFTTiers.mintTier(tier, value)` yang memanggil `DAILY_APP.mintNFT(uint8)`.
 
 > [!IMPORTANT]
-> Jalur entitlement V15/Voucher sekarang legacy dan tidak boleh dipakai untuk DailyApp V16. Frontend ABI harus berasal dari `artifacts/contracts/DailyAppV16.sol/DailyAppV16.json`, lalu disinkronkan ke `Raffle_Frontend/src/lib/daily_app_abi.json` dan `Raffle_Frontend/src/lib/abis_data.txt`.
+> Jalur entitlement V15 legacy tidak boleh dipakai untuk DailyApp V16. Jalur entitlement V16 hanya valid jika target contract adalah `DailyAppV16`, verifier address berasal dari env resolver, receipt mengarah ke DailyApp, dan event `NFTMinted` terverifikasi sebelum DB/log sync.
 
 ---
 
@@ -515,4 +516,4 @@ Untuk menjamin UX tanpa reload setelah transaksi swap diselesaikan di frontend:
 3. **Propagation Callback**: Komponen `SwapModal` memicu prop callback `onSuccess` untuk memicu refetch saldo, profil, status on-chain, dan SBT pada view induk (`ProfilePage.tsx` dan `CreateMissionPage.tsx`).
 
 ---
-*End of Source of Truth Document - Nexus v3.64.23-Hardened LOCKED.*
+*End of Source of Truth Document - Nexus v3.64.34-Hardened LOCKED.*

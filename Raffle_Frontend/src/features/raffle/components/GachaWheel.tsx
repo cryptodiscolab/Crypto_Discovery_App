@@ -17,11 +17,10 @@ export function GachaWheel() {
 
   // Price Oracle for ETH / WETH / USDC
   const oracleAddresses: string[] = [WETH_ADDRESS, USDC_ADDRESS].filter(Boolean) as string[];
-  const { prices } = usePriceOracle(oracleAddresses);
+  usePriceOracle(oracleAddresses);
 
   // Profile data ticket balance
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const availableTickets = Number((profileData as any)?.raffle_tickets_bought || 0);
+  const availableTickets = Number((profileData as { raffle_tickets_bought?: number | string | null } | null | undefined)?.raffle_tickets_bought || 0);
 
   // Gacha states
   const [isSpinning, setIsSpinning] = useState(false);

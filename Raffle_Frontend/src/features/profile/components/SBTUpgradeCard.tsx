@@ -1,4 +1,4 @@
-import { useAccount, useBalance, useConfig, useReadContract, useChainId } from 'wagmi';
+import { useAccount, useBalance, useConfig, useReadContract } from 'wagmi';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import { useNFTTiers } from '../../../hooks/useNFTTiers';
 import { useCMS } from '../../../hooks/useCMS';
@@ -6,14 +6,16 @@ import { usePoints } from '../../../shared/context/PointsContext';
 import { useSBT } from '../../../hooks/useSBT';
 import { useUserInfo } from '../../../hooks/useContract';
 import { CONTRACTS, ABIS } from '../../../lib/contracts';
+import { BUNDLE_ROUTES, USER_BUNDLE_ACTIONS } from '../../../lib/apiRoutes';
 import { formatEther } from 'viem';
 import toast from 'react-hot-toast';
 import { AlertCircle, ArrowUpCircle, CheckCircle2, Loader2, Lock, Sparkles } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function SBTUpgradeCard() {
     const { address } = useAccount();
-    const chainId = useChainId();
     const config = useConfig();
+    const queryClient = useQueryClient();
     const { userPoints, userTier, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
     const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
@@ -130,11 +132,36 @@ export function SBTUpgradeCard() {
                 throw new Error("Transaction reverted on-chain");
             }
 
+            const cleanWallet = address?.toLowerCase();
+            if (cleanWallet) {
+                const syncRes = await fetch(BUNDLE_ROUTES.USER, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: USER_BUNDLE_ACTIONS.SYNC_SBT_UPGRADE,
+                        wallet: cleanWallet,
+                        payload: {
+                            tierName: nextTier.name,
+                            ethSpent: formatEther(effectiveMintPrice),
+                            txHash: hash
+                        }
+                    })
+                });
+
+                if (!syncRes.ok) {
+                    const syncBody = await syncRes.json().catch(() => ({}));
+                    const syncMessage = (syncBody as Record<string, string>)?.message || (syncBody as Record<string, string>)?.error || 'Backend SBT sync delayed';
+                    toast.error(syncMessage, { id: `${tid}-sync` });
+                }
+            }
+
             await Promise.allSettled([
                 Promise.resolve(refetchPoints()),
                 Promise.resolve(refetchTiers()),
                 Promise.resolve(refetchAll()),
-                Promise.resolve(refetchUserInfo?.())
+                Promise.resolve(refetchUserInfo?.()),
+                queryClient.invalidateQueries({ queryKey: ['profile', address] }),
+                queryClient.invalidateQueries({ queryKey: ['activity-logs', address] })
             ]);
 
             toast.success(`NFT Minted! Welcome to ${nextTier.name} Tier! 🎉`, { id: tid });

@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.24-Hardened)
-Last Update: 2026-05-25 (06:00)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.34-Hardened)
+Last Update: 2026-05-30 (12:59)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -140,6 +140,7 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 - `ProfilePage` / `PointsContext`: listens to `user_profiles` changes for scoped profile XP refresh.
 - `ActivityLogSection`: listens to `user_activity_logs` and `user_task_claims` changes for user history refresh.
 - `LeaderboardPage`: listens to `user_profiles` changes and refetches `/api/leaderboard`.
+- `SBTMintPage` / `SBTUpgradeCard`: after SBT mint receipt success, call `user-bundle` action `sync-sbt-upgrade` with verified `txHash`; backend mirrors tier into `user_profiles` and writes `SBT / Mint` for NFT Gallery/activity history.
 
 **Key `point_settings` Keys** (pattern: `{platform}_{action_type}`):
 `daily_claim`, `farcaster_follow`, `x_follow`, `x_repost`, `x_like`, `base_transaction`, `raffle_buy`, `sponsor_task`
@@ -260,4 +261,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-27T07:20:00+07:00 | Multi-Agent Bridge v1.4.2 & 27 Skills Synced. v3.64.24 LOCKED.*
+*Last Updated: 2026-05-30T12:59:32+07:00 | SBT Post-Mint Sync & Receipt-Verified Activity Logging. v3.64.34 LOCKED.*

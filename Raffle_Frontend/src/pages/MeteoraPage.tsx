@@ -17,7 +17,7 @@ export function MeteoraPage() {
   const [yieldGenerated, setYieldGenerated] = useState(14.85);
   const [isRebalancing, setIsRebalancing] = useState(false);
 
-  const [pools, setPools] = useState<Pool[]>([
+  const [pools] = useState<Pool[]>([
     { name: 'SOL-USDC [Dynamic DLMM]', tvl: '$42,400,000', volume24h: '$18,200,000', baseApy: 92.4 },
     { name: 'ETH-USDC [Dynamic DLMM]', tvl: '$28,150,000', volume24h: '$11,900,000', baseApy: 81.5 },
     { name: 'WBTC-SOL [Dynamic DLMM]', tvl: '$12,800,000', volume24h: '$4,100,000', baseApy: 56.2 }

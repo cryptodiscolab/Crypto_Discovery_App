@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Plus, Zap, Shield, ArrowUpCircle, Coins, Lock, Wallet
+  Plus, Shield, ArrowUpCircle, Coins, Lock, Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
@@ -19,10 +19,6 @@ import { useProfile } from '../features/profile/hooks/useProfileQueries';
 import { ProfileHeader } from '../features/profile/components/ProfileHeader';
 import { ProfileStats } from '../features/profile/components/ProfileStats';
 import { ActivityLogSection } from '../features/profile/components/ActivityLogSection';
-import { CreateTaskModal } from '../features/profile/components/modals/CreateTaskModal';
-import { DailyClaimModal } from '../features/profile/components/modals/DailyClaimModal';
-import { RevenueClaimModal, RenewSponsorshipModal } from '../features/profile/components/modals/ExtraModals';
-import { SwapModal } from '../components/SwapModal';
 import { ProfileData } from '../features/profile/types';
 import { WalletPortfolio } from '../components/WalletPortfolio';
 
@@ -36,15 +32,15 @@ export default function ProfilePage() {
   const _navigate = useNavigate();
   const { disconnect: _disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
-  const { ecosystemSettings: _ecosystemSettings, refetch: refetchPoints } = usePoints();
+  const { ecosystemSettings: _ecosystemSettings } = usePoints();
   const { linkGoogle, linkX, isLinking: isOAuthLinking } = useOAuth();
 
   // Modular Data Fetching (TanStack Query)
   const { data: profileData, refetch: refetchProfile, isLoading: isProfileLoading, isError: isProfileError } = useProfile(address);
-  const { refetch: refetchOnChainStats, stats: onChainStats } = useUserInfo(address);
-  const { claimableAmount, refetchAll: refetchSBT } = useSBTData();
+  const { stats: onChainStats } = useUserInfo(address);
+  const { claimableAmount } = useSBTData();
 
-  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [, setActiveModal] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

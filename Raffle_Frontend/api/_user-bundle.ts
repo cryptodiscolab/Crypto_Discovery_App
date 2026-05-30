@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { withMiddleware } from './_shared/middleware.js';
 import type { Database } from './_shared/database.types.js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
-import { verifyMessage, keccak256, encodePacked } from 'viem';
+import { verifyMessage, keccak256, encodePacked, formatEther, parseEventLogs } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import crypto from 'crypto';
 import {
@@ -63,6 +63,27 @@ type PendingSyncJobInsert = {
     payload: Json | null;
     error_message: string | null;
     status: string;
+};
+
+const DAILY_APP_SBT_MINT_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'user', type: 'address' },
+            { indexed: false, name: 'tier', type: 'uint8' },
+            { indexed: false, name: 'tokenId', type: 'uint256' }
+        ],
+        name: 'NFTMinted',
+        type: 'event'
+    }
+] as const;
+
+type DailyAppSbtMintLog = {
+    args?: {
+        user?: `0x${string}`;
+        tier?: number;
+        tokenId?: bigint;
+    };
 };
 
 type UnknownTableClient = {
@@ -1561,36 +1582,82 @@ async function handleSbtMintEntitlement(req: VercelRequest, res: VercelResponse)
 
 async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
     const { wallet, signature, message, payload } = req.body;
-    if (!wallet || !signature || !message || !payload) return res.status(400).json({ error: 'Missing sync data' });
+    if (!wallet || !payload) return res.status(400).json({ error: 'Missing sync data' });
 
     try {
-        const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
-        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        const cleanWallet = String(wallet).trim().toLowerCase();
+        const { tierName: payloadTierName, ethSpent, txHash } = payload;
+        if (!txHash) return res.status(400).json({ error: 'Missing transaction hash' });
+        const cleanTxHash = String(txHash).trim().toLowerCase();
+
+        if (signature && message) {
+            const valid = await verifyMessage({
+                address: cleanWallet as `0x${string}`,
+                message,
+                signature: signature as `0x${string}`
+            });
+            if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        }
 
         // Rule 61: IDENTITY GATING MANDATE
-        const isVerified = await checkIdentityStatus(wallet);
+        const isVerified = await checkIdentityStatus(cleanWallet);
         if (!isVerified) return res.status(403).json({ error: 'Identity verification required for tier upgrades' });
 
-        const { tierName, ethSpent, txHash } = payload;
+        const receipt = await rpcClient.waitForTransactionReceipt({ hash: cleanTxHash as `0x${string}`, timeout: 15000 });
+        if (!receipt || receipt.status !== 'success') {
+            return res.status(400).json({ error: 'SBT mint transaction reverted or invalid on-chain' });
+        }
+        if (receipt.from.toLowerCase() !== cleanWallet) {
+            return res.status(403).json({ error: 'Transaction sender does not match wallet' });
+        }
+        if (DAILY_APP_ADDRESS && receipt.to?.toLowerCase() !== DAILY_APP_ADDRESS.toLowerCase()) {
+            return res.status(403).json({ error: 'Transaction destination is not the DailyApp contract' });
+        }
+
+        const mintLogs = parseEventLogs({
+            abi: DAILY_APP_SBT_MINT_EVENT_ABI,
+            eventName: 'NFTMinted',
+            logs: receipt.logs,
+            strict: false
+        }) as DailyAppSbtMintLog[];
+        const mintLog = mintLogs.find((log) => String(log.args?.user || '').toLowerCase() === cleanWallet);
+        if (!mintLog) {
+            return res.status(400).json({ error: 'Transaction did not emit a DailyApp SBT mint event for this wallet' });
+        }
 
         const { data: thresholds } = await getSupabaseAdmin().from('sbt_thresholds').select('level, tier_name, min_xp, badge_url');
         const tierMap: Record<string, number> = thresholds?.reduce((acc, t) => { if (t.tier_name) acc[t.tier_name] = t.level; return acc; }, {} as Record<string, number>) || {};
         const minXpMap: Record<number, number> = thresholds?.reduce((acc, t) => { acc[t.level] = t.min_xp; return acc; }, {} as Record<number, number>) || {};
-        const tierIndex = tierMap[tierName] || 0;
+        const mintedTier = Number(mintLog.args?.tier || 0);
+        const thresholdMeta = thresholds?.find((t) => Number(t.level) === mintedTier);
+        const tierName = String(payloadTierName || thresholdMeta?.tier_name || `Tier ${mintedTier}`);
+        const tierIndex = tierMap[tierName] || mintedTier;
+        const tokenId = mintLog.args?.tokenId != null
+            ? String(mintLog.args.tokenId)
+            : (mintedTier > 0 ? String(mintedTier) : String(cleanTxHash));
 
         const contractStats = await rpcClient.readContract({
             address: DAILY_APP_ADDRESS as `0x${string}`,
             abi: DAILY_APP_USER_STATS_ABI,
             functionName: 'userStats',
-            args: [wallet.toLowerCase() as `0x${string}`],
+            args: [cleanWallet as `0x${string}`],
         }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
 
         const actualTierOnChain = Number(contractStats?.[3] || 0);
         const actualPointsOnChain = Number(contractStats?.[0] || 0);
+        if (actualTierOnChain < mintedTier) {
+            return res.status(503).json({ error: 'RPC_STATE_LAG', message: 'SBT mint event indexed but user tier is not updated yet. Please retry shortly.' });
+        }
+
+        let ethSpentValue = parseFloat(String(ethSpent ?? ''));
+        if (!Number.isFinite(ethSpentValue) || ethSpentValue < 0) {
+            const tx = await rpcClient.getTransaction({ hash: cleanTxHash as `0x${string}` });
+            ethSpentValue = parseFloat(formatEther(tx.value || 0n));
+        }
 
         if (actualTierOnChain >= tierIndex && tierIndex > 0) {
             // Check if burn already logged to prevent double-burn on retry
-            const { data: existingBurn } = await getSupabaseAdmin().from('user_task_claims').select('id').eq('task_id', `sbt_upgrade_burn_${txHash}`).maybeSingle();
+            const { data: existingBurn } = await getSupabaseAdmin().from('user_task_claims').select('id').eq('task_id', `sbt_upgrade_burn_${cleanTxHash}`).maybeSingle();
 
             if (!existingBurn) {
                 // Read actual pointsRequired from contract nftConfigs for accuracy
@@ -1611,8 +1678,8 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
 
                 if (burnedXP > 0) {
                     await getSupabaseAdmin().from('user_task_claims').insert({
-                        wallet_address: wallet.toLowerCase(),
-                        task_id: `sbt_upgrade_burn_${txHash}`,
+                        wallet_address: cleanWallet,
+                        task_id: `sbt_upgrade_burn_${cleanTxHash}`,
                         xp_earned: -burnedXP,
                         platform: 'base',
                         action_type: 'tier_upgrade'
@@ -1628,43 +1695,63 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
                     last_onchain_xp: actualPointsOnChain,
                     updated_at: new Date().toISOString()
                 })
-                .eq('wallet_address', wallet.toLowerCase());
+                .eq('wallet_address', cleanWallet);
         }
 
-        await logActivity({
-            wallet,
-            category: 'PURCHASE',
-            type: 'SBT Tier Ascension',
-            description: `Upgraded to ${tierName} Tier (Ledger Verified)`,
-            amount: parseFloat(ethSpent),
-            symbol: 'ETH',
-            txHash,
-            metadata: { tierName, onchain_tier: actualTierOnChain }
-        });
+        const { data: existingPurchaseLog } = await getSupabaseAdmin()
+            .from('user_activity_logs')
+            .select('id')
+            .eq('wallet_address', cleanWallet)
+            .eq('tx_hash', cleanTxHash)
+            .eq('category', 'PURCHASE')
+            .eq('activity_type', 'SBT Tier Ascension')
+            .maybeSingle();
+
+        if (!existingPurchaseLog) {
+            await logActivity({
+                wallet: cleanWallet,
+                category: 'PURCHASE',
+                type: 'SBT Tier Ascension',
+                description: `Upgraded to ${tierName} Tier (Ledger Verified)`,
+                amount: ethSpentValue,
+                symbol: 'ETH',
+                txHash: cleanTxHash,
+                metadata: { tierName, onchain_tier: actualTierOnChain, tx_verified: true }
+            });
+        }
 
         // Dedicated SBT / Mint event for profile/admin filter
-        const thresholdMeta = thresholds?.find((t) => Number(t.level) === actualTierOnChain);
-        const tokenId = actualTierOnChain > 0 ? String(actualTierOnChain) : String(txHash || 'unknown');
+        const { data: existingMintLog } = await getSupabaseAdmin()
+            .from('user_activity_logs')
+            .select('id')
+            .eq('wallet_address', cleanWallet)
+            .eq('tx_hash', cleanTxHash)
+            .eq('category', 'SBT')
+            .eq('activity_type', 'Mint')
+            .maybeSingle();
 
-        await logActivity({
-            wallet,
-            category: 'SBT',
-            type: 'Mint',
-            description: `Minted ${tierName} SBT NFT`,
-            amount: parseFloat(ethSpent),
-            symbol: 'ETH',
-            txHash,
-            metadata: {
-                tier: actualTierOnChain,
-                tier_name: tierName,
-                token_id: tokenId,
-                name: `${tierName} SBT #${tokenId}`,
-                image_url: thresholdMeta?.badge_url || null,
-                mint_price_eth: ethSpent,
-                contract_address: DAILY_APP_ADDRESS,
-                chain_id: isMainnet ? 8453 : 84532
-            }
-        });
+        if (!existingMintLog) {
+            await logActivity({
+                wallet: cleanWallet,
+                category: 'SBT',
+                type: 'Mint',
+                description: `Minted ${tierName} SBT NFT`,
+                amount: ethSpentValue,
+                symbol: 'ETH',
+                txHash: cleanTxHash,
+                metadata: {
+                    tier: actualTierOnChain,
+                    tier_name: tierName,
+                    token_id: tokenId,
+                    name: `${tierName} SBT #${tokenId}`,
+                    image_url: thresholdMeta?.badge_url || null,
+                    mint_price_eth: ethSpentValue,
+                    contract_address: DAILY_APP_ADDRESS,
+                    chain_id: isMainnet ? 8453 : 84532,
+                    tx_verified: true
+                }
+            });
+        }
 
         // PERMANENT FIX: Auto-sync DailyApp tier to MasterX after mint.
         // Uses WALLET_BOT_SIGNER (must be MasterX owner) to call batchUpdateUserTiers.
@@ -1687,11 +1774,11 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
                     address: MASTER_X_ADDRESS as `0x${string}`,
                     abi: MASTER_X_ABI,
                     functionName: 'batchUpdateUserTiers',
-                    args: [[wallet.toLowerCase() as `0x${string}`], [actualTierOnChain]]
+                    args: [[cleanWallet as `0x${string}`], [actualTierOnChain]]
                 });
 
                 await logActivity({
-                    wallet,
+                    wallet: cleanWallet,
                     category: 'SYNC',
                     type: 'MasterX Tier Synced',
                     description: `Auto-synced tier ${actualTierOnChain} to MasterX contract`,
@@ -1707,13 +1794,13 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             const errMsg = masterXErr instanceof Error ? masterXErr.message : String(masterXErr);
             console.warn('[handleSyncSbtUpgrade] MasterX auto-sync failed (bot may not be owner):', errMsg);
             await logActivity({
-                wallet,
+                wallet: cleanWallet,
                 category: 'SYNC',
                 type: 'MasterX Tier Sync Failed',
                 description: `Auto-sync to MasterX failed. Admin batchUpdateUserTiers needed.`,
                 amount: 0,
                 symbol: 'XP',
-                txHash,
+                txHash: cleanTxHash,
                 metadata: { dailyapp_tier: actualTierOnChain, error: errMsg.slice(0, 200) }
             });
         }

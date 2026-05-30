@@ -1,0 +1,119 @@
+# Work Report: SBT Post-Mint Sync Fix - 2026-05-30
+
+- **Date**: 2026-05-30T12:59:32+07:00
+- **Ecosystem Version**: v3.64.34-Hardened
+- **Agent**: Antigravity / Codex
+- **Status**: COMPLETED & VERIFIED
+
+---
+
+## Executive Summary
+
+Fixed the SBT tier-upgrade drift after successful minting. The mint transaction now triggers a receipt-verified backend sync that updates `user_profiles.tier`, writes the dedicated `SBT / Mint` activity log used by NFT Gallery, and refreshes profile/activity caches so Leaderboard and Profile surfaces stop showing stale Rookie state.
+
+---
+
+## User-Reported Bugs
+
+1. SBT stayed locked on NFT Gallery after successful SBT mint.
+2. User stayed in Rookie tier on Leaderboard after minting the next SBT tier.
+3. User activity log did not record the SBT minting transaction.
+
+---
+
+## Root Cause
+
+The frontend mint flow had removed the post-mint call to `sync-sbt-upgrade`. The chain transaction succeeded, but the database mirror and activity ledger were never updated immediately. Because NFT Gallery depends on `user_activity_logs` category `SBT` / activity type `Mint`, and Leaderboard depends on `user_profiles` / `v_user_full_profile`, both UI surfaces stayed stale even though the wallet minted on-chain.
+
+The old sync path also required a second wallet signature prompt. The hardened fix removes that extra prompt and uses `txHash` plus RPC receipt/event verification as the trust boundary.
+
+---
+
+## Changes Applied
+
+### Backend
+
+**File**: `Raffle_Frontend/api/_user-bundle.ts`
+
+- Added `DAILY_APP_SBT_MINT_EVENT_ABI` for the `NFTMinted(address user, uint8 tier, uint256 tokenId)` event.
+- Hardened `handleSyncSbtUpgrade()` to accept a verified `txHash` without requiring a second frontend signature.
+- Verifies receipt status, sender wallet, DailyApp destination contract, and `NFTMinted` event ownership before writing database state.
+- Reads `DailyAppV16.userStats(wallet)` after receipt verification and updates:
+  - `user_profiles.tier`
+  - `user_profiles.total_xp`
+  - `user_profiles.last_onchain_xp`
+  - `user_profiles.updated_at`
+- Preserves XP burn claim idempotency using `sbt_upgrade_burn_${txHash}`.
+- Writes idempotent logs:
+  - `PURCHASE / SBT Tier Ascension`
+  - `SBT / Mint`
+- Keeps MasterX auto-sync behavior, but preserves graceful failure logging.
+
+### Frontend - SBT Mint Page
+
+**File**: `Raffle_Frontend/src/pages/SBTMintPage.tsx`
+
+- Waits for transaction receipt and rejects reverted receipts.
+- Calls `/api/user-bundle` action `sync-sbt-upgrade` after receipt success.
+- Sends `wallet`, `tierName`, `ethSpent`, and `txHash`.
+- Invalidates React Query caches for `profile` and `activity-logs`.
+- No second wallet signature prompt is required.
+
+### Frontend - Profile SBT Upgrade Card
+
+**File**: `Raffle_Frontend/src/features/profile/components/SBTUpgradeCard.tsx`
+
+- Calls the same backend sync after `mintNFT` receipt success.
+- Invalidates `profile` and `activity-logs` queries after sync attempt.
+- Removed unused `useChainId` import found during lint verification.
+
+---
+
+## Expected User-Facing Result
+
+- NFT Gallery unlocks the minted SBT from the new `SBT / Mint` log or current DB tier fallback.
+- Leaderboard upgrades from Rookie once `user_profiles.tier` refreshes and `LeaderboardPage` realtime listener refetches `/api/leaderboard`.
+- Activity Log shows the mint transaction under the SBT category.
+- Wallet UX remains one transaction/signature flow for minting; no extra post-mint signature prompt.
+
+---
+
+## Verification Evidence
+
+| Gate | Result |
+| --- | --- |
+| `rtk node scripts/audits/check_sync_status.cjs` | PASS |
+| `rtk npm run check-routes` | PASS |
+| `rtk npx tsc --noEmit` | PASS |
+| `rtk npx eslint api/_user-bundle.ts src/pages/SBTMintPage.tsx src/features/profile/components/SBTUpgradeCard.tsx --max-warnings=0` | PASS |
+| `rtk npm run build` | PASS |
+| `rtk npm run gitleaks-check` | PASS - no leaks found |
+| `rtk node scripts/audits/agent_anti_negligence_hook.cjs` | PASS |
+| `rtk gain` | PASS - RTK active |
+
+---
+
+## Residual Risk / Manual QA
+
+- Live wallet E2E still needs one funded Base Sepolia wallet to mint an SBT and confirm the three surfaces together:
+  1. NFT Gallery unlocked card.
+  2. Leaderboard tier update.
+  3. Activity Log `SBT / Mint` row with `tx_hash`, `tier`, `token_id`, `contract_address`, and `chain_id`.
+- MasterX auto-sync still depends on `WALLET_BOT_SIGNER` having the required contract permission. If permission is missing, backend logs `SYNC / MasterX Tier Sync Failed` and admin must run manual tier sync.
+
+---
+
+## Files Changed
+
+- `Raffle_Frontend/api/_user-bundle.ts`
+- `Raffle_Frontend/src/pages/SBTMintPage.tsx`
+- `Raffle_Frontend/src/features/profile/components/SBTUpgradeCard.tsx`
+- `PRD/DISCO_DAILY_MASTER_PRD.md`
+- `PRD/FEATURE_WORKFLOW_SOT.md`
+- `PRD/TASK_FEATURE_WORKFLOW.md`
+- `.agents/WORKSPACE_MAP.md`
+- `.agents/gemini.md`
+
+---
+
+*Generated by Antigravity / Codex | v3.64.34-Hardened | 2026-05-30*

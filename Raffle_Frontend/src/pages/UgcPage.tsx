@@ -3,9 +3,9 @@ import { useAccount } from 'wagmi';
 import { CreateRafflePage } from './CreateRafflePage';
 import { CreateMissionPage } from './CreateMissionPage';
 import {
-    TrendingUp, Gift, Zap, BarChart3, Users,
-    CheckCircle2, DollarSign, Globe, Sparkles,
-    Shield, ArrowUpRight, HelpCircle, Loader2
+    TrendingUp, BarChart3,
+    CheckCircle2, DollarSign, Sparkles,
+    Shield, HelpCircle
 } from 'lucide-react';
 
 interface CampaignItem {
@@ -20,7 +20,7 @@ interface CampaignItem {
 }
 
 export function UgcPage() {
-    const { isConnected, address } = useAccount();
+    const { isConnected } = useAccount();
     const [activeTab, setActiveTab] = useState<'dashboard' | 'raffle' | 'mission'>('dashboard');
 
     const campaigns = useMemo<CampaignItem[]>(() => [
