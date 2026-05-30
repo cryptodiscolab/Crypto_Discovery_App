@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
 import { Users, Zap } from 'lucide-react';
 
 /**
@@ -12,21 +11,6 @@ interface FeedItem {
     avatar?: string;
     message: string;
     type: 'activity';
-}
-
-interface UserActivityLog {
-    id: number | string;
-    description: string;
-    activity_type: string;
-    created_at: string;
-    wallet_address: string;
-}
-
-interface UserProfileView {
-    wallet_address: string;
-    display_name: string | null;
-    username: string | null;
-    pfp_url: string | null;
 }
 
 export const HypeFeed = () => {
@@ -49,48 +33,10 @@ export const HypeFeed = () => {
 
     const fetchRecentActivity = async () => {
         try {
-            // 1. Fetch real activities
-            const { data: logs, error: logError } = await supabase
-                .from('user_activity_logs')
-                .select('id, description, activity_type, created_at, wallet_address')
-                .order('created_at', { ascending: false })
-                .limit(10);
-
-            if (logError) throw logError;
-            if (!logs || (logs as UserActivityLog[]).length === 0) {
-                setActivities([]);
-                return;
-            }
-
-            const typedLogs = logs as UserActivityLog[];
-
-            // 2. Fetch identities from the Master View (Mandate Alignment)
-            const wallets = [...new Set(typedLogs.map((l) => l.wallet_address.toLowerCase()))];
-            const { data: profiles, error: profileError } = await supabase
-                .from('v_user_full_profile')
-                .select('wallet_address, display_name, username, pfp_url')
-                .in('wallet_address', wallets);
-
-            if (profileError) {
-                console.warn('[HypeFeed] View fetch failed, using fallback:', profileError);
-            }
-
-            // 3. Transform into feed items with joined data
-            const profileMap = (profiles as UserProfileView[] || []).reduce((acc: Record<string, UserProfileView>, p) => {
-                acc[p.wallet_address.toLowerCase()] = p;
-                return acc;
-            }, {});
-
-            const feed: FeedItem[] = typedLogs.map((log) => {
-                const user = profileMap[log.wallet_address.toLowerCase()];
-                return {
-                    id: log.id,
-                    name: user?.display_name || user?.username || `${log.wallet_address.slice(0, 4)}...${log.wallet_address.slice(-4)}`,
-                    avatar: user?.pfp_url || undefined,
-                    message: log.description || "is active in the Nexus",
-                    type: 'activity'
-                };
-            });
+            const res = await fetch('/api/user-bundle?action=get-public-activity-feed&limit=10');
+            if (!res.ok) throw new Error(`Feed request failed: ${res.status}`);
+            const json = await res.json();
+            const feed = Array.isArray(json?.activities) ? (json.activities as FeedItem[]) : [];
 
             setActivities(feed);
         } catch (e: unknown) {

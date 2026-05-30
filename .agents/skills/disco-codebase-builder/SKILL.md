@@ -51,6 +51,7 @@ Do not bulk-read old PRD versions unless investigating historical drift.
 ## Domain Rules
 
 ### XP, Tasks, Identity
+- Daily claim sync is receipt-verified through `Raffle_Frontend/api/_user-bundle.ts` action `daily-claim`; DB activity category remains `XP`, and `DAILY` is only a virtual API/UI category for dashboard/history filters.
 - Off-chain XP must call `fn_increment_xp(p_wallet, p_amount)` with raw base XP from `point_settings`.
 - Do not calculate anti-whale scaling in JS; the DB RPC owns final XP.
 - Two-step task flow is mandatory for linked tasks: open link, countdown, then claim.

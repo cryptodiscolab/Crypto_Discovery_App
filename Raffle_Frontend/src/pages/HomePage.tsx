@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
+import toast from 'react-hot-toast';
 import { usePoints } from '../shared/context/PointsContext';
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
@@ -12,6 +13,7 @@ import { useFarcaster } from '../shared/context/FarcasterContext';
 import { supabase } from '../lib/supabaseClient';
 import { DailyClaimModal } from '../features/profile/components/modals/DailyClaimModal';
 import { ActivityLogSection } from '../features/profile/components/ActivityLogSection';
+import { useUserInfo } from '../hooks/useContract';
 
 interface PoolSettings {
   targetUSDC: number;
@@ -42,6 +44,7 @@ export function HomePage() {
   const { isConnected, address } = useAccount();
   const { userPoints, unclaimedRewards: _unclaimedRewards, userTier, rankName, profileData, ecosystemSettings } = usePoints();
   const { totalPoolBalance } = useSBT();
+  const { stats: onChainUserStats } = useUserInfo(address);
   const { isFrame, frameUser } = useFarcaster();
   const typedFrameUser = frameUser as { pfpUrl?: string; pfpUser?: string; username?: string } | undefined;
   const [activityLogs, setActivityLogs] = useState<ActivityLogItem[]>([]);
@@ -54,6 +57,7 @@ export function HomePage() {
   } = useCMS();
 
   const displayCards = featureCards as FeatureCard[];
+  const visibleCards = displayCards.filter((card: FeatureCard) => card.visible !== false);
   const currentPoolSettings = poolSettings as PoolSettings | undefined;
   const poolUSD = parseFloat(formatUnits(totalPoolBalance || 0n, 18)) * ethPrice;
   const poolETH = parseFloat(formatUnits(totalPoolBalance || 0n, 18)).toFixed(4);
@@ -68,25 +72,75 @@ export function HomePage() {
     streak_count?: number | null;
     raffle_tickets_bought?: number | null;
     total_raffles_created?: number | null;
+    raffles_created?: number | null;
     last_streak_claim?: string | null;
+    last_daily_bonus_claim?: string | null;
     is_base_social_verified?: boolean | null;
   } | null;
   const displayStreak = Number(typedProfile?.streak_count || 0);
   const displayTickets = Number(typedProfile?.raffle_tickets_bought || 0);
   const displayXp = userPoints;
+  const isBaseVerified = typedProfile?.is_base_social_verified === true;
   const tierNames = ['Rookie', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
   const currentTier = Math.max(0, Math.min(Number(userTier || 0), tierNames.length - 1));
   const displayTierName = rankName || tierNames[currentTier];
   const welcomeEns = typedFrameUser?.username || typedProfile?.basename || typedProfile?.ens_name || typedProfile?.display_name || (isConnected ? 'Connected Agent' : 'Guest Agent');
   const welcomeAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connect wallet';
-  const activeRafflesCreated = Number(typedProfile?.total_raffles_created || 0);
-  const lastClaimAt = typedProfile?.last_streak_claim ? new Date(typedProfile.last_streak_claim).getTime() : null;
+  const activeRafflesCreated = Number(typedProfile?.total_raffles_created ?? typedProfile?.raffles_created ?? 0);
+  const lastClaimSource = typedProfile?.last_daily_bonus_claim || typedProfile?.last_streak_claim || null;
+  const lastClaimAt = lastClaimSource ? new Date(lastClaimSource).getTime() : null;
   const lastClaimLabel = lastClaimAt ? formatRelativeTime(lastClaimAt) : 'No check-in yet';
   const dailyClaimXp = ecosystemSettings?.daily_claim ?? 0;
   const recentLogs = activityLogs.slice(0, 4);
   const unclaimedRewardsCount = Array.isArray(_unclaimedRewards) ? _unclaimedRewards.length : 0;
   const [showDailyClaimModal, setShowDailyClaimModal] = useState(false);
+  const [optimisticClaimedAt, setOptimisticClaimedAt] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const { refetch: refetchPoints } = usePoints();
+  const dailyClaimCooldownSec = Number((ecosystemSettings as { daily_claim_cooldown_sec?: number })?.daily_claim_cooldown_sec || 86400);
+  const onChainClaimAt = onChainUserStats?.lastDailyBonusClaim ? Number(onChainUserStats.lastDailyBonusClaim) * 1000 : null;
+  const claimBaseMs = Math.max(optimisticClaimedAt || 0, onChainClaimAt || 0, lastClaimAt || 0) || null;
+  const nextDailyClaimMs = claimBaseMs ? claimBaseMs + dailyClaimCooldownSec * 1000 : 0;
+  const dailyClaimRemainingMs = Math.max(0, nextDailyClaimMs - nowMs);
+  const isDailyClaimLocked = dailyClaimRemainingMs > 0;
+  const dailyClaimCountdown = formatCountdown(dailyClaimRemainingMs);
+
+  const handleCopyAddress = async () => {
+    if (!address) {
+      toast.error('Connect wallet first');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(address);
+      toast.success('Wallet address copied');
+    } catch {
+      toast.error('Copy failed');
+    }
+  };
+
+  const handleOpenDailyClaim = () => {
+    if (!isConnected || !address) {
+      toast.error('Connect wallet first');
+      return;
+    }
+    if (isDailyClaimLocked) {
+      toast.error(`Daily claim cooldown: ${dailyClaimCountdown}`);
+      return;
+    }
+    setShowDailyClaimModal(true);
+  };
+
+  useEffect(() => {
+    setOptimisticClaimedAt(null);
+  }, [address]);
+
+  useEffect(() => {
+    if (!claimBaseMs) return;
+    setNowMs(Date.now());
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [claimBaseMs]);
 
   useEffect(() => {
     if (!address) {
@@ -194,11 +248,20 @@ export function HomePage() {
                 <h2 className="font-heading text-base text-white m-0" style={{ fontFamily: 'var(--typography-family-heading)', letterSpacing: '0.02em' }}>
                   {welcomeEns}
                 </h2>
-                <span className="badge-cyber badge-cyber-green text-[8px]" style={{ padding: '2px 6px' }}>Basename Verified</span>
+                <span className={`badge-cyber ${isBaseVerified ? 'badge-cyber-green' : 'badge-cyber-blue'} text-[8px]`} style={{ padding: '2px 6px' }}>
+                  {isBaseVerified ? 'Basename Verified' : 'Identity Pending'}
+                </span>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="value-native text-[10px]" style={{ color: '#64748b' }}>{welcomeAddr}</span>
-                <button className="text-slate-500 hover:text-slate-300 text-[10px] bg-none border-none cursor-pointer">
+                <button
+                  type="button"
+                  onClick={handleCopyAddress}
+                  disabled={!address}
+                  className="text-slate-500 hover:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed text-[10px] bg-none border-none cursor-pointer"
+                  title="Copy wallet address"
+                  aria-label="Copy wallet address"
+                >
                   <i className="fa-regular fa-copy"></i>
                 </button>
               </div>
@@ -212,11 +275,11 @@ export function HomePage() {
                   <i className="fa-solid fa-circle-check text-[9px] text-emerald-500 ml-1"></i>
                 </div>
                 {/* X Badge */}
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-slate-400 cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 hover:text-slate-200">
+                <Link to="/profile" className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-slate-400 cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 hover:text-slate-200">
                   <i className="fa-brands fa-x-twitter text-xs opacity-60"></i>
                   <span className="value-native text-[10px]">Link X</span>
                   <i className="fa-solid fa-plus text-[8px]"></i>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -287,7 +350,9 @@ export function HomePage() {
 
           <div className="mt-4 flex items-center gap-2 label-native" style={{ color: 'var(--colors-brand-success)' }}>
             <i className="fa-solid fa-circle-check text-xs"></i>
-            <span className="text-[9px]">NO RIBA · VERIFIED ON-CHAIN · LIVE TELEMETRY</span>
+            <span className="text-[9px]">
+              {totalPoolBalance === 0n ? 'POOL EMPTY · AWAITING RAFFLE REVENUE · LIVE TELEMETRY' : 'NO RIBA · VERIFIED ON-CHAIN · LIVE TELEMETRY'}
+            </span>
           </div>
         </div>
 
@@ -305,10 +370,10 @@ export function HomePage() {
             <span className="badge-cyber badge-cyber-blue">SOULBOUND VERIFIED</span>
           </div>
 
-          {/* Total Earnings */}
+          {/* Total XP Earned */}
           <div className="glass-card stat-card-cyber p-5">
             <div className="stat-header-cyber">
-              <span className="label-native">Total Earnings</span>
+              <span className="label-native">Total XP Earned</span>
               <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-slate-400">
                 <i className="fa-solid fa-coins"></i>
               </div>
@@ -350,21 +415,27 @@ export function HomePage() {
           <div className="flex flex-col gap-6">
             {/* Streak Check-In */}
             <div className="glass-card p-5">
-              <div className="card-title-row flex items-center justify-between mb-5">
+            <div className="card-title-row flex items-center justify-between mb-5">
                 <h3 className="text-base text-white font-heading" style={{ fontFamily: 'var(--typography-family-heading)' }}>Daily Check-In Streak</h3>
-                <span className="badge-cyber badge-cyber-orange">STREAK WINDOW OPEN</span>
+                <span className={`badge-cyber ${isDailyClaimLocked ? 'badge-cyber-blue' : 'badge-cyber-orange'}`}>
+                  {isDailyClaimLocked ? `COOLDOWN ${dailyClaimCountdown}` : 'STREAK WINDOW OPEN'}
+                </span>
               </div>
               <p className="content-native mb-5">
-                Claim your daily XP to keep your streak alive. The daily streak window is active between 20 to 48 hours after your last check-in.
+                Claim your daily XP to keep your streak alive. Cooldown is enforced by DailyApp V16 and mirrored to the database for dashboard transparency.
               </p>
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <div className="label-native">Last Check-In</div>
                   <div className="value-native text-white">{lastClaimLabel}</div>
                 </div>
-                <button onClick={() => setShowDailyClaimModal(true)} className="btn-cyber-primary">
+                <button
+                  onClick={handleOpenDailyClaim}
+                  disabled={isDailyClaimLocked}
+                  className={`btn-cyber-primary ${isDailyClaimLocked ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                >
                   <i className="fa-solid fa-bolt"></i>
-                  <span>Claim Daily +{dailyClaimXp} XP</span>
+                  <span>{isDailyClaimLocked ? `Claim in ${dailyClaimCountdown}` : `Claim Daily +${dailyClaimXp} XP`}</span>
                 </button>
               </div>
             </div>
@@ -384,7 +455,10 @@ export function HomePage() {
                     Certain partner quests require verification of your official Base Basename. Connect your wallet to automatically resolve and verify your Basename identity.
                   </p>
                   <div className="flex items-center gap-3">
-                    <span className="badge-cyber badge-cyber-green"><i className="fa-solid fa-circle-check mr-1"></i> Resolved: {welcomeEns}</span>
+                    <span className={`badge-cyber ${isBaseVerified ? 'badge-cyber-green' : 'badge-cyber-blue'}`}>
+                      <i className={`fa-solid ${isBaseVerified ? 'fa-circle-check' : 'fa-link'} mr-1`}></i>
+                      {isBaseVerified ? `Resolved: ${welcomeEns}` : 'Open Profile to verify'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -416,29 +490,46 @@ export function HomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {isLoadingCards && displayCards.length === 0 ? (
             <FeatureCardSkeleton count={6} />
+          ) : visibleCards.length === 0 ? (
+            <div className="glass-card p-5 sm:col-span-2 lg:col-span-3 text-center">
+              <span className="label-native text-[10px] text-slate-500">NO DASHBOARD CARDS ACTIVE</span>
+            </div>
           ) : (
-            displayCards
-              .filter((card: FeatureCard) => card.visible !== false)
+            visibleCards
               .map((card: FeatureCard, index: number) => {
                 const isCustomImage = card.icon && typeof card.icon === 'string' && card.icon.startsWith('http');
-                return (
-                  <Link key={index} to={card.link || '/'} className="group">
-                    <div className="glass-card p-5 h-full hover:bg-white/5 transition-colors duration-150">
-                      <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors overflow-hidden border border-white/5">
-                        {isCustomImage ? (
-                          <img src={card.icon} alt={card.title} className="w-full h-full object-cover" loading="lazy" />
-                        ) : (
-                          <i className="fa-solid fa-sparkles text-indigo-400"></i>
-                        )}
-                      </div>
-                      <h3 className="text-[11px] font-black text-white mb-1 leading-snug uppercase tracking-widest">{String(card.title || '').toUpperCase()}</h3>
-                      <p className="text-zinc-500 text-[11px] leading-relaxed font-black uppercase tracking-widest">{String(card.description || '').toUpperCase()}</p>
-                      {card.linkText && (
-                        <div className="flex items-center mt-3 text-[11px] font-black uppercase tracking-widest text-indigo-400 group-hover:underline">
-                          {String(card.linkText || '').toUpperCase()} →
-                        </div>
+                const cardLink = String(card.link || '/');
+                const isExternalLink = /^https?:\/\//i.test(cardLink);
+                const cardContent = (
+                  <div className="glass-card p-5 h-full hover:bg-white/5 transition-colors duration-150">
+                    <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors overflow-hidden border border-white/5">
+                      {isCustomImage ? (
+                        <img src={card.icon} alt={card.title} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <i className="fa-solid fa-sparkles text-indigo-400"></i>
                       )}
                     </div>
+                    <h3 className="text-[11px] font-black text-white mb-1 leading-snug uppercase tracking-widest">{String(card.title || '').toUpperCase()}</h3>
+                    <p className="text-zinc-500 text-[11px] leading-relaxed font-black uppercase tracking-widest">{String(card.description || '').toUpperCase()}</p>
+                    {card.linkText && (
+                      <div className="flex items-center mt-3 text-[11px] font-black uppercase tracking-widest text-indigo-400 group-hover:underline">
+                        {String(card.linkText || '').toUpperCase()} →
+                      </div>
+                    )}
+                  </div>
+                );
+
+                if (isExternalLink) {
+                  return (
+                    <a key={card.id || index} href={cardLink} target="_blank" rel="noopener noreferrer" className="group">
+                      {cardContent}
+                    </a>
+                  );
+                }
+
+                return (
+                  <Link key={card.id || index} to={cardLink.startsWith('/') ? cardLink : '/'} className="group">
+                    {cardContent}
                   </Link>
                 );
               })
@@ -450,7 +541,10 @@ export function HomePage() {
         <DailyClaimModal
           onClose={() => setShowDailyClaimModal(false)}
           onSuccess={() => {
+            setOptimisticClaimedAt(Date.now());
+            setNowMs(Date.now());
             refetchPoints();
+            window.setTimeout(() => { refetchPoints(); }, 3500);
           }}
           streakCount={displayStreak}
         />
@@ -501,4 +595,13 @@ function formatRelativeTime(timestamp: number) {
 
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+function formatCountdown(ms: number) {
+  if (!Number.isFinite(ms) || ms <= 0) return '00:00:00';
+  const totalSeconds = Math.ceil(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }

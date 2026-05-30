@@ -9,6 +9,7 @@
 - [x] Full codebase audit (50 TS errors fixed, 39 API responses sanitized)
 - [x] Contract audit: 2 CRITICAL + 6 HIGH vulnerabilities fixed
 - [x] DailyAppV15 deployed with: emergencyWithdraw protection, burnPoints cap, cross-chain replay prevention
+- [x] Dashboard/Home v3.64.35 audit: `HomePage.tsx` is the single active dashboard, card functions verified, daily claim sync receipt-verified, and activity history maps DB-valid `XP` daily rows to virtual `DAILY`.
 - [x] MasterX patched: holder counter underflow guard, addPoints rate limit
 - [x] Raffle patched: unclaimed prize reclaim, winner deduplication
 - [x] Real-time XP sync: DB→On-chain via cron (30min) + event trigger

@@ -1,6 +1,32 @@
 <h1>DailyApp Verification System - Complete Implementation</h1>
 <hr>
 <h1>IMPLEMENTATION SUMMARY</h1>
+<h2>v3.64.35-Hardened (Dashboard/Home Card Audit, Daily Claim Sync, and Activity History Contract Parity)</h2>
+<ul>
+<li><strong>Status</strong>: Completed. Dashboard/home card functions, daily claim sync, and activity history are aligned with live API, ABI, and database constraints.</li>
+<li><strong>Dashboard Single Source</strong>:<ul>
+<li>Removed stale full-dashboard <code>UnifiedDashboard.tsx</code> and documented <code>HomePage.tsx</code> as the only active <code>/</code> dashboard implementation.</li>
+<li>Fixed wallet copy, X/Profile routing, Basename verified state, daily-claim wallet guard, feature-card skeleton/empty states, and CMS internal/external link routing.</li>
+<li>Hardened dashboard card data hydration so <code>get-profile</code> merges <code>v_user_full_profile</code> with <code>user_profiles</code> fields required by Identity, Streak, Tickets, and Basename cards.</li>
+<li>Daily Claim card now shows a countdown and disables the button from DailyApp V16 <code>lastDailyBonusClaim</code>, DB mirror, and optimistic post-claim state.</li>
+</ul>
+</li>
+<li><strong>Daily Claim + Activity History</strong>:<ul>
+<li><code>DailyClaimModal</code> now posts receipt-backed <code>action=daily-claim</code> sync after wallet tx success.</li>
+<li>Backend verifies receipt sender/target, reads DailyApp V16 <code>userStats</code>, mirrors <code>last_onchain_xp</code>, streak, tier, and applies only positive XP deltas.</li>
+<li>Dashboard/profile activity history reads through <code>/api/user-bundle?action=get-activity-logs</code>; daily claim rows stay DB-valid <code>XP</code> and are returned as virtual <code>DAILY</code> to the UI.</li>
+</ul>
+</li>
+<li><strong>ABI/API Parity</strong>:<ul>
+<li>Removed/disabled stale frontend paths for unavailable <code>mintNFTWithEntitlement</code> and raffle <code>setRaffleFees</code> selectors on the active deployed contracts.</li>
+</ul>
+</li>
+<li><strong>Verification</strong>:<ul>
+<li>Passed TypeScript, route audit, live CMS probe, live RLS check, production build, gitleaks, anti-negligence hook, and diff hygiene checks. Live SBT pool verifier confirmed MasterX pool is currently <code>0 ETH</code>; UI now reports empty-pool telemetry instead of implying stale data.</li>
+</ul>
+</li>
+<li><strong>Files Changed</strong>: <code>Raffle_Frontend/src/pages/HomePage.tsx</code>, <code>Raffle_Frontend/src/features/profile/components/modals/DailyClaimModal.tsx</code>, <code>Raffle_Frontend/api/_user-bundle.ts</code>, <code>Raffle_Frontend/api/_audit-bundle.ts</code>, <code>Raffle_Frontend/src/components/HypeFeed.tsx</code>, <code>Raffle_Frontend/src/pages/SBTMintPage.tsx</code>, <code>Raffle_Frontend/src/features/admin/components/RaffleManagerTab.tsx</code>, <code>Raffle_Frontend/src/features/admin/components/system/config/RaffleEconSettingsCard.tsx</code>, <code>Raffle_Frontend/src/lib/abis_data.txt</code>, <code>PRD/DISCO_DAILY_MASTER_PRD.md</code>, <code>PRD/FEATURE_WORKFLOW_SOT.md</code>, <code>.agents/WORKSPACE_MAP.md</code>, <code>Raffle_Frontend/Agen Work Report/AGEN_WORK_REPORT.md</code>, <code>Raffle_Frontend/Agen Work Report/NEW_UI_DESIGN_ROADMAP.md</code>.</li>
+</ul>
 <h2>v3.64.32-Hardened (Daily Claim XP Sync &amp; Watermark Self-Healing)</h2>
 <ul>
 <li><strong>Status</strong>: Completed. Resolved daily claim XP deadlock by implementing dynamic contract migration detection and DB watermark self-healing, and executed a database recovery alignment script.</li>

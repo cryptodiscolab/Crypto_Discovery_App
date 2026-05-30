@@ -302,16 +302,6 @@ function AdminRaffleSettings() {
         if (surcharge !== undefined) setFees(f => ({ ...f, surcharge: (Number(surcharge) / 100).toString() }));
     }, [rake, surcharge]);
 
-    const calls = [{
-        to: RAFFLE_ADDRESS,
-        abi: RAFFLE_ABI,
-        functionName: 'setRaffleFees',
-        args: [
-            BigInt(Number(fees.rake) * 100),
-            BigInt(Number(fees.surcharge) * 100)
-        ]
-    }];
-
     return (
         <div className="bg-[#121214] p-8 border border-white/5 rounded-[2.5rem] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000">
@@ -347,12 +337,13 @@ function AdminRaffleSettings() {
                 </div>
             </div>
 
-            <AdminTransactionButton
-                calls={calls}
-                onSuccess={() => toast.success("Protocol fees updated!")}
-                text="UPDATE PROTOCOL FEES"
+            <button
+                type="button"
+                onClick={() => toast.error("Protocol fee setter is unavailable on the deployed raffle contract. Redeploy/upgrade before fee writes.")}
                 className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 py-5 rounded-2xl label-native transition-all shadow-lg active:scale-[0.98] disabled:opacity-30"
-            />
+            >
+                UPDATE PROTOCOL FEES
+            </button>
         </div>
     );
 }

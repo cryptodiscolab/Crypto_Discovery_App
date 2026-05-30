@@ -1,5 +1,5 @@
-# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.34-Hardened)
-**Last Updated**: 2026-05-30 — SBT Post-Mint Sync & Receipt-Verified Activity Logging
+# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.35-Hardened)
+**Last Updated**: 2026-05-30 — Dashboard/Home Card Audit, Daily Claim Sync, and Activity History Contract Parity
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -60,22 +60,32 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 - **Execution**: Frontend memanggil fungsi `claimDailyBonus()` di kontrak **DailyApp V16** (`0xb592D6819Ea310d83034cD80FDDC2e754D0a5353`) melalui `VITE_DAILY_APP_V16_ADDRESS`.
 - **Success**: MetaMask/Wallet mengembalikan `tx_hash`.
 
-### 2.2 The Backend Synchronization (Hardened v3.61.0)
-- **Triggers**: Setelah `tx_hash` didapat, Frontend memanggil `/api/user-bundle?action=xp`.
-- **Workflow (Backend `handleXpSync` - 100% TS)**:
-  1. **Validation**: Backend menerima `tx_hash`. Menggunakan strict interface `UserBundlePayload`.
-  2. **Security**: Implementasi `unknown` error guard pattern untuk mencegah kegagalan fatal pada RPC lag.
-  3. **RPC Read (Lag-Prone)**: Backend mencoba membaca `readContract(userStats)`.
-  3. **Optimistic Trust Fallback**:
-     - Jika `tx_hash` ada, TETAPI `readContract` gagal/timeout.
-     - ATAU jika `tx_hash` valid tapi XP On-Chain belum berubah (RPC lag `xpDelta === 0`).
-     - **Maka**: Backend mengabaikannya dan SECARA PAKSA menambahkan `standardDailyReward` ke Supabase.
-  4. **Database Write**: `user_profiles.total_xp` di-update dengan nilai baru.
-  5. **Activity Log**: Ditulis ke `user_activity_logs` dengan keterangan Daily Claim.
+### 2.2 The Backend Synchronization (Receipt-Verified v3.64.35)
+- **Triggers**: Setelah `tx_hash` didapat, `DailyClaimModal` memanggil `/api/user-bundle` dengan `action=daily-claim`, `wallet_address`, `tx_hash`, dan `chain_id`.
+- **Workflow (Backend `handleDailyClaim`)**:
+  1. **Idempotency**: Cek `user_activity_logs.tx_hash` terlebih dahulu agar transaksi yang sama tidak menambah XP dua kali.
+  2. **Receipt Verification**: Tunggu receipt RPC. Jika belum terindeks, API mengembalikan `RPC_SYNC_DELAYED`/503 supaya frontend memasukkan job ke `pending_sync_jobs`.
+  3. **Sender + Target Guard**: Validasi `receipt.from === wallet_address` dan `receipt.to === DailyApp V16`.
+  4. **On-Chain Truth Read**: Baca `userStats(wallet)` dari DailyApp V16 untuk mendapatkan XP, streak, dan tier aktual.
+  5. **DB Mirror**: Update `user_profiles.last_onchain_xp`, `streak_count`, `last_streak_claim`, dan `tier`.
+  6. **Delta XP Only**: Panggil `fn_increment_xp(p_wallet, p_amount)` hanya untuk delta positif antara on-chain XP dan DB mirror.
+  7. **Activity Log**: Tulis log dengan kategori DB-valid `XP`, deskripsi Daily Claim, metadata streak/tier, dan `tx_hash`. API/UI memetakan log ini menjadi kategori virtual `DAILY` untuk dashboard/history.
+  8. **Referral Bonus**: Referral reward dijalankan fire-and-forget setelah sync utama aman.
 
-### 2.3 Post-Claim Frontend Refresh
-- Frontend menunggu secara eksplisit selama **1.5 detik** sebelum memanggil `refetch()`.
-- Tujuannya: Agar Supabase memiliki waktu meng-update SQL Views (`v_user_full_profile`).
+### 2.3 Post-Claim Dashboard/Home Refresh
+- `HomePage` melakukan immediate `refetchPoints()` saat klaim sukses, lalu delayed refetch untuk menunggu DB mirror/view propagation.
+- `ActivityLogSection` dan dashboard history membaca `/api/user-bundle?action=get-activity-logs`, bukan direct anon query ke tabel privat.
+- `get-activity-logs&category=DAILY` adalah kategori virtual API: backend meng-query log `XP` dengan pola Daily Claim karena constraint database tidak menerima kategori literal `DAILY`.
+- Recovery job dari `pending_sync_jobs` memakai `_audit-bundle` dengan pola kategori DB-valid yang sama.
+
+### 2.4 Home Dashboard / Card Function Contract
+- `HomePage.tsx` adalah single source of truth untuk route dashboard `/`; implementasi dashboard penuh lama `UnifiedDashboard.tsx` sudah dihapus.
+- Dashboard profile hydration memakai `/api/user-bundle?action=get-profile`, yang merge `v_user_full_profile` dengan field `user_profiles` untuk `raffle_tickets_bought`, `raffles_created`, `last_streak_claim`, `is_base_social_verified`, dan identity metadata.
+- Welcome card: tombol copy wallet aktif, X/social action mengarah ke `/profile`, dan Basename badge hanya `Resolved` jika `is_base_social_verified === true`.
+- Daily check-in card melakukan wallet guard dan cooldown guard sebelum membuka `DailyClaimModal`; countdown memakai nilai terbaru dari DailyApp V16 `userStats.lastDailyBonusClaim`, DB mirror, dan optimistic timestamp setelah klaim sukses.
+- CMS feature cards dibaca dari Content CMS (`getFeatureCards`), difilter `visible !== false`, merender link internal via `<Link>`, link eksternal `https://` via `<a target="_blank" rel="noopener noreferrer">`, dan menampilkan empty state jika live CMS mengembalikan `[]`.
+- Hype feed dan activity feed memakai service-role API route yang mengembalikan payload publik/sanitized; frontend tidak membaca private Supabase tables langsung.
+- SBT Reward Pool card membaca `MasterX.totalSBTPoolBalance()` via `useSBT()`. Jika contract mengembalikan `0`, UI wajib menampilkan empty-pool telemetry, bukan nilai palsu. `scripts/sync/sync-sbt.cjs` memakai viem minimal ABI untuk mirror `sbt_pool_stats` dari MasterX ke Supabase.
 
 ---
 
@@ -99,7 +109,7 @@ Ada **dua jalur berbeda** yang mengupdate `user_profiles.total_xp`. Agen HARUS m
 
 | Jalur | Sumber XP | Trigger Backend | Cara Update DB |
 |-------|-----------|-----------------|----------------|
-| **On-Chain** | `claimDailyBonus()` di DailyApp contract | `/api/user-bundle?action=xp` | Baca `readContract(userStats)` ΓåÆ upsert `total_xp` |
+| **On-Chain** | `claimDailyBonus()` di DailyApp contract | `/api/user-bundle` action `daily-claim` | Receipt verify ΓåÆ baca `userStats(wallet)` ΓåÆ mirror `last_onchain_xp`/streak/tier ΓåÆ `fn_increment_xp` untuk delta positif |
 | **Off-Chain** | Task dari tabel `daily_tasks` (Supabase) | `Verification-Server` ΓåÆ `tasks-bundle.js` | `fn_increment_xp(wallet, xp)` RPC langsung |
 
 > [!IMPORTANT]
@@ -115,12 +125,12 @@ Ada **dua jalur berbeda** yang mengupdate `user_profiles.total_xp`. Agen HARUS m
 Setelah XP didapat dari Daily Claim atau Social Tasks, sistem harus menentukan apakah Tier/Rank user berubah. **Tier harus dihitung berdasarkan Database, bukan menunggu on-chain.**
 
 ### 4.1 Real-Time Tier Update Flow
-- **Workflow** di dalam `/api/user-bundle?action=xp`:
-  1. Setelah backend selesai menambahkan XP (misal: total menjadi 12,000 XP).
-  2. Backend melakukan **query asinkron langsung ke tabel `sbt_thresholds`** di Supabase (diurutkan descending berdasarkan `xp_required`).
-  3. Sistem mencari Tier tertinggi dimana `total_xp >= xp_required`.
-  4. Jika "Fan" (10,000 XP) terpenuhi, backend otomatis mengupdate kolom `tier` di `user_profiles` menjadi "Fan".
-- **Result**: Saat user pindah ke Leaderboard/Profile, Tier mereka langsung "Fan", tanpa perlu menunggu data dari smart contract.
+- **Workflow**:
+  1. On-chain daily claim sync membaca `userStats(wallet)` lalu mirror tier/streak ke `user_profiles`.
+  2. Off-chain task/reward sync memakai `fn_increment_xp(...)` sebagai jalur atomik untuk XP database.
+  3. SBT threshold logic WAJIB memakai kolom `min_xp` pada `sbt_thresholds`; `xp_required` adalah legacy/forbidden.
+  4. Setelah SBT mint/upgrade, frontend memanggil `sync-sbt-upgrade` agar backend receipt-verify event `NFTMinted` dan menulis tier DB.
+- **Result**: Leaderboard/Profile/Dashboard membaca DB mirror yang sudah sinkron dengan transaksi terverifikasi, bukan melakukan loop RPC untuk setiap render.
 
 ---
 
@@ -136,7 +146,7 @@ Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersif
     1. **Pre-Check UI**: `SBTUpgradeCard` memverifikasi 3 syarat utama: `hasTotalXP` (DB canonical), `hasEnoughETH` (balance), dan `!isSoldOut` / `isOpen` dari `DAILY_APP.nftConfigs`.
     2. **Cost Transparency**: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.
     3. **ETH Pre-Check**: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.
-    4. **Minting**: Frontend memanggil `useNFTTiers.mintTier(...)` untuk `DAILY_APP.mintNFT(uint8 tier)` atau `SBTMintPage` memanggil `DAILY_APP.mintNFTWithEntitlement(...)` jika backend sudah menerbitkan voucher EIP-712.
+    4. **Minting**: Frontend memanggil `useNFTTiers.mintTier(...)` atau `SBTMintPage` memanggil `DAILY_APP.mintNFT(uint8 tier)`. Jalur `mintNFTWithEntitlement(...)` adalah legacy V15 dan tidak tersedia pada DailyApp V16 aktif.
     5. **On-Chain Enforcement**: `DailyAppV16` menegakkan sequential tier, price, supply, status tier, XP on-chain, dan event `NFTMinted`.
     6. **Receipt-Verified Post-Mint Sync**: Setelah receipt sukses, frontend WAJIB memanggil `/api/user-bundle` action `sync-sbt-upgrade` dengan `wallet`, `txHash`, `tierName`, dan `ethSpent`. Tidak boleh meminta signature wallet kedua untuk sync.
     7. **Backend Verification**: `handleSyncSbtUpgrade()` WAJIB memverifikasi receipt status, sender wallet, DailyApp destination, dan event `NFTMinted(user,tier,tokenId)` sebelum update DB.
@@ -225,8 +235,9 @@ Fase kritis untuk transparansi finansial dan pendanaan treasury (SBT Pool) berpu
  4. **Resilient Tracking**: Sistem menggunakan `useCallsStatus` untuk memantau status bundle transaksi batch, mencegah UI hang saat menunggu konfirmasi dari provider (v3.45.0).
  
  ### 5.2 Unified Activity Logs Tracking
-- Semua transaksi yang memengaruhi poin atau ekuitas user **WAJIB** terpusat di fungsi `logActivity` (di backend APIs). Frontend *ProfilePage* => `ActivityLogSection` mem-parse data log secara realtime dengan pembagian:
-- **XP Gains (ZAP)**: Daily Claims (on-chain), UGC Claims (off-chain), Referral Invites, Sponsor Rewards.
+- Semua transaksi yang memengaruhi poin atau ekuitas user **WAJIB** terpusat di fungsi `logActivity`/handler backend terkait. Frontend dashboard/home dan *ProfilePage* => `ActivityLogSection` mem-parse data log via `/api/user-bundle?action=get-activity-logs` dengan pembagian:
+- **Daily Claims (DAILY virtual)**: Disimpan sebagai kategori DB-valid `XP` dengan activity/description Daily Claim, lalu API mengembalikan kategori virtual `DAILY` untuk filter dashboard/history.
+- **XP Gains (ZAP)**: UGC Claims (off-chain), Referral Invites, Sponsor Rewards, dan XP events lain yang bukan daily claim.
 - **Purchases (SHOPPING CART)**: Pembelian tiket kembaran Raffle. Semua tugas dengan awalan `raffle_buy_`.
 - **Rewards (ACCOMPLISHMENT)**: Pemenang undian Raffle / Airdrop khusus.
 - Ini menggantikan metode pengecekan history frontend di `TaskList.jsx` (yang kini bersifat absolute "One-Time Claim" per Task ID globally). Dilarang ada tugas yang di-cache di client-side sebagai task harian berulang jika Backend tidak men-generate *Task ID* spesifik baru tiap harinya.
@@ -300,7 +311,7 @@ Integrasi Basename untuk eliminasi bot dan standardisasi identitas on-chain.
 
 ### 11.2 Task Gate (Social Guard)
 1. Admin menandai tugas dengan flag `is_base_social_required = true`.
-2. Frontend `UnifiedDashboard` mengevaluasi profil user.
+2. Frontend `TasksPage` / `TaskList` mengevaluasi profil user.
 3. Jika tugas butuh verifikasi tapi user belum link:
    - Tombol "Claim" di-replace dengan "LINK BASE".
    - Status visual: `BASE REQ`.
@@ -498,7 +509,7 @@ Sistem ekonomi sirkular yang memberikan transparansi bagi admin dan insentif bag
   1. **Project Rake**: Potongan dari total penjualan tiket (Default: 20%).
   2. **Claim Fee**: Biaya yang dibayar pemenang saat klaim hadiah (Default: 5%).
   3. **Gas Surcharge**: Biaya tambahan untuk menutupi biaya callback randomness (Default: 10%).
-- **State Sync**: Perubahan pada dashboard memicu `setRaffleFees` di kontrak `CryptoDiscoRaffle.sol`.
+- **State Sync**: Deployed raffle aktif tidak mengekspos `setRaffleFees`; dashboard/admin wajib men-disable fee writes sampai kontrak di-upgrade/redeploy. Limit dan XP raffle tetap memakai selector live `setRaffleLimits` / `setRaffleXP`.
 
 ### 21.2 Creator Revenue Portal
 - **Visibility**: Kreator melihat kartu **"Your Earnings"** di dashboard mereka.

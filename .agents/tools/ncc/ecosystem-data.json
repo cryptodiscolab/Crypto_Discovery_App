@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-27T02:28:16.028Z",
+  "timestamp": "2026-05-30T17:44:41.980Z",
   "status": "HEALTHY",
   "alerts": [],
   "layers": {
@@ -210,7 +210,7 @@
         {
           "id": "MasterX_Contract",
           "status": "GREEN",
-          "address": "0x5916E4A76Ec2a790373FDC2C7410d5065856F142"
+          "address": "0x1b573DdD9a1679505ae64498564523222c758EC2"
         },
         {
           "id": "Raffle_Contract",
@@ -226,7 +226,7 @@
           "id": "SBT_Mining_Pool",
           "status": "YELLOW",
           "value": "0 ETH",
-          "last_dist": "23/05/2026"
+          "last_dist": "28/05/2026"
         },
         {
           "id": "SBT_Tier_BRONZE",

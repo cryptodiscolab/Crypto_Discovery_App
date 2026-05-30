@@ -31,19 +31,11 @@ export function RaffleEconSettingsCard({
 
     const handleSaveRaffleFees = async () => {
         setIsSaving(true);
-        const tid = toast.loading("Syncing Raffle Fees...");
         try {
-            const hash = await writeContractAsync({
-                address: CONTRACTS.RAFFLE as `0x${string}`,
-                abi: RAFFLE_ABI,
-                functionName: 'setRaffleFees',
-                args: [BigInt(raffleFees.rake), BigInt(raffleFees.surcharge)],
-            });
-            await publicClient!.waitForTransactionReceipt({ hash });
-            toast.success("Raffle Fees Updated!", { id: tid });
+            toast.error("Raffle fee setter is unavailable on the deployed contract. Redeploy/upgrade is required before fee writes.");
         } catch (e: unknown) {
             const error = e as { shortMessage?: string; message?: string };
-            toast.error(error.shortMessage || error.message || "Action failed", { id: tid });
+            toast.error(error.shortMessage || error.message || "Action failed");
         } finally {
             setIsSaving(false);
         }

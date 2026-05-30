@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Shield, Sparkles, AlertTriangle, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
-import { useAccount, useSignMessage, useWriteContract, usePublicClient } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
-import { CONTRACTS, ABIS } from '../lib/contracts';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 import { BUNDLE_ROUTES, USER_BUNDLE_ACTIONS } from '../lib/apiRoutes';
 import { formatEther } from 'viem';
+import { useNFTTiers } from '../hooks/useNFTTiers';
 
 const PINATA_GATEWAY = (import.meta.env.VITE_PINATA_GATEWAY || 'https://gateway.pinata.cloud/ipfs').trim();
 
@@ -91,6 +91,7 @@ export function SBTMintPage() {
   const [loading, setLoading] = useState(true);
   const [minting, setMinting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { tiers: nftTiers, mintTier, refetch: refetchTiers } = useNFTTiers();
 
   // Fetch tier thresholds from Supabase (Zero-Hardcode: all XP values from DB)
   const fetchThresholds = useCallback(async (): Promise<SBTThreshold[]> => {
@@ -152,9 +153,6 @@ export function SBTMintPage() {
     fetchProgress();
   }, [fetchProgress]);
 
-  const { signMessageAsync } = useSignMessage();
-
-  const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
 
   const handleMint = async () => {
@@ -162,8 +160,6 @@ export function SBTMintPage() {
     setMinting(true);
     try {
       const cleanWallet = address.toLowerCase();
-      const message = `sbt mint entitlement ${cleanWallet}`;
-      const signature = await signMessageAsync({ message });
 
       // FIX: Look up NEXT tier level (not current) — backend validates sequential upgrade
       const nextTierLevel = thresholds.find(
@@ -171,69 +167,12 @@ export function SBTMintPage() {
       )?.level;
       if (!nextTierLevel) throw new Error('Cannot determine next tier level');
 
-      // Step 1: Get signed entitlement voucher from backend
-      const res = await fetch(BUNDLE_ROUTES.USER, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: USER_BUNDLE_ACTIONS.SBT_MINT_ENTITLEMENT,
-          wallet: cleanWallet,
-          signature,
-          message,
-          requested_tier: nextTierLevel,
-        }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error((errBody as Record<string, string>)?.error || 'Entitlement request failed');
-      }
-
-      const result = await res.json();
-      const voucherStatus = (result as Record<string, string>)?.voucher_status;
-      if (voucherStatus !== 'signed') {
-        const reason = (result as Record<string, string>)?.reason || 'Not eligible for SBT mint';
-        throw new Error(reason);
-      }
-
-      // Step 2: Call mintNFTWithEntitlement() on-chain with the signed voucher
-      const voucher = (result as Record<string, unknown>)?.voucher as {
-        wallet: string;
-        tier: number;
-        tier_name: string;
-        db_total_xp: number;
-        required_xp: number;
-        mint_price_wei: string;
-        contract_address: string;
-        verifier_address: string;
-        chain_id: number;
-        deadline: number;
-        nonce: string;
-        signature: string;
-      } | undefined;
-
-      if (!voucher) throw new Error('Backend returned no voucher data');
-
+      const targetTier = nftTiers.find((tier) => tier.id === nextTierLevel);
+      if (!targetTier) throw new Error('Next tier config is not loaded from DailyApp V16');
+      if (targetTier.isOpen === false) throw new Error(`${progress.nextTier} minting is currently closed`);
+      const mintPrice = targetTier.mintPrice || 0n;
       toast.loading('Sending mint transaction…', { id: 'sbt-mint' });
-
-      const contractAddress = (voucher.contract_address || CONTRACTS.DAILY_APP) as `0x${string}`;
-      const txHash = await writeContractAsync({
-        address: contractAddress,
-        abi: ABIS.DAILY_APP,
-        functionName: 'mintNFTWithEntitlement',
-        args: [
-          {
-            wallet: voucher.wallet as `0x${string}`,
-            targetContract: contractAddress,
-            targetTier: voucher.tier,
-            requiredXp: BigInt(voucher.required_xp),
-            nonce: BigInt(voucher.nonce),
-            deadline: BigInt(voucher.deadline),
-          },
-          voucher.signature as `0x${string}`,
-        ],
-        value: BigInt(voucher.mint_price_wei || '0'),
-      });
+      const txHash = await mintTier(nextTierLevel, mintPrice);
 
       toast.loading('Waiting for confirmation…', { id: 'sbt-mint' });
       if (!publicClient) throw new Error('Wallet RPC client is not ready');
@@ -241,7 +180,7 @@ export function SBTMintPage() {
       if (receipt.status !== 'success') throw new Error('Transaction reverted on-chain');
 
       toast.success(
-        `✅ ${voucher.tier_name} SBT minted on-chain!`,
+        `✅ ${progress.nextTier} SBT minted on-chain!`,
         { id: 'sbt-mint' }
       );
 
@@ -252,8 +191,8 @@ export function SBTMintPage() {
           action: USER_BUNDLE_ACTIONS.SYNC_SBT_UPGRADE,
           wallet: cleanWallet,
           payload: {
-            tierName: voucher.tier_name,
-            ethSpent: formatEther(BigInt(voucher.mint_price_wei || '0')),
+            tierName: progress.nextTier,
+            ethSpent: formatEther(mintPrice),
             txHash,
           },
         }),
@@ -272,6 +211,7 @@ export function SBTMintPage() {
 
       // Refresh progress after successful mint
       fetchProgress();
+      refetchTiers();
     } catch (err) {
       console.error('[SBTMint] Mint failed:', err);
       toast.error(err instanceof Error ? err.message : 'Mint failed', { id: 'sbt-mint' });

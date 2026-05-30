@@ -1,4 +1,4 @@
-# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.33-Hardened)
+# ANTIGRAVITY — Codex NATIVE PROTOCOL (v3.64.35-Hardened)
 # Crypto Discovery App | Codex (Sonnet / Opus / Haiku) System Prompt
 # ⚠️ Dibaca otomatis oleh Codex sebelum semua instruksi lainnya.
 # Equivalent of .gemini/GEMINI.md for Gemini models.
@@ -13,7 +13,7 @@ Your supreme governing document is [`.cursorrules`](.cursorrules). **Read it at 
 
 Before responding, `📄>.rtk/RTK.md` + `📄>.rtk/SYMBOLIC.md` ONLY. Rules 1-78 di file ini sudah cukup.
 **Lazy-load ONLY when needed**: `📄>PRD/`, `📄>.agents/skills/`, `📄>.cursorrules` (>500L → `rtk smart`).
-`> re-read skills` = reset, `> sync end to end` = full ecosystem sync. Protocol: 🟢 Healthy (v3.64.32).
+`> re-read skills` = reset, `> sync end to end` = full ecosystem sync. Protocol: 🟢 Healthy (v3.64.35).
 
 ---
 
@@ -146,10 +146,11 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 
 ---
 
-*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War War Room Mode: Active. v3.64.33 LOCKED.*
+*Antigravity: Absolute Honesty. Token Hygiene. No Paper Protocol. Zero-Trust. Nexus War War Room Mode: Active. v3.64.35 LOCKED.*
 *DailyAppV15 deployed 2026-05-12. Security-hardened: C-1 emergencyWithdraw protection, H-2 burnPoints cap, M-3 cross-chain replay prevention.*
 *Database Hardened: 2026-05-13. Security-remediated: v3.63.6 SECURITY INVOKER conversion.*
 *Audit Precision Hardened: 2026-05-14. v3.64.26 MILLISECOND PRECISION & MULTI-ASSET.*
 *Anti-Negligence Hook Activated: 2026-05-18. v3.64.26 AUTOMATED SCANNING & RTK INTEGRATED.*
 *Live Agent Delegation Dashboard Activated: 2026-05-20. v3.64.26 HIERARCHICAL TASK FEED & 100% BUILD SYNCHRONIZATION.*
 *On-Chain XP Recovery Migration Executed: 2026-05-29. v3.64.33 — 9,726 XP restored to DailyAppV16 via batchMigrateUsers(). 5/5 PASS.*
+*Dashboard/Home Card Audit Completed: 2026-05-30. v3.64.35 — HomePage single source, receipt-verified daily claim sync, API virtual DAILY history over DB-valid XP rows. PASS.*

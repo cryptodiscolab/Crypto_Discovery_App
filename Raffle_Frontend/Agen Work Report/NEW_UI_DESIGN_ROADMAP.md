@@ -1,7 +1,7 @@
 # 🗺️ MIDNIGHT CYBER UI — E2E IMPLEMENTATION ROADMAP & TASKS
-- **Ecosystem Version:** v3.64.24-Hardened
-- **Status:** IMPLEMENTATION COMPLETE (Phase 1-5 done, structural fixes applied 2026-05-27)
-- **Last Updated:** 2026-05-27T18:58:00+07:00
+- **Ecosystem Version:** v3.64.35-Hardened
+- **Status:** IMPLEMENTATION COMPLETE (Phase 1-5 done, dashboard card/function audit applied 2026-05-30)
+- **Last Updated:** 2026-05-30T22:57:14+07:00
 - **Author/Agent:** Antigravity (Lead Blockchain Architect)
 - **Target Surface:** `Raffle_Frontend/` (Vite + React + Tailwind + Supabase)
 
@@ -16,7 +16,7 @@ A detailed audit has been conducted comparing the `NEW UI DESIGN` vanilla bluepr
 | **Global Theme & CSS** | CSS variables, radial background, animated cyber grid, scrollbars, glassmorphism card shine. | Fully integrated in `index.css` and `design-tokens.css`. | ✅ None. Foundations are 100% styled. |
 | **Desktop Layout** | Fixed 260px `sidebar-desktop` with 10 navigation links. Sticky header inside wrapper. | Sidebar updated with full navigation links. | ✅ DONE. UGC, Meteora, Swap routes registered. |
 | **Mobile Layout** | Hidden sidebar, sticky `mobile-top-bar` with user stats, `bottom-nav` with 5 core items, and a **"More" Drawer overlay** for remaining items. | `MobileTopBar.tsx` created, `BottomNav.tsx` updated with drawer. | ✅ DONE. Top bar + bottom nav + drawer fully implemented. |
-| **Dashboard (`HomePage.tsx`)** | Welcome Card with linked socials, SBT Reward Pool progress & countdown, Stats Grid (4 items), Daily Check-in with min/max hours constraint, Activity Feed logs. | `HomePage.tsx` matches blueprint structure. | ✅ DONE. Social connection buttons active. |
+| **Dashboard (`HomePage.tsx`)** | Welcome Card with linked socials, SBT Reward Pool progress & countdown, Stats Grid (4 items), Daily Check-in with wallet/cooldown guard, CMS Feature Cards, Activity Feed logs. | `HomePage.tsx` is the single active dashboard source. Copy wallet, X/Profile routing, Basename verified state, daily-claim countdown/disabled state, internal/external CMS card links, CMS empty state, API-backed merged profile hydration, and empty-pool SBT telemetry are active. | ✅ DONE. Dashboard card functions rechecked 2026-05-31. |
 | **Tasks (`TasksPage.tsx`)** | Quest Board header, Daily/Partner tabs, disappearing tasks, **2-step task verification with 5s countdown timer**. | Tabs and disappearing tasks are active. 5s countdown implemented. | ✅ DONE. |
 | **Raffles & Gacha (`RafflesPage.tsx`)** | Dual tabs: "Explore Campaigns" (Raffles List) and **"Gacha Spin Wheel" (Buyer Calculator + HTML5 Canvas Spin Wheel)**. | `GachaWheel.tsx` built with calculator + spin wheel. | ✅ DONE. Ticket calculator (ETH/WETH/USDC, volume discount) + CSS wheel + backend `spin-gacha` endpoint. |
 | **Meteora Engine (`MeteoraPage.tsx`)** | Dynamic pools list, TVL/APY telemetry, rebalancing sliders (slippage, allocation), bot toggle controls. | `MeteoraPage.tsx` created with telemetry + rebalancing inputs. | ✅ DONE. |

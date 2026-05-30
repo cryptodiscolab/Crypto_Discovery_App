@@ -4,6 +4,23 @@
 
 # IMPLEMENTATION SUMMARY
 
+## v3.64.35-Hardened (Dashboard/Home Card Audit, Daily Claim Sync, and Activity History Contract Parity)
+- **Status**: Completed. Dashboard/home card functions, daily claim sync, and activity history are aligned with live API, ABI, and database constraints.
+- **Dashboard Single Source**:
+  - Removed stale full-dashboard `UnifiedDashboard.tsx` and documented `HomePage.tsx` as the only active `/` dashboard implementation.
+  - Fixed wallet copy, X/Profile routing, Basename verified state, daily-claim wallet guard, feature-card skeleton/empty states, and CMS internal/external link routing.
+  - Hardened dashboard card data hydration so `get-profile` merges `v_user_full_profile` with `user_profiles` fields required by Identity, Streak, Tickets, and Basename cards.
+  - Daily Claim card now shows a countdown and disables the button from DailyApp V16 `lastDailyBonusClaim`, DB mirror, and optimistic post-claim state.
+- **Daily Claim + Activity History**:
+  - `DailyClaimModal` now posts receipt-backed `action=daily-claim` sync after wallet tx success.
+  - Backend verifies receipt sender/target, reads DailyApp V16 `userStats`, mirrors `last_onchain_xp`, streak, tier, and applies only positive XP deltas.
+  - Dashboard/profile activity history reads through `/api/user-bundle?action=get-activity-logs`; daily claim rows stay DB-valid `XP` and are returned as virtual `DAILY` to the UI.
+- **ABI/API Parity**:
+  - Removed/disabled stale frontend paths for unavailable `mintNFTWithEntitlement` and raffle `setRaffleFees` selectors on the active deployed contracts.
+- **Verification**:
+  - Passed TypeScript, route audit, live CMS probe, live RLS check, production build, gitleaks, anti-negligence hook, and diff hygiene checks. Live SBT pool verifier confirmed MasterX pool is currently `0 ETH`; UI now reports empty-pool telemetry instead of implying stale data.
+- **Files Changed**: `Raffle_Frontend/src/pages/HomePage.tsx`, `Raffle_Frontend/src/features/profile/components/modals/DailyClaimModal.tsx`, `Raffle_Frontend/api/_user-bundle.ts`, `Raffle_Frontend/api/_audit-bundle.ts`, `Raffle_Frontend/src/components/HypeFeed.tsx`, `Raffle_Frontend/src/pages/SBTMintPage.tsx`, `Raffle_Frontend/src/features/admin/components/RaffleManagerTab.tsx`, `Raffle_Frontend/src/features/admin/components/system/config/RaffleEconSettingsCard.tsx`, `Raffle_Frontend/src/lib/abis_data.txt`, `PRD/DISCO_DAILY_MASTER_PRD.md`, `PRD/FEATURE_WORKFLOW_SOT.md`, `.agents/WORKSPACE_MAP.md`, `Raffle_Frontend/Agen Work Report/AGEN_WORK_REPORT.md`, `Raffle_Frontend/Agen Work Report/NEW_UI_DESIGN_ROADMAP.md`.
+
 ## v3.64.32-Hardened (Daily Claim XP Sync & Watermark Self-Healing)
 - **Status**: Completed. Resolved daily claim XP deadlock by implementing dynamic contract migration detection and DB watermark self-healing, and executed a database recovery alignment script.
 - **Contract Migration Reset Support**:

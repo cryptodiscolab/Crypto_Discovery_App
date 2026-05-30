@@ -53,6 +53,22 @@ type ActivityFeedItem = {
     created_at: string;
     source: 'log' | 'claim';
 };
+type PublicActivityFeedItem = {
+    id: string | number;
+    name: string;
+    avatar?: string;
+    message: string;
+    type: 'activity';
+};
+
+function isDailyActivityLog(log: Pick<ActivityLogRow, 'activity_type' | 'description'>): boolean {
+    const type = String(log.activity_type || '').toLowerCase();
+    const description = String(log.description || '').toLowerCase();
+    return type.includes('daily claim')
+        || type.includes('on-chain daily claim')
+        || description.startsWith('daily claim')
+        || description.includes('daily bonus');
+}
 
 type PendingSyncJobInsert = {
     wallet_address: string;
@@ -319,6 +335,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         case 'fc-sync': await handleFarcasterSync(req, res); break;
         case 'update-profile': await handleUpdateProfile(req, res); break;
         case 'get-activity-logs': await handleGetActivityLogs(req, res); break;
+        case 'get-public-activity-feed': await handleGetPublicActivityFeed(req, res); break;
         case 'get-profile': await handleGetProfile(req, res); break;
         case 'log-activity': await handleFrontendLogActivity(req, res); break;
         case 'get-point-settings': await handleGetPointSettings(req, res); break;
@@ -906,13 +923,26 @@ async function handleGetProfile(req: VercelRequest, res: VercelResponse) {
     if (!wallet) return res.status(400).json({ error: 'Missing wallet' });
 
     try {
-        const { data, error } = await getSupabaseAdmin()
+        const cleanWallet = wallet.toLowerCase();
+        const [viewResult, profileResult] = await Promise.all([
+            getSupabaseAdmin()
             .from('v_user_full_profile')
             .select('*')
-            .eq('wallet_address', wallet.toLowerCase())
-            .maybeSingle();
+                .eq('wallet_address', cleanWallet)
+                .maybeSingle(),
+            getSupabaseAdmin()
+                .from('user_profiles')
+                .select('wallet_address,total_xp,tier,streak_count,raffle_tickets_bought,raffles_created,last_streak_claim,last_daily_bonus_claim,is_base_social_verified,base_username,display_name,username,pfp_url,last_onchain_xp,updated_at')
+                .eq('wallet_address', cleanWallet)
+                .maybeSingle()
+        ]);
 
-        if (error) throw error;
+        if (viewResult.error) throw viewResult.error;
+        if (profileResult.error) throw profileResult.error;
+
+        const data = viewResult.data || profileResult.data
+            ? { ...(viewResult.data || {}), ...(profileResult.data || {}) }
+            : null;
         if (!data) return res.status(200).json({ success: true, data: null, isNew: true });
 
         return res.status(200).json({ success: true, data });
@@ -945,6 +975,10 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
                 logsQuery = logsQuery.in('category', ['PURCHASE', 'SWAP', 'EXPENSE']);
             } else if (category === 'REWARD') {
                 logsQuery = logsQuery.in('category', ['REWARD', 'PAYOUT']);
+            } else if (category === 'DAILY') {
+                logsQuery = logsQuery
+                    .eq('category', 'XP')
+                    .or('activity_type.ilike.%daily claim%,description.ilike.daily claim%,description.ilike.%daily bonus%');
             } else {
                 logsQuery = logsQuery.eq('category', category);
             }
@@ -968,7 +1002,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
 
         const activityLogs: ActivityFeedItem[] = ((logsResult.data || []) as ActivityLogRow[]).map((log) => ({
             id: log.id,
-            category: log.category,
+            category: isDailyActivityLog(log) ? 'DAILY' : log.category,
             activity_type: log.activity_type,
             description: log.description || '',
             value_amount: log.value_amount || 0,
@@ -1031,6 +1065,65 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
             .slice(0, parsedLimit);
 
         return res.status(200).json({ success: true, logs: combined });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleGetPublicActivityFeed(req: VercelRequest, res: VercelResponse) {
+    const { limit = '10' } = req.query as { limit?: string };
+
+    try {
+        const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 20);
+        const { data: logs, error: logError } = await getSupabaseAdmin()
+            .from('user_activity_logs')
+            .select('id, description, activity_type, created_at, wallet_address')
+            .order('created_at', { ascending: false })
+            .limit(parsedLimit);
+
+        if (logError) throw logError;
+        const typedLogs = (logs || []) as Array<{
+            id: string | number;
+            description: string | null;
+            activity_type: string | null;
+            wallet_address: string;
+        }>;
+
+        if (typedLogs.length === 0) {
+            return res.status(200).json({ success: true, activities: [] });
+        }
+
+        const wallets = [...new Set(typedLogs.map((log) => String(log.wallet_address || '').trim().toLowerCase()).filter(Boolean))];
+        const { data: profiles, error: profileError } = await getSupabaseAdmin()
+            .from('v_user_full_profile')
+            .select('wallet_address, display_name, username, pfp_url')
+            .in('wallet_address', wallets);
+
+        if (profileError) throw profileError;
+        const profileMap = ((profiles || []) as Array<{
+            wallet_address: string;
+            display_name: string | null;
+            username: string | null;
+            pfp_url: string | null;
+        }>).reduce((acc: Record<string, { display_name: string | null; username: string | null; pfp_url: string | null }>, profile) => {
+            acc[String(profile.wallet_address || '').toLowerCase()] = profile;
+            return acc;
+        }, {});
+
+        const activities: PublicActivityFeedItem[] = typedLogs.map((log) => {
+            const wallet = String(log.wallet_address || '').trim().toLowerCase();
+            const profile = profileMap[wallet];
+            return {
+                id: log.id,
+                name: profile?.display_name || profile?.username || `${wallet.slice(0, 4)}...${wallet.slice(-4)}`,
+                avatar: profile?.pfp_url || undefined,
+                message: log.description || log.activity_type || 'is active in the Nexus',
+                type: 'activity'
+            };
+        });
+
+        return res.status(200).json({ success: true, activities });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });

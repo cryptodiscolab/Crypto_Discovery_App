@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.32-Hardened)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.35-Hardened)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -718,7 +718,7 @@ Contract addresses **MUST** be synchronized across all associated Vercel project
 | `useSBT.js` | `useNFTTiers.js` (baca KEDUANYA) | Contract split: MASTER_X vs DAILY_APP |
 | `useNFTTiers.js` | `useSBT.js` (baca KEDUANYA) | Contract split: DAILY_APP vs MASTER_X |
 | `tasks-bundle.js` | `TASK_FEATURE_WORKFLOW.md §5` + fn_increment_xp docs | XP pipeline parity |
-| `user-bundle.js` | `FEATURE_WORKFLOW_SOT.md §2` (Daily Claim Flow) | Optimistic trust fallback |
+| `user-bundle.ts` | `FEATURE_WORKFLOW_SOT.md §2` (Daily Claim Flow) | Receipt-verified daily claim sync; DB stores Daily Claim as `XP`, API may expose virtual `DAILY` |
 | `admin-bundle.js` | `TASK_FEATURE_WORKFLOW.md §13` (Admin Management) | ABI parity mandate |
 | `ProfilePage.jsx` | `FEATURE_WORKFLOW_SOT.md §5` (NFT Mint) + `WORKSPACE_MAP.md §6` | Contract parity |
 | `useVerification.js` | `TASK_FEATURE_WORKFLOW.md §8` (Social Verification Flow) | EIP-191 + anti-fraud mandates |

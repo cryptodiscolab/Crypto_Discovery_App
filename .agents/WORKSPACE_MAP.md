@@ -1,5 +1,5 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.34-Hardened)
-Last Update: 2026-05-30 (12:59)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.35-Hardened)
+Last Update: 2026-05-30 (22:57)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
 
@@ -138,7 +138,8 @@ Seluruh API dikonsolidasi ke dalam bundles untuk menghemat limit Vercel (Max 12)
 
 **Realtime UI Listeners (v3.64.8)**:
 - `ProfilePage` / `PointsContext`: listens to `user_profiles` changes for scoped profile XP refresh.
-- `ActivityLogSection`: listens to `user_activity_logs` and `user_task_claims` changes for user history refresh.
+- `HomePage`: single active `/` dashboard source; profile cards hydrate through `user-bundle?action=get-profile` (view + `user_profiles` merge), CMS feature cards use Content CMS, daily claim button is cooldown-guarded from DailyApp V16/DB/local state, and SBT pool shows live MasterX empty-pool telemetry when `totalSBTPoolBalance()` is 0.
+- `ActivityLogSection`: listens to `user_activity_logs` and `user_task_claims` changes for user history refresh; dashboard/history reads via `/api/user-bundle?action=get-activity-logs`. `DAILY` is an API virtual category over DB-valid `XP` rows with Daily Claim activity/description.
 - `LeaderboardPage`: listens to `user_profiles` changes and refetches `/api/leaderboard`.
 - `SBTMintPage` / `SBTUpgradeCard`: after SBT mint receipt success, call `user-bundle` action `sync-sbt-upgrade` with verified `txHash`; backend mirrors tier into `user_profiles` and writes `SBT / Mint` for NFT Gallery/activity history.
 
@@ -261,4 +262,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-30T12:59:32+07:00 | SBT Post-Mint Sync & Receipt-Verified Activity Logging. v3.64.34 LOCKED.*
+*Last Updated: 2026-05-30T22:57:14+07:00 | Dashboard/Home Card Audit, Daily Claim Sync, and Activity History Contract Parity. v3.64.35 LOCKED.*

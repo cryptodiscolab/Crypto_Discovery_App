@@ -21,7 +21,7 @@ interface DailyClaimModalProps {
 /**
  * DailyClaimModal Component
  * [v3.64.33-Hardened] ON-CHAIN ONLY daily claim — 1x wallet signature for claimDailyBonus().
- * No extra backend calls. Off-chain DB sync is fire-and-forget backup only.
+ * Off-chain DB sync is fire-and-forget backup only and never blocks the user.
  * UI updates purely from on-chain refetch.
  */
 export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount }: DailyClaimModalProps) {
@@ -60,10 +60,12 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
 
     const handleClaim = async () => {
         if (isCooldown) return toast.error("Cooldown active!");
+        if (!address) return toast.error("Connect wallet first");
+        if (!publicClient) return toast.error("RPC client unavailable");
         setIsClaiming(true);
         const tid = toast.loading("Preparing claim...");
         try {
-            // [ON-CHAIN ONLY] 1x wallet signature for claimDailyBonus() — single sig, no extra backend calls
+            // [ON-CHAIN ONLY] The required wallet action is claimDailyBonus().
             const hash = await writeContractAsync({ address: CONTRACTS.DAILY_APP as `0x${string}`, abi: DAILY_APP_ABI, functionName: 'claimDailyBonus' });
             toast.loading('Mining transaction...', { id: tid });
             await publicClient!.waitForTransactionReceipt({ hash });
@@ -76,7 +78,7 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
             setTimeout(() => { void refetchOnChainStats(); void refetchPoints(); }, 3000);
 
             // [FIRE-AND-FORGET] Off-chain DB sync as backup only — never blocks user
-            fetch('/api/user-bundle', {
+            void fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
@@ -85,14 +87,25 @@ export function DailyClaimModal({ onClose, onSuccess, pointSettings, streakCount
                     tx_hash: hash,
                     chain_id: chainId
                 })
-            }).catch(() => {
+            }).then(async (response) => {
+                if (response.ok) {
+                    setTimeout(() => { void refetchPoints(); }, 1000);
+                    return;
+                }
+
+                const body = await response.json().catch(() => ({})) as { error?: string; message?: string };
+                throw new Error(body.error || body.message || `Backup sync failed (${response.status})`);
+            }).catch((syncError: unknown) => {
+                const message = syncError instanceof Error && syncError.message
+                    ? syncError.message
+                    : 'Backup sync failed';
                 recordPendingSync({
                     actionType: 'daily_claim',
                     txHash: hash,
                     chainId,
                     contractAddress: CONTRACTS.DAILY_APP as string,
                     payload: { reward_xp: dailyReward },
-                    errorMessage: 'Backup sync failed'
+                    errorMessage: message
                 }).catch(() => {});
             });
 

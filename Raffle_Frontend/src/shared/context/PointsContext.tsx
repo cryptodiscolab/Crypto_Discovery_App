@@ -68,7 +68,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
     const [_pointsToNext, _setPointsToNext] = useState(0);
     const [rankName, setRankName] = useState('Rookie');
     const [totalTasksCompleted, setTotalTasksCompleted] = useState(0);
-    const [profileData, setProfileData] = useState(null);
+    const [profileData, setProfileData] = useState<Record<string, unknown> | null>(null);
 
     // Loading States
     const [isLoading, setIsLoading] = useState(false);
@@ -149,14 +149,32 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
 
         try {
-            // Priority: Fetch from 'v_user_full_profile' (The Consolidated View)
-            const { data, error } = await supabase
-                .from('v_user_full_profile')
-                .select('*') // Changed to select all as per instruction
-                .eq('wallet_address', address.toLowerCase())
-                .maybeSingle();
+            const cleanAddress = address.toLowerCase();
+            let data: Record<string, unknown> | null = null;
 
-            if (error) throw error;
+            // Priority: service-role profile API merges v_user_full_profile with dashboard-only
+            // user_profiles fields such as raffle_tickets_bought and last_streak_claim.
+            try {
+                const profileRes = await fetch(`/api/user-bundle?action=get-profile&wallet=${cleanAddress}`);
+                if (profileRes.ok) {
+                    const profileJson = await profileRes.json() as { success?: boolean; data?: Record<string, unknown> | null };
+                    if (profileJson.success) data = profileJson.data || null;
+                }
+            } catch (apiErr) {
+                console.warn('[PointsContext] Profile API fallback:', apiErr);
+            }
+
+            if (!data) {
+                // Fallback: Fetch from 'v_user_full_profile' (The Consolidated View)
+                const { data: viewData, error } = await supabase
+                    .from('v_user_full_profile')
+                    .select('*')
+                    .eq('wallet_address', cleanAddress)
+                    .maybeSingle();
+
+                if (error) throw error;
+                data = viewData as Record<string, unknown> | null;
+            }
 
             if (data) {
                 const dbPoints = Number(data.total_xp || 0);
@@ -165,7 +183,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
                 setUserPoints(BigInt(dbPoints));
                 userPointsRef.current = dbPoints; // Update ref
                 setUserTier(data.tier !== undefined ? Number(data.tier) : 0);
-                setRankName(data.rank_name || "Guest");
+                setRankName(typeof data.rank_name === 'string' ? data.rank_name : "Guest");
                 setProfileData(data); // Full view data (streaks, last claim, etc.)
 
                 // Log the sync with prev context
@@ -176,7 +194,7 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
             const { count } = await supabase
                 .from('user_task_claims')
                 .select('*', { count: 'exact', head: true })
-                .eq('wallet_address', address.toLowerCase());
+                .eq('wallet_address', cleanAddress);
 
             setTotalTasksCompleted(count || 0);
 

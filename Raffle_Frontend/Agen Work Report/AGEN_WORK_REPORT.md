@@ -1,9 +1,26 @@
 # 🤖 CRYPTO DISCO — AGENT WORK REPORTS (CONSOLIDATED)
 
-- **Ecosystem Version:** v3.64.28-Hardened
-- **Consolidated At:** 2026-05-29T18:15:00Z
+- **Ecosystem Version:** v3.64.35-Hardened
+- **Consolidated At:** 2026-05-30T22:57:14+07:00
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+## 2026-05-30 Dashboard/Home Card Function & Daily Claim History Audit (v3.64.35-Hardened)
+- **Status**: Completed, verified via TypeScript, routes, build, RLS, gitleaks, anti-negligence hook, and diff hygiene checks.
+- **Surface**: `HomePage.tsx`, `DailyClaimModal.tsx`, `ActivityLogSection` API path, `_user-bundle.ts`, `_audit-bundle.ts`, `HypeFeed.tsx`, `abis_data.txt`, and dashboard docs.
+- **Root Cause & Fix Applied**:
+  1. **Dashboard Single Source**: Removed stale full-dashboard implementation `UnifiedDashboard.tsx`; route `/` remains backed by `HomePage.tsx`.
+  2. **Card Functions**: Fixed wallet copy action, X/Profile routing, Basename verified state, daily-claim wallet guard, CMS feature-card visible filtering, internal/external link routing, skeleton and empty states.
+  2.1. **Dashboard Data Hydration**: `get-profile` now merges `v_user_full_profile` with `user_profiles` dashboard fields so Identity Tier, Streak, Raffle Tickets, and Basename status do not silently fall back to zero/unknown when the view omits those columns.
+  2.2. **Claim Cooldown UX**: Home daily-claim card now disables immediately after success and shows countdown from DailyApp V16 `userStats.lastDailyBonusClaim`, DB mirror, and optimistic local state.
+  3. **Activity History**: Dashboard/profile activity now reads through `/api/user-bundle?action=get-activity-logs`; service-role API returns sanitized data instead of relying on anon table reads.
+  4. **Daily Claim Sync**: `DailyClaimModal` posts `action=daily-claim` after tx success; backend receipt-verifies sender/target, reads `userStats`, mirrors XP/streak/tier, and queues `pending_sync_jobs` on delayed RPC.
+  5. **DB Contract Parity**: Live DB constraint does not accept literal `DAILY`; daily claim logs remain DB-valid `XP` rows and the API maps them to virtual `DAILY` for dashboard filters/history.
+  6. **ABI/API Parity**: Removed stale frontend calls/selectors for unavailable V16/raffle functions and documented disabled fee-write behavior until contract support exists.
+  7. **SBT Pool Transparency**: Live MasterX verifier confirms `totalSBTPoolBalance() = 0 ETH`; dashboard now labels the pool as empty/awaiting raffle revenue. `scripts/sync/sync-sbt.cjs` was hardened to mirror pool stats via viem minimal ABI.
+- **Verification**: `tsc --noEmit`, `check-routes`, live CMS probe, `check-live-rls`, production build, `gitleaks-check`, `agent_anti_negligence_hook.cjs`, and `git diff --check` passed in the current working tree.
+
+---
 
 ## 2026-05-29 On-Chain XP Redesign — Full Ecosystem Overhaul (v3.64.33-Hardened)
 - **Status**: Completed, all syntax checks passed.

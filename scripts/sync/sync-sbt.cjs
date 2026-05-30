@@ -1,4 +1,5 @@
-const { ethers } = require("hardhat");
+const { createPublicClient, http, formatEther } = require("viem");
+const { baseSepolia } = require("viem/chains");
 const { createClient } = require("@supabase/supabase-js");
 require("dotenv").config();
 
@@ -7,9 +8,10 @@ require("dotenv").config();
  * Usage: npx hardhat run scripts/sync-sbt.js --network base-sepolia
  */
 async function main() {
-    const MASTER_X_ADDRESS = process.env.MASTER_X_ADDRESS;
+    const MASTER_X_ADDRESS = process.env.MASTER_X_ADDRESS || process.env.VITE_MASTER_X_ADDRESS_SEPOLIA || process.env.VITE_MASTER_X_ADDRESS;
     const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || process.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
 
     if (!MASTER_X_ADDRESS || !SUPABASE_URL || !SUPABASE_KEY) {
         console.error("❌ Missing configuration in .env (MASTER_X_ADDRESS, SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY)");
@@ -17,10 +19,38 @@ async function main() {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const publicClient = createPublicClient({ chain: baseSepolia, transport: http(RPC_URL) });
+    const MASTER_X_ABI = [
+        { name: 'totalSBTPoolBalance', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'totalLockedRewards', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'lastDistributeTimestamp', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'accRewardPerShare', type: 'function', stateMutability: 'view', inputs: [{ type: 'uint256' }], outputs: [{ type: 'uint256' }] },
+        { name: 'diamondHolders', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'platinumHolders', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'goldHolders', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'silverHolders', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'bronzeHolders', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'diamondWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'platinumWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'goldWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'silverWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+        { name: 'bronzeWeight', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    ];
 
-    // Get Contract Instance
-    // Ensure the ABI is compiled: npx hardhat compile
-    const CryptoDiscoMasterX = await ethers.getContractAt("CryptoDiscoMasterX", MASTER_X_ADDRESS);
+    const read = (functionName, args = []) => publicClient.readContract({
+        address: MASTER_X_ADDRESS,
+        abi: MASTER_X_ABI,
+        functionName,
+        args,
+    });
+    const safeRead = async (functionName, args = [], fallback = 0n) => {
+        try {
+            return await read(functionName, args);
+        } catch (err) {
+            console.warn(`⚠️  [SBT Sync] ${functionName}(${args.join(',')}) unavailable, using ${fallback.toString()}`);
+            return fallback;
+        }
+    };
 
     console.log("🔍 Fetching SBT Pool data from:", MASTER_X_ADDRESS);
 
@@ -32,25 +62,24 @@ async function main() {
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
                 contractData = await Promise.all([
-                    CryptoDiscoMasterX.totalSBTPoolBalance(),
-                    CryptoDiscoMasterX.accRewardPerShare(0),
-                    CryptoDiscoMasterX.accRewardPerShare(1),
-                    CryptoDiscoMasterX.accRewardPerShare(2),
-                    CryptoDiscoMasterX.accRewardPerShare(3),
-                    CryptoDiscoMasterX.accRewardPerShare(4),
-                    CryptoDiscoMasterX.accRewardPerShare(5),
-                    CryptoDiscoMasterX.lastDistributeTimestamp(),
-                    CryptoDiscoMasterX.totalLockedRewards(),
-                    CryptoDiscoMasterX.diamondHolders(),
-                    CryptoDiscoMasterX.platinumHolders(),
-                    CryptoDiscoMasterX.goldHolders(),
-                    CryptoDiscoMasterX.silverHolders(),
-                    CryptoDiscoMasterX.bronzeHolders(),
-                    CryptoDiscoMasterX.diamondWeight(),
-                    CryptoDiscoMasterX.platinumWeight(),
-                    CryptoDiscoMasterX.goldWeight(),
-                    CryptoDiscoMasterX.silverWeight(),
-                    CryptoDiscoMasterX.bronzeWeight(),
+                    read('totalSBTPoolBalance'),
+                    safeRead('accRewardPerShare', [1]),
+                    safeRead('accRewardPerShare', [2]),
+                    safeRead('accRewardPerShare', [3]),
+                    safeRead('accRewardPerShare', [4]),
+                    safeRead('accRewardPerShare', [5]),
+                    read('lastDistributeTimestamp'),
+                    read('totalLockedRewards'),
+                    read('diamondHolders'),
+                    read('platinumHolders'),
+                    read('goldHolders'),
+                    read('silverHolders'),
+                    read('bronzeHolders'),
+                    read('diamondWeight'),
+                    read('platinumWeight'),
+                    read('goldWeight'),
+                    read('silverWeight'),
+                    read('bronzeWeight'),
                 ]);
                 break;
             } catch (err) {
@@ -62,7 +91,7 @@ async function main() {
 
         const [
             totalSBTPoolBalance,
-            noneAcc, bronzeAcc, silverAcc, goldAcc, platinumAcc, diamondAcc,
+            bronzeAcc, silverAcc, goldAcc, platinumAcc, diamondAcc,
             lastDist, totalLocked,
             diamondHolders, platinumHolders, goldHolders, silverHolders, bronzeHolders,
             dW, pW, gW, sW, bW
@@ -70,13 +99,13 @@ async function main() {
 
         const stats = {
             id: 1,
-            total_pool_balance: ethers.formatEther(totalSBTPoolBalance),
+            total_pool_balance: Number(formatEther(totalSBTPoolBalance)),
             acc_diamond: diamondAcc.toString(),
             acc_platinum: platinumAcc.toString(),
             acc_gold: goldAcc.toString(),
             acc_silver: silverAcc.toString(),
             acc_bronze: bronzeAcc.toString(),
-            total_locked_rewards: ethers.formatEther(totalLocked),
+            total_locked_rewards: Number(formatEther(totalLocked)),
             diamond_holders: Number(diamondHolders),
             platinum_holders: Number(platinumHolders),
             gold_holders: Number(goldHolders),
@@ -155,6 +184,7 @@ async function main() {
             metadata: { consecutive_success: 0 },
             updated_at: new Date().toISOString()
         }, { onConflict: 'service_key' });
+        process.exitCode = 1;
     } finally {
         console.log("📡 [Sync Health] Process finished at:", new Date().toISOString());
     }
