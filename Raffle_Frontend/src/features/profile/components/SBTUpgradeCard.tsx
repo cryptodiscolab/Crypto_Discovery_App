@@ -1,4 +1,4 @@
-import { useAccount, useBalance, useSignMessage, useConfig, useReadContract, useChainId } from 'wagmi';
+import { useAccount, useBalance, useConfig, useReadContract, useChainId } from 'wagmi';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import { useNFTTiers } from '../../../hooks/useNFTTiers';
 import { useCMS } from '../../../hooks/useCMS';
@@ -8,15 +8,12 @@ import { useUserInfo } from '../../../hooks/useContract';
 import { CONTRACTS, ABIS } from '../../../lib/contracts';
 import { formatEther } from 'viem';
 import toast from 'react-hot-toast';
-import { usePendingSyncRecovery } from '../../../hooks/usePendingSyncRecovery';
 import { AlertCircle, ArrowUpCircle, CheckCircle2, Loader2, Lock, Sparkles } from 'lucide-react';
 
 export function SBTUpgradeCard() {
     const { address } = useAccount();
     const chainId = useChainId();
-    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const config = useConfig();
-    const { signMessageAsync } = useSignMessage();
     const { userPoints, userTier, refetch: refetchPoints, ecosystemSettings, gasTracker } = usePoints();
     const { isGasExpensive, isGasHigh } = gasTracker || {};
     const { tiers, mintTier, refetch: refetchTiers } = useNFTTiers();
@@ -121,7 +118,9 @@ export function SBTUpgradeCard() {
 
             toast.loading(`Waiting for confirmation...`, { id: tid });
 
-            // FIX v3.47.4: Wait for the transaction receipt to avoid optimistic UI state when tx reverts
+            // Single-wallet transaction flow:
+            // only mint on DailyApp, then refresh local reads from chain/queries.
+            // Do not trigger any secondary sync transaction from profile.
             const receipt = await waitForTransactionReceipt(config, {
                 hash,
                 confirmations: 1
@@ -131,56 +130,14 @@ export function SBTUpgradeCard() {
                 throw new Error("Transaction reverted on-chain");
             }
 
+            await Promise.allSettled([
+                Promise.resolve(refetchPoints()),
+                Promise.resolve(refetchTiers()),
+                Promise.resolve(refetchAll()),
+                Promise.resolve(refetchUserInfo?.())
+            ]);
+
             toast.success(`NFT Minted! Welcome to ${nextTier.name} Tier! 🎉`, { id: tid });
-
-            // Sync to DB Log
-            try {
-                const timestamp = new Date().toISOString();
-                const message = `Log activity for ${address}\nAction: SBT Tier Ascension\nTimestamp: ${timestamp}`;
-                const signature = await signMessageAsync({ message });
-
-                const syncRes = await fetch('/api/user-bundle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'sync-sbt-upgrade',
-                        wallet: address,
-                        signature,
-                        message,
-                        payload: {
-                            tierName: nextTier.name,
-                            ethSpent: formatEther(effectiveMintPrice),
-                            txHash: hash
-                        }
-                    })
-                });
-                if (!syncRes.ok) throw new Error(`SBT sync API returned ${syncRes.status}`);
-            } catch (syncErr: unknown) {
-                console.warn('SBT Sync failed (non-critical):', syncErr);
-                // Chain succeeded but backend sync failed → record for reconciliation cron.
-                const errMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
-                recordPendingSync({
-                    actionType: 'sbt_upgrade',
-                    txHash: hash,
-                    chainId,
-                    contractAddress: CONTRACTS.DAILY_APP as string,
-                    payload: {
-                        tier_id: nextTier.id,
-                        tier_name: nextTier.name,
-                        eth_spent: formatEther(effectiveMintPrice)
-                    },
-                    errorMessage: errMsg
-                }).catch(() => {});
-                toast('SBT minted on-chain. Backend sync pending — will retry automatically.', {
-                    icon: '⏳',
-                    duration: 6000
-                });
-            }
-
-            refetchPoints();
-            refetchTiers();
-            refetchAll();
-            refetchUserInfo?.(); // FIX v3.56.1: Force update on-chain user stats for instant UI feedback
         } catch (err: unknown) {
             const e = err as { shortMessage?: string; message?: string; code?: number | string };
             console.error('[SBTUpgradeCard] Mint error:', e);
@@ -282,7 +239,7 @@ export function SBTUpgradeCard() {
                     </div>
                     <div className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-black uppercase tracking-widest ${hasDbCanonicalXP ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
                         {hasDbCanonicalXP ? <CheckCircle2 size={12} /> : <Loader2 size={12} className="animate-spin" />}
-                        Voucher Ready
+                        On-Chain Ready
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-6">

@@ -37,6 +37,8 @@ export function useNFTTiers() {
         { id: 5, name: 'Diamond', data: dConfig },
     ].map(t => {
         const d = t.data as readonly unknown[] | undefined;
+        // FIX v3.64.35: Use undefined as default for isOpen when data not loaded.
+        // isTierClosed in SBTUpgradeCard uses `=== false` check, so undefined won't block the button.
         return {
             ...t,
             pointsRequired: d ? Number(d[0]) : 0,
@@ -45,7 +47,7 @@ export function useNFTTiers() {
             multiplierBP: d ? Number(d[3]) : 0,
             maxSupply: d ? Number(d[4]) : 0,
             currentSupply: d ? Number(d[5]) : 0,
-            isOpen: d ? (d[6] as boolean) : false,
+            isOpen: d ? (d[6] as boolean) : undefined,
             uri: t.id === 1 ? bURI : t.id === 2 ? sURI : t.id === 3 ? gURI : t.id === 4 ? pURI : dURI
         };
     }), [bConfig, sConfig, gConfig, pConfig, dConfig, bURI, sURI, gURI, pURI, dURI]);
