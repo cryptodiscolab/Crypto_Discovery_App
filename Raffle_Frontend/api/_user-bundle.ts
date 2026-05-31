@@ -40,7 +40,7 @@ import type {
     Json
 } from './_shared/types.js';
 
-type ActivityLogRow = Pick<Database['public']['Tables']['user_activity_logs']['Row'], 'id' | 'category' | 'activity_type' | 'description' | 'value_amount' | 'value_symbol' | 'tx_hash' | 'created_at'>;
+type ActivityLogRow = Pick<Database['public']['Tables']['user_activity_logs']['Row'], 'id' | 'category' | 'activity_type' | 'description' | 'value_amount' | 'value_symbol' | 'tx_hash' | 'created_at' | 'metadata'>;
 type TaskClaimRow = Pick<Database['public']['Tables']['user_task_claims']['Row'], 'id' | 'task_id' | 'xp_earned' | 'action_type' | 'claimed_at'>;
 type ActivityFeedItem = {
     id: string | number;
@@ -51,6 +51,7 @@ type ActivityFeedItem = {
     value_symbol: string;
     tx_hash: string | null;
     created_at: string;
+    metadata?: Json | null;
     source: 'log' | 'claim';
 };
 type PublicActivityFeedItem = {
@@ -1009,6 +1010,7 @@ async function handleGetActivityLogs(req: VercelRequest, res: VercelResponse) {
             value_symbol: log.value_symbol || 'XP',
             tx_hash: log.tx_hash,
             created_at: log.created_at || new Date(0).toISOString(),
+            metadata: log.metadata,
             source: 'log'
         }));
 
@@ -1225,7 +1227,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         const {
             title, description, sponsor_address, platform_code,
             reward_amount_per_user, max_participants, txHash,
-            tasks_batch, reward_symbol, payment_token,
+            tasks_batch, reward_symbol, payment_token, duration_days,
             is_base_social_required, listing_fee
         } = payload;
 
@@ -1262,6 +1264,11 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         const platformFee = ugcConfig.listing_fee_usdc
             ? parseFloat(String(ugcConfig.listing_fee_usdc))
             : (sysSetting?.value ? parseFloat(String(sysSetting.value)) : 0);
+        const requestedDurationDays = Number(duration_days);
+        const configuredDurationDays = Number(ugcConfig.mission_duration_days);
+        const effectiveDurationDays = Number.isFinite(requestedDurationDays) && requestedDurationDays > 0
+            ? Math.floor(requestedDurationDays)
+            : (Number.isFinite(configuredDurationDays) && configuredDurationDays > 0 ? Math.floor(configuredDurationDays) : 30);
 
         const taskXpReward = pointSetting?.points_value || 0;
 
@@ -1277,7 +1284,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             payment_token: payment_token || null,
             reward_symbol: reward_symbol || 'TOKEN',
             creation_tx_hash: txHash,
-            duration_days: Number(ugcConfig.mission_duration_days) || 30, // Zero-Hardcode: reads from ugc_config
+            duration_days: effectiveDurationDays,
             reward_token_address: (payment_token || '0x0000000000000000000000000000000000000000').toLowerCase(),
             total_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
             remaining_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
@@ -1302,7 +1309,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
                 token_reward_symbol: reward_symbol || 'TOKEN',
                 creator_address: wallet.toLowerCase(),
                 is_base_social_required: !!is_base_social_required,
-                expires_at: new Date(Date.now() + Number(ugcConfig.mission_duration_days || 7) * 24 * 60 * 60 * 1000).toISOString(),
+                expires_at: new Date(Date.now() + effectiveDurationDays * 24 * 60 * 60 * 1000).toISOString(),
                 created_at: new Date().toISOString()
             }));
 
@@ -1392,8 +1399,11 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
 
         const { raffle_id, depositETH, end_time, max_tickets, metadata_uri, extra_metadata, winnerCount, txHash } = payload;
+        const numericRaffleId = Number(raffle_id);
+        if (!Number.isInteger(numericRaffleId) || numericRaffleId <= 0) {
+            return res.status(400).json({ error: 'Invalid raffle_id for UGC raffle sync' });
+        }
 
-        const { data: sysSetting } = await getSupabaseAdmin().from('system_settings').select('value').eq('key', 'raffle_platform_fee_percent').maybeSingle();
         const isAdminWallet = MASTER_ADMINS.includes(wallet.toLowerCase());
 
         if (!isAdminWallet) {
@@ -1402,7 +1412,7 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
                     address: RAFFLE_ADDRESS as `0x${string}`,
                     abi: RAFFLE_ABI,
                     functionName: 'getRaffleInfo',
-                    args: [BigInt(raffle_id)]
+                    args: [BigInt(numericRaffleId)]
                 }) as { sponsor: string };
 
                 if (raffleInfo.sponsor.toLowerCase() !== wallet.toLowerCase()) {
@@ -1411,16 +1421,17 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
             } catch (onChainErr: unknown) {
                 const msg = onChainErr instanceof Error ? onChainErr.message : String(onChainErr);
                 console.error('[handleSyncUgcRaffle] On-chain check fail:', msg);
+                return res.status(502).json({ error: `Unable to verify Raffle #${raffle_id} on-chain` });
             }
         }
 
-        const sysSettingData = (sysSetting?.value || {}) as Record<string, string | number | boolean>;
-        const platformFeePercent = sysSettingData.raffle_platform_fee_percent ? parseFloat(String(sysSettingData.raffle_platform_fee_percent)) : 5;
-        const feeMultiplier = 1 + (platformFeePercent / 100);
-        const prizePool = depositETH ? parseFloat(depositETH) / feeMultiplier : 0;
+        const prizePool = depositETH ? parseFloat(depositETH) : 0;
+        if (!Number.isFinite(prizePool) || prizePool < 0) {
+            return res.status(400).json({ error: 'Invalid depositETH for UGC raffle sync' });
+        }
 
         const { error: raffleErr } = await getSupabaseAdmin().from('raffles').upsert({
-            id: Number(raffle_id),
+            id: numericRaffleId,
             creator_address: wallet.toLowerCase(),
             sponsor_address: wallet.toLowerCase(),
             end_time: end_time ? new Date(end_time * 1000).toISOString() : null,

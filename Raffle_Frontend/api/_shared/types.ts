@@ -75,6 +75,7 @@ export interface UgcMissionPayload {
     platform_code: string;
     reward_amount_per_user: string;
     max_participants: number;
+    duration_days?: number;
     txHash: string;
     tasks_batch: unknown[];
     reward_symbol: string;
@@ -86,6 +87,7 @@ export interface UgcMissionPayload {
 export interface UgcRafflePayload {
     raffle_id: string;
     depositETH: string;
+    totalPaymentETH?: string;
     end_time: number;
     max_tickets: number;
     metadata_uri: string;

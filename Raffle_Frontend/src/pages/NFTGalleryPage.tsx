@@ -17,6 +17,13 @@ interface NFTItem {
   isLocked?: boolean;
 }
 
+interface SbtActivityLog {
+  id: string | number;
+  tx_hash?: string | null;
+  created_at?: string;
+  metadata?: Record<string, unknown> | null;
+}
+
 const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '8453');
 const PINATA_GATEWAY = (import.meta.env.VITE_PINATA_GATEWAY || 'https://gateway.pinata.cloud/ipfs').trim();
 const BASESCAN_URL = CHAIN_ID === 84532 ? 'https://sepolia.basescan.org' : 'https://basescan.org';
@@ -166,23 +173,20 @@ export function NFTGalleryPage() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch SBT mint logs from Supabase metadata cache; metadata image_url is Pinata/IPFS-backed.
-      const { data: supaLogs, error: supaError } = await supabase
-        .from('user_activity_logs')
-        .select('*')
-        .eq('wallet_address', address?.toLowerCase())
-        .eq('category', 'SBT')
-        .eq('activity_type', 'Mint')
-        .order('created_at', { ascending: false });
+      // Fetch canonical profile + SBT logs through the backend bundle so gallery follows
+      // the same merged profile/activity truth used by dashboard and profile surfaces.
+      const [profileRes, activityRes] = await Promise.all([
+        fetch(`/api/user-bundle?action=get-profile&wallet=${address}`),
+        fetch(`/api/user-bundle?action=get-activity-logs&wallet=${address}&category=SBT&limit=100`)
+      ]);
 
-      if (supaError) throw supaError;
+      if (!profileRes.ok) throw new Error(`Profile fetch failed: ${profileRes.status}`);
+      if (!activityRes.ok) throw new Error(`SBT activity fetch failed: ${activityRes.status}`);
 
-      // Fetch user's current tier level from profile
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('tier')
-        .eq('wallet_address', address?.toLowerCase())
-        .maybeSingle();
+      const profileJson = await profileRes.json();
+      const activityJson = await activityRes.json();
+      const profile = profileJson?.data || null;
+      const supaLogs = (activityJson?.logs || []) as SbtActivityLog[];
 
       // Fetch all thresholds to match levels to details
       const { data: thresholds } = await supabase
@@ -190,7 +194,8 @@ export function NFTGalleryPage() {
         .select('level, tier_name, min_xp, badge_url')
         .order('level', { ascending: true });
 
-      const currentTier = profile?.tier || 0;
+      const currentTier = Number(profile?.tier || 0);
+      const profileUpdatedAt = typeof profile?.updated_at === 'string' ? profile.updated_at : undefined;
 
       const mapped: NFTItem[] = [];
       const loggedTiers = new Set<string>();
@@ -201,22 +206,24 @@ export function NFTGalleryPage() {
       }, {} as Record<string, number>) || {};
 
       if (supaLogs && supaLogs.length > 0) {
-        supaLogs.forEach((d: Record<string, unknown>) => {
-          const meta = (d.metadata || {}) as Record<string, string>;
-          const tier = String(meta?.tier_name || meta?.tier || 'ROOKIE').toUpperCase();
-          loggedTiers.add(tier);
-          mapped.push({
-            token_id: String(meta?.token_id || d.tx_hash || d.id || 'unknown'),
-            contract_address: String(meta?.contract_address || DAILY_APP_ADDRESS),
-            name: String(meta?.name || `${meta?.tier_name || tier} SBT`),
-            image_url: resolvePinataAssetUrl(meta?.image_url || meta?.image || meta?.badge_url),
-            tier,
-            minted_at: String(d.created_at || ''),
-            chain_id: CHAIN_ID,
-            level: tierMap[tier] || 0,
-            isLocked: false,
+        supaLogs
+          .filter((d) => d.metadata || d.tx_hash)
+          .forEach((d) => {
+            const meta = (d.metadata || {}) as Record<string, string>;
+            const tier = String(meta?.tier_name || meta?.tier || 'ROOKIE').toUpperCase();
+            loggedTiers.add(tier);
+            mapped.push({
+              token_id: String(meta?.token_id || d.tx_hash || d.id || 'unknown'),
+              contract_address: String(meta?.contract_address || DAILY_APP_ADDRESS),
+              name: String(meta?.name || `${meta?.tier_name || tier} SBT`),
+              image_url: resolvePinataAssetUrl(meta?.image_url || meta?.image || meta?.badge_url),
+              tier,
+              minted_at: String(d.created_at || ''),
+              chain_id: CHAIN_ID,
+              level: tierMap[tier] || 0,
+              isLocked: false,
+            });
           });
-        });
       }
 
       // Dynamic Fallback & Locked Tiers: If user has a tier level in profile, generate mock SBT cards for their collection.
@@ -233,7 +240,7 @@ export function NFTGalleryPage() {
               name: `${t.tier_name} SBT`,
               image_url: resolvePinataAssetUrl(t.badge_url),
               tier: tierUpper,
-              minted_at: new Date().toISOString(), // Fallback to current time
+              minted_at: profileUpdatedAt,
               chain_id: CHAIN_ID,
               level: t.level,
               isLocked: false,

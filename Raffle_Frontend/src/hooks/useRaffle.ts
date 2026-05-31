@@ -321,6 +321,9 @@ export function useRaffle() {
                 let raffleId = 0;
                 try {
                     const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+                    if (receipt.status !== 'success') {
+                        throw new Error(`createSponsorshipRaffle reverted on-chain (status: ${receipt.status})`);
+                    }
                     for (const log of receipt.logs) {
                         try {
                             const decoded = decodeEventLog({
@@ -334,8 +337,31 @@ export function useRaffle() {
                             }
                         } catch (e) { /* skip logs from other events */ }
                     }
-                } catch (e) {
+                } catch (e: unknown) {
+                    const errMsg = e instanceof Error ? e.message : String(e);
+                    if (errMsg.includes('reverted on-chain')) throw e;
                     console.error("Failed to extract raffle ID:", e);
+                }
+
+                if (!raffleId || raffleId === 0) {
+                    recordPendingSync({
+                        actionType: 'raffle_create',
+                        txHash: hash,
+                        chainId,
+                        contractAddress: RAFFLE_ADDRESS,
+                        payload: {
+                            winnerCount,
+                            maxTickets,
+                            durationDays,
+                            metadataURI,
+                            depositETH: formatEther(depositETH),
+                            totalPaymentETH: formatEther(totalValue),
+                            extraMetadata
+                        },
+                        errorMessage: 'Failed to extract raffle_id from receipt'
+                    }).catch(() => {});
+                    toast.success("Raffle created on-chain. ID extraction failed — sync pending.");
+                    return hash;
                 }
 
                 const response = await fetch('/api/user-bundle', {
@@ -347,12 +373,13 @@ export function useRaffle() {
                         signature,
                         message,
                         payload: {
-                            raffle_id: raffleId || 0,
+                            raffle_id: raffleId,
                             end_time: Math.floor(Date.now() / 1000) + (durationDays * 86400),
                             max_tickets: Number(maxTickets),
                             winnerCount: Number(winnerCount),
                             txHash: hash,
-                            depositETH: formatEther(totalValue),
+                            depositETH: formatEther(depositETH),
+                            totalPaymentETH: formatEther(totalValue),
                             metadata_uri: metadataURI,
                             extra_metadata: extraMetadata
                         }
@@ -376,7 +403,8 @@ export function useRaffle() {
                         maxTickets,
                         durationDays,
                         metadataURI,
-                        depositETH: formatEther(totalValue),
+                        depositETH: formatEther(depositETH),
+                        totalPaymentETH: formatEther(totalValue),
                         extraMetadata
                     },
                     errorMessage: errMsg
