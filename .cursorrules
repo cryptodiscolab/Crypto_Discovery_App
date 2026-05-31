@@ -398,6 +398,10 @@ Seluruh agen aktif (Antigravity, OpenClaw, Qwen, DeepSeek) wajib beroperasi seba
 
 ## 27. CLEAN GIT TREE MANDATE (Source Control Hygiene Protocol)
 - **PRINCIPLE**: The Git repository is the single source of truth for all source code. It MUST be kept strictly clean — only commit code, config, and deployment scripts.
+- **STRICT GIT FLOW MANDATE (v3.65.0)**: DILARANG commit/push langsung ke `main`, `master`, atau `develop`. Semua pekerjaan WAJIB berada di branch `feature/nama-fitur` atau `bugfix/123-short-description`, masuk ke `develop`/`main` hanya via Pull Request.
+- **PR REVIEW & REQUIRED CHECKS**: PR wajib memiliki peer review atau AI code review, dan tidak boleh merge jika automated checks belum pass. GitHub branch protection wajib mengikuti `.github/BRANCH_PROTECTION_RULES.md`.
+- **PRE-CODE TEST MANDATE**: Sebelum menulis kode baru, agent WAJIB menjalankan `npm run test:all`. Jika perubahan mempengaruhi fungsi/dependensi lain, agent WAJIB membuat atau memperbarui regression test yang relevan.
+- **ENFORCEMENT**: `scripts/audits/git_flow_guard.cjs`, `scripts/audits/run_required_tests.cjs`, `.husky/pre-commit`, `.husky/pre-push`, dan `.github/workflows/strict-git-flow.yml` adalah guard resmi untuk mandat ini.
 - **NO-SCREENSHOT MANDATE (CRITICAL)**: DILARANG KERAS mengambil, menyimpan, atau men-staged screenshot/media file (`.png`, `.jpg`, `.webp`, `.gif`, `.mp4`) ke dalam Git repository. Seluruh file pendukung sesi audit WAJIB dihapus sebelum task ditutup.
 - **AGENT CACHE HYGIENE**: Agent WAJIB secara aktif membersihkan direktori `browser_recordings/` dan `**/browser/` di dalam App Data atau workspace setelah tugas selesai. Media hanya boleh disimpan sementara untuk keperluan debugging visual instan dan HARUS segera di-purge.
 - **VITE HYGIENE**: DILARANG KERAS melakukan commit terhadap file temporer Vite (`vite.config.js.timestamp-*.mjs`).

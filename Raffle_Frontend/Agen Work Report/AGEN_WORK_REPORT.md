@@ -1,9 +1,24 @@
 # 🤖 CRYPTO DISCO — AGENT WORK REPORTS (CONSOLIDATED)
 
-- **Ecosystem Version:** v3.64.35-Hardened
-- **Consolidated At:** 2026-05-30T22:57:14+07:00
+- **Ecosystem Version:** v3.64.36-Hardened
+- **Consolidated At:** 2026-05-31T08:20:00+07:00
 - **Status:** ACTIVE SOT
 - **Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
+
+## 2026-05-31 Tasks & Quests On-Chain SOT Migration Audit (v3.64.36-Hardened)
+- **Status**: Audit Completed. Ready for E2E On-Chain implementation.
+- **Surface**: `_tasks-bundle.ts`, `TasksPage.tsx`, `TaskList.tsx`
+- **Root Cause & Drift Identified**:
+  1. **Off-Chain Tasks (Missions)**: Claims murni menulis database via `insertClaimAndIncrementXp`. Tidak memicu `awardOnChainXp()` sehingga poin on-chain tertinggal.
+  2. **UGC Campaigns**: Klaim total reward All-or-Nothing hanya menulis DB. Tidak tersinkronisasi ke contract `DailyAppV16`.
+  3. **Gacha Tier Upgrade**: Hadiah "Bronze Upgrade" melakukan update database-only (`tier: 1`) tanpa minting SBT on-chain, memicu ketidaksinkronan status NFT Gallery.
+- **Migration Plan & Solutions**:
+  1. **On-Chain XP for Tasks**: Tambahkan `awardOnChainXp('awardSocialXp')` pada `handleClaim` backend.
+  2. **On-Chain XP for UGC Campaigns**: Tambahkan `awardOnChainXp('awardUgcTaskXp')` pada `handleClaimUgcCampaign` backend.
+  3. **Gacha Tier Fix**: Ganti hadiah Gacha "Bronze Upgrade" dengan XP/Tickets alternatif untuk mencegah desinkronisasi SBT.
+- **Detailed Report**: [TASKS_QUESTS_ONCHAIN_SOT_AUDIT_REPORT.md](file:///Raffle_Frontend/Agen%20Work%20Report/TASKS_QUESTS_ONCHAIN_SOT_AUDIT_REPORT.md)
+
+---
 
 ## 2026-05-30 Dashboard/Home Card Function & Daily Claim History Audit (v3.64.35-Hardened)
 - **Status**: Completed, verified via TypeScript, routes, build, RLS, gitleaks, anti-negligence hook, and diff hygiene checks.

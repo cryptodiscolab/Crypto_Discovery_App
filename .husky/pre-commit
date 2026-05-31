@@ -1,3 +1,11 @@
+echo "🌿 [Strict Git Flow] Verifying branch policy before commit..."
+node scripts/audits/git_flow_guard.cjs
+
+if [ $? -ne 0 ]; then
+  echo "❌ STRICT GIT FLOW CHECK FAILED! Commit blocked."
+  exit 1
+fi
+
 echo "🛡️ [Anti-Negligence Mandate] Running Agent Anti-Negligence Hook..."
 node scripts/audits/agent_anti_negligence_hook.cjs
 
@@ -8,4 +16,3 @@ fi
 
 echo "🛡️ [Zero-Leak Mandate] Running Gitleaks security scan..."
 npm run gitleaks-check
-

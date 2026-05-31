@@ -7,6 +7,8 @@ import {
     VIEM_CHAIN, 
     RPC_URL, 
     getContractAddr,
+    DAILY_APP_ADDRESS,
+    DAILY_APP_USER_STATS_ABI,
     RAFFLE_EVENT_ABI,
     IS_MAINNET,
     sanitizeError,
@@ -23,6 +25,7 @@ import type {
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 type UserTaskClaimInsert = Database['public']['Tables']['user_task_claims']['Insert'];
+type OnChainXpFunction = Parameters<typeof awardOnChainXp>[0];
 
 const publicClient = createPublicClient({
     chain: VIEM_CHAIN,
@@ -225,41 +228,94 @@ async function logActivity(wallet: string, category: string, type: string, descr
 }
 
 /**
- * 🛡️ ATOMIC CLAIM + XP INCREMENT (v3.64.17)
- *
- * Replaces the old split two-step approach (INSERT claim → RPC fn_increment_xp)
- * which was NOT equivalent to a real transaction and could leave the XP ledger
- * in a drifted state if either step failed mid-flight.
- *
- * This now calls fn_insert_claim_and_increment_xp — a single Postgres PL/pgSQL
- * function that performs both operations inside ONE transaction block.
- * A unique_violation (duplicate claim) triggers a full rollback of both steps,
- * so the ledger is ALWAYS consistent: either both succeed or neither does.
+ * On-chain SOT backup path: claims are inserted as indexer records only.
+ * XP totals are mirrored from DailyAppV16 userStats(), never incremented here.
  */
-async function insertClaimAndIncrementXp(claim: UserTaskClaimInsert, context: string): Promise<{ alreadyClaimed: boolean }> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabaseAdmin.rpc as any)('fn_insert_claim_and_increment_xp', {
-        p_wallet:      claim.wallet_address,
-        p_task_id:     claim.task_id as string,
-        p_xp_earned:   claim.xp_earned ?? 0,
-        p_platform:    claim.platform ?? null,
-        p_action_type: claim.action_type ?? null,
-        p_target_id:   claim.target_id ?? null,
+async function insertClaimBackupOnly(claim: UserTaskClaimInsert, context: string): Promise<{ alreadyClaimed: boolean }> {
+    const { error } = await supabaseAdmin.from('user_task_claims').insert(claim);
+    if (error) {
+        if (error.code === '23505') return { alreadyClaimed: true };
+        await logSystemError({
+            severity: 'critical',
+            surface: 'api',
+            bundle: 'tasks-bundle',
+            action: context,
+            message: `user_task_claims backup insert failed: ${error.message}`
+        }).catch(() => {});
+        throw error;
+    }
+
+    return { alreadyClaimed: false };
+}
+
+async function isClaimBackedUp(wallet: string, taskId: string): Promise<boolean> {
+    const { data, error } = await supabaseAdmin
+        .from('user_task_claims')
+        .select('id')
+        .eq('wallet_address', wallet.toLowerCase())
+        .eq('task_id', taskId)
+        .maybeSingle();
+    if (error) throw error;
+    return !!data;
+}
+
+async function readOnChainUserStats(wallet: string): Promise<{ points: number; tier: number }> {
+    if (!DAILY_APP_ADDRESS) throw new Error('DailyApp contract address is not configured');
+    const stats = await publicClient.readContract({
+        address: DAILY_APP_ADDRESS as `0x${string}`,
+        abi: DAILY_APP_USER_STATS_ABI,
+        functionName: 'userStats',
+        args: [wallet.toLowerCase() as `0x${string}`]
     });
+    const [points, , , currentTier] = stats as readonly [bigint, bigint, bigint, number, bigint, bigint, boolean];
+    return { points: Number(points), tier: Number(currentTier) };
+}
+
+async function mirrorOnChainUserStats(wallet: string, context: string, txHash: `0x${string}`): Promise<{ points: number; tier: number }> {
+    const cleanWallet = wallet.toLowerCase();
+    const stats = await readOnChainUserStats(cleanWallet);
+    const { error } = await supabaseAdmin
+        .from('user_profiles')
+        .upsert({
+            wallet_address: cleanWallet,
+            total_xp: stats.points,
+            last_onchain_xp: stats.points,
+            tier: stats.tier,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'wallet_address' });
 
     if (error) {
         await logSystemError({
             severity: 'critical',
             surface: 'api',
             bundle: 'tasks-bundle',
-            action: context,
-            message: `fn_insert_claim_and_increment_xp failed: ${error.message}`
+            action: `${context}:mirrorOnChainUserStats`,
+            wallet_address: cleanWallet,
+            tx_hash: txHash,
+            message: `Failed to mirror on-chain userStats: ${error.message}`
         }).catch(() => {});
         throw error;
     }
 
-    const result = (data as unknown) as { already_claimed: boolean; claim_id: string | null; xp_earned: number };
-    return { alreadyClaimed: result.already_claimed };
+    return stats;
+}
+
+async function requireOnChainXpAward(functionName: OnChainXpFunction, args: readonly unknown[], wallet: string, context: string) {
+    const txHash = await awardOnChainXp(functionName, args);
+    if (!txHash) {
+        await logSystemError({
+            severity: 'critical',
+            surface: 'api',
+            bundle: 'tasks-bundle',
+            action: context,
+            wallet_address: wallet.toLowerCase(),
+            message: `${functionName} did not produce an on-chain transaction hash`
+        }).catch(() => {});
+        throw new Error('ONCHAIN_XP_AWARD_FAILED');
+    }
+
+    const stats = await mirrorOnChainUserStats(wallet, context, txHash);
+    return { txHash, ...stats };
 }
 
 /**
@@ -269,12 +325,13 @@ async function awardReferralBonus(userWallet: string, xpEarned: number, source: 
     if (!xpEarned || xpEarned <= 0) return;
     try {
         const cleanWallet = userWallet.toLowerCase();
-        const { data: profile } = await supabaseAdmin.from('user_profiles').select('referred_by, total_xp').eq('wallet_address', cleanWallet).maybeSingle();
+        const { data: profile } = await supabaseAdmin.from('user_profiles').select('referred_by').eq('wallet_address', cleanWallet).maybeSingle();
         if (!profile?.referred_by) return;
 
         const { data: thresholdSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'referral_active_threshold').maybeSingle();
         const threshold = thresholdSetting?.value ? Number(thresholdSetting.value) : 500;
-        if ((profile.total_xp || 0) < threshold) return;
+        const userStats = await readOnChainUserStats(cleanWallet);
+        if (userStats.points < threshold) return;
 
         const { data: bonusSetting } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'referral_bonus_percent').maybeSingle();
         const bonusPercent = bonusSetting?.value ? Number(bonusSetting.value) : 10;
@@ -283,8 +340,8 @@ async function awardReferralBonus(userWallet: string, xpEarned: number, source: 
 
         const referrerWallet = profile.referred_by.toLowerCase();
         if (referrerWallet === cleanWallet) return; // [SECURITY HARDENING] Prevent self-referral XP loop
-        await supabaseAdmin.rpc('fn_increment_xp', { p_wallet: referrerWallet, p_amount: bonusXp });
-        await logActivity(referrerWallet, 'XP', 'Referral Bonus', `Referral Bonus: +${bonusXp} XP (${bonusPercent}% from ${cleanWallet.slice(0, 6)}...${cleanWallet.slice(-4)})`, bonusXp, 'XP', { source, referred_user: cleanWallet, bonus_percent: bonusPercent });
+        const award = await requireOnChainXpAward('awardSocialXp', [referrerWallet as `0x${string}`, BigInt(bonusXp)], referrerWallet, 'awardReferralBonus');
+        await logActivity(referrerWallet, 'XP', 'Referral Bonus', `Referral Bonus: +${bonusXp} XP (${bonusPercent}% from ${cleanWallet.slice(0, 6)}...${cleanWallet.slice(-4)})`, bonusXp, 'XP', { source, referred_user: cleanWallet, bonus_percent: bonusPercent, onchain_xp: award.points }, award.txHash);
     } catch (err: unknown) {
         console.warn('[ReferralBonus]', err instanceof Error ? err.message : String(err));
     }
@@ -320,22 +377,22 @@ async function checkAndGrantDailyBonus(wallet_address: string) {
         const bonusXp = await getPointValue('daily_task_completion') || 50;
         const todayStr = new Date().toISOString().split('T')[0];
         
-        const { error: claimErr } = await supabaseAdmin.from('user_task_claims').insert({
+        const bonusTaskId = `daily_task_completion_${todayStr}`;
+        if (await isClaimBackedUp(wallet, bonusTaskId)) return;
+
+        const award = await requireOnChainXpAward('awardSocialXp', [wallet as `0x${string}`, BigInt(bonusXp)], wallet, 'checkAndGrantDailyBonus');
+
+        const { alreadyClaimed } = await insertClaimBackupOnly({
             wallet_address: wallet,
-            task_id: `daily_task_completion_${todayStr}`,
+            task_id: bonusTaskId,
             xp_earned: bonusXp,
             platform: 'system',
             action_type: 'daily_bonus'
-        });
+        }, 'checkAndGrantDailyBonus');
 
-        if (claimErr) return; 
+        if (alreadyClaimed) return;
 
-        await supabaseAdmin.rpc('fn_increment_xp', {
-            p_wallet: wallet,
-            p_amount: bonusXp
-        });
-
-        await logActivity(wallet, 'DAILY', 'Daily Goal Bonus', `Unlocked 3-Task Daily Bonus! +${bonusXp} XP`, bonusXp, 'XP');
+        await logActivity(wallet, 'DAILY', 'Daily Goal Bonus', `Unlocked 3-Task Daily Bonus! +${bonusXp} XP`, bonusXp, 'XP', { onchain_xp: award.points }, award.txHash);
 
         console.log(`[DailyBonus] Granted ${bonusXp} XP to ${wallet} (Verified)`);
     } catch (e: unknown) {
@@ -412,9 +469,18 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
 
     try {
         const { xp, targetId } = await validateAndCalculateXP(wallet_address, signature, message, task_id);
+        const cleanWallet = wallet_address.toLowerCase();
 
-        const result = await insertClaimAndIncrementXp({
-            wallet_address: wallet_address.toLowerCase(),
+        if (await isClaimBackedUp(cleanWallet, task_id)) {
+            await logActivity(wallet_address, 'SYNC', 'Duplicate Claim Attempt', `Task ${task_id} already claimed`, 0, 'XP');
+            return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
+        }
+
+        // [ON-CHAIN FIRST] Award XP on-chain via bot signer (bot pays gas ~$0.001)
+        const award = await requireOnChainXpAward('awardSocialXp', [cleanWallet as `0x${string}`, BigInt(xp)], cleanWallet, 'handleClaim');
+
+        const result = await insertClaimBackupOnly({
+            wallet_address: cleanWallet,
             task_id,
             xp_earned: xp,
             target_id: targetId
@@ -425,13 +491,13 @@ async function handleClaim(req: ExtendedVercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true, message: "Already claimed.", already_claimed: true });
         }
 
-        await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`, xp, 'XP');
+        await logActivity(wallet_address, 'XP', 'Claim Success', `Earned ${xp} XP for ${task_id}`, xp, 'XP', { onchain_xp: award.points, onchain_tier: award.tier }, award.txHash);
 
         // Award referral bonus to referrer (fire-and-forget)
         awardReferralBonus(wallet_address, xp, 'Task Claim').catch(() => {});
 
         await checkAndGrantDailyBonus(wallet_address);
-        return res.status(200).json({ success: true, xp });
+        return res.status(200).json({ success: true, xp, txHash: award.txHash, onchain_xp: award.points });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         console.error('[handleClaim Error]', msg);
@@ -444,9 +510,21 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
     if (!wallet_address || !signature || !message || !task_id) throw new Error('Missing fields');
 
     const { xp, targetId } = await validateAndCalculateXP(wallet_address, signature, message, task_id);
+    const cleanWallet = wallet_address.toLowerCase();
 
-    const result = await insertClaimAndIncrementXp({
-        wallet_address: wallet_address.toLowerCase(),
+    if (await isClaimBackedUp(cleanWallet, task_id)) {
+        await logActivity(wallet_address, 'SYNC', 'Duplicate Verify Attempt', `Task ${task_id} already verified on ${platform || 'unknown'}`, 0, 'XP');
+        return res.status(200).json({ success: true, message: "Already verified.", already_claimed: true });
+    }
+
+    const amountMatch = message.match(/Amount:\s*(\d+)/i);
+    const ticketCount = amountMatch ? parseInt(amountMatch[1], 10) : 1;
+    const award = task_id.startsWith('raffle_buy_')
+        ? await requireOnChainXpAward('awardRaffleBuyXp', [cleanWallet as `0x${string}`, BigInt(ticketCount)], cleanWallet, 'handleVerify:raffle_buy')
+        : await requireOnChainXpAward('awardSocialXp', [cleanWallet as `0x${string}`, BigInt(xp)], cleanWallet, 'handleVerify');
+
+    const result = await insertClaimBackupOnly({
+        wallet_address: cleanWallet,
         task_id,
         platform,
         action_type,
@@ -455,32 +533,27 @@ async function handleVerify(req: ExtendedVercelRequest, res: VercelResponse) {
     }, 'handleVerify');
 
     if (result.alreadyClaimed) {
-        await logActivity(wallet_address, 'SYNC', 'Duplicate Verify Attempt', `Task ${task_id} already verified on ${platform || 'unknown'}`, 0, 'XP');
+        await logActivity(wallet_address, 'SYNC', 'Duplicate Verify Race', `Task ${task_id} was awarded on-chain but backup already existed`, 0, 'XP', { onchain_xp: award.points, onchain_tier: award.tier }, award.txHash);
         return res.status(200).json({ success: true, message: "Already verified.", already_claimed: true });
     }
 
     if (task_id.startsWith('raffle_buy_')) {
-        const amountMatch = message.match(/Amount:\s*(\d+)/i);
-        const ticketCount = amountMatch ? parseInt(amountMatch[1], 10) : 1;
         const parts = task_id.split('_');
         const raffleId = parts[2] || null;
         const txHashFromId = parts[parts.length - 1] || null;
-        
-        // [ON-CHAIN FIRST] Award raffle buy XP via bot signer (bot pays gas)
-        const onChainTx = await awardOnChainXp('awardRaffleBuyXp', [wallet_address.toLowerCase() as `0x${string}`, BigInt(ticketCount)]);
-        
+
         await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
-            p_wallet: wallet_address.toLowerCase(),
+            p_wallet: cleanWallet,
             p_amount: ticketCount
         });
 
-        await logActivity(wallet_address, 'RAFFLE', 'Ticket Purchase', `Purchased ${ticketCount} ticket(s) for Raffle #${raffleId}`, ticketCount, 'TICKET', { raffle_id: raffleId, ticket_count: ticketCount, onchain_tx: onChainTx || undefined }, txHashFromId);
+        await logActivity(wallet_address, 'RAFFLE', 'Ticket Purchase', `Purchased ${ticketCount} ticket(s) for Raffle #${raffleId}`, ticketCount, 'TICKET', { raffle_id: raffleId, ticket_count: ticketCount, xp_award_tx: award.txHash, onchain_xp: award.points }, txHashFromId);
     } else {
-        await logActivity(wallet_address, 'XP', 'Task Verify', `Verified ${task_id} on ${platform}`, xp, 'XP');
+        await logActivity(wallet_address, 'XP', 'Task Verify', `Verified ${task_id} on ${platform}`, xp, 'XP', { onchain_xp: award.points, onchain_tier: award.tier }, award.txHash);
     }
 
     await checkAndGrantDailyBonus(wallet_address);
-    return res.status(200).json({ success: true, xp } as TaskClaimResponse);
+    return res.status(200).json({ success: true, xp, txHash: award.txHash } as TaskClaimResponse);
 }
 
 async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelResponse) {
@@ -500,12 +573,17 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
         throw verifyErr;
     }
 
+    const cleanWallet = wallet_address.toLowerCase();
+    if (await isClaimBackedUp(cleanWallet, task_id)) {
+        return res.status(200).json({ success: true, message: "Already recorded.", already_claimed: true });
+    }
+
     // [ON-CHAIN FIRST] Award XP on-chain via bot signer (bot pays gas ~$0.001)
-    const onChainTx = await awardOnChainXp('awardSocialXp', [wallet_address.toLowerCase() as `0x${string}`, BigInt(xp)]);
+    const award = await requireOnChainXpAward('awardSocialXp', [cleanWallet as `0x${string}`, BigInt(xp)], cleanWallet, 'handleSocialVerify');
 
     // DB backup (fire-and-forget) — insert claim + activity log
-    const result = await insertClaimAndIncrementXp({
-        wallet_address: wallet_address.toLowerCase(),
+    const result = await insertClaimBackupOnly({
+        wallet_address: cleanWallet,
         task_id,
         platform: platform || 'regular',
         action_type: action_type || 'task',
@@ -517,13 +595,13 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
         return res.status(200).json({ success: true, message: "Already recorded.", already_claimed: true });
     }
 
-    await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`, xp, 'XP', { onchain_tx: onChainTx || undefined });
+    await logActivity(wallet_address, 'XP', 'Social Verify', `Verified ${action_type} on ${platform}`, xp, 'XP', { onchain_xp: award.points, onchain_tier: award.tier }, award.txHash);
 
     // Award referral bonus to referrer (fire-and-forget)
     awardReferralBonus(wallet_address, xp, 'Social Verify').catch(() => {});
 
     await checkAndGrantDailyBonus(wallet_address);
-    return res.status(200).json({ success: true, xp, message: `Task verified.` });
+    return res.status(200).json({ success: true, xp, txHash: award.txHash, message: `Task verified.` });
 }
 
 async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelResponse) {
@@ -611,7 +689,10 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             .eq('id', campaign_id)
             .maybeSingle();
 
-        const claimResult = await insertClaimAndIncrementXp({
+        // [ON-CHAIN FIRST] Award XP on-chain via bot signer (bot pays gas ~$0.001)
+        const award = await requireOnChainXpAward('awardUgcTaskXp', [wallet_address.toLowerCase() as `0x${string}`, BigInt(totalXp)], wallet_address, 'handleClaimUgcCampaign');
+
+        const claimResult = await insertClaimBackupOnly({
             wallet_address: wallet_address.toLowerCase(),
             task_id: `ugc_campaign_${campaign_id}`,
             xp_earned: totalXp,
@@ -635,7 +716,9 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             'Campaign Complete', 
             `Completed UGC Campaign: ${campaign?.title || campaign_id}`, 
             totalXp, 
-            'XP'
+            'XP',
+            { onchain_xp: award.points, onchain_tier: award.tier },
+            award.txHash
         );
 
         // Separate reward log if token reward exists
@@ -647,13 +730,15 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
                 'UGC Campaign Reward',
                 `Earned ${rewardAmount} ${campaign?.reward_symbol || 'USDC'} from campaign: ${campaign?.title || campaign_id}`,
                 rewardAmount,
-                campaign?.reward_symbol || 'USDC'
+                campaign?.reward_symbol || 'USDC',
+                { xp_award_tx: award.txHash }
             );
         }
 
         return res.status(200).json({
             success: true,
             xp: totalXp,
+            txHash: award.txHash,
             usdc_reward: campaign?.reward_amount_per_user || '0',
             reward_symbol: campaign?.reward_symbol || 'USDC',
             message: 'Campaign reward claimed successfully!'
@@ -671,6 +756,7 @@ async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) 
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    let deductedWallet: string | null = null;
     try {
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
@@ -707,10 +793,10 @@ async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) 
         const segmentPrizes = [
             { text: '+50 XP', category: 'XP', amount: 50 },
             { text: '+100 XP', category: 'XP', amount: 100 },
-            { text: 'Double Streak', category: 'STREAK', amount: 1 },
-            { text: 'Bronze Upgrade', category: 'TIER', amount: 1 },
-            { text: '+3 Tickets', category: 'TICKET', amount: 3 },
-            { text: 'Bonus Multiplier', category: 'XP', amount: 150 }
+            { text: '+125 XP', category: 'XP', amount: 125 },
+            { text: '+150 XP Bonus', category: 'XP', amount: 150 },
+            { text: '+175 XP', category: 'XP', amount: 175 },
+            { text: '+200 XP', category: 'XP', amount: 200 }
         ];
 
         const winIdx = Math.floor(Math.random() * segmentPrizes.length);
@@ -721,51 +807,13 @@ async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) 
             p_wallet: wallet,
             p_amount: -1
         });
+        deductedWallet = wallet;
 
-        // [ON-CHAIN FIRST] Award XP via bot signer for XP prizes
-        if (winPrize.category === 'XP') {
-            awardOnChainXp('awardMojoXp', [wallet as `0x${string}`, BigInt(winPrize.amount)]).catch(() => {});
-        }
+        // [ON-CHAIN FIRST] Award XP via bot signer for every prize.
+        const award = await requireOnChainXpAward('awardMojoXp', [wallet as `0x${string}`, BigInt(winPrize.amount)], wallet, 'handleSpinGacha');
 
         // 4. Distribute reward
-        let prizeDetail = '';
-        if (winPrize.category === 'XP') {
-            await supabaseAdmin.rpc('fn_increment_xp', {
-                p_wallet: wallet,
-                p_amount: winPrize.amount
-            });
-            prizeDetail = `Earned +${winPrize.amount} XP`;
-        } else if (winPrize.category === 'TICKET') {
-            await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
-                p_wallet: wallet,
-                p_amount: winPrize.amount
-            });
-            prizeDetail = `Earned +${winPrize.amount} tickets`;
-        } else if (winPrize.category === 'STREAK') {
-            await supabaseAdmin
-                .from('user_profiles')
-                .update({ streak_count: Number(profile.streak_count || 0) + 1 })
-                .eq('wallet_address', wallet);
-            prizeDetail = 'Incremented daily check-in streak (+1 Day)';
-        } else if (winPrize.category === 'TIER') {
-            if (Number(profile.tier || 0) === 0) {
-                await supabaseAdmin
-                    .from('user_profiles')
-                    .update({ tier: 1 })
-                    .eq('wallet_address', wallet);
-                prizeDetail = 'Upgraded tier: Rookie -> Bronze!';
-            } else {
-                // Fallback reward if already Bronze or higher
-                await supabaseAdmin.rpc('fn_increment_xp', {
-                    p_wallet: wallet,
-                    p_amount: 100
-                });
-                prizeDetail = 'Earned +100 XP (already upgraded)';
-            }
-        }
-
-        // Generate telemetric txHash for logging
-        const txHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+        const prizeDetail = `Earned +${winPrize.amount} XP on-chain`;
 
         // 5. Log Activity with millisecond-precision ISO timestamp
         await logActivity(
@@ -775,8 +823,8 @@ async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) 
             `Spun Gacha Wheel. Won: ${winPrize.text} (${prizeDetail})`,
             winPrize.amount,
             winPrize.category,
-            { segment_index: winIdx, prize_label: winPrize.text, prize_detail: prizeDetail },
-            txHash
+            { segment_index: winIdx, prize_label: winPrize.text, prize_detail: prizeDetail, onchain_xp: award.points, onchain_tier: award.tier },
+            award.txHash
         );
 
         return res.status(200).json({
@@ -784,10 +832,20 @@ async function handleSpinGacha(req: ExtendedVercelRequest, res: VercelResponse) 
             winIndex: winIdx,
             prizeLabel: winPrize.text,
             prizeDetail,
-            txHash
+            txHash: award.txHash
         });
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
+        if (deductedWallet && msg === 'ONCHAIN_XP_AWARD_FAILED') {
+            try {
+                await supabaseAdmin.rpc('fn_increment_raffle_tickets', {
+                    p_wallet: deductedWallet,
+                    p_amount: 1
+                });
+            } catch {
+                // Refund failure is logged by the outer error path.
+            }
+        }
         console.error('[handleSpinGacha Error]', msg);
         return res.status(500).json({ error: sanitizeError(msg) });
     }

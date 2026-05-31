@@ -43,10 +43,10 @@ export function GachaWheel() {
   const segmentPrizes = [
     { text: '+50 XP', color: '#1e293b' },
     { text: '+100 XP', color: '#0f172a' },
-    { text: 'Double Streak', color: '#312e81' },
-    { text: 'Bronze Upgrade', color: '#064e3b' },
-    { text: '+3 Tickets', color: '#1e1b4b' },
-    { text: 'Bonus Multiplier', color: '#451a03' }
+    { text: '+125 XP', color: '#312e81' },
+    { text: '+150 XP Bonus', color: '#064e3b' },
+    { text: '+175 XP', color: '#1e1b4b' },
+    { text: '+200 XP', color: '#451a03' }
   ];
 
   // Fetch ticket price and surcharge from contracts

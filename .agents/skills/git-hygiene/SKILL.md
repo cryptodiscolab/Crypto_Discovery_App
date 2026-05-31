@@ -110,6 +110,10 @@ Remove-Item tmp_*.cjs, tmp_*.js, tsc_output*.txt, lint_results*.txt
 ## 5. Git Pre-Commit Hook (Anti-Negligence & RTK Guard) (v3.64.14-Hardened)
 
 Repositori ini dikonfigurasi dengan Git hook `pre-commit` (melalui Husky) yang berjalan otomatis sebelum komit dibuat. Hook ini mengeksekusi pemeriksaan berikut:
+0. **Strict Git Flow Guard** (`node scripts/audits/git_flow_guard.cjs`)
+   - Memblokir commit langsung dari `main`, `master`, dan `develop`.
+   - Memblokir branch yang tidak mengikuti `feature/nama-fitur` atau `bugfix/123-short-description`.
+   - Menjamin semua perubahan masuk ke `develop`/`main` via Pull Request.
 1. **Agent Anti-Negligence Hook** (`node scripts/audits/agent_anti_negligence_hook.cjs`)
    - Mendeteksi kebocoran log `[dotenv]`.
    - Memeriksa file polutan/sampah di direktori kerja (Git Hygiene).
@@ -120,6 +124,26 @@ Repositori ini dikonfigurasi dengan Git hook `pre-commit` (melalui Husky) yang b
    - Memeriksa kebocoran token, private key, dan data sensitif secara statis.
 
 > 🚨 **PENTING**: Komit akan secara otomatis diblokir jika salah satu pemeriksaan di atas gagal, atau jika executable **RTK** (`.bin/rtk.exe`) tidak terdeteksi atau tidak aktif di workspace.
+
+## 5.1 Strict Git Flow & PR Mandate (v3.65.0)
+
+Semua agent dan tim WAJIB mengikuti strategi berikut:
+
+- **No direct commit** ke `main`, `master`, atau `develop`.
+- **Branching strategy**: gunakan `feature/nama-fitur` untuk fitur dan `bugfix/123-short-description` untuk bug.
+- **Pre-code tests**: sebelum menulis kode baru, jalankan `npm run test:all` untuk baseline.
+- **Regression tests**: jika perubahan mempengaruhi fungsi, hook, API route, contract, atau UI flow lain, tambah/update test yang mencakup dependensi tersebut.
+- **PR review**: merge ke `develop` atau `main` wajib melalui PR dengan peer review atau AI code review.
+- **Required checks**: PR tidak boleh merge jika `Strict Git Flow / Required Tests` atau check wajib lain belum pass.
+
+Enforcement:
+
+```bash
+npm run git-flow:guard
+npm run test:all
+```
+
+GitHub settings wajib mengikuti `.github/BRANCH_PROTECTION_RULES.md`.
 
 ---
 

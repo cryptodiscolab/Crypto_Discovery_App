@@ -1,3 +1,19 @@
+echo "🌿 [Strict Git Flow] Verifying branch policy before push..."
+node scripts/audits/git_flow_guard.cjs
+
+if [ $? -ne 0 ]; then
+  echo "❌ STRICT GIT FLOW CHECK FAILED! Push blocked."
+  exit 1
+fi
+
+echo "🧪 [Regression Mandate] Running full required test suite before push..."
+npm run test:all
+
+if [ $? -ne 0 ]; then
+  echo "❌ REQUIRED TEST SUITE FAILED! Push blocked."
+  exit 1
+fi
+
 echo "🛡️ [Zero-Leak Mandate] Running Gitleaks security scan before push..."
 npm run gitleaks-check
 

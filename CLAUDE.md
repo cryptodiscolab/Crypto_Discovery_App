@@ -62,6 +62,8 @@ Natural lang ONLY for: complex explanations, security, user docs. Thinking: skip
 73. ESM: `.js` extensions in imports. 74. SECURITY INVOKER + `search_path`.
 75. ISO-8601 milliseconds. 76. Multi-asset: ETH/WETH/USDC dynamic.
 77. `agent_anti_negligence_hook.cjs` before finalize.
+77.1 Strict Git Flow: ❌ commit langsung ke `main`/`master`/`develop`; gunakan `feature/nama-fitur` atau `bugfix/123-short-description`; PR wajib review + automated tests pass sebelum merge.
+77.2 Pre-code test mandate: sebelum menulis kode baru jalankan `npm run test:all`; jika perubahan menyentuh dependensi/fungsi lain, wajib tambah/update regression test.
 
 ---
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Shield, Sparkles, AlertTriangle, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 import { useAccount, usePublicClient } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
@@ -227,10 +227,17 @@ export function SBTMintPage() {
     } catch (err) {
       console.error('[SBTMint] Mint failed:', err);
       toast.error(err instanceof Error ? err.message : 'Mint failed', { id: 'sbt-mint' });
-    } finally {
+  } finally {
       setMinting(false);
     }
   };
+
+  const hasEligibleHigherTiers = useMemo(() => {
+    if (!progress || !thresholds.length) return false;
+    const sorted = [...thresholds].sort((a, b) => a.level - b.level);
+    const currentIdx = sorted.findIndex((t) => t.tier_name?.toUpperCase() === progress.currentTier);
+    return sorted.some((t, idx) => idx > currentIdx + 1 && progress.totalXP >= t.min_xp);
+  }, [progress, thresholds]);
 
   // Not connected state
   if (!isConnected) {
@@ -245,13 +252,6 @@ export function SBTMintPage() {
   }
 
   const currentTierColor = TIER_COLORS[progress?.currentTier || 'ROOKIE'] || TIER_COLORS.ROOKIE;
-
-  const hasEligibleHigherTiers = useMemo(() => {
-    if (!progress || !thresholds.length) return false;
-    const sorted = [...thresholds].sort((a, b) => a.level - b.level);
-    const currentIdx = sorted.findIndex((t) => t.tier_name?.toUpperCase() === progress.currentTier);
-    return sorted.some((t, idx) => idx > currentIdx + 1 && progress.totalXP >= t.min_xp);
-  }, [progress, thresholds]);
 
   // Sort thresholds descending for display (Diamond first)
   const displayTiers = [...thresholds].sort((a, b) => b.level - a.level);

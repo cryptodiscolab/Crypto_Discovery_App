@@ -42,7 +42,7 @@ interface ActivityLogItem {
 
 export function HomePage() {
   const { isConnected, address } = useAccount();
-  const { userPoints, unclaimedRewards: _unclaimedRewards, userTier, rankName, profileData, ecosystemSettings } = usePoints();
+  const { userPoints, unclaimedRewards: _unclaimedRewards, userTier, profileData, ecosystemSettings } = usePoints();
   const { totalPoolBalance } = useSBT();
   const { stats: onChainUserStats } = useUserInfo(address);
   const { isFrame, frameUser } = useFarcaster();
