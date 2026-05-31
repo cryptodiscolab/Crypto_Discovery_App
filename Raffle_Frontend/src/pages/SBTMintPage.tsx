@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { BUNDLE_ROUTES, USER_BUNDLE_ACTIONS } from '../lib/apiRoutes';
 import { formatEther } from 'viem';
 import { useNFTTiers } from '../hooks/useNFTTiers';
+import { useUserInfo } from '../hooks/useContract';
 
 const PINATA_GATEWAY = (import.meta.env.VITE_PINATA_GATEWAY || 'https://gateway.pinata.cloud/ipfs').trim();
 
@@ -86,6 +87,7 @@ const TIER_COLORS: Record<string, string> = {
 export function SBTMintPage() {
   const { address, isConnected } = useAccount();
   const queryClient = useQueryClient();
+  const { stats: onChainUserStats, refetch: refetchOnChainStats } = useUserInfo(address);
   const [thresholds, setThresholds] = useState<SBTThreshold[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,8 +125,17 @@ export function SBTMintPage() {
 
       setThresholds(tiers);
 
-      const totalXP = Number(profileResult.data?.total_xp || 0);
-      const currentTier = String(profileResult.data?.rank_name || 'ROOKIE').toUpperCase();
+      const onChainPoints = onChainUserStats ? onChainUserStats.points : null;
+      const onChainTierLevel = onChainUserStats ? onChainUserStats.currentTier : null;
+
+      const totalXP = onChainPoints !== null ? onChainPoints : Number(profileResult.data?.total_xp || 0);
+      let currentTier = 'ROOKIE';
+      if (onChainTierLevel !== null) {
+        const found = tiers.find((t) => t.level === onChainTierLevel);
+        if (found) currentTier = String(found.tier_name).toUpperCase();
+      } else {
+        currentTier = String(profileResult.data?.rank_name || 'ROOKIE').toUpperCase();
+      }
 
       // Determine next tier from live DB thresholds (Sequential Upgrade Only — BP-007)
       const sorted = [...tiers].sort((a, b) => a.level - b.level);
@@ -147,7 +158,7 @@ export function SBTMintPage() {
     } finally {
       setLoading(false);
     }
-  }, [address, fetchThresholds]);
+  }, [address, fetchThresholds, onChainUserStats]);
 
   useEffect(() => {
     fetchProgress();
@@ -210,6 +221,7 @@ export function SBTMintPage() {
       }
 
       // Refresh progress after successful mint
+      refetchOnChainStats();
       fetchProgress();
       refetchTiers();
     } catch (err) {
@@ -233,6 +245,13 @@ export function SBTMintPage() {
   }
 
   const currentTierColor = TIER_COLORS[progress?.currentTier || 'ROOKIE'] || TIER_COLORS.ROOKIE;
+
+  const hasEligibleHigherTiers = useMemo(() => {
+    if (!progress || !thresholds.length) return false;
+    const sorted = [...thresholds].sort((a, b) => a.level - b.level);
+    const currentIdx = sorted.findIndex((t) => t.tier_name?.toUpperCase() === progress.currentTier);
+    return sorted.some((t, idx) => idx > currentIdx + 1 && progress.totalXP >= t.min_xp);
+  }, [progress, thresholds]);
 
   // Sort thresholds descending for display (Diamond first)
   const displayTiers = [...thresholds].sort((a, b) => b.level - a.level);
@@ -377,6 +396,13 @@ export function SBTMintPage() {
                 );
               })}
             </div>
+
+            {hasEligibleHigherTiers && (
+              <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-[11px] font-black uppercase tracking-widest text-yellow-400 flex items-center gap-2">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span>Note: You qualify for higher tiers, but you must upgrade sequentially (one tier at a time).</span>
+              </div>
+            )}
 
             {/* Mint Button */}
             <button

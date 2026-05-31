@@ -2036,7 +2036,12 @@ async function handleDailyClaim(req: VercelRequest, res: VercelResponse) {
         }
 
         const lastOnChainXp = profile.last_onchain_xp || 0;
-        const xpDelta = currentOnChainXp > lastOnChainXp ? currentOnChainXp - lastOnChainXp : currentOnChainXp;
+        let xpDelta = 0;
+        if (currentOnChainXp > lastOnChainXp) {
+            xpDelta = currentOnChainXp - lastOnChainXp;
+        } else if (currentOnChainXp < lastOnChainXp) {
+            xpDelta = currentOnChainXp;
+        }
 
         // 6. Calculate streak
         const now = new Date();

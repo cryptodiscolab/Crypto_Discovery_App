@@ -1,4 +1,4 @@
-# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.35-Hardened)
+# 🗺️ CRYPTO DISCO LAB - WORKSPACE MAP (v3.64.36-Hardened)
 Last Update: 2026-05-30 (22:57)
 Current Architecture: Hybrid Vercel-Supabase-Hardhat (Multi-Agent Optimized)
 Status: [🟢] OPERATIONAL - BRIDGE v1.3.7 ACTIVE
@@ -77,6 +77,7 @@ e:\Disco Gacha\Disco_DailyApp
 │   │   └── verify-db-sync.cjs   # Database sync verification
 │   ├── sync/                # Data & Contract synchronization
 │   │   ├── robust_sync.cjs      # Clean-Pipe Sync Engine (v3.43.0)
+│   │   ├── force_onchain_sync.cjs # 🆕 On-Chain to DB Force Sync Daemon (v3.64.36)
 │   │   └── sync_vercel_all.cjs  # Multi-Project Sync Trigger
 │   ├── deployments/         # CI/CD and deploy helpers
 │   │   └── install_rtk.cjs  # 🆕 Local RTK CLI installer (v3.64.6)
@@ -262,4 +263,4 @@ Saat perintah **"re-read skills"** diberikan, agent WAJIB membaca file berikut s
 15. `.cursorrules` — Master Architect Protocol
 
 ---
-*Last Updated: 2026-05-30T22:57:14+07:00 | Dashboard/Home Card Audit, Daily Claim Sync, and Activity History Contract Parity. v3.64.35 LOCKED.*
+*Last Updated: 2026-05-31T08:05:00+07:00 | On-Chain SOT Migration with Paymaster & Leaderboard Integration. v3.64.36 LOCKED.*

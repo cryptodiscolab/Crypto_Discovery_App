@@ -77,13 +77,16 @@ export function HomePage() {
     last_daily_bonus_claim?: string | null;
     is_base_social_verified?: boolean | null;
   } | null;
+  const onChainXp = onChainUserStats ? Number(onChainUserStats.points) : null;
+  const onChainTier = onChainUserStats ? Number(onChainUserStats.currentTier) : null;
+
   const displayStreak = Number(typedProfile?.streak_count || 0);
   const displayTickets = Number(typedProfile?.raffle_tickets_bought || 0);
-  const displayXp = userPoints;
+  const displayXp = onChainXp !== null ? onChainXp : userPoints;
   const isBaseVerified = typedProfile?.is_base_social_verified === true;
   const tierNames = ['Rookie', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-  const currentTier = Math.max(0, Math.min(Number(userTier || 0), tierNames.length - 1));
-  const displayTierName = rankName || tierNames[currentTier];
+  const currentTier = Math.max(0, Math.min(Number(onChainTier !== null ? onChainTier : (userTier || 0)), tierNames.length - 1));
+  const displayTierName = tierNames[currentTier];
   const welcomeEns = typedFrameUser?.username || typedProfile?.basename || typedProfile?.ens_name || typedProfile?.display_name || (isConnected ? 'Connected Agent' : 'Guest Agent');
   const welcomeAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connect wallet';
   const activeRafflesCreated = Number(typedProfile?.total_raffles_created ?? typedProfile?.raffles_created ?? 0);

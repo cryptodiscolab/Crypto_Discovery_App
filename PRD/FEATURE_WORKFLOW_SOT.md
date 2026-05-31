@@ -1,5 +1,5 @@
-# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.35-Hardened)
-**Last Updated**: 2026-05-30 — Dashboard/Home Card Audit, Daily Claim Sync, and Activity History Contract Parity
+# 📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.36-Hardened)
+**Last Updated**: 2026-05-31 — On-Chain SOT Migration with Paymaster & Leaderboard Integration
 **Status**: 🛡️ ARCHITECTURALLY HARDENED
 
 Dokumen ini adalah **Source of Truth** absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. **JANGAN berhalusinasi atau menebak**. Jika ada yang error, rujuk dokumen ini.
@@ -80,7 +80,8 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 
 ### 2.4 Home Dashboard / Card Function Contract
 - `HomePage.tsx` adalah single source of truth untuk route dashboard `/`; implementasi dashboard penuh lama `UnifiedDashboard.tsx` sudah dihapus.
-- Dashboard profile hydration memakai `/api/user-bundle?action=get-profile`, yang merge `v_user_full_profile` dengan field `user_profiles` untuk `raffle_tickets_bought`, `raffles_created`, `last_streak_claim`, `is_base_social_verified`, dan identity metadata.
+- **On-Chain SOT Integration (v3.64.36)**: Nilai total XP dan Tier pengguna pada `HomePage` di-resolve secara primer dari hasil contract read (`useUserInfo` / `useNFTTiers`), menggunakan database `user_profiles` hanya sebagai loading skeleton/fallback.
+- Dashboard profile hydration memakai `/api/user-bundle?action=get-profile`, yang merge `v_user_full_profile` dengan field `user_profiles` for `raffle_tickets_bought`, `raffles_created`, `last_streak_claim`, `is_base_social_verified`, and identity metadata.
 - Welcome card: tombol copy wallet aktif, X/social action mengarah ke `/profile`, dan Basename badge hanya `Resolved` jika `is_base_social_verified === true`.
 - Daily check-in card melakukan wallet guard dan cooldown guard sebelum membuka `DailyClaimModal`; countdown memakai nilai terbaru dari DailyApp V16 `userStats.lastDailyBonusClaim`, DB mirror, dan optimistic timestamp setelah klaim sukses.
 - CMS feature cards dibaca dari Content CMS (`getFeatureCards`), difilter `visible !== false`, merender link internal via `<Link>`, link eksternal `https://` via `<a target="_blank" rel="noopener noreferrer">`, dan menampilkan empty state jika live CMS mengembalikan `[]`.
@@ -94,7 +95,7 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 Leaderboard bergantung pada kueri database yang efisien, bukan RPC blockchain agar bisa merender ribuan user seketika.
 
 ### 3.1 Leaderboard Read Flow
-- **Data Source**: Menggunakan tabel view `v_user_full_profile`.
+- **Data Source**: Menggunakan tabel view `v_user_full_profile` (kolom `last_onchain_xp` dengan fallback ke `total_xp`).
 - **Mechanism**:
   1. User mengunjungi halaman `/leaderboard`.
   2. Frontend men-fetch data API rank.
@@ -102,6 +103,7 @@ Leaderboard bergantung pada kueri database yang efisien, bukan RPC blockchain ag
 - **Rules**: 
   1. Dilarang me-loop panggil `MasterX` untuk mengambil ranking user, semuanya harus via database `user_profiles.total_xp`.
   2. **SBT-Gating Mandate (v3.59.2)**: User hanya akan ditampilkan di leaderboard jika memiliki NFT SBT di on-chain. Integritas ini dijaga oleh fungsi SQL `compute_leaderboard_tiers` yang melakukan join terhadap status minting.
+  3. **Leaderboard SOT Integration (v3.64.36)**: Peringkat leaderboard mengambil nilai `last_onchain_xp` secara langsung sebagai source of truth on-chain, menggunakan `total_xp` (database) hanya sebagai dynamic fallback jika database view belum tersinkronisasi.
 
 ### 3.2 Dua Jalur XP Sync (PENTING ΓÇö Jangan Regress!)
 
@@ -527,4 +529,4 @@ Untuk menjamin UX tanpa reload setelah transaksi swap diselesaikan di frontend:
 3. **Propagation Callback**: Komponen `SwapModal` memicu prop callback `onSuccess` untuk memicu refetch saldo, profil, status on-chain, dan SBT pada view induk (`ProfilePage.tsx` dan `CreateMissionPage.tsx`).
 
 ---
-*End of Source of Truth Document - Nexus v3.64.34-Hardened LOCKED.*
+*End of Source of Truth Document - Nexus v3.64.36-Hardened LOCKED.*

@@ -1,7 +1,7 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.35-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.36-Hardened)
 
-- **Ecosystem Version:** v3.64.35-Hardened
-- **Last Updated:** 2026-05-30T22:57:14+07:00
+- **Ecosystem Version:** v3.64.36-Hardened
+- **Last Updated:** 2026-05-31T08:05:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
@@ -4967,5 +4967,61 @@ Created admin migration script `scripts/sync/recover_xp_to_contract.cjs` that:
 - `scripts/sync/recover_xp_to_contract.cjs` [NEW] — Admin XP recovery migration tool
 
 ---
+
+## 61. Work Report v3.64.34-Hardened — SBT Post-Mint Sync Hardening
+**Status**: COMPLETED
+**Date**: 2026-05-30
+**Focus**: Resolving database tier drift and NFT gallery lock state after successful SBT minting transactions.
+
+### Key Results:
+- **Receipt-Verified SBT Sync**: Hardened `handleSyncSbtUpgrade` in `_user-bundle.ts` to decode the on-chain `NFTMinted` event from the transaction receipt before updating database state.
+- **One-Signature Mint Flow**: Replaced the legacy two-signature flow in `SBTMintPage.tsx` and `SBTUpgradeCard.tsx` with a single mint transaction, auto-triggering the backend sync trigger upon transaction confirmation.
+- **Gallery & Leaderboard Update**: Enforced immediate React Query cache invalidations for the profile and activity logs queries after sync settled, causing the NFT Gallery to immediately unlock cards and the Leaderboard to reflect the new tier without reloading.
+
+### Files Changed:
+- `Raffle_Frontend/api/_user-bundle.ts`
+- `Raffle_Frontend/src/pages/SBTMintPage.tsx`
+- `Raffle_Frontend/src/features/profile/components/SBTUpgradeCard.tsx`
+
+---
+
+## 62. Work Report v3.64.35-Hardened — Single Dashboard Source, Daily Claim Cooldown Sync & Empty SBT Pool
+**Status**: COMPLETED
+**Date**: 2026-05-30
+**Focus**: Consolidating user dashboard architecture into `HomePage.tsx` and resolving daily claim cooldown sync.
+
+### Key Results:
+- **Dashboard Consolidation**: Deleted `UnifiedDashboard.tsx` from the project directory. Ported all necessary user cards, referrers, identity verification checks, and activity log render systems into `HomePage.tsx` to prevent layout redundancy.
+- **Daily Claim Cooldown Sync**: Refactored `DailyClaimModal` and welcome cards to synchronize cooldown timers directly with `DailyAppV16` contract's on-chain timestamps (`userStats.lastDailyBonusClaim`), resolving the offline drift loop.
+- **SBT Pool Telemetry**: Programmed the SBT Reward Pool card to read and display live `totalSBTPoolBalance` from the MasterX contract. Handled `0` pool state with real-time empty-pool UI telemetry messages instead of displaying stale mockup balances.
+- **Virtual Daily Claims Log**: Mapped API XP rows with Daily Claim descriptions into virtual `DAILY` categories, ensuring the user profile's activity log remains structured.
+
+### Files Changed:
+- `Raffle_Frontend/src/components/UnifiedDashboard.tsx` [DELETE]
+- `Raffle_Frontend/src/pages/HomePage.tsx`
+- `Raffle_Frontend/src/pages/SBTMintPage.tsx`
+- `Raffle_Frontend/src/shared/context/PointsContext.tsx`
+- `scripts/sync/sync-sbt.cjs`
+
+---
+
+## 63. Work Report v3.64.36-Hardened — Pure On-Chain SOT Migration (with Paymaster) & Leaderboard Integration
+**Status**: COMPLETED
+**Date**: 2026-05-31
+**Focus**: Refactoring points, tier, and leaderboard ranking inputs to rely entirely on the blockchain as the supreme Source of Truth.
+
+### Key Results:
+- **Frontend SOT Integration**: Modified `HomePage.tsx` to read user points and current tier from contract states using the `useUserInfo` hook. Enabled optimistic state updates and graceful skeleton states reading from the database view.
+- **On-Chain Sequential Upgrade Guard**: Enforced sequential tier upgrades (`Rookie` -> `Bronze` -> `Silver` -> `Gold` -> `Platinum` -> `Diamond`) directly inside `SBTMintPage.tsx` and UI cards based on blockchain-verified XP values, avoiding manual client-side tier jumping.
+- **Leaderboard SOT Integration**: Updated `LeaderboardPage.tsx` to natively parse and display the `last_onchain_xp` field for each ranked user, using the database's aggregated `total_xp` as a safe loading/fallback mechanism.
+- **SQL View Alignment**: Appended `u.last_onchain_xp` column to the `v_user_full_profile` SQL View configuration in `remediate_view_security.sql` to support indexer data access.
+- **Ecosystem Build Verification**: Built the production client bundle using rollup/vite locally in `Raffle_Frontend` with 0 warnings or errors, and executed ecosystem sync status audit script with 100% success.
+
+### Files Changed:
+- `Raffle_Frontend/src/pages/HomePage.tsx`
+- `Raffle_Frontend/src/pages/LeaderboardPage.tsx`
+- `scripts/sync/remediate_view_security.sql`
+
+---
 *Created by Antigravity — Nexus Master Architect*
-*Integrity First. Nexus Synchronized. v3.64.33 LOCKED.*
+*Integrity First. Nexus Synchronized. v3.64.36 LOCKED.*

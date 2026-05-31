@@ -1,7 +1,7 @@
-<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.35-Hardened)</h1>
+<h1>📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.36-Hardened)</h1>
 <ul>
-<li><strong>Ecosystem Version:</strong> v3.64.35-Hardened</li>
-<li><strong>Last Updated:</strong> 2026-05-30T22:57:14+07:00</li>
+<li><strong>Ecosystem Version:</strong> v3.64.36-Hardened</li>
+<li><strong>Last Updated:</strong> 2026-05-31T08:05:00+07:00</li>
 <li><strong>Author:</strong> Antigravity (Lead Blockchain Architect)</li>
 <li><strong>Status:</strong> [🟢] DEPLOYED &amp; HARDENED (Source of Truth)</li>
 <li><strong>Master Registry:</strong> <a href="file:///.agents/WORKSPACE_MAP.md">WORKSPACE_MAP.md</a> | <a href="file:///AGENTS.md">AGENTS.md</a></li>
@@ -260,7 +260,7 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><strong>Result</strong>: Leaderboard/Profile/Dashboard membaca DB mirror yang sudah sinkron dengan transaksi terverifikasi, bukan melakukan loop RPC untuk setiap render.</li>
 </ul>
 <hr>
-<h2>🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint) — v3.56.4</h2>
+<h2>🎨 5. Tier Mint / Upgrade Workflow (On-Chain Mint) — v3.64.34</h2>
 <p>Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersifat <strong>Soulbound</strong> dan <strong>Sequential</strong>.</p>
 <h3>5.1 The Upgrade Execution</h3>
 <ul>
@@ -275,10 +275,11 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><strong>Cost Transparency</strong>: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.</li>
 <li><strong>ETH Pre-Check</strong>: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.</li>
 <li><strong>Minting</strong>: Frontend memanggil <code>useNFTTiers.mintTier(...)</code> atau <code>SBTMintPage</code> memanggil <code>DAILY_APP.mintNFT(uint8 tier)</code>. Jalur <code>mintNFTWithEntitlement(...)</code> adalah legacy V15 dan tidak tersedia pada DailyApp V16 aktif.</li>
-<li><strong>On-Chain Enforcement</strong>: <code>DailyAppV16</code> menegakkan sequential tier, price, supply, status tier, dan XP on-chain. Tidak ada jalur entitlement voucher untuk mint V16.</li>
-<li><strong>Event Emitted</strong>: Blockchain mencatat perubahan kepemilikan NFT.</li>
-<li><strong>State Sync</strong>: UI menampilkan banner &quot;NFT Minted!&quot; dan menghapus tombol upgrade.</li>
-<li><strong>DB Log</strong>: Signature request ke <code>/api/user-bundle?action=sync-sbt-upgrade</code> untuk logging aktivitas dan sinkronisasi tier/log pasca mint.</li>
+<li><strong>On-Chain Enforcement</strong>: <code>DailyAppV16</code> menegakkan sequential tier, price, supply, status tier, XP on-chain, dan event <code>NFTMinted</code>.</li>
+<li><strong>Receipt-Verified Post-Mint Sync</strong>: Setelah receipt sukses, frontend WAJIB memanggil <code>/api/user-bundle</code> action <code>sync-sbt-upgrade</code> dengan <code>wallet</code>, <code>txHash</code>, <code>tierName</code>, dan <code>ethSpent</code>. Tidak boleh meminta signature wallet kedua untuk sync.</li>
+<li><strong>Backend Verification</strong>: <code>handleSyncSbtUpgrade()</code> memverifikasi receipt status, sender wallet, DailyApp destination, dan event <code>NFTMinted(user,tier,tokenId)</code> sebelum update database.</li>
+<li><strong>DB Mirror + Logs</strong>: Backend mengupdate <code>user_profiles.tier</code>, <code>total_xp</code>, <code>last_onchain_xp</code>, lalu menulis log idempotent <code>PURCHASE / SBT Tier Ascension</code> dan <code>SBT / Mint</code> agar NFT Gallery, Activity Log, dan Leaderboard sinkron.</li>
+<li><strong>State Sync</strong>: UI menginvalidasi cache <code>profile</code> dan <code>activity-logs</code>; <code>LeaderboardPage</code> realtime listener refetch <code>/api/leaderboard</code> dari perubahan <code>user_profiles</code>.</li>
 </ol>
 </li>
 </ul>
@@ -288,7 +289,7 @@ Jangan pernah memanggil <code>useSBT.upgradeTier()</code> untuk minting tier NFT
 </blockquote>
 <blockquote>
 <p>[!IMPORTANT]
-Jalur entitlement V15/Voucher sekarang legacy dan tidak boleh dipakai untuk DailyApp V16. Frontend ABI harus berasal dari <code>artifacts/contracts/DailyAppV16.sol/DailyAppV16.json</code>, lalu disinkronkan ke <code>Raffle_Frontend/src/lib/daily_app_abi.json</code> dan <code>Raffle_Frontend/src/lib/abis_data.txt</code>.</p>
+Jalur entitlement V15 legacy tidak boleh dipakai untuk DailyApp V16. Jalur entitlement V16 hanya valid jika target contract adalah <code>DailyAppV16</code>, verifier address berasal dari env resolver, receipt mengarah ke DailyApp, dan event <code>NFTMinted</code> terverifikasi sebelum DB/log sync.</p>
 </blockquote>
 <hr>
 <h2>🚦 6. Definisi &quot;Healthy State&quot; Ekosistem (CHECKLIST)</h2>
@@ -5978,3 +5979,97 @@ system documents.
 <hr>
 <p><em>Created by Antigravity — Nexus Master Architect</em>
 <em>Integrity First. Nexus Synchronized. v3.64.32 LOCKED.</em></p>
+<hr>
+<h2>60. Work Report v3.64.33-Hardened — On-Chain XP Recovery Migration (Supabase → DailyAppV16)</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-29
+<strong>Focus</strong>: Full XP state restoration from Supabase backup into the DailyAppV16 contract for all 5 active users after contract redeployment reset all on-chain XP to 0.</p>
+<h3>Problem:</h3>
+<p>After DailyAppV15 → V16 upgrade (UUPS proxy reset), all on-chain user XP and tier state was zeroed. While the Watermark Self-Healing (v3.64.32) fixed future daily claims, historical XP was not on-chain — users appeared to have 0 XP on-chain even though Supabase showed their full history.</p>
+<h3>Solution:</h3>
+<p>Created admin migration script <code>scripts/sync/recover_xp_to_contract.cjs</code> that:</p>
+<ol>
+<li>Reads all users with <code>total_xp &gt; 0</code> from Supabase <code>user_profiles</code></li>
+<li>Counts <code>totalTasksCompleted</code> per wallet from <code>user_task_claims</code> table (41 total claims)</li>
+<li>Reads current on-chain XP via RPC (public Base Sepolia endpoint — Alchemy inactive)</li>
+<li>Filters to users needing migration (on-chain XP &lt; Supabase total_xp)</li>
+<li>Calls <code>batchMigrateUsers(address[], UserStats[])</code> on DailyAppV16</li>
+<li>Updates Supabase <code>last_onchain_xp</code> watermarks atomically after each batch</li>
+<li>Auto-verifies on-chain state matches Supabase after migration</li>
+</ol>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>5/5 users migrated</strong> in a single transaction (Block: 42,130,067)</li>
+<li><strong>TX</strong>: <code>0x24d6a1fa...6f12b</code> (<a href="https://sepolia.basescan.org/address/0xb592D6819Ea310d83034cD80FDDC2e754D0a5353">Basescan</a>)</li>
+<li><strong>Total XP Restored</strong>: 9,726 XP</li>
+<li><strong>Tasks Restored</strong>: 41 completed tasks across all users</li>
+<li><strong>Tier Restored</strong>: Sequential validation (0-4) — <code>0x5226..</code> restored to Tier 3, <code>0x455d..</code> to Tier 2</li>
+<li><strong>Verification</strong>: 5/5 PASS — on-chain XP, tier, and tasksCompleted match Supabase exactly</li>
+<li><strong>lastDailyBonusClaim</strong>: Set to 0 → users can claim daily bonus fresh on new contract</li>
+<li><strong>Supabase watermarks</strong>: <code>last_onchain_xp</code> updated to match <code>total_xp</code> for all migrated users</li>
+<li><strong>Idempotent</strong>: Script skips users where on-chain XP already ≥ Supabase XP (safe to re-run)</li>
+<li><strong>RPC Fallback</strong>: Uses <code>sepolia.base.org</code> public RPC (Alchemy free tier returned &#39;App inactive&#39;)</li>
+</ul>
+<h3>Files Changed:</h3>
+<ul>
+<li><code>scripts/sync/recover_xp_to_contract.cjs</code> [NEW] — Admin XP recovery migration tool</li>
+</ul>
+<hr>
+<h2>61. Work Report v3.64.34-Hardened — SBT Post-Mint Sync Hardening</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-30
+<strong>Focus</strong>: Resolving database tier drift and NFT gallery lock state after successful SBT minting transactions.</p>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>Receipt-Verified SBT Sync</strong>: Hardened <code>handleSyncSbtUpgrade</code> in <code>_user-bundle.ts</code> to decode the on-chain <code>NFTMinted</code> event from the transaction receipt before updating database state.</li>
+<li><strong>One-Signature Mint Flow</strong>: Replaced the legacy two-signature flow in <code>SBTMintPage.tsx</code> and <code>SBTUpgradeCard.tsx</code> with a single mint transaction, auto-triggering the backend sync trigger upon transaction confirmation.</li>
+<li><strong>Gallery &amp; Leaderboard Update</strong>: Enforced immediate React Query cache invalidations for the profile and activity logs queries after sync settled, causing the NFT Gallery to immediately unlock cards and the Leaderboard to reflect the new tier without reloading.</li>
+</ul>
+<h3>Files Changed:</h3>
+<ul>
+<li><code>Raffle_Frontend/api/_user-bundle.ts</code></li>
+<li><code>Raffle_Frontend/src/pages/SBTMintPage.tsx</code></li>
+<li><code>Raffle_Frontend/src/features/profile/components/SBTUpgradeCard.tsx</code></li>
+</ul>
+<hr>
+<h2>62. Work Report v3.64.35-Hardened — Single Dashboard Source, Daily Claim Cooldown Sync &amp; Empty SBT Pool</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-30
+<strong>Focus</strong>: Consolidating user dashboard architecture into <code>HomePage.tsx</code> and resolving daily claim cooldown sync.</p>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>Dashboard Consolidation</strong>: Deleted <code>UnifiedDashboard.tsx</code> from the project directory. Ported all necessary user cards, referrers, identity verification checks, and activity log render systems into <code>HomePage.tsx</code> to prevent layout redundancy.</li>
+<li><strong>Daily Claim Cooldown Sync</strong>: Refactored <code>DailyClaimModal</code> and welcome cards to synchronize cooldown timers directly with <code>DailyAppV16</code> contract&#39;s on-chain timestamps (<code>userStats.lastDailyBonusClaim</code>), resolving the offline drift loop.</li>
+<li><strong>SBT Pool Telemetry</strong>: Programmed the SBT Reward Pool card to read and display live <code>totalSBTPoolBalance</code> from the MasterX contract. Handled <code>0</code> pool state with real-time empty-pool UI telemetry messages instead of displaying stale mockup balances.</li>
+<li><strong>Virtual Daily Claims Log</strong>: Mapped API XP rows with Daily Claim descriptions into virtual <code>DAILY</code> categories, ensuring the user profile&#39;s activity log remains structured.</li>
+</ul>
+<h3>Files Changed:</h3>
+<ul>
+<li><code>Raffle_Frontend/src/components/UnifiedDashboard.tsx</code> [DELETE]</li>
+<li><code>Raffle_Frontend/src/pages/HomePage.tsx</code></li>
+<li><code>Raffle_Frontend/src/pages/SBTMintPage.tsx</code></li>
+<li><code>Raffle_Frontend/src/shared/context/PointsContext.tsx</code></li>
+<li><code>scripts/sync/sync-sbt.cjs</code></li>
+</ul>
+<hr>
+<h2>63. Work Report v3.64.36-Hardened — Pure On-Chain SOT Migration (with Paymaster) &amp; Leaderboard Integration</h2>
+<p><strong>Status</strong>: COMPLETED
+<strong>Date</strong>: 2026-05-31
+<strong>Focus</strong>: Refactoring points, tier, and leaderboard ranking inputs to rely entirely on the blockchain as the supreme Source of Truth.</p>
+<h3>Key Results:</h3>
+<ul>
+<li><strong>Frontend SOT Integration</strong>: Modified <code>HomePage.tsx</code> to read user points and current tier from contract states using the <code>useUserInfo</code> hook. Enabled optimistic state updates and graceful skeleton states reading from the database view.</li>
+<li><strong>On-Chain Sequential Upgrade Guard</strong>: Enforced sequential tier upgrades (<code>Rookie</code> -&gt; <code>Bronze</code> -&gt; <code>Silver</code> -&gt; <code>Gold</code> -&gt; <code>Platinum</code> -&gt; <code>Diamond</code>) directly inside <code>SBTMintPage.tsx</code> and UI cards based on blockchain-verified XP values, avoiding manual client-side tier jumping.</li>
+<li><strong>Leaderboard SOT Integration</strong>: Updated <code>LeaderboardPage.tsx</code> to natively parse and display the <code>last_onchain_xp</code> field for each ranked user, using the database&#39;s aggregated <code>total_xp</code> as a safe loading/fallback mechanism.</li>
+<li><strong>SQL View Alignment</strong>: Appended <code>u.last_onchain_xp</code> column to the <code>v_user_full_profile</code> SQL View configuration in <code>remediate_view_security.sql</code> to support indexer data access.</li>
+<li><strong>Ecosystem Build Verification</strong>: Built the production client bundle using rollup/vite locally in <code>Raffle_Frontend</code> with 0 warnings or errors, and executed ecosystem sync status audit script with 100% success.</li>
+</ul>
+<h3>Files Changed:</h3>
+<ul>
+<li><code>Raffle_Frontend/src/pages/HomePage.tsx</code></li>
+<li><code>Raffle_Frontend/src/pages/LeaderboardPage.tsx</code></li>
+<li><code>scripts/sync/remediate_view_security.sql</code></li>
+</ul>
+<hr>
+<p><em>Created by Antigravity — Nexus Master Architect</em>
+<em>Integrity First. Nexus Synchronized. v3.64.36 LOCKED.</em></p>

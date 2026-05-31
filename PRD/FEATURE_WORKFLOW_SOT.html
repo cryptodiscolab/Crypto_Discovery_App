@@ -1,5 +1,5 @@
-<h1>📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.35-Hardened)</h1>
-<p><strong>Last Updated</strong>: 2026-05-30 — Dashboard/Home Card Audit, Daily Claim Sync, and Activity History Contract Parity
+<h1>📜 FEATURE WORKFLOW: SOURCE OF TRUTH (v3.64.36-Hardened)</h1>
+<p><strong>Last Updated</strong>: 2026-05-31 — On-Chain SOT Migration with Paymaster &amp; Leaderboard Integration
 <strong>Status</strong>: 🛡️ ARCHITECTURALLY HARDENED</p>
 <p>Dokumen ini adalah <strong>Source of Truth</strong> absolut untuk seluruh alur fungsional (Feature Workflows) dan registri kontrak di dalam aplikasi Crypto Disco. Semua modifikasi dan pengembangan agen HARUS mematuhi alur ini untuk mencegah System Drift, desynchronization, atau kegagalan API. <strong>JANGAN berhalusinasi atau menebak</strong>. Jika ada yang error, rujuk dokumen ini.</p>
 <hr>
@@ -127,7 +127,8 @@ DailyApp frontend resolution MUST prefer <code>VITE_DAILY_APP_V16_ADDRESS</code>
 <h3>2.4 Home Dashboard / Card Function Contract</h3>
 <ul>
 <li><code>HomePage.tsx</code> adalah single source of truth untuk route dashboard <code>/</code>; implementasi dashboard penuh lama <code>UnifiedDashboard.tsx</code> sudah dihapus.</li>
-<li>Dashboard profile hydration memakai <code>/api/user-bundle?action=get-profile</code>, yang merge <code>v_user_full_profile</code> dengan field <code>user_profiles</code> untuk <code>raffle_tickets_bought</code>, <code>raffles_created</code>, <code>last_streak_claim</code>, <code>is_base_social_verified</code>, dan identity metadata.</li>
+<li><strong>On-Chain SOT Integration (v3.64.36)</strong>: Nilai total XP dan Tier pengguna pada <code>HomePage</code> di-resolve secara primer dari hasil contract read (<code>useUserInfo</code> / <code>useNFTTiers</code>), menggunakan database <code>user_profiles</code> hanya sebagai loading skeleton/fallback.</li>
+<li>Dashboard profile hydration memakai <code>/api/user-bundle?action=get-profile</code>, yang merge <code>v_user_full_profile</code> dengan field <code>user_profiles</code> for <code>raffle_tickets_bought</code>, <code>raffles_created</code>, <code>last_streak_claim</code>, <code>is_base_social_verified</code>, and identity metadata.</li>
 <li>Welcome card: tombol copy wallet aktif, X/social action mengarah ke <code>/profile</code>, dan Basename badge hanya <code>Resolved</code> jika <code>is_base_social_verified === true</code>.</li>
 <li>Daily check-in card melakukan wallet guard dan cooldown guard sebelum membuka <code>DailyClaimModal</code>; countdown memakai nilai terbaru dari DailyApp V16 <code>userStats.lastDailyBonusClaim</code>, DB mirror, dan optimistic timestamp setelah klaim sukses.</li>
 <li>CMS feature cards dibaca dari Content CMS (<code>getFeatureCards</code>), difilter <code>visible !== false</code>, merender link internal via <code>&lt;Link&gt;</code>, link eksternal <code>https://</code> via <code>&lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;&gt;</code>, dan menampilkan empty state jika live CMS mengembalikan <code>[]</code>.</li>
@@ -139,7 +140,7 @@ DailyApp frontend resolution MUST prefer <code>VITE_DAILY_APP_V16_ADDRESS</code>
 <p>Leaderboard bergantung pada kueri database yang efisien, bukan RPC blockchain agar bisa merender ribuan user seketika.</p>
 <h3>3.1 Leaderboard Read Flow</h3>
 <ul>
-<li><strong>Data Source</strong>: Menggunakan tabel view <code>v_user_full_profile</code>.</li>
+<li><strong>Data Source</strong>: Menggunakan tabel view <code>v_user_full_profile</code> (kolom <code>last_onchain_xp</code> dengan fallback ke <code>total_xp</code>).</li>
 <li><strong>Mechanism</strong>:<ol>
 <li>User mengunjungi halaman <code>/leaderboard</code>.</li>
 <li>Frontend men-fetch data API rank.</li>
@@ -149,6 +150,7 @@ DailyApp frontend resolution MUST prefer <code>VITE_DAILY_APP_V16_ADDRESS</code>
 <li><strong>Rules</strong>: <ol>
 <li>Dilarang me-loop panggil <code>MasterX</code> untuk mengambil ranking user, semuanya harus via database <code>user_profiles.total_xp</code>.</li>
 <li><strong>SBT-Gating Mandate (v3.59.2)</strong>: User hanya akan ditampilkan di leaderboard jika memiliki NFT SBT di on-chain. Integritas ini dijaga oleh fungsi SQL <code>compute_leaderboard_tiers</code> yang melakukan join terhadap status minting.</li>
+<li><strong>Leaderboard SOT Integration (v3.64.36)</strong>: Peringkat leaderboard mengambil nilai <code>last_onchain_xp</code> secara langsung sebagai source of truth on-chain, menggunakan <code>total_xp</code> (database) hanya sebagai dynamic fallback jika database view belum tersinkronisasi.</li>
 </ol>
 </li>
 </ul>
@@ -199,7 +201,7 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><strong>Result</strong>: Leaderboard/Profile/Dashboard membaca DB mirror yang sudah sinkron dengan transaksi terverifikasi, bukan melakukan loop RPC untuk setiap render.</li>
 </ul>
 <hr>
-<h2>≡ƒÄ¿ 5. Tier Mint / Upgrade Workflow (On-Chain Mint) ΓÇö v3.56.4</h2>
+<h2>≡ƒÄ¿ 5. Tier Mint / Upgrade Workflow (On-Chain Mint) ΓÇö v3.64.34</h2>
 <p>Status SBT/NFT ini adalah tiket representasi permanen dari Tier user yang bersifat <strong>Soulbound</strong> dan <strong>Sequential</strong>.</p>
 <h3>5.1 The Upgrade Execution</h3>
 <ul>
@@ -214,10 +216,11 @@ Database <strong>tidak memiliki trigger otomatis</strong> yang mengagregasi <cod
 <li><strong>Cost Transparency</strong>: UI menampilkan estimasi biaya USDC secara real-time berdasarkan konversi ETH terkini agar user mendapatkan kejelasan finansial sebelum konfirmasi.</li>
 <li><strong>ETH Pre-Check</strong>: Jika balance tidak cukup, tampilkan error toast SEBELUM buka wallet.</li>
 <li><strong>Minting</strong>: Frontend memanggil <code>useNFTTiers.mintTier(...)</code> atau <code>SBTMintPage</code> memanggil <code>DAILY_APP.mintNFT(uint8 tier)</code>. Jalur <code>mintNFTWithEntitlement(...)</code> adalah legacy V15 dan tidak tersedia pada DailyApp V16 aktif.</li>
-<li><strong>On-Chain Enforcement</strong>: <code>DailyAppV16</code> menegakkan sequential tier, price, supply, status tier, dan XP on-chain. Tidak ada jalur entitlement voucher untuk mint V16.</li>
-<li><strong>Event Emitted</strong>: Blockchain mencatat perubahan kepemilikan NFT.</li>
-<li><strong>State Sync</strong>: UI menampilkan banner &quot;NFT Minted!&quot; dan menghapus tombol upgrade.</li>
-<li><strong>DB Log</strong>: Signature request ke <code>/api/user-bundle?action=sync-sbt-upgrade</code> untuk logging aktivitas dan sinkronisasi tier/log pasca mint.</li>
+<li><strong>On-Chain Enforcement</strong>: <code>DailyAppV16</code> menegakkan sequential tier, price, supply, status tier, XP on-chain, dan event <code>NFTMinted</code>.</li>
+<li><strong>Receipt-Verified Post-Mint Sync</strong>: Setelah receipt sukses, frontend WAJIB memanggil <code>/api/user-bundle</code> action <code>sync-sbt-upgrade</code> dengan <code>wallet</code>, <code>txHash</code>, <code>tierName</code>, dan <code>ethSpent</code>. Tidak boleh meminta signature wallet kedua untuk sync.</li>
+<li><strong>Backend Verification</strong>: <code>handleSyncSbtUpgrade()</code> WAJIB memverifikasi receipt status, sender wallet, DailyApp destination, dan event <code>NFTMinted(user,tier,tokenId)</code> sebelum update DB.</li>
+<li><strong>DB Mirror + Logs</strong>: Backend mengupdate <code>user_profiles.tier</code>, <code>total_xp</code>, <code>last_onchain_xp</code>, lalu menulis log idempotent <code>PURCHASE / SBT Tier Ascension</code> dan <code>SBT / Mint</code> agar NFT Gallery, Activity Log, dan Leaderboard sinkron.</li>
+<li><strong>State Sync</strong>: UI menginvalidasi cache <code>profile</code> dan <code>activity-logs</code>; <code>LeaderboardPage</code> realtime listener refetch <code>/api/leaderboard</code> dari perubahan <code>user_profiles</code>.</li>
 </ol>
 </li>
 </ul>
@@ -227,7 +230,7 @@ Jangan pernah memanggil <code>useSBT.upgradeTier()</code> untuk minting tier NFT
 </blockquote>
 <blockquote>
 <p>[!IMPORTANT]
-Jalur entitlement V15/Voucher sekarang legacy dan tidak boleh dipakai untuk DailyApp V16. Frontend ABI harus berasal dari <code>artifacts/contracts/DailyAppV16.sol/DailyAppV16.json</code>, lalu disinkronkan ke <code>Raffle_Frontend/src/lib/daily_app_abi.json</code> dan <code>Raffle_Frontend/src/lib/abis_data.txt</code>.</p>
+Jalur entitlement V15 legacy tidak boleh dipakai untuk DailyApp V16. Jalur entitlement V16 hanya valid jika target contract adalah <code>DailyAppV16</code>, verifier address berasal dari env resolver, receipt mengarah ke DailyApp, dan event <code>NFTMinted</code> terverifikasi sebelum DB/log sync.</p>
 </blockquote>
 <hr>
 <h2>≡ƒÜª 6. Definisi &quot;Healthy State&quot; Ekosistem (CHECKLIST)</h2>
@@ -653,4 +656,4 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 <li><strong>Propagation Callback</strong>: Komponen <code>SwapModal</code> memicu prop callback <code>onSuccess</code> untuk memicu refetch saldo, profil, status on-chain, dan SBT pada view induk (<code>ProfilePage.tsx</code> dan <code>CreateMissionPage.tsx</code>).</li>
 </ol>
 <hr>
-<p><em>End of Source of Truth Document - Nexus v3.64.23-Hardened LOCKED.</em></p>
+<p><em>End of Source of Truth Document - Nexus v3.64.36-Hardened LOCKED.</em></p>

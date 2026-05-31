@@ -10,6 +10,7 @@ interface LeaderboardUser {
   pfp_url?: string;
   rank_name?: string;
   total_xp?: number | string;
+  last_onchain_xp?: number | string;
   streak_count?: number;
   raffle_wins?: number;
 }
@@ -75,7 +76,9 @@ function LeaderboardRow({ user, rank, isCurrentUser }: { user: LeaderboardUser, 
         </div>
       </div>
       <div className="flex flex-col items-end">
-        <span className="text-blue-500 font-black font-mono">{Number(user.total_xp || 0).toLocaleString()}</span>
+        <span className="text-blue-500 font-black font-mono">
+          {Number(user.last_onchain_xp !== undefined && user.last_onchain_xp !== null ? user.last_onchain_xp : (user.total_xp || 0)).toLocaleString()}
+        </span>
         <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">XP</span>
       </div>
     </div>
@@ -181,7 +184,7 @@ export function LeaderboardPage() {
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
             <Sparkles size={14} className="text-indigo-400 animate-pulse" />
             <span className="text-[11px] text-indigo-300 font-black uppercase tracking-widest leading-none">
-              {activeTab === 'All' ? 'SHOWING TOP 100 GLOBAL HUNTERS' : `SHOWING USERS IN ${activeTab.toUpperCase()} LEAGUE`}
+              {activeTab === 'All' ? 'SHOWING TOP 100 GLOBAL HUNTERS · INDEXED FROM ON-CHAIN SOT' : `SHOWING USERS IN ${activeTab.toUpperCase()} LEAGUE · INDEXED FROM ON-CHAIN SOT`}
             </span>
           </div>
         </div>

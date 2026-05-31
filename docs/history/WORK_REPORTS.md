@@ -4,6 +4,39 @@ This document serves as the central registry for historical Work Reports within 
 
 ---
 
+## 🟢 Work Report v3.64.36-Hardened: Pure On-Chain SOT Migration (with Paymaster) & Leaderboard Integration
+**Status**: ✅ IMPLEMENTED, VERIFIED & COMMITTED
+**Summary**: Overhauled the frontend points and tier resolution architecture to adhere to the pure On-Chain SOT paradigm. Users' XP and Tier status are now fetched and resolved directly from the blockchain via on-chain contract calls (`useUserInfo` and `useNFTTiers`), relegating Supabase to a backup/loading-skeleton state. Configured the global leaderboard to query `last_onchain_xp` with fallback compatibility, and finalized SQL view structures.
+**Changes**:
+1. **Frontend SOT Integration**: Modified `HomePage.tsx` to read user points and current tier from contract states using the `useUserInfo` hook. Enabled optimistic state updates and graceful skeleton states reading from the database view.
+2. **On-Chain Sequential Upgrade Guard**: Enforced sequential tier upgrades (`Rookie` -> `Bronze` -> `Silver` -> `Gold` -> `Platinum` -> `Diamond`) directly inside `SBTMintPage.tsx` and UI cards based on blockchain-verified XP values, avoiding manual client-side tier jumping.
+3. **Leaderboard SOT Integration**: Updated `LeaderboardPage.tsx` to natively parse and display the `last_onchain_xp` field for each ranked user, using the database's aggregated `total_xp` as a safe loading/fallback mechanism.
+4. **SQL View Alignment**: Appended `u.last_onchain_xp` column to the `v_user_full_profile` SQL View configuration in `remediate_view_security.sql` to support indexer data access.
+5. **Ecosystem Build Verification**: Built the production client bundle using rollup/vite locally in `Raffle_Frontend` with 0 warnings or errors, and executed ecosystem sync status audit script with 100% success.
+
+---
+
+## 🟢 Work Report v3.64.35-Hardened: Single Dashboard Source, Daily Claim Cooldown Sync & Empty SBT Pool
+**Status**: ✅ IMPLEMENTED, VERIFIED & COMMITTED
+**Summary**: Streamlined the user dashboard architecture by designating `HomePage.tsx` as the single active dashboard entry point and deleting the legacy `UnifiedDashboard.tsx` monolithic layout. Patched the daily claim cooldown countdown to check the actual on-chain claim timestamp dynamically, and added empty-pool telemetry constraints.
+**Changes**:
+1. **Dashboard Consolidation**: Deleted `UnifiedDashboard.tsx` from the project directory. Ported all necessary user cards, referrers, identity verification checks, and activity log render systems into `HomePage.tsx` to prevent layout redundancy.
+2. **Daily Claim Cooldown Sync**: Refactored `DailyClaimModal` and welcome cards to synchronize cooldown timers directly with `DailyAppV16` contract's on-chain timestamps (`userStats.lastDailyBonusClaim`), resolving the offline drift loop.
+3. **SBT Pool Telemetry**: Programmed the SBT Reward Pool card to read and display live `totalSBTPoolBalance` from the MasterX contract. Handled `0` pool state with real-time empty-pool UI telemetry messages instead of displaying stale mockup balances.
+4. **Virtual Daily Claims Log**: Mapped API XP rows with Daily Claim descriptions into virtual `DAILY` categories, ensuring the user profile's activity log remains structured.
+
+---
+
+## 🟢 Work Report v3.64.34-Hardened: SBT Post-Mint Sync Hardening
+**Status**: ✅ IMPLEMENTED, VERIFIED & COMMITTED
+**Summary**: Resolved the database tier drift and NFT gallery lock state after successful SBT minting transactions. Re-implemented the receipt-verified backend sync API `/api/user-bundle?action=sync-sbt-upgrade` without requiring a second frontend wallet signature prompt, ensuring immediate data alignment across Leaderboard, Profile, and NFT Gallery pages.
+**Changes**:
+1. **Receipt-Verified SBT Sync**: Hardened `handleSyncSbtUpgrade` in `_user-bundle.ts` to verifiably decode the on-chain `NFTMinted` event from the transaction receipt before updating database state.
+2. **One-Signature Mint Flow**: Replaced the legacy two-signature flow in `SBTMintPage.tsx` and `SBTUpgradeCard.tsx` with a single mint transaction, auto-triggering the backend sync trigger upon transaction confirmation.
+3. **Gallery & Leaderboard Update**: Enforced immediate React Query cache invalidations for the profile and activity logs queries after sync settled, causing the NFT Gallery to immediately unlock cards and the Leaderboard to reflect the new tier without reloading.
+
+---
+
 ## 🟢 Work Report v3.64.33-Hardened: On-Chain XP Recovery Migration (Supabase → DailyAppV16)
 **Status**: ✅ EXECUTED, VERIFIED & COMMITTED
 **Summary**: Executed full XP state restoration from Supabase `user_profiles` backup into the DailyAppV16 contract for all 5 active users after the UUPS proxy redeployment reset all on-chain state to 0. The v3.64.32 watermark self-healing fixed future daily claims; this migration restores historical XP, tiers, and task counts on-chain.

@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.35-Hardened)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.36-Hardened)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -873,3 +873,7 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 *Anti-Negligence Hook Activated: 2026-05-18. v3.64.19 AUTOMATED SCANNING & RTK INTEGRATED.*
 *E2E Security Audit & Protocol Compliance: 2026-05-23. v3.64.20 Ownable2Step + DailyAppV16 pause/nonReentrant + @sentry/react + axios pinned.*
 *Nexus Command Center (NCC) Audit & Hardening: 2026-05-25. v3.64.23-Hardened. index.html Native+ styling, DOM XSS sanitization, Hardhat compiling.*
+*On-Chain XP Recovery Migration Executed: 2026-05-29. v3.64.33 — 9,726 XP restored to DailyAppV16 via batchMigrateUsers(). 5/5 PASS.*
+*SBT Post-Mint Sync Hardened: 2026-05-30. v3.64.34 — Receipt-verified sync-sbt-upgrade without second prompt. Unlocked NFT Gallery & Leaderboard update. PASS.*
+*Dashboard/Home Card Audit Completed: 2026-05-30. v3.64.35 — HomePage single source, receipt-verified daily claim sync, API virtual DAILY history over DB-valid XP rows. PASS.*
+*On-Chain SOT Migration Completed: 2026-05-31. v3.64.36 — Refactored LeaderboardPage to support last_onchain_xp directly with dynamic total_xp fallback. Updated remediate_view_security.sql view. Verified build. PASS.*
