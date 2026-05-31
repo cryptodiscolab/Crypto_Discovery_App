@@ -2,7 +2,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { withMiddleware } from './_shared/middleware.js';
-import { verifyMessage } from 'viem';
+import { verifyMessage, parseEventLogs, type TransactionReceipt } from 'viem';
 import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
@@ -13,6 +13,8 @@ import {
     TELEGRAM_CHAT_ID,
     TELEGRAM_API_URL,
     ZERO_ADDRESS,
+    ENTRY_POINT_ADDRESS,
+    ENTRY_POINT_ABI,
     DISCO_APP_URL,
     isMainnet,
     sanitizeError,
@@ -20,6 +22,28 @@ import {
 } from './_shared/constants.js';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+const RAFFLE_WINNER_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'raffleId', type: 'uint256' },
+            { indexed: true, name: 'winner', type: 'address' },
+            { indexed: false, name: 'prize', type: 'uint256' }
+        ],
+        name: 'RaffleWinner',
+        type: 'event'
+    }
+] as const;
+
+type RaffleWinnerLog = {
+    address?: string;
+    args?: {
+        raffleId?: bigint;
+        winner?: `0x${string}`;
+        prize?: bigint;
+    };
+};
 
 async function isAuthorizedAdmin(walletAddress: string): Promise<boolean> {
     if (!walletAddress) return false;
@@ -34,6 +58,68 @@ async function isAuthorizedAdmin(walletAddress: string): Promise<boolean> {
 
     if (error || !data) return false;
     return !!data.is_admin;
+}
+
+function verifyTransactionOwnership(receipt: TransactionReceipt, walletAddress: string): boolean {
+    if (!receipt || receipt.status !== 'success') return false;
+    const cleanAddress = walletAddress.toLowerCase();
+
+    if (receipt.from.toLowerCase() === cleanAddress) {
+        return true;
+    }
+
+    if (!ENTRY_POINT_ADDRESS || receipt.to?.toLowerCase() !== ENTRY_POINT_ADDRESS.toLowerCase()) {
+        return false;
+    }
+
+    try {
+        const parsedLogs = parseEventLogs({
+            abi: ENTRY_POINT_ABI,
+            eventName: 'UserOperationEvent',
+            logs: receipt.logs,
+            strict: false
+        });
+
+        const hasUserOp = parsedLogs.some((log) => {
+            const logAddr = (log as { address?: string }).address;
+            const logArgs = (log as { args?: { sender?: string } }).args;
+            return logAddr?.toLowerCase() === ENTRY_POINT_ADDRESS.toLowerCase() &&
+                   logArgs?.sender?.toLowerCase() === cleanAddress;
+        });
+
+        if (hasUserOp) return true;
+    } catch (err) {
+        console.error('[verifyTransactionOwnership] Failed to parse EntryPoint logs:', err);
+    }
+
+    return false;
+}
+
+function isReceiptTo(receipt: TransactionReceipt, targetAddress?: string | null): boolean {
+    return !!targetAddress && receipt.to?.toLowerCase() === targetAddress.toLowerCase();
+}
+
+function hasRaffleWinnerClaim(receipt: TransactionReceipt, walletAddress: string, raffleId: string): boolean {
+    const cleanAddress = walletAddress.toLowerCase();
+    try {
+        const expectedRaffleId = BigInt(raffleId);
+        const winnerLogs = parseEventLogs({
+            abi: RAFFLE_WINNER_EVENT_ABI,
+            eventName: 'RaffleWinner',
+            logs: receipt.logs,
+            strict: false
+        }) as RaffleWinnerLog[];
+
+        return winnerLogs.some((log) =>
+            log.address?.toLowerCase() === RAFFLE_ADDRESS.toLowerCase() &&
+            String(log.args?.winner || '').toLowerCase() === cleanAddress &&
+            BigInt(log.args?.raffleId || 0n) === expectedRaffleId &&
+            BigInt(log.args?.prize || 0n) > 0n
+        );
+    } catch (err) {
+        console.error('[hasRaffleWinnerClaim] Failed to parse RaffleWinner logs:', err);
+        return false;
+    }
 }
 
 // ─── Telegram Notification Helper ────────────────────────────────────────────
@@ -188,9 +274,18 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
         if (tx_hash) {
             try {
                 const receipt = await rpcClient.getTransactionReceipt({ hash: tx_hash as `0x${string}` });
-                txVerified = receipt?.status === 'success' && receipt.from.toLowerCase() === normalizedWallet;
+                const isOwner = verifyTransactionOwnership(receipt, normalizedWallet);
+                const isRaffleTx = isReceiptTo(receipt, RAFFLE_ADDRESS);
+                const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+                const hasWinnerEvent = hasRaffleWinnerClaim(receipt, normalizedWallet, String(raffle_id));
+
+                if (!isOwner || (!isRaffleTx && !isEntryPointTx) || !hasWinnerEvent) {
+                    return res.status(400).json({ error: 'Invalid raffle claim transaction proof' });
+                }
+
+                txVerified = true;
             } catch {
-                // tx_hash verification is best-effort — claim still proceeds based on winner array check
+                return res.status(503).json({ error: 'RPC_SYNC_DELAYED', message: 'Raffle claim transaction not verifiable yet.' });
             }
         }
 

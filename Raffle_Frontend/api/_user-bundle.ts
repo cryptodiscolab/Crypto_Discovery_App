@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { withMiddleware } from './_shared/middleware.js';
 import type { Database } from './_shared/database.types.js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
-import { verifyMessage, keccak256, encodePacked, formatEther, parseEventLogs } from 'viem';
+import { verifyMessage, keccak256, encodePacked, formatEther, parseEventLogs, type TransactionReceipt } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import crypto from 'crypto';
 import {
@@ -16,6 +16,8 @@ import {
     RAFFLE_ADDRESS,
     RAFFLE_ABI,
     DAILY_APP_USER_STATS_ABI,
+    ENTRY_POINT_ADDRESS,
+    ENTRY_POINT_ABI,
     PROFILE_LIMITS,
     MASTER_ADMINS,
     MASTER_X_ADDRESS,
@@ -95,11 +97,57 @@ const DAILY_APP_SBT_MINT_EVENT_ABI = [
     }
 ] as const;
 
+const DAILY_APP_TASK_COMPLETED_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'user', type: 'address' },
+            { indexed: false, name: 'taskId', type: 'uint256' },
+            { indexed: false, name: 'reward', type: 'uint256' },
+            { indexed: false, name: 'timestamp', type: 'uint256' }
+        ],
+        name: 'TaskCompleted',
+        type: 'event'
+    }
+] as const;
+
+const MASTER_X_CLAIM_PROCESSED_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'user', type: 'address' },
+            { indexed: false, name: 'tier', type: 'uint8' },
+            { indexed: false, name: 'amount', type: 'uint256' }
+        ],
+        name: 'ClaimProcessed',
+        type: 'event'
+    }
+] as const;
+
 type DailyAppSbtMintLog = {
     args?: {
         user?: `0x${string}`;
         tier?: number;
         tokenId?: bigint;
+    };
+};
+
+type DailyAppTaskCompletedLog = {
+    address?: string;
+    args?: {
+        user?: `0x${string}`;
+        taskId?: bigint;
+        reward?: bigint;
+        timestamp?: bigint;
+    };
+};
+
+type MasterXClaimProcessedLog = {
+    address?: string;
+    args?: {
+        user?: `0x${string}`;
+        tier?: number;
+        amount?: bigint;
     };
 };
 
@@ -567,6 +615,87 @@ async function handleLoginSync(req: VercelRequest, res: VercelResponse) {
     }
 }
 
+function verifyTransactionOwnership(receipt: TransactionReceipt, walletAddress: string): boolean {
+    if (!receipt || receipt.status !== 'success') return false;
+    const cleanAddress = walletAddress.toLowerCase();
+
+    if (receipt.from.toLowerCase() === cleanAddress) {
+        return true;
+    }
+
+    if (!ENTRY_POINT_ADDRESS || receipt.to?.toLowerCase() !== ENTRY_POINT_ADDRESS.toLowerCase()) {
+        return false;
+    }
+
+    try {
+        const parsedLogs = parseEventLogs({
+            abi: ENTRY_POINT_ABI,
+            eventName: 'UserOperationEvent',
+            logs: receipt.logs,
+            strict: false
+        });
+
+        const hasUserOp = parsedLogs.some((log) => {
+            const logAddr = (log as { address?: string }).address;
+            const logArgs = (log as { args?: { sender?: string } }).args;
+            return logAddr?.toLowerCase() === ENTRY_POINT_ADDRESS.toLowerCase() &&
+                   logArgs?.sender?.toLowerCase() === cleanAddress;
+        });
+
+        if (hasUserOp) return true;
+    } catch (err) {
+        console.error('[verifyTransactionOwnership] Failed to parse EntryPoint logs:', err);
+    }
+
+    return false;
+}
+
+function isReceiptTo(receipt: TransactionReceipt, targetAddress?: string | null): boolean {
+    return !!targetAddress && receipt.to?.toLowerCase() === targetAddress.toLowerCase();
+}
+
+function hasDailyAppDailyClaim(receipt: TransactionReceipt, walletAddress: string): boolean {
+    const cleanAddress = walletAddress.toLowerCase();
+    try {
+        const taskLogs = parseEventLogs({
+            abi: DAILY_APP_TASK_COMPLETED_EVENT_ABI,
+            eventName: 'TaskCompleted',
+            logs: receipt.logs,
+            strict: false
+        }) as DailyAppTaskCompletedLog[];
+
+        return taskLogs.some((log) =>
+            log.address?.toLowerCase() === DAILY_APP_ADDRESS.toLowerCase() &&
+            String(log.args?.user || '').toLowerCase() === cleanAddress &&
+            BigInt(log.args?.taskId || 0n) === 0n
+        );
+    } catch (err) {
+        console.error('[hasDailyAppDailyClaim] Failed to parse TaskCompleted logs:', err);
+        return false;
+    }
+}
+
+function hasMasterXPoolClaim(receipt: TransactionReceipt, walletAddress: string): boolean {
+    const cleanAddress = walletAddress.toLowerCase();
+    try {
+        const claimLogs = parseEventLogs({
+            abi: MASTER_X_CLAIM_PROCESSED_EVENT_ABI,
+            eventName: 'ClaimProcessed',
+            logs: receipt.logs,
+            strict: false
+        }) as MasterXClaimProcessedLog[];
+
+        return claimLogs.some((log) =>
+            log.address?.toLowerCase() === MASTER_X_ADDRESS.toLowerCase() &&
+            String(log.args?.user || '').toLowerCase() === cleanAddress &&
+            BigInt(log.args?.amount || 0n) > 0n
+        );
+    } catch (err) {
+        console.error('[hasMasterXPoolClaim] Failed to parse ClaimProcessed logs:', err);
+        return false;
+    }
+}
+
 async function handleXpSync(req: VercelRequest, res: VercelResponse) {
     const { wallet_address, signature, message, tx_hash } = req.body as XpSyncPayload;
     if (!wallet_address) return res.status(400).json({ error: 'Missing wallet' });
@@ -594,12 +723,15 @@ async function handleXpSync(req: VercelRequest, res: VercelResponse) {
                 const receipt = await rpcClient.waitForTransactionReceipt({ hash: cleanTxHash as `0x${string}`, timeout: 10000 });
                 
                 // [SECURITY FIX] Ensure the transaction was actually sent to our DailyApp contract, not just any random address
-                const isDailyAppTx = receipt?.to?.toLowerCase() === DAILY_APP_ADDRESS.toLowerCase();
+                const isDailyAppTx = isReceiptTo(receipt, DAILY_APP_ADDRESS);
+                const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+                const isOwner = verifyTransactionOwnership(receipt, cleanAddress);
+                const hasDailyClaimEvent = hasDailyAppDailyClaim(receipt, cleanAddress);
                 
-                if (receipt?.status === 'success' && receipt.from.toLowerCase() === cleanAddress && isDailyAppTx) {
+                if (receipt?.status === 'success' && isOwner && (isDailyAppTx || isEntryPointTx) && hasDailyClaimEvent) {
                     skipSignature = true;
-                } else if (receipt && (!isDailyAppTx || receipt.from.toLowerCase() !== cleanAddress)) {
-                    return res.status(400).json({ error: 'Invalid transaction target or sender.' });
+                } else if (receipt && (!isOwner || (!isDailyAppTx && !isEntryPointTx) || !hasDailyClaimEvent)) {
+                    return res.status(400).json({ error: 'Invalid transaction target, sender, or DailyApp claim event.' });
                 }
             } catch (hashErr: unknown) {
                 const msg = hashErr instanceof Error ? hashErr.message.toLowerCase() : String(hashErr).toLowerCase();
@@ -1156,7 +1288,7 @@ async function handleFrontendLogActivity(req: VercelRequest, res: VercelResponse
             }
             try {
                 const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
-                receiptVerified = receipt?.status === 'success' && receipt.from.toLowerCase() === wallet_address.toLowerCase();
+                receiptVerified = verifyTransactionOwnership(receipt, wallet_address);
             } catch (err: unknown) {
                 const msg = err instanceof Error ? err.message : String(err);
                 console.error('[handleFrontendLogActivity] Transaction receipt verification error:', msg);
@@ -1711,11 +1843,12 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
         if (!receipt || receipt.status !== 'success') {
             return res.status(400).json({ error: 'SBT mint transaction reverted or invalid on-chain' });
         }
-        if (receipt.from.toLowerCase() !== cleanWallet) {
-            return res.status(403).json({ error: 'Transaction sender does not match wallet' });
-        }
-        if (DAILY_APP_ADDRESS && receipt.to?.toLowerCase() !== DAILY_APP_ADDRESS.toLowerCase()) {
-            return res.status(403).json({ error: 'Transaction destination is not the DailyApp contract' });
+        const isOwner = verifyTransactionOwnership(receipt, cleanWallet);
+        const isDailyAppTx = isReceiptTo(receipt, DAILY_APP_ADDRESS);
+        const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+
+        if (!isOwner || (!isDailyAppTx && !isEntryPointTx)) {
+            return res.status(403).json({ error: 'Transaction verification failed: invalid sender or destination' });
         }
 
         const mintLogs = parseEventLogs({
@@ -1723,8 +1856,12 @@ async function handleSyncSbtUpgrade(req: VercelRequest, res: VercelResponse) {
             eventName: 'NFTMinted',
             logs: receipt.logs,
             strict: false
-        }) as DailyAppSbtMintLog[];
-        const mintLog = mintLogs.find((log) => String(log.args?.user || '').toLowerCase() === cleanWallet);
+        }) as (DailyAppSbtMintLog & { address: string })[];
+
+        const mintLog = mintLogs.find((log) =>
+            String(log.args?.user || '').toLowerCase() === cleanWallet &&
+            log.address?.toLowerCase() === DAILY_APP_ADDRESS?.toLowerCase()
+        );
         if (!mintLog) {
             return res.status(400).json({ error: 'Transaction did not emit a DailyApp SBT mint event for this wallet' });
         }
@@ -1948,12 +2085,13 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Transaction reverted on-chain' });
         }
 
-        if (receipt.from.toLowerCase() !== wallet.toLowerCase()) {
-            return res.status(403).json({ error: 'Transaction sender does not match wallet' });
-        }
+        const isOwner = verifyTransactionOwnership(receipt, wallet);
+        const isMasterXTx = isReceiptTo(receipt, MASTER_X_ADDRESS);
+        const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+        const hasPoolClaimEvent = hasMasterXPoolClaim(receipt, wallet);
 
-        if (DAILY_APP_ADDRESS && receipt.to?.toLowerCase() !== DAILY_APP_ADDRESS.toLowerCase()) {
-            return res.status(403).json({ error: 'Transaction destination is not the DailyApp contract' });
+        if (!isOwner || (!isMasterXTx && !isEntryPointTx) || !hasPoolClaimEvent) {
+            return res.status(403).json({ error: 'Transaction verification failed: invalid sender, destination, or pool claim event' });
         }
 
         await logActivity({
@@ -2016,12 +2154,14 @@ async function handleDailyClaim(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Transaction reverted or invalid on-chain' });
         }
 
-        // 3. Verify sender matches wallet and target is DailyApp contract
-        if (receipt.from.toLowerCase() !== cleanAddress) {
-            return res.status(403).json({ error: 'Transaction sender does not match wallet' });
-        }
-        if (DAILY_APP_ADDRESS && receipt.to?.toLowerCase() !== DAILY_APP_ADDRESS.toLowerCase()) {
-            return res.status(403).json({ error: 'Transaction destination is not DailyApp contract' });
+        // 3. Verify sender matches wallet and target is DailyApp contract (supports EOA and AA via EntryPoint)
+        const isOwner = verifyTransactionOwnership(receipt, cleanAddress);
+        const isDailyAppTx = isReceiptTo(receipt, DAILY_APP_ADDRESS);
+        const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+        const hasDailyClaimEvent = hasDailyAppDailyClaim(receipt, cleanAddress);
+
+        if (!isOwner || (!isDailyAppTx && !isEntryPointTx) || !hasDailyClaimEvent) {
+            return res.status(403).json({ error: 'Transaction verification failed: invalid sender, destination, or DailyApp claim event' });
         }
 
         // 4. Read current on-chain stats

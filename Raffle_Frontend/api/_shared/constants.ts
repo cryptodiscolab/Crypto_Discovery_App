@@ -209,6 +209,24 @@ if (!USDC_ADDRESS) console.warn('[Zero-Hardcode] USDC_ADDRESS is empty — set V
 
 // Zero-address sentinel for filtering
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+export const ENTRY_POINT_ADDRESS = getEnv('ENTRY_POINT_ADDRESS', getEnv('VITE_ENTRY_POINT_ADDRESS', '')).toLowerCase() as `0x${string}`;
+if (!ENTRY_POINT_ADDRESS) console.warn('[Zero-Hardcode] ENTRY_POINT_ADDRESS is empty — AA receipt ownership checks are disabled');
+export const ENTRY_POINT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'userOpHash', type: 'bytes32' },
+            { indexed: true, name: 'sender', type: 'address' },
+            { indexed: true, name: 'paymaster', type: 'address' },
+            { indexed: false, name: 'nonce', type: 'uint256' },
+            { indexed: false, name: 'success', type: 'bool' },
+            { indexed: false, name: 'actualGasCost', type: 'uint256' },
+            { indexed: false, name: 'actualGasUsed', type: 'uint256' }
+        ],
+        name: 'UserOperationEvent',
+        type: 'event'
+    }
+] as const;
 export const NATIVE_TOKEN_ALIASES = new Set([ZERO_ADDRESS, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee']);
 
 // External API endpoints

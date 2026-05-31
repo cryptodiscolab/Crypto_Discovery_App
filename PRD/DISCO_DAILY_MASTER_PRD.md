@@ -113,7 +113,7 @@ Ini adalah alur paling rentan yang telah diperkeras dengan mekanisme kompensasi 
 - **Workflow (Backend `handleDailyClaim`)**:
   1. **Idempotency**: Cek `user_activity_logs.tx_hash` terlebih dahulu agar transaksi yang sama tidak menambah XP dua kali.
   2. **Receipt Verification**: Tunggu receipt RPC. Jika belum terindeks, API mengembalikan `RPC_SYNC_DELAYED`/503 supaya frontend memasukkan job ke `pending_sync_jobs`.
-  3. **Sender + Target Guard**: Validasi `receipt.from === wallet_address` dan `receipt.to === DailyApp V16`.
+  3. **Sender + Action Guard**: Validasi `receipt.from === wallet_address` (EOA) ATAU `UserOperationEvent.sender === wallet_address` dari `ENTRY_POINT_ADDRESS` (Account Abstraction), lalu wajib parse event aksi kontrak yang sesuai (`TaskCompleted` DailyApp task 0 untuk daily claim). Pengecekan tujuan luar (`receipt.to`) hanya menerima `DailyApp V16` atau `ENTRY_POINT_ADDRESS`; `ENTRY_POINT_ADDRESS` wajib berasal dari env, bukan literal hardcode.
   4. **On-Chain Truth Read**: Baca `userStats(wallet)` dari DailyApp V16 untuk mendapatkan XP, streak, dan tier aktual.
   5. **DB Mirror**: Update `user_profiles.last_onchain_xp`, `streak_count`, `last_streak_claim`, dan `tier`.
   6. **Delta XP Only**: Panggil `fn_increment_xp(p_wallet, p_amount)` hanya untuk delta positif antara on-chain XP dan DB mirror.

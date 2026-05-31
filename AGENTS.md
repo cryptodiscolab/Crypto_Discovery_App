@@ -157,3 +157,5 @@ To ensure errors are never repeated, follow the **A-D-R-R-E** cycle:
 *On-Chain XP Recovery Migration Executed: 2026-05-29. v3.64.33 — 9,726 XP restored to DailyAppV16 via batchMigrateUsers(). 5/5 PASS.*
 *Dashboard/Home Card Audit Completed: 2026-05-30. v3.64.35 — HomePage single source, receipt-verified daily claim sync, API virtual DAILY history over DB-valid XP rows. PASS.*
 *On-Chain SOT Migration Completed: 2026-05-31. v3.64.36 — Refactored LeaderboardPage to support last_onchain_xp directly with dynamic total_xp fallback. Updated remediate_view_security.sql view. Verified build. PASS.*
+*Account Abstraction Integration Completed: 2026-05-31. v3.64.37 — Implemented verifyTransactionOwnership() to support ERC-4337 smart accounts via EntryPoint logs parsing in API bundles. Updated Daily Claim, SBT Mint, Pool Claim, and Prize Claim sync handlers. Verified build. PASS.*
+*Account Abstraction Proof Hardened: 2026-05-31. v3.64.38 — EntryPoint address moved to env and AA receipt sync now requires action-specific contract events for Daily Claim, SBT Mint, Pool Claim, and Prize Claim. Secret-like work report artifacts redacted. PASS pending final hook.*
