@@ -26,6 +26,7 @@ class TwitterService {
      * @returns {Promise<boolean>}
      */
     async verifyFollow(userId, targetUserId) {
+        if (!this.readOnlyClient) throw new Error('Twitter API client is not configured on the server. Please check TWITTER_BEARER_TOKEN.');
         try {
             let nextToken = null;
             let page = 1;
@@ -59,6 +60,7 @@ class TwitterService {
      * @returns {Promise<boolean>}
      */
     async verifyLike(userId, tweetId) {
+        if (!this.readOnlyClient) throw new Error('Twitter API client is not configured on the server. Please check TWITTER_BEARER_TOKEN.');
         try {
             let nextToken = null;
             let page = 1;
@@ -92,6 +94,7 @@ class TwitterService {
      * @returns {Promise<boolean>}
      */
     async verifyRetweet(userId, tweetId) {
+        if (!this.readOnlyClient) throw new Error('Twitter API client is not configured on the server. Please check TWITTER_BEARER_TOKEN.');
         try {
             let nextToken = null;
             let page = 1;
@@ -125,6 +128,7 @@ class TwitterService {
      * @returns {Promise<boolean>}
      */
     async verifyQuote(userId, tweetId) {
+        if (!this.readOnlyClient) throw new Error('Twitter API client is not configured on the server. Please check TWITTER_BEARER_TOKEN.');
         try {
             let nextToken = null;
             let page = 1;
@@ -164,6 +168,7 @@ class TwitterService {
      * @returns {Promise<boolean>}
      */
     async verifyComment(userId, tweetId) {
+        if (!this.readOnlyClient) throw new Error('Twitter API client is not configured on the server. Please check TWITTER_BEARER_TOKEN.');
         try {
             let nextToken = null;
             let page = 1;
@@ -202,6 +207,7 @@ class TwitterService {
      * @returns {Promise<Object>}
      */
     async getUserByUsername(username) {
+        if (!this.readOnlyClient) throw new Error('Twitter API client is not configured on the server. Please check TWITTER_BEARER_TOKEN.');
         try {
             const response = await withRetry(() => this.readOnlyClient.v2.userByUsername(username), TWITTER_RETRY_OPTS);
             return response.data || null;
@@ -217,6 +223,7 @@ class TwitterService {
      * @returns {Promise<Object>}
      */
     async getUserById(userId) {
+        if (!this.readOnlyClient) throw new Error('Twitter API client is not configured on the server. Please check TWITTER_BEARER_TOKEN.');
         try {
             const response = await withRetry(() => this.readOnlyClient.v2.user(userId, {
                 'user.fields': ['profile_image_url', 'description']
@@ -236,6 +243,7 @@ class TwitterService {
      * @returns {Promise<boolean>}
      */
     async verifyLinkage(userId, walletAddress, verificationCode) {
+        if (!this.readOnlyClient) return false;
         try {
             // Get user's recent tweets
             const response = await withRetry(() => this.readOnlyClient.v2.userTimeline(userId, {
@@ -256,6 +264,7 @@ class TwitterService {
             return false;
         }
     }
+
 }
 
 module.exports = new TwitterService();

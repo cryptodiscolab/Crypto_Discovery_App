@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { verifyMessage, createPublicClient, http, decodeEventLog } from 'viem';
+import { verifyMessage, createPublicClient, http, decodeEventLog, parseUnits, keccak256, toBytes, encodePacked, parseEventLogs } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import { VercelResponse } from '@vercel/node';
 import { 
     SUPABASE_URL, 
@@ -11,9 +12,17 @@ import {
     DAILY_APP_USER_STATS_ABI,
     RAFFLE_EVENT_ABI,
     IS_MAINNET,
+    ERC20_ABI,
+    UGC_REWARD_ESCROW_ABI,
+    UGC_REWARD_ESCROW_ADDRESS,
+    SAFE_MULTISIG,
+    WALLET_BOT_SIGNER,
+    CHAIN_ID,
     sanitizeError,
     logSystemError,
-    awardOnChainXp
+    awardOnChainXp,
+    API_SECRET,
+    VERIFY_SERVER_URL
 } from './_shared/constants.js';
 import type { 
     PointSetting,
@@ -26,6 +35,23 @@ import type {
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 type UserTaskClaimInsert = Database['public']['Tables']['user_task_claims']['Insert'];
 type OnChainXpFunction = Parameters<typeof awardOnChainXp>[0];
+type RewardPoolRpcResult = {
+    success?: boolean;
+    error?: string;
+    remaining_reward_pool?: number | string | null;
+};
+type CampaignClaimStatus = 'paid' | 'earned_pending_onchain_claim' | 'xp_only' | string | null;
+type UgcRewardClaimedLog = {
+    address?: string;
+    args?: {
+        campaignId?: `0x${string}`;
+        claimant?: string;
+        token?: string;
+        amount?: bigint;
+        deadline?: bigint;
+        nonce?: bigint;
+    };
+};
 
 const publicClient = createPublicClient({
     chain: VIEM_CHAIN,
@@ -318,6 +344,179 @@ async function requireOnChainXpAward(functionName: OnChainXpFunction, args: read
     return { txHash, ...stats };
 }
 
+async function decrementCampaignRewardPoolAtomic(campaignId: string, rewardAmount: number): Promise<number | null> {
+    if (!Number.isFinite(rewardAmount) || rewardAmount <= 0) return null;
+
+    const { data, error } = await supabaseAdmin.rpc('fn_decrement_campaign_reward_pool_atomic', {
+        p_campaign_id: campaignId,
+        p_reward_amount: rewardAmount
+    });
+
+    if (!error) {
+        const result = data as RewardPoolRpcResult | null;
+        if (!result?.success) throw new Error(result?.error || 'UGC_REWARD_POOL_DECREMENT_FAILED');
+        return Number(result.remaining_reward_pool ?? 0);
+    }
+
+    const missingRpc = error.code === 'PGRST202' || /fn_decrement_campaign_reward_pool_atomic/i.test(error.message || '');
+    if (!missingRpc) throw error;
+
+    await logSystemError({
+        severity: 'critical',
+        surface: 'api',
+        bundle: 'tasks-bundle',
+        action: 'decrementCampaignRewardPoolAtomic',
+        message: `Atomic pool RPC missing; using non-atomic fallback: ${error.message}`
+    }).catch(() => {});
+
+    const { data: campaign, error: readErr } = await supabaseAdmin
+        .from('campaigns')
+        .select('remaining_reward_pool')
+        .eq('id', campaignId)
+        .maybeSingle();
+
+    if (readErr) throw readErr;
+
+    const current = Number(campaign?.remaining_reward_pool || 0);
+    if (current < rewardAmount) throw new Error('INSUFFICIENT_REWARD_POOL');
+    const nextRemaining = Math.max(0, current - rewardAmount);
+
+    const { data: updated, error: updateErr } = await supabaseAdmin
+        .from('campaigns')
+        .update({ remaining_reward_pool: nextRemaining })
+        .eq('id', campaignId)
+        .gte('remaining_reward_pool', rewardAmount)
+        .select('remaining_reward_pool')
+        .maybeSingle();
+
+    if (updateErr) throw updateErr;
+    if (!updated) throw new Error('UGC_REWARD_POOL_CONCURRENT_UPDATE_FAILED');
+    return Number(updated.remaining_reward_pool || 0);
+}
+
+function isNativeRewardToken(tokenAddress?: string | null, symbol?: string | null): boolean {
+    const token = String(tokenAddress || '').toLowerCase();
+    const normalizedSymbol = String(symbol || '').toUpperCase();
+    return !token || token === '0x0000000000000000000000000000000000000000' || normalizedSymbol === 'ETH';
+}
+
+function rewardTokenDecimals(symbol?: string | null): number {
+    return String(symbol || '').toUpperCase() === 'USDC' ? 6 : 18;
+}
+
+function toCampaignKey(campaignId: string): `0x${string}` {
+    return keccak256(toBytes(String(campaignId)));
+}
+
+function normalizeRewardToken(tokenAddress?: string | null, symbol?: string | null): `0x${string}` {
+    if (isNativeRewardToken(tokenAddress, symbol)) return '0x0000000000000000000000000000000000000000';
+    const token = String(tokenAddress || '').toLowerCase();
+    if (!token.startsWith('0x')) throw new Error('Invalid reward token address');
+    return token as `0x${string}`;
+}
+
+function rewardAmountRaw(amount: number, symbol?: string | null): bigint {
+    const decimals = rewardTokenDecimals(symbol);
+    return parseUnits(amount.toFixed(decimals), decimals);
+}
+
+function getWalletBotAccount() {
+    if (!WALLET_BOT_SIGNER) return null;
+    const privateKey = WALLET_BOT_SIGNER.startsWith('0x') ? WALLET_BOT_SIGNER : `0x${WALLET_BOT_SIGNER}`;
+    return privateKeyToAccount(privateKey as `0x${string}`);
+}
+
+function isFinalCampaignClaimStatus(status: CampaignClaimStatus): boolean {
+    return status === 'paid' || status === 'earned_pending_onchain_claim' || status === 'xp_only';
+}
+
+async function getUgcTreasuryAddress(): Promise<string> {
+    const { data } = await supabaseAdmin
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'ugc_config')
+        .maybeSingle();
+    const config = (data?.value || {}) as Record<string, unknown>;
+    const treasury = String(config.treasury_address || SAFE_MULTISIG || '').trim().toLowerCase();
+    if (!treasury.startsWith('0x')) throw new Error('UGC treasury address is not configured');
+    return treasury;
+}
+
+async function verifyUgcPayoutTransfer(params: {
+    txHash: string;
+    campaignId?: string;
+    wallet: string;
+    tokenAddress?: string | null;
+    rewardSymbol?: string | null;
+    rewardAmount: number;
+}): Promise<void> {
+    if (!params.txHash?.startsWith('0x')) throw new Error('Missing payout transaction hash');
+    if (!Number.isFinite(params.rewardAmount) || params.rewardAmount <= 0) throw new Error('Invalid payout amount');
+
+    const wallet = params.wallet.toLowerCase();
+    const expectedCampaignKey = params.campaignId ? toCampaignKey(params.campaignId).toLowerCase() : '';
+    const treasury = await getUgcTreasuryAddress();
+    const decimals = rewardTokenDecimals(params.rewardSymbol);
+    const expectedRaw = parseUnits(params.rewardAmount.toFixed(decimals), decimals);
+    const receipt = await publicClient.getTransactionReceipt({ hash: params.txHash as `0x${string}` });
+    if (!receipt || receipt.status !== 'success') throw new Error('Payout transaction is not confirmed');
+
+    const escrowAddress = String(UGC_REWARD_ESCROW_ADDRESS || '').toLowerCase();
+    if (escrowAddress.startsWith('0x')) {
+        const logs = parseEventLogs({
+            abi: UGC_REWARD_ESCROW_ABI,
+            eventName: 'RewardClaimed',
+            logs: receipt.logs,
+            strict: false
+        }) as UgcRewardClaimedLog[];
+
+        const escrowProof = logs.some((log) =>
+            log.address?.toLowerCase() === escrowAddress &&
+            (!expectedCampaignKey || String(log.args?.campaignId || '').toLowerCase() === expectedCampaignKey) &&
+            String(log.args?.claimant || '').toLowerCase() === wallet &&
+            String(log.args?.token || '').toLowerCase() === normalizeRewardToken(params.tokenAddress, params.rewardSymbol).toLowerCase() &&
+            BigInt(log.args?.amount || 0n) >= expectedRaw
+        );
+        if (escrowProof) return;
+    }
+
+    if (isNativeRewardToken(params.tokenAddress, params.rewardSymbol)) {
+        const tx = await publicClient.getTransaction({ hash: params.txHash as `0x${string}` });
+        const isDirectPayout = tx.from.toLowerCase() === treasury
+            && tx.to?.toLowerCase() === wallet
+            && BigInt(tx.value || 0n) >= expectedRaw;
+        if (!isDirectPayout) throw new Error('Native payout proof mismatch');
+        return;
+    }
+
+    const tokenAddress = String(params.tokenAddress || '').toLowerCase();
+    if (!tokenAddress.startsWith('0x')) throw new Error('Invalid payout token address');
+
+    for (const log of receipt.logs) {
+        if (log.address.toLowerCase() !== tokenAddress) continue;
+        try {
+            const decoded = decodeEventLog({
+                abi: ERC20_ABI,
+                eventName: 'Transfer',
+                data: log.data,
+                topics: log.topics
+            }) as { args: { from?: string; to?: string; value?: bigint } };
+
+            if (
+                String(decoded.args.from || '').toLowerCase() === treasury &&
+                String(decoded.args.to || '').toLowerCase() === wallet &&
+                BigInt(decoded.args.value || 0n) >= expectedRaw
+            ) {
+                return;
+            }
+        } catch {
+            // Ignore logs that are not ERC20 Transfer events for this token.
+        }
+    }
+
+    throw new Error('ERC20 payout proof mismatch');
+}
+
 /**
  * awardReferralBonus — Awards passive XP to referrer. Fire-and-forget.
  */
@@ -442,7 +641,7 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
         if (!allowed) return;
     }
 
-    if (action === 'claim-ugc-campaign') {
+    if (action === 'claim-ugc-campaign' || action === 'prepare-ugc-payout-claim' || action === 'sync-ugc-payout') {
         const allowed = await checkFeatureGuard('ugc_campaign', res);
         if (!allowed) return;
     }
@@ -453,6 +652,8 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
             case 'verify': await handleVerify(req, res); break;
             case 'social-verify': await handleSocialVerify(req, res); break;
             case 'claim-ugc-campaign': await handleClaimUgcCampaign(req, res); break;
+            case 'prepare-ugc-payout-claim': await handlePrepareUgcPayoutClaim(req, res); break;
+            case 'sync-ugc-payout': await handleSyncUgcPayout(req, res); break;
             case 'spin-gacha': await handleSpinGacha(req, res); break;
             default: res.status(400).json({ error: 'Invalid action' }); break;
         }
@@ -574,8 +775,111 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
     }
 
     const cleanWallet = wallet_address.toLowerCase();
+    const { data: taskGuard, error: taskGuardErr } = await supabaseAdmin
+        .from('daily_tasks')
+        .select('task_type, platform, action_type, is_base_social_required, onchain_id')
+        .eq('id', task_id)
+        .maybeSingle();
+    if (taskGuardErr) throw taskGuardErr;
+
+    if (taskGuard?.task_type === 'ugc') {
+        const expectedPlatform = String(taskGuard.platform || '').toLowerCase().trim();
+        const expectedAction = String(taskGuard.action_type || '').toLowerCase().trim();
+        const requestedPlatform = String(platform || '').toLowerCase().trim();
+        const requestedAction = String(action_type || '').toLowerCase().trim();
+
+        if (expectedPlatform && requestedPlatform && expectedPlatform !== requestedPlatform) {
+            return res.status(400).json({ error: 'UGC task platform mismatch.' });
+        }
+        if (expectedAction && requestedAction && expectedAction !== requestedAction) {
+            return res.status(400).json({ error: 'UGC task action mismatch.' });
+        }
+
+        const { data: profile, error: profileErr } = await supabaseAdmin
+            .from('user_profiles')
+            .select('is_base_social_verified, fid, twitter_id')
+            .eq('wallet_address', cleanWallet)
+            .maybeSingle();
+        if (profileErr) throw profileErr;
+
+        const isIdentityVerified = !!(profile?.is_base_social_verified || profile?.fid || profile?.twitter_id);
+        if (!isIdentityVerified) {
+            return res.status(403).json({ error: 'Identity verification is required before UGC task verification.' });
+        }
+    }
+
     if (await isClaimBackedUp(cleanWallet, task_id)) {
         return res.status(200).json({ success: true, message: "Already recorded.", already_claimed: true });
+    }
+
+    // ── CONNECT TO VERIFICATION SERVER FOR SOCIAL TASKS ──
+    const taskPlatform = String(taskGuard?.platform || platform || '').toLowerCase().trim();
+    const taskActionType = String(taskGuard?.action_type || action_type || '').toLowerCase().trim();
+    const isSocialTask = ['farcaster', 'twitter', 'tiktok', 'instagram'].includes(taskPlatform);
+
+    if (isSocialTask) {
+        // Construct payload to forward to Verification Server
+        const verifyBody = {
+            userAddress: cleanWallet,
+            taskId: taskGuard?.onchain_id || task_id, // contract numeric ID if available, otherwise UUID
+            dbTaskId: task_id,
+            xpEarned: xp,
+            signature,
+            message,
+            socialId: req.body.socialId || req.body.fid || req.body.userId || req.body.tiktokHandle || req.body.instagramHandle,
+            actionParams: req.body.actionParams || {
+                targetFid: req.body.targetFid,
+                castHash: req.body.castHash,
+                tweetId: req.body.tweetId,
+                targetUserId: req.body.targetUserId
+            },
+            // Flat fields for compatibility with verify.routes.js extractPlatformParams
+            fid: req.body.fid,
+            userId: req.body.userId,
+            tiktokHandle: req.body.tiktokHandle,
+            instagramHandle: req.body.instagramHandle,
+            targetFid: req.body.targetFid,
+            castHash: req.body.castHash,
+            tweetId: req.body.tweetId,
+            targetUserId: req.body.targetUserId,
+            // CRITICAL: Request server to ONLY check status, do NOT record DB/on-chain there
+            onlyVerify: true
+        };
+
+        const verifyUrl = `${VERIFY_SERVER_URL}/api/verify/${taskPlatform}/${taskActionType}`;
+        console.log(`[Social Verify] Contacting verification server: ${verifyUrl}`);
+
+        try {
+            const vRes = await fetch(verifyUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-secret': API_SECRET
+                },
+                body: JSON.stringify(verifyBody)
+            });
+
+            const vText = await vRes.text();
+            let vData;
+            try {
+                vData = JSON.parse(vText);
+            } catch (jsonErr) {
+                console.error(`[Social Verify] Non-JSON response from verification server:`, vText);
+                return res.status(502).json({ error: 'Verification server returned an invalid response.' });
+            }
+
+            if (!vRes.ok || !vData.success) {
+                const errMsg = vData.error || `Verification failed (status ${vRes.status})`;
+                console.warn(`[Social Verify] Action not completed or error for ${cleanWallet}:`, errMsg);
+                return res.status(400).json({ error: errMsg });
+            }
+
+            console.log(`[Social Verify] Social action check succeeded for ${cleanWallet}.`);
+        } catch (fetchErr: unknown) {
+            const fetchErrMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+            console.error('[Social Verify] Network error contacting verification server:', fetchErrMsg);
+            return res.status(502).json({ error: `Verification server is currently unreachable. Please try again later.` });
+        }
     }
 
     // [ON-CHAIN FIRST] Award XP on-chain via bot signer (bot pays gas ~$0.001)
@@ -611,6 +915,10 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    const cleanWallet = wallet_address.toLowerCase();
+    let reservedCampaignClaim = false;
+    let onChainAwarded = false;
+
     try {
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid) return res.status(401).json({ error: 'Invalid signature' });
@@ -619,8 +927,8 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         // Ensure user actually joined the campaign so they can't bypass max_participants
         const { data: joinRecord } = await supabaseAdmin
             .from('user_claims')
-            .select('is_claimed')
-            .eq('user_address', wallet_address.toLowerCase())
+            .select('id, is_claimed, payout_status, payout_amount, payout_tx_hash')
+            .eq('user_address', cleanWallet)
             .eq('campaign_id', campaign_id)
             .maybeSingle();
 
@@ -645,19 +953,40 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         const { data: existingClaim } = await supabaseAdmin
             .from('user_task_claims')
             .select('id')
-            .eq('wallet_address', wallet_address.toLowerCase())
+            .eq('wallet_address', cleanWallet)
             .eq('task_id', `ugc_campaign_${campaign_id}`)
             .maybeSingle();
 
         if (existingClaim || joinRecord.is_claimed) {
-            return res.status(200).json({ success: true, already_claimed: true, message: 'Campaign reward already claimed.' });
+            if (!isFinalCampaignClaimStatus(joinRecord.payout_status)) {
+                await supabaseAdmin.from('user_claims')
+                    .update({ payout_status: 'sync_failed' })
+                    .eq('id', joinRecord.id)
+                    .in('payout_status', ['joined', 'processing', 'xp_processing', 'failed']);
+
+                return res.status(409).json({
+                    error: 'Campaign claim is incomplete and requires payout/XP reconciliation before it can be claimed again.',
+                    payout_status: 'sync_failed',
+                    recovery_required: true
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                already_claimed: true,
+                payout_status: joinRecord.payout_status || 'claimed',
+                payout_amount: joinRecord.payout_amount,
+                payout_tx_hash: joinRecord.payout_tx_hash,
+                requires_onchain_payout: joinRecord.payout_status === 'earned_pending_onchain_claim',
+                message: 'Campaign reward already recorded.'
+            });
         }
 
         const subTaskIds = subTasks.map(t => t.id);
         const { data: userClaims, error: clErr } = await supabaseAdmin
             .from('user_task_claims')
             .select('task_id')
-            .eq('wallet_address', wallet_address.toLowerCase())
+            .eq('wallet_address', cleanWallet)
             .in('task_id', subTaskIds);
 
         if (clErr) throw clErr;
@@ -685,15 +1014,50 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
 
         const { data: campaign } = await supabaseAdmin
             .from('campaigns')
-            .select('reward_amount_per_user, reward_symbol, title')
+            .select('reward_amount_per_user, reward_symbol, title, remaining_reward_pool, payment_token, reward_token_address')
             .eq('id', campaign_id)
             .maybeSingle();
 
+        if (!campaign) return res.status(404).json({ error: 'Campaign not found.' });
+
+        const rewardAmount = Number(campaign.reward_amount_per_user || 0);
+        const remainingRewardPool = Number(campaign.remaining_reward_pool || 0);
+        if (rewardAmount > 0 && remainingRewardPool < rewardAmount) {
+            return res.status(409).json({ error: 'Campaign reward pool is depleted.' });
+        }
+
+        const reservedAt = new Date().toISOString();
+        const payoutDeadlineAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+        const { data: reservedClaim, error: reserveErr } = await supabaseAdmin
+            .from('user_claims')
+            .update({
+                is_claimed: true,
+                claimed_at: reservedAt,
+                payout_amount: rewardAmount,
+                payout_status: rewardAmount > 0 ? 'processing' : 'xp_processing',
+                payout_deadline_at: payoutDeadlineAt
+            })
+            .eq('user_address', cleanWallet)
+            .eq('campaign_id', campaign_id)
+            .or('is_claimed.is.false,is_claimed.is.null')
+            .select('id')
+            .maybeSingle();
+
+        if (reserveErr) throw reserveErr;
+        if (!reservedClaim) {
+            return res.status(409).json({
+                error: 'Campaign claim reservation failed or is already in progress. Please refresh before retrying.',
+                recovery_required: true
+            });
+        }
+        reservedCampaignClaim = true;
+
         // [ON-CHAIN FIRST] Award XP on-chain via bot signer (bot pays gas ~$0.001)
-        const award = await requireOnChainXpAward('awardUgcTaskXp', [wallet_address.toLowerCase() as `0x${string}`, BigInt(totalXp)], wallet_address, 'handleClaimUgcCampaign');
+        const award = await requireOnChainXpAward('awardUgcTaskXp', [cleanWallet as `0x${string}`, BigInt(totalXp)], cleanWallet, 'handleClaimUgcCampaign');
+        onChainAwarded = true;
 
         const claimResult = await insertClaimBackupOnly({
-            wallet_address: wallet_address.toLowerCase(),
+            wallet_address: cleanWallet,
             task_id: `ugc_campaign_${campaign_id}`,
             xp_earned: totalXp,
             platform: 'ugc',
@@ -701,14 +1065,29 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         }, 'handleClaimUgcCampaign');
 
         if (claimResult.alreadyClaimed) {
-            return res.status(200).json({ success: true, already_claimed: true, message: 'Campaign reward already claimed.' });
+            throw new Error('UGC_CAMPAIGN_BACKUP_ALREADY_EXISTS_BEFORE_FINALIZATION');
         }
 
-        // [SECURITY FIX] Update Campaign Join State
-        await supabaseAdmin.from('user_claims')
-            .update({ is_claimed: true })
-            .eq('user_address', wallet_address.toLowerCase())
-            .eq('campaign_id', campaign_id);
+        const updatedRemainingRewardPool = await decrementCampaignRewardPoolAtomic(campaign_id, rewardAmount);
+
+        const finalPayoutStatus = rewardAmount > 0 ? 'earned_pending_onchain_claim' : 'xp_only';
+        const { data: finalizedClaim, error: finalizeErr } = await supabaseAdmin.from('user_claims')
+            .update({
+                is_claimed: true,
+                claimed_at: reservedAt,
+                payout_amount: rewardAmount,
+                payout_status: finalPayoutStatus,
+                payout_deadline_at: payoutDeadlineAt
+            })
+            .eq('user_address', cleanWallet)
+            .eq('campaign_id', campaign_id)
+            .select('id, payout_amount, payout_status, payout_tx_hash')
+            .maybeSingle();
+
+        if (finalizeErr) throw finalizeErr;
+        if (!finalizedClaim || finalizedClaim.payout_status !== finalPayoutStatus) {
+            throw new Error('UGC_CAMPAIGN_CLAIM_FINALIZATION_FAILED');
+        }
 
         await logActivity(
             wallet_address, 
@@ -717,12 +1096,11 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             `Completed UGC Campaign: ${campaign?.title || campaign_id}`, 
             totalXp, 
             'XP',
-            { onchain_xp: award.points, onchain_tier: award.tier },
+            { onchain_xp: award.points, onchain_tier: award.tier, remaining_reward_pool: updatedRemainingRewardPool },
             award.txHash
         );
 
         // Separate reward log if token reward exists
-        const rewardAmount = Number(campaign?.reward_amount_per_user || 0);
         if (rewardAmount > 0) {
             await logActivity(
                 wallet_address,
@@ -731,7 +1109,7 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
                 `Earned ${rewardAmount} ${campaign?.reward_symbol || 'USDC'} from campaign: ${campaign?.title || campaign_id}`,
                 rewardAmount,
                 campaign?.reward_symbol || 'USDC',
-                { xp_award_tx: award.txHash }
+                { xp_award_tx: award.txHash, remaining_reward_pool: updatedRemainingRewardPool }
             );
         }
 
@@ -739,13 +1117,272 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             success: true,
             xp: totalXp,
             txHash: award.txHash,
+            token_reward_amount: campaign?.reward_amount_per_user || '0',
             usdc_reward: campaign?.reward_amount_per_user || '0',
             reward_symbol: campaign?.reward_symbol || 'USDC',
-            message: 'Campaign reward claimed successfully!'
+            reward_token_address: campaign?.reward_token_address || campaign?.payment_token || null,
+            remaining_reward_pool: updatedRemainingRewardPool,
+            payout_status: finalizedClaim.payout_status,
+            payout_tx_hash: finalizedClaim.payout_tx_hash,
+            payout_deadline_at: payoutDeadlineAt,
+            requires_onchain_payout: rewardAmount > 0,
+            message: rewardAmount > 0
+                ? 'Campaign XP recorded. Token reward is earned and pending on-chain payout claim.'
+                : 'Campaign XP reward claimed successfully.'
         });
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
+        try {
+            if (reservedCampaignClaim && !onChainAwarded) {
+                await supabaseAdmin.from('user_claims')
+                    .update({ is_claimed: false, claimed_at: null, payout_status: 'failed' })
+                    .eq('user_address', cleanWallet)
+                    .eq('campaign_id', campaign_id)
+                    .in('payout_status', ['processing', 'xp_processing']);
+            } else if (reservedCampaignClaim && onChainAwarded) {
+                await supabaseAdmin.from('user_claims')
+                    .update({ payout_status: 'sync_failed' })
+                    .eq('user_address', cleanWallet)
+                    .eq('campaign_id', campaign_id)
+                    .in('payout_status', ['processing', 'xp_processing']);
+            }
+        } catch {
+            // Preserve the original claim error; reconciliation can repair payout_status.
+        }
         console.error('[handleClaimUgcCampaign]', msg);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handlePrepareUgcPayoutClaim(req: ExtendedVercelRequest, res: VercelResponse) {
+    const { wallet_address, signature, message, campaign_id } = req.body;
+    if (!wallet_address || !signature || !message || !campaign_id) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const cleanWallet = String(wallet_address).trim().toLowerCase();
+    try {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        if (!message.includes(`ID: ${campaign_id}`) || !String(message).toLowerCase().includes(cleanWallet)) {
+            return res.status(400).json({ error: 'Payout authorization message mismatch.' });
+        }
+
+        if (!UGC_REWARD_ESCROW_ADDRESS?.startsWith('0x')) {
+            return res.status(503).json({ error: 'UGC reward escrow contract is not configured.' });
+        }
+
+        const account = getWalletBotAccount();
+        if (!account) return res.status(503).json({ error: 'UGC payout authorizer is not configured.' });
+
+        const [{ data: joinRecord, error: joinErr }, { data: campaign, error: campaignErr }, { data: earnedClaim, error: earnedErr }] = await Promise.all([
+            supabaseAdmin
+                .from('user_claims')
+                .select('id, is_claimed, payout_status, payout_amount, payout_tx_hash, payout_deadline_at')
+                .eq('user_address', cleanWallet)
+                .eq('campaign_id', campaign_id)
+                .maybeSingle(),
+            supabaseAdmin
+                .from('campaigns')
+                .select('id, title, reward_amount_per_user, reward_symbol, reward_token_address, payment_token, escrow_contract_address, claim_deadline_at')
+                .eq('id', campaign_id)
+                .maybeSingle(),
+            supabaseAdmin
+                .from('user_task_claims')
+                .select('id')
+                .eq('wallet_address', cleanWallet)
+                .eq('task_id', `ugc_campaign_${campaign_id}`)
+                .maybeSingle()
+        ]);
+
+        if (joinErr) throw joinErr;
+        if (campaignErr) throw campaignErr;
+        if (earnedErr) throw earnedErr;
+        if (!joinRecord || !joinRecord.is_claimed || !earnedClaim) {
+            return res.status(409).json({ error: 'Campaign reward must be earned before token payout claim.' });
+        }
+        if (joinRecord.payout_status === 'paid') {
+            return res.status(200).json({ success: true, already_paid: true, payout_tx_hash: joinRecord.payout_tx_hash });
+        }
+        if (joinRecord.payout_status !== 'earned_pending_onchain_claim') {
+            return res.status(409).json({ error: 'Campaign reward is not ready for on-chain payout claim.', payout_status: joinRecord.payout_status });
+        }
+
+        const deadlineAt = joinRecord.payout_deadline_at || campaign?.claim_deadline_at;
+        const deadlineMs = deadlineAt ? new Date(deadlineAt).getTime() : Date.now() + 72 * 60 * 60 * 1000;
+        if (!Number.isFinite(deadlineMs) || Date.now() > deadlineMs) {
+            return res.status(410).json({ error: 'UGC payout claim window expired.', payout_deadline_at: deadlineAt });
+        }
+
+        const rewardAmount = Number(joinRecord.payout_amount || campaign?.reward_amount_per_user || 0);
+        if (!Number.isFinite(rewardAmount) || rewardAmount <= 0) {
+            return res.status(409).json({ error: 'Invalid payout amount.' });
+        }
+
+        const campaignKey = toCampaignKey(campaign_id);
+        const token = normalizeRewardToken(campaign?.reward_token_address || campaign?.payment_token || null, campaign?.reward_symbol);
+        const amountRaw = rewardAmountRaw(rewardAmount, campaign?.reward_symbol);
+        const deadline = BigInt(Math.floor(deadlineMs / 1000));
+        const nonceHex = keccak256(encodePacked(
+            ['bytes32', 'address', 'address', 'uint256', 'uint256'],
+            [campaignKey, cleanWallet as `0x${string}`, token, amountRaw, deadline]
+        ));
+        const nonce = BigInt(nonceHex);
+
+        const typedSignature = await account.signTypedData({
+            domain: {
+                name: 'DiscoDailyUGCRewardEscrow',
+                version: '1',
+                chainId: Number(CHAIN_ID),
+                verifyingContract: UGC_REWARD_ESCROW_ADDRESS as `0x${string}`
+            },
+            types: {
+                ClaimAuthorization: [
+                    { name: 'campaignId', type: 'bytes32' },
+                    { name: 'claimant', type: 'address' },
+                    { name: 'token', type: 'address' },
+                    { name: 'amount', type: 'uint256' },
+                    { name: 'deadline', type: 'uint256' },
+                    { name: 'nonce', type: 'uint256' }
+                ]
+            },
+            primaryType: 'ClaimAuthorization',
+            message: {
+                campaignId: campaignKey,
+                claimant: cleanWallet as `0x${string}`,
+                token,
+                amount: amountRaw,
+                deadline,
+                nonce
+            }
+        });
+
+        await supabaseAdmin
+            .from('user_claims')
+            .update({
+                payout_authorization_nonce: nonce.toString(),
+                payout_deadline_at: new Date(Number(deadline) * 1000).toISOString()
+            })
+            .eq('id', joinRecord.id);
+
+        return res.status(200).json({
+            success: true,
+            escrow_address: UGC_REWARD_ESCROW_ADDRESS,
+            campaign_key: campaignKey,
+            token,
+            amount: amountRaw.toString(),
+            reward_amount: rewardAmount,
+            reward_symbol: campaign?.reward_symbol || 'TOKEN',
+            deadline: deadline.toString(),
+            nonce: nonce.toString(),
+            signature: typedSignature,
+            payout_deadline_at: new Date(Number(deadline) * 1000).toISOString()
+        });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[handlePrepareUgcPayoutClaim]', msg);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
+}
+
+async function handleSyncUgcPayout(req: ExtendedVercelRequest, res: VercelResponse) {
+    const { wallet_address, signature, message, campaign_id, tx_hash } = req.body;
+    if (!wallet_address || !signature || !message || !campaign_id || !tx_hash) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const cleanWallet = String(wallet_address).trim().toLowerCase();
+    try {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        if (!message.includes(`ID: ${campaign_id}`) || !message.includes(`Tx: ${tx_hash}`) || !String(message).toLowerCase().includes(cleanWallet)) {
+            return res.status(400).json({ error: 'Payout sync message mismatch.' });
+        }
+
+        const [{ data: joinRecord, error: joinErr }, { data: campaign, error: campaignErr }, { data: earnedClaim, error: earnedErr }] = await Promise.all([
+            supabaseAdmin
+                .from('user_claims')
+                .select('id, is_claimed, payout_status, payout_amount, payout_tx_hash')
+                .eq('user_address', cleanWallet)
+                .eq('campaign_id', campaign_id)
+                .maybeSingle(),
+            supabaseAdmin
+                .from('campaigns')
+                .select('id, title, reward_amount_per_user, reward_symbol, reward_token_address, payment_token')
+                .eq('id', campaign_id)
+                .maybeSingle(),
+            supabaseAdmin
+                .from('user_task_claims')
+                .select('id')
+                .eq('wallet_address', cleanWallet)
+                .eq('task_id', `ugc_campaign_${campaign_id}`)
+                .maybeSingle()
+        ]);
+
+        if (joinErr) throw joinErr;
+        if (campaignErr) throw campaignErr;
+        if (earnedErr) throw earnedErr;
+        if (!joinRecord) return res.status(403).json({ error: 'You must join the campaign before syncing payout.' });
+        if (!campaign) return res.status(404).json({ error: 'Campaign not found.' });
+        if (!joinRecord.is_claimed || !earnedClaim) {
+            return res.status(409).json({ error: 'Campaign reward must be earned before payout can be synced.' });
+        }
+
+        if (joinRecord.payout_status === 'paid' && joinRecord.payout_tx_hash) {
+            return res.status(200).json({
+                success: true,
+                already_synced: true,
+                payout_status: 'paid',
+                payout_tx_hash: joinRecord.payout_tx_hash
+            });
+        }
+
+        const rewardAmount = Number(joinRecord.payout_amount || campaign.reward_amount_per_user || 0);
+        await verifyUgcPayoutTransfer({
+            txHash: tx_hash,
+            campaignId: campaign_id,
+            wallet: cleanWallet,
+            tokenAddress: campaign.reward_token_address || campaign.payment_token || null,
+            rewardSymbol: campaign.reward_symbol,
+            rewardAmount
+        });
+
+        const { data: updatedClaim, error: updateErr } = await supabaseAdmin
+            .from('user_claims')
+            .update({
+                payout_status: 'paid',
+                payout_tx_hash: tx_hash
+            })
+            .eq('id', joinRecord.id)
+            .select('id, payout_status, payout_amount, payout_tx_hash')
+            .maybeSingle();
+
+        if (updateErr) throw updateErr;
+        if (!updatedClaim || updatedClaim.payout_status !== 'paid') {
+            throw new Error('UGC_PAYOUT_SYNC_FINALIZATION_FAILED');
+        }
+
+        await logActivity(
+            cleanWallet,
+            'REWARD',
+            'UGC Campaign Payout',
+            `Claimed ${rewardAmount} ${campaign.reward_symbol || 'TOKEN'} payout for UGC campaign: ${campaign.title || campaign_id}`,
+            rewardAmount,
+            campaign.reward_symbol || 'TOKEN',
+            { campaign_id, payout_verified: true },
+            tx_hash
+        );
+
+        return res.status(200).json({
+            success: true,
+            payout_status: 'paid',
+            payout_amount: updatedClaim.payout_amount,
+            payout_tx_hash: updatedClaim.payout_tx_hash,
+            message: 'UGC campaign payout verified and synced.'
+        });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[handleSyncUgcPayout]', msg);
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }

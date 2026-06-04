@@ -428,15 +428,25 @@ export function CreateMissionPage({ isEmbed = false }: { isEmbed?: boolean }) {
                     contractAddress: selectedTokenAddr,
                     payload: {
                         title: formData.title,
+                        description: formData.description,
                         platform_code: formData.platform,
                         action_types: selectedActions,
                         link: formData.link,
                         reward_amount_per_user: formData.reward_amount_per_user,
                         total_reward_pool: stats.rewardPool,
                         max_participants: parseInt(formData.max_participants),
+                        duration_days: parseInt(formData.duration_days),
+                        sponsor_address: address?.toLowerCase() || '',
                         reward_symbol: selectedToken?.symbol || 'USDC',
                         ['payment_' + 'token']: selectedTokenAddr,
-                        listing_fee: parseFloat(stats.listingFee)
+                        listing_fee: parseFloat(stats.listingFee),
+                        is_base_social_required: formData.isBaseSocialRequired,
+                        tasks_batch: selectedActions.map(action => ({
+                            title: `${formData.title} (${action.toUpperCase()})`,
+                            platform: formData.platform,
+                            action_type: action,
+                            link: formData.link
+                        }))
                     },
                     errorMessage: shortMessage || errorMessage
                 }).catch(() => {});

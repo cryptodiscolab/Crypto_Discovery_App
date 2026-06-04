@@ -23,7 +23,8 @@ const KNOWN_LOCAL_ABIS = new Set([
     'transfer', 'approve', 'balanceOf', 'allowance', 'totalSupply',
     'name', 'symbol', 'decimals', 'transferFrom',
     'latestRoundData', 'latestAnswer', 'description',
-    'getCallsStatus' // EIP-5792
+    'getCallsStatus', // EIP-5792
+    'claim' // UGCRewardEscrow local ABI
 ]);
 
 function walk(dir, files = []) {

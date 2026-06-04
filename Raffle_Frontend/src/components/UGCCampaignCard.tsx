@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, usePublicClient, useSignMessage, useWriteContract } from 'wagmi';
 import toast from 'react-hot-toast';
 import { useVerification } from '../hooks/useVerification';
 import { useFarcaster } from '../hooks/useFarcaster';
-import { APP_CONFIG } from '../lib/contracts';
+import { APP_CONFIG, UGC_REWARD_ESCROW_ABI, UGC_REWARD_ESCROW_ADDRESS } from '../lib/contracts';
 import { CheckCircle2, ExternalLink, Loader2, Lock, MessageCircle, ShieldCheck, Trophy, Twitter, X, Zap } from 'lucide-react';
 
 // Platform display icon (text-based since we avoid external deps)
@@ -21,7 +21,37 @@ interface UGCCampaign {
     platform_code: string;
     reward_amount_per_user: number | string;
     reward_symbol: string;
+    reward_token_address?: string | null;
+    payment_token?: string | null;
+    claim_deadline_at?: string | null;
+    escrow_contract_address?: string | null;
+    escrow_campaign_key?: string | null;
 }
+
+type ClaimResult = {
+    xp?: number;
+    token_reward_amount?: string | number;
+    usdc_reward?: string | number;
+    reward_symbol?: string;
+    requires_onchain_payout?: boolean;
+    payout_status?: string;
+    payout_deadline_at?: string;
+    already_paid?: boolean;
+};
+
+type PreparedPayout = {
+    already_paid?: boolean;
+    escrow_address?: string;
+    campaign_key?: `0x${string}`;
+    token?: `0x${string}`;
+    amount?: string;
+    deadline?: number;
+    nonce?: string;
+    signature?: `0x${string}`;
+    reward_amount?: string | number;
+    reward_symbol?: string;
+    payout_deadline_at?: string;
+};
 
 interface UGCSubTask {
     id: string | number;
@@ -111,7 +141,7 @@ function CompletionModal({ campaign, totalXp, usdcReward, rewardSymbol, onClaim,
                 ) : (
                     <div className="flex items-center justify-center gap-2 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        <span className="text-[11px] font-black text-emerald-400 uppercase tracking-widest">Reward Claimed!</span>
+                        <span className="text-[11px] font-black text-emerald-400 uppercase tracking-widest">Reward Recorded!</span>
                     </div>
                 )}
 
@@ -147,14 +177,17 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     refetchStats?: () => void;
 }) {
     const { address } = useAccount();
+    const publicClient = usePublicClient();
     const { signMessageAsync } = useSignMessage();
+    const { writeContractAsync } = useWriteContract();
     const { profileData } = useFarcaster();
     const { verifyTask, registerTaskStart, isVerifying, lastActionTime } = useVerification(refetchStats);
 
     const [showModal, setShowModal] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
+    const [isClaimingPayout, setIsClaimingPayout] = useState(false);
     const [claimed, setClaimed] = useState(false);
-    const [claimResult, setClaimResult] = useState<unknown>(null);
+    const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
     const [localStarted, setLocalStarted] = useState<Record<string | number, boolean>>({});
 
     // Identity Verification Status (v3.42.1)
@@ -164,6 +197,19 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     const completedCount = subTasks.filter(t => userClaimedTaskIds.has(String(t.id))).length;
     const allDone = completedCount === totalTasks && totalTasks > 0;
     const alreadyCampaignClaimed = userClaimedTaskIds.has(`ugc_campaign_${campaign.id}`);
+    const rewardAmount = Number(campaign.reward_amount_per_user || 0);
+    const payoutDeadline = claimResult?.payout_deadline_at || campaign.claim_deadline_at || null;
+    const isPayoutExpired = payoutDeadline ? Date.now() > new Date(payoutDeadline).getTime() : false;
+    const escrowAddress = campaign.escrow_contract_address || UGC_REWARD_ESCROW_ADDRESS;
+    const canShowPayoutClaim = rewardAmount > 0 && (alreadyCampaignClaimed || claimed || !!claimResult?.requires_onchain_payout);
+    const payoutRecordedPaid = claimResult?.already_paid || String(claimResult?.payout_status || '').includes('paid');
+
+    const formatDeadline = (value?: string | null) => {
+        if (!value) return 'Claim window: 72h after reward is recorded';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'Claim window: 72h after reward is recorded';
+        return `Claim before ${date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`;
+    };
 
     // Auto-show modal when all tasks just completed
     useEffect(() => {
@@ -216,19 +262,117 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
             if (!response.ok) throw new Error(data.error || "Claim failed");
 
             if (data.already_claimed) {
-                toast.success('Already claimed!', { id: tid });
+                if (data.requires_onchain_payout || String(data.payout_status || '').includes('pending')) {
+                    toast.success('Reward recorded. Token payout is still pending claim.', { id: tid });
+                } else {
+                    toast.success('Already recorded!', { id: tid });
+                }
+                setClaimResult(data);
                 setClaimed(true);
                 return;
             }
             setClaimResult(data);
             setClaimed(true);
-            toast.success(`🎉 +${data.xp} XP & ${data.usdc_reward} ${data.reward_symbol} claimed!`, { id: tid, duration: 6000 });
+            const tokenReward = data.token_reward_amount ?? data.usdc_reward;
+            if (data.requires_onchain_payout || String(data.payout_status || '').includes('pending')) {
+                toast.success(`+${data.xp} XP recorded. ${tokenReward} ${data.reward_symbol} pending payout claim.`, { id: tid, duration: 6000 });
+            } else {
+                toast.success(`+${data.xp} XP & ${tokenReward} ${data.reward_symbol} claimed!`, { id: tid, duration: 6000 });
+            }
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'Claim failed.', { id: tid });
         } finally {
             setIsClaiming(false);
         }
-    }, [address, campaign.id, campaign.title, subTasks, userClaimedTaskIds, isBaseVerified]);
+    }, [address, campaign.id, campaign.title, subTasks, userClaimedTaskIds, isBaseVerified, signMessageAsync]);
+
+    const handleClaimPayout = useCallback(async () => {
+        if (!address) return toast.error('Connect wallet first.');
+        if (!publicClient) return toast.error('Wallet RPC client is not ready.');
+        if (!escrowAddress) return toast.error('Reward escrow is not configured yet.');
+        if (isPayoutExpired) return toast.error('Reward claim window has expired.');
+
+        setIsClaimingPayout(true);
+        const tid = toast.loading('Preparing on-chain payout claim...');
+        try {
+            const timestamp = new Date().toISOString();
+            const message = `Prepare UGC Payout Claim\nID: ${campaign.id}\nWallet: ${address.toLowerCase()}\nTime: ${timestamp}`;
+            const signature = await signMessageAsync({ message });
+
+            const prepareResponse = await fetch('/api/tasks-bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'prepare-ugc-payout-claim',
+                    wallet_address: address,
+                    campaign_id: campaign.id,
+                    signature,
+                    message
+                })
+            });
+            const prepared = await prepareResponse.json() as PreparedPayout & { error?: string };
+            if (!prepareResponse.ok) throw new Error(prepared.error || 'Unable to prepare payout claim.');
+            if (prepared.already_paid) {
+                setClaimResult(prev => ({ ...(prev || {}), already_paid: true, payout_status: 'paid' }));
+                toast.success('Token payout already claimed.', { id: tid });
+                return;
+            }
+
+            if (!prepared.campaign_key || !prepared.token || !prepared.amount || !prepared.deadline || !prepared.nonce || !prepared.signature) {
+                throw new Error('Payout authorization is incomplete.');
+            }
+
+            toast.loading('Confirm escrow claim in your wallet...', { id: tid });
+            const hash = await writeContractAsync({
+                address: (prepared.escrow_address || escrowAddress) as `0x${string}`,
+                abi: UGC_REWARD_ESCROW_ABI,
+                functionName: 'claim',
+                args: [
+                    prepared.campaign_key,
+                    prepared.token,
+                    BigInt(prepared.amount),
+                    BigInt(prepared.deadline),
+                    BigInt(prepared.nonce),
+                    prepared.signature
+                ]
+            });
+
+            toast.loading('Waiting for on-chain confirmation...', { id: tid });
+            const receipt = await publicClient.waitForTransactionReceipt({ hash });
+            if (receipt.status !== 'success') throw new Error('Escrow claim transaction failed.');
+
+            const syncTimestamp = new Date().toISOString();
+            const syncMessage = `Sync UGC Payout\nID: ${campaign.id}\nTx: ${hash}\nWallet: ${address.toLowerCase()}\nTime: ${syncTimestamp}`;
+            const syncSignature = await signMessageAsync({ message: syncMessage });
+            const syncResponse = await fetch('/api/tasks-bundle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'sync-ugc-payout',
+                    wallet_address: address,
+                    campaign_id: campaign.id,
+                    tx_hash: hash,
+                    signature: syncSignature,
+                    message: syncMessage
+                })
+            });
+            const syncData = await syncResponse.json() as { error?: string; already_paid?: boolean };
+            if (!syncResponse.ok) throw new Error(syncData.error || 'Payout sync failed.');
+
+            setClaimResult(prev => ({
+                ...(prev || {}),
+                payout_status: 'paid',
+                already_paid: true,
+                payout_deadline_at: prepared.payout_deadline_at || prev?.payout_deadline_at
+            }));
+            toast.success(`${prepared.reward_amount || campaign.reward_amount_per_user} ${prepared.reward_symbol || campaign.reward_symbol} claimed on-chain.`, { id: tid, duration: 6000 });
+            refetchStats?.();
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Payout claim failed.', { id: tid, duration: 8000 });
+        } finally {
+            setIsClaimingPayout(false);
+        }
+    }, [address, campaign.id, campaign.reward_amount_per_user, campaign.reward_symbol, escrowAddress, isPayoutExpired, publicClient, refetchStats, signMessageAsync, writeContractAsync]);
 
     return (
         <>
@@ -331,10 +475,23 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                         <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Reward</p>
                         <p className="text-sm font-black text-emerald-400 font-mono">{campaign.reward_amount_per_user} {campaign.reward_symbol || 'USDC'}</p>
                     </div>
-                    {alreadyCampaignClaimed ? (
-                        <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Rewards Claimed</span>
+                    {canShowPayoutClaim ? (
+                        <div className="flex flex-col items-end gap-1.5">
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Rewards Recorded</span>
+                            </div>
+                            <button
+                                onClick={handleClaimPayout}
+                                disabled={isClaimingPayout || payoutRecordedPaid || isPayoutExpired || !escrowAddress}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-600/40 text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isClaimingPayout ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
+                                {payoutRecordedPaid ? 'PAYOUT CLAIMED' : isPayoutExpired ? 'CLAIM EXPIRED' : 'CLAIM TOKEN PAYOUT'}
+                            </button>
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter mr-1 max-w-[220px] text-right">
+                                {!escrowAddress ? 'Escrow contract not configured' : formatDeadline(payoutDeadline)}
+                            </span>
                         </div>
                     ) : allDone ? (
                         <button

@@ -111,6 +111,7 @@ export const DAILY_APP_ADDRESS =
   || getAddr('DAILY_APP', 'VITE_V12_CONTRACT_ADDRESS', 'VITE_V12_CONTRACT_ADDRESS_SEPOLIA');
 export const RAFFLE_ADDRESS = getAddr('RAFFLE', 'VITE_RAFFLE_ADDRESS', 'VITE_RAFFLE_ADDRESS_SEPOLIA');
 export const CMS_CONTRACT_ADDRESS = getAddr('CMS', 'VITE_CMS_CONTRACT_ADDRESS', 'VITE_CMS_CONTRACT_ADDRESS_SEPOLIA');
+export const UGC_REWARD_ESCROW_ADDRESS = getAddr('UGC_REWARD_ESCROW', 'VITE_UGC_REWARD_ESCROW_ADDRESS', 'VITE_UGC_REWARD_ESCROW_ADDRESS_SEPOLIA');
 export const USDC_ADDRESS = getAddr('USDC', 'VITE_USDC_ADDRESS', 'VITE_USDC_ADDRESS_SEPOLIA');
 export const CREATOR_TOKEN_ADDRESS = getAddr('CREATOR_TOKEN', 'VITE_CREATOR_TOKEN_ADDRESS');
 export const PRICE_FEED_ADDRESS = cleanAddr(import.meta.env.VITE_PRICE_FEED_ADDRESS);
@@ -133,6 +134,23 @@ export const CMS_CONTRACT_ABI = createAbiProxy('CMS');
 export const CHAINLINK_ORACLE_ABI = createAbiProxy('CHAINLINK');
 export const ERC20_ABI = createAbiProxy('ERC20');
 
+export const UGC_REWARD_ESCROW_ABI = [
+  {
+    type: 'function',
+    name: 'claim',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'campaignId', type: 'bytes32' },
+      { name: 'token', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' },
+      { name: 'nonce', type: 'uint256' },
+      { name: 'signature', type: 'bytes' }
+    ],
+    outputs: []
+  }
+] as const;
+
 // Aliases
 export const V12_ABI = DAILY_APP_ABI;
 export const DISCO_MASTER_ABI = MASTER_X_ABI;
@@ -142,6 +160,7 @@ export const CONTRACTS = {
   DAILY_APP: DAILY_APP_ADDRESS,
   RAFFLE: RAFFLE_ADDRESS,
   CMS: CMS_CONTRACT_ADDRESS,
+  UGC_REWARD_ESCROW: UGC_REWARD_ESCROW_ADDRESS,
   USDC: USDC_ADDRESS,
   CREATOR_TOKEN: CREATOR_TOKEN_ADDRESS
 };
@@ -185,6 +204,7 @@ export const ABIS = {
   MASTER_X: MASTER_X_ABI,
   RAFFLE: RAFFLE_ABI,
   CMS: CMS_CONTRACT_ABI,
+  UGC_REWARD_ESCROW: UGC_REWARD_ESCROW_ABI,
   CHAINLINK: CHAINLINK_ORACLE_ABI,
   ERC20: ERC20_ABI
 };

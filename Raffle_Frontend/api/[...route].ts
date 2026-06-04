@@ -21,6 +21,7 @@ export { default as pinMetadata } from './_pin-metadata.js';
 export { default as isAdmin } from './_is-admin.js';
 export { default as pingHandler } from './_ping.js';
 export { default as backupHandler } from './cron/_backup.js';
+export { default as rewardClaimReminders } from './cron/_reward-claim-reminders.js';
 
 // ── Route Map ────────────────────────────────────────────────────────────────
 type RouteHandler = (req: VercelRequest, res: VercelResponse) => Promise<unknown> | unknown;
@@ -42,6 +43,7 @@ const routes: Record<string, RouteHandler> = {
   'is-admin':                (req, res) => import('./_is-admin.js').then(m => m.default(req, res)),
   'ping':                    (req, res) => import('./_ping.js').then(m => m.default(req, res)),
   'cron/backup':             (req, res) => import('./cron/_backup.js').then(m => m.default(req, res)),
+  'cron/reward-claim-reminders': (req, res) => import('./cron/_reward-claim-reminders.js').then(m => m.default(req, res)),
   'cron/sync-events':        (req, res) => import('./_audit-bundle.js').then(m => {
     req.query = { ...req.query, action: 'sync' };
     return m.default(req, res);

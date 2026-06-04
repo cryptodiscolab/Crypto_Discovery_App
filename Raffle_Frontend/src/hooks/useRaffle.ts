@@ -114,12 +114,13 @@ export function useRaffle() {
             calls: [{ to: RAFFLE_ADDRESS, data: callData, value: requiredETH }],
             capabilities: paymasterCapabilities,
         });
+        const callStatusId = typeof callId === 'string' ? callId : ((callId as { id?: string })?.id || '');
 
         toast.success("⛽ Gasless tickets purchased!");
 
         // [FIX v3.56.5] Resolve actual on-chain txHash from callId for backend verification.
         // EIP-5792 callId is NOT a valid txHash — we must resolve receipts to get the real hash.
-        let resolvedTxHash: string = typeof callId === 'string' ? callId : ((callId as { id?: string })?.id || ''); // fallback to ID from call response
+        let resolvedTxHash = '';
         try {
             // Poll getCallsStatus to retrieve the actual transaction hash
             let attempts = 0;
@@ -137,11 +138,15 @@ export function useRaffle() {
                 attempts++;
             }
         } catch (resolveErr: unknown) {
-            console.warn('[buyTicketsGasless] Could not resolve txHash from callId, falling back:', resolveErr instanceof Error ? resolveErr.message : String(resolveErr));
+            console.warn('[buyTicketsGasless] Could not resolve txHash from callId:', resolveErr instanceof Error ? resolveErr.message : String(resolveErr));
         }
 
         // Award XP & Log Activity
         try {
+            if (!resolvedTxHash.startsWith('0x')) {
+                throw new Error('Gasless transaction hash is not indexed yet');
+            }
+
             const timestamp = new Date().toISOString();
             const message = `Claim XP for Raffle Purchase\nRaffle ID: ${raffleId}\nAmount: ${amount}\nUser: ${address?.toLowerCase() || ''}\nTime: ${timestamp}`;
             const signature = await signMessageAsync({ message });
@@ -176,7 +181,7 @@ export function useRaffle() {
                 txHash: resolvedTxHash,
                 chainId,
                 contractAddress: RAFFLE_ADDRESS,
-                payload: { raffle_id: raffleId, amount, gasless: true },
+                payload: { raffle_id: raffleId, amount, gasless: true, call_id: callStatusId },
                 errorMessage: errMsg
             }).catch(() => {});
         }

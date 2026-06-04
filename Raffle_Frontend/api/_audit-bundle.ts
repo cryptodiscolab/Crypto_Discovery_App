@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { verifyMessage, keccak256, toBytes, formatEther } from 'viem';
+import { verifyMessage, keccak256, toBytes, formatEther, parseEventLogs } from 'viem';
 import {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
@@ -12,8 +12,12 @@ import {
     NEYNAR_API_KEY,
     MASTER_X_EVENT_ABI,
     DAILY_APP_EVENT_ABI,
+    RAFFLE_EVENT_ABI,
+    RAFFLE_ABI,
     USDC_ADDRESS,
     getEnv,
+    getContractAddr,
+    awardOnChainXp,
     sanitizeError
 } from './_shared/constants.js';
 
@@ -26,11 +30,269 @@ const TASK_IDS = {
     TIER_UPGRADE: getEnv('TIER_UPGRADE_TASK_ID', "2c1e23f5-0ded-4ca1-af04-e8b6924823e2")
 };
 
+const MASTER_X_CLAIM_PROCESSED_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'user', type: 'address' },
+            { indexed: false, name: 'tier', type: 'uint8' },
+            { indexed: false, name: 'amount', type: 'uint256' }
+        ],
+        name: 'ClaimProcessed',
+        type: 'event'
+    }
+] as const;
+
 function makeId(seed: string) {
     const hash = keccak256(toBytes(seed));
     return [
         hash.slice(2, 10), hash.slice(10, 14), hash.slice(14, 18), hash.slice(18, 22), hash.slice(22, 34)
     ].join("-");
+}
+
+async function getPointValue(activityKey: string): Promise<number> {
+    const { data, error } = await (supabase as any)
+        .from('point_settings')
+        .select('points_value')
+        .eq('activity_key', activityKey)
+        .eq('is_active', true)
+        .maybeSingle();
+    if (error) throw error;
+    return Number(data?.points_value || 0);
+}
+
+async function mirrorDailyAppStats(wallet: string) {
+    const cleanWallet = wallet.toLowerCase();
+    const stats = await rpcClient.readContract({
+        address: DAILY_APP_ADDRESS as `0x${string}`,
+        abi: DAILY_APP_USER_STATS_ABI,
+        functionName: 'userStats',
+        args: [cleanWallet as `0x${string}`]
+    }) as unknown as [bigint, bigint, bigint, number, bigint, bigint, boolean];
+
+    const points = Number(stats[0] || 0n);
+    const tier = Number(stats[3] || 0);
+    const { error } = await (supabase as any)
+        .from('user_profiles')
+        .upsert({
+            wallet_address: cleanWallet,
+            total_xp: points,
+            last_onchain_xp: points,
+            tier,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'wallet_address' });
+    if (error) throw error;
+    return { points, tier };
+}
+
+function hasRaffleTicketPurchase(receipt: any, wallet: string, raffleId: string | number, minimumCount: number): boolean {
+    const raffleAddress = getContractAddr('RAFFLE').toLowerCase();
+    const cleanWallet = wallet.toLowerCase();
+    const expectedRaffleId = BigInt(raffleId);
+    const logs = parseEventLogs({
+        abi: RAFFLE_EVENT_ABI,
+        eventName: 'TicketPurchased',
+        logs: receipt.logs,
+        strict: false
+    }) as any[];
+
+    const confirmedCount = logs.reduce((sum, log) => {
+        if (String(log.address || '').toLowerCase() !== raffleAddress) return sum;
+        if (String(log.args?.user || '').toLowerCase() !== cleanWallet) return sum;
+        if (BigInt(log.args?.raffleId || 0n) !== expectedRaffleId) return sum;
+        return sum + Number(log.args?.count || 0n);
+    }, 0);
+
+    return confirmedCount >= minimumCount;
+}
+
+function hasRaffleWinnerClaim(receipt: any, wallet: string, raffleId: string | number): boolean {
+    const raffleAddress = getContractAddr('RAFFLE').toLowerCase();
+    const cleanWallet = wallet.toLowerCase();
+    const expectedRaffleId = BigInt(raffleId);
+    const logs = parseEventLogs({
+        abi: RAFFLE_EVENT_ABI,
+        eventName: 'RaffleWinner',
+        logs: receipt.logs,
+        strict: false
+    }) as any[];
+
+    return logs.some((log) =>
+        String(log.address || '').toLowerCase() === raffleAddress &&
+        String(log.args?.winner || '').toLowerCase() === cleanWallet &&
+        BigInt(log.args?.raffleId || 0n) === expectedRaffleId &&
+        BigInt(log.args?.prize || 0n) > 0n
+    );
+}
+
+async function reconcileRaffleBuy(job: any, receipt: any) {
+    const wallet = String(job.wallet_address || '').toLowerCase();
+    const payload = typeof job.payload === 'object' && job.payload ? job.payload : {};
+    const raffleId = payload.raffle_id || payload.raffleId;
+    const ticketCount = Number(payload.amount || payload.ticket_count || 1);
+    const txHash = String(job.tx_hash || '').toLowerCase();
+    if (!wallet || !raffleId || !txHash.startsWith('0x') || !Number.isFinite(ticketCount) || ticketCount <= 0) {
+        throw new Error('Reconciliation: raffle_buy payload incomplete');
+    }
+
+    const taskId = `raffle_buy_${raffleId}_${txHash}`;
+    const { data: existingClaim, error: claimReadErr } = await (supabase as any)
+        .from('user_task_claims')
+        .select('id')
+        .eq('wallet_address', wallet)
+        .eq('task_id', taskId)
+        .maybeSingle();
+    if (claimReadErr) throw claimReadErr;
+    if (existingClaim) return;
+
+    if (!hasRaffleTicketPurchase(receipt, wallet, raffleId, ticketCount)) {
+        throw new Error('Reconciliation: raffle_buy event proof mismatch');
+    }
+
+    const xpPerTicket = await getPointValue('raffle_buy');
+    const xpEarned = xpPerTicket * ticketCount;
+    const xpAwardTx = await awardOnChainXp('awardRaffleBuyXp', [wallet as `0x${string}`, BigInt(ticketCount)]);
+    if (!xpAwardTx) throw new Error('Reconciliation: awardRaffleBuyXp failed');
+    const stats = await mirrorDailyAppStats(wallet);
+
+    const { error: insertErr } = await (supabase as any)
+        .from('user_task_claims')
+        .insert({
+            wallet_address: wallet,
+            task_id: taskId,
+            xp_earned: xpEarned,
+            platform: 'system',
+            action_type: 'raffle_buy',
+            target_id: txHash,
+            claimed_at: new Date().toISOString()
+        });
+    if (insertErr && insertErr.code !== '23505') throw insertErr;
+
+    await (supabase as any).rpc('fn_increment_raffle_tickets', {
+        p_wallet: wallet,
+        p_amount: ticketCount
+    });
+
+    await logActivity(supabase, {
+        wallet,
+        category: 'RAFFLE',
+        type: 'Ticket Purchase',
+        description: `Purchased ${ticketCount} ticket(s) for Raffle #${raffleId} (reconciled)`,
+        amount: ticketCount,
+        symbol: 'TICKET',
+        txHash,
+        metadata: { raffle_id: raffleId, ticket_count: ticketCount, xp_award_tx: xpAwardTx, onchain_xp: stats.points, onchain_tier: stats.tier }
+    });
+}
+
+async function reconcileRaffleClaim(job: any, receipt: any) {
+    const wallet = String(job.wallet_address || '').toLowerCase();
+    const payload = typeof job.payload === 'object' && job.payload ? job.payload : {};
+    const raffleId = payload.raffle_id || payload.raffleId;
+    const txHash = String(job.tx_hash || '').toLowerCase();
+    if (!wallet || !raffleId || !txHash.startsWith('0x')) {
+        throw new Error('Reconciliation: raffle_claim payload incomplete');
+    }
+
+    const taskId = `raffle_win_${raffleId}`;
+    const { data: existingClaim, error: claimReadErr } = await (supabase as any)
+        .from('user_task_claims')
+        .select('id')
+        .eq('wallet_address', wallet)
+        .eq('task_id', taskId)
+        .maybeSingle();
+    if (claimReadErr) throw claimReadErr;
+    if (existingClaim) return;
+
+    if (!hasRaffleWinnerClaim(receipt, wallet, raffleId)) {
+        throw new Error('Reconciliation: raffle_claim event proof mismatch');
+    }
+
+    const raffleInfo: any = await rpcClient.readContract({
+        address: getContractAddr('RAFFLE') as `0x${string}`,
+        abi: RAFFLE_ABI,
+        functionName: 'getRaffleInfo',
+        args: [BigInt(raffleId)]
+    });
+    const winners = (raffleInfo.winners || []).map((winner: string) => winner.toLowerCase());
+    if (!winners.includes(wallet)) throw new Error('Reconciliation: wallet is not a raffle winner');
+
+    const xpAwarded = await getPointValue('raffle_win');
+    const xpAwardTx = await awardOnChainXp('awardRaffleWinXp', [wallet as `0x${string}`]);
+    if (!xpAwardTx) throw new Error('Reconciliation: awardRaffleWinXp failed');
+    const stats = await mirrorDailyAppStats(wallet);
+
+    const { error: insertErr } = await (supabase as any)
+        .from('user_task_claims')
+        .insert({
+            wallet_address: wallet,
+            task_id: taskId,
+            xp_earned: xpAwarded,
+            platform: 'system',
+            action_type: 'raffle_win',
+            target_id: taskId,
+            claimed_at: new Date().toISOString()
+        });
+    if (insertErr && insertErr.code !== '23505') throw insertErr;
+
+    await (supabase as any).rpc('fn_increment_raffle_wins', { p_wallet: wallet });
+
+    await logActivity(supabase, {
+        wallet,
+        category: 'XP',
+        type: 'Raffle Win XP',
+        description: `Earned ${xpAwarded} XP for winning Raffle #${raffleId} (reconciled)`,
+        amount: xpAwarded,
+        symbol: 'XP',
+        txHash: xpAwardTx,
+        metadata: { claim_tx_hash: txHash, onchain_xp: stats.points, onchain_tier: stats.tier }
+    });
+}
+
+async function reconcilePoolClaim(job: any, receipt: any) {
+    const wallet = String(job.wallet_address || '').toLowerCase();
+    const txHash = String(job.tx_hash || '').toLowerCase();
+    if (!wallet || !txHash.startsWith('0x')) {
+        throw new Error('Reconciliation: pool_claim payload incomplete');
+    }
+
+    const claimLogs = parseEventLogs({
+        abi: MASTER_X_CLAIM_PROCESSED_EVENT_ABI,
+        eventName: 'ClaimProcessed',
+        logs: receipt.logs,
+        strict: false
+    }) as any[];
+
+    const claimLog = claimLogs.find((log) =>
+        String(log.address || '').toLowerCase() === MASTER_X_ADDRESS.toLowerCase() &&
+        String(log.args?.user || '').toLowerCase() === wallet &&
+        BigInt(log.args?.amount || 0n) > 0n
+    );
+    if (!claimLog) throw new Error('Reconciliation: pool_claim event proof mismatch');
+
+    const { data: existingLog, error: existingErr } = await (supabase as any)
+        .from('user_activity_logs')
+        .select('id')
+        .eq('wallet_address', wallet)
+        .eq('tx_hash', txHash)
+        .eq('category', 'SBT')
+        .eq('activity_type', 'Pool Sharing Claim')
+        .maybeSingle();
+    if (existingErr) throw existingErr;
+    if (existingLog) return;
+
+    const amountEth = Number(formatEther(BigInt(claimLog.args?.amount || 0n)));
+    const tier = Number(claimLog.args?.tier || 0);
+    await logActivity(supabase, {
+        wallet,
+        category: 'SBT',
+        type: 'Pool Sharing Claim',
+        description: `Claimed ${amountEth.toFixed(6)} ETH from SBT pool (Tier ${tier}) (reconciled)`,
+        amount: amountEth,
+        symbol: 'ETH',
+        txHash,
+        metadata: { userTier: tier, feature: 'sbt_pool', tx_verified: true, reconciled: true }
+    });
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -234,9 +496,10 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
             try {
                 // Verify the tx_hash is still valid on-chain
                 let txValid = false;
+                let receipt: any = null;
                 if (job.tx_hash) {
                     try {
-                        const receipt = await rpcClient.getTransactionReceipt({ hash: job.tx_hash as `0x${string}` });
+                        receipt = await rpcClient.getTransactionReceipt({ hash: job.tx_hash as `0x${string}` });
                         txValid = receipt?.status === 'success';
                     } catch {
                         // Receipt not found or RPC error — mark as attempted, don't resolve
@@ -424,6 +687,53 @@ async function handleReconcilePending(req: VercelRequest, res: VercelResponse) {
                             console.warn(`[Reconcile] Daily claim sync for job ${job.id} failed:`, syncErr);
                             throw syncErr; // Re-throw to trigger retry_count increment in the outer catch block
                         }
+                    }
+
+                    if (job.action_type === 'raffle_create') {
+                        const raffleId = job.payload?.raffle_id || job.payload?.raffleId;
+                        if (!raffleId) throw new Error('Reconciliation: raffle_create missing raffle_id payload');
+                        const { data: raffleRow, error: raffleErr } = await (supabase as any)
+                            .from('raffles')
+                            .select('id')
+                            .eq('id', Number(raffleId))
+                            .maybeSingle();
+                        if (raffleErr) throw raffleErr;
+                        if (!raffleRow) throw new Error('Reconciliation: raffle_create DB mirror not found');
+                    }
+
+                    if (job.action_type === 'mission_create') {
+                        const { data: missionRow, error: missionErr } = await (supabase as any)
+                            .from('campaigns')
+                            .select('id')
+                            .eq('payment_tx_hash', String(job.tx_hash).toLowerCase())
+                            .maybeSingle();
+                        if (missionErr) throw missionErr;
+                        if (!missionRow) throw new Error('Reconciliation: mission_create DB mirror not found; signed resubmit required');
+                    }
+
+                    if (job.action_type === 'raffle_reject') {
+                        const raffleId = job.payload?.raffle_id || job.payload?.raffleId;
+                        if (!raffleId) throw new Error('Reconciliation: raffle_reject missing raffle_id payload');
+                        const { data: rejectRow, error: rejectErr } = await (supabase as any)
+                            .from('raffles')
+                            .select('id, cancellation_tx')
+                            .eq('id', Number(raffleId))
+                            .eq('cancellation_tx', String(job.tx_hash).toLowerCase())
+                            .maybeSingle();
+                        if (rejectErr) throw rejectErr;
+                        if (!rejectRow) throw new Error('Reconciliation: raffle_reject DB mirror not found');
+                    }
+
+                    if (job.action_type === 'raffle_buy') {
+                        await reconcileRaffleBuy(job, receipt);
+                    }
+
+                    if (job.action_type === 'raffle_claim') {
+                        await reconcileRaffleClaim(job, receipt);
+                    }
+
+                    if (job.action_type === 'pool_claim') {
+                        await reconcilePoolClaim(job, receipt);
                     }
 
                     await (supabase as any)

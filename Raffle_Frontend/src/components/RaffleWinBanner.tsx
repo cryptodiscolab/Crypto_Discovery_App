@@ -18,6 +18,13 @@ export function RaffleWinBanner() {
 
     const totalPrize = unclaimedWins.reduce((sum, w) => sum + Number(w.prizePerWinner), 0) / 1e18;
     const count = unclaimedWins.length;
+    const earliestDeadline = unclaimedWins
+        .map(w => w.claimDeadlineAt ? new Date(w.claimDeadlineAt).getTime() : 0)
+        .filter((value) => value > 0)
+        .sort((a, b) => a - b)[0];
+    const deadlineLabel = earliestDeadline
+        ? `Claim before ${new Date(earliestDeadline).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`
+        : 'Claim window: 72h after raffle finalization';
 
     return (
         <div className="w-full bg-gradient-to-r from-emerald-600/20 via-emerald-500/10 to-emerald-600/20 border-b border-emerald-500/30 backdrop-blur-xl relative overflow-hidden">
@@ -33,7 +40,7 @@ export function RaffleWinBanner() {
                             🎉 {count > 1 ? `${count} UNCLAIMED PRIZES` : 'YOU WON A RAFFLE!'}
                         </p>
                         <p className="text-[10px] font-bold text-emerald-300/60 uppercase tracking-wider truncate">
-                            {totalPrize.toFixed(4)} ETH waiting to be claimed
+                            {totalPrize.toFixed(4)} ETH waiting to be claimed · {deadlineLabel}
                         </p>
                     </div>
                 </div>

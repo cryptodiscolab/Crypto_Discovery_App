@@ -229,12 +229,17 @@ export type Database = {
         Row: {
           banner_url: string | null
           chain_id: number
+          claim_deadline_at: string | null
           created_at: string | null
           creation_tx_hash: string
           current_participants: number | null
           description: string | null
           duration_days: number
           end_at: string | null
+          escrow_campaign_key: string | null
+          escrow_contract_address: string | null
+          escrow_deposit_tx_hash: string | null
+          escrow_funded_at: string | null
           id: string
           is_active: boolean | null
           is_refunded: boolean | null
@@ -242,6 +247,7 @@ export type Database = {
           is_verified_payment: boolean | null
           listing_fee_usdc: number | null
           max_participants: number
+          payment_token: string | null
           payment_tx_hash: string | null
           platform_code: string | null
           platform_fee_paid: number
@@ -262,12 +268,17 @@ export type Database = {
         Insert: {
           banner_url?: string | null
           chain_id?: number
+          claim_deadline_at?: string | null
           created_at?: string | null
           creation_tx_hash: string
           current_participants?: number | null
           description?: string | null
           duration_days: number
           end_at?: string | null
+          escrow_campaign_key?: string | null
+          escrow_contract_address?: string | null
+          escrow_deposit_tx_hash?: string | null
+          escrow_funded_at?: string | null
           id?: string
           is_active?: boolean | null
           is_refunded?: boolean | null
@@ -275,6 +286,7 @@ export type Database = {
           is_verified_payment?: boolean | null
           listing_fee_usdc?: number | null
           max_participants: number
+          payment_token?: string | null
           payment_tx_hash?: string | null
           platform_code?: string | null
           platform_fee_paid: number
@@ -295,12 +307,17 @@ export type Database = {
         Update: {
           banner_url?: string | null
           chain_id?: number
+          claim_deadline_at?: string | null
           created_at?: string | null
           creation_tx_hash?: string
           current_participants?: number | null
           description?: string | null
           duration_days?: number
           end_at?: string | null
+          escrow_campaign_key?: string | null
+          escrow_contract_address?: string | null
+          escrow_deposit_tx_hash?: string | null
+          escrow_funded_at?: string | null
           id?: string
           is_active?: boolean | null
           is_refunded?: boolean | null
@@ -308,6 +325,7 @@ export type Database = {
           is_verified_payment?: boolean | null
           listing_fee_usdc?: number | null
           max_participants?: number
+          payment_token?: string | null
           payment_tx_hash?: string | null
           platform_code?: string | null
           platform_fee_paid?: number
@@ -605,6 +623,7 @@ export type Database = {
           cancellation_tx: string | null
           category: string | null
           created_at: string | null
+          finalized_at: string | null
           creator_address: string
           description: string | null
           end_time: string | null
@@ -613,6 +632,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean | null
           is_finalized: boolean | null
+          claim_deadline_at: string | null
           max_tickets: number | null
           metadata_uri: string | null
           min_sbt_level: number | null
@@ -631,6 +651,7 @@ export type Database = {
           cancellation_tx?: string | null
           category?: string | null
           created_at?: string | null
+          finalized_at?: string | null
           creator_address: string
           description?: string | null
           end_time?: string | null
@@ -639,6 +660,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           is_finalized?: boolean | null
+          claim_deadline_at?: string | null
           max_tickets?: number | null
           metadata_uri?: string | null
           min_sbt_level?: number | null
@@ -657,6 +679,7 @@ export type Database = {
           cancellation_tx?: string | null
           category?: string | null
           created_at?: string | null
+          finalized_at?: string | null
           creator_address?: string
           description?: string | null
           end_time?: string | null
@@ -665,6 +688,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           is_finalized?: boolean | null
+          claim_deadline_at?: string | null
           max_tickets?: number | null
           metadata_uri?: string | null
           min_sbt_level?: number | null
@@ -985,6 +1009,8 @@ export type Database = {
           is_claimed: boolean | null
           is_verified: boolean | null
           payout_amount: number | null
+          payout_authorization_nonce: string | null
+          payout_deadline_at: string | null
           payout_status: string | null
           payout_tx_hash: string | null
           platform_identity: string | null
@@ -999,6 +1025,8 @@ export type Database = {
           is_claimed?: boolean | null
           is_verified?: boolean | null
           payout_amount?: number | null
+          payout_authorization_nonce?: string | null
+          payout_deadline_at?: string | null
           payout_status?: string | null
           payout_tx_hash?: string | null
           platform_identity?: string | null
@@ -1013,6 +1041,8 @@ export type Database = {
           is_claimed?: boolean | null
           is_verified?: boolean | null
           payout_amount?: number | null
+          payout_authorization_nonce?: string | null
+          payout_deadline_at?: string | null
           payout_status?: string | null
           payout_tx_hash?: string | null
           platform_identity?: string | null
@@ -1367,6 +1397,10 @@ export type Database = {
         }[]
       }
       fn_deactivate_expired_tasks: { Args: never; Returns: undefined }
+      fn_decrement_campaign_reward_pool_atomic: {
+        Args: { p_campaign_id: string; p_reward_amount: number }
+        Returns: Json
+      }
       fn_get_leaderboard: {
         Args: { p_limit?: number; p_tier?: string }
         Returns: {

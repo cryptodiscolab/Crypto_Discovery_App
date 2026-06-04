@@ -10,6 +10,7 @@ interface UnclaimedWin {
     raffleId: number;
     prizePerWinner: bigint;
     title?: string;
+    claimDeadlineAt?: string | null;
 }
 
 /**
@@ -37,7 +38,7 @@ export function useUnclaimedRaffleWins() {
             // 1. Get all finalized raffles from DB
             const { data: finalizedRaffles, error } = await supabase
                 .from('raffles')
-                .select('id, title, is_finalized')
+                .select('id, title, is_finalized, claim_deadline_at')
                 .eq('is_finalized', true)
                 .order('id', { ascending: false })
                 .limit(20);
@@ -61,7 +62,11 @@ export function useUnclaimedRaffleWins() {
 
             // 3. Filter to unclaimed finalized raffles
             const potentialWins = finalizedRaffles.filter(
-                (r: { id: number }) => !claimedSet.has(`raffle_win_${r.id}`)
+                (r: { id: number; claim_deadline_at?: string | null }) => {
+                    const deadlineMs = r.claim_deadline_at ? new Date(r.claim_deadline_at).getTime() : 0;
+                    const isExpired = deadlineMs > 0 && Date.now() > deadlineMs;
+                    return !isExpired && !claimedSet.has(`raffle_win_${r.id}`);
+                }
             );
 
             if (potentialWins.length === 0) {
@@ -111,7 +116,8 @@ export function useUnclaimedRaffleWins() {
                             wins.push({
                                 raffleId: raffle.id,
                                 prizePerWinner: BigInt(prizePerWinner.toString()),
-                                title: raffle.title || undefined
+                                title: raffle.title || undefined,
+                                claimDeadlineAt: raffle.claim_deadline_at || null
                             });
                         }
                     }
@@ -128,8 +134,9 @@ export function useUnclaimedRaffleWins() {
                 if (!hasNotifiedRef.current.has(win.raffleId)) {
                     hasNotifiedRef.current.add(win.raffleId);
                     const prizeETH = Number(win.prizePerWinner) / 1e18;
+                    const deadlineLabel = win.claimDeadlineAt ? ` Claim before ${new Date(win.claimDeadlineAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}.` : '';
                     toast(
-                        `🏆 You won ${win.title ? `"${win.title}"` : `Raffle #${win.raffleId}`}! Claim your ${prizeETH.toFixed(4)} ETH prize!`,
+                        `🏆 You won ${win.title ? `"${win.title}"` : `Raffle #${win.raffleId}`}! Claim your ${prizeETH.toFixed(4)} ETH prize.${deadlineLabel}`,
                         {
                             duration: 12000,
                             icon: '🎉',

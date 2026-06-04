@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { withMiddleware } from './_shared/middleware.js';
 import type { Database } from './_shared/database.types.js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
-import { verifyMessage, keccak256, encodePacked, formatEther, parseEventLogs, type TransactionReceipt } from 'viem';
+import { verifyMessage, keccak256, encodePacked, formatEther, parseEventLogs, parseUnits, type TransactionReceipt } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import crypto from 'crypto';
 import {
@@ -29,7 +29,8 @@ import {
     sanitizeError,
     logSystemError,
     NATIVE_TOKEN_ALIASES,
-    DEX_SCREENER_API_URL
+    DEX_SCREENER_API_URL,
+    awardOnChainXp
 } from './_shared/constants.js';
 import type {
     UserProfile,
@@ -124,6 +125,44 @@ const MASTER_X_CLAIM_PROCESSED_EVENT_ABI = [
     }
 ] as const;
 
+const ERC20_TRANSFER_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'from', type: 'address' },
+            { indexed: true, name: 'to', type: 'address' },
+            { indexed: false, name: 'value', type: 'uint256' }
+        ],
+        name: 'Transfer',
+        type: 'event'
+    }
+] as const;
+
+const RAFFLE_CANCELLED_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'raffleId', type: 'uint256' },
+            { indexed: true, name: 'sponsor', type: 'address' },
+            { indexed: false, name: 'refundedAmount', type: 'uint256' }
+        ],
+        name: 'RaffleCancelled',
+        type: 'event'
+    }
+] as const;
+
+const RAFFLE_CREATED_EVENT_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'raffleId', type: 'uint256' },
+            { indexed: false, name: 'timestamp', type: 'uint256' }
+        ],
+        name: 'RaffleCreated',
+        type: 'event'
+    }
+] as const;
+
 type DailyAppSbtMintLog = {
     args?: {
         user?: `0x${string}`;
@@ -149,6 +188,46 @@ type MasterXClaimProcessedLog = {
         tier?: number;
         amount?: bigint;
     };
+};
+
+type Erc20TransferLog = {
+    address?: string;
+    args?: {
+        from?: `0x${string}`;
+        to?: `0x${string}`;
+        value?: bigint;
+    };
+};
+
+type RaffleCancelledLog = {
+    address?: string;
+    args?: {
+        raffleId?: bigint;
+        sponsor?: `0x${string}`;
+        refundedAmount?: bigint;
+    };
+};
+
+type RaffleCreatedLog = {
+    address?: string;
+    args?: {
+        raffleId?: bigint;
+        timestamp?: bigint;
+    };
+};
+type RaffleInfo = {
+    raffleId?: bigint;
+    totalTickets?: bigint;
+    maxTickets?: bigint;
+    prizePool?: bigint;
+    winnerCount?: bigint;
+    isActive?: boolean;
+    isFinalized?: boolean;
+    sponsor?: string;
+    metadataURI?: string;
+    endTime?: bigint;
+    prizePerWinner?: bigint;
+    totalTicketRevenue?: bigint;
 };
 
 type UnknownTableClient = {
@@ -694,6 +773,234 @@ function hasMasterXPoolClaim(receipt: TransactionReceipt, walletAddress: string)
         console.error('[hasMasterXPoolClaim] Failed to parse ClaimProcessed logs:', err);
         return false;
     }
+}
+
+function isNativeTokenAddress(token?: string | null): boolean {
+    const normalized = normalizeTokenAddress(token);
+    return !normalized
+        || normalized === '0x0000000000000000000000000000000000000000'
+        || NATIVE_TOKEN_ALIASES.has(normalized);
+}
+
+async function getTokenDecimals(tokenAddress?: string | null, symbol?: string | null): Promise<number> {
+    if (isNativeTokenAddress(tokenAddress)) return 18;
+    const normalizedAddress = normalizeTokenAddress(tokenAddress);
+    const normalizedSymbol = String(symbol || '').trim().toUpperCase();
+    const { data } = await getSupabaseAdmin()
+        .from('allowed_tokens')
+        .select('address, symbol, decimals')
+        .eq('is_active', true);
+
+    const match = (data || []).find((token: { address?: string | null; symbol?: string | null; decimals?: number | null }) => {
+        const tokenAddr = normalizeTokenAddress(token.address);
+        const tokenSymbol = String(token.symbol || '').trim().toUpperCase();
+        return (normalizedAddress && tokenAddr === normalizedAddress)
+            || (normalizedSymbol && tokenSymbol === normalizedSymbol);
+    });
+
+    return Number(match?.decimals || 18);
+}
+
+function hasErc20Transfer(receipt: TransactionReceipt, tokenAddress: string, from: string, to: string, minimumValue: bigint): boolean {
+    const cleanToken = tokenAddress.toLowerCase();
+    const cleanFrom = from.toLowerCase();
+    const cleanTo = to.toLowerCase();
+    try {
+        const logs = parseEventLogs({
+            abi: ERC20_TRANSFER_EVENT_ABI,
+            eventName: 'Transfer',
+            logs: receipt.logs,
+            strict: false
+        }) as Erc20TransferLog[];
+
+        return logs.some((log) =>
+            log.address?.toLowerCase() === cleanToken &&
+            String(log.args?.from || '').toLowerCase() === cleanFrom &&
+            String(log.args?.to || '').toLowerCase() === cleanTo &&
+            BigInt(log.args?.value || 0n) >= minimumValue
+        );
+    } catch (err) {
+        console.error('[hasErc20Transfer] Failed to parse ERC20 Transfer logs:', err);
+        return false;
+    }
+}
+
+async function verifyUgcMissionPayment(params: {
+    wallet: string;
+    txHash: string;
+    paymentToken?: string | null;
+    rewardSymbol?: string | null;
+    treasuryAddress?: string | null;
+    rewardAmount: number;
+    maxParticipants: number;
+    platformFeeUsd: number;
+    listingFeeToken?: number;
+    tokenPriceUsd: number;
+}): Promise<{ expectedRaw: bigint; decimals: number }> {
+    const treasury = String(params.treasuryAddress || '').trim().toLowerCase();
+    if (!treasury.startsWith('0x')) throw new Error('Invalid treasury configuration: UGC treasury address is not configured');
+    if (!params.txHash?.startsWith('0x')) throw new Error('Missing payment transaction hash');
+
+    const receipt = await rpcClient.getTransactionReceipt({ hash: params.txHash as `0x${string}` });
+    if (!receipt || receipt.status !== 'success') throw new Error('Invalid payment transaction state: not confirmed');
+
+    const decimals = await getTokenDecimals(params.paymentToken, params.rewardSymbol);
+    const rewardPool = params.rewardAmount * params.maxParticipants;
+    const configuredListingFeeInToken = params.tokenPriceUsd > 0 ? params.platformFeeUsd / params.tokenPriceUsd : params.platformFeeUsd;
+    const listingFeeInToken = Math.max(toPositiveNumber(params.listingFeeToken), configuredListingFeeInToken);
+    const expectedAmount = rewardPool + listingFeeInToken;
+    const expectedRaw = parseUnits(expectedAmount.toFixed(decimals), decimals);
+    const cleanWallet = params.wallet.toLowerCase();
+
+    if (isNativeTokenAddress(params.paymentToken)) {
+        const tx = await rpcClient.getTransaction({ hash: params.txHash as `0x${string}` });
+        const directNativePayment = tx.from.toLowerCase() === cleanWallet
+            && tx.to?.toLowerCase() === treasury
+            && BigInt(tx.value || 0n) >= expectedRaw;
+
+        if (directNativePayment) {
+            return { expectedRaw, decimals };
+        }
+
+        // Fallback for Smart Accounts (AA) / contract-based treasury transfers:
+        // Try parsing SafeReceived event logs from the Gnosis Safe treasury
+        try {
+            const safeReceivedAbi = [
+                {
+                    anonymous: false,
+                    inputs: [
+                        { indexed: true, name: 'sender', type: 'address' },
+                        { indexed: false, name: 'value', type: 'uint256' }
+                    ],
+                    name: 'SafeReceived',
+                    type: 'event'
+                }
+            ] as const;
+
+            const safeReceivedLogs = parseEventLogs({
+                abi: safeReceivedAbi,
+                eventName: 'SafeReceived',
+                logs: receipt.logs,
+                strict: false
+            });
+
+            const hasSafePayment = safeReceivedLogs.some(log =>
+                log.address?.toLowerCase() === treasury.toLowerCase() &&
+                log.args?.sender?.toLowerCase() === cleanWallet &&
+                BigInt(log.args?.value || 0n) >= expectedRaw
+            );
+
+            if (hasSafePayment) {
+                return { expectedRaw, decimals };
+            }
+        } catch (err) {
+            console.error('[verifyUgcMissionPayment] Failed to parse SafeReceived logs:', err);
+        }
+
+        throw new Error('Invalid native payment proof');
+    }
+
+    const tokenAddress = normalizeTokenAddress(params.paymentToken);
+    if (!tokenAddress.startsWith('0x')) throw new Error('Invalid payment token address');
+    const isOwner = verifyTransactionOwnership(receipt, params.wallet);
+    const hasTransfer = hasErc20Transfer(receipt, tokenAddress, params.wallet, treasury, expectedRaw);
+    if (!isOwner || !hasTransfer) throw new Error('Invalid ERC20 payment proof');
+    return { expectedRaw, decimals };
+}
+
+function hasRaffleCancelled(receipt: TransactionReceipt, raffleId: string | number): boolean {
+    try {
+        const expectedRaffleId = BigInt(raffleId);
+        const logs = parseEventLogs({
+            abi: RAFFLE_CANCELLED_EVENT_ABI,
+            eventName: 'RaffleCancelled',
+            logs: receipt.logs,
+            strict: false
+        }) as RaffleCancelledLog[];
+
+        return logs.some((log) =>
+            log.address?.toLowerCase() === RAFFLE_ADDRESS.toLowerCase() &&
+            BigInt(log.args?.raffleId || 0n) === expectedRaffleId
+        );
+    } catch (err) {
+        console.error('[hasRaffleCancelled] Failed to parse RaffleCancelled logs:', err);
+        return false;
+    }
+}
+
+function hasRaffleCreated(receipt: TransactionReceipt, raffleId: string | number): boolean {
+    try {
+        const expectedRaffleId = BigInt(raffleId);
+        const logs = parseEventLogs({
+            abi: RAFFLE_CREATED_EVENT_ABI,
+            eventName: 'RaffleCreated',
+            logs: receipt.logs,
+            strict: false
+        }) as RaffleCreatedLog[];
+
+        return logs.some((log) =>
+            log.address?.toLowerCase() === RAFFLE_ADDRESS.toLowerCase() &&
+            BigInt(log.args?.raffleId || 0n) === expectedRaffleId
+        );
+    } catch (err) {
+        console.error('[hasRaffleCreated] Failed to parse RaffleCreated logs:', err);
+        return false;
+    }
+}
+
+async function mirrorOnChainUserStats(wallet: string, context: string, txHash: `0x${string}`): Promise<{ points: number; tier: number }> {
+    const cleanWallet = wallet.toLowerCase();
+    const stats = await rpcClient.readContract({
+        address: DAILY_APP_ADDRESS as `0x${string}`,
+        abi: DAILY_APP_USER_STATS_ABI,
+        functionName: 'userStats',
+        args: [cleanWallet as `0x${string}`]
+    }) as readonly [bigint, bigint, bigint, number, bigint, bigint, boolean];
+    const points = Number(stats[0] || 0n);
+    const tier = Number(stats[3] || 0);
+    const { error } = await getSupabaseAdmin()
+        .from('user_profiles')
+        .upsert({
+            wallet_address: cleanWallet,
+            total_xp: points,
+            last_onchain_xp: points,
+            tier,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'wallet_address' });
+
+    if (error) {
+        await logSystemError({
+            severity: 'critical',
+            surface: 'api',
+            bundle: 'user-bundle',
+            action: `${context}:mirrorOnChainUserStats`,
+            wallet_address: cleanWallet,
+            tx_hash: txHash,
+            message: `Failed to mirror on-chain userStats: ${error.message}`
+        }).catch(() => {});
+        throw error;
+    }
+
+    return { points, tier };
+}
+
+async function requireOnChainXpAward(functionName: 'awardUgcTaskXp' | 'awardUgcRaffleXp', args: readonly unknown[], wallet: string, context: string) {
+    const cleanWallet = wallet.toLowerCase();
+    const txHash = await awardOnChainXp(functionName, args);
+    if (!txHash) {
+        await logSystemError({
+            severity: 'critical',
+            surface: 'api',
+            bundle: 'user-bundle',
+            action: context,
+            wallet_address: cleanWallet,
+            message: `${functionName} did not produce an on-chain transaction hash`
+        }).catch(() => {});
+        throw new Error('ONCHAIN_XP_AWARD_FAILED');
+    }
+
+    const stats = await mirrorOnChainUserStats(cleanWallet, context, txHash);
+    return { txHash, ...stats };
 }
 
 async function handleXpSync(req: VercelRequest, res: VercelResponse) {
@@ -1362,6 +1669,9 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             tasks_batch, reward_symbol, payment_token, duration_days,
             is_base_social_required, listing_fee
         } = payload;
+        if (!txHash?.startsWith('0x')) {
+            return res.status(400).json({ error: 'Missing payment transaction hash' });
+        }
 
         const [{ data: ugcConfigRes }, { data: sysSetting }, { data: pointSetting }, { data: tokenPricesRes }] = await Promise.all([
             getSupabaseAdmin().from('system_settings').select('value').eq('key', 'ugc_config').maybeSingle(),
@@ -1396,6 +1706,18 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         const platformFee = ugcConfig.listing_fee_usdc
             ? parseFloat(String(ugcConfig.listing_fee_usdc))
             : (sysSetting?.value ? parseFloat(String(sysSetting.value)) : 0);
+        const paymentProof = await verifyUgcMissionPayment({
+            wallet: wallet.toLowerCase(),
+            txHash,
+            paymentToken: payment_token,
+            rewardSymbol: reward_symbol,
+            treasuryAddress: String(ugcConfig.treasury_address || ''),
+            rewardAmount,
+            maxParticipants: Number(max_participants),
+            platformFeeUsd: platformFee,
+            listingFeeToken: Number(listing_fee || 0),
+            tokenPriceUsd: tokenPrice
+        });
         const requestedDurationDays = Number(duration_days);
         const configuredDurationDays = Number(ugcConfig.mission_duration_days);
         const effectiveDurationDays = Number.isFinite(requestedDurationDays) && requestedDurationDays > 0
@@ -1416,12 +1738,14 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             payment_token: payment_token || null,
             reward_symbol: reward_symbol || 'TOKEN',
             creation_tx_hash: txHash,
+            payment_tx_hash: txHash,
             duration_days: effectiveDurationDays,
             reward_token_address: (payment_token || '0x0000000000000000000000000000000000000000').toLowerCase(),
             total_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
             remaining_reward_pool: parseFloat(reward_amount_per_user) * Number(max_participants),
             listing_fee: listing_fee || platformFee,
             platform_fee_paid: platformFee, // Legacy tracking
+            is_verified_payment: true,
             chain_id: Number(CHAIN_ID)
         }).select().maybeSingle();
 
@@ -1465,18 +1789,25 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
         try {
             const { data: sponsorPoints } = await getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'sponsor_task').maybeSingle();
             const creatorXp = sponsorPoints?.points_value || 0;
+            const { data: existingClaim } = await getSupabaseAdmin()
+                .from('user_task_claims')
+                .select('id')
+                .eq('wallet_address', wallet.toLowerCase())
+                .eq('task_id', `ugc_mission_create_${campaign.id}`)
+                .maybeSingle();
 
-            const { error: claimErr } = await getSupabaseAdmin().from('user_task_claims').insert({
-                wallet_address: wallet.toLowerCase(),
-                task_id: `ugc_mission_create_${campaign.id}`,
-                xp_earned: creatorXp,
-                platform: 'system',
-                action_type: 'sponsor_task',
-                target_id: String(campaign.id)
-            });
+            if (!existingClaim && creatorXp > 0) {
+                const award = await requireOnChainXpAward('awardUgcTaskXp', [wallet.toLowerCase() as `0x${string}`, BigInt(creatorXp)], wallet, 'sync-ugc-mission:create-xp');
+                const { error: claimErr } = await getSupabaseAdmin().from('user_task_claims').insert({
+                    wallet_address: wallet.toLowerCase(),
+                    task_id: `ugc_mission_create_${campaign.id}`,
+                    xp_earned: creatorXp,
+                    platform: 'system',
+                    action_type: 'sponsor_task',
+                    target_id: String(campaign.id)
+                });
 
-            if (!claimErr) {
-                await getSupabaseAdmin().rpc('fn_increment_xp', { p_wallet: wallet.toLowerCase(), p_amount: creatorXp });
+                if (claimErr && claimErr.code !== '23505') throw claimErr;
                 await logActivity({
                     wallet,
                     category: 'XP',
@@ -1484,8 +1815,8 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
                     description: `Earned ${creatorXp} XP for creating mission: ${title}`,
                     amount: creatorXp,
                     symbol: 'XP',
-                    txHash,
-                    metadata: { campaign_id: String(campaign.id) }
+                    txHash: award.txHash,
+                    metadata: { campaign_id: String(campaign.id), payment_tx_hash: txHash, onchain_xp: award.points, onchain_tier: award.tier }
                 });
             }
         } catch (xpErr: unknown) {
@@ -1512,7 +1843,7 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
             amount: listing_fee || platformFee,
             symbol: reward_symbol || 'USDC',
             txHash,
-            metadata: { campaign_id: campaign.id }
+            metadata: { campaign_id: campaign.id, payment_expected_raw: paymentProof.expectedRaw.toString(), payment_decimals: paymentProof.decimals }
         });
 
         return res.status(200).json({ success: true });
@@ -1535,42 +1866,56 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         if (!Number.isInteger(numericRaffleId) || numericRaffleId <= 0) {
             return res.status(400).json({ error: 'Invalid raffle_id for UGC raffle sync' });
         }
+        if (!txHash?.startsWith('0x')) {
+            return res.status(400).json({ error: 'Missing raffle creation transaction hash' });
+        }
 
         const isAdminWallet = MASTER_ADMINS.includes(wallet.toLowerCase());
-
-        if (!isAdminWallet) {
-            try {
-                const raffleInfo = await rpcClient.readContract({
-                    address: RAFFLE_ADDRESS as `0x${string}`,
-                    abi: RAFFLE_ABI,
-                    functionName: 'getRaffleInfo',
-                    args: [BigInt(numericRaffleId)]
-                }) as { sponsor: string };
-
-                if (raffleInfo.sponsor.toLowerCase() !== wallet.toLowerCase()) {
-                    return res.status(403).json({ error: `Not sponsor of Raffle #${raffle_id}` });
-                }
-            } catch (onChainErr: unknown) {
-                const msg = onChainErr instanceof Error ? onChainErr.message : String(onChainErr);
-                console.error('[handleSyncUgcRaffle] On-chain check fail:', msg);
-                return res.status(502).json({ error: `Unable to verify Raffle #${raffle_id} on-chain` });
-            }
+        const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+        const isOwner = verifyTransactionOwnership(receipt, wallet);
+        const isRaffleTx = isReceiptTo(receipt, RAFFLE_ADDRESS);
+        const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+        if (!isOwner || (!isRaffleTx && !isEntryPointTx) || !hasRaffleCreated(receipt, numericRaffleId)) {
+            return res.status(400).json({ error: 'Invalid raffle creation transaction proof' });
         }
 
-        const prizePool = depositETH ? parseFloat(depositETH) : 0;
-        if (!Number.isFinite(prizePool) || prizePool < 0) {
+        let raffleInfo: RaffleInfo;
+        try {
+            raffleInfo = await rpcClient.readContract({
+                address: RAFFLE_ADDRESS as `0x${string}`,
+                abi: RAFFLE_ABI,
+                functionName: 'getRaffleInfo',
+                args: [BigInt(numericRaffleId)]
+            }) as RaffleInfo;
+
+            if (!isAdminWallet && raffleInfo.sponsor?.toLowerCase() !== wallet.toLowerCase()) {
+                return res.status(403).json({ error: `Not sponsor of Raffle #${raffle_id}` });
+            }
+        } catch (onChainErr: unknown) {
+            const msg = onChainErr instanceof Error ? onChainErr.message : String(onChainErr);
+            console.error('[handleSyncUgcRaffle] On-chain check fail:', msg);
+            return res.status(502).json({ error: `Unable to verify Raffle #${raffle_id} on-chain` });
+        }
+
+        const paidDeposit = depositETH ? parseFloat(depositETH) : 0;
+        if (!Number.isFinite(paidDeposit) || paidDeposit < 0) {
             return res.status(400).json({ error: 'Invalid depositETH for UGC raffle sync' });
         }
+        const onChainPrizePool = raffleInfo.prizePool ?? 0n;
+        const prizePool = Number(formatEther(onChainPrizePool));
+        const onChainEndTime = Number(raffleInfo.endTime || 0n);
+        const onChainMaxTickets = Number(raffleInfo.maxTickets || BigInt(max_tickets || 0));
+        const onChainWinnerCount = Number(raffleInfo.winnerCount || BigInt(winnerCount || 0));
 
         const { error: raffleErr } = await getSupabaseAdmin().from('raffles').upsert({
             id: numericRaffleId,
             creator_address: wallet.toLowerCase(),
             sponsor_address: wallet.toLowerCase(),
-            end_time: end_time ? new Date(end_time * 1000).toISOString() : null,
-            max_tickets: Number(max_tickets),
-            winner_count: Number(winnerCount),
+            end_time: onChainEndTime > 0 ? new Date(onChainEndTime * 1000).toISOString() : (end_time ? new Date(end_time * 1000).toISOString() : null),
+            max_tickets: onChainMaxTickets,
+            winner_count: onChainWinnerCount,
             prize_pool: prizePool,
-            metadata_uri: metadata_uri || null,
+            metadata_uri: raffleInfo.metadataURI || metadata_uri || null,
             is_active: false,
             title: extra_metadata?.title || null,
             description: extra_metadata?.description || null,
@@ -1587,17 +1932,25 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
         const { data: setting } = await getSupabaseAdmin().from('point_settings').select('points_value').eq('activity_key', 'raffle_create').maybeSingle();
         if (setting?.points_value) {
             const creatorXp = setting.points_value;
-            const { error: claimErr } = await getSupabaseAdmin().from('user_task_claims').insert({
-                wallet_address: wallet.toLowerCase(),
-                task_id: `raffle_create_${raffle_id}`,
-                xp_earned: creatorXp,
-                platform: 'system',
-                action_type: 'raffle_create',
-                target_id: `raffle_create_${raffle_id}`
-            });
+            const { data: existingClaim } = await getSupabaseAdmin()
+                .from('user_task_claims')
+                .select('id')
+                .eq('wallet_address', wallet.toLowerCase())
+                .eq('task_id', `raffle_create_${raffle_id}`)
+                .maybeSingle();
 
-            if (!claimErr) {
-                await getSupabaseAdmin().rpc('fn_increment_xp', { p_wallet: wallet.toLowerCase(), p_amount: creatorXp });
+            if (!existingClaim) {
+                const award = await requireOnChainXpAward('awardUgcRaffleXp', [wallet.toLowerCase() as `0x${string}`, BigInt(creatorXp)], wallet, 'sync-ugc-raffle:create-xp');
+                const { error: claimErr } = await getSupabaseAdmin().from('user_task_claims').insert({
+                    wallet_address: wallet.toLowerCase(),
+                    task_id: `raffle_create_${raffle_id}`,
+                    xp_earned: creatorXp,
+                    platform: 'system',
+                    action_type: 'raffle_create',
+                    target_id: `raffle_create_${raffle_id}`
+                });
+
+                if (claimErr && claimErr.code !== '23505') throw claimErr;
                 await logActivity({
                     wallet,
                     category: 'XP',
@@ -1605,9 +1958,10 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
                     description: `Awarded ${creatorXp} XP for Creating Raffle #${raffle_id}`,
                     amount: creatorXp,
                     symbol: 'XP',
-                    txHash
+                    txHash: award.txHash,
+                    metadata: { raffle_id, creation_tx_hash: txHash, onchain_xp: award.points, onchain_tier: award.tier }
                 });
-            } else if (claimErr.code === '23505') {
+            } else {
                 // Duplicate claim — XP already awarded on a previous sync attempt
                 await logActivity({
                     wallet,
@@ -1628,10 +1982,10 @@ async function handleSyncUgcRaffle(req: VercelRequest, res: VercelResponse) {
             category: 'PURCHASE',
             type: 'UGC Raffle Launch',
             description: `Launched sponsored raffle: ${extra_metadata?.title || raffle_id}`,
-            amount: parseFloat(depositETH),
+            amount: paidDeposit,
             symbol: 'ETH',
             txHash,
-            metadata: { raffle_id, winnerCount, sync_status: 'synced', contract_verified: true }
+            metadata: { raffle_id, winnerCount: onChainWinnerCount, prize_pool_eth: prizePool, sync_status: 'synced', contract_verified: true }
         });
 
         return res.status(200).json({ success: true });
@@ -2094,6 +2448,17 @@ async function handleSyncPoolClaim(req: VercelRequest, res: VercelResponse) {
             return res.status(403).json({ error: 'Transaction verification failed: invalid sender, destination, or pool claim event' });
         }
 
+        const { data: existingLog, error: existingErr } = await getSupabaseAdmin()
+            .from('user_activity_logs')
+            .select('id')
+            .eq('wallet_address', wallet.toLowerCase())
+            .eq('tx_hash', txHash)
+            .eq('category', 'SBT')
+            .eq('activity_type', 'Pool Sharing Claim')
+            .maybeSingle();
+        if (existingErr) throw existingErr;
+        if (existingLog) return res.status(200).json({ success: true, already_synced: true });
+
         await logActivity({
             wallet,
             category: 'SBT',
@@ -2486,6 +2851,7 @@ const VALID_PENDING_SYNC_ACTIONS = new Set([
     'raffle_create',
     'raffle_reject',
     'daily_claim',
+    'pool_claim',
     'sbt_upgrade',
     'sbt_mint',
     'mission_create',
@@ -2720,6 +3086,15 @@ async function handleRejectRaffle(req: VercelRequest, res: VercelResponse) {
     try {
         const valid = await verifyMessage({ address: wallet as `0x${string}`, message, signature: signature as `0x${string}` });
         if (!valid || !(await isAuthorizedAdmin(wallet))) return res.status(403).json({ error: 'Unauthorized' });
+        if (!txHash?.startsWith('0x')) return res.status(400).json({ error: 'Missing cancellation transaction hash' });
+
+        const receipt = await rpcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+        const isOwner = verifyTransactionOwnership(receipt, wallet);
+        const isRaffleTx = isReceiptTo(receipt, RAFFLE_ADDRESS);
+        const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+        if (!isOwner || (!isRaffleTx && !isEntryPointTx) || !hasRaffleCancelled(receipt, raffle_id)) {
+            return res.status(400).json({ error: 'Invalid raffle cancellation transaction proof' });
+        }
 
         const { error } = await getSupabaseAdmin().from('raffles').update({
             is_active: false,

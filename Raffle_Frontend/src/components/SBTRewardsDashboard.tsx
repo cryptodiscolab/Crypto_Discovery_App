@@ -3,9 +3,10 @@ import { Award, DollarSign, ShieldAlert, CheckCircle, ExternalLink, Timer as Tim
 import { useSBT } from '../hooks/useSBT';
 import { useCMS } from '../hooks/useCMS';
 import { formatEther, formatUnits } from 'viem';
-import { usePublicClient, useAccount, useSignMessage } from 'wagmi';
+import { usePublicClient, useAccount, useSignMessage, useChainId } from 'wagmi';
 import { useUserInfo, useV12Stats } from '../hooks/useContract';
 import { calculateMultipliers } from '../lib/economy';
+import { usePendingSyncRecovery } from '../hooks/usePendingSyncRecovery';
 import toast from 'react-hot-toast';
 
 interface Multipliers {
@@ -17,11 +18,13 @@ interface Multipliers {
 
 export function SBTRewardsDashboard() {
     const { address } = useAccount();
+    const chainId = useChainId();
     const { signMessageAsync } = useSignMessage();
     const { totalPoolBalance, userTier, claimableAmount, maxGasPrice, claimRewards, isLoading: loadingSBT } = useSBT();
     const { ethPrice, poolSettings, isLoading: loadingCMS } = useCMS();
     const { stats: userStats } = useUserInfo(address);
     const { totalUsers } = useV12Stats();
+    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const publicClient = usePublicClient();
 
     const multis = calculateMultipliers(userStats, totalUsers);
@@ -89,7 +92,7 @@ export function SBTRewardsDashboard() {
                 // Use EIP-6963 compliant signMessageAsync
                 const signature = await signMessageAsync({ message });
 
-                await fetch('/api/user-bundle', {
+                const response = await fetch('/api/user-bundle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -104,8 +107,24 @@ export function SBTRewardsDashboard() {
                         }
                     })
                 });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || result?.success !== true) {
+                    throw new Error(result?.error || result?.message || 'Pool claim sync failed');
+                }
             } catch (syncErr) {
-                console.warn('Pool Sync failed:', syncErr);
+                const errMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
+                console.warn('Pool Sync failed:', errMsg);
+                recordPendingSync({
+                    actionType: 'pool_claim',
+                    txHash: hash,
+                    chainId,
+                    payload: {
+                        amountETH: formatEther(claimableAmount),
+                        tier: userTier
+                    },
+                    errorMessage: errMsg
+                }).catch(() => {});
+                toast.success('Claim successful. Pool sync is pending recovery.', { id: tid, duration: 6000 });
             }
         } catch (err: unknown) {
             console.error(err);

@@ -839,6 +839,7 @@ Ekosistem Task dianggap sehat jika semua poin berikut terpenuhi:
 - [x] **Dynamic Summary**: Home Page summary (`TaskCard.jsx`) menggunakan real-time Supabase stats (bukan placeholder).
 - [x] **15s Anti-Fraud (Off-Chain)**: `startedTasks` countdown setelah "GO TO TASK" klik sebelum CLAIM REWARD aktif (v3.47.1).
 - [x] **Self-Healing v3.51.2**: Backend otomatis memulihkan XP/Log jika record claim sudah ada tapi data reward hilang.
+- [x] **Client-Side Cache Social ID Resolution**: `verifyTask` resolves correct platform social IDs (`twitter_id`, `tiktok_username`, etc.) from `localStorage` cache / Supabase fallback before calling `/api/tasks-bundle` (v3.64.39).
 
 ---
 

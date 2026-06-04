@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Coins, RefreshCw } from 'lucide-react';
-import { useAccount, useSignMessage, usePublicClient } from 'wagmi';
+import { useAccount, useSignMessage, usePublicClient, useChainId } from 'wagmi';
+import { formatEther } from 'viem';
 import toast from 'react-hot-toast';
 import { useSBT as useSBTData } from '../../../../hooks/useSBT';
 import { useUserInfo } from '../../../../hooks/useContract';
 import { usePoints } from '../../../../shared/context/PointsContext';
+import { usePendingSyncRecovery } from '../../../../hooks/usePendingSyncRecovery';
 
 interface RevenueClaimModalProps {
     onClose: () => void;
@@ -17,8 +19,10 @@ interface RevenueClaimModalProps {
  */
 export function RevenueClaimModal({ onClose, claimable, onSuccess }: RevenueClaimModalProps) {
     const { address } = useAccount();
+    const chainId = useChainId();
     const { signMessageAsync } = useSignMessage();
     const { claimRewards } = useSBTData();
+    const { recordFailure: recordPendingSync } = usePendingSyncRecovery();
     const [isClaiming, setIsClaiming] = useState(false);
     const publicClient = usePublicClient();
 
@@ -26,23 +30,41 @@ export function RevenueClaimModal({ onClose, claimable, onSuccess }: RevenueClai
         if (claimable === 0n) return toast.error("Nothing to claim!");
         setIsClaiming(true);
         const tid = toast.loading("Confirming claim...");
+        let claimHash: `0x${string}` | null = null;
         try {
-            const hash = await claimRewards();
-            await publicClient!.waitForTransactionReceipt({ hash });
+            claimHash = await claimRewards();
+            const receipt = await publicClient!.waitForTransactionReceipt({ hash: claimHash });
+            if (receipt.status !== 'success') throw new Error('Claim transaction reverted on-chain');
             const timestamp = new Date().toISOString();
             const message = `Claim Dividends for ${address}\nTimestamp: ${timestamp}`;
             const signature = await signMessageAsync({ message });
-            await fetch('/api/user-bundle', {
+            const response = await fetch('/api/user-bundle', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ action: 'sync-pool-claim', wallet: address, signature, message, payload: { amountETH: Number(claimable).toString(), txHash: hash } }),
+                body: JSON.stringify({ action: 'sync-pool-claim', wallet: address, signature, message, payload: { amountETH: formatEther(claimable), txHash: claimHash } }),
             });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result?.success !== true) {
+                throw new Error(result?.error || result?.message || 'Pool claim sync failed');
+            }
             toast.success("Dividends claimed!", { id: tid });
             if (onSuccess) onSuccess();
             onClose();
         } catch (err: unknown) {
             const error = err as { shortMessage?: string; message?: string };
-            toast.error(error.shortMessage || error.message || "Claim failed", { id: tid });
+            const errorMessage = error.shortMessage || error.message || "Claim failed";
+            if (claimHash) {
+                recordPendingSync({
+                    actionType: 'pool_claim',
+                    txHash: claimHash,
+                    chainId,
+                    payload: { amountETH: formatEther(claimable) },
+                    errorMessage
+                }).catch(() => {});
+                toast.success("Claim succeeded. Pool sync is pending recovery.", { id: tid });
+            } else {
+                toast.error(errorMessage, { id: tid });
+            }
         } finally {
             setIsClaiming(false);
         }

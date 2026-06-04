@@ -58,6 +58,10 @@
             "schedule": "0 0 * * *"
         },
         {
+            "path": "/api/cron/reward-claim-reminders",
+            "schedule": "0 0 * * *"
+        },
+        {
             "path": "/api/sync-xp-onchain",
             "schedule": "0 2 * * *"
         },

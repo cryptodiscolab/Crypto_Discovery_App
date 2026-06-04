@@ -24,6 +24,11 @@ export interface UGCCampaign {
     platform_code: string;
     reward_amount_per_user: number;
     reward_symbol: string;
+    reward_token_address?: string | null;
+    payment_token?: string | null;
+    claim_deadline_at?: string | null;
+    escrow_contract_address?: string | null;
+    escrow_campaign_key?: string | null;
     is_active: boolean;
     is_verified_payment: boolean;
     subTasks?: Task[];

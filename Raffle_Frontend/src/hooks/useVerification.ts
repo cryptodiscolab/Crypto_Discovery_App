@@ -56,6 +56,49 @@ export function useVerification(refetchStats?: () => void) {
             const platform = t.platform?.toLowerCase() || 'farcaster';
             const isSocialTask = ['farcaster', 'twitter', 'tiktok', 'instagram'].includes(platform);
 
+            // Resolve correct social IDs from localStorage cache or fallback
+            let resolvedFid = userFid || (typeof t.socialId === 'number' ? t.socialId : 0);
+            let resolvedTwitterId = '';
+            let resolvedTiktok = typeof t.socialId === 'string' ? t.socialId : (t.tiktokHandle || '');
+            let resolvedInstagram = typeof t.socialId === 'string' ? t.socialId : (t.instagramHandle || '');
+
+            if (isSocialTask) {
+                try {
+                    const cached = localStorage.getItem(`fc_cache_${address.toLowerCase()}`);
+                    if (cached) {
+                        const cachedProfile = JSON.parse(cached);
+                        if (cachedProfile) {
+                            if (cachedProfile.fid) resolvedFid = Number(cachedProfile.fid);
+                            if (cachedProfile.twitter_id) resolvedTwitterId = String(cachedProfile.twitter_id);
+                            if (cachedProfile.tiktok_username) resolvedTiktok = String(cachedProfile.tiktok_username);
+                            if (cachedProfile.instagram_username) resolvedInstagram = String(cachedProfile.instagram_username);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[verifyTask] Cache resolution error:', e);
+                }
+
+                // Zero-Trust Direct Lookup Fallback
+                if (!resolvedTwitterId && !resolvedFid && !resolvedTiktok && !resolvedInstagram) {
+                    try {
+                        const { supabase } = await import('../lib/supabaseClient');
+                        const { data } = await supabase
+                            .from('user_profiles')
+                            .select('fid, twitter_id, tiktok_username, instagram_username')
+                            .eq('wallet_address', address.toLowerCase())
+                            .maybeSingle();
+                        if (data) {
+                            if (data.fid) resolvedFid = Number(data.fid);
+                            if (data.twitter_id) resolvedTwitterId = String(data.twitter_id);
+                            if (data.tiktok_username) resolvedTiktok = String(data.tiktok_username);
+                            if (data.instagram_username) resolvedInstagram = String(data.instagram_username);
+                        }
+                    } catch (dbErr) {
+                        console.warn('[verifyTask] DB fallback resolution error:', dbErr);
+                    }
+                }
+            }
+
             let response;
             if (isSocialTask) {
                 // ── CALL TASKS-BUNDLE (SOCIAL VERIFY) ──
@@ -71,10 +114,10 @@ export function useVerification(refetchStats?: () => void) {
                         task_id: taskId,
                         platform: platform,
                         action_type: t.action_type || 'like',
-                        fid: platform === 'farcaster' ? (userFid || t.socialId || 0) : undefined,
-                        userId: platform === 'twitter' ? (userFid || t.socialId || 0) : undefined,
-                        tiktokHandle: platform === 'tiktok' ? (t.socialId || t.tiktokHandle || '') : undefined,
-                        instagramHandle: platform === 'instagram' ? (t.socialId || t.instagramHandle || '') : undefined,
+                        fid: platform === 'farcaster' ? (resolvedFid || undefined) : undefined,
+                        userId: platform === 'twitter' ? (resolvedTwitterId || undefined) : undefined,
+                        tiktokHandle: platform === 'tiktok' ? (resolvedTiktok || undefined) : undefined,
+                        instagramHandle: platform === 'instagram' ? (resolvedInstagram || undefined) : undefined,
                         targetFid: t.targetFid,
                         castHash: t.castHash,
                         tweetId: t.tweetId,

@@ -52,7 +52,7 @@ export function TasksPage() {
         try {
             const { data: campaigns } = await supabase
                 .from('campaigns')
-                .select('id, title, platform_code, reward_amount_per_user, reward_symbol, is_active, is_verified_payment')
+                .select('id, title, platform_code, reward_amount_per_user, reward_symbol, reward_token_address, payment_token, claim_deadline_at, escrow_contract_address, escrow_campaign_key, is_active, is_verified_payment')
                 .eq('is_active', true)
                 .eq('is_verified_payment', true)
                 .order('created_at', { ascending: false });
@@ -62,7 +62,20 @@ export function TasksPage() {
                 return;
             }
 
-            type CampaignRow = { id: string | number; title?: string; platform_code?: string; reward_amount_per_user?: number; reward_symbol?: string; is_active?: boolean; is_verified_payment?: boolean };
+            type CampaignRow = {
+                id: string | number;
+                title?: string;
+                platform_code?: string;
+                reward_amount_per_user?: number;
+                reward_symbol?: string;
+                reward_token_address?: string | null;
+                payment_token?: string | null;
+                claim_deadline_at?: string | null;
+                escrow_contract_address?: string | null;
+                escrow_campaign_key?: string | null;
+                is_active?: boolean;
+                is_verified_payment?: boolean;
+            };
             const typedCampaigns = campaigns as CampaignRow[];
             const campaignIds = typedCampaigns.map((c) => String(c.id));
 
@@ -100,6 +113,11 @@ export function TasksPage() {
                 platform_code: c.platform_code || '',
                 reward_amount_per_user: Number(c.reward_amount_per_user || 0),
                 reward_symbol: c.reward_symbol || 'USDC',
+                reward_token_address: c.reward_token_address || null,
+                payment_token: c.payment_token || null,
+                claim_deadline_at: c.claim_deadline_at || null,
+                escrow_contract_address: c.escrow_contract_address || null,
+                escrow_campaign_key: c.escrow_campaign_key || null,
                 is_active: !!c.is_active,
                 is_verified_payment: !!c.is_verified_payment,
                 subTasks: tasksByCampaign[String(c.id)] || []

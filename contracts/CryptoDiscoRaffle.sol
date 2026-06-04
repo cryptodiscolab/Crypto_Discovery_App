@@ -61,6 +61,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable2Step {
     uint256 public maintenanceFeeBP = 2000; // 20% rake from sales
     uint256 public claimFeeBP = 500;       // 5% fee from prizes (User Request #3)
     uint256 public surchargeBP = 1000;      // 10% gas surcharge on purchase
+    uint256 public constant CLAIM_WINDOW = 3 days;
     
     // Reward XP values
     uint256 public raffleCreateXP = 200;
@@ -345,6 +346,7 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable2Step {
     function claimRafflePrize(uint256 raffleId) external nonReentrant {
         RaffleData storage raffle = raffles[raffleId];
         require(raffle.isFinalized, "Not finalized");
+        require(finalizedAt[raffleId] > 0 && block.timestamp <= finalizedAt[raffleId] + CLAIM_WINDOW, "Claim window expired");
         require(!hasClaimedPrize[raffleId][msg.sender], "Already claimed");
         
         // Calculate total wins for this user

@@ -291,7 +291,7 @@ class VerificationService {
      * @returns {Promise<Object>}
      */
     async verifyAndMarkTask(params) {
-        const { platform, action, userAddress, taskId, socialId, actionParams, signature, message } = params;
+        const { platform, action, userAddress, taskId, socialId, actionParams, signature, message, onlyVerify } = params;
 
         try {
             // ── ZERO TRUST FIX: Cryptographic Verification ──
@@ -437,6 +437,13 @@ class VerificationService {
                 return {
                     success: false,
                     error: `Verification failed: ${action} not completed`,
+                };
+            }
+
+            if (onlyVerify) {
+                return {
+                    success: true,
+                    verified: true
                 };
             }
 

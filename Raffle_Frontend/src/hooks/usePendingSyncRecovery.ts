@@ -7,6 +7,7 @@ export type PendingSyncAction =
     | 'raffle_create'
     | 'raffle_reject'
     | 'daily_claim'
+    | 'pool_claim'
     | 'sbt_upgrade'
     | 'sbt_mint'
     | 'mission_create'

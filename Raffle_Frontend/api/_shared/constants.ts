@@ -54,6 +54,10 @@ export const RAFFLE_ADDRESS = IS_MAINNET
     ? getEnv('VITE_RAFFLE_ADDRESS', '')
     : getEnv('VITE_RAFFLE_ADDRESS_SEPOLIA', '');
 
+export const UGC_REWARD_ESCROW_ADDRESS = IS_MAINNET
+    ? getEnv('VITE_UGC_REWARD_ESCROW_ADDRESS', getEnv('UGC_REWARD_ESCROW_ADDRESS', ''))
+    : getEnv('VITE_UGC_REWARD_ESCROW_ADDRESS_SEPOLIA', getEnv('UGC_REWARD_ESCROW_ADDRESS_SEPOLIA', getEnv('UGC_REWARD_ESCROW_ADDRESS', '')));
+
 // 3. ABIs (Moved from hardcode in bundle files)
 export const RAFFLE_ABI = [
     {
@@ -76,9 +80,10 @@ export const RAFFLE_ABI = [
                     { "internalType": "address", "name": "sponsor", "type": "address" },
                     { "internalType": "string", "name": "metadataURI", "type": "string" },
                     { "internalType": "uint256", "name": "endTime", "type": "uint256" },
-                    { "internalType": "uint256", "name": "prizePerWinner", "type": "uint256" }
+                    { "internalType": "uint256", "name": "prizePerWinner", "type": "uint256" },
+                    { "internalType": "uint256", "name": "totalTicketRevenue", "type": "uint256" }
                 ],
-                "internalType": "struct NFT_Raffle_V2.RaffleInfo",
+                "internalType": "struct CryptoDiscoRaffle.RaffleData",
                 "name": "",
                 "type": "tuple"
             }
@@ -145,6 +150,16 @@ export const DAILY_APP_XP_ABI = [
             { "name": "amount", "type": "uint256" }
         ],
         "name": "awardUgcTaskXp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            { "name": "user", "type": "address" },
+            { "name": "amount", "type": "uint256" }
+        ],
+        "name": "awardUgcRaffleXp",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -235,6 +250,8 @@ export const NEYNAR_API_URL = getEnv('NEYNAR_API_URL', 'https://api.neynar.com/v
 export const DEX_SCREENER_API_URL = getEnv('DEX_SCREENER_API_URL', 'https://api.dexscreener.com/latest/dex/tokens');
 export const TELEGRAM_API_URL = getEnv('TELEGRAM_API_URL', 'https://api.telegram.org');
 export const DISCO_APP_URL = getEnv('DISCO_APP_URL', getEnv('NEXT_PUBLIC_APP_URL', 'https://disco-daily.vercel.app'));
+export const API_SECRET = getEnv('API_SECRET');
+export const VERIFY_SERVER_URL = getEnv('VERIFY_SERVER_URL', getEnv('VITE_VERIFY_SERVER_URL', 'https://dailyapp-verification-server.vercel.app'));
 
 export const MASTER_X_ADDRESS = IS_MAINNET
     ? getEnv('VITE_MASTER_X_ADDRESS', '')
@@ -260,6 +277,36 @@ export const ERC20_ABI = [
         ],
         name: 'Transfer',
         type: 'event'
+    }
+] as const;
+
+export const UGC_REWARD_ESCROW_ABI = [
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'campaignId', type: 'bytes32' },
+            { indexed: true, name: 'claimant', type: 'address' },
+            { indexed: true, name: 'token', type: 'address' },
+            { indexed: false, name: 'amount', type: 'uint256' },
+            { indexed: false, name: 'deadline', type: 'uint256' },
+            { indexed: false, name: 'nonce', type: 'uint256' }
+        ],
+        name: 'RewardClaimed',
+        type: 'event'
+    },
+    {
+        inputs: [
+            { name: 'campaignId', type: 'bytes32' },
+            { name: 'token', type: 'address' },
+            { name: 'amount', type: 'uint256' },
+            { name: 'deadline', type: 'uint256' },
+            { name: 'nonce', type: 'uint256' },
+            { name: 'signature', type: 'bytes' }
+        ],
+        name: 'claim',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function'
     }
 ] as const;
 
@@ -357,7 +404,7 @@ export async function logSystemError(params: SystemErrorParams): Promise<void> {
 // Returns the tx hash on success, or null if the bot signer is not configured.
 
 export async function awardOnChainXp(
-    functionName: 'awardSocialXp' | 'awardRaffleBuyXp' | 'awardRaffleWinXp' | 'awardMojoXp' | 'awardUgcTaskXp' | 'awardSwapXp' | 'awardPurchaseXp',
+    functionName: 'awardSocialXp' | 'awardRaffleBuyXp' | 'awardRaffleWinXp' | 'awardMojoXp' | 'awardUgcTaskXp' | 'awardUgcRaffleXp' | 'awardSwapXp' | 'awardPurchaseXp',
     args: readonly unknown[]
 ): Promise<`0x${string}` | null> {
     if (!WALLET_BOT_SIGNER || !DAILY_APP_ADDRESS) return null;

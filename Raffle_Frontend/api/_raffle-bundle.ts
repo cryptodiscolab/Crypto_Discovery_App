@@ -18,7 +18,11 @@ import {
     DISCO_APP_URL,
     isMainnet,
     sanitizeError,
-    MASTER_ADMINS
+    MASTER_ADMINS,
+    DAILY_APP_ADDRESS,
+    DAILY_APP_USER_STATS_ABI,
+    awardOnChainXp,
+    logSystemError
 } from './_shared/constants.js';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -120,6 +124,62 @@ function hasRaffleWinnerClaim(receipt: TransactionReceipt, walletAddress: string
         console.error('[hasRaffleWinnerClaim] Failed to parse RaffleWinner logs:', err);
         return false;
     }
+}
+
+async function mirrorOnChainUserStats(wallet: string, context: string, txHash: `0x${string}`): Promise<{ points: number; tier: number }> {
+    const cleanWallet = wallet.toLowerCase();
+    const stats = await rpcClient.readContract({
+        address: DAILY_APP_ADDRESS as `0x${string}`,
+        abi: DAILY_APP_USER_STATS_ABI,
+        functionName: 'userStats',
+        args: [cleanWallet as `0x${string}`]
+    }) as readonly [bigint, bigint, bigint, number, bigint, bigint, boolean];
+
+    const points = Number(stats[0] || 0n);
+    const tier = Number(stats[3] || 0);
+    const { error } = await supabaseAdmin
+        .from('user_profiles')
+        .upsert({
+            wallet_address: cleanWallet,
+            total_xp: points,
+            last_onchain_xp: points,
+            tier,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'wallet_address' });
+
+    if (error) {
+        await logSystemError({
+            severity: 'critical',
+            surface: 'api',
+            bundle: 'raffle-bundle',
+            action: `${context}:mirrorOnChainUserStats`,
+            wallet_address: cleanWallet,
+            tx_hash: txHash,
+            message: `Failed to mirror on-chain userStats: ${error.message}`
+        }).catch(() => {});
+        throw error;
+    }
+
+    return { points, tier };
+}
+
+async function requireOnChainRaffleWinAward(wallet: string): Promise<{ txHash: `0x${string}`; points: number; tier: number }> {
+    const cleanWallet = wallet.toLowerCase();
+    const txHash = await awardOnChainXp('awardRaffleWinXp', [cleanWallet as `0x${string}`]);
+    if (!txHash) {
+        await logSystemError({
+            severity: 'critical',
+            surface: 'api',
+            bundle: 'raffle-bundle',
+            action: 'claim-prize:awardRaffleWinXp',
+            wallet_address: cleanWallet,
+            message: 'awardRaffleWinXp did not produce an on-chain transaction hash'
+        }).catch(() => {});
+        throw new Error('ONCHAIN_XP_AWARD_FAILED');
+    }
+
+    const stats = await mirrorOnChainUserStats(cleanWallet, 'claim-prize', txHash);
+    return { txHash, ...stats };
 }
 
 // ─── Telegram Notification Helper ────────────────────────────────────────────
@@ -259,7 +319,7 @@ async function handleAnnounceWinner(req: VercelRequest, res: VercelResponse) {
 
 async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
     const { wallet_address, signature, message, raffle_id, tx_hash } = req.body;
-    if (!wallet_address || !signature || !message || !raffle_id) return res.status(400).json({ error: 'Missing required fields' });
+    if (!wallet_address || !signature || !message || !raffle_id || !tx_hash) return res.status(400).json({ error: 'Missing required fields' });
 
     try {
         const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
@@ -269,24 +329,21 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
 
         const normalizedWallet = wallet_address.toLowerCase();
 
-        // Verify tx_hash on-chain if provided (data integrity check)
         let txVerified = false;
-        if (tx_hash) {
-            try {
-                const receipt = await rpcClient.getTransactionReceipt({ hash: tx_hash as `0x${string}` });
-                const isOwner = verifyTransactionOwnership(receipt, normalizedWallet);
-                const isRaffleTx = isReceiptTo(receipt, RAFFLE_ADDRESS);
-                const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
-                const hasWinnerEvent = hasRaffleWinnerClaim(receipt, normalizedWallet, String(raffle_id));
+        try {
+            const receipt = await rpcClient.getTransactionReceipt({ hash: tx_hash as `0x${string}` });
+            const isOwner = verifyTransactionOwnership(receipt, normalizedWallet);
+            const isRaffleTx = isReceiptTo(receipt, RAFFLE_ADDRESS);
+            const isEntryPointTx = isReceiptTo(receipt, ENTRY_POINT_ADDRESS);
+            const hasWinnerEvent = hasRaffleWinnerClaim(receipt, normalizedWallet, String(raffle_id));
 
-                if (!isOwner || (!isRaffleTx && !isEntryPointTx) || !hasWinnerEvent) {
-                    return res.status(400).json({ error: 'Invalid raffle claim transaction proof' });
-                }
-
-                txVerified = true;
-            } catch {
-                return res.status(503).json({ error: 'RPC_SYNC_DELAYED', message: 'Raffle claim transaction not verifiable yet.' });
+            if (!isOwner || (!isRaffleTx && !isEntryPointTx) || !hasWinnerEvent) {
+                return res.status(400).json({ error: 'Invalid raffle claim transaction proof' });
             }
+
+            txVerified = true;
+        } catch {
+            return res.status(503).json({ error: 'RPC_SYNC_DELAYED', message: 'Raffle claim transaction not verifiable yet.' });
         }
 
         // Read raffle info to verify winner AND get prize amount
@@ -319,6 +376,7 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
 
         const { data: setting } = await supabaseAdmin.from('point_settings').select('points_value').eq('activity_key', 'raffle_win').maybeSingle();
         const xpAwarded = setting?.points_value || 0;
+        const award = await requireOnChainRaffleWinAward(normalizedWallet);
 
         const { error: claimError } = await supabaseAdmin
             .from('user_task_claims')
@@ -339,10 +397,6 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
             throw claimError;
         }
 
-        if (xpAwarded > 0) {
-            await supabaseAdmin.rpc('fn_increment_xp', { p_wallet: normalizedWallet, p_amount: xpAwarded });
-        }
-
         await supabaseAdmin.rpc('fn_increment_raffle_wins', { p_wallet: normalizedWallet });
         await notifyTelegramWinner(normalizedWallet, raffle_id, xpAwarded);
 
@@ -354,7 +408,8 @@ async function handleClaimPrize(req: VercelRequest, res: VercelResponse) {
             description: `Earned ${xpAwarded} XP for winning Raffle #${raffle_id}`,
             amount: xpAwarded,
             symbol: 'XP',
-            txHash: tx_hash
+            txHash: award.txHash,
+            metadata: { claim_tx_hash: tx_hash, onchain_xp: award.points, onchain_tier: award.tier }
         });
 
         // Raffle-specific prize claim log with actual ETH prize amount

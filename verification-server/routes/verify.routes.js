@@ -329,7 +329,8 @@ router.post('/farcaster/:action', async (req, res) => {
             socialId: params.socialId,
             actionParams: params.actionParams,
             signature,
-            message
+            message,
+            onlyVerify: req.body.onlyVerify === true || req.body.onlyVerify === 'true' || req.query.onlyVerify === 'true'
         });
 
         res.json(result);
@@ -372,7 +373,8 @@ router.post('/twitter/:action', async (req, res) => {
             socialId: params.socialId,
             actionParams: params.actionParams,
             signature,
-            message
+            message,
+            onlyVerify: req.body.onlyVerify === true || req.body.onlyVerify === 'true' || req.query.onlyVerify === 'true'
         });
 
         res.json(result);
@@ -412,7 +414,8 @@ router.post('/tiktok/:action', async (req, res) => {
             socialId: params.socialId,
             actionParams: params.actionParams,
             signature,
-            message
+            message,
+            onlyVerify: req.body.onlyVerify === true || req.body.onlyVerify === 'true' || req.query.onlyVerify === 'true'
         });
 
         res.json(result);
@@ -452,7 +455,8 @@ router.post('/instagram/:action', async (req, res) => {
             socialId: params.socialId,
             actionParams: params.actionParams,
             signature,
-            message
+            message,
+            onlyVerify: req.body.onlyVerify === true || req.body.onlyVerify === 'true' || req.query.onlyVerify === 'true'
         });
 
         res.json(result);
