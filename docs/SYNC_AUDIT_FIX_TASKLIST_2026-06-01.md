@@ -606,6 +606,14 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 
 ## 2026-06-05: Next Progress Task List
 
+- [x] Pre-fix live audit rerun passed: Sentinel `HEALTHY`, Task Claim Pipeline `FULLY FUNCTIONAL`, Security Matrix `13/13`.
+- [x] Fixed UGC participant fresh-join blocker: `/api/tasks-bundle` now supports signed `join-ugc-campaign`, validates wallet/campaign/timestamp, and calls live `fn_join_campaign_atomic` before a participant can start a sponsored task.
+- [x] Fixed UI join flow: `UGCCampaignCard` now asks the participant to sign a campaign join before opening the subtask link, then records the local task-start timer.
+- [x] Fixed stale payout CTA risk: `TasksPage` now reads and subscribes to `user_claims`, then passes payout state to `UGCCampaignCard`.
+- [x] Fixed invalid payout CTA for broken legacy rows: the UGC card now only enables `CLAIM TOKEN PAYOUT` for `earned_pending_onchain_claim` or `paid`, and shows a disabled `PAYOUT PAUSED` review state for `sync_failed`.
+- [x] Frontend/API verification after fix passed: `npx tsc --noEmit --pretty false`, `npm run check-routes`, `npm run check-abi`, and `npm run build`.
+- [x] Post-fix sync/security verification passed: `node scripts/audits/check_sync_status.cjs` and `node scripts/audits/agent_anti_negligence_hook.cjs`.
+- [ ] Recover the legacy QA participant row for campaign `89056fca-ff28-4bf4-ba45-6a7f87849b46` from `sync_failed` to a valid `earned_pending_onchain_claim` state only after confirming the intended payout recovery path, then execute `UGCRewardEscrow.claim(...)` from the participant wallet and sync `RewardClaimed`.
 - [ ] Run participant-wallet UGC claim QA against the funded Base Sepolia USDC escrow campaign: complete real verified subtasks, call user-initiated `UGCRewardEscrow.claim(...)`, verify `RewardClaimed`, participant token balance, `user_claims.payout_status`, `campaigns.remaining_reward_pool`, and `user_activity_logs`.
 - [ ] Run UGC claim negative QA: non-joined wallet rejected, incomplete subtask wallet rejected, platform/action spoof rejected, replay/double claim rejected, expired claim after 3x24h rejected.
 - [ ] Create or select a Base Sepolia wallet with verified SBT tier and pending pool reward, then execute SBT pool claim through UI/API and verify `ClaimProcessed` plus DB mirror.

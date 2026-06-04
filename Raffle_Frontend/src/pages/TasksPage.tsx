@@ -14,6 +14,13 @@ import { Task, UGCCampaign } from '../types/tasks';
 import { Database } from '../types/database.types';
 
 type DailyTask = Database['public']['Tables']['daily_tasks']['Row'];
+type UserCampaignClaimState = {
+    is_claimed?: boolean | null;
+    payout_status?: string | null;
+    payout_tx_hash?: string | null;
+    payout_amount?: number | null;
+    payout_deadline_at?: string | null;
+};
 
 export function TasksPage() {
     const navigate = useNavigate();
@@ -22,20 +29,42 @@ export function TasksPage() {
     const { refetch } = useUserV12Stats(address);
     const [activeTab, setActiveTab] = useState<'tasks' | 'offers'>('tasks');
     const [offChainClaims, setOffChainClaims] = useState<Set<string>>(new Set());
+    const [ugcClaimStates, setUgcClaimStates] = useState<Record<string, UserCampaignClaimState>>({});
 
     const refetchClaims = useCallback(() => {
         if (address) {
+            const cleanWallet = address.toLowerCase();
             supabase
                 .from('user_task_claims')
                 .select('task_id')
-                .eq('wallet_address', address.toLowerCase())
+                .eq('wallet_address', cleanWallet)
                 .then(({ data, error }) => {
                     if (data && !error) {
                         setOffChainClaims(new Set((data as Array<{ task_id: string | number }>).map((d) => String(d.task_id).toLowerCase())));
                     }
                 });
+            supabase
+                .from('user_claims')
+                .select('campaign_id, is_claimed, payout_status, payout_tx_hash, payout_amount, payout_deadline_at')
+                .eq('user_address', cleanWallet)
+                .then(({ data, error }) => {
+                    if (data && !error) {
+                        const nextStates: Record<string, UserCampaignClaimState> = {};
+                        (data as Array<UserCampaignClaimState & { campaign_id: string | number }>).forEach((row) => {
+                            nextStates[String(row.campaign_id)] = {
+                                is_claimed: row.is_claimed,
+                                payout_status: row.payout_status,
+                                payout_tx_hash: row.payout_tx_hash,
+                                payout_amount: row.payout_amount,
+                                payout_deadline_at: row.payout_deadline_at
+                            };
+                        });
+                        setUgcClaimStates(nextStates);
+                    }
+                });
         } else {
             setOffChainClaims(new Set());
+            setUgcClaimStates({});
         }
     }, [address]);
 
@@ -144,6 +173,7 @@ export function TasksPage() {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'campaigns' }, refreshUgc)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_tasks' }, refreshUgc)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'user_task_claims' }, refreshUgc)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'user_claims' }, refreshUgc)
             .subscribe();
 
         return () => {
@@ -228,6 +258,7 @@ export function TasksPage() {
                                         campaign={campaign}
                                         subTasks={(campaign.subTasks || []) as unknown as Parameters<typeof UGCCampaignCard>[0]['subTasks']}
                                         userClaimedTaskIds={offChainClaims}
+                                        userCampaignClaimState={ugcClaimStates[String(campaign.id)] || null}
                                         refetchStats={() => { refetch(); refetchClaims(); }}
                                     />
                                 ))}

@@ -39,6 +39,14 @@ type ClaimResult = {
     already_paid?: boolean;
 };
 
+type UserCampaignClaimState = {
+    is_claimed?: boolean | null;
+    payout_status?: string | null;
+    payout_tx_hash?: string | null;
+    payout_amount?: number | null;
+    payout_deadline_at?: string | null;
+};
+
 type PreparedPayout = {
     already_paid?: boolean;
     escrow_address?: string;
@@ -170,10 +178,11 @@ function CompletionModal({ campaign, totalXp, usdcReward, rewardSymbol, onClaim,
 // ─────────────────────────────────────────────
 // Main UGC Campaign Card Component
 // ─────────────────────────────────────────────
-export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new Set(), refetchStats }: {
+export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new Set(), userCampaignClaimState = null, refetchStats }: {
     campaign: UGCCampaign;
     subTasks: UGCSubTask[];
     userClaimedTaskIds?: Set<string | number>;
+    userCampaignClaimState?: UserCampaignClaimState | null;
     refetchStats?: () => void;
 }) {
     const { address } = useAccount();
@@ -189,6 +198,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     const [claimed, setClaimed] = useState(false);
     const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
     const [localStarted, setLocalStarted] = useState<Record<string | number, boolean>>({});
+    const [joiningTaskId, setJoiningTaskId] = useState<string | number | null>(null);
 
     // Identity Verification Status (v3.42.1)
     const isBaseVerified = useMemo(() => (profileData as { is_base_social_verified?: boolean })?.is_base_social_verified === true, [profileData]);
@@ -198,11 +208,14 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
     const allDone = completedCount === totalTasks && totalTasks > 0;
     const alreadyCampaignClaimed = userClaimedTaskIds.has(`ugc_campaign_${campaign.id}`);
     const rewardAmount = Number(campaign.reward_amount_per_user || 0);
-    const payoutDeadline = claimResult?.payout_deadline_at || campaign.claim_deadline_at || null;
+    const payoutStatus = claimResult?.payout_status || userCampaignClaimState?.payout_status || '';
+    const payoutDeadline = claimResult?.payout_deadline_at || userCampaignClaimState?.payout_deadline_at || campaign.claim_deadline_at || null;
     const isPayoutExpired = payoutDeadline ? Date.now() > new Date(payoutDeadline).getTime() : false;
     const escrowAddress = campaign.escrow_contract_address || UGC_REWARD_ESCROW_ADDRESS;
-    const canShowPayoutClaim = rewardAmount > 0 && (alreadyCampaignClaimed || claimed || !!claimResult?.requires_onchain_payout);
-    const payoutRecordedPaid = claimResult?.already_paid || String(claimResult?.payout_status || '').includes('paid');
+    const payoutRecordedPaid = !!claimResult?.already_paid || payoutStatus === 'paid';
+    const hasPendingPayout = payoutStatus === 'earned_pending_onchain_claim' || !!claimResult?.requires_onchain_payout;
+    const payoutSyncFailed = payoutStatus === 'sync_failed';
+    const canShowPayoutClaim = rewardAmount > 0 && (hasPendingPayout || payoutRecordedPaid);
 
     const formatDeadline = (value?: string | null) => {
         if (!value) return 'Claim window: 72h after reward is recorded';
@@ -218,13 +231,55 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
         }
     }, [allDone, alreadyCampaignClaimed]);
 
-    const handleGoToTask = (task: UGCSubTask) => {
+    const ensureJoined = useCallback(async () => {
+        if (!address) throw new Error('Connect wallet first.');
+        if (userCampaignClaimState || alreadyCampaignClaimed || claimed) return;
+
+        const timestamp = new Date().toISOString();
+        const message = `Join UGC Campaign\nID: ${campaign.id}\nWallet: ${address.toLowerCase()}\nTime: ${timestamp}`;
+        const signature = await signMessageAsync({ message });
+        const identity = (profileData as { username?: string; fid?: number } | null)?.username || (profileData as { fid?: number } | null)?.fid;
+
+        const response = await fetch('/api/tasks-bundle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'join-ugc-campaign',
+                wallet_address: address,
+                campaign_id: campaign.id,
+                platform_identity: identity ? String(identity) : undefined,
+                signature,
+                message
+            })
+        });
+        const data = await response.json() as { error?: string; payout_status?: string; is_claimed?: boolean; payout_deadline_at?: string };
+        if (!response.ok) throw new Error(data.error || 'Campaign join failed.');
+        setClaimResult(prev => ({
+            ...(prev || {}),
+            payout_status: data.payout_status,
+            payout_deadline_at: data.payout_deadline_at || prev?.payout_deadline_at
+        }));
+        if (data.is_claimed) setClaimed(true);
+        refetchStats?.();
+    }, [address, alreadyCampaignClaimed, campaign.id, claimed, profileData, refetchStats, signMessageAsync, userCampaignClaimState]);
+
+    const handleGoToTask = async (task: UGCSubTask) => {
         if (task.is_base_social_required && !isBaseVerified) {
             return toast.error("IDENTITY LOCKED: Please verify your Base Social profile first.");
         }
-        registerTaskStart(task.id);
-        setLocalStarted(prev => ({ ...prev, [task.id]: true }));
-        window.open(task.link, '_blank');
+        setJoiningTaskId(task.id);
+        const tid = toast.loading('Joining sponsored mission...');
+        try {
+            await ensureJoined();
+            toast.success('Mission joined. Opening task...', { id: tid });
+            registerTaskStart(task.id);
+            setLocalStarted(prev => ({ ...prev, [task.id]: true }));
+            window.open(task.link, '_blank');
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Unable to join mission.', { id: tid, duration: 7000 });
+        } finally {
+            setJoiningTaskId(null);
+        }
     };
 
     const handleVerifySubTask = async (task: UGCSubTask) => {
@@ -273,6 +328,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
             }
             setClaimResult(data);
             setClaimed(true);
+            refetchStats?.();
             const tokenReward = data.token_reward_amount ?? data.usdc_reward;
             if (data.requires_onchain_payout || String(data.payout_status || '').includes('pending')) {
                 toast.success(`+${data.xp} XP recorded. ${tokenReward} ${data.reward_symbol} pending payout claim.`, { id: tid, duration: 6000 });
@@ -284,7 +340,7 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
         } finally {
             setIsClaiming(false);
         }
-    }, [address, campaign.id, campaign.title, subTasks, userClaimedTaskIds, isBaseVerified, signMessageAsync]);
+    }, [address, campaign.id, campaign.title, subTasks, userClaimedTaskIds, isBaseVerified, refetchStats, signMessageAsync]);
 
     const handleClaimPayout = useCallback(async () => {
         if (!address) return toast.error('Connect wallet first.');
@@ -456,10 +512,10 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                                         ) : (
                                             <button
                                                 onClick={() => handleGoToTask(task)}
-                                                disabled={isGated}
+                                                disabled={isGated || joiningTaskId === task.id}
                                                 className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isGated ? 'bg-white/5 text-slate-500 cursor-not-allowed' : 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-600/40'}`}
                                             >
-                                                Go <ExternalLink className="w-2.5 h-2.5" />
+                                                {joiningTaskId === task.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <>Go <ExternalLink className="w-2.5 h-2.5" /></>}
                                             </button>
                                         )}
                                     </div>
@@ -475,7 +531,24 @@ export function UGCCampaignCard({ campaign, subTasks, userClaimedTaskIds = new S
                         <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Reward</p>
                         <p className="text-sm font-black text-emerald-400 font-mono">{campaign.reward_amount_per_user} {campaign.reward_symbol || 'USDC'}</p>
                     </div>
-                    {canShowPayoutClaim ? (
+                    {payoutSyncFailed ? (
+                        <div className="flex flex-col items-end gap-1.5">
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                                <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Payout Sync Review</span>
+                            </div>
+                            <button
+                                disabled
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/5 text-slate-500 text-[10px] font-black uppercase tracking-widest cursor-not-allowed"
+                            >
+                                <Lock className="w-4 h-4" />
+                                PAYOUT PAUSED
+                            </button>
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter mr-1 max-w-[220px] text-right">
+                                Reward record needs backend recovery before on-chain claim
+                            </span>
+                        </div>
+                    ) : canShowPayoutClaim ? (
                         <div className="flex flex-col items-end gap-1.5">
                             <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
                                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />

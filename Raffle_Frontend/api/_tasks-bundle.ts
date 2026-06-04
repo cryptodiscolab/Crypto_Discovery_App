@@ -33,6 +33,12 @@ import type {
 } from './_shared/types.js';
 
 const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const untypedRpcClient = supabaseAdmin as unknown as {
+    rpc<T = unknown>(
+        fn: string,
+        args?: Record<string, unknown>
+    ): Promise<{ data: T | null; error: { message?: string; code?: string } | null }>;
+};
 type UserTaskClaimInsert = Database['public']['Tables']['user_task_claims']['Insert'];
 type OnChainXpFunction = Parameters<typeof awardOnChainXp>[0];
 type RewardPoolRpcResult = {
@@ -641,7 +647,7 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
         if (!allowed) return;
     }
 
-    if (action === 'claim-ugc-campaign' || action === 'prepare-ugc-payout-claim' || action === 'sync-ugc-payout') {
+    if (action === 'join-ugc-campaign' || action === 'claim-ugc-campaign' || action === 'prepare-ugc-payout-claim' || action === 'sync-ugc-payout') {
         const allowed = await checkFeatureGuard('ugc_campaign', res);
         if (!allowed) return;
     }
@@ -651,6 +657,7 @@ export default async function handler(req: ExtendedVercelRequest, res: VercelRes
             case 'claim': await handleClaim(req, res); break;
             case 'verify': await handleVerify(req, res); break;
             case 'social-verify': await handleSocialVerify(req, res); break;
+            case 'join-ugc-campaign': await handleJoinUgcCampaign(req, res); break;
             case 'claim-ugc-campaign': await handleClaimUgcCampaign(req, res); break;
             case 'prepare-ugc-payout-claim': await handlePrepareUgcPayoutClaim(req, res); break;
             case 'sync-ugc-payout': await handleSyncUgcPayout(req, res); break;
@@ -906,6 +913,73 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
 
     await checkAndGrantDailyBonus(wallet_address);
     return res.status(200).json({ success: true, xp, txHash: award.txHash, message: `Task verified.` });
+}
+
+async function handleJoinUgcCampaign(req: ExtendedVercelRequest, res: VercelResponse) {
+    const { wallet_address, signature, message, campaign_id, platform_identity } = req.body;
+
+    if (!wallet_address || !signature || !message || !campaign_id) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const cleanWallet = String(wallet_address).trim().toLowerCase();
+
+    try {
+        const valid = await verifyMessage({ address: wallet_address as `0x${string}`, message, signature: signature as `0x${string}` });
+        if (!valid) return res.status(401).json({ error: 'Invalid signature' });
+        if (!message.includes(`ID: ${campaign_id}`) || !String(message).toLowerCase().includes(cleanWallet)) {
+            return res.status(400).json({ error: 'Campaign join message mismatch.' });
+        }
+
+        const timestampMatch = String(message).match(/Time:\s*([^\n]+)/i);
+        const signedAt = timestampMatch ? new Date(timestampMatch[1].trim()).getTime() : NaN;
+        if (!Number.isFinite(signedAt) || Math.abs(Date.now() - signedAt) > 5 * 60 * 1000) {
+            return res.status(400).json({ error: 'Signature expired (must be under 5 minutes)' });
+        }
+
+        const { data: existing, error: existingErr } = await supabaseAdmin
+            .from('user_claims')
+            .select('id, payout_status, is_claimed, payout_tx_hash, payout_deadline_at')
+            .eq('user_address', cleanWallet)
+            .eq('campaign_id', campaign_id)
+            .maybeSingle();
+        if (existingErr) throw existingErr;
+
+        if (existing) {
+            return res.status(200).json({
+                success: true,
+                already_joined: true,
+                payout_status: existing.payout_status,
+                is_claimed: existing.is_claimed,
+                payout_tx_hash: existing.payout_tx_hash,
+                payout_deadline_at: existing.payout_deadline_at
+            });
+        }
+
+        const { data: typedResult, error: joinErr } = await untypedRpcClient.rpc<{ success?: boolean; error?: string }>('fn_join_campaign_atomic', {
+            p_campaign_id: campaign_id,
+            p_user_address: cleanWallet
+        });
+        if (joinErr) throw joinErr;
+
+        if (!typedResult?.success) {
+            return res.status(409).json({ error: typedResult?.error || 'Campaign join failed.' });
+        }
+
+        if (platform_identity) {
+            await supabaseAdmin
+                .from('user_claims')
+                .update({ platform_identity: String(platform_identity).trim().slice(0, 128) })
+                .eq('user_address', cleanWallet)
+                .eq('campaign_id', campaign_id);
+        }
+
+        return res.status(200).json({ success: true, payout_status: 'joined', is_claimed: false });
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[handleJoinUgcCampaign]', msg);
+        return res.status(500).json({ error: sanitizeError(msg) });
+    }
 }
 
 async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelResponse) {
