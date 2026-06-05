@@ -16,8 +16,8 @@ export const IS_MAINNET = CHAIN_ID === '8453';
 export const isMainnet = IS_MAINNET;
 
 export const RPC_URL = IS_MAINNET 
-    ? getEnv('VITE_BASE_MAINNET_RPC_URL', getEnv('VITE_RPC_URL', 'https://mainnet.base.org'))
-    : getEnv('VITE_BASE_SEPOLIA_RPC_URL', 'https://sepolia.base.org');
+    ? getEnv('BASE_MAINNET_RPC_URL', getEnv('VITE_BASE_MAINNET_RPC_URL', getEnv('VITE_RPC_URL', 'https://mainnet.base.org')))
+    : getEnv('BASE_SEPOLIA_RPC_URL', getEnv('VITE_BASE_SEPOLIA_RPC_URL', 'https://sepolia.base.org'));
 
 export const VIEM_CHAIN = IS_MAINNET ? base : baseSepolia;
 
@@ -410,7 +410,8 @@ export async function awardOnChainXp(
     if (!WALLET_BOT_SIGNER || !DAILY_APP_ADDRESS) return null;
 
     try {
-        const account = privateKeyToAccount(WALLET_BOT_SIGNER as `0x${string}`);
+        const signerKey = WALLET_BOT_SIGNER.startsWith('0x') ? WALLET_BOT_SIGNER : `0x${WALLET_BOT_SIGNER}`;
+        const account = privateKeyToAccount(signerKey as `0x${string}`);
         const walletClient = createWalletClient({
             account,
             chain: VIEM_CHAIN,

@@ -64,6 +64,16 @@ const publicClient = createPublicClient({
     transport: http(RPC_URL)
 });
 
+function describeUnknownError(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    try {
+        return JSON.stringify(error);
+    } catch {
+        return String(error);
+    }
+}
+
 // 🛡️ REFACTORED HELPERS 🛡️
 
 async function getPointValue(activityKey: string): Promise<number> {
@@ -434,6 +444,14 @@ function getWalletBotAccount() {
 
 function isFinalCampaignClaimStatus(status: CampaignClaimStatus): boolean {
     return status === 'paid' || status === 'earned_pending_onchain_claim' || status === 'xp_only';
+}
+
+function hasEarnedCampaignClaim(record?: {
+    claimed_at?: string | null;
+    payout_status?: CampaignClaimStatus | string | null;
+} | null): boolean {
+    if (!record) return false;
+    return Boolean(record.claimed_at) || isFinalCampaignClaimStatus(record.payout_status as CampaignClaimStatus);
 }
 
 async function getUgcTreasuryAddress(): Promise<string> {
@@ -939,7 +957,7 @@ async function handleJoinUgcCampaign(req: ExtendedVercelRequest, res: VercelResp
 
         const { data: existing, error: existingErr } = await supabaseAdmin
             .from('user_claims')
-            .select('id, payout_status, is_claimed, payout_tx_hash, payout_deadline_at')
+            .select('id, payout_status, claimed_at, payout_tx_hash, payout_deadline_at')
             .eq('user_address', cleanWallet)
             .eq('campaign_id', campaign_id)
             .maybeSingle();
@@ -950,7 +968,7 @@ async function handleJoinUgcCampaign(req: ExtendedVercelRequest, res: VercelResp
                 success: true,
                 already_joined: true,
                 payout_status: existing.payout_status,
-                is_claimed: existing.is_claimed,
+                is_claimed: hasEarnedCampaignClaim(existing),
                 payout_tx_hash: existing.payout_tx_hash,
                 payout_deadline_at: existing.payout_deadline_at
             });
@@ -1001,7 +1019,7 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         // Ensure user actually joined the campaign so they can't bypass max_participants
         const { data: joinRecord } = await supabaseAdmin
             .from('user_claims')
-            .select('id, is_claimed, payout_status, payout_amount, payout_tx_hash')
+            .select('id, claimed_at, payout_status, payout_amount, payout_tx_hash')
             .eq('user_address', cleanWallet)
             .eq('campaign_id', campaign_id)
             .maybeSingle();
@@ -1031,7 +1049,7 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             .eq('task_id', `ugc_campaign_${campaign_id}`)
             .maybeSingle();
 
-        if (existingClaim || joinRecord.is_claimed) {
+        if (existingClaim || hasEarnedCampaignClaim(joinRecord)) {
             if (!isFinalCampaignClaimStatus(joinRecord.payout_status)) {
                 await supabaseAdmin.from('user_claims')
                     .update({ payout_status: 'sync_failed' })
@@ -1105,7 +1123,6 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         const { data: reservedClaim, error: reserveErr } = await supabaseAdmin
             .from('user_claims')
             .update({
-                is_claimed: true,
                 claimed_at: reservedAt,
                 payout_amount: rewardAmount,
                 payout_status: rewardAmount > 0 ? 'processing' : 'xp_processing',
@@ -1113,7 +1130,7 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             })
             .eq('user_address', cleanWallet)
             .eq('campaign_id', campaign_id)
-            .or('is_claimed.is.false,is_claimed.is.null')
+            .is('claimed_at', null)
             .select('id')
             .maybeSingle();
 
@@ -1147,7 +1164,6 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
         const finalPayoutStatus = rewardAmount > 0 ? 'earned_pending_onchain_claim' : 'xp_only';
         const { data: finalizedClaim, error: finalizeErr } = await supabaseAdmin.from('user_claims')
             .update({
-                is_claimed: true,
                 claimed_at: reservedAt,
                 payout_amount: rewardAmount,
                 payout_status: finalPayoutStatus,
@@ -1205,11 +1221,11 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
                 : 'Campaign XP reward claimed successfully.'
         });
     } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = describeUnknownError(err);
         try {
             if (reservedCampaignClaim && !onChainAwarded) {
                 await supabaseAdmin.from('user_claims')
-                    .update({ is_claimed: false, claimed_at: null, payout_status: 'failed' })
+                    .update({ claimed_at: null, payout_status: 'failed' })
                     .eq('user_address', cleanWallet)
                     .eq('campaign_id', campaign_id)
                     .in('payout_status', ['processing', 'xp_processing']);
@@ -1224,6 +1240,15 @@ async function handleClaimUgcCampaign(req: ExtendedVercelRequest, res: VercelRes
             // Preserve the original claim error; reconciliation can repair payout_status.
         }
         console.error('[handleClaimUgcCampaign]', msg);
+        await logSystemError({
+            severity: 'error',
+            surface: 'api',
+            bundle: 'tasks-bundle',
+            action: 'claim-ugc-campaign',
+            wallet_address: cleanWallet,
+            message: msg.slice(0, 500),
+            metadata: { campaign_id }
+        }).catch(() => {});
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
@@ -1252,7 +1277,7 @@ async function handlePrepareUgcPayoutClaim(req: ExtendedVercelRequest, res: Verc
         const [{ data: joinRecord, error: joinErr }, { data: campaign, error: campaignErr }, { data: earnedClaim, error: earnedErr }] = await Promise.all([
             supabaseAdmin
                 .from('user_claims')
-                .select('id, is_claimed, payout_status, payout_amount, payout_tx_hash, payout_deadline_at')
+                .select('id, claimed_at, payout_status, payout_amount, payout_tx_hash, payout_deadline_at')
                 .eq('user_address', cleanWallet)
                 .eq('campaign_id', campaign_id)
                 .maybeSingle(),
@@ -1272,7 +1297,7 @@ async function handlePrepareUgcPayoutClaim(req: ExtendedVercelRequest, res: Verc
         if (joinErr) throw joinErr;
         if (campaignErr) throw campaignErr;
         if (earnedErr) throw earnedErr;
-        if (!joinRecord || !joinRecord.is_claimed || !earnedClaim) {
+        if (!joinRecord || !hasEarnedCampaignClaim(joinRecord) || !earnedClaim) {
             return res.status(409).json({ error: 'Campaign reward must be earned before token payout claim.' });
         }
         if (joinRecord.payout_status === 'paid') {
@@ -1376,7 +1401,7 @@ async function handleSyncUgcPayout(req: ExtendedVercelRequest, res: VercelRespon
         const [{ data: joinRecord, error: joinErr }, { data: campaign, error: campaignErr }, { data: earnedClaim, error: earnedErr }] = await Promise.all([
             supabaseAdmin
                 .from('user_claims')
-                .select('id, is_claimed, payout_status, payout_amount, payout_tx_hash')
+                .select('id, claimed_at, payout_status, payout_amount, payout_tx_hash')
                 .eq('user_address', cleanWallet)
                 .eq('campaign_id', campaign_id)
                 .maybeSingle(),
@@ -1398,7 +1423,7 @@ async function handleSyncUgcPayout(req: ExtendedVercelRequest, res: VercelRespon
         if (earnedErr) throw earnedErr;
         if (!joinRecord) return res.status(403).json({ error: 'You must join the campaign before syncing payout.' });
         if (!campaign) return res.status(404).json({ error: 'Campaign not found.' });
-        if (!joinRecord.is_claimed || !earnedClaim) {
+        if (!hasEarnedCampaignClaim(joinRecord) || !earnedClaim) {
             return res.status(409).json({ error: 'Campaign reward must be earned before payout can be synced.' });
         }
 

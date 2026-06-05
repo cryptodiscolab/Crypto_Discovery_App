@@ -1,7 +1,7 @@
 # UGC / Raffle / Task Sync Fix Checklist
 
 Date: 2026-06-01
-Last verified: 2026-06-04
+Last verified: 2026-06-05
 Scope: UGC missions, sponsored raffle creation, task claims, ticket purchase, raffle prize claim, raffle rejection/refund, payment fee verification, pending sync recovery, and raffle DB indexer sync.
 
 ## Verdict
@@ -39,7 +39,7 @@ Scope: UGC missions, sponsored raffle creation, task claims, ticket purchase, ra
 - [x] P0 Required: implement user-initiated on-chain UGC reward payout/escrow claim path, then sync DB only from verified payout receipt/event. Current DB pool is a ledger/indexer mirror, not proof that the participant wallet received USDC/ETH.
 - [x] P0 Required: connect UGC subtask verification to the existing verification server or equivalent platform verifier; signed task ID plus identity gate is not sufficient proof of follow/like/comment action.
 - [ ] Manual QA still required for raffle prize claim after QRNG fulfillment and SBT pool claim with an identity-verified tiered wallet.
-- [x] Production `/api/user-bundle?action=sync-ugc-mission` still returned generic 500 for clean ETH/USDC payments; payments were recovered on-chain-first into DB, but production bundle/log follow-up is verified and working locally.
+- [x] Production `/api/user-bundle?action=sync-ugc-mission` fixed for clean ETH/USDC payments: backend RPC priority now uses server-side Base RPC env first, falls back to public RPCs for payment proof, logs structured errors, and `supported_platforms.onchain` is live.
 
 ## Architecture Rule
 
@@ -545,11 +545,11 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 
 ## Known Manual Gate
 
-- [ ] Execute the remaining manual QA scenarios with funded Base Sepolia wallets. Raffle create/buy/reject and UGC mission create ETH/USDC are complete; UGC mission participant claim, raffle prize claim, and SBT pool claim remain.
+- [ ] Execute the remaining manual QA scenarios with funded Base Sepolia wallets. Raffle create/buy/reject and UGC mission create/participant payout ETH/USDC are complete; raffle prize claim and SBT pool claim remain.
 - [x] Confirm bot signer has required DailyApp roles: `RAFFLE_ROLE` and `UGC_ROLE`.
 - [x] Confirm `system_settings.ugc_config.treasury_address` is configured.
 - [x] Confirm `allowed_tokens.decimals` is correct for every active payment token (USDC: 6, ETH/WETH/DEGEN: 18).
-- [x] Inspect/deploy production `sync-ugc-mission` bundle: clean ETH/USDC payments still returned generic 500 even after DB schema parity was repaired. (Fixed: implemented Gnosis Safe `SafeReceived` event parser for AA native transfers, renamed verification errors to include 'invalid' to bypass client-side error sanitization, and identified missing `ENTRY_POINT_ADDRESS` in Vercel environment variables).
+- [x] Inspect/deploy production `sync-ugc-mission` bundle: clean ETH/USDC payments now pass payment proof verification and write structured failure logs instead of generic opaque `[object Object]`.
 - [x] Deploy `UGCRewardEscrow`, grant `CLAIM_AUTHORIZER_ROLE` to backend signer, fund active campaign escrow pool, and set escrow address envs before live participant payout QA.
 - [ ] Redeploy `CryptoDiscoRaffle` or upgrade active raffle implementation before the 3x24h raffle claim window exists on-chain in production/Sepolia.
 - [x] Deploy `UGCRewardEscrow` to Base Sepolia: `0xf307d1B02A994b3a26122C5583a631f92Fc266Fd`.
@@ -619,9 +619,11 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 - [x] Re-ran post-payout verification: `node scripts/audits/check_sync_status.cjs` passed with Sentinel `HEALTHY`, Task Claim Pipeline `FULLY FUNCTIONAL`, and Security Matrix `13/13`; `node scripts/audits/agent_anti_negligence_hook.cjs` passed `100% OPERATIONAL & PRISTINE`.
 - [x] Refreshed production Sentinel heartbeat via `/api/lurah-cron`: returned `HEALTHY`, no alerts, and post-refresh audit shows fresh heartbeat.
 - [x] Production negative QA partial pass: non-joined wallet claim rejected `403`, UGC platform spoof rejected `400`, already-claimed campaign returns idempotent `200` with `payout_status=paid`, and already-paid payout prepare returns idempotent `200`.
-- [ ] Production deploy gate: `join-ugc-campaign` is committed/pushed but not yet deployed to `crypto-discovery-app` production; production currently returns `Invalid action`. Fresh non-legacy participant-wallet UGC payout QA requires explicit production deploy or a working unprotected preview/local API.
-- [ ] Run a fresh non-legacy participant-wallet UGC payout QA on a new funded campaign to verify the production `sync-ugc-payout` non-paid path without manual DB recovery.
-- [ ] Finish remaining UGC negative QA: incomplete subtask joined wallet rejected, replay/double escrow claim rejected on-chain, and expired claim after 3x24h rejected.
+- [x] Production deploy gate cleared: `join-ugc-campaign`, schema-compatible UGC claim handling, backend RPC priority, and `supported_platforms.onchain` are deployed to `https://crypto-discovery-app.vercel.app`.
+- [x] Fresh non-legacy participant-wallet ETH UGC payout QA passed on new campaign `1f82a6a2`: payment proof `0x93dc5e56...0f05e3`, escrow deposit `0x1931f689...93abe6`, subtask XP tx `0x1781b636...bb1fb9`, campaign claim XP tx `0x85ef2d75...b45a78`, participant escrow claim `0x24c3bc1b...6a889b`, and `RewardClaimed` emitted for claimant `0x52260c30...6795c8`.
+- [x] Fresh ETH payout DB consistency passed: `user_claims.payout_status = paid`, `payout_amount = 0.00001 ETH`, `payout_deadline_at = 2026-06-08T00:51:07Z`, `campaigns.remaining_reward_pool = 0`, and `user_activity_logs` contains `UGC Campaign Payout`.
+- [x] Fresh ETH payout idempotency passed: re-running `claim-ugc-campaign`, `prepare-ugc-payout-claim`, and `sync-ugc-payout` after payout returned safe 200 responses with `already_claimed`, `already_paid`, and `already_synced`.
+- [ ] Finish remaining UGC negative QA: replay/double escrow claim rejected on-chain with same nonce/signature, and expired claim after 3x24h rejected.
 - [ ] Create or select a Base Sepolia wallet with verified SBT tier and pending pool reward, then execute SBT pool claim through UI/API and verify `ClaimProcessed` plus DB mirror.
 - [ ] Resolve raffle QRNG/finalization blocker before prize-claim QA; document whether the fix is Airnode config, request parameters, or a new raffle deployment.
 - [ ] Decide raffle 3x24h claim-window migration path: redeploy/upgrade raffle contract only with explicit address migration, ABI/env sync, and DB backfill plan.

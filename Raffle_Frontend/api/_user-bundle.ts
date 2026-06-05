@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { withMiddleware } from './_shared/middleware.js';
 import type { Database } from './_shared/database.types.js';
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
-import { verifyMessage, keccak256, encodePacked, formatEther, parseEventLogs, parseUnits, type TransactionReceipt } from 'viem';
+import { verifyMessage, keccak256, encodePacked, formatEther, parseEventLogs, parseUnits, createPublicClient, http, type TransactionReceipt } from 'viem';
+import { base, baseSepolia } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import crypto from 'crypto';
 import {
@@ -262,6 +263,16 @@ const toPositiveNumber = (value: unknown): number => {
     const parsed = typeof value === 'number' ? value : parseFloat(String(value ?? ''));
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
+
+function describeUnknownError(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    try {
+        return JSON.stringify(error);
+    } catch {
+        return String(error);
+    }
+}
 
 const normalizeTokenAddress = (address?: string | null): string => (address || '').trim().toLowerCase();
 
@@ -825,6 +836,72 @@ function hasErc20Transfer(receipt: TransactionReceipt, tokenAddress: string, fro
     }
 }
 
+type PaymentProofTransaction = {
+    from: string;
+    to?: string | null;
+    value?: bigint;
+};
+
+async function withPaymentProofTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), 10000))
+    ]);
+}
+
+function getPaymentProofRpcUrls(): string[] {
+    const configured = isMainnet
+        ? [getEnv('BASE_MAINNET_RPC_URL'), getEnv('VITE_BASE_MAINNET_RPC_URL'), getEnv('VITE_RPC_URL')]
+        : [getEnv('BASE_SEPOLIA_RPC_URL'), getEnv('VITE_BASE_SEPOLIA_RPC_URL')];
+    const fallbacks = isMainnet
+        ? ['https://mainnet.base.org', 'https://base.llamarpc.com']
+        : ['https://sepolia.base.org', 'https://base-sepolia.publicnode.com'];
+
+    return [...new Set([...configured, ...fallbacks].map((url) => url.trim()).filter(Boolean))];
+}
+
+async function readPaymentProofTransaction(txHash: `0x${string}`): Promise<{ receipt: TransactionReceipt; tx: PaymentProofTransaction }> {
+    const failures: string[] = [];
+
+    try {
+        const [receipt, tx] = await Promise.all([
+            withPaymentProofTimeout(rpcClient.getTransactionReceipt({ hash: txHash }), 'primary receipt lookup'),
+            withPaymentProofTimeout(rpcClient.getTransaction({ hash: txHash }), 'primary transaction lookup')
+        ]);
+        return { receipt, tx: tx as PaymentProofTransaction };
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        failures.push(`primary:${msg.slice(0, 160)}`);
+    }
+
+    for (const rpcUrl of getPaymentProofRpcUrls()) {
+        try {
+            const client = createPublicClient({
+                chain: isMainnet ? base : baseSepolia,
+                transport: http(rpcUrl)
+            });
+            const [receipt, tx] = await Promise.all([
+                withPaymentProofTimeout(client.getTransactionReceipt({ hash: txHash }), 'fallback receipt lookup'),
+                withPaymentProofTimeout(client.getTransaction({ hash: txHash }), 'fallback transaction lookup')
+            ]);
+            return { receipt, tx: tx as PaymentProofTransaction };
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            failures.push(`${rpcUrl.replace(/^https?:\/\//, '').slice(0, 48)}:${msg.slice(0, 120)}`);
+        }
+    }
+
+    await logSystemError({
+        severity: 'critical',
+        surface: 'api',
+        bundle: 'user-bundle',
+        action: 'verifyUgcMissionPayment:payment-proof-rpc',
+        tx_hash: txHash,
+        message: `Payment proof RPC verification failed: ${failures.join(' | ').slice(0, 900)}`
+    }).catch(() => {});
+    throw new Error('Invalid payment transaction proof: RPC verification failed');
+}
+
 async function verifyUgcMissionPayment(params: {
     wallet: string;
     txHash: string;
@@ -841,7 +918,7 @@ async function verifyUgcMissionPayment(params: {
     if (!treasury.startsWith('0x')) throw new Error('Invalid treasury configuration: UGC treasury address is not configured');
     if (!params.txHash?.startsWith('0x')) throw new Error('Missing payment transaction hash');
 
-    const receipt = await rpcClient.getTransactionReceipt({ hash: params.txHash as `0x${string}` });
+    const { receipt, tx } = await readPaymentProofTransaction(params.txHash as `0x${string}`);
     if (!receipt || receipt.status !== 'success') throw new Error('Invalid payment transaction state: not confirmed');
 
     const decimals = await getTokenDecimals(params.paymentToken, params.rewardSymbol);
@@ -853,7 +930,6 @@ async function verifyUgcMissionPayment(params: {
     const cleanWallet = params.wallet.toLowerCase();
 
     if (isNativeTokenAddress(params.paymentToken)) {
-        const tx = await rpcClient.getTransaction({ hash: params.txHash as `0x${string}` });
         const directNativePayment = tx.from.toLowerCase() === cleanWallet
             && tx.to?.toLowerCase() === treasury
             && BigInt(tx.value || 0n) >= expectedRaw;
@@ -1848,7 +1924,16 @@ async function handleSyncUgcMission(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ success: true });
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
+        const msg = describeUnknownError(error);
+        await logSystemError({
+            severity: 'error',
+            surface: 'api',
+            bundle: 'user-bundle',
+            action: 'sync-ugc-mission',
+            wallet_address: wallet,
+            tx_hash: payload?.txHash,
+            message: msg.slice(0, 500)
+        }).catch(() => {});
         return res.status(500).json({ error: sanitizeError(msg) });
     }
 }
