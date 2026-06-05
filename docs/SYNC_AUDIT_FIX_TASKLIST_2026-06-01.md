@@ -324,7 +324,7 @@ Contract:
 
 Negative:
 
-- [ ] Reusing same tx hash must not award duplicate XP.
+- [x] Reusing same tx hash must not award duplicate XP. Live raffle #7 replay returned `[Security] Target account already claimed by this user` after first `raffle_buy_7_0xf00a65...214f` awarded 15 XP once.
 - [ ] For gasless buy, disconnect/reload before backend XP sync and confirm `pending_sync_jobs.action_type = raffle_buy`.
 - [ ] Run pending reconcile and confirm it resolves only after `TicketPurchased` is visible on-chain.
 
@@ -335,7 +335,7 @@ E2E:
 - [ ] Use winner wallet.
 - [ ] Claim prize from raffle UI.
 - [ ] Confirm backend sync completes after receipt.
-- [ ] Current deployer QA blocker: raffle #3 has 1 ticket, but `drawWinner(3)` reverted with missing revert data during Airnode RRP request. Airnode address is configured, but fulfillment/finalization did not complete.
+- [ ] Current deployer QA blocker: raffle #7 has 1 ticket and `drawWinner(7)` succeeds with `QRNGRequested`, but no `QRNGFulfilled` callback arrived within 24 x 15s polling window. Request tx `0x3159fc49...9329`, request id `0xffeaf636...aca3`; raffle remains pending QRNG and prize claim cannot execute until finalized.
 
 Database:
 
@@ -426,7 +426,7 @@ Database:
 
 - [ ] `raffles.is_finalized` matches `getRaffleInfo().isFinalized`.
 - [ ] `raffles.prize_per_winner` matches chain.
-- [ ] `raffles.is_active = false` when finalized.
+- [x] `raffles.is_active = false` while pending QRNG or finalized. Fixed `_raffle-sync.ts` to mirror on-chain `isActive` and avoid partial `upsert`; verified DB rows #6/#7 now update to `is_active=false` after `/api/raffle-sync`.
 
 Contract:
 
@@ -601,7 +601,7 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 - Deployer wallet: `0x52260C30697674A7C837feb2Af21BbF3606795C8`.
 - Production API drift found: resolved by updating Vercel production environment variables and deploying the latest API bundles.
 - SBT pool claim cannot be completed with deployer wallet: MasterX `users(deployer).tier = NONE`, `isVerified = false`, pending reward `0 ETH`, and `totalLockedRewards = 0 ETH`.
-- Raffle prize claim cannot be completed until QRNG finalization succeeds. Root cause verified on 2026-06-05: active raffle `0xaE8fe1d4...85B7` has immutable `airnodeRrp = 0x2ab9f26E...e2Add`, and that address has no bytecode on Base Sepolia. `drawWinner(3)` therefore reverts inside `makeFullRequest` even though raffle #3 is expired/sold out, caller is owner, Airnode is configured, and sponsor wallet is funded.
+- Legacy Raffle prize claim cannot be completed on `0xaE8fe1d4...85B7` because it has immutable `airnodeRrp = 0x2ab9f26E...e2Add`, and that address has no bytecode on Base Sepolia. Cutover executed on 2026-06-05 to active Raffle `0x0b5171D5...Ec82F9` with valid AirnodeRrp `0xa0AD79D9...e3Aa1Bd`.
 - UGC mission create is now tested for ETH and USDC with QA wallets. The payments are recovered on-chain-first into DB with on-chain XP proof. UGC mission participant claim still requires social-task completion state.
 
 ## 2026-06-05: Next Progress Task List
@@ -626,8 +626,13 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 - [ ] Finish remaining UGC negative QA: replay/double escrow claim rejected on-chain with same nonce/signature, and expired claim after 3x24h rejected.
 - [ ] Create or select a Base Sepolia wallet with verified SBT tier and pending pool reward, then execute SBT pool claim through UI/API and verify `ClaimProcessed` plus DB mirror.
 - [x] Resolve raffle QRNG/finalization blocker root cause: active Raffle was deployed with a no-code AirnodeRrp address. Code guards now detect this before live QA/deploy.
-- [ ] Execute explicit Raffle redeploy/cutover plan: deploy `CryptoDiscoRaffle` with valid Base Sepolia AirnodeRrp `0xa0AD79D9...e3Aa1Bd`, call `setQRNGParameters(0x62387725...E1D, endpointId, sponsorWallet)`, initialize first raffle, grant/link roles if required, update local/Vercel `VITE_RAFFLE_ADDRESS_SEPOLIA`/`RAFFLE_ADDRESS_SEPOLIA`, backfill or archive old DB raffle rows, then run create/buy/draw/claim prize QA.
-- [ ] Decide raffle 3x24h claim-window production migration path: redeploy/upgrade raffle contract only with explicit address migration, ABI/env sync, DB backfill, and rollback plan.
+- [x] Execute explicit Raffle redeploy/cutover plan on-chain: deployed patched `CryptoDiscoRaffle` `0x1501273b...C1d32C` with valid Base Sepolia AirnodeRrp `0xa0AD79D9...e3Aa1Bd`; deploy tx `0xbe5d81bd...79aa6e`; set QRNG tx `0x979132a7...8e72a1`; RRP sponsorship tx `0x9589b714...1d2af4`; initialized tx `0x2d8bf306...ff914d`; linked MasterX tx `0x361b4d7c...6a7049`; satellite tx `0x62673bd0...37b102`; DailyApp `RAFFLE_ROLE` tx `0xc0c7f547...4b598b`.
+- [x] Completed Raffle environment cutover: Vercel/frontend/API now points to `0x1501273b...C1d32C`; old DB raffle rows #1-#4 archived; production redeployed to `https://crypto-discovery-app.vercel.app`.
+- [x] Fixed Raffle QRNG sponsor wallet mismatch: derived sponsor wallet for the new sponsor/requester contract is `0x40eF15db...8d92`, replacing stale `0x7186e5D3...7d61`; funded derived wallet with `0.02 ETH` in tx `0xe51f8345...fdd1`; updated QRNG params tx `0x6dbe0376...6996`; refreshed RRP sponsorship tx `0x87ad50a3...4ccc`; updated Vercel `SPONSOR_WALLET`.
+- [x] Raffle create/buy XP QA passed on active cutover contract: raffle #7 create tx `0xc115e22c...a662`, buy tx `0xf00a65bf...214f`, creation XP +200 and buy XP +15 recorded once.
+- [x] Raffle pending-state DB sync fixed: `_raffle-sync.ts` now updates existing rows instead of partial upsert, parses booleans safely, and mirrors `is_active=false` for draw-pending rows #6/#7.
+- [ ] Complete Raffle claim prize QA after Airnode callback is restored: no `QRNGFulfilled` emitted for #6 request `0xfbe11f...d015` or #7 request `0xffeaf6...aca3` as of latest checked block `42436054`.
+- [x] Raffle 3x24h claim-window migration path selected: new active Raffle deployment includes `CLAIM_WINDOW = 3 days`; remaining work is env/DB/API promotion and live claim QA.
 - [ ] After participant QA, run production preview smoke for Tasks, UGC campaign card, raffle win banner, and SBT rewards dashboard before promoting any new deployment.
 - [ ] Open PR from `feature/sync-dashboard-architecture`; include test evidence, source-control audit evidence, and remaining manual-gate notes.
 

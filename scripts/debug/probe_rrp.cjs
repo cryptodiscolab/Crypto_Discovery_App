@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 
 async function main() {
   const provider = ethers.provider;
-  const raffleAddr = '0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7';
+  const raffleAddr = process.env.VITE_RAFFLE_ADDRESS_SEPOLIA || '0x1501273b0a02D8a313ae2cDb1C5CeAeeE0C1d32C';
   const raffle = new ethers.Contract(raffleAddr, ['function airnodeRrp() view returns (address)'], provider);
   try {
     const rrp = await raffle.airnodeRrp();

@@ -11,13 +11,13 @@ require('dotenv').config();
 const { ethers } = require('hardhat');
 
 const NEW_MASTER_X  = '0x1b573DdD9a1679505ae64498564523222c758EC2';
-const NEW_RAFFLE    = '0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7';
+const NEW_RAFFLE    = '0x1501273b0a02D8a313ae2cDb1C5CeAeeE0C1d32C';
 const V16_PROXY     = '0xb592D6819Ea310d83034cD80FDDC2e754D0a5353';
 
 // API3 QRNG — Base Sepolia
 const AIRNODE        = '0x6238772544f029ecaBfDED4300f13A3c4FE84E1D';
 const ENDPOINT_ID    = '0xfb6d017bb87991b7495f563db3c8cf59ff87b09781947bb1e417006ad7f55a78';
-const SPONSOR_WALLET = process.env.SPONSOR_WALLET || '0x7186e5D35f126c3C809670F567b594582f3C7d61';
+const SPONSOR_WALLET = process.env.SPONSOR_WALLET || '0x40eF15db2F08F322abCE913ead1cF039FDC48d92';
 
 // Minimal ABIs for the calls we need
 const MASTER_X_ABI = [

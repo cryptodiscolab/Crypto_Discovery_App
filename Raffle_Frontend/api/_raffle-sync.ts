@@ -9,7 +9,8 @@ import {
     RAFFLE_EVENT_ABI,
     RAFFLE_ABI,
     getEnv,
-    sanitizeError
+    sanitizeError,
+    ZERO_ADDRESS
 } from './_shared/constants.js';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -19,6 +20,10 @@ const MAX_BLOCK_RANGE = 2000n;
 const RAFFLE_ADDRESS = isMainnet 
     ? getEnv('VITE_RAFFLE_ADDRESS') 
     : getEnv('VITE_RAFFLE_ADDRESS_SEPOLIA');
+
+function isOnChainTrue(value: unknown): boolean {
+    return value === true || value === 'true' || value === 1 || value === 1n;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const startTime = Date.now();
@@ -56,14 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const touchedRaffleIds = new Set<number>();
 
         if (creationLogs.length > 0) {
-            const inserts = creationLogs.map(log => ({
-                id: Number((log.args as any).raffleId),
-                created_at: new Date(Number((log.args as any).timestamp) * 1000).toISOString(),
-                is_finalized: false,
-                updated_at: new Date().toISOString()
-            }));
-            inserts.forEach(row => touchedRaffleIds.add(row.id));
-            await supabase.from('raffles').upsert(inserts, { onConflict: 'id' });
+            creationLogs.forEach(log => touchedRaffleIds.add(Number((log.args as any).raffleId)));
         }
 
         if (ticketLogs.length > 0) {
@@ -89,7 +87,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         (activeRows || []).forEach((row: { id: number }) => touchedRaffleIds.add(Number(row.id)));
 
         if (touchedRaffleIds.size > 0) {
-            const stateUpdates = [];
             const touchedIds = Array.from(touchedRaffleIds);
             const { data: existingRaffles } = await supabase
                 .from('raffles')
@@ -107,28 +104,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         functionName: 'getRaffleInfo',
                         args: [BigInt(raffleId)]
                     }) as any;
-                    const isFinalized = Boolean(info.isFinalized ?? info[10]);
+                    const isActive = isOnChainTrue(info.isActive ?? info[9]);
+                    const isFinalized = isOnChainTrue(info.isFinalized ?? info[10]);
                     const existing = existingById.get(raffleId);
                     const finalizedAt = existing?.finalized_at || (isFinalized ? new Date().toISOString() : null);
                     const claimDeadlineAt = existing?.claim_deadline_at || (finalizedAt ? new Date(new Date(finalizedAt).getTime() + 72 * 60 * 60 * 1000).toISOString() : null);
+                    const sponsor = String(info.sponsor ?? info[11] ?? ZERO_ADDRESS).toLowerCase();
+                    const nowIso = new Date().toISOString();
                     const update: Record<string, unknown> = {
-                        id: raffleId,
+                        is_active: isActive,
                         is_finalized: isFinalized,
                         prize_pool: Number(info.prizePool ?? info[4] ?? 0n) / 1e18,
                         prize_per_winner: Number(info.prizePerWinner ?? info[14] ?? 0n) / 1e18,
-                        updated_at: new Date().toISOString()
+                        max_tickets: Number(info.maxTickets ?? info[2] ?? 0n),
+                        winner_count: Number(info.winnerCount ?? info[7] ?? 0n),
+                        metadata_uri: String(info.metadataURI ?? info[12] ?? ''),
+                        end_time: Number(info.endTime ?? info[13] ?? 0n) > 0
+                            ? new Date(Number(info.endTime ?? info[13]) * 1000).toISOString()
+                            : null,
+                        updated_at: nowIso
                     };
                     if (isFinalized) {
-                        update.is_active = false;
                         update.finalized_at = finalizedAt;
                         update.claim_deadline_at = claimDeadlineAt;
                     }
-                    stateUpdates.push(update);
+
+                    const { data: updatedRows, error: updateErr } = await supabase
+                        .from('raffles')
+                        .update(update)
+                        .eq('id', raffleId)
+                        .select('id');
+                    if (updateErr) throw updateErr;
+
+                    if (!updatedRows || updatedRows.length === 0) {
+                        const { error: insertErr } = await supabase
+                            .from('raffles')
+                            .insert({
+                                id: raffleId,
+                                creator_address: sponsor,
+                                sponsor_address: sponsor,
+                                category: 'NFT',
+                                ...update,
+                                created_at: nowIso
+                            });
+                        if (insertErr) throw insertErr;
+                    }
                 } catch (stateErr: any) {
                     console.warn(`[raffle-sync] state refresh failed for #${raffleId}:`, stateErr?.message || String(stateErr));
                 }
             }
-            if (stateUpdates.length > 0) await supabase.from('raffles').upsert(stateUpdates, { onConflict: 'id' });
         }
 
         await supabase.from('raffle_sync_state').update({ last_synced_block: toBlock.toString(), updated_at: new Date().toISOString() }).eq('id', 'primary_sync');

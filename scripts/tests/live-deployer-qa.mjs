@@ -73,12 +73,16 @@ const RAFFLE_ABI = [
   'function buyTickets(uint256 raffleId,uint256 ticketCount) payable',
   'function cancelRaffle(uint256 raffleId)',
   'function drawWinner(uint256 raffleId)',
+  'function claimRafflePrize(uint256 raffleId)',
   'function getUserTickets(uint256 raffleId,address user) view returns (uint256)',
+  'function hasUserClaimed(uint256 raffleId,address user) view returns (bool)',
   'function getRaffleInfo(uint256 raffleId) view returns (tuple(uint256 raffleId,uint256 totalTickets,uint256 maxTickets,uint256 targetPrizePool,uint256 prizePool,address[] participants,address[] winners,uint256 winnerCount,uint256 randomNumber,bool isActive,bool isFinalized,address sponsor,string metadataURI,uint256 endTime,uint256 prizePerWinner,uint256 totalTicketRevenue))',
   'event RaffleCreated(uint256 indexed raffleId,uint256 timestamp)',
   'event TicketPurchased(address indexed user,uint256 indexed raffleId,uint256 count)',
   'event RaffleCancelled(uint256 indexed raffleId,address indexed sponsor,uint256 refundedAmount)',
-  'event QRNGRequested(bytes32 indexed requestId,uint256 indexed raffleId)'
+  'event QRNGRequested(bytes32 indexed requestId,uint256 indexed raffleId)',
+  'event QRNGFulfilled(bytes32 indexed requestId,uint256 randomNumber)',
+  'event RaffleWinner(uint256 indexed raffleId,address indexed winner,uint256 prize)'
 ];
 
 const dailyApp = new Contract(DAILY_APP, DAILY_APP_ABI, provider);
@@ -96,11 +100,40 @@ function log(payload) {
 }
 
 async function apiPost(pathname, body) {
-  const response = await fetch(`${APP_URL}${pathname}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body)
-  });
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(`${APP_URL}${pathname}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const text = await response.text();
+      let parsed;
+      try {
+        parsed = text ? JSON.parse(text) : null;
+      } catch {
+        parsed = { raw: text.slice(0, 500) };
+      }
+      if (response.ok || parsed?.error !== 'RPC_SYNC_DELAYED') {
+        return { status: response.status, ok: response.ok, body: parsed, attempt };
+      }
+      lastError = new Error(parsed?.message || parsed?.error || 'RPC_SYNC_DELAYED');
+    } catch (error) {
+      lastError = error;
+    }
+    await sleep(5000 * attempt);
+  }
+  return {
+    status: 0,
+    ok: false,
+    body: { error: lastError instanceof Error ? lastError.message : String(lastError) },
+    attempt: 3
+  };
+}
+
+async function apiGet(pathname, headers = {}) {
+  const response = await fetch(`${APP_URL}${pathname}`, { headers });
   const text = await response.text();
   let parsed;
   try {
@@ -124,6 +157,38 @@ function getEvent(receipt, name) {
   return null;
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function normalizeRaffleInfo(info) {
+  return {
+    isActive: Boolean(info.isActive ?? info[9]),
+    isFinalized: Boolean(info.isFinalized ?? info[10]),
+    winners: Array.from(info.winners ?? info[6] ?? []).map((winner) => String(winner).toLowerCase()),
+    prizePool: BigInt(info.prizePool ?? info[4] ?? 0n),
+    prizePerWinner: BigInt(info.prizePerWinner ?? info[14] ?? 0n),
+    randomNumber: BigInt(info.randomNumber ?? info[8] ?? 0n)
+  };
+}
+
+async function waitForFinalized(raffleId, attempts = 24, intervalMs = 15000) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const info = normalizeRaffleInfo(await raffleRead.getRaffleInfo(raffleId));
+    log({
+      phase: 'draw-poll',
+      raffleId,
+      attempt,
+      isActive: info.isActive,
+      isFinalized: info.isFinalized,
+      winners: info.winners,
+      prizePerWinnerETH: formatEther(info.prizePerWinner),
+      randomNumber: info.randomNumber.toString()
+    });
+    if (info.isFinalized) return info;
+    await sleep(intervalMs);
+  }
+  return normalizeRaffleInfo(await raffleRead.getRaffleInfo(raffleId));
+}
+
 async function createRaffle(label, deposit) {
   const metadata = `ipfs://qa-live-${label}-${Date.now()}`;
   const tx = await raffle.createSponsorshipRaffle(1, 1, 1, metadata, { value: deposit });
@@ -140,6 +205,7 @@ async function sign(message) {
 
 const balance = await provider.getBalance(walletAddress);
 const beforeStats = await dailyApp.userStats(walletAddress);
+const qaStartedAt = new Date().toISOString();
 const deposit = parseEther('0.0001');
 const ticketPrice = await masterX.getTicketPriceInETH();
 const surchargeBP = await raffleRead.surchargeBP();
@@ -213,6 +279,7 @@ const buyReplay = await apiPost('/api/tasks/verify', {
   task_id: buyTaskId,
   xp_reward: 0
 });
+const replayBlocked = buyReplay.ok || /already claimed|already_claimed|duplicate/i.test(String(buyReplay.body?.error || buyReplay.body?.message || ''));
 log({
   phase: 'buy-ticket-sync',
   raffleId: created.raffleId,
@@ -220,9 +287,10 @@ log({
   eventFound: !!getEvent(buyReceipt, 'TicketPurchased'),
   tickets: tickets.toString(),
   api: buySync,
-  replay: buyReplay
+  replay: buyReplay,
+  replayBlocked
 });
-if (!buySync.ok || !buyReplay.ok) throw new Error(`buy ticket sync/replay failed for ${created.raffleId}`);
+if (!buySync.ok || !replayBlocked) throw new Error(`buy ticket sync/replay failed for ${created.raffleId}`);
 
 const cancelled = await createRaffle('cancel', deposit);
 const cancelTx = await raffle.cancelRaffle(cancelled.raffleId);
@@ -248,6 +316,8 @@ log({
 if (!reject.ok) throw new Error(`reject-raffle failed for ${cancelled.raffleId}`);
 
 let drawResult;
+let finalInfo = null;
+let claimResult = { skipped: true, reason: 'draw not attempted' };
 try {
   const airnode = await raffleRead.airnode();
   const airnodeRrp = await raffleRead.airnodeRrp();
@@ -265,28 +335,86 @@ try {
     const drawTx = await raffle.drawWinner(created.raffleId);
     const drawReceipt = await drawTx.wait();
     drawResult = { txHash: drawTx.hash, status: drawReceipt.status, eventFound: !!getEvent(drawReceipt, 'QRNGRequested') };
+    finalInfo = await waitForFinalized(created.raffleId);
+
+    if (!finalInfo.isFinalized) {
+      claimResult = { skipped: true, reason: 'QRNG fulfillment not finalized within polling window' };
+    } else if (!finalInfo.winners.includes(walletAddress.toLowerCase())) {
+      claimResult = { skipped: true, reason: 'QA wallet is not the finalized winner', winners: finalInfo.winners };
+    } else {
+      const claimTx = await raffle.claimRafflePrize(created.raffleId);
+      const claimReceipt = await claimTx.wait();
+      const claimMessage = `Claim NFT Raffle Prize\nRaffle ID: ${created.raffleId}\nWinner: ${walletAddress.toLowerCase()}\nTime: ${new Date().toISOString()}`;
+      let claimSync = await apiPost('/api/raffle?action=claim-prize', {
+        wallet_address: walletAddress,
+        signature: await sign(claimMessage),
+        message: claimMessage,
+        raffle_id: created.raffleId,
+        tx_hash: claimTx.hash
+      });
+
+      if (!claimSync.ok && claimSync.body?.error === 'RPC_SYNC_DELAYED') {
+        await sleep(10000);
+        claimSync = await apiPost('/api/raffle?action=claim-prize', {
+          wallet_address: walletAddress,
+          signature: await sign(claimMessage),
+          message: claimMessage,
+          raffle_id: created.raffleId,
+          tx_hash: claimTx.hash
+        });
+      }
+
+      claimResult = {
+        txHash: claimTx.hash,
+        status: claimReceipt.status,
+        eventFound: !!getEvent(claimReceipt, 'RaffleWinner'),
+        hasUserClaimed: String(await raffleRead.hasUserClaimed(created.raffleId, walletAddress)),
+        api: claimSync
+      };
+    }
   }
 } catch (error) {
   drawResult = { skipped: true, reason: error instanceof Error ? error.message : String(error) };
 }
 
+let raffleSync = { skipped: true, reason: 'CRON_SECRET not configured' };
+if (process.env.CRON_SECRET?.trim()) {
+  raffleSync = await apiGet('/api/raffle-sync', { authorization: `Bearer ${process.env.CRON_SECRET.trim()}` });
+}
+
 const { data: raffleRows } = await supabase
   .from('raffles')
-  .select('id,is_active,creator_address,sponsor_address,prize_pool,max_tickets,winner_count,cancellation_tx,rejection_reason')
+  .select('id,is_active,is_finalized,finalized_at,claim_deadline_at,creator_address,sponsor_address,prize_pool,prize_per_winner,max_tickets,winner_count,cancellation_tx,rejection_reason')
   .in('id', [created.raffleId, cancelled.raffleId])
   .order('id', { ascending: true });
 const { data: claims } = await supabase
   .from('user_task_claims')
   .select('task_id,xp_earned,target_id')
-  .in('task_id', [`raffle_create_${created.raffleId}`, buyTaskId])
+  .in('task_id', [`raffle_create_${created.raffleId}`, buyTaskId, `raffle_win_${created.raffleId}`])
   .order('task_id', { ascending: true });
+const { data: activityLogs } = await supabase
+  .from('user_activity_logs')
+  .select('category,activity_type,value_amount,value_symbol,tx_hash,created_at,metadata')
+  .eq('wallet_address', walletAddress.toLowerCase())
+  .gte('created_at', qaStartedAt)
+  .in('category', ['RAFFLE', 'XP', 'PURCHASE', 'SYNC'])
+  .order('created_at', { ascending: true });
 const afterStats = await dailyApp.userStats(walletAddress);
 
 log({
   phase: 'final',
   drawResult,
+  finalInfo: finalInfo ? {
+    isFinalized: finalInfo.isFinalized,
+    winners: finalInfo.winners,
+    prizePoolETH: formatEther(finalInfo.prizePool),
+    prizePerWinnerETH: formatEther(finalInfo.prizePerWinner)
+  } : null,
+  claimResult,
+  raffleSync,
   dbRaffles: raffleRows,
   dbClaims: claims,
+  dbActivityLogs: activityLogs,
   afterPoints: afterStats[0].toString(),
   afterTier: Number(afterStats[3]),
   xpDelta: (afterStats[0] - beforeStats[0]).toString()

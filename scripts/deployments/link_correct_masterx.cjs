@@ -10,7 +10,7 @@ require('dotenv').config();
 const { ethers } = require('hardhat');
 
 const NEW_MASTER_X  = '0x1b573DdD9a1679505ae64498564523222c758EC2';
-const RAFFLE        = '0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7';
+const RAFFLE        = '0x1501273b0a02D8a313ae2cDb1C5CeAeeE0C1d32C';
 const V16_PROXY     = '0xb592D6819Ea310d83034cD80FDDC2e754D0a5353';
 
 // Minimal ABIs

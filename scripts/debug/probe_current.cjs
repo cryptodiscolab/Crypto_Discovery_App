@@ -8,7 +8,7 @@ async function main() {
   const contracts = [
     { name: 'DailyApp V16 Proxy', addr: '0xb592D6819Ea310d83034cD80FDDC2e754D0a5353' },
     { name: 'MasterX (New)', addr: '0x1b573DdD9a1679505ae64498564523222c758EC2' },
-    { name: 'Raffle (New)', addr: '0xaE8fe1d4D566D438a7ac410c4bE23daD94Fe85B7' },
+    { name: 'Raffle (Active QRNG)', addr: '0x1501273b0a02D8a313ae2cDb1C5CeAeeE0C1d32C' },
     { name: 'CMS V2', addr: '0xd992f0c869E82EC3B6779038Aa4fCE5F16305edC' },
     { name: 'DailyApp V15 (Legacy)', addr: '0x0D6f339795EeA5129461388F25dE4f87e92b8DA2' },
     { name: 'MasterX (Old)', addr: '0x980770dAcE8f13E10632D3EC1410FAA4c707076c' }

@@ -1,7 +1,7 @@
 const { ethers } = require("ethers");
 
 // Lowercase address (no checksum)
-const lowercaseAddr = "0x7186e5d35f126c3c809670f567b594582f3c7d61";
+const lowercaseAddr = "0x40ef15db2f08f322abce913ead1cf039fdc48d92";
 
 try {
     // ethers.getAddress will return the CORRECT checksummed version

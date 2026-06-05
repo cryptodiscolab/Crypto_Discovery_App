@@ -209,6 +209,10 @@ contract CryptoDiscoRaffle is ReentrancyGuard, Pausable, Ownable2Step {
         sponsorWallet = _sw;
     }
 
+    function setRrpSponsorshipStatus(bool status) external onlyOwner {
+        airnodeRrp.setSponsorshipStatus(address(this), status);
+    }
+
     function drawWinner(uint256 raffleId) external {
         RaffleData storage raffle = raffles[raffleId];
         require(raffle.isActive, "Not active");

@@ -12,7 +12,7 @@ async function main() {
     // Alamat Kontrak yang benar (deployed)
     const rawContract = "0xd7f6d4589A04F51D22B3a5965860EB40fb219c78";
     // Alamat Sponsor Wallet (dengan checksum yang benar)
-    const rawSponsor = "0x7186e5D35f126c3C809670F567b594582f3C7d61";
+    const rawSponsor = "0x40eF15db2F08F322abCE913ead1cF039FDC48d92";
 
     // PAKSA ke format Checksum yang bener biar Ethers v6 nggak marah (Node v23 fix)
     const airnodeAddress = ethers.getAddress(rawAirnode);

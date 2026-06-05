@@ -7,7 +7,7 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
 const CONTRACT_ADDRESS = "0xd7f6d4589A04F51D22B3a5965860EB40fb219c78";
-const SPONSOR_WALLET = "0x7186e5D35f126c3C809670F567b594582f3C7d61";
+const SPONSOR_WALLET = "0x40eF15db2F08F322abCE913ead1cF039FDC48d92";
 const BALANCE_THRESHOLD = ethers.parseEther("0.005");
 
 // 2. Minimal ABI for the events we need
