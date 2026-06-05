@@ -38,6 +38,11 @@ export function useVerifiedAction() {
     const { address } = useAccount();
     const { signMessageAsync } = useSignMessage();
 
+    const normalizeSocialPlatform = (value?: string) => {
+        const normalized = value?.toLowerCase().trim();
+        return normalized === 'x' ? 'twitter' : normalized;
+    };
+
     const execute = useCallback(async (action: string, payload: VerifiedActionPayload) => {
         if (!address) throw new Error('Wallet not connected');
 
@@ -52,7 +57,8 @@ export function useVerifiedAction() {
         // [v3.60.0] All actions route through /api/tasks-bundle (server handles verification secret)
         const bundleAction = (action === 'claim_task') ? 'claim' : action;
         const isClaimAction = (action === 'claim_task');
-        const isSocialVerify = !isClaimAction && payload.platform && payload.platform !== 'regular' && payload.platform !== 'system';
+        const normalizedPlatform = normalizeSocialPlatform(payload.platform);
+        const isSocialVerify = !isClaimAction && normalizedPlatform && normalizedPlatform !== 'regular' && normalizedPlatform !== 'system';
 
         // All requests go through our server — never expose secrets client-side
         const endpoint = isSocialVerify
@@ -70,7 +76,7 @@ export function useVerifiedAction() {
                 signature,
                 message,
                 // Enhanced payload for Verification Server
-                platform: payload.platform,
+                platform: normalizedPlatform || payload.platform,
                 action_type: payload.action_type,
                 userAddress: address.toLowerCase(),
                 taskId: payload.task_id,
@@ -85,6 +91,7 @@ export function useVerifiedAction() {
                 target_id: payload.target_id ?? null, // ✅ v3.64.30: Anti-Sybil deduplication target
                 // Backward compatibility for tasks-bundle
                 fid: payload.fid,
+                userId: normalizedPlatform === 'twitter' ? payload.twitterId : undefined,
                 targetFid: payload.targetFid,
                 castHash: payload.castHash,
                 tweetId: payload.tweetId,

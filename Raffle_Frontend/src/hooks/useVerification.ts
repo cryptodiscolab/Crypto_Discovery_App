@@ -9,6 +9,11 @@ export function useVerification(refetchStats?: () => void) {
     const lastActionTimeRef = useRef<Record<string | number, number>>({});
     const { signMessageAsync } = useSignMessage();
 
+    const normalizeSocialPlatform = (value?: string) => {
+        const normalized = value?.toLowerCase().trim() || 'farcaster';
+        return normalized === 'x' ? 'twitter' : normalized;
+    };
+
     const verifyTask = async (task: unknown, address: string, taskId: string | number, userFid: number | null = null) => {
         // 0. Anti-Fraud: 30s Delay Check
         const now = Date.now();
@@ -53,7 +58,7 @@ export function useVerification(refetchStats?: () => void) {
 
             toast.loading("Verifying on server...", { id: tid });
 
-            const platform = t.platform?.toLowerCase() || 'farcaster';
+            const platform = normalizeSocialPlatform(t.platform);
             const isSocialTask = ['farcaster', 'twitter', 'tiktok', 'instagram'].includes(platform);
 
             // Resolve correct social IDs from localStorage cache or fallback
@@ -78,8 +83,14 @@ export function useVerification(refetchStats?: () => void) {
                     console.warn('[verifyTask] Cache resolution error:', e);
                 }
 
+                const needsProfileLookup =
+                    (platform === 'farcaster' && !resolvedFid) ||
+                    (platform === 'twitter' && !resolvedTwitterId) ||
+                    (platform === 'tiktok' && !resolvedTiktok) ||
+                    (platform === 'instagram' && !resolvedInstagram);
+
                 // Zero-Trust Direct Lookup Fallback
-                if (!resolvedTwitterId && !resolvedFid && !resolvedTiktok && !resolvedInstagram) {
+                if (needsProfileLookup) {
                     try {
                         const { supabase } = await import('../lib/supabaseClient');
                         const { data } = await supabase

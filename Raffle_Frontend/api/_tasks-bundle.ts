@@ -59,6 +59,11 @@ type UgcRewardClaimedLog = {
     };
 };
 
+const normalizeSocialPlatform = (value?: string | null) => {
+    const normalized = String(value || '').toLowerCase().trim();
+    return normalized === 'x' ? 'twitter' : normalized;
+};
+
 const publicClient = createPublicClient({
     chain: VIEM_CHAIN,
     transport: http(RPC_URL)
@@ -808,9 +813,9 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
     if (taskGuardErr) throw taskGuardErr;
 
     if (taskGuard?.task_type === 'ugc') {
-        const expectedPlatform = String(taskGuard.platform || '').toLowerCase().trim();
+        const expectedPlatform = normalizeSocialPlatform(taskGuard.platform);
         const expectedAction = String(taskGuard.action_type || '').toLowerCase().trim();
-        const requestedPlatform = String(platform || '').toLowerCase().trim();
+        const requestedPlatform = normalizeSocialPlatform(platform);
         const requestedAction = String(action_type || '').toLowerCase().trim();
 
         if (expectedPlatform && requestedPlatform && expectedPlatform !== requestedPlatform) {
@@ -838,7 +843,7 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
     }
 
     // ── CONNECT TO VERIFICATION SERVER FOR SOCIAL TASKS ──
-    const taskPlatform = String(taskGuard?.platform || platform || '').toLowerCase().trim();
+    const taskPlatform = normalizeSocialPlatform(taskGuard?.platform || platform);
     const taskActionType = String(taskGuard?.action_type || action_type || '').toLowerCase().trim();
     const isSocialTask = ['farcaster', 'twitter', 'tiktok', 'instagram'].includes(taskPlatform);
 
@@ -860,7 +865,7 @@ async function handleSocialVerify(req: ExtendedVercelRequest, res: VercelRespons
             },
             // Flat fields for compatibility with verify.routes.js extractPlatformParams
             fid: req.body.fid,
-            userId: req.body.userId,
+            userId: req.body.userId || (taskPlatform === 'twitter' ? req.body.twitterId || req.body.socialId : undefined),
             tiktokHandle: req.body.tiktokHandle,
             instagramHandle: req.body.instagramHandle,
             targetFid: req.body.targetFid,

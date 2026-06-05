@@ -39,7 +39,7 @@ export function useOAuth() {
         // Use SDK to get the authorization URL.
         // skipBrowserRedirect: true prevents it from redirecting the current tab.
         const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: provider === 'twitter' ? ('x' as unknown as 'twitter') : provider,
+            provider,
             options: {
                 redirectTo,
                 skipBrowserRedirect: true,
