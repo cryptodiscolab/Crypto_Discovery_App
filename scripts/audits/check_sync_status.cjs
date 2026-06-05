@@ -3,6 +3,10 @@ const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rbgzwhsdqnhwrwimjjfm.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SENTINEL_STALE_HOURS = Number.parseFloat(process.env.SENTINEL_STALE_HOURS || '26');
+const SENTINEL_STALE_MS = Number.isFinite(SENTINEL_STALE_HOURS) && SENTINEL_STALE_HOURS > 0
+    ? SENTINEL_STALE_HOURS * 60 * 60 * 1000
+    : 26 * 60 * 60 * 1000;
 
 if (!SUPABASE_SERVICE_KEY) {
     console.error("❌ ERROR: SUPABASE_SERVICE_ROLE_KEY is missing from environment variables.");
@@ -46,7 +50,7 @@ async function fullVerification() {
     // 1b. Check Lurah Sentinel Health
     const { data: healthSvc } = await supabase.from('system_health').select('*').eq('service_key', 'lurah_ekosistem').maybeSingle();
     if (healthSvc) {
-        const isStale = Date.now() - new Date(healthSvc.last_heartbeat).getTime() > 2 * 60 * 60 * 1000;
+        const isStale = Date.now() - new Date(healthSvc.last_heartbeat).getTime() > SENTINEL_STALE_MS;
         const status = (healthSvc.status === 'healthy' && !isStale) ? '✅' : '⚠️';
         console.log(`  ${status} Sentinel Health         │ ${healthSvc.status.toUpperCase()} │ Heartbeat: ${new Date(healthSvc.last_heartbeat).toLocaleString()}${isStale ? ' (STALE)' : ''}`);
     } else {

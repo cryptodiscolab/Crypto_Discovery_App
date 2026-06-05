@@ -11,7 +11,10 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const STALE_THRESHOLD = 2 * 60 * 60 * 1000; // 2 hours
+const STALE_THRESHOLD_HOURS = Number.parseFloat(process.env.SENTINEL_STALE_HOURS || '26');
+const STALE_THRESHOLD = Number.isFinite(STALE_THRESHOLD_HOURS) && STALE_THRESHOLD_HOURS > 0
+    ? STALE_THRESHOLD_HOURS * 60 * 60 * 1000
+    : 26 * 60 * 60 * 1000;
 
 async function runHealthBot() {
     console.log("📡 [Health Bot] Starting ecosystem pulse-check...");

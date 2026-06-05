@@ -543,6 +543,7 @@ Untuk alur end-to-end lengkap fitur Task, lihat dokumen khusus:
 <h3>14.1 Vercel Cron Override</h3>
 <ul>
 <li><strong>Lurah Cron</strong>: Dijalankan via <code>/api/lurah-cron</code> (berdasarkan <code>vercel.json</code>). Menyimpan health check di tabel <code>system_health</code> dengan <code>service_key: lurah_ekosistem</code>.</li>
+<li><strong>Heartbeat Stale Window</strong>: Audit lokal dan health bot memakai <code>SENTINEL_STALE_HOURS</code> dengan default <code>26</code> jam agar selaras dengan Vercel Hobby daily cron dan toleransi eksekusi UTC.</li>
 <li><strong>Legacy Ban</strong>: Script PM2/Hardhat lokal seperti <code>sync-sbt.cjs</code> dan <code>sync-underdog.cjs</code> DILARANG digunakan lagi. Entry health lama mereka WAJIB dihapus dari <code>system_health</code>.</li>
 </ul>
 <h3>14.2 Sync Events Staleness Protection</h3>

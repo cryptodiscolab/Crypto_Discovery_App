@@ -425,6 +425,7 @@ Arsitektur pemantauan ekosistem sekarang eksklusif berada di jaringan Vercel Ser
 
 ### 14.1 Vercel Cron Override
 - **Lurah Cron**: Dijalankan via `/api/lurah-cron` (berdasarkan `vercel.json`). Menyimpan health check di tabel `system_health` dengan `service_key: lurah_ekosistem`.
+- **Heartbeat Stale Window**: Audit lokal dan health bot memakai `SENTINEL_STALE_HOURS` dengan default `26` jam agar selaras dengan Vercel Hobby daily cron dan toleransi eksekusi UTC.
 - **Legacy Ban**: Script PM2/Hardhat lokal seperti `sync-sbt.cjs` dan `sync-underdog.cjs` DILARANG digunakan lagi. Entry health lama mereka WAJIB dihapus dari `system_health`.
 
 ### 14.2 Sync Events Staleness Protection
