@@ -5,7 +5,7 @@ async function main() {
     console.log("\n🚀 Starting CryptoDiscoRaffle Deployment...");
 
     const masterXAddress = ethers.getAddress((process.env.VITE_MASTER_X_ADDRESS_SEPOLIA || process.env.MASTER_X_ADDRESS_SEPOLIA).toLowerCase());
-    const airnodeRrpAddress = ethers.getAddress((process.env.AIRNODE_RRP || "0x2ab9f26E18b6103274414940251539D0105e2Add").toLowerCase());
+    const airnodeRrpAddress = ethers.getAddress((process.env.AIRNODE_RRP || "0xa0AD79D995DdeeB18a14eAef56A549A04e3Aa1Bd").toLowerCase());
 
     if (!masterXAddress) {
         throw new Error("MASTER_X_ADDRESS_SEPOLIA missing in .env");
@@ -13,6 +13,11 @@ async function main() {
 
     console.log("📍 MasterX Address:", masterXAddress);
     console.log("📍 AirnodeRRP Address:", airnodeRrpAddress);
+
+    const rrpCode = await ethers.provider.getCode(airnodeRrpAddress);
+    if (!rrpCode || rrpCode === "0x") {
+        throw new Error(`AIRNODE_RRP has no bytecode on this network: ${airnodeRrpAddress}`);
+    }
 
     const [deployer] = await ethers.getSigners();
     console.log("👤 Deployer Wallet:", deployer.address);

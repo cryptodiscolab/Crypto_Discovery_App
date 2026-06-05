@@ -601,7 +601,7 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 - Deployer wallet: `0x52260C30697674A7C837feb2Af21BbF3606795C8`.
 - Production API drift found: resolved by updating Vercel production environment variables and deploying the latest API bundles.
 - SBT pool claim cannot be completed with deployer wallet: MasterX `users(deployer).tier = NONE`, `isVerified = false`, pending reward `0 ETH`, and `totalLockedRewards = 0 ETH`.
-- Raffle prize claim cannot be completed until QRNG finalization succeeds. `drawWinner(3)` saw Airnode configured (`0x6238772544f029ecaBfDED4300f13A3c4FE84E1D`) but reverted during the Airnode RRP request.
+- Raffle prize claim cannot be completed until QRNG finalization succeeds. Root cause verified on 2026-06-05: active raffle `0xaE8fe1d4...85B7` has immutable `airnodeRrp = 0x2ab9f26E...e2Add`, and that address has no bytecode on Base Sepolia. `drawWinner(3)` therefore reverts inside `makeFullRequest` even though raffle #3 is expired/sold out, caller is owner, Airnode is configured, and sponsor wallet is funded.
 - UGC mission create is now tested for ETH and USDC with QA wallets. The payments are recovered on-chain-first into DB with on-chain XP proof. UGC mission participant claim still requires social-task completion state.
 
 ## 2026-06-05: Next Progress Task List
@@ -625,8 +625,9 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 - [x] Fresh ETH payout idempotency passed: re-running `claim-ugc-campaign`, `prepare-ugc-payout-claim`, and `sync-ugc-payout` after payout returned safe 200 responses with `already_claimed`, `already_paid`, and `already_synced`.
 - [ ] Finish remaining UGC negative QA: replay/double escrow claim rejected on-chain with same nonce/signature, and expired claim after 3x24h rejected.
 - [ ] Create or select a Base Sepolia wallet with verified SBT tier and pending pool reward, then execute SBT pool claim through UI/API and verify `ClaimProcessed` plus DB mirror.
-- [ ] Resolve raffle QRNG/finalization blocker before prize-claim QA; document whether the fix is Airnode config, request parameters, or a new raffle deployment.
-- [ ] Decide raffle 3x24h claim-window migration path: redeploy/upgrade raffle contract only with explicit address migration, ABI/env sync, and DB backfill plan.
+- [x] Resolve raffle QRNG/finalization blocker root cause: active Raffle was deployed with a no-code AirnodeRrp address. Code guards now detect this before live QA/deploy.
+- [ ] Execute explicit Raffle redeploy/cutover plan: deploy `CryptoDiscoRaffle` with valid Base Sepolia AirnodeRrp `0xa0AD79D9...e3Aa1Bd`, call `setQRNGParameters(0x62387725...E1D, endpointId, sponsorWallet)`, initialize first raffle, grant/link roles if required, update local/Vercel `VITE_RAFFLE_ADDRESS_SEPOLIA`/`RAFFLE_ADDRESS_SEPOLIA`, backfill or archive old DB raffle rows, then run create/buy/draw/claim prize QA.
+- [ ] Decide raffle 3x24h claim-window production migration path: redeploy/upgrade raffle contract only with explicit address migration, ABI/env sync, DB backfill, and rollback plan.
 - [ ] After participant QA, run production preview smoke for Tasks, UGC campaign card, raffle win banner, and SBT rewards dashboard before promoting any new deployment.
 - [ ] Open PR from `feature/sync-dashboard-architecture`; include test evidence, source-control audit evidence, and remaining manual-gate notes.
 

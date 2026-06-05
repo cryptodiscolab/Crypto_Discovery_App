@@ -67,6 +67,8 @@ const RAFFLE_ABI = [
   'function currentRaffleId() view returns (uint256)',
   'function surchargeBP() view returns (uint256)',
   'function airnode() view returns (address)',
+  'function airnodeRrp() view returns (address)',
+  'function sponsorWallet() view returns (address)',
   'function createSponsorshipRaffle(uint256 winnerCount,uint256 maxTickets,uint256 durationDays,string metadataURI) payable',
   'function buyTickets(uint256 raffleId,uint256 ticketCount) payable',
   'function cancelRaffle(uint256 raffleId)',
@@ -248,8 +250,17 @@ if (!reject.ok) throw new Error(`reject-raffle failed for ${cancelled.raffleId}`
 let drawResult;
 try {
   const airnode = await raffleRead.airnode();
+  const airnodeRrp = await raffleRead.airnodeRrp();
+  const sponsorWallet = await raffleRead.sponsorWallet();
   if (airnode === '0x0000000000000000000000000000000000000000') {
     drawResult = { skipped: true, reason: 'Airnode is not configured' };
+  } else if (await provider.getCode(airnodeRrp) === '0x') {
+    drawResult = {
+      skipped: true,
+      reason: 'AirnodeRrp has no bytecode on Base Sepolia; raffle must be redeployed with a valid RRP address before QRNG draw.',
+      airnodeRrp,
+      sponsorWallet
+    };
   } else {
     const drawTx = await raffle.drawWinner(created.raffleId);
     const drawReceipt = await drawTx.wait();
