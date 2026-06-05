@@ -1,7 +1,7 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.37-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.38-Hardened)
 
-- **Ecosystem Version:** v3.64.37-Hardened
-- **Last Updated:** 2026-06-05T14:30:00+07:00
+- **Ecosystem Version:** v3.64.38-Hardened
+- **Last Updated:** 2026-06-05T17:45:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
@@ -5024,7 +5024,7 @@ Created admin migration script `scripts/sync/recover_xp_to_contract.cjs` that:
 
 ---
 
-## 64. Work Report v3.64.37-Hardened — Dependency Security Hardening & Vite 6 Upgrade
+## 64. Work Report v3.64.38-Hardened — Dependency Security Hardening & Vite 6 Upgrade
 **Status**: COMPLETED
 **Date**: 2026-06-05
 **Focus**: Eliminating all 52 frontend security vulnerabilities from Vercel build audits by upgrading dependencies and applying transitive overrides in `Raffle_Frontend/package.json`.
@@ -5034,7 +5034,7 @@ Created admin migration script `scripts/sync/recover_xp_to_contract.cjs` that:
 - **Upgraded Direct dependencies**: Resolved conflict with direct `postcss` devDependency by updating it to `8.5.10` in `devDependencies` and removing it from the overrides block. Updated `react-router-dom` to `6.30.4` to fix the redirect security advisory.
 - **Vite 6 Upgrade**: Upgraded `vite` to `6.4.2` to resolve multiple `server.fs.deny` bypass and path traversal vulnerabilities while maintaining compatibility with the Rollup bundler on Windows environments as required.
 - **Zero Vulnerabilities Audit**: Ran frontend dependency install/audit and verified `Raffle_Frontend npm audit` returns exactly **0 vulnerabilities**. Production Vercel install also reports `found 0 vulnerabilities`.
-- **Root Dev-Tool Audit**: Root `npm audit fix --ignore-scripts` reduced dev-tool findings from 80 to 59. Remaining root findings are isolated to tooling chains that require breaking Hardhat/Airnode/coverage upgrades or packages with no safe fix.
+- **Root Dev-Tool Audit**: Pruned unused Airnode npm packages, removed unused Hardhat toolbox/Ignition/network-helper/gas-reporter/coverage dependencies, replaced toolbox loading with explicit Hardhat plugins, upgraded `hardhat` to `2.28.6`, and upgraded `hardhat-contract-sizer` to `2.10.1`. Root `npm audit` is reduced from 80 findings to **14 low** findings with **0 moderate/high/critical** findings; the remaining low findings are isolated to Hardhat 2 / verify / upgrades transitive packages and require a breaking Hardhat 3 migration to fully eliminate.
 - **Build Verification**: Verified that the production client bundle compiles successfully locally and on Vercel with 0 errors.
 
 ### Files Changed:
@@ -5045,4 +5045,4 @@ Created admin migration script `scripts/sync/recover_xp_to_contract.cjs` that:
 
 ---
 *Created by Antigravity — Nexus Master Architect*
-*Integrity First. Nexus Synchronized. v3.64.37 LOCKED.*
+*Integrity First. Nexus Synchronized. v3.64.38 LOCKED.*

@@ -1,4 +1,4 @@
-# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.37-Hardened)
+# 🏗️ CRYPTO DISCO LAB - MASTER ARCHITECT PROTOCOL (v3.64.38-Hardened)
 
 ---
 ## ⚠️ MANDATORY FIRST ACTION — ALL MODELS (READ BEFORE ANYTHING ELSE)
@@ -881,4 +881,4 @@ Every `logActivity` call for a task MUST include `task_id` (and `platform` if ap
 *SBT Post-Mint Sync Hardened: 2026-05-30. v3.64.34 — Receipt-verified sync-sbt-upgrade without second prompt. Unlocked NFT Gallery & Leaderboard update. PASS.*
 *Dashboard/Home Card Audit Completed: 2026-05-30. v3.64.35 — HomePage single source, receipt-verified daily claim sync, API virtual DAILY history over DB-valid XP rows. PASS.*
 *On-Chain SOT Migration Completed: 2026-05-31. v3.64.36 — Refactored LeaderboardPage to support last_onchain_xp directly with dynamic total_xp fallback. Updated remediate_view_security.sql view. Verified build. PASS.*
-*Dependency Security Hardening & Vite 6 Upgrade: 2026-06-05. v3.64.37 — Upgraded frontend vite, postcss, and react-router-dom; applied frontend transitive overrides (ws, uuid, esbuild, undici, ajv, smol-toml, react-router); Vercel/frontend lockfile audited with 0 vulnerabilities. Root dev-tool audit retains breaking/no-fix residuals. PASS.*
+*Dependency Security Hardening & Vite 6 Upgrade: 2026-06-05. v3.64.38 — Upgraded frontend vite, postcss, and react-router-dom; applied frontend transitive overrides (ws, uuid, esbuild, undici, ajv, smol-toml, react-router); Vercel/frontend lockfile audited with 0 vulnerabilities. Root dev-tool chain pruned and Hardhat upgraded to 2.28.6; root audit now has 0 moderate/high/critical findings and 14 low Hardhat 2 residuals pending breaking Hardhat 3 migration. PASS.*
