@@ -1,7 +1,7 @@
-# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.36-Hardened)
+# 📕 CRYPTO DISCO DAILY APP - SUPREME MASTER PRD (v3.64.37-Hardened)
 
-- **Ecosystem Version:** v3.64.36-Hardened
-- **Last Updated:** 2026-05-31T08:05:00+07:00
+- **Ecosystem Version:** v3.64.37-Hardened
+- **Last Updated:** 2026-06-05T14:30:00+07:00
 - **Author:** Antigravity (Lead Blockchain Architect)
 - **Status:** [🟢] DEPLOYED & HARDENED (Source of Truth)
 - **Master Registry:** [WORKSPACE_MAP.md](file:///.agents/WORKSPACE_MAP.md) | [AGENTS.md](file:///AGENTS.md)
@@ -5023,5 +5023,26 @@ Created admin migration script `scripts/sync/recover_xp_to_contract.cjs` that:
 - `scripts/sync/remediate_view_security.sql`
 
 ---
+
+## 64. Work Report v3.64.37-Hardened — Dependency Security Hardening & Vite 6 Upgrade
+**Status**: COMPLETED
+**Date**: 2026-06-05
+**Focus**: Eliminating all 52 frontend security vulnerabilities from Vercel build audits by upgrading dependencies and applying transitive overrides in `Raffle_Frontend/package.json`.
+
+### Key Results:
+- **Overridden Transitive Dependencies**: Resolved 47 vulnerabilities by overriding transitive dependencies `ws` to `8.20.1` and `uuid` to `11.1.1` in the package overrides block.
+- **Upgraded Direct dependencies**: Resolved conflict with direct `postcss` devDependency by updating it to `8.5.10` in `devDependencies` and removing it from the overrides block. Updated `react-router-dom` to `6.30.4` to fix the redirect security advisory.
+- **Vite 6 Upgrade**: Upgraded `vite` to `6.4.2` to resolve multiple `server.fs.deny` bypass and path traversal vulnerabilities while maintaining compatibility with the Rollup bundler on Windows environments as required.
+- **Zero Vulnerabilities Audit**: Ran frontend dependency install/audit and verified `Raffle_Frontend npm audit` returns exactly **0 vulnerabilities**. Production Vercel install also reports `found 0 vulnerabilities`.
+- **Root Dev-Tool Audit**: Root `npm audit fix --ignore-scripts` reduced dev-tool findings from 80 to 59. Remaining root findings are isolated to tooling chains that require breaking Hardhat/Airnode/coverage upgrades or packages with no safe fix.
+- **Build Verification**: Verified that the production client bundle compiles successfully locally and on Vercel with 0 errors.
+
+### Files Changed:
+- `Raffle_Frontend/package.json`
+- `Raffle_Frontend/package-lock.json`
+- `package.json`
+- `package-lock.json`
+
+---
 *Created by Antigravity — Nexus Master Architect*
-*Integrity First. Nexus Synchronized. v3.64.36 LOCKED.*
+*Integrity First. Nexus Synchronized. v3.64.37 LOCKED.*

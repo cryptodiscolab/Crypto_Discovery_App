@@ -27,7 +27,6 @@
     "@api3/airnode-admin": "0.15.0",
     "@api3/airnode-protocol": "0.15.0",
     "@modelcontextprotocol/sdk": "^1.25.2",
-    "@modelcontextprotocol/server-github": "2025.4.8",
     "@nomicfoundation/hardhat-chai-matchers": "2.1.0",
     "@nomicfoundation/hardhat-ethers": "3.1.3",
     "@nomicfoundation/hardhat-ignition": "0.15.16",
@@ -64,6 +63,12 @@
     "@sentry/node": "^10.53.1",
     "@supabase/supabase-js": "^2.42.0",
     "telegraf": "4.16.3",
-    "viem": "2.47.4"
+    "viem": "2.52.2"
+  },
+  "overrides": {
+    "ws": "8.21.0",
+    "uuid": "11.1.1",
+    "undici": "6.26.0",
+    "minimatch": "9.0.9"
   }
 }

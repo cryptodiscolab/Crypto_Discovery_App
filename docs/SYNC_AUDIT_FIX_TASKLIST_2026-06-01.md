@@ -607,6 +607,7 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 ## 2026-06-05: Next Progress Task List
 
 - [x] Pre-fix live audit rerun passed: Sentinel `HEALTHY`, Task Claim Pipeline `FULLY FUNCTIONAL`, Security Matrix `13/13`.
+- [x] Resolved 52 dependency vulnerabilities from Vercel build audit by upgrading direct frontend dependencies (vite to 6.4.2, react-router-dom to 6.30.4, postcss to 8.5.10) and applying strict frontend overrides in package.json (ws@8.20.1, uuid@11.1.1, esbuild@0.25.0, minimatch@9.0.9, path-to-regexp@6.3.0, undici@6.26.0, ajv@8.18.0, smol-toml@1.6.1, react-router@6.30.4). `Raffle_Frontend` lockfile updated, local/remote Vercel build confirmed `0 vulnerabilities`, and Windows build passed. Root dev-tool audit was reduced from 80 to 59 residual vulnerabilities; remaining findings require breaking Hardhat/Airnode/coverage upgrades or packages with no safe fix.
 - [x] Fixed UGC participant fresh-join blocker: `/api/tasks-bundle` now supports signed `join-ugc-campaign`, validates wallet/campaign/timestamp, and calls live `fn_join_campaign_atomic` before a participant can start a sponsored task.
 - [x] Fixed UI join flow: `UGCCampaignCard` now asks the participant to sign a campaign join before opening the subtask link, then records the local task-start timer.
 - [x] Fixed stale payout CTA risk: `TasksPage` now reads and subscribes to `user_claims`, then passes payout state to `UGCCampaignCard`.
