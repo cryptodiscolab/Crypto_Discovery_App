@@ -5,6 +5,29 @@ import toast from 'react-hot-toast';
 const _SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const _SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+type OAuthProvider = 'google' | 'x';
+
+type OAuthUser = {
+    id: string;
+    email?: string;
+    user_metadata?: {
+        full_name?: string;
+        name?: string;
+        avatar_url?: string;
+        picture?: string;
+        user_name?: string;
+        preferred_username?: string;
+        provider_id?: string;
+    };
+};
+
+const isProviderMatch = (requestedProvider: OAuthProvider, responseProvider?: string) => {
+    if (!responseProvider) return true;
+    const normalized = responseProvider.toLowerCase().trim();
+    if (requestedProvider === 'x') return normalized === 'x' || normalized === 'twitter';
+    return normalized === requestedProvider;
+};
+
 /**
  * useOAuth — Hook to link Google or X (Twitter) OAuth identity to the connected wallet.
  *
@@ -31,7 +54,7 @@ export function useOAuth() {
      * Internal: Call the Supabase OAuth sign-in popup.
      * Uses Supabase SDK to handle PKCE/State coordination automatically.
      */
-    const openSupabaseOAuth = useCallback(async (provider: 'google' | 'twitter'): Promise<{ id: string; email?: string; user_metadata?: { full_name?: string; name?: string; avatar_url?: string; picture?: string; user_name?: string; preferred_username?: string; provider_id?: string } }> => {
+    const openSupabaseOAuth = useCallback(async (provider: OAuthProvider): Promise<OAuthUser> => {
         const { supabase } = await import('../lib/supabaseClient');
 
         const redirectTo = `${window.location.origin}/oauth-callback`;
@@ -51,31 +74,35 @@ export function useOAuth() {
 
         // Open in popup window
         const popup = window.open(data.url, `${provider}_oauth`, 'width=600,height=700,scrollbars=yes');
+        if (!popup) throw new Error('OAuth popup was blocked by the browser');
 
         return new Promise((resolve, reject) => {
             let resolved = false;
+            let timeout: ReturnType<typeof setTimeout> | null = null;
+
+            const cleanup = () => {
+                window.removeEventListener('message', handleMessage);
+                if (timeout) {
+                    clearTimeout(timeout);
+                    timeout = null;
+                }
+            };
 
             const handleMessage = (event: MessageEvent) => {
                 // Security check: Only trust messages from our own origin
                 if (event.origin !== window.location.origin) return;
 
-                // Provider alias matching: Supabase uses 'twitter', we normalize to 'x'
+                // Provider alias matching: Supabase OAuth 2.0 uses 'x'; legacy sessions may report 'twitter'.
                 const msgProvider = event.data?.provider;
-                const providerMatch = msgProvider === provider
-                    || (provider === 'twitter' && (msgProvider === 'x' || msgProvider === 'twitter'))
-                    || (provider === 'google' && msgProvider === 'google')
-                    // Accept any provider if we got OAUTH_SUCCESS but provider unknown
-                    || (event.data?.type === 'OAUTH_SUCCESS' && !msgProvider);
+                const providerMatch = isProviderMatch(provider, msgProvider);
 
                 if (event.data?.type === 'OAUTH_SUCCESS' && providerMatch) {
                     resolved = true;
-                    window.removeEventListener('message', handleMessage);
-                    clearInterval(pollClose);
+                    cleanup();
                     resolve(event.data.user);
-                } else if (event.data?.type === 'OAUTH_ERROR') {
+                } else if (event.data?.type === 'OAUTH_ERROR' && providerMatch) {
                     resolved = true;
-                    window.removeEventListener('message', handleMessage);
-                    clearInterval(pollClose);
+                    cleanup();
                     reject(new Error(event.data.error || 'OAuth failed'));
                 }
             };
@@ -83,33 +110,17 @@ export function useOAuth() {
             window.addEventListener('message', handleMessage);
 
             // COOP Compatibility Fix:
-            // Do not poll popup.closed as it may throw or return true prematurely due to isolation.
-            // Instead, set a 5-minute timeout as a fallback for user cancellation/timeout.
-            const timeout = setTimeout(() => {
+            // Do not poll popup.closed: Chromium can report true prematurely when OAuth redirects
+            // cross-origin, which makes an active X authorization window look user-closed.
+            // Rely on callback postMessage and a bounded timeout instead.
+            timeout = setTimeout(() => {
                 if (!resolved) {
                     resolved = true;
-                    window.removeEventListener('message', handleMessage);
+                    cleanup();
                     reject(new Error('OAuth timeout: No response received from popup after 5 minutes. Please try again.'));
-                    try { popup?.close(); } catch (e) { /* ignore isolation errors */ }
+                    try { popup.close(); } catch (e) { /* ignore isolation errors */ }
                 }
             }, 300000); // 5 minutes
-
-            // Still attempt a safe poll for close, but wrapped in try-catch
-            const pollClose = setInterval(() => {
-                try {
-                    if (popup?.closed && !resolved) {
-                        resolved = true;
-                        clearInterval(pollClose);
-                        clearTimeout(timeout);
-                        window.removeEventListener('message', handleMessage);
-                        reject(new Error('OAuth popup closed by user'));
-                    }
-                } catch (e) {
-                    // If we hit a COOP/domain error, we stop polling and rely on the timeout fallback
-                    clearInterval(pollClose);
-                    console.warn('[useOAuth] Popup polling restricted by COOP, relying on timeout fallback.');
-                }
-            }, 1000);
         });
     }, []);
 
@@ -192,7 +203,7 @@ export function useOAuth() {
 
         try {
             // 1. OAuth popup
-            const oauthUser = await openSupabaseOAuth('twitter');
+            const oauthUser = await openSupabaseOAuth('x');
 
             const twitterUsername = oauthUser.user_metadata?.user_name || oauthUser.user_metadata?.preferred_username;
             const twitterId = oauthUser.user_metadata?.provider_id || oauthUser.id;

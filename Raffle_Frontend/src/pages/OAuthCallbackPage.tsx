@@ -9,6 +9,12 @@
  */
 import { useEffect, useState } from 'react';
 
+const normalizeOAuthProvider = (provider?: string | null) => {
+    const normalized = provider?.toLowerCase().trim();
+    if (normalized === 'twitter') return 'x';
+    return normalized || 'google';
+};
+
 export function OAuthCallbackPage() {
     const [status, setStatus] = useState('Processing...');
 
@@ -21,12 +27,14 @@ export function OAuthCallbackPage() {
             const code = searchParams.get('code');
             const errorCode = hashParams.get('error_code') || searchParams.get('error') || searchParams.get('error_code');
             const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
+            const providerFromSearch = searchParams.get('provider') || null;
 
             // ─── Error case ───────────────────────────────────────────────────────
             if (errorCode) {
                 setStatus('Authentication error. Closing...');
                 window.opener?.postMessage({
                     type: 'OAUTH_ERROR',
+                    provider: normalizeOAuthProvider(providerFromSearch),
                     error: errorDescription || errorCode || 'OAuth authorization failed'
                 }, window.location.origin);
                 setTimeout(() => window.close(), 1500);
@@ -35,13 +43,12 @@ export function OAuthCallbackPage() {
 
             // Detect provider from URL (Supabase includes it as query param or hash)
             const providerFromHash = hashParams.get('provider_token') ? 'google' : null;
-            const providerFromSearch = searchParams.get('provider') || null;
 
             // ─── Flow 1: Implicit Grant (access_token in hash) ────────────────────
             if (accessToken) {
                 try {
                     const payload = JSON.parse(atob(accessToken.split('.')[1]));
-                    const provider = providerFromHash || providerFromSearch || payload.app_metadata?.provider || 'google';
+                    const provider = normalizeOAuthProvider(providerFromHash || providerFromSearch || payload.app_metadata?.provider);
 
                     window.opener?.postMessage({
                         type: 'OAUTH_SUCCESS',
@@ -57,6 +64,7 @@ export function OAuthCallbackPage() {
                     console.error('[OAuthCallback] Token parse error:', e);
                     window.opener?.postMessage({
                         type: 'OAUTH_ERROR',
+                        provider: normalizeOAuthProvider(providerFromSearch),
                         error: 'Failed to parse OAuth token'
                     }, window.location.origin);
                 }
@@ -80,7 +88,7 @@ export function OAuthCallbackPage() {
 
                     // Detect provider from user metadata
                     const appProvider = user.app_metadata?.provider || 'google';
-                    const provider = providerFromSearch || (appProvider === 'twitter' ? 'twitter' : appProvider);
+                    const provider = normalizeOAuthProvider(providerFromSearch || appProvider);
 
                     window.opener?.postMessage({
                         type: 'OAUTH_SUCCESS',
@@ -97,6 +105,7 @@ export function OAuthCallbackPage() {
                     console.error('[OAuthCallback] PKCE exchange error:', e);
                     window.opener?.postMessage({
                         type: 'OAUTH_ERROR',
+                        provider: normalizeOAuthProvider(providerFromSearch),
                         error: message || 'OAuth code exchange failed'
                     }, window.location.origin);
                 }
@@ -112,7 +121,7 @@ export function OAuthCallbackPage() {
                 const user = sessionData?.session?.user;
 
                 if (user) {
-                    const provider = user.app_metadata?.provider || 'google';
+                    const provider = normalizeOAuthProvider(user.app_metadata?.provider);
                     window.opener?.postMessage({
                         type: 'OAUTH_SUCCESS',
                         provider,
@@ -126,6 +135,7 @@ export function OAuthCallbackPage() {
                 } else {
                     window.opener?.postMessage({
                         type: 'OAUTH_ERROR',
+                        provider: normalizeOAuthProvider(providerFromSearch),
                         error: 'No session or code found after OAuth redirect'
                     }, window.location.origin);
                     setStatus('Authentication incomplete. Please try again.');
@@ -134,6 +144,7 @@ export function OAuthCallbackPage() {
                 const message = e instanceof Error ? e.message : String(e);
                 window.opener?.postMessage({
                     type: 'OAUTH_ERROR',
+                    provider: normalizeOAuthProvider(providerFromSearch),
                     error: message || 'Session retrieval failed'
                 }, window.location.origin);
             }
