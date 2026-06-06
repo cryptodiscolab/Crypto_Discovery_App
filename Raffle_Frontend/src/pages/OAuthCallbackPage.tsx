@@ -9,10 +9,55 @@
  */
 import { useEffect, useState } from 'react';
 
+type OAuthCallbackPayload = {
+    type: 'OAUTH_SUCCESS' | 'OAUTH_ERROR';
+    provider?: string;
+    user?: {
+        id: string;
+        email?: string;
+        user_metadata?: Record<string, unknown>;
+    };
+    error?: string;
+};
+
+const OAUTH_RESULT_CHANNEL = 'crypto-disco-oauth-result';
+const OAUTH_RESULT_KEY = 'crypto-disco:oauth:result';
+
 const normalizeOAuthProvider = (provider?: string | null) => {
     const normalized = provider?.toLowerCase().trim();
     if (normalized === 'twitter') return 'x';
-    return normalized || 'google';
+    return normalized || undefined;
+};
+
+const getProviderResultKey = (provider?: string) => provider ? `${OAUTH_RESULT_KEY}:${provider}` : null;
+
+const deliverOAuthResult = (payload: OAuthCallbackPayload) => {
+    const normalizedProvider = normalizeOAuthProvider(payload.provider);
+    const result = { ...payload, provider: normalizedProvider, timestamp: Date.now() };
+
+    try {
+        window.opener?.postMessage(result, window.location.origin);
+    } catch {
+        // COOP can sever opener access; storage/channel fallbacks below still notify the parent.
+    }
+
+    try {
+        localStorage.setItem(OAUTH_RESULT_KEY, JSON.stringify(result));
+        const providerKey = getProviderResultKey(normalizedProvider);
+        if (providerKey) localStorage.setItem(providerKey, JSON.stringify(result));
+    } catch {
+        // Ignore storage-denied browsers; BroadcastChannel may still work.
+    }
+
+    if ('BroadcastChannel' in window) {
+        try {
+            const channel = new BroadcastChannel(OAUTH_RESULT_CHANNEL);
+            channel.postMessage(result);
+            channel.close();
+        } catch {
+            // Ignore channel isolation errors.
+        }
+    }
 };
 
 export function OAuthCallbackPage() {
@@ -32,11 +77,11 @@ export function OAuthCallbackPage() {
             // ─── Error case ───────────────────────────────────────────────────────
             if (errorCode) {
                 setStatus('Authentication error. Closing...');
-                window.opener?.postMessage({
+                deliverOAuthResult({
                     type: 'OAUTH_ERROR',
                     provider: normalizeOAuthProvider(providerFromSearch),
                     error: errorDescription || errorCode || 'OAuth authorization failed'
-                }, window.location.origin);
+                });
                 setTimeout(() => window.close(), 1500);
                 return;
             }
@@ -50,7 +95,7 @@ export function OAuthCallbackPage() {
                     const payload = JSON.parse(atob(accessToken.split('.')[1]));
                     const provider = normalizeOAuthProvider(providerFromHash || providerFromSearch || payload.app_metadata?.provider);
 
-                    window.opener?.postMessage({
+                    deliverOAuthResult({
                         type: 'OAUTH_SUCCESS',
                         provider,
                         user: {
@@ -58,15 +103,15 @@ export function OAuthCallbackPage() {
                             email: payload.email,
                             user_metadata: payload.user_metadata || {}
                         }
-                    }, window.location.origin);
+                    });
                     setStatus('Sign-in complete! Closing...');
                 } catch (e) {
                     console.error('[OAuthCallback] Token parse error:', e);
-                    window.opener?.postMessage({
+                    deliverOAuthResult({
                         type: 'OAUTH_ERROR',
                         provider: normalizeOAuthProvider(providerFromSearch),
                         error: 'Failed to parse OAuth token'
-                    }, window.location.origin);
+                    });
                 }
                 setTimeout(() => window.close(), 800);
                 return;
@@ -90,7 +135,7 @@ export function OAuthCallbackPage() {
                     const appProvider = user.app_metadata?.provider || 'google';
                     const provider = normalizeOAuthProvider(providerFromSearch || appProvider);
 
-                    window.opener?.postMessage({
+                    deliverOAuthResult({
                         type: 'OAUTH_SUCCESS',
                         provider,
                         user: {
@@ -98,16 +143,16 @@ export function OAuthCallbackPage() {
                             email: user.email,
                             user_metadata: user.user_metadata || {}
                         }
-                    }, window.location.origin);
+                    });
                     setStatus('Sign-in complete! Closing...');
                 } catch (e: unknown) {
                     const message = e instanceof Error ? e.message : String(e);
                     console.error('[OAuthCallback] PKCE exchange error:', e);
-                    window.opener?.postMessage({
+                    deliverOAuthResult({
                         type: 'OAUTH_ERROR',
                         provider: normalizeOAuthProvider(providerFromSearch),
                         error: message || 'OAuth code exchange failed'
-                    }, window.location.origin);
+                    });
                 }
                 setTimeout(() => window.close(), 800);
                 return;
@@ -122,7 +167,7 @@ export function OAuthCallbackPage() {
 
                 if (user) {
                     const provider = normalizeOAuthProvider(user.app_metadata?.provider);
-                    window.opener?.postMessage({
+                    deliverOAuthResult({
                         type: 'OAUTH_SUCCESS',
                         provider,
                         user: {
@@ -130,23 +175,23 @@ export function OAuthCallbackPage() {
                             email: user.email,
                             user_metadata: user.user_metadata || {}
                         }
-                    }, window.location.origin);
+                    });
                     setStatus('Sign-in complete!');
                 } else {
-                    window.opener?.postMessage({
+                    deliverOAuthResult({
                         type: 'OAUTH_ERROR',
                         provider: normalizeOAuthProvider(providerFromSearch),
                         error: 'No session or code found after OAuth redirect'
-                    }, window.location.origin);
+                    });
                     setStatus('Authentication incomplete. Please try again.');
                 }
             } catch (e: unknown) {
                 const message = e instanceof Error ? e.message : String(e);
-                window.opener?.postMessage({
+                deliverOAuthResult({
                     type: 'OAUTH_ERROR',
                     provider: normalizeOAuthProvider(providerFromSearch),
                     error: message || 'Session retrieval failed'
-                }, window.location.origin);
+                });
             }
             setTimeout(() => window.close(), 1500);
         }

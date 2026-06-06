@@ -21,11 +21,38 @@ type OAuthUser = {
     };
 };
 
+type OAuthResultPayload = {
+    type?: string;
+    provider?: string;
+    user?: OAuthUser;
+    error?: string;
+};
+
+const OAUTH_RESULT_CHANNEL = 'crypto-disco-oauth-result';
+const OAUTH_RESULT_KEY = 'crypto-disco:oauth:result';
+
+const getProviderResultKey = (provider: OAuthProvider) => `${OAUTH_RESULT_KEY}:${provider}`;
+
 const isProviderMatch = (requestedProvider: OAuthProvider, responseProvider?: string) => {
     if (!responseProvider) return true;
     const normalized = responseProvider.toLowerCase().trim();
     if (requestedProvider === 'x') return normalized === 'x' || normalized === 'twitter';
     return normalized === requestedProvider;
+};
+
+const parseOAuthResult = (value: unknown): OAuthResultPayload | null => {
+    if (!value) return null;
+    if (typeof value === 'string') {
+        try {
+            return parseOAuthResult(JSON.parse(value));
+        } catch {
+            return null;
+        }
+    }
+    if (typeof value !== 'object') return null;
+    const payload = value as OAuthResultPayload;
+    if (payload.type !== 'OAUTH_SUCCESS' && payload.type !== 'OAUTH_ERROR') return null;
+    return payload;
 };
 
 /**
@@ -79,44 +106,70 @@ export function useOAuth() {
         return new Promise((resolve, reject) => {
             let resolved = false;
             let timeout: ReturnType<typeof setTimeout> | null = null;
+            const providerResultKey = getProviderResultKey(provider);
+            let channel: BroadcastChannel | null = null;
 
             const cleanup = () => {
                 window.removeEventListener('message', handleMessage);
+                window.removeEventListener('storage', handleStorage);
+                if (channel) {
+                    channel.close();
+                    channel = null;
+                }
                 if (timeout) {
                     clearTimeout(timeout);
                     timeout = null;
                 }
             };
 
-            const handleMessage = (event: MessageEvent) => {
-                // Security check: Only trust messages from our own origin
-                if (event.origin !== window.location.origin) return;
-
+            const handleOAuthResult = (value: unknown) => {
+                const payload = parseOAuthResult(value);
+                if (!payload || resolved) return;
                 // Provider alias matching: Supabase OAuth 2.0 uses 'x'; legacy sessions may report 'twitter'.
-                const msgProvider = event.data?.provider;
+                const msgProvider = payload.provider;
                 const providerMatch = isProviderMatch(provider, msgProvider);
 
-                if (event.data?.type === 'OAUTH_SUCCESS' && providerMatch) {
+                if (payload.type === 'OAUTH_SUCCESS' && providerMatch && payload.user) {
                     resolved = true;
                     cleanup();
-                    resolve(event.data.user);
-                } else if (event.data?.type === 'OAUTH_ERROR' && providerMatch) {
+                    try { localStorage.removeItem(providerResultKey); localStorage.removeItem(OAUTH_RESULT_KEY); } catch { /* ignore storage errors */ }
+                    resolve(payload.user);
+                } else if (payload.type === 'OAUTH_ERROR' && providerMatch) {
                     resolved = true;
                     cleanup();
-                    reject(new Error(event.data.error || 'OAuth failed'));
+                    try { localStorage.removeItem(providerResultKey); localStorage.removeItem(OAUTH_RESULT_KEY); } catch { /* ignore storage errors */ }
+                    reject(new Error(payload.error || 'OAuth failed'));
                 }
             };
 
+            const handleMessage = (event: MessageEvent) => {
+                // Security check: Only trust messages from our own origin
+                if (event.origin !== window.location.origin) return;
+                handleOAuthResult(event.data);
+            };
+
+            const handleStorage = (event: StorageEvent) => {
+                if (event.key !== providerResultKey && event.key !== OAUTH_RESULT_KEY) return;
+                handleOAuthResult(event.newValue);
+            };
+
+            try { localStorage.removeItem(providerResultKey); localStorage.removeItem(OAUTH_RESULT_KEY); } catch { /* ignore storage errors */ }
             window.addEventListener('message', handleMessage);
+            window.addEventListener('storage', handleStorage);
+            if ('BroadcastChannel' in window) {
+                channel = new BroadcastChannel(OAUTH_RESULT_CHANNEL);
+                channel.onmessage = (event) => handleOAuthResult(event.data);
+            }
 
             // COOP Compatibility Fix:
             // Do not poll popup.closed: Chromium can report true prematurely when OAuth redirects
             // cross-origin, which makes an active X authorization window look user-closed.
-            // Rely on callback postMessage and a bounded timeout instead.
+            // Rely on callback postMessage/localStorage/BroadcastChannel and a bounded timeout instead.
             timeout = setTimeout(() => {
                 if (!resolved) {
                     resolved = true;
                     cleanup();
+                    try { localStorage.removeItem(providerResultKey); localStorage.removeItem(OAUTH_RESULT_KEY); } catch { /* ignore storage errors */ }
                     reject(new Error('OAuth timeout: No response received from popup after 5 minutes. Please try again.'));
                     try { popup.close(); } catch (e) { /* ignore isolation errors */ }
                 }
