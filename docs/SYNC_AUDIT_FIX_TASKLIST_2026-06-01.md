@@ -1,7 +1,7 @@
 # UGC / Raffle / Task Sync Fix Checklist
 
 Date: 2026-06-01
-Last verified: 2026-06-05
+Last verified: 2026-06-06
 Scope: UGC missions, sponsored raffle creation, task claims, ticket purchase, raffle prize claim, raffle rejection/refund, payment fee verification, pending sync recovery, and raffle DB indexer sync.
 
 ## Verdict
@@ -654,3 +654,8 @@ node scripts/audits/agent_anti_negligence_hook.cjs
 - [x] Repaired stale social-ID fallback: Twitter verification now performs a Supabase profile lookup when only `twitter_id` is missing, even if the local social cache already contains Farcaster FID; this prevents `Missing required field: userId` on X tasks.
 - [x] Restored verification-server payload compatibility: Twitter social verification now forwards flat `userId` from `twitterId`/`socialId` when needed, so both direct task flow and verified action flow reach the same backend contract.
 - [x] Repaired OAuth popup false-close regression: [useOAuth.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/src/hooks/useOAuth.ts) no longer polls `popup.closed`, because Chromium/COOP can report an active X authorization window as closed during cross-origin redirects; the flow now relies on `/oauth-callback` postMessage plus a bounded timeout.
+- [x] Hardened backend OAuth provider normalization in [_user-bundle.ts](file:///e:/Disco%20Gacha/Disco_DailyApp/Raffle_Frontend/api/_user-bundle.ts#L3015): `wallet_address` is trimmed/lowercased, `twitter` provider alias normalizes to `x`, unsupported providers return `400 Unsupported OAuth provider`, and all identity-lock branches use the normalized provider.
+- [x] Deployed commit `80e4cf3` to production Vercel. Live production now serves index `/assets/index-C1gER8jm.js`, OAuth callback chunk `OAuthCallbackPage-Bs5OVJSZ.js`, profile chunk `ProfilePage-BJHOo5oL.js`, and OAuth hook chunk `useOAuth-8kpVgB0G.js`; live chunk no longer contains `OAuth popup closed by user` or `popup.closed`.
+- [x] Verified live backend edge-case behavior after production deploy: `/api/user-bundle?action=sync-oauth` with an unsupported provider returns `400 {"error":"Unsupported OAuth provider"}` instead of falling into the older 500 path.
+- [x] Post-deploy checks passed: `check_sync_status.cjs` reports `ALL SYSTEMS SYNCHRONIZED & OPERATIONAL`, Task Claim Pipeline `FULLY FUNCTIONAL`, Security Matrix `13/13`; `agent_anti_negligence_hook.cjs` reports `100% OPERATIONAL & PRISTINE`.
+- [ ] Manual interactive QA remains required for a real X OAuth account: hard refresh production, connect wallet, authorize X popup, sign wallet message, then verify `user_profiles.twitter_id/twitter_username`, `user_activity_logs` `X Link`, and UI `CONNECTED` state.
