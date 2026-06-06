@@ -3019,17 +3019,24 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
+        const cleanWallet = String(wallet_address).trim().toLowerCase();
+        const requestedProvider = String(provider).trim().toLowerCase();
+        const normalizedProvider = requestedProvider === 'twitter' ? 'x' : requestedProvider;
+        const isGoogleProvider = normalizedProvider === 'google';
+
+        if (normalizedProvider !== 'google' && normalizedProvider !== 'x') {
+            return res.status(400).json({ error: 'Unsupported OAuth provider' });
+        }
+
         // 1. Verify EIP-191 signature to ensure the request is from the wallet owner
         const validSig = await verifyMessage({
-            address: wallet_address as `0x${string}`,
+            address: cleanWallet as `0x${string}`,
             message,
             signature: signature as `0x${string}`
         });
         if (!validSig) {
             return res.status(401).json({ error: 'Cryptographic signature verification failed' });
         }
-
-        const cleanWallet = wallet_address.toLowerCase();
 
         // 2. Verify Supabase OAuth session JWT token securely on the server
         const { data: { user }, error: authErr } = await getSupabaseAdmin().auth.getUser(oauth_token);
@@ -3038,7 +3045,7 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
         }
 
         // 3. Prevent Client-Side Trust: verify that the user retrieved from Supabase owns the requested identity
-        const expectedId = provider === 'google' ? oauth_data.google_id : oauth_data.twitter_id;
+        const expectedId = isGoogleProvider ? oauth_data.google_id : oauth_data.twitter_id;
         if (!expectedId) {
             return res.status(400).json({ error: 'Missing provider identifier in oauth_data' });
         }
@@ -3046,17 +3053,17 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
         const matchesIdentity = user.identities?.some(identity => {
             const prov = identity.provider?.toLowerCase();
             const idStr = String(identity.id || '');
-            if (provider === 'google' && prov === 'google' && idStr === String(expectedId)) return true;
-            if ((provider === 'x' || provider === 'twitter') && (prov === 'twitter' || prov === 'x') && idStr === String(expectedId)) return true;
+            if (isGoogleProvider && prov === 'google' && idStr === String(expectedId)) return true;
+            if (normalizedProvider === 'x' && (prov === 'twitter' || prov === 'x') && idStr === String(expectedId)) return true;
             return false;
-        }) || (provider === 'google' && user.id === expectedId) || ((provider === 'x' || provider === 'twitter') && user.id === expectedId);
+        }) || (isGoogleProvider && user.id === expectedId) || (normalizedProvider === 'x' && user.id === expectedId);
 
         if (!matchesIdentity) {
-            return res.status(403).json({ error: `Verification mismatch: The Supabase session does not own the requested ${provider === 'google' ? 'Google' : 'X (Twitter)'} identity.` });
+            return res.status(403).json({ error: `Verification mismatch: The Supabase session does not own the requested ${isGoogleProvider ? 'Google' : 'X (Twitter)'} identity.` });
         }
 
         // 4. Identity Lock: Ensure no other wallet is already linked to this social identity
-        const targetColumn = provider === 'google' ? 'google_id' : 'twitter_id';
+        const targetColumn = isGoogleProvider ? 'google_id' : 'twitter_id';
         const { data: existingLink } = await getSupabaseAdmin()
             .from('user_profiles')
             .select('wallet_address')
@@ -3065,7 +3072,7 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
             .maybeSingle();
 
         if (existingLink) {
-            return res.status(400).json({ error: `This ${provider === 'google' ? 'Google' : 'X (Twitter)'} account is already linked to another wallet.` });
+            return res.status(400).json({ error: `This ${isGoogleProvider ? 'Google' : 'X (Twitter)'} account is already linked to another wallet.` });
         }
 
         // 5. Update user profile database record
@@ -3073,7 +3080,7 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
             updated_at: new Date().toISOString()
         };
 
-        if (provider === 'google') {
+        if (isGoogleProvider) {
             updatePayload.google_id = oauth_data.google_id;
             updatePayload.google_email = oauth_data.google_email || null;
             if (oauth_data.name) updatePayload.display_name = oauth_data.name.substring(0, PROFILE_LIMITS.MAX_NAME_LEN);
@@ -3093,15 +3100,15 @@ async function handleGetPendingSyncs(req: VercelRequest, res: VercelResponse) {
         if (dbErr) throw dbErr;
 
         // 6. Log the link action in activity history
-        const socialDetail = provider === 'google' ? oauth_data.google_email : `@${oauth_data.twitter_username}`;
+        const socialDetail = isGoogleProvider ? oauth_data.google_email : `@${oauth_data.twitter_username}`;
         await logActivity({
             wallet: cleanWallet,
             category: 'IDENTITY',
-            type: `${provider === 'google' ? 'Google' : 'X'} Link`,
-            description: `Successfully linked ${provider === 'google' ? 'Google: ' + socialDetail : 'X: ' + socialDetail} to wallet.`
+            type: `${isGoogleProvider ? 'Google' : 'X'} Link`,
+            description: `Successfully linked ${isGoogleProvider ? 'Google: ' + socialDetail : 'X: ' + socialDetail} to wallet.`
         });
 
-        return res.status(200).json({ success: true, provider });
+        return res.status(200).json({ success: true, provider: normalizedProvider });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return res.status(500).json({ error: sanitizeError(msg) });
