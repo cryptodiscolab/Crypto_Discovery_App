@@ -1,0 +1,49 @@
+name: Reward Claim Reminders (Cron)
+
+on:
+  schedule:
+    # Runs daily at 00:00 UTC (07:00 WIB)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  reward-claim-reminders:
+    name: Trigger Reward Claim Reminders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit Endpoint with Auto-Retry
+        run: |
+          MAX_ATTEMPTS=3
+          RETRY_WAIT=60
+          attempt=1
+          
+          while [ $attempt -le $MAX_ATTEMPTS ]; do
+            echo "Memanggil Reward Claim Reminders (Percobaan $attempt/$MAX_ATTEMPTS)..."
+            RESPONSE_FILE=$(mktemp)
+            HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              --max-time 30 \
+              "https://crypto-discovery-app.vercel.app/api/cron/reward-claim-reminders")
+            
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "✅ Reward Claim Reminders berhasil dieksekusi!"
+              echo "📄 Response Body:"
+              cat "$RESPONSE_FILE"
+              rm "$RESPONSE_FILE"
+              exit 0
+            else
+              echo "❌ API gagal dengan status $HTTP_STATUS"
+              echo "📄 Full Response Body:"
+              cat "$RESPONSE_FILE"
+              rm "$RESPONSE_FILE"
+              
+              if [ $attempt -lt $MAX_ATTEMPTS ]; then
+                echo "Menunggu ${RETRY_WAIT} detik sebelum mencoba lagi..."
+                sleep $RETRY_WAIT
+              fi
+            fi
+            attempt=$((attempt + 1))
+          done
+          
+          echo "❌ Semua percobaan gagal setelah $MAX_ATTEMPTS kali."
+          exit 1
