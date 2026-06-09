@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /**
@@ -10,7 +11,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
  *      the 24 KiB contract-size limit. Raffle, UGC, swap, and purchase systems
  *      award XP through role-gated channel functions.
  */
-contract DailyAppV16 is UUPSUpgradeable {
+contract DailyAppV16 is Initializable, UUPSUpgradeable {
     error InvalidTier();
     error Blacklisted();
     error InvalidAddress();
@@ -200,7 +201,6 @@ contract DailyAppV16 is UUPSUpgradeable {
         validAddress(usdcAddress)
         validAddress(initialOwner)
     {
-        __UUPSUpgradeable_init();
 
         name = "DailyApp Membership";
         symbol = "MEMBER";

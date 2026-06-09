@@ -1,16 +1,18 @@
 import "dotenv/config";
-import hardhatEth from "@nomicfoundation/hardhat-ethers";
+import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 import hardhatMocha from "@nomicfoundation/hardhat-mocha";
 import hardhatVerify from "@nomicfoundation/hardhat-verify";
 import hardhatUpgrades from "@openzeppelin/hardhat-upgrades";
 
+const plugins = [
+    hardhatEthers,
+    hardhatMocha,
+    hardhatVerify,
+    hardhatUpgrades,
+];
+
 export default {
-    plugins: [
-        hardhatEth,
-        hardhatMocha,
-        hardhatVerify,
-        hardhatUpgrades,
-    ],
+    plugins,
     solidity: {
         compilers: [
             {

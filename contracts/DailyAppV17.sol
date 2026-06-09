@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /**
@@ -8,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
  * @notice Deployable all-on-chain XP ledger plus soulbound membership NFT.
  * @dev V17 updates the referral system to trigger at a 500 XP threshold rather than a task count.
  */
-contract DailyAppV17 is UUPSUpgradeable {
+contract DailyAppV17 is Initializable, UUPSUpgradeable {
     error InvalidTier();
     error Blacklisted();
     error InvalidAddress();
@@ -202,7 +203,6 @@ contract DailyAppV17 is UUPSUpgradeable {
         validAddress(usdcAddress)
         validAddress(initialOwner)
     {
-        __UUPSUpgradeable_init();
 
         name = "DailyApp Membership";
         symbol = "MEMBER";
